@@ -1,5 +1,5 @@
 {
-  "name": "@repo/database",
+  "name": "@deadlock-mods/database",
   "version": "1.0.0",
   "exports": {
     ".": "./src/client.ts"
@@ -21,8 +21,8 @@
     "@prisma/client": "^5.10.2"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@deadlock-mods/eslint-config": "workspace:*",
+    "@deadlock-mods/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
     "prisma": "^5.10.2",
     "rimraf": "^5.0.5",

@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@deadlock-mods/database";
 
 export default async function IndexPage() {
   const users = await prisma.user.findMany();
