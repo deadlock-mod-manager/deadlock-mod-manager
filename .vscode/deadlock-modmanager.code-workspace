@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"eslint.workingDirectories": [
+    {
+      "mode": "auto"
+			}
+		],
+		"editor.formatOnSave": false,
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "always",
+			"source.organizeImports": "explicit"
+		},
+		"rust-analyzer.linkedProjects": [
+			"apps/desktop/src-tauri/Cargo.toml"
+		]
+	}
+}

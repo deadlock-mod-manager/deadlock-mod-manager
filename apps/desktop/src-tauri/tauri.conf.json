@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "desktop",
-        "width": 800,
-        "height": 600
+        "title": "Deadlock Mod Manager",
+        "width": 1280,
+        "height": 720,
+        "decorations": false
       }
     ],
     "security": {
