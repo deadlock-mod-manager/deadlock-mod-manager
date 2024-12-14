@@ -42,7 +42,7 @@ export const AppSidebar = () => {
     <Sidebar
       collapsible="icon"
       variant="sidebar"
-      className="absolute top-10 left-0 h-[calc(100vh-40px)] flex flex-col z-10"
+      className="absolute top-10 left-0 h-[calc(100vh-40px)] flex flex-col z-10 w-[10rem]"
     >
       <SidebarContent className="flex-grow">
         <SidebarGroup>

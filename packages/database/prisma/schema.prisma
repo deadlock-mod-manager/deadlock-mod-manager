@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
   relationMode = "prisma"
 }
@@ -11,9 +8,22 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
+model Mod {
+  id String @id @default(dbgenerated("(concat('mod_', gen_random_uuid()))::TEXT"))
+  remoteId String @unique
+  name String
+  description String?
+  remoteUrl String
+  tags String[]
+  author String
+  category String
+  likes Int @default(0)
+  downloads Int @default(0)
+  remoteAddedAt DateTime
+  remoteUpdatedAt DateTime
+  hero String?
+  downloadable Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  images String[]
 }

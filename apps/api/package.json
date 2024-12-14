@@ -1,0 +1,22 @@
+{
+  "name": "api",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix"
+  },
+  "dependencies": {
+    "croner": "^9.0.0",
+    "hono": "^4.6.13",
+    "tslog": "^4.9.3",
+    "@deadlock-mods/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@deadlock-mods/utils": "workspace:*",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.2.5"
+  }
+}

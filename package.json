@@ -15,6 +15,7 @@
     "lint": "turbo run lint"
   },
   "devDependencies": {
+    "dotenv-cli": "^7.4.4",
     "prettier": "^3.2.5",
     "prisma": "5.10.2",
     "tsx": "4.19.1",

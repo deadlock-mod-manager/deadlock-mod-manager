@@ -1,0 +1,22 @@
+{
+  "name": "@deadlock-mods/utils",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest",
+    "dev": "tsup src/* --watch",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@deadlock-mods/eslint-config": "workspace:*",
+    "@deadlock-mods/database": "workspace:*",
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "tsx": "4.19.1",
+    "typescript": "5.5.4",
+    "vitest": "^2.1.8"
+  }
+}

@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 import App from './app'
 
 import './index.css'
+import GetMods from './pages/mods'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -11,7 +12,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <Routes>
         <Route element={<App />}>
           <Route path="/" element={<div>My Mods</div>} />
-          <Route path="/mods" element={<div>Get Mods</div>} />
+          <Route path="/mods" element={<GetMods />} />
           <Route path="/downloads" element={<div>Downloads</div>} />
           <Route path="/settings" element={<div>Settings</div>} />
         </Route>
