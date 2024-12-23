@@ -1,6 +1,6 @@
+import { GameBanana } from '@deadlock-mods/utils'
 import { Cron } from 'croner'
 import { registerJob } from '.'
-import { GameBananaSubmission } from '../../types/game-banana'
 import Logger from '../logger'
 import { providerRegistry } from '../providers'
 
@@ -15,7 +15,7 @@ const job = new Cron(
   },
   async () => {
     logger.info('Synchronizing mods at ' + new Date().toISOString())
-    const provider = providerRegistry.getProvider<GameBananaSubmission>('gamebanana')
+    const provider = providerRegistry.getProvider<GameBanana.GameBananaSubmission>('gamebanana')
     await provider.synchronize()
   }
 )

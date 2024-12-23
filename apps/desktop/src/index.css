@@ -46,9 +46,9 @@
     --popover: 20, 9%, 6%;
     --popover-foreground: 38, 65%, 97%;
     --primary: 42, 60%, 84%; /* Deadlock Beige */
-    --primary-foreground: 0 0% 9%;
+    --primary-foreground: 20, 9%, 6%; /* Deadlock dark brown */
     --secondary: 15, 10%, 16%; /* Deadlock Brown */
-    --secondary-foreground: 38, 65%, 97%;
+    --secondary-foreground: 41.6 60% 63%; /* Darker Deadlock Beige */
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;

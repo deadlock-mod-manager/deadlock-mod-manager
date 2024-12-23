@@ -14,6 +14,7 @@ export abstract class Provider<T> {
   abstract getMods(): AsyncGenerator<T>
   abstract synchronize(): Promise<void>
   abstract createMod(mod: T): Promise<Mod>
+  abstract getMod<D>(remoteId: string): Promise<D>
 }
 
 interface ProviderConstructor<T> {

@@ -18,7 +18,8 @@
     "studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.2"
+    "@prisma/client": "^5.10.2",
+    "@tauri-apps/plugin-fs": "^2.2.0"
   },
   "devDependencies": {
     "@deadlock-mods/eslint-config": "workspace:*",

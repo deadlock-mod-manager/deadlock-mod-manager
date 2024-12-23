@@ -2,7 +2,6 @@ import { APP_DESCRIPTION, APP_NAME, COPYRIGHT, GITHUB_REPO } from '@/lib/constan
 import { CloudArrowDown, GithubLogo } from '@phosphor-icons/react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { app } from '@tauri-apps/api'
-import { arch } from '@tauri-apps/plugin-os'
 import { open } from '@tauri-apps/plugin-shell'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -15,22 +14,19 @@ export const AboutDialog = () => {
   const [version, setVersion] = useState('')
   const [name, setName] = useState('')
   const [tauriVersion, setTauriVersion] = useState('')
-  const [arc, setArch] = useState('')
 
   useEffect(() => {
     const fetchAboutData = async () => {
       try {
-        const [version, name, tauriVersion, architecture] = await Promise.all([
+        const [version, name, tauriVersion] = await Promise.all([
           app.getVersion(),
           app.getName(),
-          app.getTauriVersion(),
-          arch()
+          app.getTauriVersion()
         ])
 
         setVersion(version)
         setName(name)
         setTauriVersion(tauriVersion)
-        setArch(architecture)
       } catch (error) {
         console.error('Failed to fetch app information:', error)
       }
@@ -49,7 +45,7 @@ export const AboutDialog = () => {
         <DialogTitle className="flex flex-col items-center gap-2 pt-2">
           {APP_NAME} ({name})
           <span className="flex gap-1 font-mono text-xs font-medium">
-            Version {version} ({arc})
+            Version {version}
             <span className="font-sans font-medium text-gray-400">
               (
               <span
@@ -74,7 +70,7 @@ export const AboutDialog = () => {
       <DialogFooter className="flex flex-row items-center border-t pt-2 text-foreground">
         <div className="mr-auto flex flex-row gap-2">
           <GithubLogo
-            className="h-5 w-5 cursor-pointer transition hover:text-foreground "
+            className="h-5 w-5 cursor-pointer transition hover:text-foreground"
             onClick={() => open(GITHUB_REPO)}
           />
         </div>

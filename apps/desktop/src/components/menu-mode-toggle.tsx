@@ -6,7 +6,7 @@ import {
   MenubarTrigger
 } from '@/components/ui/menubar'
 import { Laptop, Moon, Sun } from '@phosphor-icons/react'
-import { useTheme } from './theme-provider'
+import { useTheme } from './providers/theme'
 
 export function MenuModeToggle() {
   const { setTheme, theme } = useTheme()

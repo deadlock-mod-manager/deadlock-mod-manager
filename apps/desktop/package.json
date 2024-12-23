@@ -11,6 +11,7 @@
     "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix"
   },
   "dependencies": {
+    "@deadlock-mods/utils": "workspace:*",
     "@hookform/resolvers": "^3.9.1",
     "@phosphor-icons/react": "^2.1.7",
     "@radix-ui/react-accordion": "^1.2.2",
@@ -40,9 +41,13 @@
     "@radix-ui/react-toggle": "^1.1.1",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.5",
+    "@tanstack/react-table": "^8.20.6",
     "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-os": "^2.2.0",
     "@tauri-apps/plugin-shell": "^2",
+    "@tauri-apps/plugin-store": "^2.2.0",
+    "@tauri-apps/plugin-upload": "^2.2.1",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "cmdk": "1.0.0",
@@ -53,6 +58,7 @@
     "react": "^18.2.0",
     "react-day-picker": "8.10.1",
     "react-dom": "^18.2.0",
+    "react-error-boundary": "^4.1.2",
     "react-hook-form": "^7.54.1",
     "react-query": "^3.39.3",
     "react-resizable-panels": "^2.1.7",
@@ -63,7 +69,7 @@
     "tauri-controls": "^0.4.0",
     "vaul": "^1.1.1",
     "zod": "^3.24.1",
-    "@deadlock-mods/utils": "workspace:*"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
@@ -78,6 +84,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.2.5",
     "tailwind-merge": "^2.5.5",
+    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.2.2",
     "unplugin-fonts": "^1.3.1",

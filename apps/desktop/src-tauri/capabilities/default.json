@@ -17,6 +17,12 @@
     "core:resources:default",
     "core:menu:default",
     "core:tray:default",
-    "os:allow-os-type"
+    "os:allow-os-type",
+    "upload:default",
+    "store:default",
+    "fs:allow-applocaldata-read-recursive",
+    "fs:allow-applocaldata-write-recursive",
+    "fs:allow-applocaldata-meta-recursive",
+    "upload:allow-download"
   ]
 }

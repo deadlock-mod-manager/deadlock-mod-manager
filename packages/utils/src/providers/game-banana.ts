@@ -108,3 +108,29 @@ export interface GameBananaTopSubmission {
     _sIconUrl: string
   }
 }
+
+export interface GameBananaModDownload {
+  _bIsTrashed: boolean
+  _bIsWithheld: boolean
+  _aFiles: GameBananaModFile[]
+  _bAcceptsDonations: boolean
+  _bShowRipePromo: boolean
+  _sLicense: string
+}
+
+export interface GameBananaModFile {
+  _idRow: number
+  _sFile: string
+  _nFilesize: number
+  _sDescription: string
+  _tsDateAdded: number
+  _nDownloadCount: number
+  _sAnalysisState: string
+  _sAnalysisResultCode: string
+  _sAnalysisResult: string
+  _bContainsExe: boolean
+  _sDownloadUrl: string
+  _sMd5Checksum: string
+  _sClamAvResult: string
+  _sAvastAvResult: string
+}
