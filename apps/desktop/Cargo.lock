@@ -674,6 +674,7 @@ dependencies = [
  "tauri-plugin-store",
  "tauri-plugin-upload",
  "tempfile",
+ "thiserror 2.0.9",
  "unrar",
  "vdf-parser",
  "winreg 0.50.0",

@@ -33,6 +33,7 @@ regex = "1.11.1"
 zip = "2.2.2"
 tempfile = "3.14.0"
 unrar = "0.5.7"
+thiserror = "2.0.9"
 
 
 

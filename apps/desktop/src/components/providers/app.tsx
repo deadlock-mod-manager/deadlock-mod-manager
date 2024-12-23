@@ -26,7 +26,7 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
 
   useEffect(() => {
     if (!store) {
-      load(STORE_NAME, { autoSave: true }).then((store) => setStore(store))
+      load(STORE_NAME, { autoSave: false }).then((store) => setStore(store))
     }
     return () => {
       if (store) store.close()

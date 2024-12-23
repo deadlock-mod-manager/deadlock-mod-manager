@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::PathBuf;
-use std::error::Error;
 use std::fs;
 use winreg::enums::*;
 use winreg::RegKey;
@@ -10,16 +9,18 @@ use keyvalues_serde;
 use zip;
 use unrar::Archive;
 use tempfile;
+use crate::errors::Error;
 
 type LibraryFolders = HashMap<String, LibraryFolder>;
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
     id: String,
     name: String,
     path: PathBuf,
-    enabled: bool,
+    #[serde(default)]
+    installed_vpks: Vec<String>,
 }
 
 
@@ -61,7 +62,7 @@ impl ModManager {
     }
 
     #[cfg(target_os = "windows")]
-    pub fn find_steam(&mut self) -> Result<PathBuf, Box<dyn Error>> {
+    pub fn find_steam(&mut self) -> Result<PathBuf, Error> {
         let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
         let steam_key = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam")?;
         let install_path: String = steam_key.get_value("InstallPath")?;
@@ -77,17 +78,17 @@ impl ModManager {
                 self.steam_path = Some(default_path.clone());
                 Ok(default_path)
             } else {
-                Err("Steam installation not found".into())
+                Err(Error::SteamNotFound)
             }
         }
     }
 
     #[cfg(not(target_os = "windows"))]
-    pub fn find_steam(&mut self) -> Result<PathBuf, Box<dyn Error>> {
-        Err("Steam path finding is only implemented for Windows".into())
+    pub fn find_steam(&mut self) -> Result<PathBuf, Error> {
+        Err(Error::GamePathNotSet)
     }
 
-    pub fn find_game(&mut self) -> Result<PathBuf, Box<dyn Error>> {
+    pub fn find_game(&mut self) -> Result<PathBuf, Error> {
         const DEADLOCK_APP_ID: &str = "1422450";
         
         if let Some(steam_path) = &self.steam_path {
@@ -117,10 +118,10 @@ impl ModManager {
             }
         }
 
-        Err("Deadlock not found in any Steam library".into())
+        Err(Error::GameNotFound)
     }
 
-    pub fn setup_game_for_mods(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn setup_game_for_mods(&mut self) -> Result<(), Error> {
         if self.game_setup {
             println!("Game already setup");
             return Ok(());  
@@ -146,9 +147,9 @@ impl ModManager {
 
             // Find the SearchPaths section
             let search_paths_start = gameinfo_content.find("SearchPaths")
-                .ok_or("SearchPaths section not found")?;
+                .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
             let relative_end = gameinfo_content[search_paths_start..].find("}")
-                .ok_or("Could not find end of SearchPaths section")?;
+                .ok_or_else(|| Error::GameConfigParse("Could not find end of SearchPaths section".into()))?;
 
             let search_paths_end = search_paths_start + relative_end + 1;
             let search_paths_section = &gameinfo_content[search_paths_start-1..search_paths_end];
@@ -176,25 +177,33 @@ impl ModManager {
 
             Ok(())
         } else {
-            Err("Game path not set. Call find_game() first".into())
+            Err(Error::GamePathNotSet)
         }
     }
 
-    fn copy_vpks_from_temp(&self, temp_dir: &std::path::Path, mod_files_path: &std::path::Path) -> Result<(), Box<dyn Error>> {
+    fn copy_vpks_from_temp(&self, temp_dir: &std::path::Path, mod_files_path: &std::path::Path) -> Result<Vec<String>, Error> {
+        let mut installed_vpks = Vec::new();
+        
         for entry in fs::read_dir(temp_dir)? {
             let entry = entry?;
             let path = entry.path();
             
             if path.is_dir() {
-                self.copy_vpks_from_temp(&path, mod_files_path)?;
+                let mut sub_vpks = self.copy_vpks_from_temp(&path, mod_files_path)?;
+                installed_vpks.append(&mut sub_vpks);
             } else if path.extension().map_or(false, |ext| ext == "vpk") {
-                fs::copy(&path, mod_files_path.join(path.file_name().unwrap()))?;
+                let vpk_name = path.file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string();
+                fs::copy(&path, mod_files_path.join(&vpk_name))?;
+                installed_vpks.push(vpk_name);
             }
         }
-        Ok(())
+        Ok(installed_vpks)
     }
 
-    fn extract_zip(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Box<dyn Error>> {
+    fn extract_zip(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Error> {
         let zip_file = File::open(path)?;
         let mut archive = zip::ZipArchive::new(zip_file)?;
             
@@ -222,7 +231,7 @@ impl ModManager {
         Ok(())
     }
 
-    fn extract_rar(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Box<dyn Error>> {
+    fn extract_rar(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Error> {
         let mut archive = Archive::new(path.to_string_lossy().as_ref())
             .open_for_processing()?;
 
@@ -237,9 +246,13 @@ impl ModManager {
         Ok(())
     }
 
-    pub fn install_mod(&mut self, deadlock_mod: Mod) -> Result<(), Box<dyn Error>> {
+    pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
         println!("Starting installation of mod: {}", deadlock_mod.name);
         
+        if !deadlock_mod.path.exists() {
+            return Err(Error::ModFileNotFound);
+        }
+
         if !self.game_setup {
             println!("Setting up game for mods...");
             self.setup_game_for_mods()?;
@@ -247,18 +260,15 @@ impl ModManager {
 
         if self.mods.contains_key(&deadlock_mod.id) {
             println!("Mod {} already installed", deadlock_mod.name);
-            return Err("Mod already installed".into());
+            return Err(Error::ModAlreadyInstalled(deadlock_mod.name));
         }
 
         if let Some(game_path) = &self.game_path {
-            if !deadlock_mod.path.exists() {
-                println!("Mod path does not exist: {:?}", deadlock_mod.path);
-                return Err("Mod file does not exist".into());
-            }
-
             let mod_files_path = deadlock_mod.path.join("files");
             println!("Creating mod files directory at: {:?}", mod_files_path);
             fs::create_dir_all(&mod_files_path)?;
+
+            let mut all_vpks = Vec::new();
 
             for entry in fs::read_dir(&deadlock_mod.path)? {
                 let entry = entry?;
@@ -280,21 +290,30 @@ impl ModManager {
                 }
 
                 println!("Copying VPK files to mod directory...");
-                self.copy_vpks_from_temp(temp_dir.path(), &mod_files_path)?;
+                let mut vpks = self.copy_vpks_from_temp(temp_dir.path(), &mod_files_path)?;
+                all_vpks.append(&mut vpks);
+            }
+
+            if all_vpks.is_empty() {
+                println!("No VPK files found in mod");
+                return Err(Error::ModInvalid("No VPK files found in mod".into()));
             }
 
             let addons_path = game_path.join("game").join("citadel").join("addons");
             println!("Installing VPK files to game addons: {:?}", addons_path);
             self.copy_vpks_from_temp(&mod_files_path, &addons_path)?;
 
+            // Store the list of installed VPKs
+            deadlock_mod.installed_vpks = all_vpks;
+
             println!("Adding mod to managed mods list");
-            self.mods.insert(deadlock_mod.id.clone(), deadlock_mod);
+            self.mods.insert(deadlock_mod.id.clone(), deadlock_mod.clone());
             
             println!("Mod installation completed successfully");
-            Ok(())
+            Ok(deadlock_mod)
         } else {
             println!("Game path not set");
-            Err("Game path not set. Call find_game() first".into())
+            Err(Error::GamePathNotSet)
         }
     }
 }

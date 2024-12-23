@@ -1,110 +1,98 @@
-# Turborepo starter
+# Deadlock Mod Manager
 
-This is an official starter turborepo.
+![Deadlock Mod Manager](./docs/assets/download.png)
 
-## Using this example
+A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript.
 
-Run the following command:
+## Screenshots
 
-```sh
-npx create-turbo@latest -e with-prisma
-```
+<details>
+<summary>Click to view screenshots</summary>
+
+![Main Window](./docs/assets/about.png)
+
+![Mod Details](./docs/assets/download.png)
+
+![My Mods](./docs/assets/my-mods.png)
+
+![Mods](./docs/assets/mods.png)
+
+</details>
 
 ## What's inside?
 
-This turborepo includes the following packages/apps:
+This monorepo includes the following packages/apps:
 
-### Apps and Packages
+### Apps
 
-- `web`: a [Next.js](https://nextjs.org/) app
-- `@deadlock-mods/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@deadlock-mods/database`: [Prisma](https://prisma.io/) ORM wrapper to manage & access your database
-- `@deadlock-mods/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `web`: A [Next.js](https://nextjs.org/) web application
+- `desktop`: A [Tauri](https://tauri.app/) + React desktop application
+- `api`: A [Bun](https://bun.sh/) + [Hono](https://hono.dev/) API server
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### Packages
 
-### Utilities
+- `@deadlock-mods/database`: [Prisma](https://prisma.io/) ORM wrapper to manage & access the database
+- `@deadlock-mods/utils`: Shared utilities
+- `@deadlock-mods/eslint-config`: ESLint configurations
+- `@deadlock-mods/typescript-config`: TypeScript configurations
 
-This turborepo has some additional tools already setup for you:
+## Getting Started
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Prisma](https://prisma.io/) for database ORM
-- [Docker Compose](https://docs.docker.com/compose/) for local database
+### Prerequisites
 
-### Database
+- Node.js >= 18
+- pnpm
+- Docker (for local database)
+- Rust (for desktop app)
 
-We use [Prisma](https://prisma.io/) to manage & access our database. As such you will need a database for this project, either locally or hosted in the cloud.
+### Installation
 
-To make this process easier, we offer a [`docker-compose.yml`](https://docs.docker.com/compose/) file to deploy a MySQL server locally with a new database named `turborepo` (To change this update the `MYSQL_DATABASE` environment variable in the `docker-compose.yml` file):
-
+1. Install dependencies:
 ```bash
-cd my-turborepo
-docker-compose up -d
+pnpm install
 ```
 
-Once deployed you will need to copy the `.env.example` file to `.env` in order for Prisma to have a `DATABASE_URL` environment variable to access.
+2. Set up environment variables:
 
 ```bash
 cp .env.example .env
 ```
 
-If you added a custom database name, or use a cloud based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
-
-Once deployed & up & running, you will need to create & deploy migrations to your database to add the necessary tables. This can be done using [Prisma Migrate](https://www.prisma.io/migrate):
-
+3. Run the migrations:
 ```bash
-npx prisma migrate dev
+pnpm db:migrate:deploy
 ```
 
-If you need to push any existing migrations to the database, you can use either the Prisma db push or the Prisma migrate deploy command(s):
-
+4. Run the API server:
 ```bash
-yarn run db:push
-
-# OR
-
-yarn run db:migrate:deploy
+pnpm api:dev
 ```
 
-There is slight difference between the two commands & [Prisma offers a breakdown on which command is best to use](https://www.prisma.io/docs/concepts/components/prisma-migrate/db-push#choosing-db-push-or-prisma-migrate).
-
-An optional additional step is to seed some initial or fake data to your database using [Prisma's seeding functionality](https://www.prisma.io/docs/guides/database/seed-database).
-
-To do this update check the seed script located in `packages/database/src/seed.ts` & add or update any users you wish to seed to the database.
-
-Once edited run the following command to run tell Prisma to run the seed script defined in the Prisma configuration:
-
+5. Run the desktop app:
 ```bash
-yarn run db:seed
+pnpm desktop:dev
 ```
 
-For further more information on migrations, seeding & more, we recommend reading through the [Prisma Documentation](https://www.prisma.io/docs/).
+### Development
 
-### Build
-
-To build all apps and packages, run the following command:
+To develop all apps and packages:
 
 ```bash
-yarn run build
+pnpm dev
 ```
 
-### Develop
+## Features
 
-To develop all apps and packages, run the following command:
+- Cross-platform desktop application (Windows, macOS, Linux)
+- Modern UI with [shadcn/ui](https://ui.shadcn.com/)
+- Database integration with Prisma
+- Type-safe development with TypeScript
+- Consistent code style with ESLint and Prettier
 
-```bash
-yarn run dev
-```
+## Contributing
 
-## Useful Links
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Learn more about the power of Turborepo:
+## License
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+This project is not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks

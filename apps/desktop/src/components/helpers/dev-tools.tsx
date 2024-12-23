@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 
 const DevTools = () => {
   const { clearMods } = usePersistedStore()
-
+  return null
   return (
     <div className="flex gap-2">
       <Button onClick={clearMods}>Clear Mods</Button>

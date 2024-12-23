@@ -29,3 +29,10 @@ export interface DownloadableMod extends Omit<LocalMod, 'status'> {
   onComplete: (path: string) => void
   onError: (error: Error) => void
 }
+
+export interface InstallableMod {
+  id: string
+  name: string
+  path: string
+  installed_vpks: string[]
+}

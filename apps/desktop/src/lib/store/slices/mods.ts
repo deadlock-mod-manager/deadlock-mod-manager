@@ -16,9 +16,12 @@ export interface ModsState {
 export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
   console.log('transitionModStatus', current, next)
   if (current === ModStatus.DOWNLOADING && next === ModStatus.DOWNLOADED) return ModStatus.DOWNLOADED
-  if (current === ModStatus.DOWNLOADED && next === ModStatus.INSTALLED) return ModStatus.INSTALLED
+  if (current === ModStatus.DOWNLOADED && next === ModStatus.INSTALLING) return ModStatus.INSTALLING
+  if (current === ModStatus.INSTALLING && next === ModStatus.INSTALLED) return ModStatus.INSTALLED
   if (current === ModStatus.INSTALLED && next === ModStatus.DOWNLOADING) return ModStatus.DOWNLOADING
   if (current === ModStatus.DOWNLOADING && next === ModStatus.ERROR) return ModStatus.ERROR
+  if (current === ModStatus.INSTALLING && next === ModStatus.ERROR) return ModStatus.ERROR
+  if (next === ModStatus.INSTALLED) return ModStatus.INSTALLED
   return current
 }
 
