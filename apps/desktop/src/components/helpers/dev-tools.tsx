@@ -4,25 +4,10 @@ import { Button } from '../ui/button'
 
 const DevTools = () => {
   const { clearMods } = usePersistedStore()
-  return null
   return (
     <div className="flex gap-2">
       <Button onClick={clearMods}>Clear Mods</Button>
-      <Button onClick={() => invoke('find_game_path')}>Find Game Folder</Button>
-      <Button
-        onClick={() =>
-          invoke('install_mod', {
-            deadlockMod: {
-              id: '123',
-              name: 'Test Mod',
-              path: 'lol',
-              enabled: true
-            }
-          })
-        }
-      >
-        Test Install
-      </Button>
+      <Button onClick={() => invoke('stop_game')}>Stop Game</Button>
     </div>
   )
 }

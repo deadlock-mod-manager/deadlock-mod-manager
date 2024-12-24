@@ -34,6 +34,9 @@ zip = "2.2.2"
 tempfile = "3.14.0"
 unrar = "0.5.7"
 thiserror = "2.0.9"
+sysinfo = {version = "0.33.0", features = ["windows"] }
+tauri-plugin-log = "2"
+log = "0.4"
 
 
 
@@ -45,3 +48,6 @@ codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
 strip = true      # Automatically strip symbols from the binary.
 debug = false
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2.2.0"

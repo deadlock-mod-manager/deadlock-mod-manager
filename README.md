@@ -1,8 +1,60 @@
 # Deadlock Mod Manager
 
+
+<br />
+<div align="center">
+  <a href="https://github.com/othneildrew/Best-README-Template">
+    <img src="./docs/assets/deadlock.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Deadlock Mod Manager</h3>
+
+  <p align="center">
+    A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript.
+    <br />
+    <br />
+    <a href="https://github.com/stormix/deadlock-modmanager/releases/latest">Download</a>
+    ·
+    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    ·
+    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+  </p>
+</div>
+ 
+
 ![Deadlock Mod Manager](./docs/assets/download.png)
 
-A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript.
+
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#screenshots">Screenshots</a>
+      <ul>
+        <li><a href="#main-window">Main Window</a></li>
+        <li><a href="#mod-details">Mod Details</a></li>
+        <li><a href="#my-mods">My Mods</a></li>
+        <li><a href="#mods">Mods</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
+
 
 ## Screenshots
 
@@ -18,6 +70,7 @@ A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScri
 ![Mods](./docs/assets/mods.png)
 
 </details>
+
 
 ## What's inside?
 
@@ -89,10 +142,55 @@ pnpm dev
 - Type-safe development with TypeScript
 - Consistent code style with ESLint and Prettier
 
+<!-- ROADMAP -->
+## Roadmap
+
+- [ ] Prepare first release
+
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Don't forget to give the project a star! Thanks again!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+
+
+### Top contributors:
+
+<a href="https://github.com/stormix/deadlock-modmanager/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=stormix/deadlock-modmanager" alt="contrib.rocks image" />
+</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 ## License
 
 This project is not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks
+
+
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+This project was only possible thanks to the amazing open source community, especially:
+
+* [Gamebanana API](https://gamebanana.com/)
+* [Phosphor Icons](https://phosphoricons.com/)
+* [React Icons](https://react-icons.github.io/react-icons/search)
+* [shadcn/ui](https://ui.shadcn.com/)
+* [Tauri](https://tauri.app/)
+* [Hono](https://hono.dev/)
+* [Bun](https://bun.sh/)
+* [Prisma](https://prisma.io/)
+* [shadcn/ui](https://ui.shadcn.com/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

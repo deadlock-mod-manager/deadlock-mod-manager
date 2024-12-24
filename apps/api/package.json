@@ -2,7 +2,8 @@
   "name": "api",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix"
+    "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
+    "desktop:dev": "pnpm dev"
   },
   "dependencies": {
     "croner": "^9.0.0",

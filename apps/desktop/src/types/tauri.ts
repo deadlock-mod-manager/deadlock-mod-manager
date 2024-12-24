@@ -14,5 +14,8 @@ export type ErrorKind = {
     | 'zip'
     | 'modInvalid'
     | 'unknown'
+    | 'gameRunning'
+    | 'gameNotRunning'
+    | 'gameLaunchFailed'
   message: string
 }

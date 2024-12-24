@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "desktop",
+  "productName": "deadlock-mod-manager",
   "version": "0.1.0",
-  "identifier": "dev.stormix.deadlock-mods",
+  "identifier": "dev.stormix.deadlock-mod-manager",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",

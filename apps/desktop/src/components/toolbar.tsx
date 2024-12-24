@@ -1,12 +1,12 @@
+import { useLaunch } from '@/hooks/use-launch'
 import { usePersistedStore } from '@/lib/store'
 import { Check, GameController, Play, X } from '@phosphor-icons/react'
 import DevTools from './helpers/dev-tools'
 import { Button } from './ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
-
 export const Toolbar = () => {
   const { gamePath } = usePersistedStore()
-
+  const { launch } = useLaunch()
   return (
     <div className="flex flex-row items-center justify-end w-full gap-4 py-4 px-8 border-b">
       <div className="flex flex-row items-center gap-2 px-4 flex-grow justify-start">
@@ -23,11 +23,11 @@ export const Toolbar = () => {
         </Tooltip>
       </div>
       <DevTools />
-      <Button size="lg" variant="ghost" disabled={!gamePath}>
+      <Button size="lg" variant="ghost" disabled={!gamePath} onClick={() => launch(true)}>
         <Play />
         <span className="font-medium text-md">Launch Vanilla</span>
       </Button>
-      <Button size="lg" disabled={!gamePath}>
+      <Button size="lg" disabled={!gamePath} onClick={() => launch()}>
         <GameController />
         <span className="font-medium text-md">Launch Modded</span>
       </Button>

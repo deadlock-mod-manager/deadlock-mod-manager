@@ -13,6 +13,10 @@
       "cache": false,
       "persistent": true
     },
+    "desktop:dev": {
+      "cache": false,
+      "persistent": true
+    },
     "generate": {
       "dependsOn": ["^generate"]
     },

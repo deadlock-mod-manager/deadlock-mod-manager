@@ -1,29 +1,35 @@
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-  #[error(transparent)]
-  Io(#[from] std::io::Error),
-  #[error("failed to parse as string: {0}")]
-  Utf8(#[from] std::str::Utf8Error),
-  #[error("Steam installation not found")]
-  SteamNotFound,
-  #[error("Game not found in any Steam library")]
-  GameNotFound,
-  #[error("Game path not set - initialize game first")]
-  GamePathNotSet,
-  #[error("Failed to parse game configuration: {0}")]
-  GameConfigParse(String),
-  #[error("Mod {0} is already installed")]
-  ModAlreadyInstalled(String),
-  #[error("Mod file not found at path")]
-  ModFileNotFound,
-  #[error(transparent)]
-  KeyValues(#[from] keyvalues_serde::Error),
-  #[error(transparent)]
-  Rar(#[from] unrar::error::UnrarError),
-  #[error(transparent)]
-  Zip(#[from] zip::result::ZipError),
-  #[error("Mod is invalid")]
-  ModInvalid(String),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error("failed to parse as string: {0}")]
+    Utf8(#[from] std::str::Utf8Error),
+    #[error("Steam installation not found")]
+    SteamNotFound,
+    #[error("Game not found in any Steam library")]
+    GameNotFound,
+    #[error("Game path not set - initialize game first")]
+    GamePathNotSet,
+    #[error("Failed to parse game configuration: {0}")]
+    GameConfigParse(String),
+    #[error("Mod {0} is already installed")]
+    ModAlreadyInstalled(String),
+    #[error("Mod file not found at path")]
+    ModFileNotFound,
+    #[error(transparent)]
+    KeyValues(#[from] keyvalues_serde::Error),
+    #[error(transparent)]
+    Rar(#[from] unrar::error::UnrarError),
+    #[error(transparent)]
+    Zip(#[from] zip::result::ZipError),
+    #[error("Mod is invalid")]
+    ModInvalid(String),
+    #[error("Game is running")]
+    GameRunning,
+    #[error("Game is not running")]
+    GameNotRunning,
+    #[error("Failed to launch game: {0}")]
+    GameLaunchFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -33,7 +39,7 @@ impl serde::Serialize for Error {
     {
         use serde::ser::SerializeStruct;
         let mut state = serializer.serialize_struct("Error", 2)?;
-        
+
         // Map the error variant to the corresponding kind string
         let kind = match self {
             Error::Io(_) => "io",
@@ -48,6 +54,9 @@ impl serde::Serialize for Error {
             Error::Rar(_) => "rar",
             Error::Zip(_) => "zip",
             Error::ModInvalid(_) => "modInvalid",
+            Error::GameRunning => "gameRunning",
+            Error::GameNotRunning => "gameNotRunning",
+            Error::GameLaunchFailed(_) => "gameLaunchFailed",
         };
 
         state.serialize_field("kind", kind)?;

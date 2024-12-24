@@ -20,6 +20,7 @@
     "os:allow-os-type",
     "upload:default",
     "store:default",
+    "log:default",
     "fs:allow-applocaldata-read-recursive",
     "fs:allow-applocaldata-write-recursive",
     "fs:allow-applocaldata-meta-recursive",

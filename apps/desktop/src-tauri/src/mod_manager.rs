@@ -1,18 +1,22 @@
+use crate::errors::Error;
+use keyvalues_serde;
+use log;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
 use std::path::PathBuf;
-use std::fs;
+use sysinfo::System;
+use tempfile;
+use unrar::Archive;
 use winreg::enums::*;
 use winreg::RegKey;
-use serde::{Deserialize, Serialize};
-use keyvalues_serde;
 use zip;
-use unrar::Archive;
-use tempfile;
-use crate::errors::Error;
 
 type LibraryFolders = HashMap<String, LibraryFolder>;
 
+const DEADLOCK_PROCESS_NAME: &str = "project8.exe";
+const DEADLOCK_APP_ID: &str = "1422450";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
@@ -22,7 +26,6 @@ pub struct Mod {
     #[serde(default)]
     installed_vpks: Vec<String>,
 }
-
 
 #[derive(Debug, Deserialize)]
 struct LibraryFolder {
@@ -49,6 +52,7 @@ pub struct ModManager {
     game_path: Option<PathBuf>,
     game_setup: bool,
     mods: HashMap<String, Mod>,
+    system: System,
 }
 
 impl ModManager {
@@ -58,6 +62,7 @@ impl ModManager {
             game_path: None,
             game_setup: false,
             mods: HashMap::new(),
+            system: System::new_all(),
         }
     }
 
@@ -67,10 +72,10 @@ impl ModManager {
         let steam_key = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam")?;
         let install_path: String = steam_key.get_value("InstallPath")?;
         let steam_path = PathBuf::from(install_path);
-        
+
         if steam_path.exists() {
             self.steam_path = Some(steam_path.clone());
-            println!("Steam path found: {:?}", steam_path);
+            log::info!("Steam path found: {:?}", steam_path);
             Ok(steam_path)
         } else {
             let default_path = PathBuf::from(r"C:\Program Files (x86)\Steam");
@@ -89,8 +94,6 @@ impl ModManager {
     }
 
     pub fn find_game(&mut self) -> Result<PathBuf, Error> {
-        const DEADLOCK_APP_ID: &str = "1422450";
-        
         if let Some(steam_path) = &self.steam_path {
             let vdf_path = steam_path.join("steamapps").join("libraryfolders.vdf");
             let content = fs::read_to_string(&vdf_path)?;
@@ -108,8 +111,11 @@ impl ModManager {
                     // Read the manifest to get the install directory name
                     let manifest_content = fs::read_to_string(manifest_path)?;
                     let app_manifest: AppManifest = keyvalues_serde::from_str(&manifest_content)?;
-                    
-                    let game_path = library_path.join("steamapps").join("common").join(app_manifest.installdir);
+
+                    let game_path = library_path
+                        .join("steamapps")
+                        .join("common")
+                        .join(app_manifest.installdir);
                     if game_path.exists() {
                         self.game_path = Some(game_path.clone());
                         return Ok(game_path);
@@ -121,17 +127,51 @@ impl ModManager {
         Err(Error::GameNotFound)
     }
 
+    pub fn check_if_game_running(&mut self) -> Result<(), Error> {
+        self.system.refresh_all();
+        let processes = self
+            .system
+            .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref());
+        if processes.count() > 0 {
+            return Err(Error::GameRunning);
+        }
+        Ok(())
+    }
+
+    pub fn stop_game(&mut self) -> Result<(), Error> {
+        self.system.refresh_all();
+        let mut stopped = false;
+        let processes = self
+            .system
+            .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref());
+        log::info!("Stopping game...");
+
+        for process in processes {
+            log::info!("Killing process: {:?}", process.pid());
+            process.kill();
+            stopped = true;
+        }
+
+        if !stopped {
+            return Err(Error::GameNotRunning);
+        }
+
+        Ok(())
+    }
+
     pub fn setup_game_for_mods(&mut self) -> Result<(), Error> {
+        self.check_if_game_running()?;
+
         if self.game_setup {
-            println!("Game already setup");
-            return Ok(());  
+            log::info!("Game already setup");
+            return Ok(());
         }
 
         if let Some(game_path) = &self.game_path {
             // mods path: game_path/game/citadel/addons/
             let mods_path = game_path.join("game").join("citadel").join("addons");
             if !mods_path.exists() {
-                println!("Creating mods path: {:?}", mods_path);
+                log::info!("Creating mods path: {:?}", mods_path);
                 fs::create_dir_all(mods_path)?;
             }
 
@@ -146,13 +186,17 @@ impl ModManager {
             }
 
             // Find the SearchPaths section
-            let search_paths_start = gameinfo_content.find("SearchPaths")
+            let search_paths_start = gameinfo_content
+                .find("SearchPaths")
                 .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
-            let relative_end = gameinfo_content[search_paths_start..].find("}")
-                .ok_or_else(|| Error::GameConfigParse("Could not find end of SearchPaths section".into()))?;
+            let relative_end = gameinfo_content[search_paths_start..]
+                .find("}")
+                .ok_or_else(|| {
+                    Error::GameConfigParse("Could not find end of SearchPaths section".into())
+                })?;
 
             let search_paths_end = search_paths_start + relative_end + 1;
-            let search_paths_section = &gameinfo_content[search_paths_start-1..search_paths_end];
+            let search_paths_section = &gameinfo_content[search_paths_start - 1..search_paths_end];
 
             // Modify the SearchPaths section to include the mods path
             let new_search_paths_section = r#"
@@ -169,9 +213,10 @@ impl ModManager {
             "#;
 
             // Replace the old search paths section with the new one
-            let gameinfo_content = gameinfo_content.replace(search_paths_section, &new_search_paths_section);
+            let gameinfo_content =
+                gameinfo_content.replace(search_paths_section, &new_search_paths_section);
             fs::write(gameinfo_path, gameinfo_content)?;
-            
+
             // Mark game as setup
             self.game_setup = true;
 
@@ -181,21 +226,22 @@ impl ModManager {
         }
     }
 
-    fn copy_vpks_from_temp(&self, temp_dir: &std::path::Path, mod_files_path: &std::path::Path) -> Result<Vec<String>, Error> {
+    fn copy_vpks_from_temp(
+        &self,
+        temp_dir: &std::path::Path,
+        mod_files_path: &std::path::Path,
+    ) -> Result<Vec<String>, Error> {
         let mut installed_vpks = Vec::new();
-        
+
         for entry in fs::read_dir(temp_dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_dir() {
                 let mut sub_vpks = self.copy_vpks_from_temp(&path, mod_files_path)?;
                 installed_vpks.append(&mut sub_vpks);
             } else if path.extension().map_or(false, |ext| ext == "vpk") {
-                let vpk_name = path.file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string();
+                let vpk_name = path.file_name().unwrap().to_string_lossy().to_string();
                 fs::copy(&path, mod_files_path.join(&vpk_name))?;
                 installed_vpks.push(vpk_name);
             }
@@ -206,7 +252,7 @@ impl ModManager {
     fn extract_zip(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Error> {
         let zip_file = File::open(path)?;
         let mut archive = zip::ZipArchive::new(zip_file)?;
-            
+
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             if !file.name().ends_with(".vpk") {
@@ -232,10 +278,9 @@ impl ModManager {
     }
 
     fn extract_rar(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Error> {
-        let mut archive = Archive::new(path.to_string_lossy().as_ref())
-            .open_for_processing()?;
+        let mut archive = Archive::new(path.to_string_lossy().as_ref()).open_for_processing()?;
 
-        while let Some(header) = archive.read_header()? { 
+        while let Some(header) = archive.read_header()? {
             archive = if !header.entry().is_file() {
                 header.skip()?
             } else {
@@ -247,25 +292,25 @@ impl ModManager {
     }
 
     pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
-        println!("Starting installation of mod: {}", deadlock_mod.name);
-        
+        log::info!("Starting installation of mod: {}", deadlock_mod.name);
+
         if !deadlock_mod.path.exists() {
             return Err(Error::ModFileNotFound);
         }
 
         if !self.game_setup {
-            println!("Setting up game for mods...");
+            log::info!("Setting up game for mods...");
             self.setup_game_for_mods()?;
         }
 
         if self.mods.contains_key(&deadlock_mod.id) {
-            println!("Mod {} already installed", deadlock_mod.name);
+            log::warn!("Mod {} already installed", deadlock_mod.name);
             return Err(Error::ModAlreadyInstalled(deadlock_mod.name));
         }
 
         if let Some(game_path) = &self.game_path {
             let mod_files_path = deadlock_mod.path.join("files");
-            println!("Creating mod files directory at: {:?}", mod_files_path);
+            log::info!("Creating mod files directory at: {:?}", mod_files_path);
             fs::create_dir_all(&mod_files_path)?;
 
             let mut all_vpks = Vec::new();
@@ -275,45 +320,71 @@ impl ModManager {
                 let path = entry.path();
 
                 let temp_dir = tempfile::tempdir()?;
-                println!("Processing file: {:?}", path);
-                
+                log::info!("Processing file: {:?}", path);
+
                 match path.extension().and_then(|ext| ext.to_str()) {
                     Some("zip") => {
-                        println!("Extracting ZIP file...");
+                        log::info!("Extracting ZIP file...");
                         self.extract_zip(&path, temp_dir.path())?
-                    },
+                    }
                     Some("rar") => {
-                        println!("Extracting RAR file...");
+                        log::info!("Extracting RAR file...");
                         self.extract_rar(&path, temp_dir.path())?
-                    },
+                    }
                     _ => continue,
                 }
 
-                println!("Copying VPK files to mod directory...");
+                log::info!("Copying VPK files to mod directory...");
                 let mut vpks = self.copy_vpks_from_temp(temp_dir.path(), &mod_files_path)?;
                 all_vpks.append(&mut vpks);
             }
 
             if all_vpks.is_empty() {
-                println!("No VPK files found in mod");
+                log::error!("No VPK files found in mod");
                 return Err(Error::ModInvalid("No VPK files found in mod".into()));
             }
 
             let addons_path = game_path.join("game").join("citadel").join("addons");
-            println!("Installing VPK files to game addons: {:?}", addons_path);
+            log::info!("Installing VPK files to game addons: {:?}", addons_path);
             self.copy_vpks_from_temp(&mod_files_path, &addons_path)?;
 
             // Store the list of installed VPKs
             deadlock_mod.installed_vpks = all_vpks;
 
-            println!("Adding mod to managed mods list");
-            self.mods.insert(deadlock_mod.id.clone(), deadlock_mod.clone());
-            
-            println!("Mod installation completed successfully");
+            log::info!("Adding mod to managed mods list");
+            self.mods
+                .insert(deadlock_mod.id.clone(), deadlock_mod.clone());
+
+            log::info!("Mod installation completed successfully");
             Ok(deadlock_mod)
         } else {
-            println!("Game path not set");
+            log::error!("Game path not set");
             Err(Error::GamePathNotSet)
+        }
+    }
+
+    pub fn run_game(&mut self, additional_args: Vec<String>) -> Result<(), Error> {
+        if let Some(steam_path) = &self.steam_path {
+            let steam_exe = steam_path.join("steam.exe");
+
+            if !steam_exe.exists() {
+                return Err(Error::SteamNotFound);
+            }
+
+            // Build the command arguments
+            let mut args = vec![format!("steam://run/{}", DEADLOCK_APP_ID)];
+            args.extend(additional_args);
+
+            log::info!("Launching game with args: {:?}", args);
+
+            std::process::Command::new(steam_exe)
+                .args(args)
+                .spawn()
+                .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+
+            Ok(())
+        } else {
+            Err(Error::SteamNotFound)
         }
     }
 }
