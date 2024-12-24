@@ -52,12 +52,16 @@
   </ol>
 </details>
 
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_large)
+
 ## Screenshots
 
 <details>
 <summary>Click to view screenshots</summary>
 
 ![Main Window](./docs/assets/about.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_shield)
 
 ![Mod Details](./docs/assets/download.png)
 
