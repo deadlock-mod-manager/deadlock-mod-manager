@@ -10,6 +10,7 @@ import CustomSettings from './pages/settings';
 import Splash from './pages/splash';
 
 import './index.css';
+import Downloads from './pages/downloads';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -20,7 +21,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             <Route element={<App />}>
               <Route path="/" element={<MyMods />} />
               <Route path="/mods" element={<GetMods />} />
-              <Route path="/downloads" element={<div>Downloads</div>} />
+              <Route path="/downloads" element={<Downloads />} />
               <Route path="/settings" element={<CustomSettings />} />
             </Route>
           </Routes>

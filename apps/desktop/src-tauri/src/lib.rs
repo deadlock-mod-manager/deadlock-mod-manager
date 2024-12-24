@@ -55,7 +55,8 @@ pub fn run() {
             commands::find_game_path,
             commands::install_mod,
             commands::stop_game,
-            commands::start_game
+            commands::start_game,
+            commands::show_in_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

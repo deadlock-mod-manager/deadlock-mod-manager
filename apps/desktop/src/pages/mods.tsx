@@ -1,5 +1,6 @@
 import ErrorBoundary from '@/components/error-boundary';
 import ModCard from '@/components/mod-card';
+import PageTitle from '@/components/page-title';
 import { getMods } from '@/lib/api';
 import { Suspense, useEffect } from 'react';
 import { useQuery } from 'react-query';
@@ -17,7 +18,8 @@ const GetModsData = () => {
 
 const GetMods = () => {
   return (
-    <div className="h-[calc(100vh-160px)] overflow-y-auto p-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
+    <div className="h-[calc(100vh-160px)] overflow-y-auto px-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
+      <PageTitle className="mb-8" title="Mods" />
       <Suspense
         fallback={
           <div className="grid grid-cols-4 gap-4">

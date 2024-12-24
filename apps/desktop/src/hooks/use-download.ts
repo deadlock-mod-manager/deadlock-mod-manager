@@ -1,13 +1,11 @@
 import { downloadManager } from '@/lib/download/manager';
 import { usePersistedStore } from '@/lib/store';
-import { ModStatus, Progress } from '@/types/mods';
+import { ModStatus } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
-import { useState } from 'react';
 import { toast } from 'sonner';
 
 export const useDownload = (mod: ModDto | undefined) => {
-  const { addMod, mods, setModStatus, removeMod, setModPath } = usePersistedStore();
-  const [progress, setProgress] = useState<Progress | null>(null);
+  const { addMod, mods, setModStatus, removeMod, setModPath, setModProgress } = usePersistedStore();
   const localMod = mods.find((m) => m.remoteId === mod?.remoteId);
 
   const downloadMod = async () => {
@@ -22,7 +20,7 @@ export const useDownload = (mod: ModDto | undefined) => {
     return downloadManager.addToQueue({
       ...mod,
       onStart: () => setModStatus(mod.remoteId, ModStatus.DOWNLOADING),
-      onProgress: (progress) => setProgress(progress),
+      onProgress: (progress) => setModProgress(mod.remoteId, progress),
       onComplete: (path) => {
         setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
         setModPath(mod.remoteId, path);
@@ -36,7 +34,6 @@ export const useDownload = (mod: ModDto | undefined) => {
 
   return {
     download: downloadMod,
-    progress,
     localMod
   };
 };

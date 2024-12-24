@@ -14,7 +14,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           <AppSidebar />
           <div className={cn('flex flex-col w-full h-full')}>
             <Toolbar />
-            {children}
+            <div className={cn('flex p-8')}>{children}</div>
           </div>
         </SidebarProvider>
       </main>

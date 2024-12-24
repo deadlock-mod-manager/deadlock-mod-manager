@@ -7,18 +7,15 @@ import { useMemo } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
-  const { download, progress, localMod } = useDownload(mod);
+  const { download, localMod } = useDownload(mod);
   const status = localMod?.status;
-  const progressPercentage = ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100;
 
   const Icon = useMemo(() => {
     switch (status) {
       case ModStatus.DOWNLOADING:
-        if (!progress) return <Loader2 className="h-4 w-4 animate-spin" />;
-        return <span className="text-xs">{`${Number(progressPercentage).toFixed(0)}%`}</span>;
+        return <Loader2 className="h-4 w-4 animate-spin" />;
       case ModStatus.DOWNLOADED:
         return <CheckIcon className="h-4 w-4" />;
       case ModStatus.INSTALLED:
@@ -26,7 +23,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
       default:
         return <DownloadIcon className="h-4 w-4" />;
     }
-  }, [status, progress, progressPercentage]);
+  }, [status]);
 
   if (!mod) {
     return (
@@ -59,7 +56,6 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
         <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
         {status === ModStatus.INSTALLED ? <Badge className="absolute top-2 right-2">Installed</Badge> : null}
       </div>
-      <Progress value={progressPercentage} className="h-2" />
       <CardHeader className="px-2 py-3">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">

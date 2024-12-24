@@ -2,7 +2,9 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::{Mod, ModManager};
+use std::process::Command;
 use std::sync::LazyLock;
+
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
 
 #[tauri::command]
@@ -40,4 +42,18 @@ pub async fn stop_game() -> Result<(), Error> {
 pub async fn start_game() -> Result<(), Error> {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.run_game(vec![])
+}
+
+#[tauri::command]
+pub async fn show_in_folder(path: String) -> Result<(), Error> {
+    #[cfg(target_os = "windows")]
+    {
+        match Command::new("explorer")
+            .args(["/select,", &path]) // The comma after select is not a typo
+            .spawn()
+        {
+            Ok(_) => Ok(()),
+            Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+        }
+    }
 }

@@ -16,6 +16,7 @@ export type ErrorKind = {
     | 'unknown'
     | 'gameRunning'
     | 'gameNotRunning'
-    | 'gameLaunchFailed';
+    | 'gameLaunchFailed'
+    | 'failedToOpenFolder';
   message: string;
 };

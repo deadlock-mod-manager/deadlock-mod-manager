@@ -19,11 +19,12 @@ export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
   path?: string;
+  progress?: number;
+  speed?: number;
+  downloads?: ModDownloadDto;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, 'status'> {
-  downloads?: ModDownloadDto;
-
   onStart: () => void;
   onProgress: (progress: Progress) => void;
   onComplete: (path: string) => void;

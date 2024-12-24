@@ -1,5 +1,5 @@
 import { createLogger } from '@/lib/logger';
-import { LocalMod, ModStatus } from '@/types/mods';
+import { LocalMod, ModStatus, Progress } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
 import { StateCreator } from 'zustand';
 import { State } from '..';
@@ -13,6 +13,7 @@ export interface ModsState {
   setMods: (mods: LocalMod[]) => void;
   setModStatus: (remoteId: string, status: ModStatus) => void;
   setModPath: (remoteId: string, path: string) => void;
+  setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
 }
 
@@ -41,7 +42,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => 
       mods: state.mods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? transitionModStatus(mod.status, status) : mod.status,
-        downloadedAt: mod.status === ModStatus.DOWNLOADED ? new Date() : undefined
+        downloadedAt: status === ModStatus.DOWNLOADED ? new Date() : undefined
       }))
     })),
   setModPath: (remoteId, path) =>
@@ -53,5 +54,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => 
     })),
   removeMod: (remoteId) => set((state) => ({ mods: state.mods.filter((mod) => mod.remoteId !== remoteId) })),
   setMods: (mods) => set({ mods }),
-  clearMods: () => set({ mods: [] })
+  clearMods: () => set({ mods: [] }),
+  setModProgress: (remoteId, progress) =>
+    set((state) => ({
+      mods: state.mods.map((mod) => ({
+        ...mod,
+        progress:
+          mod.remoteId === remoteId ? ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100 : mod.progress,
+        speed: mod.remoteId === remoteId ? progress?.transferSpeed : mod.speed
+      }))
+    }))
 });

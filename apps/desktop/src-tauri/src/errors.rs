@@ -30,6 +30,8 @@ pub enum Error {
     GameNotRunning,
     #[error("Failed to launch game: {0}")]
     GameLaunchFailed(String),
+    #[error("Failed to open folder: {0}")]
+    FailedToOpenFolder(String),
 }
 
 impl serde::Serialize for Error {
@@ -57,6 +59,7 @@ impl serde::Serialize for Error {
             Error::GameRunning => "gameRunning",
             Error::GameNotRunning => "gameNotRunning",
             Error::GameLaunchFailed(_) => "gameLaunchFailed",
+            Error::FailedToOpenFolder(_) => "failedToOpenFolder",
         };
 
         state.serialize_field("kind", kind)?;

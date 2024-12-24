@@ -7,18 +7,24 @@ import { ThemeProvider } from './components/providers/theme';
 import { TooltipProvider } from './components/ui/tooltip';
 import { fetchAboutData } from './hooks/use-about';
 import { Layout } from './layout';
+import { getCustomSettings, getMods } from './lib/api';
 import { queryClient } from './lib/client';
 import { STORE_NAME } from './lib/constants';
 import logger from './lib/logger';
 import { usePersistedStore } from './lib/store';
-import { cn } from './lib/utils';
 
 const App = () => {
   const hydrateStore = async () => {
+    // Prefetch data
     await queryClient.prefetchQuery('about', fetchAboutData);
+    await queryClient.prefetchQuery('mods', getMods);
+    await queryClient.prefetchQuery('custom-settings', getCustomSettings);
+
+    // Hydrate store
     await load(STORE_NAME, { autoSave: true });
     await usePersistedStore.persist.rehydrate();
-    logger.info('Store rehydrated');
+
+    logger.debug('Store rehydrated');
   };
 
   usePromise(hydrateStore, []);
@@ -29,9 +35,7 @@ const App = () => {
         <AppProvider>
           <TooltipProvider>
             <Layout>
-              <div className={cn('flex p-8')}>
-                <Outlet />
-              </div>
+              <Outlet />
             </Layout>
           </TooltipProvider>
         </AppProvider>

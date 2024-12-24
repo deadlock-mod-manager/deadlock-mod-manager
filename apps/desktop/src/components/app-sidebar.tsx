@@ -9,6 +9,7 @@ import {
   SidebarMenuItem
 } from '@/components/ui/sidebar';
 import { usePersistedStore } from '@/lib/store';
+import { ModStatus } from '@/types/mods';
 import { Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react';
 import { Link, useLocation } from 'react-router';
 import { SidebarCollapse } from './sidebar-collapse';
@@ -17,7 +18,15 @@ import { Separator } from './ui/separator';
 
 type SidebarItem = {
   id: string;
-  title: ({ isActive, count }: { isActive?: boolean; count?: number }) => React.ReactNode;
+  title: ({
+    isActive,
+    count,
+    downloads
+  }: {
+    isActive?: boolean;
+    count?: number;
+    downloads?: number;
+  }) => React.ReactNode;
   url: string;
   icon: Icon;
 };
@@ -46,7 +55,12 @@ const items: SidebarItem[] = [
   },
   {
     id: 'downloads',
-    title: () => <span>Downloads</span>,
+    title: ({ downloads }: { downloads?: number }) => (
+      <span>
+        Downloads{' '}
+        {downloads !== undefined && downloads > 0 && <Badge className="text-xs px-1 py-0.1">{downloads}</Badge>}
+      </span>
+    ),
     url: '/downloads',
     icon: Download
   },
@@ -78,7 +92,11 @@ export const AppSidebar = () => {
                       <item.icon weight="duotone" />
                       {item.title({
                         isActive: location.pathname === item.url,
-                        count: item.id === 'my-mods' ? mods.length : undefined
+                        count: item.id === 'my-mods' ? mods.length : undefined,
+                        downloads:
+                          item.id === 'downloads'
+                            ? mods.filter((mod) => mod.status === ModStatus.DOWNLOADING).length
+                            : undefined
                       })}
                     </Link>
                   </SidebarMenuButton>
