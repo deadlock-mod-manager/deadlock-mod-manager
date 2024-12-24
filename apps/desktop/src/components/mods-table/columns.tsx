@@ -1,12 +1,15 @@
 import { InstallFunction, InstallOptions } from '@/hooks/use-install';
 import { LocalMod, ModStatus } from '@/types/mods';
+import { Trash } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 import Status from '../status';
+import { Button } from '../ui/button';
 import { DataTableColumnHeader } from '../ui/data-table/column-header';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
-export const createColumns = (install: InstallFunction, options: InstallOptions) => {
+export const createColumns = (install: InstallFunction, options: InstallOptions, remove: (mod: LocalMod) => void) => {
   return [
     {
       accessorKey: 'images',
@@ -45,17 +48,29 @@ export const createColumns = (install: InstallFunction, options: InstallOptions)
       accessorKey: 'actions',
       header: () => null,
       cell: ({ row }) => (
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="install-mod"
-            checked={row.original.status === ModStatus.INSTALLED}
-            onCheckedChange={() => {
-              install(row.original, options);
-            }}
-          />
-          <Label htmlFor="install-mod" className="text-xs">
-            {row.original.status === ModStatus.INSTALLED ? 'Uninstall' : 'Install'}
-          </Label>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="install-mod"
+              checked={row.original.status === ModStatus.INSTALLED}
+              onCheckedChange={() => {
+                install(row.original, options);
+              }}
+            />
+            <Label htmlFor="install-mod" className="text-xs">
+              {row.original.status === ModStatus.INSTALLED ? 'Uninstall' : 'Install'}
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size={'icon'} onClick={() => remove(row.original)}>
+                  <Trash className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Remove mod</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       )
     }

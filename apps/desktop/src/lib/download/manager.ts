@@ -49,7 +49,7 @@ class DownloadManager {
 
     try {
       mod.onStart();
-      logger.info('Starting download', { mod });
+      logger.info('Starting download', { mod: mod.remoteId });
 
       const modsDir = await appLocalDataDir();
       const modDir = await join(modsDir, 'mods', mod.remoteId);
@@ -57,20 +57,20 @@ class DownloadManager {
       await createIfNotExists(modDir);
 
       if (!mod.downloads) {
-        logger.info('Getting mod download links', { mod });
+        logger.info('Getting mod download links', { mod: mod.remoteId });
         const downloads = await getModDownload(mod.remoteId);
         mod.downloads = downloads;
       }
 
-      logger.info(`Mod has ${mod.downloads.length} downloadable files`, { mod });
+      logger.info(`Mod has ${mod.downloads.length} downloadable files`, { mod: mod.remoteId });
 
       const file = mod.downloads[0]; // TODO: handle multiple files
 
-      logger.info('Downloading mod', { mod });
+      logger.info('Downloading mod', { mod: mod.remoteId });
       await download(file.url, await join(modDir, `${file.name}`), (progress) => {
         mod.onProgress(progress);
         if (progress.progressTotal === progress.total) {
-          logger.info('Download complete', { mod });
+          logger.info('Download complete', { mod: mod.remoteId });
           mod.onComplete(modDir);
         }
       });

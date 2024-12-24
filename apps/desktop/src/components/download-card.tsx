@@ -31,7 +31,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
         <span>{formatSpeed(speed)}</span>
         <div className="flex items-center gap-2">
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button variant="outline" size={'icon'} onClick={() => invoke('show_in_folder', { path: download.path })}>
                 <FolderOpen className="w-4 h-4" />
               </Button>

@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/ui/data-table';
 import useInstall from '@/hooks/use-install';
+import useUninstall from '@/hooks/use-uninstall';
 import { createLogger } from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
 import { LocalMod, ModStatus } from '@/types/mods';
@@ -11,30 +12,35 @@ const logger = createLogger('installation');
 export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
   const { setModStatus } = usePersistedStore();
   const { install } = useInstall();
+  const { uninstall } = useUninstall();
 
-  const columns = createColumns(install, {
-    onStart: (mod) => {
-      logger.info('Starting installation', { mod });
-      setModStatus(mod.remoteId, ModStatus.INSTALLING);
-    },
-    onComplete: (mod, result) => {
-      logger.info('Installation complete', { mod, result });
-      setModStatus(mod.remoteId, ModStatus.INSTALLED);
-    },
-    onError: (mod, error) => {
-      logger.error('Installation error', { mod, error });
+  const columns = createColumns(
+    install,
+    {
+      onStart: (mod) => {
+        logger.info('Starting installation', { mod: mod.remoteId });
+        setModStatus(mod.remoteId, ModStatus.INSTALLING);
+      },
+      onComplete: (mod, result) => {
+        logger.info('Installation complete', { mod: mod.remoteId, result: result.installed_vpks });
+        setModStatus(mod.remoteId, ModStatus.INSTALLED);
+      },
+      onError: (mod, error) => {
+        logger.error('Installation error', { mod: mod.remoteId, error });
 
-      switch (error.kind) {
-        case 'modAlreadyInstalled':
-          setModStatus(mod.remoteId, ModStatus.INSTALLED);
-          toast.error(error.message);
-          break;
-        default:
-          setModStatus(mod.remoteId, ModStatus.ERROR);
-          toast.error(error.message);
+        switch (error.kind) {
+          case 'modAlreadyInstalled':
+            setModStatus(mod.remoteId, ModStatus.INSTALLED);
+            toast.error(error.message);
+            break;
+          default:
+            setModStatus(mod.remoteId, ModStatus.ERROR);
+            toast.error(error.message);
+        }
       }
-    }
-  });
+    },
+    uninstall
+  );
 
   return <DataTable columns={columns} data={mods} />;
 };
