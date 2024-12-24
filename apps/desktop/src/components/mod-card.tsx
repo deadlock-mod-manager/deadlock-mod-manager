@@ -1,32 +1,32 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { useDownload } from '@/hooks/use-download'
-import { ModStatus } from '@/types/mods'
-import { ModDto } from '@deadlock-mods/utils'
-import { CheckIcon, DownloadIcon, Loader2 } from 'lucide-react'
-import { useMemo } from 'react'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Card, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Progress } from './ui/progress'
+import { Skeleton } from '@/components/ui/skeleton';
+import { useDownload } from '@/hooks/use-download';
+import { ModStatus } from '@/types/mods';
+import { ModDto } from '@deadlock-mods/utils';
+import { CheckIcon, DownloadIcon, Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Progress } from './ui/progress';
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
-  const { download, progress, localMod } = useDownload(mod)
-  const status = localMod?.status
-  const progressPercentage = ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100
+  const { download, progress, localMod } = useDownload(mod);
+  const status = localMod?.status;
+  const progressPercentage = ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100;
 
   const Icon = useMemo(() => {
     switch (status) {
       case ModStatus.DOWNLOADING:
-        if (!progress) return <Loader2 className="h-4 w-4 animate-spin" />
-        return <span className="text-xs">{`${Number(progressPercentage).toFixed(0)}%`}</span>
+        if (!progress) return <Loader2 className="h-4 w-4 animate-spin" />;
+        return <span className="text-xs">{`${Number(progressPercentage).toFixed(0)}%`}</span>;
       case ModStatus.DOWNLOADED:
-        return <CheckIcon className="h-4 w-4" />
+        return <CheckIcon className="h-4 w-4" />;
       case ModStatus.INSTALLED:
-        return <CheckIcon className="h-4 w-4" />
+        return <CheckIcon className="h-4 w-4" />;
       default:
-        return <DownloadIcon className="h-4 w-4" />
+        return <DownloadIcon className="h-4 w-4" />;
     }
-  }, [status, progress, progressPercentage])
+  }, [status, progress, progressPercentage]);
 
   if (!mod) {
     return (
@@ -50,7 +50,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           </div>
         </CardHeader>
       </Card>
-    )
+    );
   }
 
   return (
@@ -84,7 +84,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
         </div>
       </CardHeader>
     </Card>
-  )
-}
+  );
+};
 
-export default ModCard
+export default ModCard;

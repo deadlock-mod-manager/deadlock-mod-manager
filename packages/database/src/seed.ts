@@ -1,32 +1,17 @@
 import { prisma } from "./client";
 
-import type { User } from "@prisma/client";
-
-const DEFAULT_USERS = [
-  // Add your own user to pre-populate the database with
-  {
-    name: "Tim Apple",
-    email: "tim@apple.com",
-  },
-] as Array<Partial<User>>;
-
 (async () => {
   try {
-    await Promise.all(
-      DEFAULT_USERS.map((user) =>
-        prisma.user.upsert({
-          where: {
-            email: user.email!,
-          },
-          update: {
-            ...user,
-          },
-          create: {
-            ...user,
-          },
-        })
-      )
-    );
+
+    await prisma.customSetting.create({
+      data: {
+        key: "citadel_unit_status_use_new",
+        value: "true",
+        type: "launch_option", // TODO: enum
+        description: "Use new unit status system (new healthbar, etc.)",
+      },
+    });
+
   } catch (error) {
     console.error(error);
     process.exit(1);

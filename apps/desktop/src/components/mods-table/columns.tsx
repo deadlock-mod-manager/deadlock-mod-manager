@@ -1,10 +1,10 @@
-import { InstallFunction, InstallOptions } from '@/hooks/use-install'
-import { LocalMod, ModStatus } from '@/types/mods'
-import { ColumnDef } from '@tanstack/react-table'
-import Status from '../status'
-import { DataTableColumnHeader } from '../ui/data-table/column-header'
-import { Label } from '../ui/label'
-import { Switch } from '../ui/switch'
+import { InstallFunction, InstallOptions } from '@/hooks/use-install';
+import { LocalMod, ModStatus } from '@/types/mods';
+import { ColumnDef } from '@tanstack/react-table';
+import Status from '../status';
+import { DataTableColumnHeader } from '../ui/data-table/column-header';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
 
 export const createColumns = (install: InstallFunction, options: InstallOptions) => {
   return [
@@ -12,8 +12,8 @@ export const createColumns = (install: InstallFunction, options: InstallOptions)
       accessorKey: 'images',
       header: () => null,
       cell: ({ row }) => {
-        const src = row.original.images[0]
-        return <img src={src} alt="Thumbnail" className="rounded-md object-cover h-16 w-16" />
+        const src = row.original.images[0];
+        return <img src={src} alt="Thumbnail" className="rounded-md object-cover h-16 w-16" />;
       }
     },
 
@@ -50,7 +50,7 @@ export const createColumns = (install: InstallFunction, options: InstallOptions)
             id="install-mod"
             checked={row.original.status === ModStatus.INSTALLED}
             onCheckedChange={() => {
-              install(row.original, options)
+              install(row.original, options);
             }}
           />
           <Label htmlFor="install-mod" className="text-xs">
@@ -59,5 +59,5 @@ export const createColumns = (install: InstallFunction, options: InstallOptions)
         </div>
       )
     }
-  ] satisfies ColumnDef<LocalMod>[]
-}
+  ] satisfies ColumnDef<LocalMod>[];
+};

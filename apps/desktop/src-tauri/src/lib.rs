@@ -10,6 +10,7 @@ mod mod_manager;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
+use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -44,6 +45,9 @@ pub fn run() {
 
             #[cfg(desktop)]
             let _ = handle.plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}));
+
+            // Prepare store
+            let _store = handle.store("state.json")?;
 
             Ok(())
         })

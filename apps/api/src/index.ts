@@ -5,11 +5,11 @@ import { logger } from 'hono/logger'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
 import { trimTrailingSlash } from 'hono/trailing-slash'
+import customSettings from './lib/custom-settings'
 import { startJobs } from './lib/jobs'
 import mods from './lib/mods'
 
 import './lib/jobs/synchronize-mods'
-
 const app = new Hono()
 
 app.use(etag(), logger(), secureHeaders(), trimTrailingSlash())
@@ -23,6 +23,7 @@ app.get('/', (c) => {
 })
 
 app.route('/mods', mods)
+app.route('/custom-settings', customSettings)
 
 startJobs()
 

@@ -7,20 +7,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem
-} from '@/components/ui/sidebar'
-import { usePersistedStore } from '@/lib/store'
-import { Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react'
-import { Link, useLocation } from 'react-router'
-import { SidebarCollapse } from './sidebar-collapse'
-import { Badge } from './ui/badge'
-import { Separator } from './ui/separator'
+} from '@/components/ui/sidebar';
+import { usePersistedStore } from '@/lib/store';
+import { Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react';
+import { Link, useLocation } from 'react-router';
+import { SidebarCollapse } from './sidebar-collapse';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 type SidebarItem = {
-  id: string
-  title: ({ isActive, count }: { isActive?: boolean; count?: number }) => React.ReactNode
-  url: string
-  icon: Icon
-}
+  id: string;
+  title: ({ isActive, count }: { isActive?: boolean; count?: number }) => React.ReactNode;
+  url: string;
+  icon: Icon;
+};
 
 const items: SidebarItem[] = [
   {
@@ -56,11 +56,11 @@ const items: SidebarItem[] = [
     url: '/settings',
     icon: Gear
   }
-]
+];
 
 export const AppSidebar = () => {
-  const location = useLocation()
-  const mods = usePersistedStore((state) => state.mods)
+  const location = useLocation();
+  const mods = usePersistedStore((state) => state.mods);
   return (
     <Sidebar
       collapsible="icon"
@@ -99,5 +99,5 @@ export const AppSidebar = () => {
         </SidebarGroup>
       </SidebarFooter>
     </Sidebar>
-  )
-}
+  );
+};

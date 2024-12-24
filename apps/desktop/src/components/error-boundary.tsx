@@ -1,7 +1,7 @@
-import { Warning } from '@phosphor-icons/react'
-import { FallbackProps, ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
-import { Alert, AlertDescription } from './ui/alert'
-import { Button } from './ui/button'
+import { Warning } from '@phosphor-icons/react';
+import { FallbackProps, ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
+import { Alert, AlertDescription } from './ui/alert';
+import { Button } from './ui/button';
 
 const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
   return (
@@ -20,11 +20,11 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
         </div>
       </AlertDescription>
     </Alert>
-  )
-}
+  );
+};
 
 const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
-  return <ReactErrorBoundary fallbackRender={fallbackRender}>{children}</ReactErrorBoundary>
-}
+  return <ReactErrorBoundary fallbackRender={fallbackRender}>{children}</ReactErrorBoundary>;
+};
 
-export default ErrorBoundary
+export default ErrorBoundary;

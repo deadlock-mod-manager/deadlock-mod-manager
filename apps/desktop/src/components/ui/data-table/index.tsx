@@ -7,22 +7,22 @@ import {
   getPaginationRowModel,
   SortingState,
   useReactTable
-} from '@tanstack/react-table'
+} from '@tanstack/react-table';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { useState } from 'react'
-import { Input } from '../input'
-import { DataTablePagination } from './pagination'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useState } from 'react';
+import { Input } from '../input';
+import { DataTablePagination } from './pagination';
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  pagination?: boolean
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  pagination?: boolean;
 }
 
 export function DataTable<TData, TValue>({ columns, data, pagination = true }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
@@ -42,7 +42,7 @@ export function DataTable<TData, TValue>({ columns, data, pagination = true }: D
       sorting,
       columnFilters
     }
-  })
+  });
 
   return (
     <div className="flex flex-col gap-4 h-fit">
@@ -64,7 +64,7 @@ export function DataTable<TData, TValue>({ columns, data, pagination = true }: D
                     <TableHead key={header.id}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -90,5 +90,5 @@ export function DataTable<TData, TValue>({ columns, data, pagination = true }: D
       </div>
       {pagination && <DataTablePagination table={table} />}
     </div>
-  )
+  );
 }

@@ -44,3 +44,14 @@ model ModDownload {
 
   @@unique([modId, remoteId])
 }
+
+
+model CustomSetting {
+  id        String   @id @default(dbgenerated("(concat('custom_setting_', gen_random_uuid()))::TEXT"))
+  key       String
+  value     String
+  type      String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,37 +1,40 @@
-import { DataTable } from '@/components/ui/data-table'
-import useInstall from '@/hooks/use-install'
-import { usePersistedStore } from '@/lib/store'
-import { LocalMod, ModStatus } from '@/types/mods'
-import { toast } from 'sonner'
-import { createColumns } from './columns'
+import { DataTable } from '@/components/ui/data-table';
+import useInstall from '@/hooks/use-install';
+import { createLogger } from '@/lib/logger';
+import { usePersistedStore } from '@/lib/store';
+import { LocalMod, ModStatus } from '@/types/mods';
+import { toast } from 'sonner';
+import { createColumns } from './columns';
+
+const logger = createLogger('installation');
 
 export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
-  const { setModStatus } = usePersistedStore()
-  const { install } = useInstall()
+  const { setModStatus } = usePersistedStore();
+  const { install } = useInstall();
 
   const columns = createColumns(install, {
     onStart: (mod) => {
-      setModStatus(mod.remoteId, ModStatus.INSTALLING)
+      logger.info('Starting installation', { mod });
+      setModStatus(mod.remoteId, ModStatus.INSTALLING);
     },
     onComplete: (mod, result) => {
-      console.log('complete', mod, result)
-      setModStatus(mod.remoteId, ModStatus.INSTALLED)
+      logger.info('Installation complete', { mod, result });
+      setModStatus(mod.remoteId, ModStatus.INSTALLED);
     },
     onError: (mod, error) => {
-      console.log('> Mod: ', mod.id)
-      console.error(error)
+      logger.error('Installation error', { mod, error });
 
       switch (error.kind) {
         case 'modAlreadyInstalled':
-          setModStatus(mod.remoteId, ModStatus.INSTALLED)
-          toast.error(error.message)
-          break
+          setModStatus(mod.remoteId, ModStatus.INSTALLED);
+          toast.error(error.message);
+          break;
         default:
-          setModStatus(mod.remoteId, ModStatus.ERROR)
-          toast.error(error.message)
+          setModStatus(mod.remoteId, ModStatus.ERROR);
+          toast.error(error.message);
       }
     }
-  })
+  });
 
-  return <DataTable columns={columns} data={mods} />
-}
+  return <DataTable columns={columns} data={mods} />;
+};

@@ -1,39 +1,18 @@
-import { APP_DESCRIPTION, APP_NAME, COPYRIGHT, GITHUB_REPO } from '@/lib/constants'
-import { CloudArrowDown, GithubLogo } from '@phosphor-icons/react'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { app } from '@tauri-apps/api'
-import { open } from '@tauri-apps/plugin-shell'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import Logo from './logo'
-import { Button, buttonVariants } from './ui/button'
-import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
-import { Separator } from './ui/separator'
+import useAbout from '@/hooks/use-about';
+import { APP_DESCRIPTION, APP_NAME, COPYRIGHT, GITHUB_REPO } from '@/lib/constants';
+import { CloudArrowDown, GithubLogo } from '@phosphor-icons/react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { open } from '@tauri-apps/plugin-shell';
+import { toast } from 'sonner';
+import Logo from './logo';
+import { Button, buttonVariants } from './ui/button';
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Separator } from './ui/separator';
 
 export const AboutDialog = () => {
-  const [version, setVersion] = useState('')
-  const [name, setName] = useState('')
-  const [tauriVersion, setTauriVersion] = useState('')
-
-  useEffect(() => {
-    const fetchAboutData = async () => {
-      try {
-        const [version, name, tauriVersion] = await Promise.all([
-          app.getVersion(),
-          app.getName(),
-          app.getTauriVersion()
-        ])
-
-        setVersion(version)
-        setName(name)
-        setTauriVersion(tauriVersion)
-      } catch (error) {
-        console.error('Failed to fetch app information:', error)
-      }
-    }
-
-    fetchAboutData()
-  }, [])
+  const { data } = useAbout();
+  if (!data) return null;
+  const { version, name, tauriVersion } = data;
 
   return (
     <DialogContent className="overflow-clip pb-2">
@@ -88,5 +67,5 @@ export const AboutDialog = () => {
         </DialogPrimitive.Close>
       </DialogFooter>
     </DialogContent>
-  )
-}
+  );
+};

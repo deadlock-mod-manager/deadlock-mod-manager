@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
-import { WindowTitlebar } from 'tauri-controls'
+import { useCallback } from 'react';
+import { WindowTitlebar } from 'tauri-controls';
 
 import {
   Menubar,
@@ -9,19 +9,19 @@ import {
   MenubarSeparator,
   MenubarShortcut,
   MenubarTrigger
-} from '@/components/ui/menubar'
+} from '@/components/ui/menubar';
 
-import { getCurrentWindow } from '@tauri-apps/api/window'
-import { AboutDialog } from './about-dialog'
-import Logo from './logo'
-import { Dialog, DialogTrigger } from './ui/dialog'
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { AboutDialog } from './about-dialog';
+import Logo from './logo';
+import { Dialog, DialogTrigger } from './ui/dialog';
 
 export function Menu() {
-  const appWindow = getCurrentWindow()
+  const appWindow = getCurrentWindow();
 
   const closeWindow = useCallback(async () => {
-    appWindow.close()
-  }, [appWindow])
+    appWindow.close();
+  }, [appWindow]);
 
   return (
     <WindowTitlebar className="border-b bg-background z-20">
@@ -60,5 +60,5 @@ export function Menu() {
         </MenubarMenu>
       </Menubar>
     </WindowTitlebar>
-  )
+  );
 }

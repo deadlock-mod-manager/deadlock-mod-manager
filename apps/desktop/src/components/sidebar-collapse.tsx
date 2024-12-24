@@ -1,9 +1,9 @@
-import { cn } from '@/lib/utils'
-import { ArrowLineLeft } from '@phosphor-icons/react'
-import { SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar'
+import { cn } from '@/lib/utils';
+import { ArrowLineLeft } from '@phosphor-icons/react';
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
 export const SidebarCollapse = () => {
-  const { toggleSidebar, open } = useSidebar()
+  const { toggleSidebar, open } = useSidebar();
   return (
     <SidebarMenuItem>
       <SidebarMenuButton onClick={toggleSidebar}>
@@ -14,5 +14,5 @@ export const SidebarCollapse = () => {
         <span>Collapse menu</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
-  )
-}
+  );
+};

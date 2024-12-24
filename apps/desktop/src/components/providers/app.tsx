@@ -1,67 +1,47 @@
-import { STORE_NAME } from '@/lib/constants'
-import { downloadManager } from '@/lib/download/manager'
-import { usePersistedStore } from '@/lib/store'
-import { invoke } from '@tauri-apps/api/core'
-import { load, Store } from '@tauri-apps/plugin-store'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { downloadManager } from '@/lib/download/manager';
+import { usePersistedStore } from '@/lib/store';
+import { invoke } from '@tauri-apps/api/core';
+import { createContext, useContext, useEffect, useRef } from 'react';
 
 type AppProviderProps = {
-  children: React.ReactNode
-}
+  children: React.ReactNode;
+};
 
-type AppProviderState = {
-  store: Store | null
-}
+type AppProviderState = {};
 
-const initialState: AppProviderState = {
-  store: null
-}
-
-const AppProviderContext = createContext<AppProviderState>(initialState)
+const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
-  const [store, setStore] = useState<Store | null>(null)
-  const [queueInterval, setQueueInterval] = useState<Timer | null>(null)
-  const { gamePath, setGamePath } = usePersistedStore()
+  const queueInterval = useRef<Timer | null>(null);
+  const { gamePath, setGamePath } = usePersistedStore();
 
   useEffect(() => {
-    if (!store) {
-      load(STORE_NAME, { autoSave: false }).then((store) => setStore(store))
+    if (!queueInterval.current) {
+      downloadManager.init().then(() => {
+        queueInterval.current = setInterval(() => downloadManager.process(), 100);
+      });
     }
-    return () => {
-      if (store) store.close()
-    }
-  }, [store])
 
-  useEffect(() => {
-    if (!queueInterval) {
-      downloadManager.init().then(() => setQueueInterval(setInterval(() => downloadManager.process(), 100)))
-    }
     return () => {
-      if (queueInterval) clearInterval(queueInterval)
-    }
-  }, [queueInterval])
+      if (queueInterval.current) clearInterval(queueInterval.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!gamePath) {
-      invoke('find_game_path').then((path) => setGamePath(path as string))
+      invoke('find_game_path').then((path) => setGamePath(path as string));
     }
-  }, [gamePath, setGamePath])
+  }, [gamePath, setGamePath]);
 
   return (
-    <AppProviderContext.Provider
-      {...props}
-      value={{
-        store
-      }}
-    >
+    <AppProviderContext.Provider {...props} value={{}}>
       {children}
     </AppProviderContext.Provider>
-  )
-}
+  );
+};
 
 export const useApp = () => {
-  const context = useContext(AppProviderContext)
-  if (context === undefined) throw new Error('useApp must be used within a AppProvider')
-  return context
-}
+  const context = useContext(AppProviderContext);
+  if (context === undefined) throw new Error('useApp must be used within a AppProvider');
+  return context;
+};

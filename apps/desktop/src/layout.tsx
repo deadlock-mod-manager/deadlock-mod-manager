@@ -1,9 +1,9 @@
-import { AppSidebar } from './components/app-sidebar'
-import { Menu } from './components/menu'
-import { Toolbar } from './components/toolbar'
-import { SidebarProvider } from './components/ui/sidebar'
-import { Toaster } from './components/ui/sonner'
-import { cn } from './lib/utils'
+import { AppSidebar } from './components/app-sidebar';
+import { Menu } from './components/menu';
+import { Toolbar } from './components/toolbar';
+import { SidebarProvider } from './components/ui/sidebar';
+import { Toaster } from './components/ui/sonner';
+import { cn } from './lib/utils';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -20,5 +20,5 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       </main>
       <Toaster />
     </>
-  )
-}
+  );
+};

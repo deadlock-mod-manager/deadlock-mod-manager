@@ -4,12 +4,12 @@ import {
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarTrigger
-} from '@/components/ui/menubar'
-import { Laptop, Moon, Sun } from '@phosphor-icons/react'
-import { useTheme } from './providers/theme'
+} from '@/components/ui/menubar';
+import { Laptop, Moon, Sun } from '@phosphor-icons/react';
+import { useTheme } from './providers/theme';
 
 export function MenuModeToggle() {
-  const { setTheme, theme } = useTheme()
+  const { setTheme, theme } = useTheme();
 
   return (
     <MenubarMenu>
@@ -31,5 +31,5 @@ export function MenuModeToggle() {
         </MenubarRadioGroup>
       </MenubarContent>
     </MenubarMenu>
-  )
+  );
 }

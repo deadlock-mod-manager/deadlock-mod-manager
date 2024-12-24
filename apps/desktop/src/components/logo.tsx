@@ -31,7 +31,7 @@ const Logo = ({ className }: { className?: string }) => {
         clipRule="evenodd"
       />
     </svg>
-  )
-}
+  );
+};
 
-export default Logo
+export default Logo;
