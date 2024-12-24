@@ -1,4 +1,13 @@
+<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+<a id="readme-top"></a>
+
 # Deadlock Mod Manager
+
+
+[![FOSSA License Status][license-status]][license-url]
+[![FOSSA Security Status][security-status]][security-url]
+[![Downloads][downloads-status]][downloads-url]
+[![GitHub Issues or Pull Requests][issues-status]][issues-url]
 
 <br />
 <div align="center">
@@ -189,3 +198,12 @@ This project was only possible thanks to the amazing open source community, espe
 - [shadcn/ui](https://ui.shadcn.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+[security-status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=shield&issueType=security
+[security-url]: https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_shield&issueType=security
+[license-status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=shield&issueType=license
+[license-url]: https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_shield&issueType=license
+[downloads-status]: https://img.shields.io/github/downloads/stormix/deadlock-modmanager/latest/total
+[downloads-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
+[issues-status]: https://img.shields.io/github/issues/stormix/deadlock-modmanager
+[issues-url]: https://github.com/stormix/deadlock-modmanager/issues
