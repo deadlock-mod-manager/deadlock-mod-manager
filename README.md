@@ -1,6 +1,5 @@
 # Deadlock Mod Manager
 
-
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
@@ -19,12 +18,10 @@
     ·
     <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
+  <img src="./docs/assets/download.png" alt="Deadlock Mod Manager" width="600">
 </div>
- 
 
-![Deadlock Mod Manager](./docs/assets/download.png)
-
-
+<br />
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -55,7 +52,6 @@
   </ol>
 </details>
 
-
 ## Screenshots
 
 <details>
@@ -70,7 +66,6 @@
 ![Mods](./docs/assets/mods.png)
 
 </details>
-
 
 ## What's inside?
 
@@ -101,6 +96,7 @@ This monorepo includes the following packages/apps:
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 pnpm install
 ```
@@ -112,16 +108,19 @@ cp .env.example .env
 ```
 
 3. Run the migrations:
+
 ```bash
 pnpm db:migrate:deploy
 ```
 
 4. Run the API server:
+
 ```bash
 pnpm api:dev
 ```
 
 5. Run the desktop app:
+
 ```bash
 pnpm desktop:dev
 ```
@@ -143,13 +142,12 @@ pnpm dev
 - Consistent code style with ESLint and Prettier
 
 <!-- ROADMAP -->
+
 ## Roadmap
 
 - [ ] Prepare first release
 
-
 ## Contributing
-
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
@@ -162,8 +160,6 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
-
 ### Top contributors:
 
 <a href="https://github.com/stormix/deadlock-modmanager/graphs/contributors">
@@ -172,25 +168,24 @@ Don't forget to give the project a star! Thanks again!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
 ## License
 
 This project is not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks
 
-
-
 <!-- ACKNOWLEDGMENTS -->
+
 ## Acknowledgments
+
 This project was only possible thanks to the amazing open source community, especially:
 
-* [Gamebanana API](https://gamebanana.com/)
-* [Phosphor Icons](https://phosphoricons.com/)
-* [React Icons](https://react-icons.github.io/react-icons/search)
-* [shadcn/ui](https://ui.shadcn.com/)
-* [Tauri](https://tauri.app/)
-* [Hono](https://hono.dev/)
-* [Bun](https://bun.sh/)
-* [Prisma](https://prisma.io/)
-* [shadcn/ui](https://ui.shadcn.com/)
+- [Gamebanana API](https://gamebanana.com/)
+- [Phosphor Icons](https://phosphoricons.com/)
+- [React Icons](https://react-icons.github.io/react-icons/search)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Tauri](https://tauri.app/)
+- [Hono](https://hono.dev/)
+- [Bun](https://bun.sh/)
+- [Prisma](https://prisma.io/)
+- [shadcn/ui](https://ui.shadcn.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
