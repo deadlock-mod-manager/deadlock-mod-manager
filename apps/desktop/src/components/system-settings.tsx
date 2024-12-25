@@ -10,6 +10,12 @@ const SYSTEM_SETTINGS: SystemSetting[] = [
     description: 'Automatically reapply mods when the mod manager is launched.',
     enabled: false,
     onChange: NOOP
+  },
+  {
+    id: 'launch-vanilla-no-args',
+    description: 'Launch the game in vanilla mode without additional arguments.',
+    enabled: false,
+    onChange: NOOP
   }
 ].map((setting) => ({
   ...setting,

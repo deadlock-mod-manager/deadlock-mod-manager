@@ -17,6 +17,29 @@ type LibraryFolders = HashMap<String, LibraryFolder>;
 
 const DEADLOCK_PROCESS_NAME: &str = "project8.exe";
 const DEADLOCK_APP_ID: &str = "1422450";
+const MODDED_SEARCH_PATHS: &str = r#"
+		SearchPaths
+        {  
+            Game                citadel/addons
+            Mod                 citadel
+            Write               citadel          
+            Game                citadel
+            Write               core
+            Mod                 core
+            Game                core        
+        }
+            "#;
+
+const VANILLA_SEARCH_PATHS: &str = r#"
+		SearchPaths
+        {  
+            Game                citadel
+            Write               citadel          
+            Game                citadel
+            Write               core
+            Game                core        
+        }
+            "#;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
@@ -73,6 +96,8 @@ impl ModManager {
         let install_path: String = steam_key.get_value("InstallPath")?;
         let steam_path = PathBuf::from(install_path);
 
+        log::info!("Steam path from registry: {:?}", steam_path);
+
         if steam_path.exists() {
             self.steam_path = Some(steam_path.clone());
             log::info!("Steam path found: {:?}", steam_path);
@@ -94,6 +119,7 @@ impl ModManager {
     }
 
     pub fn find_game(&mut self) -> Result<PathBuf, Error> {
+        self.find_steam()?;
         if let Some(steam_path) = &self.steam_path {
             let vdf_path = steam_path.join("steamapps").join("libraryfolders.vdf");
             let content = fs::read_to_string(&vdf_path)?;
@@ -116,7 +142,9 @@ impl ModManager {
                         .join("steamapps")
                         .join("common")
                         .join(app_manifest.installdir);
+
                     if game_path.exists() {
+                        log::info!("Game path found: {:?}", game_path);
                         self.game_path = Some(game_path.clone());
                         return Ok(game_path);
                     }
@@ -159,6 +187,52 @@ impl ModManager {
         Ok(())
     }
 
+    fn modify_search_paths(&self, gameinfo_path: &PathBuf, vanilla: bool) -> Result<(), Error> {
+        log::info!(
+            "Modifying search paths for gameinfo.gi: {:?}",
+            gameinfo_path
+        );
+
+        // Read gameinfo.gi
+        let gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+
+        // Backup gameinfo.gi to gameinfo.gi.bak
+        let backup_path = gameinfo_path.with_extension("gi.bak");
+        if !backup_path.exists() {
+            fs::copy(&gameinfo_path, &backup_path)?;
+        }
+
+        // Find the SearchPaths section
+        let search_paths_start = gameinfo_content
+            .find("SearchPaths")
+            .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
+        let relative_end = gameinfo_content[search_paths_start..]
+            .find("}")
+            .ok_or_else(|| {
+                Error::GameConfigParse("Could not find end of SearchPaths section".into())
+            })?;
+
+        let search_paths_end = search_paths_start + relative_end + 1;
+        let search_paths_section = &gameinfo_content[search_paths_start - 1..search_paths_end];
+
+        // Use the appropriate search paths based on vanilla flag
+        let new_search_paths_section = if vanilla {
+            VANILLA_SEARCH_PATHS
+        } else {
+            MODDED_SEARCH_PATHS
+        };
+
+        // Replace the old search paths section with the new one
+        let gameinfo_content =
+            gameinfo_content.replace(search_paths_section, new_search_paths_section);
+
+        log::info!("Writing gameinfo.gi: {:?}", gameinfo_path);
+        log::info!("> New search paths section: {:?}", new_search_paths_section);
+        fs::write(gameinfo_path, gameinfo_content)?;
+
+        Ok(())
+    }
+
     pub fn setup_game_for_mods(&mut self) -> Result<(), Error> {
         self.check_if_game_running()?;
 
@@ -175,47 +249,8 @@ impl ModManager {
                 fs::create_dir_all(mods_path)?;
             }
 
-            // Read gameinfo.gi
-            let gameinfo_path: PathBuf = game_path.join("game").join("citadel").join("gameinfo.gi");
-            let gameinfo_content = fs::read_to_string(&gameinfo_path)?;
-
-            // Backup gameinfo.gi to gameinfo.gi.bak
-            let backup_path = gameinfo_path.with_extension("gi.bak");
-            if !backup_path.exists() {
-                fs::copy(&gameinfo_path, &backup_path)?;
-            }
-
-            // Find the SearchPaths section
-            let search_paths_start = gameinfo_content
-                .find("SearchPaths")
-                .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
-            let relative_end = gameinfo_content[search_paths_start..]
-                .find("}")
-                .ok_or_else(|| {
-                    Error::GameConfigParse("Could not find end of SearchPaths section".into())
-                })?;
-
-            let search_paths_end = search_paths_start + relative_end + 1;
-            let search_paths_section = &gameinfo_content[search_paths_start - 1..search_paths_end];
-
-            // Modify the SearchPaths section to include the mods path
-            let new_search_paths_section = r#"
-		SearchPaths
-        {  
-            Game                citadel/addons
-            Mod                 citadel
-            Write               citadel          
-            Game                citadel
-            Write               core
-            Mod                 core
-            Game                core        
-        }
-            "#;
-
-            // Replace the old search paths section with the new one
-            let gameinfo_content =
-                gameinfo_content.replace(search_paths_section, &new_search_paths_section);
-            fs::write(gameinfo_path, gameinfo_content)?;
+            let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+            self.modify_search_paths(&gameinfo_path, false)?;
 
             // Mark game as setup
             self.game_setup = true;
@@ -363,7 +398,20 @@ impl ModManager {
         }
     }
 
-    pub fn run_game(&mut self, additional_args: Vec<String>) -> Result<(), Error> {
+    pub fn toggle_mods(&mut self, vanilla: bool) -> Result<(), Error> {
+        if let Some(game_path) = &self.game_path {
+            let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+            self.modify_search_paths(&gameinfo_path, vanilla)?;
+        } else {
+            log::error!("Game path not set");
+            return Err(Error::GamePathNotSet);
+        }
+        Ok(())
+    }
+
+    pub fn run_game(&mut self, vanilla: bool, additional_args: String) -> Result<(), Error> {
+        self.find_game()?;
+
         if let Some(steam_path) = &self.steam_path {
             let steam_exe = steam_path.join("steam.exe");
 
@@ -371,14 +419,20 @@ impl ModManager {
                 return Err(Error::SteamNotFound);
             }
 
-            // Build the command arguments
-            let mut args = vec![format!("steam://run/{}", DEADLOCK_APP_ID)];
-            args.extend(additional_args);
+            if vanilla {
+                log::info!("Disabling mods...");
+            } else {
+                log::info!("Enabling mods...");
+            }
 
-            log::info!("Launching game with args: {:?}", args);
+            self.toggle_mods(vanilla)?;
+
+            // Construct the full Steam URI
+            let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
+            log::info!("Launching game with URI: {}", steam_uri);
 
             std::process::Command::new(steam_exe)
-                .args(args)
+                .arg(steam_uri)
                 .spawn()
                 .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
 

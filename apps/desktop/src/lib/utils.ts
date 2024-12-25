@@ -1,3 +1,5 @@
+import { LocalSetting } from '@/types/settings';
+import { CustomSettingType } from '@deadlock-mods/utils';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,4 +17,14 @@ export const formatSize = (size: number) => {
 
 export const formatSpeed = (speed: number) => {
   return `${formatSize(speed)}/s`;
+};
+
+export const getAdditionalArgs = (settings: LocalSetting[]) => {
+  const additionalArgs = [];
+
+  for (const setting of settings.filter((s) => s.type === CustomSettingType.LAUNCH_OPTION)) {
+    additionalArgs.push(`+${setting.key} ${setting.value}`);
+  }
+
+  return additionalArgs.join(' ');
 };

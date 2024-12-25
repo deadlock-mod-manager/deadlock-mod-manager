@@ -39,9 +39,14 @@ pub async fn stop_game() -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn start_game() -> Result<(), Error> {
+pub async fn start_game(vanilla: bool, additional_args: String) -> Result<(), Error> {
     let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.run_game(vec![])
+    log::info!(
+        "Starting game with args: {:?} (vanilla: {:?})",
+        additional_args,
+        vanilla
+    );
+    mod_manager.run_game(vanilla, additional_args)
 }
 
 #[tauri::command]
