@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")" >> $GITHUB_ENV
