@@ -14,13 +14,13 @@ type AppProviderState = {
 const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
-  const queueInterval = useRef<NodeJS.Timer | null>(null);
+  const queueInterval = useRef<number | null>(null);
   const { gamePath, setGamePath } = usePersistedStore();
 
   useEffect(() => {
     if (!queueInterval.current) {
       downloadManager.init().then(() => {
-        queueInterval.current = setInterval(() => downloadManager.process(), 100);
+        queueInterval.current = setInterval(() => downloadManager.process(), 100) as unknown as number; // This is annoying
       });
     }
 
