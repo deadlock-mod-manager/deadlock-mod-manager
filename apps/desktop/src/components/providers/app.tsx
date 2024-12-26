@@ -14,7 +14,7 @@ type AppProviderState = {
 const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
-  const queueInterval = useRef<Timer | null>(null);
+  const queueInterval = useRef<NodeJS.Timer | null>(null);
   const { gamePath, setGamePath } = usePersistedStore();
 
   useEffect(() => {
