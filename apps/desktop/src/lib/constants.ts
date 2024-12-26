@@ -7,3 +7,11 @@ export const COPYRIGHT =
 
 export const STORE_NAME = 'state.json';
 export const NOOP = () => {};
+
+export enum SortType {
+  DEFAULT = 'default',
+  LAST_UPDATED = 'last updated',
+  DOWNLOADS = 'download count',
+  RATING = 'rating',
+  RELEASE_DATE = 'release date'
+}

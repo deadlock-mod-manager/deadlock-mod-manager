@@ -2,7 +2,6 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::{Mod, ModManager};
-use std::process::Command;
 use std::sync::LazyLock;
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
@@ -51,14 +50,23 @@ pub async fn start_game(vanilla: bool, additional_args: String) -> Result<(), Er
 
 #[tauri::command]
 pub async fn show_in_folder(path: String) -> Result<(), Error> {
-    #[cfg(target_os = "windows")]
-    {
-        match Command::new("explorer")
-            .args(["/select,", &path]) // The comma after select is not a typo
-            .spawn()
-        {
-            Ok(_) => Ok(()),
-            Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
-        }
-    }
+    crate::utils::show_in_folder_windows(&path)
+}
+
+#[tauri::command]
+pub async fn clear_mods() -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.clear_mods()
+}
+
+#[tauri::command]
+pub async fn open_mods_folder() -> Result<(), Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.open_mods_folder()
+}
+
+#[tauri::command]
+pub async fn open_game_folder() -> Result<(), Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.open_game_folder()
 }

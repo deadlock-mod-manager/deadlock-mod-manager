@@ -7,6 +7,7 @@
 mod commands;
 mod errors;
 mod mod_manager;
+mod utils;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -56,7 +57,10 @@ pub fn run() {
             commands::install_mod,
             commands::stop_game,
             commands::start_game,
-            commands::show_in_folder
+            commands::show_in_folder,
+            commands::clear_mods,
+            commands::open_mods_folder,
+            commands::open_game_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

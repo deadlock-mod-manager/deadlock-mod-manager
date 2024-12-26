@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use crate::utils;
 use keyvalues_serde;
 use log;
 use serde::{Deserialize, Serialize};
@@ -80,13 +81,20 @@ pub struct ModManager {
 
 impl ModManager {
     pub fn new() -> Self {
-        ModManager {
+        let mut manager = ModManager {
             steam_path: None,
             game_path: None,
             game_setup: false,
             mods: HashMap::new(),
             system: System::new_all(),
+        };
+
+        // Try to find the game path on initialization
+        if let Err(e) = manager.find_game() {
+            log::warn!("Failed to find game path during initialization: {:?}", e);
         }
+
+        manager
     }
 
     #[cfg(target_os = "windows")]
@@ -439,6 +447,45 @@ impl ModManager {
             Ok(())
         } else {
             Err(Error::SteamNotFound)
+        }
+    }
+
+    pub fn clear_mods(&mut self) -> Result<(), Error> {
+        // Delete all vpk files in citadel/addons
+        if let Some(game_path) = &self.game_path {
+            let addons_path = game_path.join("game").join("citadel").join("addons");
+
+            if !addons_path.exists() {
+                return Ok(());
+            }
+
+            for entry in fs::read_dir(&addons_path)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_file() && path.extension().unwrap() == "vpk" {
+                    fs::remove_file(path)?;
+                }
+            }
+            Ok(())
+        } else {
+            Err(Error::GamePathNotSet)
+        }
+    }
+
+    pub fn open_mods_folder(&self) -> Result<(), Error> {
+        if let Some(game_path) = &self.game_path {
+            let addons_path = game_path.join("game").join("citadel").join("addons");
+            utils::show_in_folder_windows(&addons_path.to_string_lossy().to_string())
+        } else {
+            Err(Error::GamePathNotSet)
+        }
+    }
+
+    pub fn open_game_folder(&self) -> Result<(), Error> {
+        if let Some(game_path) = &self.game_path {
+            utils::show_in_folder_windows(&game_path.to_string_lossy().to_string())
+        } else {
+            Err(Error::GamePathNotSet)
         }
     }
 }

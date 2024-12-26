@@ -1,15 +1,18 @@
 import AddSettingDialog from '@/components/add-setting';
 import ErrorBoundary from '@/components/error-boundary';
 import PageTitle from '@/components/page-title';
+import { useConfirm } from '@/components/providers/alert-dialog';
 import Section, { SectionSkeleton } from '@/components/section';
 import SettingCard, { SettingCardSkeleton } from '@/components/setting-card';
 import SystemSettings from '@/components/system-settings';
 import { Button } from '@/components/ui/button';
 import { getCustomSettings } from '@/lib/api';
+import logger from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
 import { LocalSetting } from '@/types/settings';
 import { CustomSettingDto, CustomSettingType, customSettingTypeHuman } from '@deadlock-mods/utils';
-import { PlusIcon } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
+import { FolderOpen, PlusIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
@@ -73,6 +76,8 @@ const CustomSettingsData = () => {
 };
 
 const CustomSettings = () => {
+  const { clearMods } = usePersistedStore();
+  const confirm = useConfirm();
   return (
     <div className="h-[calc(100vh-160px)] overflow-y-auto px-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
       <PageTitle
@@ -104,6 +109,38 @@ const CustomSettings = () => {
       <Section title="System Settings" description="Mod Manager Settings. These do not affect the game.">
         <div className="grid grid-cols-1 gap-4">
           <SystemSettings />
+        </div>
+      </Section>
+      <Section title="Tools" description="Utility functions for managing your mods">
+        <div className="flex gap-4">
+          <Button className="w-fit" variant="outline" onClick={() => invoke('open_game_folder')}>
+            <FolderOpen className="w-4 h-4" />
+            Open Game Folder
+          </Button>
+          <Button className="w-fit" variant="outline" onClick={() => invoke('open_mods_folder')}>
+            <FolderOpen className="w-4 h-4" />
+            Open Mods Folder
+          </Button>
+          <Button
+            className="w-fit"
+            variant="destructive"
+            onClick={async () => {
+              if (await confirm('Are you sure you want to clear all mods? This action cannot be undone.')) {
+                invoke('clear_mods')
+                  .then(() => {
+                    clearMods();
+                    toast.success('All mods have been cleared');
+                  })
+                  .catch((error) => {
+                    logger.error(error);
+                    toast.error('Failed to clear mods');
+                  });
+              }
+            }}
+          >
+            <TrashIcon className="w-4 h-4" />
+            Clear All Mods
+          </Button>
         </div>
       </Section>
     </div>
