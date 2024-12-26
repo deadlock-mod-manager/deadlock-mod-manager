@@ -54,19 +54,11 @@ pub struct Mod {
 #[derive(Debug, Deserialize)]
 struct LibraryFolder {
     path: String,
-    label: String,
-    contentid: String,
-    totalsize: String,
-    #[serde(rename = "update_clean_bytes_tally")]
-    update_clean_bytes_tally: String,
-    #[serde(rename = "time_last_update_verified")]
-    time_last_update_verified: String,
     apps: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct AppManifest {
-    name: String,
     installdir: String,
 }
 

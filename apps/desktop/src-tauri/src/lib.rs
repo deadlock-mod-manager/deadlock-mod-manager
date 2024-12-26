@@ -16,9 +16,7 @@ use tauri_plugin_store::StoreExt;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(debug_assertions)] // only enable instrumentation in development builds
-    let builder = tauri::Builder::default();
-
-    builder
+    tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_upload::init())

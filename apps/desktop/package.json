@@ -4,12 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "ui:dev": "vite",
+    "ui:build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
-    "desktop:dev": "pnpm tauri dev"
+    "desktop:dev": "pnpm tauri dev",
+    "desktop:build": "pnpm tauri build",
+    "build": "pnpm tauri build"
   },
   "dependencies": {
     "@deadlock-mods/utils": "workspace:*",
