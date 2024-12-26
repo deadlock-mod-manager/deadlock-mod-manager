@@ -20,16 +20,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - uses: pnpm/action-setup@v2.0.1
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v2.0.1
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")" >> $GITHUB_ENV
@@ -74,11 +72,14 @@ jobs:
         with:
           workspaces: apps/desktop -> apps/desktop/target
 
-      - name: Install Node.js
+      - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v2.0.1
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install apt dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
@@ -89,8 +90,11 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: pnpm install
+
+      - name: Prisma Generate
+        run: pnpm generate
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
