@@ -12,5 +12,6 @@ module.exports = {
         allowList: ["NODE_ENV"],
       },
     ],
+    "no-unused-vars": "off",
   },
 };

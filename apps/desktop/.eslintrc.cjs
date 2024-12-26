@@ -10,6 +10,7 @@ module.exports = {
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
   rules: {
-    'no-undef': 'off'
+    'no-undef': 'off',
+    '@typescript-eslint/no-explicit-any': 'off'
   }
 }

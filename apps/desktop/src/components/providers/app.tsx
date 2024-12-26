@@ -7,7 +7,9 @@ type AppProviderProps = {
   children: React.ReactNode;
 };
 
-type AppProviderState = {};
+type AppProviderState = {
+  // TODO
+};
 
 const AppProviderContext = createContext<AppProviderState>({});
 

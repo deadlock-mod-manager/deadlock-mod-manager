@@ -18,22 +18,9 @@ export const usePersistedStore = create<State>()(
       name: 'local-config',
       version: 1,
       storage: createJSONStorage(() => storage),
-      skipHydration: true,
+      skipHydration: true
       // TODO: exclude callbacks from persisted state
       // TODO: remove progress from persisted state
-
-      onRehydrateStorage: (state) => {
-        console.log('hydration starts');
-
-        // optional
-        return (state, error) => {
-          if (error) {
-            console.log('an error happened during hydration', error);
-          } else {
-            console.log('hydration finished');
-          }
-        };
-      }
     }
   )
 );

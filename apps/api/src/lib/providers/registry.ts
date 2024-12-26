@@ -18,6 +18,7 @@ export abstract class Provider<T> {
 }
 
 interface ProviderConstructor<T> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any[]): Provider<T>
 }
 
