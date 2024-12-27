@@ -51,3 +51,4 @@ debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2.2.0"
+tauri-plugin-updater = "2.3.0"

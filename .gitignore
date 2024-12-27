@@ -33,3 +33,5 @@ yarn-error.log*
 .turbo
 
 .env
+
+.tauri/updater.key

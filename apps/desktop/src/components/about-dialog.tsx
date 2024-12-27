@@ -1,4 +1,5 @@
 import useAbout from '@/hooks/use-about';
+import useUpdateManager from '@/hooks/use-update-manager';
 import { APP_DESCRIPTION, APP_NAME, COPYRIGHT, GITHUB_REPO } from '@/lib/constants';
 import { CloudArrowDown, GithubLogo } from '@phosphor-icons/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -11,6 +12,7 @@ import { Separator } from './ui/separator';
 
 export const AboutDialog = () => {
   const { data } = useAbout();
+  const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   if (!data) return null;
   const { version, name, tauriVersion } = data;
 
@@ -58,7 +60,14 @@ export const AboutDialog = () => {
           type="submit"
           variant="outline"
           className="h-7 gap-1"
-          onClick={() => toast('You have the latest version.')}
+          onClick={async () => {
+            if (await checkForUpdates()) {
+              toast.info('Downloading update...');
+              await updateAndRelaunch();
+            } else {
+              toast.info('You have the latest version.');
+            }
+          }}
         >
           <CloudArrowDown /> Check for Updates
         </Button>

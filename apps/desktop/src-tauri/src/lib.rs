@@ -42,6 +42,9 @@ pub fn run() {
             #[cfg(desktop)]
             let _ = handle.plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}));
 
+            #[cfg(desktop)]
+            let _ = handle.plugin(tauri_plugin_updater::Builder::new().build());
+
             // Prepare store
             let _store = handle.store("state.json")?;
 
