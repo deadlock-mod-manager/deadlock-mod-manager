@@ -37,6 +37,7 @@ thiserror = "2.0.9"
 sysinfo = {version = "0.33.0", features = ["windows"] }
 tauri-plugin-log = "2"
 log = "0.4"
+tauri-plugin-process = "2.2.0"
 
 
 
