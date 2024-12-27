@@ -101,7 +101,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          VITE_API_URL: https://api.deadlock.stormix.dev
+          VITE_API_URL: https://api.deadlockmods.app
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-release.outputs.release_id }}
