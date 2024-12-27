@@ -126,3 +126,23 @@ jobs:
               draft: false,
               prerelease: false
             })
+
+  cleanup-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    needs: build-tauri
+    if: failure()
+
+    steps:
+      - name: Delete release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            github.rest.repos.deleteRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id
+            })
