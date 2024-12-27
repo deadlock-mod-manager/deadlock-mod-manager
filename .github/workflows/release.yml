@@ -100,7 +100,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-release.outputs.release_id }}
@@ -131,7 +131,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-20.04
-    needs: build-tauri
+    needs:  [create-release, build-tauri]
     if: failure()
 
     steps:
