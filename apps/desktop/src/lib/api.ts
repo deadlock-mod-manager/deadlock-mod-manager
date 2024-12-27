@@ -2,7 +2,7 @@ import { CustomSettingDto, ModDownloadDto, ModDto } from '@deadlock-mods/utils';
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:9000', // TODO: get from env
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:9000',
   headers: {
     'Content-Type': 'application/json'
   }

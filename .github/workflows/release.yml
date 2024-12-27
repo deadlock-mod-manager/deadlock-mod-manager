@@ -1,4 +1,4 @@
-name: "release"
+name: Release Desktop App
 env:
   PNPM_VERSION: "9.15.0"
   NODE_VERSION: "22.11.0"
@@ -101,6 +101,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlock.stormix.dev
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-release.outputs.release_id }}

@@ -8,12 +8,17 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n
 RUN bash n $NODE_VERSION
 RUN rm n
 RUN npm install -g n
+RUN npm install -g pnpm
 
-COPY apps/api .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api ./apps/api
+COPY packages ./packages
 
-RUN bun install
-RUN bunx prisma generate
+RUN pnpm install
+RUN pnpm generate
 
 EXPOSE 9000
 
-ENTRYPOINT [ "bun",  "start" ]
+WORKDIR /usr/src/app/apps/api
+
+ENTRYPOINT [ "pnpm",  "start" ]
