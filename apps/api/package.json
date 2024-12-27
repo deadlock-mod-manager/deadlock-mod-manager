@@ -1,6 +1,7 @@
 {
   "name": "api",
   "scripts": {
+    "start": "bun run src/index.ts",
     "dev": "bun run --watch src/index.ts",
     "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
     "desktop:dev": "pnpm dev"

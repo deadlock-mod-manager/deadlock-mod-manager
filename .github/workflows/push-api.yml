@@ -1,0 +1,66 @@
+name: Publish API Docker image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+      - uses: oven-sh/setup-bun@v2
+        name: Setup bun
+        with:
+          bun-version: latest
+      - uses: fregante/setup-git-user@v2
+        name: Setup git user
+      - name: Install dependencies
+        working-directory: ./apps/api
+        run: |
+          bun install
+      - name: Read version from package.json
+        id: get_version
+        working-directory: ./apps/api
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "Current version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_ENV
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: stormix/deadlock-mods-api
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:${{ env.version }}
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:latest
+          labels: ${{ steps.meta.outputs.labels }}
