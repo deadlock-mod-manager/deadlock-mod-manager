@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "deadlock-mod-manager",
+  "productName": "Deadlock Mod Manager",
   "version": "../package.json",
   "identifier": "dev.stormix.deadlock-mod-manager",
   "build": {

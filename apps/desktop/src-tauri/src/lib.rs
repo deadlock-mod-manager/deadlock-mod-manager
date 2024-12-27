@@ -15,7 +15,6 @@ use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(debug_assertions)] // only enable instrumentation in development builds
     tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
@@ -39,8 +38,6 @@ pub fn run() {
         )
         .setup(|app| {
             let handle = app.app_handle();
-            let window = handle.get_webview_window("main").unwrap();
-            window.open_devtools();
 
             #[cfg(desktop)]
             let _ = handle.plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}));
