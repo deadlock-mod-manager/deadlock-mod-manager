@@ -6,6 +6,6 @@ export const getMod = async <T = GameBanana.GameBananaModDownload>(
   providerName = 'gamebanana'
 ): Promise<T> => {
   const provider = providerRegistry.getProvider<T>(providerName)
-  const mod = await provider.getMod<T>(remoteId)
+  const mod = await provider.getModDownload<T>(remoteId)
   return mod
 }
