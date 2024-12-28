@@ -1,6 +1,12 @@
 {
   "extends": "@deadlock-mods/typescript-config/nextjs.json",
-  "compilerOptions": { "plugins": [{ "name": "next" }] },
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
   "include": [
     "next-env.d.ts",
     "next.config.js",

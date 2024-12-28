@@ -1,0 +1,92 @@
+
+html {
+  scroll-behavior: smooth;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* Dark Deadlock Brown */
+    --foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --card: 0 0% 100%;
+    --card-foreground: 15, 10%, 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 15, 10%, 16%;
+    --primary: 42, 60%, 84%; /* Deadlock Beige */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 15, 10%, 16%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 20, 9%, 6%; /* Deadlock dark brown */
+    --foreground: 38, 65%, 97%; /* Deadlock White */
+    --card: 20, 9%, 6%;
+    --card-foreground: 38, 65%, 97%;
+    --popover: 20, 9%, 6%;
+    --popover-foreground: 38, 65%, 97%;
+    --primary: 42, 60%, 84%; /* Deadlock Beige */
+    --primary-foreground: 20, 9%, 6%; /* Deadlock dark brown */
+    --secondary: 15, 10%, 16%; /* Deadlock Brown */
+    --secondary-foreground: 41.6 60% 63%; /* Darker Deadlock Beige */
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 38, 65%, 97%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 38, 65%, 97%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 15, 10%, 16%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
+    --sidebar-background: 20, 9%, 6%; /* Deadlock dark brown */
+    --sidebar-foreground: 38, 65%, 97%; /* Deadlock White */
+    --sidebar-primary:  42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border min-h-0 min-w-0;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
