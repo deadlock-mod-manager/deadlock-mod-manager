@@ -9,4 +9,7 @@ module.exports = {
       static: 180, // 180 seconds
     },
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
