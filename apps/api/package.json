@@ -1,5 +1,6 @@
 {
   "name": "api",
+  "version": "0.0.1",
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun run --watch src/index.ts",
@@ -7,15 +8,19 @@
     "desktop:dev": "pnpm dev"
   },
   "dependencies": {
+    "@deadlock-mods/database": "workspace:*",
+    "@hono/sentry": "^1.2.0",
+    "@sentry/bun": "^8.47.0",
+    "@sentry/node": "^8.47.0",
+    "@sentry/profiling-node": "^8.47.0",
     "croner": "^9.0.0",
     "hono": "^4.6.13",
-    "tslog": "^4.9.3",
-    "@deadlock-mods/database": "workspace:*"
+    "tslog": "^4.9.3"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@deadlock-mods/typescript-config": "workspace:*",
     "@deadlock-mods/utils": "workspace:*",
+    "@types/bun": "latest",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
