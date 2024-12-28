@@ -11,10 +11,18 @@ import customSettings from './lib/custom-settings'
 import { startJobs } from './lib/jobs'
 import mods from './lib/mods'
 
+import { sentry } from '@hono/sentry'
+import { SENTRY_OPTIONS } from './lib/constants'
 import './lib/jobs/synchronize-mods'
 
 const app = new Hono()
 
+app.use(
+  '*',
+  sentry({
+    ...SENTRY_OPTIONS
+  })
+)
 app.use(etag(), logger(), secureHeaders(), trimTrailingSlash())
 app.use('*', requestId())
 app.use('*', cors())

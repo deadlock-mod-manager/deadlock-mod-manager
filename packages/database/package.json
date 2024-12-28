@@ -18,14 +18,14 @@
     "studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.1.0",
+    "@prisma/client": "^5.10.2",
     "@tauri-apps/plugin-fs": "^2.2.0"
   },
   "devDependencies": {
     "@deadlock-mods/eslint-config": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
-    "prisma": "^6.1.0",
+    "prisma": "^5.10.2",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "tsx": "4.19.1",
