@@ -1,8 +1,8 @@
 "use client";
 
 import { RefreshCwIcon } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-
 type Status = "operational" | "downtime" | "degraded";
 
 interface StatusWidgetProps {
@@ -63,9 +63,9 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
     <div className={`flex items-center gap-2 justify-center ${className}`}>
       <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-secondary">
         <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-        <span className="text-sm">
+        <Link href="/status" className="text-sm" target="_blank">
           {loading ? "Checking status..." : getStatusText()}
-        </span>
+        </Link>
         <button
           onClick={fetchStatus}
           disabled={loading}
