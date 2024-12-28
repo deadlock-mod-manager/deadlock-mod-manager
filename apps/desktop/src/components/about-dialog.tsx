@@ -61,11 +61,15 @@ export const AboutDialog = () => {
           variant="outline"
           className="h-7 gap-1"
           onClick={async () => {
-            if (await checkForUpdates()) {
-              toast.info('Downloading update...');
-              await updateAndRelaunch();
-            } else {
-              toast.info('You have the latest version.');
+            try {
+              if (await checkForUpdates()) {
+                toast.info('Downloading update...');
+                await updateAndRelaunch();
+              } else {
+                toast.info('You have the latest version.');
+              }
+            } catch (e) {
+              toast.error('Failed to check for updates, you may need to manually update the app.');
             }
           }}
         >

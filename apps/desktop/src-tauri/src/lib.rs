@@ -11,11 +11,26 @@ mod utils;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
+use tauri_plugin_sentry::{minidump, sentry};
 use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let client = sentry::init((
+        "https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200",
+        sentry::ClientOptions {
+            release: sentry::release_name!(),
+            auto_session_tracking: true,
+            ..Default::default()
+        },
+    ));
+
+    // Caution! Everything before here runs in both app and crash reporter processes
+    #[cfg(not(target_os = "ios"))]
+    let _guard = minidump::init(&client);
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_sentry::init(&client))
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_upload::init())

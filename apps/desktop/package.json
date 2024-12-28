@@ -75,6 +75,7 @@
     "sonner": "^1.7.1",
     "tailwindcss-animate": "^1.0.7",
     "tauri-controls": "^0.4.0",
+    "tauri-plugin-sentry-api": "^0.3.1",
     "tslog": "^4.9.3",
     "uuid": "^11.0.3",
     "vaul": "^1.1.1",

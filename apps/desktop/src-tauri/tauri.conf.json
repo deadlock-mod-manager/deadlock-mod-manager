@@ -15,7 +15,8 @@
         "title": "Deadlock Mod Manager",
         "width": 1280,
         "height": 720,
-        "decorations": false
+        "decorations": false,
+        "label": "main"
       }
     ],
     "security": {

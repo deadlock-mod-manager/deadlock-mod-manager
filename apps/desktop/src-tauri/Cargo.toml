@@ -39,7 +39,7 @@ tauri-plugin-log = "2"
 log = "0.4"
 tauri-plugin-process = "2.2.0"
 sevenz-rust = "0.5"
-
+tauri-plugin-sentry = "0.3"
 
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
