@@ -1,5 +1,11 @@
 # desktop
 
+## 0.2.0
+
+### Minor Changes
+
+- Add sentry issue tracking and fix updater permissions
+
 ## 0.1.1
 
 ### Patch Changes
