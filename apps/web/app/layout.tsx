@@ -5,7 +5,6 @@ import { Footer } from "@/components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_URL } from "@/lib/constants";
 import { cn, getLatestVersion } from "@/lib/utils";
-import { GoogleTagManager } from '@next/third-parties/google';
 import { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import localFont from 'next/font/local';
@@ -119,7 +118,6 @@ const RootLayout: React.FC<{
             {children}
             <Footer />
           </ThemeProvider>
-          <GoogleTagManager gtmId="G-692L1V5KQD" />
         </body>
       </html>
     </>
