@@ -8,6 +8,7 @@
 [![FOSSA Security Status][security-status]][security-url]
 [![Downloads][downloads-status]][downloads-url]
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
 <br />
 <div align="center">

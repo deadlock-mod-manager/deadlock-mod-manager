@@ -6,6 +6,7 @@ import Link from "next/link";
 import { GoogleAnalytics } from "nextjs-google-analytics";
 import React from "react";
 import Logo from "./logo";
+import { StatusWidget } from "./status-widget";
 
 export const Footer: React.FC<{ children?: React.ReactNode }> = ({
   children,
@@ -107,9 +108,9 @@ export const Footer: React.FC<{ children?: React.ReactNode }> = ({
           </div>
 
           <Separator className="my-6" />
-          <section className="text-center">
+          <section className="text-center flex flex-col items-center gap-4">
             <p>
-              {COPYRIGHT} Created by{" "}
+              {COPYRIGHT}. Created by{" "}
               <Link
                 target="_blank"
                 href="https://github.com/Stormix"
@@ -118,6 +119,7 @@ export const Footer: React.FC<{ children?: React.ReactNode }> = ({
                 Stormix
               </Link>
             </p>
+            <StatusWidget />
           </section>
         </div>
       </footer>
