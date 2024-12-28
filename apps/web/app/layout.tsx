@@ -97,10 +97,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const RootLayout = ({
-  children,
-}: {
+const RootLayout: React.FC<{
   children: React.ReactNode;
+}> = ({
+  children,
 }) => {
   return (
     <>
