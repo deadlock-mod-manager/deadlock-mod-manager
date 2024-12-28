@@ -98,7 +98,7 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
     actionButtonVariant: 'default'
   });
 
-  const resolveRef = React.useRef<(tf: any) => void>();
+  const resolveRef = React.useRef<(tf: any) => void>(() => {});
 
   const close = () => {
     dispatch({ type: 'close' });
