@@ -1,5 +1,11 @@
 # api
 
+## 0.3.0
+
+### Minor Changes
+
+- Downgrade prisma version to fix sentry issue #4
+
 ## 0.2.0
 
 ### Minor Changes
