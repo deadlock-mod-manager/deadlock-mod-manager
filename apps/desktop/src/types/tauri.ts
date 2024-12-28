@@ -17,6 +17,7 @@ export type ErrorKind = {
     | 'gameRunning'
     | 'gameNotRunning'
     | 'gameLaunchFailed'
-    | 'failedToOpenFolder';
+    | 'failedToOpenFolder'
+    | 'modExtractionFailed';
   message: string;
 };

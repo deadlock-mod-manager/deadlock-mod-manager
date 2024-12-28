@@ -25,7 +25,7 @@ const useInstall = () => {
 
       const result = (await invoke('install_mod', {
         deadlockMod: {
-          id: mod.id,
+          id: mod.remoteId,
           name: mod.name,
           path: mod.path
         }

@@ -15,6 +15,7 @@ export interface ModsState {
   setModPath: (remoteId: string, path: string) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
+  setInstalledVpks: (remoteId: string, vpks: string[]) => void;
 }
 
 export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
@@ -26,6 +27,7 @@ export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
   if (current === ModStatus.INSTALLED && next === ModStatus.DOWNLOADING) return ModStatus.DOWNLOADING;
   if (current === ModStatus.DOWNLOADING && next === ModStatus.ERROR) return ModStatus.ERROR;
   if (current === ModStatus.INSTALLING && next === ModStatus.ERROR) return ModStatus.ERROR;
+  if (current === ModStatus.INSTALLED && next === ModStatus.DOWNLOADED) return ModStatus.DOWNLOADED;
   if (next === ModStatus.INSTALLED) return ModStatus.INSTALLED;
   return current;
 };
@@ -42,7 +44,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => 
       mods: state.mods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? transitionModStatus(mod.status, status) : mod.status,
-        downloadedAt: status === ModStatus.DOWNLOADED ? new Date() : undefined
+        downloadedAt: status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED ? new Date() : undefined
       }))
     })),
   setModPath: (remoteId, path) =>
@@ -62,6 +64,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => 
         progress:
           mod.remoteId === remoteId ? ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100 : mod.progress,
         speed: mod.remoteId === remoteId ? progress?.transferSpeed : mod.speed
+      }))
+    })),
+  setInstalledVpks: (remoteId: string, vpks: string[]) =>
+    set((state) => ({
+      mods: state.mods.map((mod) => ({
+        ...mod,
+        status: mod.remoteId === remoteId ? ModStatus.INSTALLED : mod.status,
+        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks
       }))
     }))
 });

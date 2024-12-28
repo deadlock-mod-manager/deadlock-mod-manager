@@ -10,7 +10,7 @@ import { createColumns } from './columns';
 const logger = createLogger('installation');
 
 export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
-  const { setModStatus } = usePersistedStore();
+  const { setModStatus, setInstalledVpks } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
 
@@ -23,7 +23,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
       },
       onComplete: (mod, result) => {
         logger.info('Installation complete', { mod: mod.remoteId, result: result.installed_vpks });
-        setModStatus(mod.remoteId, ModStatus.INSTALLED);
+        setInstalledVpks(mod.remoteId, result.installed_vpks);
       },
       onError: (mod, error) => {
         logger.error('Installation error', { mod: mod.remoteId, error });
@@ -39,7 +39,8 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
         }
       }
     },
-    uninstall
+    (mod) => uninstall(mod, true), // Remove
+    (mod) => uninstall(mod, false) // Uninstall
   );
 
   return <DataTable columns={columns} data={mods} />;

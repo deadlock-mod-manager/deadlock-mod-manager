@@ -3,10 +3,13 @@ use crate::utils;
 use keyvalues_serde;
 use log;
 use serde::{Deserialize, Serialize};
+use sevenz_rust;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::path::PathBuf;
+use sysinfo::ProcessRefreshKind;
+use sysinfo::ProcessesToUpdate;
 use sysinfo::System;
 use tempfile;
 use unrar::Archive;
@@ -156,28 +159,47 @@ impl ModManager {
     }
 
     pub fn check_if_game_running(&mut self) -> Result<(), Error> {
-        self.system.refresh_all();
+        self.system.refresh_processes_specifics(
+            ProcessesToUpdate::All,
+            true,
+            ProcessRefreshKind::everything(),
+        );
+
         let processes = self
             .system
             .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref());
+
         if processes.count() > 0 {
+            log::debug!("Game is running");
             return Err(Error::GameRunning);
         }
+
         Ok(())
     }
 
     pub fn stop_game(&mut self) -> Result<(), Error> {
-        self.system.refresh_all();
         let mut stopped = false;
-        let processes = self
-            .system
-            .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref());
-        log::info!("Stopping game...");
 
-        for process in processes {
-            log::info!("Killing process: {:?}", process.pid());
-            process.kill();
-            stopped = true;
+        match self.check_if_game_running() {
+            Err(Error::GameRunning) => {
+                log::info!("Stopping game...");
+                let processes = self
+                    .system
+                    .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref());
+
+                for process in processes {
+                    log::info!("Killing process: {:?}", process.pid());
+                    process.kill();
+                    stopped = true;
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to stop game: {:?}", e);
+            }
+            Ok(_) => {
+                log::info!("Game is not running");
+                return Err(Error::GameNotRunning);
+            }
         }
 
         if !stopped {
@@ -326,6 +348,15 @@ impl ModManager {
         Ok(())
     }
 
+    fn extract_7z(&self, path: &PathBuf, temp_dir: &std::path::Path) -> Result<(), Error> {
+        sevenz_rust::decompress_file(
+            path.to_string_lossy().as_ref(),
+            temp_dir.to_string_lossy().as_ref(),
+        )
+        .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
+        Ok(())
+    }
+
     pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
         log::info!("Starting installation of mod: {}", deadlock_mod.name);
 
@@ -365,6 +396,10 @@ impl ModManager {
                     Some("rar") => {
                         log::info!("Extracting RAR file...");
                         self.extract_rar(&path, temp_dir.path())?
+                    }
+                    Some("7z") => {
+                        log::info!("Extracting 7Z file...");
+                        self.extract_7z(&path, temp_dir.path())?
                     }
                     _ => continue,
                 }
@@ -478,6 +513,49 @@ impl ModManager {
             utils::show_in_folder_windows(&game_path.to_string_lossy().to_string())
         } else {
             Err(Error::GamePathNotSet)
+        }
+    }
+
+    pub fn uninstall_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+        log::info!("Uninstalling mod: {}", mod_id);
+        if let Some(game_path) = &self.game_path {
+            let addons_path = game_path.join("game").join("citadel").join("addons");
+            if !addons_path.exists() {
+                return Err(Error::GamePathNotSet);
+            }
+
+            // Check if the mod is in memory
+            if let Some(local_mod) = self.mods.get(&mod_id) {
+                log::info!("Mod found in memory: {}", local_mod.name);
+                for vpk in &local_mod.installed_vpks {
+                    let vpk_path = addons_path.join(vpk);
+                    if vpk_path.exists() {
+                        fs::remove_file(vpk_path)?;
+                    }
+                }
+
+                self.mods.remove(&mod_id);
+            } else {
+                // Just remove the vpk files from citadel/addons
+                for vpk in vpks {
+                    let vpk_path = addons_path.join(vpk);
+                    if vpk_path.exists() {
+                        fs::remove_file(vpk_path)?;
+                    }
+                }
+            }
+
+            Ok(())
+        } else {
+            Err(Error::GamePathNotSet)
+        }
+    }
+
+    pub fn is_game_running(&mut self) -> Result<bool, Error> {
+        match self.check_if_game_running() {
+            Ok(_) => Ok(false),
+            Err(Error::GameRunning) => Ok(true),
+            Err(_) => Ok(false),
         }
     }
 }

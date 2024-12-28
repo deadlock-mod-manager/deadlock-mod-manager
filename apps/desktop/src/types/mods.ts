@@ -22,6 +22,7 @@ export interface LocalMod extends ModDto {
   progress?: number;
   speed?: number;
   downloads?: ModDownloadDto;
+  installedVpks?: string[];
 }
 
 export interface DownloadableMod extends Omit<LocalMod, 'status'> {

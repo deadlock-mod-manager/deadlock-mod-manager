@@ -70,3 +70,15 @@ pub async fn open_game_folder() -> Result<(), Error> {
     let mod_manager = MANAGER.lock().unwrap();
     mod_manager.open_game_folder()
 }
+
+#[tauri::command]
+pub async fn uninstall_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.uninstall_mod(mod_id, vpks)
+}
+
+#[tauri::command]
+pub async fn is_game_running() -> Result<bool, Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.is_game_running()
+}

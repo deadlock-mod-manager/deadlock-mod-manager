@@ -1,4 +1,5 @@
 import { CustomSettingDto, ModDownloadDto, ModDto } from '@deadlock-mods/utils';
+import { invoke } from '@tauri-apps/api/core';
 import axios from 'axios';
 
 export const api = axios.create({
@@ -21,4 +22,8 @@ export const getModDownload = async (remoteId: string) => {
 export const getCustomSettings = async () => {
   const response = await api.get<CustomSettingDto[]>('/custom-settings');
   return response.data;
+};
+
+export const isGameRunning = async () => {
+  return !!(await invoke('is_game_running'));
 };

@@ -9,7 +9,12 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
-export const createColumns = (install: InstallFunction, options: InstallOptions, remove: (mod: LocalMod) => void) => {
+export const createColumns = (
+  install: InstallFunction,
+  options: InstallOptions,
+  remove: (mod: LocalMod) => void,
+  uninstall: (mod: LocalMod) => void
+) => {
   return [
     {
       accessorKey: 'images',
@@ -53,12 +58,16 @@ export const createColumns = (install: InstallFunction, options: InstallOptions,
             <Switch
               id="install-mod"
               checked={row.original.status === ModStatus.INSTALLED}
-              onCheckedChange={() => {
-                install(row.original, options);
+              onCheckedChange={(value) => {
+                if (value) {
+                  install(row.original, options);
+                } else {
+                  uninstall(row.original);
+                }
               }}
             />
             <Label htmlFor="install-mod" className="text-xs">
-              {row.original.status === ModStatus.INSTALLED ? 'Uninstall' : 'Install'}
+              {row.original.status === ModStatus.INSTALLED ? 'Disable' : 'Enable'}
             </Label>
           </div>
           <div className="flex items-center gap-2">
