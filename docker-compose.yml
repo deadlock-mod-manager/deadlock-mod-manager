@@ -1,19 +1,17 @@
-version: "3"
-
 volumes:
-  database:
-    driver: local
+    database:
+        driver: local
 
 services:
-  mysql:
-    platform: linux/amd64
-    image: mysql:8.0.32
-    container_name: turborepo_mysql
-    restart: always
-    ports:
-      - 3306:3306
-    environment:
-      MYSQL_DATABASE: turborepo
-      MYSQL_ALLOW_EMPTY_PASSWORD: 1
-    volumes:
-      - database:/var/lib/mysql
+    postgres:
+        image: postgres
+        restart: unless-stopped
+        container_name: turborepo_postgres
+        shm_size: 128mb
+        ports:
+            - "5435:5432"
+        environment:
+            POSTGRES_USER: turborepo
+            POSTGRES_PASSWORD: 123456789
+        volumes:
+            - database:/var/lib/postgresql/data
