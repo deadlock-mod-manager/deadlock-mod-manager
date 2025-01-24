@@ -454,12 +454,16 @@ impl ModManager {
                 .arg("/C")
                 .arg("start")
                 .arg(steam_uri)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
                 .spawn()
                 .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
 
             #[cfg(target_os = "linux")]
             std::process::Command::new("xdg-open")
                 .arg(steam_uri)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
                 .spawn()
                 .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
 
