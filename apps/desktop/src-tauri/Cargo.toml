@@ -26,7 +26,6 @@ tauri-plugin-os = "2.2.0"
 tauri-plugin-upload = "2"
 tauri-plugin-store = "2.2.0"
 tauri-plugin-fs = "2.2.0"
-winreg = "0.50"
 vdf-parser = "0.1.8"
 keyvalues-serde = "0.2"
 regex = "1.11.1"
@@ -34,12 +33,13 @@ zip = "2.2.2"
 tempfile = "3.14.0"
 unrar = "0.5.7"
 thiserror = "2.0.9"
-sysinfo = {version = "0.33.0", features = ["windows"] }
+sysinfo = { version = "0.33.0", features = ["windows"] }
 tauri-plugin-log = "2"
 log = "0.4"
 tauri-plugin-process = "2.2.0"
 sevenz-rust = "0.5"
 tauri-plugin-sentry = "0.3"
+steamlocate = "2.0.0"
 
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
