@@ -1,6 +1,5 @@
 use crate::errors::Error;
 use crate::utils;
-use keyvalues_serde;
 use log;
 use serde::{Deserialize, Serialize};
 use sevenz_rust;
@@ -13,14 +12,10 @@ use sysinfo::ProcessesToUpdate;
 use sysinfo::System;
 use tempfile;
 use unrar::Archive;
-use winreg::enums::*;
-use winreg::RegKey;
 use zip;
 
-type LibraryFolders = HashMap<String, LibraryFolder>;
-
 const DEADLOCK_PROCESS_NAME: &str = "project8.exe";
-const DEADLOCK_APP_ID: &str = "1422450";
+const DEADLOCK_APP_ID: u32 = 1422450;
 const MODDED_SEARCH_PATHS: &str = r#"
 		SearchPaths
         {  
@@ -54,20 +49,9 @@ pub struct Mod {
     installed_vpks: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct LibraryFolder {
-    path: String,
-    apps: HashMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct AppManifest {
-    installdir: String,
-}
-
 #[derive(Debug)]
 pub struct ModManager {
-    steam_path: Option<PathBuf>,
+    steam_dir: Option<steamlocate::SteamDir>,
     game_path: Option<PathBuf>,
     game_setup: bool,
     mods: HashMap<String, Mod>,
@@ -77,7 +61,7 @@ pub struct ModManager {
 impl ModManager {
     pub fn new() -> Self {
         let mut manager = ModManager {
-            steam_path: None,
+            steam_dir: None,
             game_path: None,
             game_setup: false,
             mods: HashMap::new(),
@@ -92,67 +76,27 @@ impl ModManager {
         manager
     }
 
-    #[cfg(target_os = "windows")]
-    pub fn find_steam(&mut self) -> Result<PathBuf, Error> {
-        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-        let steam_key = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam")?;
-        let install_path: String = steam_key.get_value("InstallPath")?;
-        let steam_path = PathBuf::from(install_path);
+    pub fn find_steam(&mut self) -> Result<steamlocate::SteamDir, Error> {
+        let steam_dir = steamlocate::SteamDir::locate().map_err(|_| Error::SteamNotFound)?;
+        self.steam_dir = Some(steam_dir.clone());
 
-        log::info!("Steam path from registry: {:?}", steam_path);
+        log::info!("Steam path from steamlocate: {:?}", steam_dir.path());
 
-        if steam_path.exists() {
-            self.steam_path = Some(steam_path.clone());
-            log::info!("Steam path found: {:?}", steam_path);
-            Ok(steam_path)
-        } else {
-            let default_path = PathBuf::from(r"C:\Program Files (x86)\Steam");
-            if default_path.exists() {
-                self.steam_path = Some(default_path.clone());
-                Ok(default_path)
-            } else {
-                Err(Error::SteamNotFound)
-            }
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    pub fn find_steam(&mut self) -> Result<PathBuf, Error> {
-        Err(Error::GamePathNotSet)
+        Ok(steam_dir)
     }
 
     pub fn find_game(&mut self) -> Result<PathBuf, Error> {
-        self.find_steam()?;
-        if let Some(steam_path) = &self.steam_path {
-            let vdf_path = steam_path.join("steamapps").join("libraryfolders.vdf");
-            let content = fs::read_to_string(&vdf_path)?;
-            let lib_folders: LibraryFolders = keyvalues_serde::from_str(&content)?;
+        let steam_dir = self.find_steam()?;
+        let (game, library) = steam_dir
+            .find_app(DEADLOCK_APP_ID)
+            .map_err(|_| Error::GameNotFound)?
+            .ok_or(Error::GameNotFound)?;
 
-            // Check each library folder for Deadlock
-            for (_key, folder) in lib_folders {
-                if folder.apps.contains_key(DEADLOCK_APP_ID) {
-                    // Found the library containing Deadlock
-                    let library_path = PathBuf::from(folder.path);
-                    let manifest_path = library_path
-                        .join("steamapps")
-                        .join(format!("appmanifest_{}.acf", DEADLOCK_APP_ID));
-
-                    // Read the manifest to get the install directory name
-                    let manifest_content = fs::read_to_string(manifest_path)?;
-                    let app_manifest: AppManifest = keyvalues_serde::from_str(&manifest_content)?;
-
-                    let game_path = library_path
-                        .join("steamapps")
-                        .join("common")
-                        .join(app_manifest.installdir);
-
-                    if game_path.exists() {
-                        log::info!("Game path found: {:?}", game_path);
-                        self.game_path = Some(game_path.clone());
-                        return Ok(game_path);
-                    }
-                }
-            }
+        let game_path = library.resolve_app_dir(&game);
+        if game_path.exists() {
+            log::info!("Game path found: {:?}", game_path);
+            self.game_path = Some(game_path.clone());
+            return Ok(game_path);
         }
 
         Err(Error::GameNotFound)
@@ -447,13 +391,7 @@ impl ModManager {
     pub fn run_game(&mut self, vanilla: bool, additional_args: String) -> Result<(), Error> {
         self.find_game()?;
 
-        if let Some(steam_path) = &self.steam_path {
-            let steam_exe = steam_path.join("steam.exe");
-
-            if !steam_exe.exists() {
-                return Err(Error::SteamNotFound);
-            }
-
+        if let Some(_steam_dir) = &self.steam_dir {
             if vanilla {
                 log::info!("Disabling mods...");
             } else {
@@ -466,7 +404,16 @@ impl ModManager {
             let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
             log::info!("Launching game with URI: {}", steam_uri);
 
-            std::process::Command::new(steam_exe)
+            #[cfg(target_os = "windows")]
+            std::process::Command::new("cmd")
+                .arg("/C")
+                .arg("start")
+                .arg(steam_uri)
+                .spawn()
+                .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+
+            #[cfg(target_os = "linux")]
+            std::process::Command::new("xdg-open")
                 .arg(steam_uri)
                 .spawn()
                 .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
@@ -502,7 +449,7 @@ impl ModManager {
     pub fn open_mods_folder(&self) -> Result<(), Error> {
         if let Some(game_path) = &self.game_path {
             let addons_path = game_path.join("game").join("citadel").join("addons");
-            utils::show_in_folder_windows(&addons_path.to_string_lossy().to_string())
+            utils::show_in_folder(&addons_path.to_string_lossy().to_string())
         } else {
             Err(Error::GamePathNotSet)
         }
@@ -510,7 +457,7 @@ impl ModManager {
 
     pub fn open_game_folder(&self) -> Result<(), Error> {
         if let Some(game_path) = &self.game_path {
-            utils::show_in_folder_windows(&game_path.to_string_lossy().to_string())
+            utils::show_in_folder(&game_path.to_string_lossy().to_string())
         } else {
             Err(Error::GamePathNotSet)
         }
