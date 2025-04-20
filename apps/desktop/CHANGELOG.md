@@ -1,5 +1,16 @@
 # desktop
 
+## 0.3.0
+
+### Minor Changes
+
+- UI refactor + better download management
+
+### Patch Changes
+
+- Updated dependencies
+  - @deadlock-mods/utils@1.1.0
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # api
 
+## 0.4.0
+
+### Minor Changes
+
+- UI refactor + better download management
+
+### Patch Changes
+
+- Updated dependencies
+  - @deadlock-mods/database@1.1.0
+  - @deadlock-mods/utils@1.1.0
+
 ## 0.3.0
 
 ### Minor Changes
