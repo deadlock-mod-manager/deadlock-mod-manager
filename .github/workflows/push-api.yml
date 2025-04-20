@@ -69,12 +69,3 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:${{ env.version }}
             ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:latest
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Setup ArgoCD CLI
-        run: |
-          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-          rm argocd-linux-amd64
-      - name: Synchronize API
-        run: |
-          argocd app sync deadlock-mod-manager --auth-token "${{ secrets.ARGOCD_TOKEN }}" --server ${{ secrets.ARGOCD_SERVER }} --grpc-web --resource *:Deployment:deadlock-mod-manager-web --replace --force
