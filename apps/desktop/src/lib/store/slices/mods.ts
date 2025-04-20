@@ -6,8 +6,14 @@ import { State } from '..';
 
 const logger = createLogger('mods-state');
 
+export interface ModProgress {
+  percentage: number;
+  speed?: number;
+}
+
 export interface ModsState {
   mods: LocalMod[];
+  modProgress: Record<string, ModProgress>;
   addMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
@@ -16,6 +22,7 @@ export interface ModsState {
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
   setInstalledVpks: (remoteId: string, vpks: string[]) => void;
+  getModProgress: (remoteId: string) => ModProgress | undefined;
 }
 
 export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
@@ -32,8 +39,9 @@ export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
   return current;
 };
 
-export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => ({
+export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get) => ({
   mods: [],
+  modProgress: {},
   addMod: (mod, additional) =>
     set((state) => {
       if (state.mods.some((m) => m.id === mod.id)) return state;
@@ -54,18 +62,28 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set) => 
         path: mod.remoteId === remoteId ? path : mod.path
       }))
     })),
-  removeMod: (remoteId) => set((state) => ({ mods: state.mods.filter((mod) => mod.remoteId !== remoteId) })),
+  removeMod: (remoteId) => 
+    set((state) => {
+      const newProgress = { ...state.modProgress };
+      delete newProgress[remoteId];
+      return { 
+        mods: state.mods.filter((mod) => mod.remoteId !== remoteId),
+        modProgress: newProgress
+      };
+    }),
   setMods: (mods) => set({ mods }),
-  clearMods: () => set({ mods: [] }),
+  clearMods: () => set({ mods: [], modProgress: {} }),
   setModProgress: (remoteId, progress) =>
     set((state) => ({
-      mods: state.mods.map((mod) => ({
-        ...mod,
-        progress:
-          mod.remoteId === remoteId ? ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100 : mod.progress,
-        speed: mod.remoteId === remoteId ? progress?.transferSpeed : mod.speed
-      }))
+      modProgress: {
+        ...state.modProgress,
+        [remoteId]: {
+          percentage: ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
+          speed: progress?.transferSpeed
+        }
+      }
     })),
+  getModProgress: (remoteId) => get().modProgress[remoteId],
   setInstalledVpks: (remoteId: string, vpks: string[]) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({

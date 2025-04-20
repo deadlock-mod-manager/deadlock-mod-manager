@@ -19,8 +19,6 @@ export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
   path?: string;
-  progress?: number;
-  speed?: number;
   downloads?: ModDownloadDto;
   installedVpks?: string[];
 }

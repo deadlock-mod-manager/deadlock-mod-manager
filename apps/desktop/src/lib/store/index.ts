@@ -19,16 +19,12 @@ export const usePersistedStore = create<State>()(
       version: 1,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
-      // TODO: exclude callbacks from persisted state
-      // TODO: remove progress from persisted state
-      partialize: (state) => ({
-        ...state,
-        mods: state.mods.map((mod) => ({
-          ...mod,
-          progress: 0,
-          speed: 0
-        }))
-      })
+      partialize: (state) => {
+        // Only include stable state that should be persisted
+        // Completely exclude modProgress from persistence to avoid spamming storage
+        const { modProgress, ...rest } = state;
+        return rest;
+      }
     }
   )
 );

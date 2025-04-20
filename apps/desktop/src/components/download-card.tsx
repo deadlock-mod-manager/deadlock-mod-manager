@@ -1,3 +1,4 @@
+import { usePersistedStore } from '@/lib/store';
 import { formatSize, formatSpeed } from '@/lib/utils';
 import { LocalMod } from '@/types/mods';
 import { FolderOpen } from '@phosphor-icons/react';
@@ -13,8 +14,10 @@ interface DownloadCardProps {
 }
 
 const DownloadCard = ({ download }: DownloadCardProps) => {
-  const progress = download.progress ?? 0;
-  const speed = download.speed ?? 0;
+  const { getModProgress } = usePersistedStore();
+  const modProgress = getModProgress(download.remoteId);
+  const percentage = modProgress?.percentage ?? 0;
+  const speed = modProgress?.speed ?? 0;
   const totalSize = useMemo(() => {
     return download.downloads?.reduce((acc, curr) => acc + curr.size, 0) ?? 0;
   }, [download.downloads]);
@@ -25,9 +28,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
         <h3 className="text-lg font-semibold">{download.name}</h3>
         <span className="text-sm text-muted-foreground">{formatSize(totalSize)}</span>
       </div>
-      <Progress value={download.progress} className="mb-2" />
+      <Progress value={percentage} className="mb-2" />
       <div className="flex justify-between items-center text-sm">
-        <span>{progress.toFixed(1)}%</span>
+        <span>{percentage.toFixed(1)}%</span>
         <span>{formatSpeed(speed)}</span>
         <div className="flex items-center gap-2">
           <Tooltip>

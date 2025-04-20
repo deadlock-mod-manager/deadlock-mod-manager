@@ -16,7 +16,7 @@ export const Toolbar = () => {
   const { data: isRunning, refetch } = useQuery({
     queryKey: ['is-game-running'],
     queryFn: () => isGameRunning(),
-    refetchInterval: 500
+    refetchInterval: 5000
   });
 
   return (

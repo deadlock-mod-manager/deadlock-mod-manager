@@ -16,7 +16,7 @@ const useInstall = () => {
       options.onStart(mod);
 
       if (!mod.path) {
-        throw new Error('Mod is not downloaded!');
+        throw new Error('Mod is not downloaded! Might be corrupted.');
       }
 
       if (mod.status === ModStatus.INSTALLED) {

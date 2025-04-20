@@ -2,6 +2,7 @@ use crate::errors::Error;
 use crate::utils;
 use keyvalues_serde;
 use log;
+use regex;
 use serde::{Deserialize, Serialize};
 use sevenz_rust;
 use std::collections::HashMap;
@@ -283,13 +284,41 @@ impl ModManager {
         }
     }
 
+    fn find_highest_vpk_number(&self, addons_path: &std::path::Path) -> Result<u32, Error> {
+        let mut highest = 0;
+
+        if addons_path.exists() {
+            for entry in fs::read_dir(addons_path)? {
+                let entry = entry?;
+                let path = entry.path();
+
+                if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
+                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        if let Some(captures) = regex::Regex::new(r"pak(\d+)_dir\.vpk")
+                            .unwrap()
+                            .captures(name)
+                        {
+                            if let Ok(num) = captures[1].parse::<u32>() {
+                                highest = highest.max(num);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(highest)
+    }
+
     fn copy_vpks_from_temp(
         &self,
         temp_dir: &std::path::Path,
         mod_files_path: &std::path::Path,
     ) -> Result<Vec<String>, Error> {
         let mut installed_vpks = Vec::new();
+        let mut vpk_files = Vec::new();
 
+        // First collect all VPK files
         for entry in fs::read_dir(temp_dir)? {
             let entry = entry?;
             let path = entry.path();
@@ -298,11 +327,26 @@ impl ModManager {
                 let mut sub_vpks = self.copy_vpks_from_temp(&path, mod_files_path)?;
                 installed_vpks.append(&mut sub_vpks);
             } else if path.extension().map_or(false, |ext| ext == "vpk") {
-                let vpk_name = path.file_name().unwrap().to_string_lossy().to_string();
-                fs::copy(&path, mod_files_path.join(&vpk_name))?;
-                installed_vpks.push(vpk_name);
+                vpk_files.push(path);
             }
         }
+
+        // Sort VPK files to ensure consistent ordering
+        vpk_files.sort();
+
+        // Get the highest existing VPK number
+        let mut current_number = self.find_highest_vpk_number(mod_files_path)?;
+
+        // Copy and rename VPK files with sequential numbering
+        for vpk_path in vpk_files {
+            current_number += 1;
+            let new_name = format!("pak{:02}_dir.vpk", current_number);
+            let new_path = mod_files_path.join(&new_name);
+
+            fs::copy(&vpk_path, &new_path)?;
+            installed_vpks.push(new_name);
+        }
+
         Ok(installed_vpks)
     }
 
