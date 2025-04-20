@@ -89,7 +89,7 @@ This monorepo includes the following packages/apps:
 
 ### Packages
 
-- `@deadlock-mods/database`: [Prisma](https://prisma.io/) ORM wrapper to manage & access the database
+- `@deadlock-mods/database`: [Drizzle ORM](https://orm.drizzle.team/) wrapper to manage & access the database
 - `@deadlock-mods/utils`: Shared utilities
 - `@deadlock-mods/eslint-config`: ESLint configurations
 - `@deadlock-mods/typescript-config`: TypeScript configurations
@@ -120,7 +120,7 @@ cp .env.example .env
 3. Run the migrations:
 
 ```bash
-pnpm db:migrate:deploy
+pnpm db:push
 ```
 
 4. Run the API server:
@@ -147,7 +147,7 @@ pnpm dev
 
 - Cross-platform desktop application (Windows, macOS, Linux)
 - Modern UI with [shadcn/ui](https://ui.shadcn.com/)
-- Database integration with Prisma
+- Database integration with [Drizzle ORM](https://orm.drizzle.team/)
 - Type-safe development with TypeScript
 - Consistent code style with ESLint and Prettier
 
@@ -195,7 +195,7 @@ This project was only possible thanks to the amazing open source community, espe
 - [Tauri](https://tauri.app/)
 - [Hono](https://hono.dev/)
 - [Bun](https://bun.sh/)
-- [Prisma](https://prisma.io/)
+- [Drizzle ORM](https://orm.drizzle.team/)
 - [shadcn/ui](https://ui.shadcn.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
