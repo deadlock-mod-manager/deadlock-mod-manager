@@ -1,13 +1,13 @@
-import { prisma } from '@deadlock-mods/database'
+import { customSettings, db } from '@deadlock-mods/database'
 import { toCustomSettingDto } from '@deadlock-mods/utils'
 import { Hono } from 'hono'
 
-const customSettings = new Hono()
+const customSettingsRouter = new Hono()
 
-customSettings.get('/', async (c) => {
-  const customSettings = await prisma.customSetting.findMany()
+customSettingsRouter.get('/', async (c) => {
+  const settings = await db.select().from(customSettings)
   await new Promise((resolve) => setTimeout(resolve, 1000))
-  return c.json(customSettings.map(toCustomSettingDto))
+  return c.json(settings.map(toCustomSettingDto))
 })
 
-export default customSettings
+export default customSettingsRouter

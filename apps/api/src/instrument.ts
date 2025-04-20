@@ -3,5 +3,4 @@ import { SENTRY_OPTIONS } from './lib/constants'
 
 Sentry.init({
   ...SENTRY_OPTIONS,
-  integrations: [Sentry.prismaIntegration()]
 })

@@ -1,4 +1,4 @@
-import { Mod } from '@prisma/client'
+import { Mod } from '@deadlock-mods/database'
 import Logger from '../logger'
 
 export abstract class Provider<T> {

@@ -7,9 +7,9 @@ import { logger } from 'hono/logger'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
 import { trimTrailingSlash } from 'hono/trailing-slash'
-import customSettings from './lib/custom-settings'
+import customSettingsRouter from './lib/custom-settings'
 import { startJobs } from './lib/jobs'
-import mods from './lib/mods'
+import modsRouter from './lib/mods'
 
 import { sentry } from '@hono/sentry'
 import { SENTRY_OPTIONS } from './lib/constants'
@@ -32,8 +32,8 @@ app.get('/', (c) => {
     health: 'ok'
   })
 })
-app.route('/mods', mods)
-app.route('/custom-settings', customSettings)
+app.route('/mods', modsRouter)
+app.route('/custom-settings', customSettingsRouter)
 
 startJobs()
 

@@ -1,5 +1,6 @@
-import { Mod, Prisma, prisma } from '@deadlock-mods/database'
+import { Mod, NewMod, db, modDownloads, mods } from '@deadlock-mods/database'
 import { GameBanana, guessHero } from '@deadlock-mods/utils'
+import { eq } from 'drizzle-orm'
 import { Provider, providerRegistry } from './registry'
 
 export const DEADLOCK_GAME_ID = 20948 // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
@@ -165,7 +166,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource
-  ): Promise<Prisma.ModUpsertArgs['create']> {
+  ): Promise<NewMod> {
     switch (source) {
       case 'featured': {
         const submission = mod as GameBanana.GameBananaSubmission
@@ -174,9 +175,9 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           name: submission._sName,
           tags: parseTags(submission._aTags),
           author: submission._aSubmitter._sName,
-          likes: submission._nLikeCount,
+          likes: submission._nLikeCount ?? 0,
           hero: guessHero(submission._sName),
-          downloadCount: submission._nViewCount,
+          downloadCount: submission._nViewCount ?? 0,
           remoteUrl: submission._sProfileUrl,
           category: submission._sModelName,
           downloadable: submission._bHasFiles,
@@ -229,55 +230,38 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     this.logger.debug('Creating/updating mod', { modId: mod._idRow.toString(), source })
     try {
       const payload = await this.createModPayload(mod, source)
-      const dbMod = await prisma.mod.upsert({
-        where: {
-          remoteId: mod._idRow.toString()
-        },
-        create: payload,
-        update: {
-          name: payload.name,
-          tags: payload.tags,
-          hero: payload.hero,
-          author: payload.author,
-          likes: payload.likes,
-          downloadCount: payload.downloadCount,
-          images: payload.images,
-          remoteUpdatedAt: payload.remoteUpdatedAt
-        }
-      })
+      
+      // Check if mod exists
+      const existingMod = await db.select().from(mods).where(eq(mods.remoteId, mod._idRow.toString())).limit(1)
+      
+      let dbMod: Mod
+      
+      if (existingMod.length === 0) {
+        // Create new mod
+        const result = await db.insert(mods).values(payload).returning()
+        dbMod = result[0]
+      } else {
+        // Update existing mod
+        const result = await db.update(mods)
+          .set({
+            name: payload.name,
+            tags: payload.tags,
+            hero: payload.hero,
+            author: payload.author,
+            likes: payload.likes,
+            downloadCount: payload.downloadCount,
+            images: payload.images,
+            remoteUpdatedAt: payload.remoteUpdatedAt
+          })
+          .where(eq(mods.remoteId, mod._idRow.toString()))
+          .returning()
+          
+        dbMod = result[0]
+      }
+      
       this.logger.debug('Mod upserted successfully', { modId: dbMod.id })
 
-      const download = await this.getModDownload(dbMod.remoteId)
-
-      if (!download || !download._aFiles) {
-        this.logger.warn('No download found for mod', { modId: dbMod.id, remoteId: dbMod.remoteId })
-        return dbMod
-      }
-
-      this.logger.debug('Processing mod downloads', { modId: dbMod.id, fileCount: download._aFiles.length })
-      for (const file of download._aFiles) {
-        await prisma.modDownload.upsert({
-          where: {
-            modId_remoteId: {
-              modId: dbMod.id,
-              remoteId: file._idRow.toString()
-            }
-          },
-          create: {
-            remoteId: file._idRow.toString(),
-            url: file._sDownloadUrl,
-            file: file._sFile,
-            size: file._nFilesize,
-            modId: dbMod.id
-          },
-          update: {}
-        })
-        this.logger.debug('Synchronized mod download', {
-          modId: dbMod.id,
-          fileName: file._sFile,
-          fileSize: file._nFilesize
-        })
-      }
+      await this.refreshModDownloads(dbMod)
 
       return dbMod
     } catch (error) {
@@ -289,6 +273,131 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       throw error
     }
   }
+
+  async refreshModDownloads(dbMod: Mod): Promise<void> {
+    try {
+      const download = await this.getModDownload(dbMod.remoteId)
+
+      if (!download || !download._aFiles || download._aFiles.length === 0) {
+        this.logger.warn('No download found for mod', { modId: dbMod.id, remoteId: dbMod.remoteId })
+        return
+      }
+
+      this.logger.debug('Processing mod downloads', { modId: dbMod.id, fileCount: download._aFiles.length })
+      
+      // Since a mod can only have one download, we need to select the most appropriate file
+      // We'll prioritize by size (largest first) as it's likely the main mod file
+      const sortedFiles = [...download._aFiles].sort((a, b) => b._nFilesize - a._nFilesize)
+      const primaryFile = sortedFiles[0]
+      
+      // Check if a download already exists for this mod
+      const existingDownloads = await db.select()
+        .from(modDownloads)
+        .where(eq(modDownloads.modId, dbMod.id))
+      
+      if (existingDownloads.length > 0) {
+        const existingDownload = existingDownloads[0]
+        
+        // Only update if something changed
+        if (existingDownload.remoteId !== primaryFile._idRow.toString() ||
+            existingDownload.url !== primaryFile._sDownloadUrl || 
+            existingDownload.file !== primaryFile._sFile || 
+            existingDownload.size !== primaryFile._nFilesize) {
+          
+          await db.update(modDownloads)
+            .set({
+              remoteId: primaryFile._idRow.toString(),
+              url: primaryFile._sDownloadUrl,
+              file: primaryFile._sFile,
+              size: primaryFile._nFilesize
+            })
+            .where(eq(modDownloads.modId, dbMod.id))
+          
+          this.logger.debug('Updated mod download', {
+            modId: dbMod.id,
+            fileName: primaryFile._sFile,
+            fileSize: primaryFile._nFilesize
+          })
+        } else {
+          this.logger.debug('Mod download is already up to date', {
+            modId: dbMod.id,
+            fileName: primaryFile._sFile
+          })
+        }
+      } else {
+        // Create new download
+        await db.insert(modDownloads).values({
+          remoteId: primaryFile._idRow.toString(),
+          url: primaryFile._sDownloadUrl,
+          file: primaryFile._sFile,
+          size: primaryFile._nFilesize,
+          modId: dbMod.id
+        })
+        
+        this.logger.debug('Added mod download', {
+          modId: dbMod.id,
+          fileName: primaryFile._sFile,
+          fileSize: primaryFile._nFilesize
+        })
+      }
+      
+      this.logger.info('Refreshed mod download successfully', {
+        modId: dbMod.id,
+        fileName: primaryFile._sFile
+      })
+    } catch (error) {
+      this.logger.error('Failed to refresh mod downloads', {
+        error,
+        modId: dbMod.id,
+        remoteId: dbMod.remoteId
+      })
+      throw error
+    }
+  }
+
+  // Public method to get a mod by ID
+  async getModById(modId: string): Promise<Mod | null> {
+    const modRecord = await db.select().from(mods).where(eq(mods.id, modId)).limit(1)
+    return modRecord.length > 0 ? modRecord[0] : null
+  }
+
+  // Public method to refresh all mods' downloads
+  async refreshAllModDownloads(): Promise<void> {
+    const allMods = await db.select().from(mods)
+    
+    this.logger.info('Starting refresh of all mod downloads', { count: allMods.length })
+    
+    for (const mod of allMods) {
+      try {
+        await this.refreshModDownloads(mod)
+        this.logger.info('Refreshed mod downloads', { modId: mod.id, name: mod.name })
+      } catch (error) {
+        this.logger.error('Failed to refresh mod downloads', { error, modId: mod.id, name: mod.name })
+        // Continue with other mods even if one fails
+      }
+    }
+    
+    this.logger.info('Completed refreshing all mod downloads', { count: allMods.length })
+  }
 }
 
 providerRegistry.registerProvider('gamebanana', GameBananaProvider)
+
+// Add a public method to refresh downloads for mods
+export async function refreshModDownloads(modId?: string): Promise<void> {
+  const provider = providerRegistry.getProvider('gamebanana') as GameBananaProvider
+  
+  if (modId) {
+    // Refresh a specific mod's downloads
+    const mod = await provider.getModById(modId)
+    
+    if (!mod) {
+      throw new Error(`Mod with ID ${modId} not found`)
+    }
+    
+    await provider.refreshModDownloads(mod)
+  } else {
+    // Refresh all mods' downloads
+    await provider.refreshAllModDownloads()
+  }
+}

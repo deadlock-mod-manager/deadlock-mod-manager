@@ -20,6 +20,7 @@
 		},
 		"rust-analyzer.linkedProjects": [
 			"apps/desktop/src-tauri/Cargo.toml"
-		]
+		],
+		"typescript.tsdk": "node_modules\\typescript\\lib"
 	}
 }
