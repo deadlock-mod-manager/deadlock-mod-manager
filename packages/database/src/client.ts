@@ -1,12 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './schema';
 
-declare global {
-  var prisma: PrismaClient;
-}
+// For direct usage
+const connectionString = process.env.DATABASE_URL || '';
+export const db = drizzle(connectionString, { schema });
 
-export const prisma = global.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") global.prisma = prisma;
-
-export * from "@prisma/client";
-
+// Types re-export
+export * from './schema';

@@ -5,27 +5,26 @@
     ".": "./src/client.ts"
   },
   "scripts": {
-    "db:migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
-    "db:migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
-    "db:push": "dotenv -e ../../.env -- prisma db push",
+    "db:migrate": "dotenv -e ../../.env -- drizzle-kit migrate",
+    "db:generate": "dotenv -e ../../.env -- drizzle-kit generate",
+    "db:push": "dotenv -e ../../.env -- drizzle-kit push",
+    "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
     "db:seed": "dotenv -e ../../.env -- tsx src/seed.ts",
     "dev": "tsup src/* --watch",
-    "format": "prisma format",
-    "generate": "prisma generate",
-    "lint": "eslint . --max-warnings 0",
-    "prebuild": "npm run generate",
-    "predev": "npm run generate",
-    "studio": "prisma studio"
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.2",
-    "@tauri-apps/plugin-fs": "^2.2.0"
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.42.0",
+    "pg": "^8.14.1"
   },
   "devDependencies": {
     "@deadlock-mods/eslint-config": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/node": "^20.11.24",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.31.0",
     "eslint": "^8.57.0",
-    "prisma": "^5.10.2",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "tsx": "4.19.1",

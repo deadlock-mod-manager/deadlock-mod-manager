@@ -1,4 +1,4 @@
-import { Mod, ModDownload } from "@deadlock-mods/database"
+import type { Mod, ModDownload } from "@deadlock-mods/database"
 
 export const toModDto = (mod: Mod) => {
   return mod
