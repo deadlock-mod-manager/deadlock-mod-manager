@@ -404,70 +404,63 @@ impl ModManager {
     pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
         log::info!("Starting installation of mod: {}", deadlock_mod.name);
 
+
         if !deadlock_mod.path.exists() {
             return Err(Error::ModFileNotFound);
         }
-
         if !self.game_setup {
             log::info!("Setting up game for mods...");
             self.setup_game_for_mods()?;
         }
-
         if self.mods.contains_key(&deadlock_mod.id) {
             log::warn!("Mod {} already installed", deadlock_mod.name);
             return Err(Error::ModAlreadyInstalled(deadlock_mod.name));
         }
-
         if let Some(game_path) = &self.game_path {
             let mod_files_path = deadlock_mod.path.join("files");
-            log::info!("Creating mod files directory at: {:?}", mod_files_path);
+
+            // clear per-mod cache
+            if mod_files_path.exists() {
+                log::info!("Clearing existing mod cache at: {:?}", mod_files_path);
+                fs::remove_dir_all(&mod_files_path)?;
+            }
             fs::create_dir_all(&mod_files_path)?;
+            log::info!("Created mod files directory at: {:?}", mod_files_path);
 
+            // unpack archives into cache, collect VPK names
             let mut all_vpks = Vec::new();
-
             for entry in fs::read_dir(&deadlock_mod.path)? {
                 let entry = entry?;
                 let path = entry.path();
 
                 let temp_dir = tempfile::tempdir()?;
-                log::info!("Processing file: {:?}", path);
+                log::info!("Processing archive: {:?}", path);
 
-                match path.extension().and_then(|ext| ext.to_str()) {
-                    Some("zip") => {
-                        log::info!("Extracting ZIP file...");
-                        self.extract_zip(&path, temp_dir.path())?
-                    }
-                    Some("rar") => {
-                        log::info!("Extracting RAR file...");
-                        self.extract_rar(&path, temp_dir.path())?
-                    }
-                    Some("7z") => {
-                        log::info!("Extracting 7Z file...");
-                        self.extract_7z(&path, temp_dir.path())?
-                    }
+                match path.extension().and_then(|e| e.to_str()) {
+                    Some("zip") => self.extract_zip(&path, temp_dir.path())?,
+                    Some("rar") => self.extract_rar(&path, temp_dir.path())?,
+                    Some("7z")  => self.extract_7z(&path, temp_dir.path())?,
                     _ => continue,
                 }
 
-                log::info!("Copying VPK files to mod directory...");
+                log::info!("Copying VPKs to mod cache…");
                 let mut vpks = self.copy_vpks_from_temp(temp_dir.path(), &mod_files_path)?;
                 all_vpks.append(&mut vpks);
             }
-
             if all_vpks.is_empty() {
                 log::error!("No VPK files found in mod");
                 return Err(Error::ModInvalid("No VPK files found in mod".into()));
             }
 
+            // append into game addons and record
             let addons_path = game_path.join("game").join("citadel").join("addons");
-            log::info!("Installing VPK files to game addons: {:?}", addons_path);
-            self.copy_vpks_from_temp(&mod_files_path, &addons_path)?;
+            log::info!("Installing VPKs to game addons: {:?}", addons_path);
+            let installed_vpks = self.copy_vpks_from_temp(&mod_files_path, &addons_path)?;
 
-            // Store the list of installed VPKs
-            deadlock_mod.installed_vpks = all_vpks;
 
+            deadlock_mod.installed_vpks = installed_vpks;
             log::info!("Adding mod to managed mods list");
-            self.mods
-                .insert(deadlock_mod.id.clone(), deadlock_mod.clone());
+            self.mods.insert(deadlock_mod.id.clone(), deadlock_mod.clone());
 
             log::info!("Mod installation completed successfully");
             Ok(deadlock_mod)
@@ -477,10 +470,17 @@ impl ModManager {
         }
     }
 
+
     pub fn toggle_mods(&mut self, vanilla: bool) -> Result<(), Error> {
         if let Some(game_path) = &self.game_path {
-            let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+            let gameinfo_path = game_path
+                .join("game")
+                .join("citadel")
+                .join("gameinfo.gi");
             self.modify_search_paths(&gameinfo_path, vanilla)?;
+            if vanilla {
+                self.clear_mods()?;
+            }
         } else {
             log::error!("Game path not set");
             return Err(Error::GamePathNotSet);
@@ -500,6 +500,7 @@ impl ModManager {
 
             if vanilla {
                 log::info!("Disabling mods...");
+                
             } else {
                 log::info!("Enabling mods...");
             }
