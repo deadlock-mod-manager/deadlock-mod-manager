@@ -27,7 +27,11 @@ const useUninstall = () => {
 
       if (mod.status === ModStatus.INSTALLED) {
         logger.info('Uninstalling mod', { modId: mod.remoteId, vpks: mod.installedVpks });
-        await invoke('uninstall_mod', { modId: mod.remoteId, vpks: mod.installedVpks ?? [] });
+        if (remove) {
+          await invoke('purge_mod', { modId: mod.remoteId, vpks: mod.installedVpks ?? [] });
+        } else {
+          await invoke('uninstall_mod', { modId: mod.remoteId, vpks: mod.installedVpks ?? [] });
+        }
         setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
       }
 
