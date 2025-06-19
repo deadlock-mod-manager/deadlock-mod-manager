@@ -33,10 +33,15 @@ const CustomSettingsData = () => {
     {} as Record<CustomSettingType, CustomSettingDto[]>
   );
 
-  const customLocalSettings = Object.values(settings).filter((setting) => setting.id.startsWith('local_setting_'));
+  const customLocalSettings = Object.values(settings).filter((setting) =>
+    setting.id.startsWith('local_setting_')
+  );
   const customLocalSettingsByType = customLocalSettings.reduce(
     (acc, setting) => {
-      acc[setting.type as CustomSettingType] = [...(acc[setting.type as CustomSettingType] ?? []), setting];
+      acc[setting.type as CustomSettingType] = [
+        ...(acc[setting.type as CustomSettingType] ?? []),
+        setting as LocalSetting
+      ];
       return acc;
     },
     {} as Record<CustomSettingType, LocalSetting[]>
@@ -76,8 +81,30 @@ const CustomSettingsData = () => {
 };
 
 const CustomSettings = () => {
-  const { clearMods } = usePersistedStore();
+  const { clearMods, mods } = usePersistedStore();
   const confirm = useConfirm();
+
+  const clearAllMods = async () => {
+    if (!(await confirm('Are you sure you want to clear all mods? This action cannot be undone.'))) {
+      return;
+    }
+    try {
+      await Promise.all(
+        mods.map((mod) =>
+          invoke('purge_mod', {
+            modId: mod.remoteId,
+            vpks: mod.installedVpks ?? []
+          })
+        )
+      );
+      clearMods();
+      toast.success('All mods have been cleared');
+    } catch (error) {
+      logger.error(error);
+      toast.error('Failed to clear mods');
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-160px)] overflow-y-auto px-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
       <PageTitle
@@ -121,23 +148,11 @@ const CustomSettings = () => {
             <FolderOpen className="w-4 h-4" />
             Open Mods Folder
           </Button>
-          <Button
-            className="w-fit"
-            variant="destructive"
-            onClick={async () => {
-              if (await confirm('Are you sure you want to clear all mods? This action cannot be undone.')) {
-                invoke('clear_mods')
-                  .then(() => {
-                    clearMods();
-                    toast.success('All mods have been cleared');
-                  })
-                  .catch((error) => {
-                    logger.error(error);
-                    toast.error('Failed to clear mods');
-                  });
-              }
-            }}
-          >
+          <Button className="w-fit" variant="outline" onClick={() => invoke('open_mods_store')}>
+            <FolderOpen className="w-4 h-4" />
+            Open Mods Store
+          </Button>
+          <Button className="w-fit" variant="destructive" onClick={clearAllMods}>
             <TrashIcon className="w-4 h-4" />
             Clear All Mods
           </Button>
