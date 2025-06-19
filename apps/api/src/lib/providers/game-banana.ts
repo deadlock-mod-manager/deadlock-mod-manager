@@ -250,6 +250,9 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
             author: payload.author,
             likes: payload.likes,
             downloadCount: payload.downloadCount,
+            remoteUrl:      payload.remoteUrl,
+            category:       payload.category,
+            downloadable:   payload.downloadable,
             images: payload.images,
             remoteUpdatedAt: payload.remoteUpdatedAt
           })
