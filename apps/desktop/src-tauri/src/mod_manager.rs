@@ -561,6 +561,18 @@ impl ModManager {
         }
     }
 
+    pub fn open_mods_store(&self) -> Result<(), Error> {
+        let local_appdata = std::env::var("LOCALAPPDATA")
+            .map_err(|_| Error::GamePathNotSet)?;
+        let mods_path = std::path::PathBuf::from(local_appdata)
+            .join("dev.stormix.deadlock-mod-manager")
+            .join("mods");
+        if !mods_path.exists() {
+            return Err(Error::GamePathNotSet); 
+        }
+        utils::show_in_folder_windows(&mods_path.to_string_lossy().to_string())
+    }
+
     pub fn uninstall_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
         log::info!("Uninstalling mod: {}", mod_id);
         if let Some(game_path) = &self.game_path {
@@ -595,6 +607,65 @@ impl ModManager {
             Err(Error::GamePathNotSet)
         }
     }
+
+    pub fn purge_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+        log::info!("Uninstalling mod: {}", mod_id);
+
+        if let Some(game_path) = &self.game_path {
+            // Determine the path to the game's addon directory
+            let addons_path = game_path.join("game").join("citadel").join("addons");
+            if !addons_path.exists() {
+                return Err(Error::GamePathNotSet);
+            }
+
+            // If the mod is tracked in memory, remove its VPKs; otherwise use provided list
+            if let Some(local_mod) = self.mods.remove(&mod_id) {
+                log::info!("Mod found in memory: {}", local_mod.name);
+                for vpk in local_mod.installed_vpks {
+                    let path = addons_path.join(&vpk);
+                    if path.exists() {
+                        log::info!("Removing VPK file: {:?}", path);
+                        std::fs::remove_file(path)?;
+                    }
+                }
+            } else {
+                // Remove each VPK passed in as argument
+                for vpk in vpks {
+                    let path = addons_path.join(&vpk);
+                    if path.exists() {
+                        log::info!("Removing VPK file: {:?}", path);
+                        std::fs::remove_file(path)?;
+                    }
+                }
+            }
+
+            // Remove the mod's folder from user's local app data
+            match std::env::var("LOCALAPPDATA") {
+                Ok(local_appdata) => {
+                    let user_mod_dir = std::path::PathBuf::from(local_appdata)
+                        .join("dev.stormix.deadlock-mod-manager")
+                        .join("mods")
+                        .join(&mod_id);
+                    if user_mod_dir.exists() {
+                        log::info!("Removing user-mod folder: {:?}", user_mod_dir);
+                        std::fs::remove_dir_all(&user_mod_dir)?;
+                    } else {
+                        log::warn!("User-mod folder not found, skipping: {:?}", user_mod_dir);
+                    }
+                }
+                Err(_) => {
+                    log::warn!("LOCALAPPDATA not set; cannot remove user-mod folder");
+                }
+            }
+
+            Ok(())
+        } else {
+            // Game path was not configured
+            Err(Error::GamePathNotSet)
+        }
+    }
+
+
 
     pub fn is_game_running(&mut self) -> Result<bool, Error> {
         match self.check_if_game_running() {
