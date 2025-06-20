@@ -16,6 +16,9 @@ import { FolderOpen, PlusIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { SortType } from '@/lib/constants';
 
 const CustomSettingsData = () => {
   const { data, error } = useQuery('custom-settings', getCustomSettings, { suspense: true });
@@ -84,6 +87,10 @@ const CustomSettings = () => {
   const { clearMods, mods } = usePersistedStore();
   const confirm = useConfirm();
 
+  // Hooks für Default Sort
+  const defaultSort = usePersistedStore((s) => s.defaultSort);
+  const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
+
   const clearAllMods = async () => {
     if (!(await confirm('Are you sure you want to clear all mods? This action cannot be undone.'))) {
       return;
@@ -138,6 +145,30 @@ const CustomSettings = () => {
           <SystemSettings />
         </div>
       </Section>
+
+      <Section title="Default Sort Value" description="Choose the default sort order for the Mods page.">
+        <div className="flex flex-col gap-2">
+          <Label className="text-sm font-bold">Default Sort</Label>
+          <Select
+            value={defaultSort}
+            onValueChange={(v) => setDefaultSort(v as SortType)}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Select default sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Object.values(SortType).map((type) => (
+                  <SelectItem key={type} value={type} className="capitalize">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      </Section>
+
       <Section title="Tools" description="Utility functions for managing your mods">
         <div className="flex gap-4">
           <Button className="w-fit" variant="outline" onClick={() => invoke('open_game_folder')}>
