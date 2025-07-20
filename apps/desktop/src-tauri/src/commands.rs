@@ -50,7 +50,7 @@ pub async fn start_game(vanilla: bool, additional_args: String) -> Result<(), Er
 
 #[tauri::command]
 pub async fn show_in_folder(path: String) -> Result<(), Error> {
-    crate::utils::show_in_folder_windows(&path)
+    crate::utils::show_in_folder(&path)
 }
 
 #[tauri::command]
