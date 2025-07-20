@@ -4,7 +4,7 @@ import { ModStatus } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
 import { CheckIcon, DownloadIcon, Loader2, XIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FiZoomIn } from "react-icons/fi";
+import { FiZoomIn } from 'react-icons/fi';
 import { useNavigate } from 'react-router';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -15,7 +15,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   const status = localMod?.status;
   const navigate = useNavigate();
   const [showLargeImage, setShowLargeImage] = useState(false);
-  
+
   const Icon = useMemo(() => {
     switch (status) {
       case ModStatus.DOWNLOADING:
@@ -57,35 +57,34 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   return (
     <>
       {showLargeImage && mod.images.length > 0 && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-8" onClick={() => setShowLargeImage(false)}>
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-8"
+          onClick={() => setShowLargeImage(false)}
+        >
           <div className="relative bg-background rounded-xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden">
-            <Button 
-              size="icon" 
-              variant="ghost" 
+            <Button
+              size="icon"
+              variant="ghost"
               onClick={() => setShowLargeImage(false)}
               className="absolute top-2 right-2 z-10"
             >
               <XIcon className="h-5 w-5" />
             </Button>
-            <img 
-              src={mod.images[0]} 
-              alt={`${mod.name} (enlarged)`} 
-              className="max-w-full max-h-[90vh] object-contain p-2" 
+            <img
+              src={mod.images[0]}
+              alt={`${mod.name} (enlarged)`}
+              className="max-w-full max-h-[90vh] object-contain p-2"
             />
           </div>
         </div>
       )}
       <Card className="shadow cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
         <div className="relative">
-          <img 
-            src={mod.images[0]} 
-            alt={mod.name} 
-            className="h-48 w-full object-cover rounded-t-xl" 
-          />
+          <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
           {status === ModStatus.INSTALLED ? <Badge className="absolute top-2 right-2">Installed</Badge> : null}
-          <Button 
-            size="icon" 
-            variant="secondary" 
+          <Button
+            size="icon"
+            variant="secondary"
             className="absolute bottom-2 right-2 opacity-80 hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();

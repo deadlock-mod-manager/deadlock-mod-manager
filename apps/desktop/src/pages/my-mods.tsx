@@ -35,14 +35,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
-  
+
   return (
     <Card className="shadow">
-      <div className={cn("relative", isDisabled && "grayscale")}>
-        <div 
-          className="cursor-pointer" 
-          onClick={() => navigate(`/mods/${mod.remoteId}`)}
-        >
+      <div className={cn('relative', isDisabled && 'grayscale')}>
+        <div className="cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
           <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
         </div>
         {mod.status === ModStatus.INSTALLING && (
@@ -54,8 +51,8 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
       <CardHeader className="px-3 py-3 pb-0">
         <div className="flex items-start">
           <div className="flex flex-col">
-            <CardTitle 
-              className="text-ellipsis w-48 overflow-clip text-nowrap cursor-pointer" 
+            <CardTitle
+              className="text-ellipsis w-48 overflow-clip text-nowrap cursor-pointer"
               title={mod.name}
               onClick={() => navigate(`/mods/${mod.remoteId}`)}
             >
@@ -87,7 +84,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
                   onError: (mod, error) => {
                     logger.error('Installation error', { mod: mod.remoteId, error });
                     toast.error(error.message);
-            
+
                     switch (error.kind) {
                       case 'modAlreadyInstalled':
                         setModStatus(mod.remoteId, ModStatus.INSTALLED);
@@ -108,12 +105,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => uninstall(mod, true)}
-              disabled={isInstalling}
-            >
+            <Button variant="outline" size="icon" onClick={() => uninstall(mod, true)} disabled={isInstalling}>
               <Trash className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
@@ -136,15 +128,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   return (
     <Card className="shadow">
       <div className="flex">
-        <div 
-          className={cn("relative h-24 w-24 min-w-24", isDisabled && "grayscale")}
+        <div
+          className={cn('relative h-24 w-24 min-w-24', isDisabled && 'grayscale')}
           onClick={() => navigate(`/mods/${mod.remoteId}`)}
         >
-          <img 
-            src={mod.images[0]} 
-            alt={mod.name} 
-            className="h-full w-full object-cover rounded-l-xl cursor-pointer" 
-          />
+          <img src={mod.images[0]} alt={mod.name} className="h-full w-full object-cover rounded-l-xl cursor-pointer" />
           {mod.status === ModStatus.INSTALLING && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -153,10 +141,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
         </div>
         <div className="flex flex-col justify-between p-3 w-full">
           <div>
-            <h3 
-              className="font-semibold text-lg cursor-pointer" 
-              onClick={() => navigate(`/mods/${mod.remoteId}`)}
-            >
+            <h3 className="font-semibold text-lg cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
               {mod.name}
             </h3>
             <p className="text-sm text-muted-foreground">By {mod.author}</p>
@@ -180,7 +165,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                       },
                       onError: (mod, error) => {
                         logger.error('Installation error', { mod: mod.remoteId, error });
-                
+
                         switch (error.kind) {
                           case 'modAlreadyInstalled':
                             setModStatus(mod.remoteId, ModStatus.INSTALLED);
@@ -201,12 +186,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => uninstall(mod, true)}
-                  disabled={isInstalling}
-                >
+                <Button variant="outline" size="icon" onClick={() => uninstall(mod, true)} disabled={isInstalling}>
                   <Trash className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
@@ -224,12 +204,7 @@ const SimpleSearchBar = ({ query, setQuery }: { query: string; setQuery: (query:
   return (
     <div className="relative w-full max-w-sm">
       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-      <Input
-        placeholder="Search mods"
-        className="pl-8"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <Input placeholder="Search mods" className="pl-8" value={query} onChange={(e) => setQuery(e.target.value)} />
     </div>
   );
 };
@@ -252,8 +227,8 @@ const MyMods = () => {
             <div className="flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant={viewMode === ViewMode.GRID ? "default" : "outline"} 
+                  <Button
+                    variant={viewMode === ViewMode.GRID ? 'default' : 'outline'}
                     size="icon"
                     onClick={() => setViewMode(ViewMode.GRID)}
                   >
@@ -264,8 +239,8 @@ const MyMods = () => {
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant={viewMode === ViewMode.LIST ? "default" : "outline"} 
+                  <Button
+                    variant={viewMode === ViewMode.LIST ? 'default' : 'outline'}
                     size="icon"
                     onClick={() => setViewMode(ViewMode.LIST)}
                   >
@@ -276,7 +251,7 @@ const MyMods = () => {
               </Tooltip>
             </div>
           </div>
-          
+
           {viewMode === ViewMode.GRID ? (
             <div className="grid grid-cols-4 gap-4">
               {results.map((mod) => (

@@ -24,7 +24,7 @@ const createIfNotExists = async (path: string) => {
 
 class DownloadManager {
   private queue: DownloadableMod[] = [];
-  private progressUpdateTimers: Record<string, { lastUpdate: number, timerId: number | null }> = {};
+  private progressUpdateTimers: Record<string, { lastUpdate: number; timerId: number | null }> = {};
   private readonly THROTTLE_MS = 500; // Only update progress every 500ms
 
   constructor() {
@@ -55,20 +55,20 @@ class DownloadManager {
   private throttledProgressUpdate(mod: DownloadableMod, progress: any) {
     const now = Date.now();
     const modId = mod.remoteId;
-    
+
     // Initialize timer entry if it doesn't exist
     if (!this.progressUpdateTimers[modId]) {
-      this.progressUpdateTimers[modId] = { 
+      this.progressUpdateTimers[modId] = {
         lastUpdate: 0,
         timerId: null
       };
     }
-    
+
     const timerEntry = this.progressUpdateTimers[modId];
-    
+
     // Always process 100% complete updates immediately
     const isComplete = progress.progressTotal === progress.total;
-    
+
     // If enough time has passed since last update or download is complete
     if (isComplete || now - timerEntry.lastUpdate >= this.THROTTLE_MS) {
       // Clear any pending timer
@@ -76,16 +76,16 @@ class DownloadManager {
         clearTimeout(timerEntry.timerId as unknown as number);
         timerEntry.timerId = null;
       }
-      
+
       // Update progress immediately
       mod.onProgress(progress);
       timerEntry.lastUpdate = now;
-      
+
       // Handle completion
       if (isComplete) {
         logger.info('Download complete', { mod: modId });
       }
-    } 
+    }
     // If there's no pending timer and we're not at the throttle interval yet
     else if (timerEntry.timerId === null) {
       // Schedule an update for when the throttle interval is reached

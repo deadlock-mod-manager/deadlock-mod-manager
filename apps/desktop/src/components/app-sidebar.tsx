@@ -76,14 +76,14 @@ const items: SidebarItem[] = [
 const DownloadProgress = () => {
   const mods = usePersistedStore((state) => state.mods);
   const modProgress = usePersistedStore((state) => state.modProgress);
-  
+
   const downloadingMods = mods.filter((mod) => mod.status === ModStatus.DOWNLOADING);
   if (downloadingMods.length === 0) return null;
-  
+
   // Calculate the combined progress of all downloads
   let totalProgress = 0;
   let modsWithProgress = 0;
-  
+
   downloadingMods.forEach((mod) => {
     const progress = modProgress[mod.remoteId];
     if (progress && progress.percentage && !isNaN(progress.percentage) && isFinite(progress.percentage)) {
@@ -91,14 +91,16 @@ const DownloadProgress = () => {
       modsWithProgress++;
     }
   });
-  
+
   const averageProgress = modsWithProgress > 0 ? totalProgress / modsWithProgress : 0;
   const displayPercentage = isNaN(averageProgress) || !isFinite(averageProgress) ? 0 : Math.round(averageProgress);
-  
+
   return (
     <div className="px-3 py-2">
       <div className="flex items-center justify-between mb-1 text-xs">
-        <span>Downloading {downloadingMods.length} mod{downloadingMods.length !== 1 ? 's' : ''}</span>
+        <span>
+          Downloading {downloadingMods.length} mod{downloadingMods.length !== 1 ? 's' : ''}
+        </span>
         <span>{displayPercentage}%</span>
       </div>
       <Progress value={displayPercentage} className="h-1" />

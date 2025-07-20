@@ -6,7 +6,10 @@ import Section, { SectionSkeleton } from '@/components/section';
 import SettingCard, { SettingCardSkeleton } from '@/components/setting-card';
 import SystemSettings from '@/components/system-settings';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCustomSettings } from '@/lib/api';
+import { SortType } from '@/lib/constants';
 import logger from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
 import { LocalSetting } from '@/types/settings';
@@ -16,9 +19,6 @@ import { FolderOpen, PlusIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { SortType } from '@/lib/constants';
 
 const CustomSettingsData = () => {
   const { data, error } = useQuery('custom-settings', getCustomSettings, { suspense: true });
@@ -36,9 +36,7 @@ const CustomSettingsData = () => {
     {} as Record<CustomSettingType, CustomSettingDto[]>
   );
 
-  const customLocalSettings = Object.values(settings).filter((setting) =>
-    setting.id.startsWith('local_setting_')
-  );
+  const customLocalSettings = Object.values(settings).filter((setting) => setting.id.startsWith('local_setting_'));
   const customLocalSettingsByType = customLocalSettings.reduce(
     (acc, setting) => {
       acc[setting.type as CustomSettingType] = [
@@ -149,10 +147,7 @@ const CustomSettings = () => {
       <Section title="Default Sort Value" description="Choose the default sort order for the Mods page.">
         <div className="flex flex-col gap-2">
           <Label className="text-sm font-bold">Default Sort</Label>
-          <Select
-            value={defaultSort}
-            onValueChange={(v) => setDefaultSort(v as SortType)}
-          >
+          <Select value={defaultSort} onValueChange={(v) => setDefaultSort(v as SortType)}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Select default sort" />
             </SelectTrigger>

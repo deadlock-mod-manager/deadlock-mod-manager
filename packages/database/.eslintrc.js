@@ -6,12 +6,6 @@ module.exports = {
     project: true,
   },
   rules: {
-    "turbo/no-undeclared-env-vars": [
-      "error",
-      {
-        allowList: ["NODE_ENV"],
-      },
-    ],
     "no-unused-vars": "off",
   },
 };

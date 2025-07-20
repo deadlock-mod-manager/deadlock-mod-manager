@@ -1,9 +1,9 @@
+import { SortType } from '@/lib/constants';
 import { createLogger } from '@/lib/logger';
 import { LocalMod, ModStatus, Progress } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
 import { StateCreator } from 'zustand';
 import { State } from '..';
-import { SortType } from '@/lib/constants';
 
 const logger = createLogger('mods-state');
 
@@ -59,23 +59,17 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
-        status:
-          mod.remoteId === remoteId
-            ? transitionModStatus(mod.status, status)
-            : mod.status,
-        downloadedAt:
-          status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED
-            ? new Date()
-            : undefined,
-      })),
+        status: mod.remoteId === remoteId ? transitionModStatus(mod.status, status) : mod.status,
+        downloadedAt: status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED ? new Date() : undefined
+      }))
     })),
 
   setModPath: (remoteId, path) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
-        path: mod.remoteId === remoteId ? path : mod.path,
-      })),
+        path: mod.remoteId === remoteId ? path : mod.path
+      }))
     })),
 
   removeMod: (remoteId) =>
@@ -84,7 +78,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get
       delete newProgress[remoteId];
       return {
         mods: state.mods.filter((mod) => mod.remoteId !== remoteId),
-        modProgress: newProgress,
+        modProgress: newProgress
       };
     }),
 
@@ -98,9 +92,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get
         ...state.modProgress,
         [remoteId]: {
           percentage: ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
-          speed: progress?.transferSpeed,
-        },
-      },
+          speed: progress?.transferSpeed
+        }
+      }
     })),
 
   getModProgress: (remoteId) => get().modProgress[remoteId],
@@ -110,7 +104,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get
       mods: state.mods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? ModStatus.INSTALLED : mod.status,
-        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
-      })),
-    })),
+        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks
+      }))
+    }))
 });

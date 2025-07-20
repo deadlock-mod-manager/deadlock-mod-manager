@@ -1,5 +1,11 @@
 # desktop
 
+## 0.4.0
+
+### Minor Changes
+
+- Fix mod deletion (thanks @Skeptic-systems)
+
 ## 0.3.0
 
 ### Minor Changes

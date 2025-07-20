@@ -1,21 +1,21 @@
-import { getMod } from "@/lib/api";
+import { getMod } from '@/lib/api';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar, Download, Tag, Trash, Upload, User } from 'lucide-react';
 import { useEffect } from 'react';
-import { useQuery } from "react-query";
-import { useNavigate, useParams } from "react-router";
+import { useQuery } from 'react-query';
+import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Separator } from "@/components/ui/separator";
-import { useDownload } from "@/hooks/use-download";
-import useInstall from "@/hooks/use-install";
-import useUninstall from "@/hooks/use-uninstall";
-import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Separator } from '@/components/ui/separator';
+import { useDownload } from '@/hooks/use-download';
+import useInstall from '@/hooks/use-install';
+import useUninstall from '@/hooks/use-uninstall';
+import { usePersistedStore } from '@/lib/store';
+import { ModStatus } from '@/types/mods';
 
 const Mod = () => {
   const params = useParams();
@@ -87,16 +87,10 @@ const Mod = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-160px)] overflow-y-auto px-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
-
+    <div className="h-[calc(100vh-160px)] overflow-y-auto overflow-x-hidden px-4 w-full scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin">
       <div className="container max-w-6xl mx-auto py-6 space-y-6">
         <div className="flex items-center mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={() => navigate('/mods')}
-          >
+          <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => navigate('/mods')}>
             <ArrowLeft className="h-4 w-4" />
             Back to Mods
           </Button>
@@ -106,11 +100,7 @@ const Mod = () => {
           {/* Hero image */}
           {data.hero && (
             <div className="w-full h-64 bg-gradient-to-r from-gray-900 to-gray-800 relative">
-              <img
-                src={data.images[0]}
-                alt={`${data.name} hero`}
-                className="w-full h-full object-cover opacity-70"
-              />
+              <img src={data.images[0]} alt={`${data.name} hero`} className="w-full h-full object-cover opacity-70" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-6">
                 <h1 className="text-3xl font-bold text-white">{data.name}</h1>
@@ -130,7 +120,7 @@ const Mod = () => {
                 </CardHeader>
               )}
 
-              <CardContent className={!data.hero ? "pt-2" : ""}>
+              <CardContent className={!data.hero ? 'pt-2' : ''}>
                 <div className="space-y-4">
                   {/* Description */}
                   <div className="prose prose-sm dark:prose-invert">
@@ -185,18 +175,19 @@ const Mod = () => {
                       onClick={handleDownload}
                       disabled={isDownloading || !data.downloadable}
                     >
-                      {isDownloading ? 'Downloading Mod...' : (data.downloadable ?  isInstalling ? "Installing" : 'Download Mod' : 'Not Downloadable')}
+                      {isDownloading
+                        ? 'Downloading Mod...'
+                        : data.downloadable
+                          ? isInstalling
+                            ? 'Installing'
+                            : 'Download Mod'
+                          : 'Not Downloadable'}
                       <Download className="ml-2" />
                     </Button>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {isInstalled ? (
-                        <Button
-                          className="w-full"
-                          size="lg"
-                          variant="destructive"
-                          onClick={handleUninstall}
-                        >
+                        <Button className="w-full" size="lg" variant="destructive" onClick={handleUninstall}>
                           Uninstall Mod
                           <Trash className="ml-2" />
                         </Button>
@@ -220,33 +211,33 @@ const Mod = () => {
                   )}
 
                   {/* Download Progress */}
-                  {modProgress?.percentage !== undefined && modProgress.percentage > 0 && modProgress.percentage < 100 && (
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground text-center">Downloading: {Math.round(modProgress.percentage)}%</p>
-                      <div className="w-full bg-secondary rounded-full h-2.5">
-                        <div
-                          className="bg-primary h-2.5 rounded-full"
-                          style={{ width: `${modProgress.percentage}%` }}
-                        ></div>
+                  {modProgress?.percentage !== undefined &&
+                    modProgress.percentage > 0 &&
+                    modProgress.percentage < 100 && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground text-center">
+                          Downloading: {Math.round(modProgress.percentage)}%
+                        </p>
+                        <div className="w-full bg-secondary rounded-full h-2.5">
+                          <div
+                            className="bg-primary h-2.5 rounded-full"
+                            style={{ width: `${modProgress.percentage}%` }}
+                          ></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Installation Progress */}
                   {isInstalling && (
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground text-center">Installing mod...</p>
                       <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden relative">
-                        <div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse-x"
-                        ></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse-x"></div>
                       </div>
                     </div>
                   )}
 
-                  {localMod?.status === ModStatus.ERROR && (
-                    <p className="text-destructive text-sm">Error with mod</p>
-                  )}
+                  {localMod?.status === ModStatus.ERROR && <p className="text-destructive text-sm">Error with mod</p>}
                 </div>
               </CardContent>
             </div>

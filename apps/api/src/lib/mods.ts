@@ -11,7 +11,11 @@ modsRouter.get('/', async (c) => {
 })
 
 modsRouter.get('/:id', async (c) => {
-  const mod = await db.select().from(mods).where(eq(mods.remoteId, c.req.param('id'))).limit(1)
+  const mod = await db
+    .select()
+    .from(mods)
+    .where(eq(mods.remoteId, c.req.param('id')))
+    .limit(1)
   if (mod.length === 0) {
     return c.json({ error: 'Mod not found' }, 404)
   }
@@ -21,16 +25,17 @@ modsRouter.get('/:id', async (c) => {
 modsRouter.get('/:id/download', async (c) => {
   const remoteId = c.req.param('id')
   const mod = await db.select().from(mods).where(eq(mods.remoteId, remoteId)).limit(1)
-  
+
   if (mod.length === 0) {
     return c.json({ error: 'Mod not found' }, 404)
   }
-  
-  const downloads = await db.select()
+
+  const downloads = await db
+    .select()
     .from(modDownloads)
     .where(eq(modDownloads.modId, mod[0].id))
     .orderBy(modDownloads.createdAt)
-  
+
   return c.json(toModDownloadDto(downloads))
 })
 
