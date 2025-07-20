@@ -3,6 +3,7 @@ import { LocalMod, ModStatus, Progress } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
 import { StateCreator } from 'zustand';
 import { State } from '..';
+import { SortType } from '@/lib/constants';
 
 const logger = createLogger('mods-state');
 
@@ -14,6 +15,8 @@ export interface ModProgress {
 export interface ModsState {
   mods: LocalMod[];
   modProgress: Record<string, ModProgress>;
+  defaultSort: SortType;
+  setDefaultSort: (sortType: SortType) => void;
   addMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
@@ -42,54 +45,72 @@ export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get) => ({
   mods: [],
   modProgress: {},
+
+  defaultSort: SortType.DEFAULT,
+  setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
+
   addMod: (mod, additional) =>
     set((state) => {
       if (state.mods.some((m) => m.id === mod.id)) return state;
       return { mods: [...state.mods, { ...mod, status: ModStatus.DOWNLOADING, ...additional }] };
     }),
+
   setModStatus: (remoteId, status) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
-        status: mod.remoteId === remoteId ? transitionModStatus(mod.status, status) : mod.status,
-        downloadedAt: status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED ? new Date() : undefined
-      }))
+        status:
+          mod.remoteId === remoteId
+            ? transitionModStatus(mod.status, status)
+            : mod.status,
+        downloadedAt:
+          status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED
+            ? new Date()
+            : undefined,
+      })),
     })),
+
   setModPath: (remoteId, path) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
-        path: mod.remoteId === remoteId ? path : mod.path
-      }))
+        path: mod.remoteId === remoteId ? path : mod.path,
+      })),
     })),
-  removeMod: (remoteId) => 
+
+  removeMod: (remoteId) =>
     set((state) => {
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
-      return { 
+      return {
         mods: state.mods.filter((mod) => mod.remoteId !== remoteId),
-        modProgress: newProgress
+        modProgress: newProgress,
       };
     }),
+
   setMods: (mods) => set({ mods }),
+
   clearMods: () => set({ mods: [], modProgress: {} }),
+
   setModProgress: (remoteId, progress) =>
     set((state) => ({
       modProgress: {
         ...state.modProgress,
         [remoteId]: {
           percentage: ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
-          speed: progress?.transferSpeed
-        }
-      }
+          speed: progress?.transferSpeed,
+        },
+      },
     })),
+
   getModProgress: (remoteId) => get().modProgress[remoteId],
+
   setInstalledVpks: (remoteId: string, vpks: string[]) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? ModStatus.INSTALLED : mod.status,
-        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks
-      }))
-    }))
+        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
+      })),
+    })),
 });

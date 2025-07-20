@@ -72,9 +72,21 @@ pub async fn open_game_folder() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn open_mods_store() -> Result<(), Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.open_mods_store()
+}
+
+#[tauri::command]
 pub async fn uninstall_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.uninstall_mod(mod_id, vpks)
+}
+
+#[tauri::command]
+pub async fn purge_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.purge_mod(mod_id, vpks)
 }
 
 #[tauri::command]
