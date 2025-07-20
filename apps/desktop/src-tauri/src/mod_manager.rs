@@ -348,7 +348,6 @@ impl ModManager {
     pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
         log::info!("Starting installation of mod: {}", deadlock_mod.name);
 
-
         if !deadlock_mod.path.exists() {
             return Err(Error::ModFileNotFound);
         }
@@ -383,7 +382,7 @@ impl ModManager {
                 match path.extension().and_then(|e| e.to_str()) {
                     Some("zip") => self.extract_zip(&path, temp_dir.path())?,
                     Some("rar") => self.extract_rar(&path, temp_dir.path())?,
-                    Some("7z")  => self.extract_7z(&path, temp_dir.path())?,
+                    Some("7z") => self.extract_7z(&path, temp_dir.path())?,
                     _ => continue,
                 }
 
@@ -401,10 +400,10 @@ impl ModManager {
             log::info!("Installing VPKs to game addons: {:?}", addons_path);
             let installed_vpks = self.copy_vpks_from_temp(&mod_files_path, &addons_path)?;
 
-
             deadlock_mod.installed_vpks = installed_vpks;
             log::info!("Adding mod to managed mods list");
-            self.mods.insert(deadlock_mod.id.clone(), deadlock_mod.clone());
+            self.mods
+                .insert(deadlock_mod.id.clone(), deadlock_mod.clone());
 
             log::info!("Mod installation completed successfully");
             Ok(deadlock_mod)
@@ -414,13 +413,9 @@ impl ModManager {
         }
     }
 
-
     pub fn toggle_mods(&mut self, vanilla: bool) -> Result<(), Error> {
         if let Some(game_path) = &self.game_path {
-            let gameinfo_path = game_path
-                .join("game")
-                .join("citadel")
-                .join("gameinfo.gi");
+            let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
             self.modify_search_paths(&gameinfo_path, vanilla)?;
             if vanilla {
                 self.clear_mods()?;
@@ -438,7 +433,6 @@ impl ModManager {
         if let Some(_steam_dir) = &self.steam_dir {
             if vanilla {
                 log::info!("Disabling mods...");
-                
             } else {
                 log::info!("Enabling mods...");
             }
@@ -513,15 +507,14 @@ impl ModManager {
     }
 
     pub fn open_mods_store(&self) -> Result<(), Error> {
-        let local_appdata = std::env::var("LOCALAPPDATA")
-            .map_err(|_| Error::GamePathNotSet)?;
+        let local_appdata = std::env::var("LOCALAPPDATA").map_err(|_| Error::GamePathNotSet)?;
         let mods_path = std::path::PathBuf::from(local_appdata)
             .join("dev.stormix.deadlock-mod-manager")
             .join("mods");
         if !mods_path.exists() {
-            return Err(Error::GamePathNotSet); 
+            return Err(Error::GamePathNotSet);
         }
-        utils::show_in_folder_windows(&mods_path.to_string_lossy().to_string())
+        utils::show_in_folder(&mods_path.to_string_lossy().to_string())
     }
 
     pub fn uninstall_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
@@ -615,8 +608,6 @@ impl ModManager {
             Err(Error::GamePathNotSet)
         }
     }
-
-
 
     pub fn is_game_running(&mut self) -> Result<bool, Error> {
         match self.check_if_game_running() {
