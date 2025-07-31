@@ -430,40 +430,62 @@ impl ModManager {
     pub fn run_game(&mut self, vanilla: bool, additional_args: String) -> Result<(), Error> {
         self.find_game()?;
 
-        if let Some(_steam_dir) = &self.steam_dir {
-            if vanilla {
-                log::info!("Disabling mods...");
+        #[cfg(target_os = "windows")]
+        {
+            if let Some(steam_path) = &self.steam_path {
+                let steam_exe = steam_path.join("steam.exe");
+
+                if !steam_exe.exists() {
+                    return Err(Error::SteamNotFound);
+                }
+                if vanilla {
+                    log::info!("Disabling mods...");
+                } else {
+                    log::info!("Enabling mods...");
+                }
+                self.toggle_mods(vanilla)?;
+
+                // Construct the full Steam URI
+                let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
+                log::info!("Launching game with URI: {}", steam_uri);
+
+                std::process::Command::new(steam_exe)
+                    .arg(steam_uri)
+                    .spawn()
+                    .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+
+                Ok(())
             } else {
-                log::info!("Enabling mods...");
+                Err(Error::SteamNotFound)
             }
+        }
 
-            self.toggle_mods(vanilla)?;
+        #[cfg(target_os = "linux")]
+        {
+            if let Some(_steam_dir) = &self.steam_dir {
+                if vanilla {
+                    log::info!("Disabling mods...");
+                } else {
+                    log::info!("Enabling mods...");
+                }
 
-            // Construct the full Steam URI
-            let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
-            log::info!("Launching game with URI: {}", steam_uri);
+                self.toggle_mods(vanilla)?;
 
-            #[cfg(target_os = "windows")]
-            std::process::Command::new("cmd")
-                .arg("/C")
-                .arg("start")
-                .arg(steam_uri)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .spawn()
-                .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+                // Construct the full Steam URI
+                let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
+                log::info!("Launching game with URI: {}", steam_uri);
 
-            #[cfg(target_os = "linux")]
-            std::process::Command::new("xdg-open")
-                .arg(steam_uri)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .spawn()
-                .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+                std::process::Command::new("xdg-open")
+                    .arg(steam_uri)
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .spawn()
+                    .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
 
-            Ok(())
-        } else {
-            Err(Error::SteamNotFound)
+                Ok(())
+            } else {
+                Err(Error::SteamNotFound)
+            }
         }
     }
 
