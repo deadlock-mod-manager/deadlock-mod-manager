@@ -432,8 +432,8 @@ impl ModManager {
 
         #[cfg(target_os = "windows")]
         {
-            if let Some(steam_path) = &self.steam_path {
-                let steam_exe = steam_path.join("steam.exe");
+            if let Some(steam_dir) = &self.steam_dir {
+                let steam_exe = steam_dir.path().join("steam.exe");
 
                 if !steam_exe.exists() {
                     return Err(Error::SteamNotFound);
