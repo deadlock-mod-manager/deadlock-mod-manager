@@ -1,34 +1,16 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
-# Deadlock Mod Manager
+# Deadlock Mod Manager [![Built with Tauri][tauri-status]][tauri-url]
 
 
 <!-- Project Stats -->
 [![Downloads][downloads-status]][downloads-url]
-[![GitHub Stars][stars-status]][stars-url]
+[![Contributors][contributors-status]][contributors-url]
 [![GitHub Release][release-status]][release-url]
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
-
-<!-- Technology Stack -->
-[![Built with Tauri][tauri-status]][tauri-url]
-[![TypeScript][typescript-status]][typescript-url]
-[![Rust][rust-status]][rust-url]
-
-<!-- Community & Activity -->
-[![Contributors][contributors-status]][contributors-url]
-[![Forks][forks-status]][forks-url]
-[![Commit Activity][commit-activity-status]][commit-activity-url]
-[![Last Commit][last-commit-status]][last-commit-url]
-
-<!-- Distribution & Platforms -->
 [![License][license-status]][license-url]
-[![AUR][aur-status]][aur-url]
-[![Windows][windows-status]][windows-url]
-[![macOS][macos-status]][macos-url]
-[![Linux][linux-status]][linux-url]
-
 
 <br />
 <div align="center">
@@ -48,7 +30,15 @@
     ·
     <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
+  
+<!-- Distribution & Platforms -->
+[![Windows][windows-status]][windows-url]
+[![macOS][macos-status]][macos-url]
+[![Linux][linux-status]][linux-url]
+[![AUR][aur-status]][aur-url]
+
   <img src="./docs/assets/download.png" alt="Deadlock Mod Manager" width="600">
+  
 </div>
 
 <br />
