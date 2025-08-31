@@ -103,6 +103,13 @@
      yay -S deadlock-modmanager-git
      ```
 
+   **Linux Compatibility Note**
+   - **Wayland + NVIDIA users**: If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs, run the application with:
+     ```bash
+     WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
+     ```
+     This resolves a known issue with webkit2gtk on NVIDIA drivers. AUR users have this automatically handled in the .desktop file.
+
 2. **First Time Setup**
    - Launch the Deadlock Mod Manager
    - The application will automatically detect your Deadlock installation
