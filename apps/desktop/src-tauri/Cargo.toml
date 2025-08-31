@@ -1,8 +1,11 @@
 [package]
-name = "desktop"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "deadlock-mod-manager"
+version = "0.5.0"
+description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
+authors = ["stormix <contact@stormix.co>"]
+license = "GPL-3.0"
+repository = "https://github.com/stormix/deadlock-modmanager"
+homepage = "https://github.com/stormix/deadlock-modmanager"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

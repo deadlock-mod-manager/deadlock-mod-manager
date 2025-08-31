@@ -925,6 +925,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadlock-mod-manager"
+version = "0.5.0"
+dependencies = [
+ "keyvalues-serde",
+ "log",
+ "regex",
+ "serde",
+ "serde_json",
+ "sevenz-rust",
+ "steamlocate",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-os",
+ "tauri-plugin-process",
+ "tauri-plugin-sentry",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-store",
+ "tauri-plugin-updater",
+ "tauri-plugin-upload",
+ "tempfile",
+ "thiserror 2.0.16",
+ "unrar",
+ "vdf-parser",
+ "zip 2.4.2",
+]
+
+[[package]]
 name = "debugid"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -972,37 +1003,6 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn 2.0.106",
-]
-
-[[package]]
-name = "desktop"
-version = "0.1.0"
-dependencies = [
- "keyvalues-serde",
- "log",
- "regex",
- "serde",
- "serde_json",
- "sevenz-rust",
- "steamlocate",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-os",
- "tauri-plugin-process",
- "tauri-plugin-sentry",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "tauri-plugin-store",
- "tauri-plugin-updater",
- "tauri-plugin-upload",
- "tempfile",
- "thiserror 2.0.16",
- "unrar",
- "vdf-parser",
- "zip 2.4.2",
 ]
 
 [[package]]

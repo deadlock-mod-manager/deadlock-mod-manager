@@ -24,7 +24,7 @@ export const formatSpeed = (speed: number) => {
 export const getAdditionalArgs = (settings: LocalSetting[]) => {
   const additionalArgs = [];
 
-  for (const setting of settings.filter((s) => s.type === CustomSettingType.LAUNCH_OPTION)) {
+  for (const setting of settings.filter((s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled)) {
     additionalArgs.push(`+${setting.key} ${setting.value}`);
   }
 
