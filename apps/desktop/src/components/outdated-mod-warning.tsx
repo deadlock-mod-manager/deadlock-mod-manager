@@ -3,17 +3,21 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-interface OutdatedModWarningProps {
+type OutdatedModWarningProps = {
   variant?: 'indicator' | 'alert';
   className?: string;
-}
+};
 
-export const OutdatedModWarning = ({ variant = 'indicator', className }: OutdatedModWarningProps) => {
-  const warningText = "This mod hasn't been updated since August 19, 2025 and may not work properly";
+export const OutdatedModWarning = ({
+  variant = 'indicator',
+  className,
+}: OutdatedModWarningProps) => {
+  const warningText =
+    "This mod hasn't been updated since August 19, 2025 and may not work properly";
 
   if (variant === 'alert') {
     return (
-      <Alert variant="destructive" className={className}>
+      <Alert className={className} variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>{warningText}</AlertDescription>
       </Alert>
@@ -24,8 +28,8 @@ export const OutdatedModWarning = ({ variant = 'indicator', className }: Outdate
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="destructive" className={`cursor-help ${className}`}>
-          <AlertTriangle className="h-3 w-3 mr-1" />
+        <Badge className={`cursor-help ${className}`} variant="destructive">
+          <AlertTriangle className="mr-1 h-3 w-3" />
           Outdated
         </Badge>
       </TooltipTrigger>

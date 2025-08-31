@@ -1,6 +1,7 @@
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { open } from '@tauri-apps/plugin-shell';
 import { useCallback } from 'react';
 import { WindowTitlebar } from 'tauri-controls';
-
 import {
   Menubar,
   MenubarContent,
@@ -8,11 +9,8 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarShortcut,
-  MenubarTrigger
+  MenubarTrigger,
 } from '@/components/ui/menubar';
-
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { open } from '@tauri-apps/plugin-shell';
 import { AboutDialog } from './about-dialog';
 import Logo from './logo';
 import { Dialog, DialogTrigger } from './ui/dialog';
@@ -25,8 +23,8 @@ export function Menu() {
   }, [appWindow]);
 
   return (
-    <WindowTitlebar className="border-b bg-background z-20">
-      <Menubar className="rounded-none border-b border-none inline-flex items-center">
+    <WindowTitlebar className="z-20 border-b bg-background">
+      <Menubar className="inline-flex items-center rounded-none border-b border-none">
         <MenubarMenu>
           <MenubarTrigger>
             <div className="inline-flex h-fit w-fit items-center gap-2">
@@ -54,7 +52,9 @@ export function Menu() {
         <MenubarMenu>
           <Dialog modal={false}>
             <DialogTrigger asChild>
-              <MenubarTrigger className="relative text-sm">About</MenubarTrigger>
+              <MenubarTrigger className="relative text-sm">
+                About
+              </MenubarTrigger>
             </DialogTrigger>
             <AboutDialog />
           </Dialog>

@@ -20,9 +20,10 @@
     "generate": {
       "dependsOn": ["^generate"]
     },
-    "lint": {}
+    "//#format": {},
+    "//#lint": {
+      "cache": false
+    }
   },
-  "globalEnv": [
-    "BETTERSTACK_API_KEY"
-  ]
+  "globalEnv": ["BETTERSTACK_API_KEY", "DATABASE_URL"]
 }

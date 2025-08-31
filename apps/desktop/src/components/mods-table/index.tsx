@@ -1,10 +1,10 @@
+import { toast } from 'sonner';
 import { DataTable } from '@/components/ui/data-table';
 import useInstall from '@/hooks/use-install';
 import useUninstall from '@/hooks/use-uninstall';
 import { createLogger } from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
-import { LocalMod, ModStatus } from '@/types/mods';
-import { toast } from 'sonner';
+import { type LocalMod, ModStatus } from '@/types/mods';
 import { createColumns } from './columns';
 
 const logger = createLogger('installation');
@@ -22,7 +22,10 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
         setModStatus(mod.remoteId, ModStatus.INSTALLING);
       },
       onComplete: (mod, result) => {
-        logger.info('Installation complete', { mod: mod.remoteId, result: result.installed_vpks });
+        logger.info('Installation complete', {
+          mod: mod.remoteId,
+          result: result.installed_vpks,
+        });
         setInstalledVpks(mod.remoteId, result.installed_vpks);
       },
       onError: (mod, error) => {
@@ -37,7 +40,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
             setModStatus(mod.remoteId, ModStatus.ERROR);
             toast.error(error.message);
         }
-      }
+      },
     },
     (mod) => uninstall(mod, true), // Remove
     (mod) => uninstall(mod, false) // Uninstall

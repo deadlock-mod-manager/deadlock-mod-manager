@@ -1,7 +1,7 @@
-import { createLogger } from '@/lib/logger';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { check, Update } from '@tauri-apps/plugin-updater';
+import { check, type Update } from '@tauri-apps/plugin-updater';
 import { useState } from 'react';
+import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('updater');
 
@@ -17,7 +17,9 @@ const useUpdateManager = () => {
   };
 
   const updateAndRelaunch = async () => {
-    if (!update) return;
+    if (!update) {
+      return;
+    }
 
     // alternatively we could also call update.download() and update.install() separately
     await update.downloadAndInstall((event) => {

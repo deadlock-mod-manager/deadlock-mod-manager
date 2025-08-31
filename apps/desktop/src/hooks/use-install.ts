@@ -1,14 +1,17 @@
-import { InstallableMod, LocalMod, ModStatus } from '@/types/mods';
-import { ErrorKind } from '@/types/tauri';
 import { invoke } from '@tauri-apps/api/core';
+import { type InstallableMod, type LocalMod, ModStatus } from '@/types/mods';
+import type { ErrorKind } from '@/types/tauri';
 
-export interface InstallOptions {
+export type InstallOptions = {
   onStart: (mod: LocalMod) => void;
   onComplete: (mod: LocalMod, result: InstallableMod) => void;
   onError: (mod: LocalMod, error: ErrorKind) => void;
-}
+};
 
-export type InstallFunction = (mod: LocalMod, options: InstallOptions) => Promise<InstallableMod | null>;
+export type InstallFunction = (
+  mod: LocalMod,
+  options: InstallOptions
+) => Promise<InstallableMod | null>;
 
 const useInstall = () => {
   const install: InstallFunction = async (mod, options) => {
@@ -27,21 +30,24 @@ const useInstall = () => {
         deadlockMod: {
           id: mod.remoteId,
           name: mod.name,
-          path: mod.path
-        }
+          path: mod.path,
+        },
       })) as InstallableMod;
 
       options.onComplete(mod, result);
 
       return result;
     } catch (error: unknown) {
-      console.error(error);
       if (error instanceof Error) {
         options.onError(mod, {
           kind: 'unknown',
-          message: error.message
+          message: error.message,
         });
-      } else if (typeof error === 'object' && error !== null && 'kind' in error) {
+      } else if (
+        typeof error === 'object' &&
+        error !== null &&
+        'kind' in error
+      ) {
         options.onError(mod, error as ErrorKind);
       }
       return null;

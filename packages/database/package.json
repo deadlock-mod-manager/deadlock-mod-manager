@@ -10,8 +10,7 @@
     "db:push": "dotenv -e ../../.env -- drizzle-kit push",
     "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
     "db:seed": "dotenv -e ../../.env -- tsx src/seed.ts",
-    "dev": "tsup src/* --watch",
-    "lint": "eslint . --max-warnings 0"
+    "dev": "tsup src/* --watch"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -19,12 +18,10 @@
     "pg": "^8.14.1"
   },
   "devDependencies": {
-    "@deadlock-mods/eslint-config": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/node": "^20.11.24",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.0",
-    "eslint": "^8.57.0",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "tsx": "4.19.1",

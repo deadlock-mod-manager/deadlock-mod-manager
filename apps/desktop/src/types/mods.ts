@@ -1,18 +1,18 @@
-import { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
+import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
 
-export interface Progress {
+export type Progress = {
   progress: number;
   progressTotal: number;
   total: number;
   transferSpeed: number;
-}
+};
 
 export enum ModStatus {
   DOWNLOADED = 'downloaded',
   INSTALLED = 'installed',
   DOWNLOADING = 'downloading',
   INSTALLING = 'installing',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 export interface LocalMod extends ModDto {
@@ -30,9 +30,9 @@ export interface DownloadableMod extends Omit<LocalMod, 'status'> {
   onError: (error: Error) => void;
 }
 
-export interface InstallableMod {
+export type InstallableMod = {
   id: string;
   name: string;
   path: string;
   installed_vpks: string[];
-}
+};

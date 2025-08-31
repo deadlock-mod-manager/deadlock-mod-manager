@@ -9,7 +9,6 @@
     "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
     "desktop:dev": "pnpm tauri dev",
     "desktop:build": "pnpm tauri build",
     "build": "pnpm tauri build"
@@ -92,10 +91,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.20",
     "clsx": "^2.1.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
     "postcss": "^8.4.49",
-    "prettier": "^3.2.5",
     "tailwind-merge": "^2.5.5",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.16",

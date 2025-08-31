@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Workflow Guidelines
+
+## First Step for Any Task
+- Before starting work on any task, always check the `.cursor/rules` directory for relevant guidance
+- These documents contain established workflows, conventions, and requirements for different aspects of the project
+- Following these rule files will ensure consistency and reduce rework
+- If multiple rule files seem relevant, review all of them before proceeding
+
+## Last Step for Any Task
+- If you've learned new concepts, workflows, or best practices during task completion, suggest updates to the relevant rules
+- For new workflows that aren't covered by existing rules, suggest creating a new rule file
+- Evaluate whether tests should be added for your changes:
+  - For functional code, new features, API changes, or bug fixes, tests are essential
+  - For content-only changes like frontend changes or documentation updates, tests are typically not required
+  - When in doubt, err on the side of adding tests - they provide long-term stability and prevent regressions
+- Always run appropriate linting and formatting before considering a task complete:
+  ```bash
+  pnpm lint
+  pnpm format
+  ```
+- Verify that no regressions are introduced by your changes

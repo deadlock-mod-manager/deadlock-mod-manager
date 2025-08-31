@@ -1,10 +1,12 @@
-import { usePersistedStore } from '@/lib/store';
 import { invoke } from '@tauri-apps/api/core';
+import { usePersistedStore } from '@/lib/store';
 import { Button } from '../ui/button';
 
 const DevTools = () => {
   const { clearMods } = usePersistedStore();
-  if (!import.meta.env.DEV) return null;
+  if (!import.meta.env.DEV) {
+    return null;
+  }
   return (
     <div className="flex gap-2">
       <Button onClick={clearMods}>Clear Mods</Button>

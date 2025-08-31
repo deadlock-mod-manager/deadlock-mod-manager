@@ -1,14 +1,14 @@
-import { SortType } from '@/lib/constants';
+import Fuse, { type FuseOptionKey } from 'fuse.js';
+import { useEffect, useMemo, useState } from 'react';
+import type { SortType } from '@/lib/constants';
 import { usePersistedStore } from '@/lib/store';
 import { sortMods } from '@/lib/utils';
-import { LocalMod } from '@/types/mods';
-import Fuse, { FuseOptionKey } from 'fuse.js';
-import { useEffect, useMemo, useState } from 'react';
+import type { LocalMod } from '@/types/mods';
 
-interface UseSearchProps<T> {
+type UseSearchProps<T> = {
   data: T[];
   keys: (keyof T)[];
-}
+};
 
 export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   const [query, setQuery] = useState('');
@@ -19,12 +19,20 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
     setSortType(defaultSort);
   }, [defaultSort]);
 
-  const fuse = useMemo(() => new Fuse(data, { keys: keys as FuseOptionKey<T>[] }), [data, keys]);
+  const fuse = useMemo(
+    () => new Fuse(data, { keys: keys as FuseOptionKey<T>[] }),
+    [data, keys]
+  );
 
   const search = (q: string) => {
-    if (!q) return sortMods(data as LocalMod[], sortType);
+    if (!q) {
+      return sortMods(data as LocalMod[], sortType);
+    }
     const results = fuse.search(q);
-    return sortMods(results.map((result) => result.item) as LocalMod[], sortType);
+    return sortMods(
+      results.map((result) => result.item) as LocalMod[],
+      sortType
+    );
   };
 
   return {
@@ -33,6 +41,6 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
     setQuery,
     results: search(query),
     sortType,
-    setSortType
+    setSortType,
   };
 };

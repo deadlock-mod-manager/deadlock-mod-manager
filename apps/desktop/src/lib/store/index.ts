@@ -12,7 +12,7 @@ export const usePersistedStore = create<State>()(
     (...a) => ({
       ...createModsSlice(...a),
       ...createGameSlice(...a),
-      ...createSettingsSlice(...a)
+      ...createSettingsSlice(...a),
     }),
     {
       name: 'local-config',
@@ -24,7 +24,7 @@ export const usePersistedStore = create<State>()(
         // Completely exclude modProgress from persistence to avoid spamming storage
         const { modProgress, ...rest } = state;
         return rest;
-      }
+      },
     }
   )
 );

@@ -1,36 +1,48 @@
-import { SortType } from '@/lib/constants';
 import { Search } from 'lucide-react';
+import { SortType } from '@/lib/constants';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
-interface SearchBarProps {
+type SearchBarProps = {
   query: string;
   setQuery: (query: string) => void;
   sortType: SortType;
   setSortType: (sortType: SortType) => void;
-}
+};
 
-const SearchBar = ({ query, setQuery, sortType, setSortType }: SearchBarProps) => {
+const SearchBar = ({
+  query,
+  setQuery,
+  sortType,
+  setSortType,
+}: SearchBarProps) => {
   return (
-    <div className="flex items-center gap-2 justify-between">
+    <div className="flex items-center justify-between gap-2">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="search" className="text-sm font-bold">
+        <Label className="font-bold text-sm" htmlFor="search">
           Search
         </Label>
         <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
           <Input
-            id="search"
-            placeholder="Search for a mod"
             className="pl-8"
-            value={query}
+            id="search"
             onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for a mod"
+            value={query}
           />
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <Label className="text-sm font-bold">Sort</Label>
+        <Label className="font-bold text-sm">Sort</Label>
         <Select onValueChange={setSortType} value={sortType}>
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Sort by" />
@@ -38,7 +50,7 @@ const SearchBar = ({ query, setQuery, sortType, setSortType }: SearchBarProps) =
           <SelectContent>
             <SelectGroup>
               {Object.values(SortType).map((type) => (
-                <SelectItem key={type} value={type} className="capitalize">
+                <SelectItem className="capitalize" key={type} value={type}>
                   {type}
                 </SelectItem>
               ))}

@@ -1,10 +1,11 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+
 <a id="readme-top"></a>
 
 # Deadlock Mod Manager [![Built with Tauri][tauri-status]][tauri-url]
 
-
 <!-- Project Stats -->
+
 [![Downloads][downloads-status]][downloads-url]
 [![Contributors][contributors-status]][contributors-url]
 [![GitHub Release][release-status]][release-url]
@@ -71,15 +72,19 @@
 <summary>Click to view screenshots</summary>
 
 ### About Dialog
+
 ![About Dialog](./docs/assets/about.png)
 
 ### Download Page
+
 ![Download Page](./docs/assets/download.png)
 
 ### My Mods Page
+
 ![My Mods](./docs/assets/my-mods.png)
 
 ### Mods Browser
+
 ![Mods Browser](./docs/assets/mods.png)
 
 </details>
@@ -89,27 +94,32 @@
 ### For End Users
 
 1. **Download the Application**
+
    - Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
    - Download the appropriate installer for your operating system (Windows, macOS, or Linux)
    - Run the installer and follow the setup instructions
 
    **Alternative Installation (Windows)**
+
    - **Windows users**: Install via winget:
      ```bash
      winget install --id=Stormix.DeadlockModManager
      ```
 
    **Alternative Installation (Linux)**
+
    - **Arch Linux users**: Install from the AUR using your preferred AUR helper:
+
      ```bash
      # Latest stable release
      yay -S deadlock-modmanager
-     
+
      # Latest development build
      yay -S deadlock-modmanager-git
      ```
 
    **Linux Compatibility Note**
+
    - **Wayland + NVIDIA users**: If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs, run the application with:
      ```bash
      WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
@@ -117,11 +127,13 @@
      This resolves a known issue with webkit2gtk on NVIDIA drivers. AUR users have this automatically handled in the .desktop file.
 
 2. **First Time Setup**
+
    - Launch the Deadlock Mod Manager
    - The application will automatically detect your Deadlock installation
    - If not detected automatically, you can manually set the game directory in Settings
 
 3. **Browse and Install Mods**
+
    - Browse available mods in the "Mods" tab
    - Use the search functionality to find specific mods
    - Click "Download" on any mod you want to install
@@ -132,7 +144,6 @@
    - Enable/disable mods as needed
    - Uninstall mods you no longer want
    - Update outdated mods when new versions are available
-
 
 ## What's inside?
 
@@ -148,7 +159,7 @@ This monorepo includes the following packages/apps:
 
 - `@deadlock-mods/database`: [Drizzle ORM](https://orm.drizzle.team/) wrapper to manage & access the database
 - `@deadlock-mods/utils`: Shared utilities and type definitions
-- `@deadlock-mods/eslint-config`: ESLint configurations
+
 - `@deadlock-mods/typescript-config`: TypeScript configurations
 
 ## Getting Started
@@ -260,7 +271,6 @@ This project was only possible thanks to the amazing open source community, espe
 - [shadcn/ui](https://ui.shadcn.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 [downloads-status]: https://img.shields.io/github/downloads/stormix/deadlock-modmanager/latest/total
 [downloads-url]: https://github.com/stormix/deadlock-modmanager/releases/latest

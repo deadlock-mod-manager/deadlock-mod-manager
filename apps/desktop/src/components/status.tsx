@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
-import { ModStatus } from '@/types/mods';
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { ModStatus } from '@/types/mods';
 import { Badge } from './ui/badge';
 
 const Status = ({ status }: { status: ModStatus }) => {
@@ -32,10 +32,10 @@ const Status = ({ status }: { status: ModStatus }) => {
   }, [status]);
 
   return (
-    <Badge className="flex items-center gap-2 w-fit" variant="secondary">
+    <Badge className="flex w-fit items-center gap-2" variant="secondary">
       <StatusIcon
-        className={cn('w-4 h-4', {
-          'animate-spin': status === ModStatus.DOWNLOADING
+        className={cn('h-4 w-4', {
+          'animate-spin': status === ModStatus.DOWNLOADING,
         })}
       />
       {StatusText}

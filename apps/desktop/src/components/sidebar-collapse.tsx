@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
 import { ArrowLineLeft } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
 export const SidebarCollapse = () => {
@@ -8,7 +8,10 @@ export const SidebarCollapse = () => {
     <SidebarMenuItem>
       <SidebarMenuButton onClick={toggleSidebar}>
         <ArrowLineLeft
-          className={cn('transition-all ease-linear duration-150', open ? '' : 'rotate-180')}
+          className={cn(
+            'transition-all duration-150 ease-linear',
+            open ? '' : 'rotate-180'
+          )}
           weight="duotone"
         />
         <span>Collapse menu</span>

@@ -1,4 +1,14 @@
 import {
+  DiscordLogo,
+  Download,
+  Gear,
+  type Icon,
+  MagnifyingGlass,
+  Package,
+} from '@phosphor-icons/react';
+import { open } from '@tauri-apps/plugin-shell';
+import { Link, useLocation } from 'react-router';
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -6,13 +16,10 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem
+  SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';
-import { DiscordLogo, Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react';
-import { open } from '@tauri-apps/plugin-shell';
-import { Link, useLocation } from 'react-router';
 import { SidebarCollapse } from './sidebar-collapse';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
@@ -23,7 +30,7 @@ type SidebarItem = {
   title: ({
     isActive,
     count,
-    downloads
+    downloads,
   }: {
     isActive?: boolean;
     count?: number;
@@ -40,46 +47,55 @@ const items: SidebarItem[] = [
       <div className="flex items-center gap-2">
         My mods{' '}
         {count !== undefined && (
-          <Badge className="text-xs px-1 py-0.1" variant={isActive ? 'inverted' : 'default'}>
+          <Badge
+            className="px-1 py-0.1 text-xs"
+            variant={isActive ? 'inverted' : 'default'}
+          >
             {count}
           </Badge>
         )}
       </div>
     ),
     url: '/',
-    icon: Package
+    icon: Package,
   },
   {
     id: 'get-mods',
     title: () => <span>Get mods</span>,
     url: '/mods',
-    icon: MagnifyingGlass
+    icon: MagnifyingGlass,
   },
   {
     id: 'downloads',
     title: ({ downloads }: { downloads?: number }) => (
       <span>
         Downloads{' '}
-        {downloads !== undefined && downloads > 0 && <Badge className="text-xs px-1 py-0.1">{downloads}</Badge>}
+        {downloads !== undefined && downloads > 0 && (
+          <Badge className="px-1 py-0.1 text-xs">{downloads}</Badge>
+        )}
       </span>
     ),
     url: '/downloads',
-    icon: Download
+    icon: Download,
   },
   {
     id: 'settings',
     title: () => <span>Settings</span>,
     url: '/settings',
-    icon: Gear
-  }
+    icon: Gear,
+  },
 ];
 
 const DownloadProgress = () => {
   const mods = usePersistedStore((state) => state.mods);
   const modProgress = usePersistedStore((state) => state.modProgress);
 
-  const downloadingMods = mods.filter((mod) => mod.status === ModStatus.DOWNLOADING);
-  if (downloadingMods.length === 0) return null;
+  const downloadingMods = mods.filter(
+    (mod) => mod.status === ModStatus.DOWNLOADING
+  );
+  if (downloadingMods.length === 0) {
+    return null;
+  }
 
   // Calculate the combined progress of all downloads
   let totalProgress = 0;
@@ -87,24 +103,33 @@ const DownloadProgress = () => {
 
   downloadingMods.forEach((mod) => {
     const progress = modProgress[mod.remoteId];
-    if (progress && progress.percentage && !isNaN(progress.percentage) && isFinite(progress.percentage)) {
+    if (
+      progress?.percentage &&
+      !Number.isNaN(progress.percentage) &&
+      Number.isFinite(progress.percentage)
+    ) {
       totalProgress += progress.percentage;
       modsWithProgress++;
     }
   });
 
-  const averageProgress = modsWithProgress > 0 ? totalProgress / modsWithProgress : 0;
-  const displayPercentage = isNaN(averageProgress) || !isFinite(averageProgress) ? 0 : Math.round(averageProgress);
+  const averageProgress =
+    modsWithProgress > 0 ? totalProgress / modsWithProgress : 0;
+  const displayPercentage =
+    Number.isNaN(averageProgress) || !Number.isFinite(averageProgress)
+      ? 0
+      : Math.round(averageProgress);
 
   return (
     <div className="px-3 py-2">
-      <div className="flex items-center justify-between mb-1 text-xs">
+      <div className="mb-1 flex items-center justify-between text-xs">
         <span>
-          Downloading {downloadingMods.length} mod{downloadingMods.length !== 1 ? 's' : ''}
+          Downloading {downloadingMods.length} mod
+          {downloadingMods.length !== 1 ? 's' : ''}
         </span>
         <span>{displayPercentage}%</span>
       </div>
-      <Progress value={displayPercentage} className="h-1" />
+      <Progress className="h-1" value={displayPercentage} />
     </div>
   );
 };
@@ -114,9 +139,9 @@ export const AppSidebar = () => {
   const mods = usePersistedStore((state) => state.mods);
   return (
     <Sidebar
+      className="absolute top-10 left-0 z-10 flex h-[calc(100vh-40px)] w-[12rem] flex-col"
       collapsible="icon"
       variant="sidebar"
-      className="absolute top-10 left-0 h-[calc(100vh-40px)] flex flex-col z-10 w-[12rem]"
     >
       <SidebarContent className="flex-grow">
         <SidebarGroup>
@@ -124,7 +149,10 @@ export const AppSidebar = () => {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.url}
+                  >
                     <Link to={item.url}>
                       <item.icon weight="duotone" />
                       {item.title({
@@ -132,8 +160,10 @@ export const AppSidebar = () => {
                         count: item.id === 'my-mods' ? mods.length : undefined,
                         downloads:
                           item.id === 'downloads'
-                            ? mods.filter((mod) => mod.status === ModStatus.DOWNLOADING).length
-                            : undefined
+                            ? mods.filter(
+                                (mod) => mod.status === ModStatus.DOWNLOADING
+                              ).length
+                            : undefined,
                       })}
                     </Link>
                   </SidebarMenuButton>
@@ -150,9 +180,9 @@ export const AppSidebar = () => {
               <DownloadProgress />
               <Separator />
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => open('https://discord.gg/KSB2kzQWWE')}
+                <SidebarMenuButton
                   className="cursor-pointer"
+                  onClick={() => open('https://discord.gg/KSB2kzQWWE')}
                 >
                   <DiscordLogo weight="duotone" />
                   <span>Need Help ?</span>

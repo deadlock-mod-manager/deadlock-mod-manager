@@ -2,7 +2,7 @@ import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
 import type { ISettingsParam } from 'tslog';
 import { Logger as TsLogger } from 'tslog';
 
-interface ILogObj {}
+type ILogObj = {};
 const defaultLogObject: ILogObj = {};
 
 export class Logger extends TsLogger<ILogObj> {
@@ -11,7 +11,7 @@ export class Logger extends TsLogger<ILogObj> {
       {
         ...settings,
         prettyErrorLoggerNameDelimiter: ' > ',
-        hideLogPositionForProduction: true
+        hideLogPositionForProduction: true,
       },
       defaultLogObject
     );
@@ -46,7 +46,7 @@ logger.attachTransport((logObj) => {
 
 export const createLogger = (name: string) => {
   return logger.getSubLogger({
-    name
+    name,
   });
 };
 

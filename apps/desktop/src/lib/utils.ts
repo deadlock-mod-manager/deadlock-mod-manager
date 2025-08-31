@@ -1,8 +1,8 @@
-import { LocalMod } from '@/types/mods';
-import { LocalSetting } from '@/types/settings';
 import { CustomSettingType } from '@deadlock-mods/utils';
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { LocalMod } from '@/types/mods';
+import type { LocalSetting } from '@/types/settings';
 import { SortType } from './constants';
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
@@ -24,15 +24,24 @@ export const formatSpeed = (speed: number) => {
 export const getAdditionalArgs = (settings: LocalSetting[]) => {
   const additionalArgs = [];
 
-  for (const setting of settings.filter((s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled)) {
+  for (const setting of settings.filter(
+    (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled
+  )) {
     additionalArgs.push(`+${setting.key} ${setting.value}`);
   }
 
   return additionalArgs.join(' ');
 };
-export const compareDates = (a: Date | number | undefined, b: Date | number | undefined) => {
-  if (!a) return -1;
-  if (!b) return 1;
+export const compareDates = (
+  a: Date | number | undefined,
+  b: Date | number | undefined
+) => {
+  if (!a) {
+    return -1;
+  }
+  if (!b) {
+    return 1;
+  }
   return new Date(a).getTime() - new Date(b).getTime();
 };
 

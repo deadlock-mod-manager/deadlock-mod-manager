@@ -1,7 +1,7 @@
-import { CustomSetting } from "@deadlock-mods/database"
+import type { CustomSetting } from '@deadlock-mods/database';
 
 export const toCustomSettingDto = (customSetting: CustomSetting) => {
-  return customSetting
-}
+  return customSetting;
+};
 
-export type CustomSettingDto = ReturnType<typeof toCustomSettingDto>
+export type CustomSettingDto = ReturnType<typeof toCustomSettingDto>;

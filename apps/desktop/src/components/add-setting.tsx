@@ -1,3 +1,12 @@
+import {
+  CustomSettingType,
+  customSettingTypeHuman,
+} from '@deadlock-mods/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PlusCircle } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -6,19 +15,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { usePersistedStore } from '@/lib/store';
-import { CreateSettingSchema, createSettingSchema } from '@/lib/validation/create-setting';
-import { CustomSettingType, customSettingTypeHuman } from '@deadlock-mods/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle } from '@phosphor-icons/react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import {
+  type CreateSettingSchema,
+  createSettingSchema,
+} from '@/lib/validation/create-setting';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
   const { createSetting } = usePersistedStore();
@@ -29,8 +50,8 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
       key: '',
       value: '',
       type: CustomSettingType.LAUNCH_OPTION,
-      description: ''
-    }
+      description: '',
+    },
   });
 
   const onSubmit = (values: CreateSettingSchema) => {
@@ -40,7 +61,7 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild onClick={() => setOpen(true)}>
         {children}
       </DialogTrigger>
@@ -48,11 +69,12 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
         <DialogHeader>
           <DialogTitle>Create a custom setting</DialogTitle>
           <DialogDescription>
-            Add a custom setting to the game. These will be added to the game as launch options.
+            Add a custom setting to the game. These will be added to the game as
+            launch options.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="key"
@@ -60,9 +82,14 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
                 <FormItem>
                   <FormLabel>Key</FormLabel>
                   <FormControl>
-                    <Input placeholder="For example: citadel_unit_status_use_new" {...field} />
+                    <Input
+                      placeholder="For example: citadel_unit_status_use_new"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormDescription>Most settings are a key-value pair</FormDescription>
+                  <FormDescription>
+                    Most settings are a key-value pair
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -74,7 +101,10 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
                 <FormItem>
                   <FormLabel>Value</FormLabel>
                   <FormControl>
-                    <Input placeholder="true or false or any value" {...field} />
+                    <Input
+                      placeholder="true or false or any value"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -86,7 +116,10 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Setting type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    defaultValue={field.value}
+                    onValueChange={field.onChange}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a type" />

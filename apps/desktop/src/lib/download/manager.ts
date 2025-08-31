@@ -1,17 +1,19 @@
-import { DownloadableMod } from '@/types/mods';
 import { appLocalDataDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { download } from '@tauri-apps/plugin-upload';
 import { toast } from 'sonner';
+import type { DownloadableMod } from '@/types/mods';
 import { getModDownload } from '../api';
 import { createLogger } from '../logger';
 
 const logger = createLogger('download-manager');
 
 const createIfNotExists = async (path: string) => {
-  logger.debug('Creating directory if not exists: ' + path);
+  logger.debug(`Creating directory if not exists: ${path}`);
   try {
-    const dirExists = await exists(path, { baseDir: BaseDirectory.AppLocalData });
+    const dirExists = await exists(path, {
+      baseDir: BaseDirectory.AppLocalData,
+    });
     if (!dirExists) {
       logger.info(`Creating ${path} directory`);
       await mkdir(path, { baseDir: BaseDirectory.AppLocalData });
@@ -24,7 +26,10 @@ const createIfNotExists = async (path: string) => {
 
 class DownloadManager {
   private queue: DownloadableMod[] = [];
-  private progressUpdateTimers: Record<string, { lastUpdate: number; timerId: number | null }> = {};
+  private readonly progressUpdateTimers: Record<
+    string,
+    { lastUpdate: number; timerId: number | null }
+  > = {};
   private readonly THROTTLE_MS = 500; // Only update progress every 500ms
 
   constructor() {
@@ -40,7 +45,9 @@ class DownloadManager {
     // Clean up any timers
     if (this.progressUpdateTimers[mod.remoteId]) {
       if (this.progressUpdateTimers[mod.remoteId].timerId) {
-        clearTimeout(this.progressUpdateTimers[mod.remoteId].timerId as unknown as number);
+        clearTimeout(
+          this.progressUpdateTimers[mod.remoteId].timerId as unknown as number
+        );
       }
       delete this.progressUpdateTimers[mod.remoteId];
     }
@@ -60,7 +67,7 @@ class DownloadManager {
     if (!this.progressUpdateTimers[modId]) {
       this.progressUpdateTimers[modId] = {
         lastUpdate: 0,
-        timerId: null
+        timerId: null,
       };
     }
 
@@ -100,9 +107,13 @@ class DownloadManager {
   }
 
   async process() {
-    if (this.queue.length === 0) return;
+    if (this.queue.length === 0) {
+      return;
+    }
     const mod = this.queue.shift();
-    if (!mod) return;
+    if (!mod) {
+      return;
+    }
 
     try {
       mod.onStart();
@@ -119,21 +130,27 @@ class DownloadManager {
         mod.downloads = downloads;
       }
 
-      logger.info(`Mod has ${mod.downloads.length} downloadable files`, { mod: mod.remoteId });
+      logger.info(`Mod has ${mod.downloads.length} downloadable files`, {
+        mod: mod.remoteId,
+      });
 
       const file = mod.downloads[0]; // TODO: handle multiple files
 
       logger.info('Downloading mod', { mod: mod.remoteId });
-      await download(file.url, await join(modDir, `${file.name}`), (progress) => {
-        this.throttledProgressUpdate(mod, progress);
-        if (progress.progressTotal === progress.total) {
-          mod.onComplete(modDir);
-          // Clean up timer entry when done
-          if (this.progressUpdateTimers[mod.remoteId]) {
-            delete this.progressUpdateTimers[mod.remoteId];
+      await download(
+        file.url,
+        await join(modDir, `${file.name}`),
+        (progress) => {
+          this.throttledProgressUpdate(mod, progress);
+          if (progress.progressTotal === progress.total) {
+            mod.onComplete(modDir);
+            // Clean up timer entry when done
+            if (this.progressUpdateTimers[mod.remoteId]) {
+              delete this.progressUpdateTimers[mod.remoteId];
+            }
           }
         }
-      });
+      );
     } catch (error) {
       logger.error(error);
       toast.error('Failed to download mod');

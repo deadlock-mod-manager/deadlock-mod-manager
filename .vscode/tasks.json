@@ -15,28 +15,28 @@
       "args": ["dev"],
       "problemMatcher": [
         {
-            "owner": "typescript",
-            "source": "Typescript",
-            "fileLocation": "absolute",
-            "applyTo": "allDocuments",
-            "background": {
-                "activeOnStart": true
-                // "beginsPattern": "sd",
-                // "endsPattern": " > "
+          "owner": "typescript",
+          "source": "Typescript",
+          "fileLocation": "absolute",
+          "applyTo": "allDocuments",
+          "background": {
+            "activeOnStart": true
+            // "beginsPattern": "sd",
+            // "endsPattern": " > "
+          },
+          "pattern": [
+            {
+              "regexp": "(ERROR|WARNING)\\(TypeScript\\)  (.*)",
+              "severity": 1,
+              "message": 2
             },
-            "pattern": [
-                {
-                    "regexp": "(ERROR|WARNING)\\(TypeScript\\)  (.*)",
-                    "severity": 1,
-                    "message": 2
-                },
-                {
-                    "regexp": "^ FILE  (.*):(\\d*):(\\d*)$",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3
-                }
-            ]
+            {
+              "regexp": "^ FILE  (.*):(\\d*):(\\d*)$",
+              "file": 1,
+              "line": 2,
+              "column": 3
+            }
+          ]
         }
       ],
       "options": {

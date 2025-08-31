@@ -1,7 +1,7 @@
-import { downloadManager } from '@/lib/download/manager';
-import { usePersistedStore } from '@/lib/store';
 import { invoke } from '@tauri-apps/api/core';
 import { createContext, useContext, useEffect, useRef } from 'react';
+import { downloadManager } from '@/lib/download/manager';
+import { usePersistedStore } from '@/lib/store';
 
 type AppProviderProps = {
   children: React.ReactNode;
@@ -20,12 +20,17 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
   useEffect(() => {
     if (!queueInterval.current) {
       downloadManager.init().then(() => {
-        queueInterval.current = setInterval(() => downloadManager.process(), 100) as unknown as number; // This is annoying
+        queueInterval.current = setInterval(
+          () => downloadManager.process(),
+          100
+        ) as unknown as number; // This is annoying
       });
     }
 
     return () => {
-      if (queueInterval.current) clearInterval(queueInterval.current);
+      if (queueInterval.current) {
+        clearInterval(queueInterval.current);
+      }
     };
   }, []);
 
@@ -44,6 +49,8 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
 
 export const useApp = () => {
   const context = useContext(AppProviderContext);
-  if (context === undefined) throw new Error('useApp must be used within a AppProvider');
+  if (context === undefined) {
+    throw new Error('useApp must be used within a AppProvider');
+  }
   return context;
 };

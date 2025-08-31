@@ -13,5 +13,5 @@ export enum SortType {
   LAST_UPDATED = 'last updated',
   DOWNLOADS = 'download count',
   RATING = 'rating',
-  RELEASE_DATE = 'release date'
+  RELEASE_DATE = 'release date',
 }

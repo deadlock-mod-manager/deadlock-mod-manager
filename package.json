@@ -6,17 +6,21 @@
     "db:push": "turbo run db:push",
     "db:seed": "turbo run db:seed",
     "dev": "turbo run desktop:dev",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "npx ultracite@latest format",
     "generate": "turbo run generate",
-    "lint": "turbo run lint",
-    "publish-packages": "turbo run build lint && changeset version && changeset publish"
+    "lint": "npx ultracite@latest lint",
+    "publish-packages": "turbo run build && changeset version && changeset publish"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.2",
     "dotenv-cli": "^7.4.4",
-    "prettier": "^3.2.5",
+    "husky": "^9.1.7",
+    "lefthook": "^1.12.3",
+    "lint-staged": "^16.1.5",
     "tsx": "4.19.1",
     "turbo": "^2.5.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "ultracite": "5.2.16"
   },
   "engines": {
     "node": ">=18"
@@ -37,5 +41,10 @@
       "sharp"
     ]
   },
-  "packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677"
+  "packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "pnpm dlx ultracite format"
+    ]
+  }
 }

@@ -1,0 +1,94 @@
+---
+description: Coding Style: Guidelines for code formatting, naming conventions, and best practices across TypeScript, React, Tauri, and Next.js
+globs: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+alwaysApply: true
+---
+
+# Coding Style Guidelines
+
+## Technology-Specific Guidelines
+
+### TypeScript
+- Use TypeScript strictly - avoid `any` types
+- Use interfaces for object shapes that will be extended
+- Use type aliases for complex types and unions
+- Use the latest TypeScript features appropriately
+
+### React Components
+- Use functional components with hooks
+- Use named exports for components
+- Keep components small and focused on a single responsibility
+- Use proper prop typing
+
+### Backend (Bun + Hono)
+- Use middleware for cross-cutting concerns
+- Validate request data with Zod
+- Use proper error handling with structured responses
+- Structure routes logically by resource
+- Leverage Bun's performance optimizations
+
+### Desktop Application (Tauri)
+- Follow Tauri framework conventions
+- Separate frontend React code from Rust backend
+- Use Tauri commands for system interactions
+- Keep performance in mind for desktop applications
+- Handle errors gracefully between frontend and backend
+
+### Web Application (Next.js)
+- Use App Router for new features
+- Implement proper SEO optimization
+- Follow Next.js best practices for performance
+- Use server components where appropriate
+
+## Comments and Documentation
+- Write self-documenting code, no need to add extra comments
+- Add comments for complex logic
+- Document public APIs and interfaces
+```typescript
+/**
+ * Fetches user data and handles pagination
+ * @param page - The page number to fetch
+ * @param limit - Number of items per page
+ * @returns Paginated user data
+ */
+async function fetchUsers(page: number, limit: number): Promise<PaginatedResponse<User>> {
+  // ...
+}
+```
+
+## Styling
+- Use Tailwind CSS for styling
+- Follow component-based styling practices
+- Use utility classes for one-off styling needs
+- Extract common patterns to shared components
+
+## Git Commit Guidelines
+
+### Commit Messages
+- Use conventional commits format
+- Include ticket number when applicable
+- Keep messages clear and concise
+```bash
+# Format: <type>(<scope>): <description>
+feat(auth): add social login support
+fix(api): handle pagination edge cases
+chore(deps): update dependencies
+```
+
+### Branch Names
+- Use feature/, bugfix/, hotfix/ prefixes
+- Include ticket number when applicable
+- Use kebab-case
+```bash
+feature/KR-123-user-authentication
+bugfix/api-pagination
+hotfix/login-crash
+```
+
+## Core Philosophy
+
+- Code is primarily written for humans to read and understand, not just for computers to execute
+- "Explicit is better than implicit. Simple is better than complex. Readability counts."
+- Maintain consistency with existing code style when modifying files
+- Keep code DRY (Don't Repeat Yourself)
+- Prefer verbose variable names and maintainability over concise code

@@ -4,7 +4,7 @@ const PageTitle = ({
   title,
   action,
   subtitle,
-  className
+  className,
 }: {
   title: string;
   action?: React.ReactNode;
@@ -13,8 +13,8 @@ const PageTitle = ({
 }) => {
   return (
     <div className={cn('flex flex-col justify-center', className)}>
-      <div className="flex gap-4 items-center">
-        <h3 className="text-3xl font-bold">{title}</h3>
+      <div className="flex items-center gap-4">
+        <h3 className="font-bold text-3xl">{title}</h3>
         {action ?? null}
       </div>
       {subtitle && <p className="text-muted-foreground">{subtitle}</p>}

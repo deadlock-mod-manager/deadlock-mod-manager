@@ -1,42 +1,33 @@
-import { db, modDownloads, mods } from '@deadlock-mods/database'
-import { toModDownloadDto, toModDto } from '@deadlock-mods/utils'
-import { desc, eq } from 'drizzle-orm'
-import { Hono } from 'hono'
+import { modDownloadRepository, modRepository } from '@deadlock-mods/database';
+import { toModDownloadDto, toModDto } from '@deadlock-mods/utils';
+import { Hono } from 'hono';
 
-const modsRouter = new Hono()
+const modsRouter = new Hono();
 
 modsRouter.get('/', async (c) => {
-  const allMods = await db.select().from(mods).orderBy(desc(mods.remoteUpdatedAt))
-  return c.json(allMods.map(toModDto))
-})
+  const allMods = await modRepository.findAll();
+  return c.json(allMods.map(toModDto));
+});
 
 modsRouter.get('/:id', async (c) => {
-  const mod = await db
-    .select()
-    .from(mods)
-    .where(eq(mods.remoteId, c.req.param('id')))
-    .limit(1)
-  if (mod.length === 0) {
-    return c.json({ error: 'Mod not found' }, 404)
+  const mod = await modRepository.findByRemoteId(c.req.param('id'));
+  if (!mod) {
+    return c.json({ error: 'Mod not found' }, 404);
   }
-  return c.json(toModDto(mod[0]))
-})
+  return c.json(toModDto(mod));
+});
 
 modsRouter.get('/:id/download', async (c) => {
-  const remoteId = c.req.param('id')
-  const mod = await db.select().from(mods).where(eq(mods.remoteId, remoteId)).limit(1)
+  const remoteId = c.req.param('id');
+  const mod = await modRepository.findByRemoteId(remoteId);
 
-  if (mod.length === 0) {
-    return c.json({ error: 'Mod not found' }, 404)
+  if (!mod) {
+    return c.json({ error: 'Mod not found' }, 404);
   }
 
-  const downloads = await db
-    .select()
-    .from(modDownloads)
-    .where(eq(modDownloads.modId, mod[0].id))
-    .orderBy(modDownloads.createdAt)
+  const downloads = await modDownloadRepository.findByModId(mod.id);
 
-  return c.json(toModDownloadDto(downloads))
-})
+  return c.json(toModDownloadDto(downloads));
+});
 
-export default modsRouter
+export default modsRouter;

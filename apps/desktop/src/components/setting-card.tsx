@@ -1,9 +1,9 @@
-import { usePersistedStore } from '@/lib/store';
-import { LocalSetting } from '@/types/settings';
 import { CustomSettingType } from '@deadlock-mods/utils';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { usePersistedStore } from '@/lib/store';
+import type { LocalSetting } from '@/types/settings';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -19,10 +19,10 @@ import { Skeleton } from './ui/skeleton';
 import { Switch } from './ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-interface SettingsCardProps {
+type SettingsCardProps = {
   setting: LocalSetting | undefined;
   onChange: (newValue: boolean) => void;
-}
+};
 
 function parseCommand(input: string): { key: string; value: string } {
   const t = input.trim();
@@ -34,9 +34,11 @@ function parseCommand(input: string): { key: string; value: string } {
 }
 
 const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
-  if (!setting) return null;
+  if (!setting) {
+    return null;
+  }
 
-  if (setting.type != CustomSettingType.LAUNCH_OPTION) {
+  if (setting.type !== CustomSettingType.LAUNCH_OPTION) {
     return (
       <code>
         {setting.key} {setting.value}
@@ -49,7 +51,7 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
       <TooltipTrigger className="flex flex-row items-center gap-2">
         Command:
         <code
-          className="underline-offset-4 underline decoration-dotted cursor-copy"
+          className="cursor-copy underline decoration-dotted underline-offset-4"
           onClick={() => {
             navigator.clipboard.writeText(`+${setting.key} ${setting.value}`);
             toast.success('Copied to clipboard');
@@ -67,19 +69,19 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
 
 export const SettingCardSkeleton = () => {
   return (
-    <div className="flex flex-row justify-between items-center pl-8">
+    <div className="flex flex-row items-center justify-between pl-8">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-medium">
-          <Skeleton className="w-48 h-6" />
+        <h3 className="font-medium text-lg">
+          <Skeleton className="h-6 w-48" />
         </h3>
-        <div className="text-sm text-muted-foreground">
-          <Skeleton className="w-96 h-4" />
+        <div className="text-muted-foreground text-sm">
+          <Skeleton className="h-4 w-96" />
         </div>
       </div>
       <div className="flex items-center space-x-2">
-        <Switch id="toggle-setting" disabled />
+        <Switch disabled id="toggle-setting" />
         <Label htmlFor="toggle-setting">
-          <Skeleton className="w-16 h-4" />
+          <Skeleton className="h-4 w-16" />
         </Label>
       </div>
     </div>
@@ -94,7 +96,9 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
   const [editName, setEditName] = useState('');
   const [editCmd, setEditCmd] = useState('');
 
-  if (!setting) return <SettingCardSkeleton />;
+  if (!setting) {
+    return <SettingCardSkeleton />;
+  }
   const custom = setting.id.startsWith('local_setting_');
 
   const openEdit = () => {
@@ -108,10 +112,14 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
   };
 
   const saveEdit = () => {
-    if (!custom) return;
+    if (!custom) {
+      return;
+    }
 
     const { key, value } = parseCommand(editCmd);
-    if (!key) return toast.error('Command key is required');
+    if (!key) {
+      return toast.error('Command key is required');
+    }
     if (setting.type === CustomSettingType.LAUNCH_OPTION && !value) {
       return toast.error('Command value is required');
     }
@@ -121,7 +129,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
       description: editName?.trim() || setting.description,
       key,
       value,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     addSetting(updated);
@@ -130,19 +138,21 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
   };
 
   const deleteSetting = () => {
-    if (!custom) return;
+    if (!custom) {
+      return;
+    }
     removeSetting(setting.id);
     toast.success('Setting removed');
   };
 
   return (
     <>
-      <div className="flex flex-row justify-between items-center pl-8">
+      <div className="flex flex-row items-center justify-between pl-8">
         <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-medium">
+          <h3 className="font-medium text-lg">
             {setting.description} {custom && <Badge>Custom</Badge>}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             <Command setting={setting} />
           </p>
         </div>
@@ -152,8 +162,13 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={openEdit} aria-label="Edit">
-                    <PencilIcon className="w-4 h-4" />
+                  <Button
+                    aria-label="Edit"
+                    onClick={openEdit}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <PencilIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -162,8 +177,13 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={deleteSetting} aria-label="Delete">
-                    <TrashIcon className="w-4 h-4" />
+                  <Button
+                    aria-label="Delete"
+                    onClick={deleteSetting}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <TrashIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -173,13 +193,19 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
             </>
           )}
 
-          <Switch id={`toggle-setting-${setting.id}`} checked={setting.enabled} onCheckedChange={onChange} />
-          <Label htmlFor={`toggle-setting-${setting.id}`}>{!setting.enabled ? 'Disabled' : 'Enabled'}</Label>
+          <Switch
+            checked={setting.enabled}
+            id={`toggle-setting-${setting.id}`}
+            onCheckedChange={onChange}
+          />
+          <Label htmlFor={`toggle-setting-${setting.id}`}>
+            {setting.enabled ? 'Enabled' : 'Disabled'}
+          </Label>
         </div>
       </div>
 
       {/* dialog for custom settings */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog onOpenChange={setEditOpen} open={editOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit custom option</DialogTitle>
@@ -188,13 +214,25 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor={`name-${setting.id}`}>Name</Label>
-              <Input id={`name-${setting.id}`} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="e.g. 110 FOV" />
+              <Input
+                id={`name-${setting.id}`}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="e.g. 110 FOV"
+                value={editName}
+              />
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor={`cmd-${setting.id}`}>Command</Label>
-              <Input id={`cmd-${setting.id}`} value={editCmd} onChange={(e) => setEditCmd(e.target.value)} placeholder="+r_aspectratio 2.7" />
-              <span className="text-xs text-muted-foreground">Format: +cvar value (leading + is optional)</span>
+              <Input
+                id={`cmd-${setting.id}`}
+                onChange={(e) => setEditCmd(e.target.value)}
+                placeholder="+r_aspectratio 2.7"
+                value={editCmd}
+              />
+              <span className="text-muted-foreground text-xs">
+                Format: +cvar value (leading + is optional)
+              </span>
             </div>
           </div>
 

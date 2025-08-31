@@ -1,19 +1,19 @@
-import { Cron } from 'croner'
+import type { Cron } from 'croner';
 
-const jobs: Cron[] = []
+const jobs: Cron[] = [];
 
 export const registerJob = (job: Cron) => {
-  jobs.push(job)
-}
+  jobs.push(job);
+};
 
 export const startJobs = () => {
-  jobs.forEach((job) => {
-    job.resume()
-  })
-}
+  for (const job of jobs) {
+    job.resume();
+  }
+};
 
 export const stopJobs = () => {
-  jobs.forEach((job) => {
-    job.pause()
-  })
-}
+  for (const job of jobs) {
+    job.pause();
+  }
+};

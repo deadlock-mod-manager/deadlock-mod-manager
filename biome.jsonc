@@ -1,0 +1,29 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+  "extends": ["ultracite"],
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**/*"],
+    "experimentalScannerIgnores": [
+      "**/components/ui/**",
+      "apps/desktop/src/components/ui/**",
+      "apps/web/components/ui/**",
+      "**/tsconfig*.json",
+      "**/next.config.js",
+      "**/tailwind.config.js",
+      "**/vite.config.ts",
+      "**/postcss.config.js"
+    ]
+  },
+  "linter": {
+    "rules": {
+      "performance": {
+        "noNamespaceImport": "off"
+      },
+      "suspicious": {
+        "useAwait": "off",
+        "noConstantCondition": "off"
+      }
+    }
+  }
+}

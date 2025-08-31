@@ -29,22 +29,25 @@ export enum DeadlockHeroes {
   Vyper = 'Vyper',
   Warden = 'Warden',
   Wraith = 'Wraith',
-  Yamato = 'Yamato'
+  Yamato = 'Yamato',
 }
 
-export const DeadlockHeroesByAlias = Object.keys(DeadlockHeroes).reduce((acc: Record<string, string>, key) => {
-  acc[DeadlockHeroes[key as keyof typeof DeadlockHeroes]] = key
-  return acc
-}, {})
+export const DeadlockHeroesByAlias = Object.keys(DeadlockHeroes).reduce(
+  (acc: Record<string, string>, key) => {
+    acc[DeadlockHeroes[key as keyof typeof DeadlockHeroes]] = key;
+    return acc;
+  },
+  {}
+);
 
 export enum CustomSettingType {
-  LAUNCH_OPTION = 'launch_option'
+  LAUNCH_OPTION = 'launch_option',
 }
 
 export const customSettingTypeHuman = {
   [CustomSettingType.LAUNCH_OPTION]: {
     title: 'Custom Launch Options',
     description:
-      'Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).'
-  }
+      'Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).',
+  },
 };

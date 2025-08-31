@@ -1,5 +1,5 @@
-import useAbout from '@/hooks/use-about';
 import { useEffect, useState } from 'react';
+import useAbout from '@/hooks/use-about';
 
 const LAST_SEEN_VERSION_KEY = 'lastSeenVersion';
 
@@ -8,7 +8,9 @@ const useWhatsNew = () => {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
 
   useEffect(() => {
-    if (!data?.version) return;
+    if (!data?.version) {
+      return;
+    }
 
     const currentVersion = data.version;
     const lastSeenVersion = localStorage.getItem(LAST_SEEN_VERSION_KEY);
@@ -36,7 +38,7 @@ const useWhatsNew = () => {
     showWhatsNew,
     markVersionAsSeen,
     forceShow,
-    currentVersion: data?.version
+    currentVersion: data?.version,
   };
 };
 

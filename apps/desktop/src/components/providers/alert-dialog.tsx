@@ -1,20 +1,30 @@
+import * as React from 'react';
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import * as React from 'react';
 
 export const AlertDialogContext = React.createContext<
-  (params: AlertAction) => Promise<AlertAction['type'] extends 'alert' | 'confirm' ? boolean : null | string>
+  (
+    params: AlertAction
+  ) => Promise<
+    AlertAction['type'] extends 'alert' | 'confirm' ? boolean : null | string
+  >
 >(() => null!);
 
-type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+type ButtonVariant =
+  | 'default'
+  | 'destructive'
+  | 'outline'
+  | 'secondary'
+  | 'ghost'
+  | 'link';
 
 const defaultCancelButtonText: string = 'Cancel';
 const defaultActionButtonText: string = 'Okay';
@@ -45,11 +55,14 @@ export type AlertAction =
       defaultValue?: string;
       cancelButtonVariant?: ButtonVariant;
       actionButtonVariant?: ButtonVariant;
-      inputProps?: React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+      inputProps?: React.DetailedHTMLProps<
+        React.InputHTMLAttributes<HTMLInputElement>,
+        HTMLInputElement
+      >;
     }
   | { type: 'close' };
 
-interface AlertDialogState {
+type AlertDialogState = {
   open: boolean;
   title: string;
   body: string;
@@ -60,11 +73,17 @@ interface AlertDialogState {
   actionButtonVariant: ButtonVariant;
   defaultValue?: string;
   inputProps?: React.PropsWithoutRef<
-    React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>
+    React.DetailedHTMLProps<
+      React.InputHTMLAttributes<HTMLInputElement>,
+      HTMLInputElement
+    >
   >;
-}
+};
 
-export function alertDialogReducer(state: AlertDialogState, action: AlertAction): AlertDialogState {
+export function alertDialogReducer(
+  state: AlertDialogState,
+  action: AlertAction
+): AlertDialogState {
   switch (action.type) {
     case 'close':
       return { ...state, open: false };
@@ -76,17 +95,28 @@ export function alertDialogReducer(state: AlertDialogState, action: AlertAction)
         open: true,
         ...action,
         cancelButton:
-          action.cancelButton || (action.type === 'alert' ? defaultActionButtonText : defaultCancelButtonText),
-        actionButton: ('actionButton' in action && action.actionButton) || defaultActionButtonText,
+          action.cancelButton ||
+          (action.type === 'alert'
+            ? defaultActionButtonText
+            : defaultCancelButtonText),
+        actionButton:
+          ('actionButton' in action && action.actionButton) ||
+          defaultActionButtonText,
         cancelButtonVariant: action.cancelButtonVariant || 'ghost',
-        actionButtonVariant: ('actionButtonVariant' in action && action.actionButtonVariant) || 'destructive'
+        actionButtonVariant:
+          ('actionButtonVariant' in action && action.actionButtonVariant) ||
+          'destructive',
       };
     default:
       return state;
   }
 }
 
-export const AlertDialogProvider = ({ children }: { children: React.ReactNode }) => {
+export const AlertDialogProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [state, dispatch] = React.useReducer(alertDialogReducer, {
     open: false,
     title: '',
@@ -95,7 +125,7 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
     cancelButton: defaultCancelButtonText,
     actionButton: defaultActionButtonText,
     cancelButtonVariant: 'default',
-    actionButtonVariant: 'default'
+    actionButtonVariant: 'default',
   });
 
   const resolveRef = React.useRef<(tf: any) => void>(() => {});
@@ -113,7 +143,9 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
   const dialog = React.useCallback(async <T extends AlertAction>(params: T) => {
     dispatch(params);
 
-    return new Promise<T['type'] extends 'alert' | 'confirm' ? boolean : null | string>((resolve) => {
+    return new Promise<
+      T['type'] extends 'alert' | 'confirm' ? boolean : null | string
+    >((resolve) => {
       resolveRef.current = resolve;
     });
   }, []);
@@ -122,11 +154,13 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
     <AlertDialogContext.Provider value={dialog}>
       {children}
       <AlertDialog
-        open={state.open}
         onOpenChange={(open) => {
-          if (!open) close();
+          if (!open) {
+            close();
+          }
           return;
         }}
+        open={state.open}
       >
         <AlertDialogContent asChild>
           <form
@@ -137,11 +171,23 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
           >
             <AlertDialogHeader>
               <AlertDialogTitle>{state.title}</AlertDialogTitle>
-              {state.body ? <AlertDialogDescription>{state.body}</AlertDialogDescription> : null}
+              {state.body ? (
+                <AlertDialogDescription>{state.body}</AlertDialogDescription>
+              ) : null}
             </AlertDialogHeader>
-            {state.type === 'prompt' && <Input name="prompt" defaultValue={state.defaultValue} {...state.inputProps} />}
+            {state.type === 'prompt' && (
+              <Input
+                defaultValue={state.defaultValue}
+                name="prompt"
+                {...state.inputProps}
+              />
+            )}
             <AlertDialogFooter>
-              <Button type="button" onClick={close} variant={state.cancelButtonVariant}>
+              <Button
+                onClick={close}
+                type="button"
+                variant={state.cancelButtonVariant}
+              >
                 {state.cancelButton}
               </Button>
               {state.type === 'alert' ? null : (
@@ -157,7 +203,9 @@ export const AlertDialogProvider = ({ children }: { children: React.ReactNode })
   );
 };
 
-type Params<T extends 'alert' | 'confirm' | 'prompt'> = Omit<Extract<AlertAction, { type: T }>, 'type'> | string;
+type Params<T extends 'alert' | 'confirm' | 'prompt'> =
+  | Omit<Extract<AlertAction, { type: T }>, 'type'>
+  | string;
 
 export function useConfirm() {
   const dialog = React.useContext(AlertDialogContext);
@@ -166,7 +214,7 @@ export function useConfirm() {
     (params: Params<'confirm'>) => {
       return dialog({
         ...(typeof params === 'string' ? { title: params } : params),
-        type: 'confirm'
+        type: 'confirm',
       });
     },
     [dialog]
@@ -179,7 +227,7 @@ export function usePrompt() {
   return (params: Params<'prompt'>) =>
     dialog({
       ...(typeof params === 'string' ? { title: params } : params),
-      type: 'prompt'
+      type: 'prompt',
     });
 }
 
@@ -188,6 +236,6 @@ export function useAlert() {
   return (params: Params<'alert'>) =>
     dialog({
       ...(typeof params === 'string' ? { title: params } : params),
-      type: 'alert'
+      type: 'alert',
     });
 }

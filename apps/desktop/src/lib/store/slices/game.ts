@@ -1,12 +1,14 @@
-import { StateCreator } from 'zustand';
-import { State } from '..';
+import type { StateCreator } from 'zustand';
+import type { State } from '..';
 
-export interface GameState {
+export type GameState = {
   gamePath: string;
   setGamePath: (path: string) => void;
-}
+};
 
-export const createGameSlice: StateCreator<State, [], [], GameState> = (set) => ({
+export const createGameSlice: StateCreator<State, [], [], GameState> = (
+  set
+) => ({
   gamePath: '',
-  setGamePath: (path: string) => set({ gamePath: path })
+  setGamePath: (path: string) => set({ gamePath: path }),
 });

@@ -1,5 +1,5 @@
 import { getStore } from '@tauri-apps/plugin-store';
-import { StateStorage } from 'zustand/middleware';
+import type { StateStorage } from 'zustand/middleware';
 import { STORE_NAME } from '../constants';
 
 const storage: StateStorage = {
@@ -15,7 +15,7 @@ const storage: StateStorage = {
   removeItem: async (key: string): Promise<void> => {
     const store = await getStore(STORE_NAME);
     await store?.delete(key);
-  }
+  },
 };
 
 export default storage;

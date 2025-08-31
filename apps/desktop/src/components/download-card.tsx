@@ -1,17 +1,17 @@
-import { usePersistedStore } from '@/lib/store';
-import { formatSize, formatSpeed } from '@/lib/utils';
-import { LocalMod } from '@/types/mods';
 import { FolderOpen } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
 import { useMemo } from 'react';
+import { usePersistedStore } from '@/lib/store';
+import { formatSize, formatSpeed } from '@/lib/utils';
+import type { LocalMod } from '@/types/mods';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-interface DownloadCardProps {
+type DownloadCardProps = {
   download: LocalMod;
-}
+};
 
 const DownloadCard = ({ download }: DownloadCardProps) => {
   const { getModProgress } = usePersistedStore();
@@ -24,19 +24,27 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
 
   return (
     <Card className="p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold">{download.name}</h3>
-        <span className="text-sm text-muted-foreground">{formatSize(totalSize)}</span>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-semibold text-lg">{download.name}</h3>
+        <span className="text-muted-foreground text-sm">
+          {formatSize(totalSize)}
+        </span>
       </div>
-      <Progress value={percentage} className="mb-2" />
-      <div className="flex justify-between items-center text-sm">
+      <Progress className="mb-2" value={percentage} />
+      <div className="flex items-center justify-between text-sm">
         <span>{percentage.toFixed(1)}%</span>
         <span>{formatSpeed(speed)}</span>
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size={'icon'} onClick={() => invoke('show_in_folder', { path: download.path })}>
-                <FolderOpen className="w-4 h-4" />
+              <Button
+                onClick={() =>
+                  invoke('show_in_folder', { path: download.path })
+                }
+                size={'icon'}
+                variant="outline"
+              >
+                <FolderOpen className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Open folder</TooltipContent>

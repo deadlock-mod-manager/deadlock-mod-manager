@@ -1,11 +1,11 @@
+import { Laptop, Moon, Sun } from '@phosphor-icons/react';
 import {
   MenubarContent,
   MenubarMenu,
   MenubarRadioGroup,
   MenubarRadioItem,
-  MenubarTrigger
+  MenubarTrigger,
 } from '@/components/ui/menubar';
-import { Laptop, Moon, Sun } from '@phosphor-icons/react';
 import { useTheme } from './providers/theme';
 
 export function MenuModeToggle() {
@@ -16,15 +16,15 @@ export function MenuModeToggle() {
       <MenubarTrigger>Theme</MenubarTrigger>
       <MenubarContent forceMount>
         <MenubarRadioGroup value={theme}>
-          <MenubarRadioItem value="light" onClick={() => setTheme('light')}>
+          <MenubarRadioItem onClick={() => setTheme('light')} value="light">
             <Sun className="mr-2 h-4 w-4" />
             <span>Light</span>
           </MenubarRadioItem>
-          <MenubarRadioItem value="dark" onClick={() => setTheme('dark')}>
+          <MenubarRadioItem onClick={() => setTheme('dark')} value="dark">
             <Moon className="mr-2 h-4 w-4" />
             <span>Dark</span>
           </MenubarRadioItem>
-          <MenubarRadioItem value="system" onClick={() => setTheme('system')}>
+          <MenubarRadioItem onClick={() => setTheme('system')} value="system">
             <Laptop className="mr-2 h-4 w-4" />
             <span>System</span>
           </MenubarRadioItem>

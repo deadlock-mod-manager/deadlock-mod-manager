@@ -5,7 +5,6 @@
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
     "test": "dotenv -e ../../.env -- bun run src/test.ts",
-    "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
     "desktop:dev": "pnpm dev"
   },
   "dependencies": {
@@ -19,15 +18,12 @@
     "dotenv-cli": "^7.4.4",
     "drizzle-orm": "^0.42.0",
     "hono": "^4.4.11",
-    "tslog": "^4.9.3"
+    "tslog": "^4.9.3",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "latest",
-    "@types/pg": "^8.11.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "prettier": "^3.2.5"
+    "@types/pg": "^8.11.0"
   }
 }

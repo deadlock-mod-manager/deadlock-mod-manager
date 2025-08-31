@@ -1,4 +1,3 @@
-
 html {
   scroll-behavior: smooth;
 }
@@ -6,7 +5,7 @@ html {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
     --background: 0 0% 100%; /* Dark Deadlock Brown */
@@ -71,7 +70,7 @@ html {
 
     --sidebar-background: 20, 9%, 6%; /* Deadlock dark brown */
     --sidebar-foreground: 38, 65%, 97%; /* Deadlock White */
-    --sidebar-primary:  42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
     --sidebar-primary-foreground: 0 0% 9%;
     --sidebar-accent: 42, 60%, 84%; /* Deadlock Beige */
     --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
@@ -88,5 +87,3 @@ html {
     @apply bg-background text-foreground;
   }
 }
-
-

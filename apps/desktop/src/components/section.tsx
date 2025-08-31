@@ -7,7 +7,7 @@ const Section = ({
   description,
   children,
   className,
-  innerClassName
+  innerClassName,
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
@@ -17,21 +17,27 @@ const Section = ({
 }) => {
   return (
     <div className={cn('flex flex-col py-4', className)}>
-      <h3 className="text-xl font-semibold text-primary/10">{title}</h3>
-      {description && <div className="text-sm text-muted-foreground">{description}</div>}
+      <h3 className="font-semibold text-primary/10 text-xl">{title}</h3>
+      {description && (
+        <div className="text-muted-foreground text-sm">{description}</div>
+      )}
       <Separator className="mt-2" />
       <div className={cn('mt-4', innerClassName)}>{children}</div>
     </div>
   );
 };
 
-export const SectionSkeleton = ({ children }: { children: React.ReactNode }) => {
+export const SectionSkeleton = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   return (
     <Section
       className="gap-2"
-      title={<Skeleton className="w-48 h-6" />}
-      description={<Skeleton className="w-96 h-4" />}
+      description={<Skeleton className="h-4 w-96" />}
       innerClassName="flex flex-col gap-4"
+      title={<Skeleton className="h-6 w-48" />}
     >
       {children}
     </Section>

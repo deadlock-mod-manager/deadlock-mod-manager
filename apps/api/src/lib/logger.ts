@@ -1,16 +1,16 @@
-import type { ILogObj, ISettingsParam } from 'tslog'
-import { Logger as TsLogger } from 'tslog'
+import type { ILogObj, ISettingsParam } from 'tslog';
+import { Logger as TsLogger } from 'tslog';
 
 export class Logger extends TsLogger<ILogObj> {
   constructor(settings?: ISettingsParam<ILogObj>) {
     super({
       ...settings,
       prettyErrorLoggerNameDelimiter: ' > ',
-      hideLogPositionForProduction: true
-    })
+      hideLogPositionForProduction: true,
+    });
   }
 }
 
-const logger = new Logger()
+const logger = new Logger();
 
-export default logger
+export default logger;

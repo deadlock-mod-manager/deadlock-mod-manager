@@ -1,12 +1,12 @@
-import { Skeleton } from '@/components/ui/skeleton';
-import { useDownload } from '@/hooks/use-download';
-import { isModOutdated } from '@/lib/utils';
-import { ModStatus } from '@/types/mods';
-import { ModDto } from '@deadlock-mods/utils';
+import type { ModDto } from '@deadlock-mods/utils';
 import { CheckIcon, DownloadIcon, Loader2, XIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { FiZoomIn } from 'react-icons/fi';
 import { useNavigate } from 'react-router';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useDownload } from '@/hooks/use-download';
+import { isModOutdated } from '@/lib/utils';
+import { ModStatus } from '@/types/mods';
 import { OutdatedModWarning } from './outdated-mod-warning';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -33,10 +33,10 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
 
   if (!mod) {
     return (
-      <Card className="shadow cursor-pointer">
-        <Skeleton className="h-48 w-full object-cover rounded-t-xl bg-muted" />
+      <Card className="cursor-pointer shadow">
+        <Skeleton className="h-48 w-full rounded-t-xl bg-muted object-cover" />
         <CardHeader className="px-2 py-3">
-          <div className="flex justify-between items-start">
+          <div className="flex items-start justify-between">
             <div className="flex flex-col gap-2">
               <CardTitle>
                 <Skeleton className="h-4 w-32" />
@@ -46,7 +46,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
               </CardDescription>
             </div>
             <div className="flex flex-col">
-              <Button size="icon" variant="outline" disabled>
+              <Button disabled size="icon" variant="outline">
                 <DownloadIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -60,65 +60,85 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
     <>
       {showLargeImage && mod.images.length > 0 && (
         <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-8"
           onClick={() => setShowLargeImage(false)}
         >
-          <div className="relative bg-background rounded-xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden">
+          <div className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-xl bg-background shadow-2xl">
             <Button
+              className="absolute top-2 right-2 z-10"
+              onClick={() => setShowLargeImage(false)}
               size="icon"
               variant="ghost"
-              onClick={() => setShowLargeImage(false)}
-              className="absolute top-2 right-2 z-10"
             >
               <XIcon className="h-5 w-5" />
             </Button>
             <img
-              src={mod.images[0]}
               alt={`${mod.name} (enlarged)`}
-              className="max-w-full max-h-[90vh] object-contain p-2"
+              className="max-h-[90vh] max-w-full object-contain p-2"
+              src={mod.images[0]}
             />
           </div>
         </div>
       )}
-      <Card className="shadow cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+      <Card
+        className="cursor-pointer shadow"
+        onClick={() => navigate(`/mods/${mod.remoteId}`)}
+      >
         <div className="relative">
-          <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
+          <img
+            alt={mod.name}
+            className="h-48 w-full rounded-t-xl object-cover"
+            src={mod.images[0]}
+          />
           <div className="absolute top-2 right-2 flex flex-col gap-1">
             {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}
             {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
           </div>
           <Button
-            size="icon"
-            variant="secondary"
-            className="absolute bottom-2 right-2 opacity-80 hover:opacity-100"
+            className="absolute right-2 bottom-2 opacity-80 hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               setShowLargeImage(true);
             }}
+            size="icon"
+            variant="secondary"
           >
             <FiZoomIn className="h-4 w-4" />
           </Button>
         </div>
         <CardHeader className="px-2 py-3">
-          <div className="flex justify-between items-start">
+          <div className="flex items-start justify-between">
             <div className="flex flex-col">
-              <CardTitle className="text-ellipsis w-36 overflow-clip text-nowrap" title={mod.name}>
+              <CardTitle
+                className="w-36 overflow-clip text-ellipsis text-nowrap"
+                title={mod.name}
+              >
                 {mod.name}
               </CardTitle>
-              <CardDescription className="text-ellipsis w-36 overflow-clip text-nowrap" title={mod.author}>
+              <CardDescription
+                className="w-36 overflow-clip text-ellipsis text-nowrap"
+                title={mod.author}
+              >
                 By {mod.author}
               </CardDescription>
             </div>
             <div className="flex flex-col">
               <Button
-                size="icon"
-                variant="outline"
-                title="Download Mod"
+                disabled={
+                  status &&
+                  [
+                    ModStatus.DOWNLOADING,
+                    ModStatus.DOWNLOADED,
+                    ModStatus.INSTALLED,
+                  ].includes(status)
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   download();
                 }}
-                disabled={status && [ModStatus.DOWNLOADING, ModStatus.DOWNLOADED, ModStatus.INSTALLED].includes(status)}
+                size="icon"
+                title="Download Mod"
+                variant="outline"
               >
                 {Icon}
               </Button>

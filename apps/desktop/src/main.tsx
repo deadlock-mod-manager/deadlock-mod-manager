@@ -20,11 +20,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         <BrowserRouter>
           <Routes>
             <Route element={<App />}>
-              <Route path="/" element={<MyMods />} />
-              <Route path="/mods" element={<GetMods />} />
-              <Route path="/mods/:id" element={<Mod />} />
-              <Route path="/downloads" element={<Downloads />} />
-              <Route path="/settings" element={<CustomSettings />} />
+              <Route element={<MyMods />} path="/" />
+              <Route element={<GetMods />} path="/mods" />
+              <Route element={<Mod />} path="/mods/:id" />
+              <Route element={<Downloads />} path="/downloads" />
+              <Route element={<CustomSettings />} path="/settings" />
             </Route>
           </Routes>
         </BrowserRouter>

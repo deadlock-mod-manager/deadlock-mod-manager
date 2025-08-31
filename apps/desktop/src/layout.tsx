@@ -17,15 +17,18 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Menu />
         <SidebarProvider>
           <AppSidebar />
-          <div className={cn('flex flex-col w-full h-full')}>
+          <div className={cn('flex h-full w-full flex-col')}>
             <Toolbar />
             <div className={cn('flex p-8')}>{children}</div>
           </div>
         </SidebarProvider>
       </main>
       <Toaster />
-      
-      <Dialog open={showWhatsNew} onOpenChange={(open) => !open && markVersionAsSeen()}>
+
+      <Dialog
+        onOpenChange={(open) => !open && markVersionAsSeen()}
+        open={showWhatsNew}
+      >
         <WhatsNewDialog onClose={markVersionAsSeen} />
       </Dialog>
     </>
