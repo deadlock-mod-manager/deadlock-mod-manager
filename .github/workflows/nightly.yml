@@ -1,0 +1,286 @@
+name: Nightly Build
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22.11.0"
+
+on:
+  schedule:
+    # Run at 2 AM UTC every day
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+      commit_count: ${{ steps.check.outputs.commit_count }}
+      latest_commit: ${{ steps.check.outputs.latest_commit }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Get full history
+
+      - name: Check for new commits since last nightly
+        id: check
+        run: |
+          # Get the latest nightly release tag
+          LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
+          
+          if [ -z "$LAST_NIGHTLY" ]; then
+            echo "No previous nightly build found, will build"
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "Last nightly: $LAST_NIGHTLY"
+            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY)
+            COMMIT_COUNT=$(git rev-list --count ${LAST_NIGHTLY_COMMIT}..HEAD)
+            
+            if [ $COMMIT_COUNT -gt 0 ]; then
+              echo "Found $COMMIT_COUNT new commits since last nightly"
+              echo "should_build=true" >> $GITHUB_OUTPUT
+            else
+              echo "No new commits since last nightly"
+              echo "should_build=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+          
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  create-nightly-release:
+    needs: check-commits
+    if: needs.check-commits.outputs.should_build == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      tag_name: ${{ steps.create-release.outputs.tag_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v2.0.1
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get version and create tag
+        id: version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          DATE=$(date +%Y%m%d)
+          COMMIT_SHORT=${{ needs.check-commits.outputs.latest_commit }}
+          TAG_NAME="nightly-${PACKAGE_VERSION}-${DATE}-${COMMIT_SHORT}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+
+      - name: Create nightly release
+        id: create-release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tag = process.env.TAG_NAME;
+            const commitCount = ${{ needs.check-commits.outputs.commit_count }};
+            
+            console.log(`Creating nightly release: ${tag}`);
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `🌙 Nightly ${tag}`,
+              body: `**Nightly build from latest development**
+              
+📅 **Built:** ${new Date().toISOString().split('T')[0]}
+📊 **Commits since last nightly:** ${commitCount}
+🔗 **Commit:** ${context.sha.substring(0, 7)}
+
+⚠️ **Warning:** This is a nightly build and may contain unstable features or bugs.
+
+*This release was generated automatically from the latest development branch.*`,
+              draft: true,
+              prerelease: true
+            });
+            
+            // Set output for the step
+            core.setOutput('tag_name', tag);
+            return data.id;
+
+  build-nightly:
+    needs: [check-commits, create-nightly-release]
+    if: needs.check-commits.outputs.should_build == 'true'
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, ubuntu-24.04]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> apps/desktop/target
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v2.0.1
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install apt dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-0=2.44.0-2 \
+            libwebkit2gtk-4.1-dev=2.44.0-2 \
+            libjavascriptcoregtk-4.1-0=2.44.0-2 \
+            libjavascriptcoregtk-4.1-dev=2.44.0-2 \
+            gir1.2-javascriptcoregtk-4.1=2.44.0-2 \
+            gir1.2-webkit2-4.1=2.44.0-2 \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Prisma Generate
+        run: pnpm generate
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+        with:
+          projectPath: ./apps/desktop
+          releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
+
+  publish-nightly:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [check-commits, create-nightly-release, build-nightly]
+    if: needs.check-commits.outputs.should_build == 'true'
+
+    steps:
+      - name: Publish nightly release
+        id: publish-release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-nightly-release.outputs.release_id }}
+        with:
+          script: |
+            try {
+              console.log(`Publishing nightly release ID: ${process.env.release_id}`);
+              
+              // Update the release to publish it
+              const { data: updatedRelease } = await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: process.env.release_id,
+                draft: false,
+                prerelease: true // Keep as prerelease for nightly builds
+              });
+              
+              console.log(`Successfully published nightly release: ${updatedRelease.html_url}`);
+              return updatedRelease.id;
+            } catch (error) {
+              console.error(`Failed to publish nightly release: ${error.message}`);
+              throw error;
+            }
+
+      - name: Cleanup old nightly releases
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            // Filter nightly releases and sort by creation date
+            const nightlyReleases = releases
+              .filter(release => release.tag_name.startsWith('nightly-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            // Keep only the latest 7 nightly releases, delete older ones
+            const releasesToDelete = nightlyReleases.slice(7);
+            
+            for (const release of releasesToDelete) {
+              console.log(`Deleting old nightly release: ${release.tag_name}`);
+              
+              try {
+                // Delete the release
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id
+                });
+                
+                // Delete the tag
+                await github.rest.git.deleteRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `tags/${release.tag_name}`
+                });
+                
+                console.log(`Successfully deleted ${release.tag_name}`);
+              } catch (error) {
+                console.error(`Failed to delete ${release.tag_name}: ${error.message}`);
+              }
+            }
+
+  cleanup-nightly:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [check-commits, create-nightly-release, build-nightly]
+    if: failure() && needs.check-commits.outputs.should_build == 'true'
+
+    steps:
+      - name: Delete failed nightly release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-nightly-release.outputs.release_id }}
+        with:
+          script: |
+            if (process.env.release_id) {
+              console.log(`Cleaning up failed nightly release: ${process.env.release_id}`);
+              try {
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: process.env.release_id
+                });
+                console.log('Successfully cleaned up failed release');
+              } catch (error) {
+                console.error(`Cleanup failed: ${error.message}`);
+              }
+            }
