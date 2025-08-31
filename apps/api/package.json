@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "scripts": {
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",

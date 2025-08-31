@@ -3,7 +3,6 @@ import './instrument'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { etag } from 'hono/etag'
-import { logger } from 'hono/logger'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
 import { trimTrailingSlash } from 'hono/trailing-slash'
@@ -23,7 +22,7 @@ app.use(
     ...SENTRY_OPTIONS
   })
 )
-app.use(etag(), logger(), secureHeaders(), trimTrailingSlash())
+app.use(etag(), secureHeaders(), trimTrailingSlash())
 app.use('*', requestId())
 app.use('*', cors())
 

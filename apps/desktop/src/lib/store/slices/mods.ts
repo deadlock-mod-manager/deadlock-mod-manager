@@ -46,7 +46,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (set, get
   mods: [],
   modProgress: {},
 
-  defaultSort: SortType.DEFAULT,
+  defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
 
   addMod: (mod, additional) =>

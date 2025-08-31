@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/sidebar';
 import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';
-import { Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react';
+import { DiscordLogo, Download, Gear, Icon, MagnifyingGlass, Package } from '@phosphor-icons/react';
+import { open } from '@tauri-apps/plugin-shell';
 import { Link, useLocation } from 'react-router';
 import { SidebarCollapse } from './sidebar-collapse';
 import { Badge } from './ui/badge';
@@ -148,6 +149,15 @@ export const AppSidebar = () => {
             <SidebarMenu>
               <DownloadProgress />
               <Separator />
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => open('https://discord.gg/KSB2kzQWWE')}
+                  className="cursor-pointer"
+                >
+                  <DiscordLogo weight="duotone" />
+                  <span>Need Help ?</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarCollapse />
             </SidebarMenu>
           </SidebarGroupContent>

@@ -15,13 +15,23 @@ use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_upload::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_fs::init());
+
+    // Add desktop-specific plugins
+    #[cfg(desktop)]
+    {
+        builder = builder
+            .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}))
+            .plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .clear_targets()
@@ -39,12 +49,6 @@ pub fn run() {
         )
         .setup(|app| {
             let handle = app.app_handle();
-
-            #[cfg(desktop)]
-            let _ = handle.plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {}));
-
-            #[cfg(desktop)]
-            let _ = handle.plugin(tauri_plugin_updater::Builder::new().build());
 
             // Prepare store
             let _store = handle.store("state.json")?;

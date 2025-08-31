@@ -1,5 +1,17 @@
 # api
 
+## 0.5.0
+
+### Minor Changes
+
+- **Enhancement:** Updated API functionality to support new desktop features
+- **Fix:** Improved mod handling and processing
+- **Enhancement:** Better compatibility with version 0.5.0 desktop client
+
+### Patch Changes
+
+- Various bug fixes and performance improvements
+
 ## 0.4.0
 
 ### Minor Changes

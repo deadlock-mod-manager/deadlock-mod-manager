@@ -6,6 +6,7 @@ import { useQuery } from 'react-query';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
+import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { useDownload } from '@/hooks/use-download';
 import useInstall from '@/hooks/use-install';
 import useUninstall from '@/hooks/use-uninstall';
 import { usePersistedStore } from '@/lib/store';
+import { isModOutdated } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
 
 const Mod = () => {
@@ -95,6 +97,13 @@ const Mod = () => {
             Back to Mods
           </Button>
         </div>
+
+        {/* Outdated mod warning */}
+        {isModOutdated(data) && (
+          <div className="mb-4">
+            <OutdatedModWarning variant="alert" />
+          </div>
+        )}
 
         <Card className="overflow-hidden">
           {/* Hero image */}

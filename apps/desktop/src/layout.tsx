@@ -1,11 +1,16 @@
 import { AppSidebar } from './components/app-sidebar';
 import { Menu } from './components/menu';
 import { Toolbar } from './components/toolbar';
+import { Dialog } from './components/ui/dialog';
 import { SidebarProvider } from './components/ui/sidebar';
 import { Toaster } from './components/ui/sonner';
+import { WhatsNewDialog } from './components/whats-new-dialog';
+import useWhatsNew from './hooks/use-whats-new';
 import { cn } from './lib/utils';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
+  const { showWhatsNew, markVersionAsSeen } = useWhatsNew();
+
   return (
     <>
       <main className="h-screen overflow-hidden">
@@ -19,6 +24,10 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         </SidebarProvider>
       </main>
       <Toaster />
+      
+      <Dialog open={showWhatsNew} onOpenChange={(open) => !open && markVersionAsSeen()}>
+        <WhatsNewDialog onClose={markVersionAsSeen} />
+      </Dialog>
     </>
   );
 };

@@ -1,12 +1,12 @@
 import { db, modDownloads, mods } from '@deadlock-mods/database'
 import { toModDownloadDto, toModDto } from '@deadlock-mods/utils'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 const modsRouter = new Hono()
 
 modsRouter.get('/', async (c) => {
-  const allMods = await db.select().from(mods)
+  const allMods = await db.select().from(mods).orderBy(desc(mods.remoteUpdatedAt))
   return c.json(allMods.map(toModDto))
 })
 

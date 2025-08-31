@@ -1,11 +1,13 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownload } from '@/hooks/use-download';
+import { isModOutdated } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
 import { ModDto } from '@deadlock-mods/utils';
 import { CheckIcon, DownloadIcon, Loader2, XIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { FiZoomIn } from 'react-icons/fi';
 import { useNavigate } from 'react-router';
+import { OutdatedModWarning } from './outdated-mod-warning';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -81,7 +83,10 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
       <Card className="shadow cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
         <div className="relative">
           <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
-          {status === ModStatus.INSTALLED ? <Badge className="absolute top-2 right-2">Installed</Badge> : null}
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}
+            {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
+          </div>
           <Button
             size="icon"
             variant="secondary"

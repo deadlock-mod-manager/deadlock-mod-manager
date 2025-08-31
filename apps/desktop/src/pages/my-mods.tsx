@@ -1,4 +1,5 @@
 import ErrorBoundary from '@/components/error-boundary';
+import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import PageTitle from '@/components/page-title';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { useSearch } from '@/hooks/use-search';
 import useUninstall from '@/hooks/use-uninstall';
 import { createLogger } from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
-import { cn } from '@/lib/utils';
+import { cn, isModOutdated } from '@/lib/utils';
 import { LocalMod, ModStatus } from '@/types/mods';
 import { Trash } from '@phosphor-icons/react';
 import { LayoutGrid, LayoutList, Loader2, Search } from 'lucide-react';
@@ -42,6 +43,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         <div className="cursor-pointer" onClick={() => navigate(`/mods/${mod.remoteId}`)}>
           <img src={mod.images[0]} alt={mod.name} className="h-48 w-full object-cover rounded-t-xl" />
         </div>
+        {isModOutdated(mod) && (
+          <div className="absolute top-2 right-2">
+            <OutdatedModWarning variant="indicator" />
+          </div>
+        )}
         {mod.status === ModStatus.INSTALLING && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-t-xl">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -133,6 +139,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
           onClick={() => navigate(`/mods/${mod.remoteId}`)}
         >
           <img src={mod.images[0]} alt={mod.name} className="h-full w-full object-cover rounded-l-xl cursor-pointer" />
+          {isModOutdated(mod) && (
+            <div className="absolute top-1 right-1">
+              <OutdatedModWarning variant="indicator" className="text-xs" />
+            </div>
+          )}
           {mod.status === ModStatus.INSTALLING && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />

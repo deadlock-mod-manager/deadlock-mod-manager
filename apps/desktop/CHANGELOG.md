@@ -1,5 +1,23 @@
 # desktop
 
+## 0.5.0
+
+### Minor Changes
+
+- **Fix:** Resolved Windows crash issue caused by tauri-plugin-single-instance null pointer dereference
+- **Feature:** Added "What's New" dialog to showcase new features and updates  
+- **Feature:** Added outdated mod warning system to alert users about outdated modifications
+- **Enhancement:** Improved mod management and user experience
+- **Enhancement:** Updated various UI components and layout improvements
+
+### Patch Changes
+
+- Updated tauri-plugin-single-instance from 2.2.0 to 2.2.2 to fix Windows stability issues
+- Enhanced about dialog functionality
+- Improved mod card display and functionality  
+- Updated utility functions for better performance
+- Various bug fixes and stability improvements
+
 ## 0.4.0
 
 ### Minor Changes

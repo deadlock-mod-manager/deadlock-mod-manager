@@ -40,6 +40,7 @@ export const Toolbar = () => {
         </Tooltip>
       </div>
       <DevTools />
+
       {!isRunning && (
         <Button size="lg" variant="ghost" disabled={!gamePath} onClick={() => launch(true)}>
           <Play />

@@ -1,23 +1,27 @@
 import useAbout from '@/hooks/use-about';
 import useUpdateManager from '@/hooks/use-update-manager';
+import useWhatsNew from '@/hooks/use-whats-new';
 import { APP_DESCRIPTION, APP_NAME, COPYRIGHT, GITHUB_REPO } from '@/lib/constants';
-import { CloudArrowDown, GithubLogo } from '@phosphor-icons/react';
+import { CloudArrowDown, DiscordLogo, GithubLogo, SparkleIcon } from '@phosphor-icons/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
 import Logo from './logo';
 import { Button, buttonVariants } from './ui/button';
-import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Separator } from './ui/separator';
+import { WhatsNewDialog } from './whats-new-dialog';
 
 export const AboutDialog = () => {
   const { data } = useAbout();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
+  const { forceShow, showWhatsNew, markVersionAsSeen } = useWhatsNew();
   if (!data) return null;
   const { version, name, tauriVersion } = data;
 
   return (
-    <DialogContent className="overflow-clip pb-2">
+    <>
+      <DialogContent className="overflow-clip pb-2">
       <DialogHeader className="flex items-center text-center">
         <div className="rounded-full bg-background p-[6px] drop-shadow-none transition duration-1000 hover:text-slate-800 hover:drop-shadow-[0_0px_10px_rgba(0,10,50,0.50)] dark:hover:text-slate-400 ">
           <Logo className="h-12 w-12" />
@@ -54,7 +58,21 @@ export const AboutDialog = () => {
             className="h-5 w-5 cursor-pointer transition hover:text-foreground"
             onClick={() => open(GITHUB_REPO)}
           />
+          <DiscordLogo
+            className="h-5 w-5 cursor-pointer transition hover:text-foreground"
+            onClick={() => open('https://discord.gg/KSB2kzQWWE')}
+          />
         </div>
+
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1"
+          onClick={() => forceShow()}
+        >
+          <SparkleIcon /> What's New
+        </Button>
 
         <Button
           type="submit"
@@ -80,5 +98,10 @@ export const AboutDialog = () => {
         </DialogPrimitive.Close>
       </DialogFooter>
     </DialogContent>
+
+      <Dialog open={showWhatsNew} onOpenChange={(open) => !open && markVersionAsSeen()}>
+        <WhatsNewDialog onClose={markVersionAsSeen} />
+      </Dialog>
+    </>
   );
 };
