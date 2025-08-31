@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { usePersistedStore } from '@/lib/store';
 import { LocalSetting } from '@/types/settings';
 import { CustomSettingType } from '@deadlock-mods/utils';
+import { PencilIcon, TrashIcon } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -17,7 +18,6 @@ import { Label } from './ui/label';
 import { Skeleton } from './ui/skeleton';
 import { Switch } from './ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { PencilIcon, TrashIcon } from 'lucide-react';
 
 interface SettingsCardProps {
   setting: LocalSetting | undefined;
@@ -173,8 +173,8 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
             </>
           )}
 
-          <Switch id="toggle-setting" checked={setting.enabled} onCheckedChange={onChange} />
-          <Label htmlFor="toggle-setting">{!setting.enabled ? 'Disabled' : 'Enabled'}</Label>
+          <Switch id={`toggle-setting-${setting.id}`} checked={setting.enabled} onCheckedChange={onChange} />
+          <Label htmlFor={`toggle-setting-${setting.id}`}>{!setting.enabled ? 'Disabled' : 'Enabled'}</Label>
         </div>
       </div>
 

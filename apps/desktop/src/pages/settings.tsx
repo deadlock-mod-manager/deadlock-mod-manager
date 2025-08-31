@@ -72,7 +72,7 @@ const CustomSettingsData = () => {
               />
             ))}
             {(customLocalSettingsByType?.[type] ?? []).map((setting) => (
-              <SettingCard key={setting.id} setting={setting} onChange={() => {}} />
+              <SettingCard key={setting.id} setting={setting} onChange={() => toggleSetting(setting.id, setting)} />
             ))}
           </div>
         </Section>
