@@ -93,6 +93,12 @@
    - Download the appropriate installer for your operating system (Windows, macOS, or Linux)
    - Run the installer and follow the setup instructions
 
+   **Alternative Installation (Windows)**
+   - **Windows users**: Install via winget:
+     ```bash
+     winget install --id=Stormix.DeadlockModManager
+     ```
+
    **Alternative Installation (Linux)**
    - **Arch Linux users**: Install from the AUR using your preferred AUR helper:
      ```bash
