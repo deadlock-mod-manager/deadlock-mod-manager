@@ -22,7 +22,7 @@ const App = () => {
     await queryClient.prefetchQuery('custom-settings', getCustomSettings);
 
     // Hydrate store
-    await load(STORE_NAME, { autoSave: true });
+    await load(STORE_NAME, { autoSave: true, defaults: {} });
     await usePersistedStore.persist.rehydrate();
 
     logger.debug('Store rehydrated');

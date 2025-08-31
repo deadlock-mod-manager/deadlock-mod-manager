@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "ui:dev": "vite",
-    "ui:build": "tsc && vite build",
+    "check-types": "tsc --noEmit",
+    "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint ./src/**/*.{ts,tsx} --quiet --fix",
