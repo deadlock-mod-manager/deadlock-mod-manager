@@ -109,6 +109,17 @@ export const Footer: React.FC<{ children?: React.ReactNode }> = ({
 
           <Separator className="my-6" />
           <section className="text-center flex flex-col items-center gap-4">
+            <p className="text-sm opacity-60">
+              Powered by{" "}
+              <Link
+                target="_blank"
+                href="https://gamebanana.com/"
+                className="text-primary transition-all hover:opacity-80 font-medium"
+              >
+                GameBanana
+              </Link>
+              {" "}for mod content and community
+            </p>
             <p>
               {COPYRIGHT}. Created by{" "}
               <Link

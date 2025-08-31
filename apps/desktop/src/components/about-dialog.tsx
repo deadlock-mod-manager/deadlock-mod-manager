@@ -49,6 +49,16 @@ export const AboutDialog = () => {
       <DialogDescription className="text-foreground text-center flex flex-col items-center gap-4">
         <div>{APP_DESCRIPTION}</div>
         <Separator className="w-8" />
+        <div className="text-xs text-muted-foreground">
+          Powered by{' '}
+          <span 
+            className="text-primary cursor-pointer hover:underline font-medium"
+            onClick={() => open('https://gamebanana.com/')}
+          >
+            GameBanana
+          </span>
+          {' '}for mod content and community
+        </div>
         <div className="text-xs font-bold">{COPYRIGHT}</div>
       </DialogDescription>
 

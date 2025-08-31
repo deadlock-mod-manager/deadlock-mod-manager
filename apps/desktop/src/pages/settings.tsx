@@ -15,6 +15,7 @@ import { usePersistedStore } from '@/lib/store';
 import { LocalSetting } from '@/types/settings';
 import { CustomSettingDto, CustomSettingType, customSettingTypeHuman } from '@deadlock-mods/utils';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-shell';
 import { FolderOpen, PlusIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
@@ -182,6 +183,38 @@ const CustomSettings = () => {
             <TrashIcon className="w-4 h-4" />
             Clear All Mods
           </Button>
+        </div>
+      </Section>
+
+      <Section title="Acknowledgments" description="Special thanks to the platforms and communities that make this project possible">
+        <div className="space-y-4">
+          <div className="p-4 border rounded-lg bg-card">
+            <div className="flex flex-col gap-2">
+              <h3 className="font-semibold text-primary">GameBanana</h3>
+              <p className="text-sm text-muted-foreground">
+                Our primary mod source and the backbone of this application. GameBanana provides the comprehensive 
+                mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-fit mt-2"
+                onClick={() => open('https://gamebanana.com/')}
+              >
+                Visit GameBanana
+              </Button>
+            </div>
+          </div>
+          
+          <div className="p-4 border rounded-lg bg-card">
+            <div className="flex flex-col gap-2">
+              <h3 className="font-semibold">Open Source Community</h3>
+              <p className="text-sm text-muted-foreground">
+                Built with amazing open source technologies including Tauri, React, TypeScript, and many other 
+                libraries that make modern desktop applications possible.
+              </p>
+            </div>
+          </div>
         </div>
       </Section>
     </div>

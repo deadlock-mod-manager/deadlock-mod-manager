@@ -10,7 +10,7 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
+  <a href="https://github.com/stormix/deadlock-modmanager">
     <img src="./docs/assets/deadlock.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -35,24 +35,17 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#screenshots">Screenshots</a>
-      <ul>
-        <li><a href="#main-window">Main Window</a></li>
-        <li><a href="#mod-details">Mod Details</a></li>
-        <li><a href="#my-mods">My Mods</a></li>
-        <li><a href="#mods">Mods</a></li>
-      </ul>
-    </li>
+    <li><a href="#screenshots">Screenshots</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#whats-inside">What's inside?</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#development">Development</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -65,15 +58,46 @@
 <details>
 <summary>Click to view screenshots</summary>
 
-![Main Window](./docs/assets/about.png)
+### About Dialog
+![About Dialog](./docs/assets/about.png)
 
-![Mod Details](./docs/assets/download.png)
+### Download Page
+![Download Page](./docs/assets/download.png)
 
+### My Mods Page
 ![My Mods](./docs/assets/my-mods.png)
 
-![Mods](./docs/assets/mods.png)
+### Mods Browser
+![Mods Browser](./docs/assets/mods.png)
 
 </details>
+
+## Usage
+
+### For End Users
+
+1. **Download the Application**
+   - Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
+   - Download the appropriate installer for your operating system (Windows, macOS, or Linux)
+   - Run the installer and follow the setup instructions
+
+2. **First Time Setup**
+   - Launch the Deadlock Mod Manager
+   - The application will automatically detect your Deadlock installation
+   - If not detected automatically, you can manually set the game directory in Settings
+
+3. **Browse and Install Mods**
+   - Browse available mods in the "Mods" tab
+   - Use the search functionality to find specific mods
+   - Click "Download" on any mod you want to install
+   - The mod will be automatically downloaded and installed
+
+4. **Manage Your Mods**
+   - View your installed mods in the "My Mods" tab
+   - Enable/disable mods as needed
+   - Uninstall mods you no longer want
+   - Update outdated mods when new versions are available
+
 
 ## What's inside?
 
@@ -81,14 +105,14 @@ This monorepo includes the following packages/apps:
 
 ### Apps
 
-- `web`: A [Next.js](https://nextjs.org/) web application
-- `desktop`: A [Tauri](https://tauri.app/) + React desktop application
-- `api`: A [Bun](https://bun.sh/) + [Hono](https://hono.dev/) API server
+- `web`: A [Next.js](https://nextjs.org/) web application that provides project information and status
+- `desktop`: A [Tauri](https://tauri.app/) + React desktop application (the main mod manager)
+- `api`: A [Bun](https://bun.sh/) + [Hono](https://hono.dev/) API server that syncs mod data from GameBanana
 
 ### Packages
 
 - `@deadlock-mods/database`: [Drizzle ORM](https://orm.drizzle.team/) wrapper to manage & access the database
-- `@deadlock-mods/utils`: Shared utilities
+- `@deadlock-mods/utils`: Shared utilities and type definitions
 - `@deadlock-mods/eslint-config`: ESLint configurations
 - `@deadlock-mods/typescript-config`: TypeScript configurations
 
@@ -109,10 +133,11 @@ This monorepo includes the following packages/apps:
 pnpm install
 ```
 
-2. Set up environment variables:
+2. Set up the database:
 
 ```bash
-cp .env.example .env
+# Start the database (requires Docker)
+docker-compose up -d
 ```
 
 3. Run the migrations:
@@ -141,20 +166,6 @@ To develop all apps and packages:
 pnpm dev
 ```
 
-## Features
-
-- Cross-platform desktop application (Windows, macOS, Linux)
-- Modern UI with [shadcn/ui](https://ui.shadcn.com/)
-- Database integration with [Drizzle ORM](https://orm.drizzle.team/)
-- Type-safe development with TypeScript
-- Consistent code style with ESLint and Prettier
-
-<!-- ROADMAP -->
-
-## Roadmap
-
-- [ ] Prepare first release
-
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -178,7 +189,19 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-This project is not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details.
+
+**Disclaimer:** This project is not affiliated with Valve Corporation. Deadlock and the Deadlock logo are registered trademarks of Valve Corporation.
+
+## Contact
+
+- **Project Repository**: [GitHub](https://github.com/stormix/deadlock-modmanager)
+- **Issues & Bug Reports**: [GitHub Issues](https://github.com/stormix/deadlock-modmanager/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/stormix/deadlock-modmanager/discussions)
+- **Discord Community**: [Join our Discord](https://discord.gg/KSB2kzQWWE)
+- **Author**: [Stormix](https://github.com/Stormix)
+
+For support and questions, please use GitHub Issues or join our Discord community. We're always happy to help!
 
 <!-- ACKNOWLEDGMENTS -->
 
@@ -186,7 +209,12 @@ This project is not affiliated with Valve. Deadlock, and the Deadlock logo are r
 
 This project was only possible thanks to the amazing open source community, especially:
 
-- [Gamebanana API](https://gamebanana.com/)
+### Special Thanks
+
+- **[GameBanana](https://gamebanana.com/)** - Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible. This project would not exist without their excellent platform and community-driven content.
+
+### Open Source Libraries
+
 - [Phosphor Icons](https://phosphoricons.com/)
 - [React Icons](https://react-icons.github.io/react-icons/search)
 - [shadcn/ui](https://ui.shadcn.com/)
