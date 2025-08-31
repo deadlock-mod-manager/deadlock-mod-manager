@@ -91,20 +91,24 @@ jobs:
             const commitCount = ${{ needs.check-commits.outputs.commit_count }};
             
             console.log(`Creating nightly release: ${tag}`);
+            const releaseBody = [
+              "**Nightly build from latest development**",
+              "",
+              `📅 **Built:** ${new Date().toISOString().split('T')[0]}`,
+              `📊 **Commits since last nightly:** ${commitCount}`,
+              `🔗 **Commit:** ${context.sha.substring(0, 7)}`,
+              "",
+              "⚠️ **Warning:** This is a nightly build and may contain unstable features or bugs.",
+              "",
+              "*This release was generated automatically from the latest development branch.*"
+            ].join('\n');
+            
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tag,
               name: `🌙 Nightly ${tag}`,
-              body: `**Nightly build from latest development**
-              
-📅 **Built:** ${new Date().toISOString().split('T')[0]}
-📊 **Commits since last nightly:** ${commitCount}
-🔗 **Commit:** ${context.sha.substring(0, 7)}
-
-⚠️ **Warning:** This is a nightly build and may contain unstable features or bugs.
-
-*This release was generated automatically from the latest development branch.*`,
+              body: releaseBody,
               draft: true,
               prerelease: true
             });
