@@ -170,6 +170,23 @@ jobs:
               throw error;
             }
 
+  winget-publish:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    needs: publish-release
+    if: success()
+
+    steps:
+      - name: Publish to WinGet
+        uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: Stormix.DeadlockModManager
+          fork-user: stormix
+          release-tag: ${{ github.event.release.tag_name }}
+          max-versions-to-keep: 5
+          token: ${{ secrets.WINGET_TOKEN }}
+
   cleanup-release:
     permissions:
       contents: write
