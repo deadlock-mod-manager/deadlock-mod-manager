@@ -12,6 +12,7 @@
 
 ### Patch Changes
 
+- **Fix:** Custom Launch Options enabled/disabled status is now properly respected when launching modded games
 - Updated tauri-plugin-single-instance from 2.2.0 to 2.2.2 to fix Windows stability issues
 - Enhanced about dialog functionality
 - Improved mod card display and functionality  

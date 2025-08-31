@@ -24,6 +24,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
         "✨ Added this \"What's New\" dialog to showcase updates",
         "⚠️ New outdated mod warning system for better mod management",
         "🎮 Updated champion roster with latest Deadlock heroes",
+        "🔧 Fixed Custom Launch Options not respecting enabled/disabled status",
         "🎨 Enhanced UI components and layout improvements",
         "🔧 Various stability improvements and bug fixes"
       ]
