@@ -4,9 +4,31 @@
 # Deadlock Mod Manager
 
 
+<!-- Project Stats -->
 [![Downloads][downloads-status]][downloads-url]
+[![GitHub Stars][stars-status]][stars-url]
+[![GitHub Release][release-status]][release-url]
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+
+<!-- Technology Stack -->
+[![Built with Tauri][tauri-status]][tauri-url]
+[![TypeScript][typescript-status]][typescript-url]
+[![Rust][rust-status]][rust-url]
+
+<!-- Community & Activity -->
+[![Contributors][contributors-status]][contributors-url]
+[![Forks][forks-status]][forks-url]
+[![Commit Activity][commit-activity-status]][commit-activity-url]
+[![Last Commit][last-commit-status]][last-commit-url]
+
+<!-- Distribution & Platforms -->
+[![License][license-status]][license-url]
+[![AUR][aur-status]][aur-url]
+[![Windows][windows-status]][windows-url]
+[![macOS][macos-status]][macos-url]
+[![Linux][linux-status]][linux-url]
+
 
 <br />
 <div align="center">
@@ -80,6 +102,16 @@
    - Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
    - Download the appropriate installer for your operating system (Windows, macOS, or Linux)
    - Run the installer and follow the setup instructions
+
+   **Alternative Installation (Linux)**
+   - **Arch Linux users**: Install from the AUR using your preferred AUR helper:
+     ```bash
+     # Latest stable release
+     yay -S deadlock-modmanager
+     
+     # Latest development build
+     yay -S deadlock-modmanager-git
+     ```
 
 2. **First Time Setup**
    - Launch the Deadlock Mod Manager
@@ -226,11 +258,36 @@ This project was only possible thanks to the amazing open source community, espe
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[security-status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=shield&issueType=security
-[security-url]: https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_shield&issueType=security
-[license-status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager.svg?type=shield&issueType=license
-[license-url]: https://app.fossa.com/projects/git%2Bgithub.com%2FStormix%2Fdeadlock-modmanager?ref=badge_shield&issueType=license
+
 [downloads-status]: https://img.shields.io/github/downloads/stormix/deadlock-modmanager/latest/total
 [downloads-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
+[stars-status]: https://img.shields.io/github/stars/stormix/deadlock-modmanager
+[stars-url]: https://github.com/stormix/deadlock-modmanager/stargazers
+[release-status]: https://img.shields.io/github/v/release/stormix/deadlock-modmanager
+[release-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
 [issues-status]: https://img.shields.io/github/issues/stormix/deadlock-modmanager
 [issues-url]: https://github.com/stormix/deadlock-modmanager/issues
+[license-status]: https://img.shields.io/github/license/stormix/deadlock-modmanager
+[license-url]: https://github.com/stormix/deadlock-modmanager/blob/main/LICENSE.md
+[aur-status]: https://img.shields.io/aur/version/deadlock-modmanager
+[aur-url]: https://aur.archlinux.org/packages/deadlock-modmanager
+[tauri-status]: https://img.shields.io/badge/built_with-Tauri-24C8DB?logo=tauri
+[tauri-url]: https://tauri.app/
+[typescript-status]: https://img.shields.io/badge/typescript-007ACC?logo=typescript&logoColor=white
+[typescript-url]: https://www.typescriptlang.org/
+[rust-status]: https://img.shields.io/badge/rust-000000?logo=rust&logoColor=white
+[rust-url]: https://www.rust-lang.org/
+[commit-activity-status]: https://img.shields.io/github/commit-activity/m/stormix/deadlock-modmanager
+[commit-activity-url]: https://github.com/stormix/deadlock-modmanager/graphs/commit-activity
+[last-commit-status]: https://img.shields.io/github/last-commit/stormix/deadlock-modmanager
+[last-commit-url]: https://github.com/stormix/deadlock-modmanager/commits/main
+[contributors-status]: https://img.shields.io/github/contributors/stormix/deadlock-modmanager
+[contributors-url]: https://github.com/stormix/deadlock-modmanager/graphs/contributors
+[forks-status]: https://img.shields.io/github/forks/stormix/deadlock-modmanager
+[forks-url]: https://github.com/stormix/deadlock-modmanager/network/members
+[windows-status]: https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white
+[windows-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
+[macos-status]: https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white
+[macos-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
+[linux-status]: https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black
+[linux-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
