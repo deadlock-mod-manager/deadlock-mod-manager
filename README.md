@@ -91,55 +91,70 @@
 
 ## Usage
 
-### For End Users
+### Installation
 
-1. **Download the Application**
+#### Download Options
 
-   - Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
-   - Download the appropriate installer for your operating system (Windows, macOS, or Linux)
-   - Run the installer and follow the setup instructions
+**Option 1: Direct Download**
 
-   **Alternative Installation (Windows)**
+- Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
+- Download the appropriate installer for your operating system (Windows, macOS, or Linux)
+- Run the installer and follow the setup instructions
 
-   - **Windows users**: Install via winget:
-     ```bash
-     winget install --id=Stormix.DeadlockModManager
-     ```
+**Option 2: Package Managers**
 
-   **Alternative Installation (Linux)**
+_Windows (winget):_
 
-   - **Arch Linux users**: Install from the AUR using your preferred AUR helper:
+```bash
+winget install --id=Stormix.DeadlockModManager
+```
 
-     ```bash
-     # Latest stable release
-     yay -S deadlock-modmanager
+_Arch Linux (AUR):_
 
-     # Latest development build
-     yay -S deadlock-modmanager-git
-     ```
+```bash
+# Latest stable release
+yay -S deadlock-modmanager
 
-   **Linux Compatibility Note**
+# Latest development build
+yay -S deadlock-modmanager-git
+```
 
-   - **Wayland + NVIDIA users**: If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs, run the application with:
-     ```bash
-     WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
-     ```
-     This resolves a known issue with webkit2gtk on NVIDIA drivers. AUR users have this automatically handled in the .desktop file.
+#### Security & Safety
 
-2. **First Time Setup**
+> [!NOTE]
+> You might get a prompt saying "Windows has protected your PC". In this case, click More Info and Run Anyway.
+
+> [!TIP]
+> If you're unsure about the safety of this app, I would suggest running it through a service like [VirusTotal](https://www.virustotal.com/).
+
+#### Platform-Specific Notes
+
+**Linux Compatibility (Wayland + NVIDIA)**
+
+If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs, run the application with:
+
+```bash
+WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
+```
+
+This resolves a known issue with webkit2gtk on NVIDIA drivers. AUR users have this automatically handled in the .desktop file.
+
+### Getting Started
+
+1. **First Time Setup**
 
    - Launch the Deadlock Mod Manager
    - The application will automatically detect your Deadlock installation
    - If not detected automatically, you can manually set the game directory in Settings
 
-3. **Browse and Install Mods**
+2. **Browse and Install Mods**
 
    - Browse available mods in the "Mods" tab
    - Use the search functionality to find specific mods
    - Click "Download" on any mod you want to install
    - The mod will be automatically downloaded and installed
 
-4. **Manage Your Mods**
+3. **Manage Your Mods**
    - View your installed mods in the "My Mods" tab
    - Enable/disable mods as needed
    - Uninstall mods you no longer want
