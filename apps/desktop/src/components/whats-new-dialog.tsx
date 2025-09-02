@@ -18,13 +18,25 @@ type WhatsNewDialogProps = {
 
 export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { data } = useAbout();
-  if (!data) {
-    return null;
-  }
 
-  const { version } = data;
+  // Use a fallback version if data is not yet available
+  const version = data?.version || '0.5.1';
 
   const updateContent = {
+    '0.5.1': {
+      title: 'Performance & Bug Fixes',
+      features: [
+        '🚀 Added virtualization to mods page for significantly better performance',
+        '🔧 Fixed "last updated" sort option not reflecting actual mod timestamps',
+        '🏷️ Added category and hero filters for better mod discovery',
+        '❌ Added clear button to search input for quick search reset',
+        '🔍 Improved filtering and searching functionality on the mods page',
+        '🐳 Resolved Docker compatibility issues',
+        '🎨 Enhanced mod card layout and styling',
+        '📖 Updated UI to acknowledge GameBanana as data source',
+        '⚡ Various performance optimizations and stability improvements',
+      ],
+    },
     '0.5.0': {
       title: 'Stability & New Features',
       features: [

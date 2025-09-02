@@ -5,6 +5,7 @@ import {
   type Icon,
   MagnifyingGlass,
   Package,
+  Sparkle,
 } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
 import { Link, useLocation } from 'react-router';
@@ -18,6 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import useWhatsNew from '@/hooks/use-whats-new';
 import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';
 import { SidebarCollapse } from './sidebar-collapse';
@@ -137,6 +139,7 @@ const DownloadProgress = () => {
 export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.mods);
+  const { forceShow } = useWhatsNew();
   return (
     <Sidebar
       className="absolute top-10 left-0 z-10 flex h-[calc(100vh-40px)] w-[12rem] flex-col"
@@ -179,6 +182,15 @@ export const AppSidebar = () => {
             <SidebarMenu>
               <DownloadProgress />
               <Separator />
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  className="cursor-pointer"
+                  onClick={() => forceShow()}
+                >
+                  <Sparkle weight="duotone" />
+                  <span>What's New</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className="cursor-pointer"

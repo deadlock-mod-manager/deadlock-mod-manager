@@ -1,5 +1,19 @@
 # api
 
+## 0.5.1
+
+### Minor Changes
+
+- **Fix:** Resolved Docker compatibility issues affecting API deployment
+- **Enhancement:** Improved mod data processing and timestamp handling for accurate sorting
+- **Enhancement:** Enhanced filtering and search capabilities for better mod discovery
+
+### Patch Changes
+
+- Updated database timestamp handling logic
+- Improved API response performance
+- Various bug fixes and stability improvements
+
 ## 0.5.0
 
 ### Minor Changes

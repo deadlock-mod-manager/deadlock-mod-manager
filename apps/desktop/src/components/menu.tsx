@@ -1,5 +1,4 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { open } from '@tauri-apps/plugin-shell';
 import { useCallback } from 'react';
 import { WindowTitlebar } from 'tauri-controls';
 import {
@@ -58,15 +57,6 @@ export function Menu() {
             </DialogTrigger>
             <AboutDialog />
           </Dialog>
-        </MenubarMenu>
-
-        <MenubarMenu>
-          <MenubarTrigger className="relative text-sm">Help</MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem onClick={() => open('https://discord.gg/KSB2kzQWWE')}>
-              Need Help? Join Discord
-            </MenubarItem>
-          </MenubarContent>
         </MenubarMenu>
       </Menubar>
     </WindowTitlebar>

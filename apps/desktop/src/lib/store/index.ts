@@ -3,9 +3,10 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { createGameSlice, type GameState } from './slices/game';
 import { createModsSlice, type ModsState } from './slices/mods';
 import { createSettingsSlice, type SettingsState } from './slices/settings';
+import { createUISlice, type UIState } from './slices/ui';
 import storage from './storage';
 
-export type State = ModsState & GameState & SettingsState;
+export type State = ModsState & GameState & SettingsState & UIState;
 
 export const usePersistedStore = create<State>()(
   persist(
@@ -13,6 +14,7 @@ export const usePersistedStore = create<State>()(
       ...createModsSlice(...a),
       ...createGameSlice(...a),
       ...createSettingsSlice(...a),
+      ...createUISlice(...a),
     }),
     {
       name: 'local-config',
@@ -21,8 +23,16 @@ export const usePersistedStore = create<State>()(
       skipHydration: true,
       partialize: (state) => {
         // Only include stable state that should be persisted
-        // Completely exclude modProgress from persistence to avoid spamming storage
-        const { modProgress: _modProgress, ...rest } = state;
+        // Exclude ephemeral state from persistence
+        const {
+          modProgress: _modProgress,
+          showWhatsNew: _showWhatsNew,
+          lastSeenVersion: _lastSeenVersion,
+          forceShowWhatsNew: _forceShowWhatsNew,
+          markVersionAsSeen: _markVersionAsSeen,
+          setShowWhatsNew: _setShowWhatsNew,
+          ...rest
+        } = state;
         return rest;
       },
     }
