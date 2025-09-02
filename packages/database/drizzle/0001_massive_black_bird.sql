@@ -1,0 +1,6 @@
+ALTER TABLE "custom_setting" ALTER COLUMN "created_at" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "custom_setting" ALTER COLUMN "updated_at" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "mod_download" ALTER COLUMN "created_at" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "mod_download" ALTER COLUMN "updated_at" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "mod" ALTER COLUMN "created_at" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "mod" ALTER COLUMN "updated_at" DROP DEFAULT;

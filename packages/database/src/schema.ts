@@ -16,12 +16,16 @@ export const mods = pgTable('mod', {
   remoteUrl: text('remote_url').notNull(),
   category: text('category').notNull(),
   likes: integer('likes').notNull().default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .notNull()
+    .$defaultFn(() => new Date()),
   author: text('author').notNull(),
   downloadable: boolean('downloadable').notNull().default(false),
-  remoteAddedAt: timestamp('remote_added_at').notNull(),
-  remoteUpdatedAt: timestamp('remote_updated_at').notNull(),
+  remoteAddedAt: timestamp('remote_added_at', { mode: 'date' }).notNull(),
+  remoteUpdatedAt: timestamp('remote_updated_at', { mode: 'date' }).notNull(),
   tags: text('tags').array().notNull(),
   images: text('images').array().notNull(),
   hero: text('hero'),
@@ -40,8 +44,12 @@ export const modDownloads = pgTable(
     remoteId: text('remote_id').notNull(),
     file: text('file').notNull(),
     url: text('url').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     size: integer('size').notNull(),
   },
   (table) => {
@@ -63,8 +71,12 @@ export const customSettings = pgTable('custom_setting', {
   value: text('value').notNull(),
   type: text('type').notNull(),
   description: text('description'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at', { mode: 'date' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export type Mod = typeof mods.$inferSelect;

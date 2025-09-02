@@ -49,13 +49,13 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
   return mods.sort((a, b) => {
     switch (sortType) {
       case SortType.LAST_UPDATED:
-        return compareDates(b.updatedAt, a.updatedAt);
+        return compareDates(b.remoteUpdatedAt, a.remoteUpdatedAt);
       case SortType.DOWNLOADS:
         return b.downloadCount - a.downloadCount;
       case SortType.RATING:
         return b.likes - a.likes;
       case SortType.RELEASE_DATE:
-        return compareDates(b.createdAt, a.createdAt);
+        return compareDates(b.remoteAddedAt, a.remoteAddedAt);
       default:
         return b.id.localeCompare(a.id);
     }
