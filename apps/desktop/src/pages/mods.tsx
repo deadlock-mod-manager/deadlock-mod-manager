@@ -1,4 +1,6 @@
-import { Suspense, useEffect, useState } from 'react';
+import type { ModDto } from '@deadlock-mods/utils';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
@@ -21,6 +23,22 @@ const GetModsData = () => {
   const filteredResults = hideOutdated
     ? results.filter((mod) => !isModOutdated(mod))
     : results;
+
+  // Group mods into rows of 4 for virtualization
+  const COLUMNS_PER_ROW = 4;
+  const modRows: ModDto[][] = [];
+  for (let i = 0; i < filteredResults.length; i += COLUMNS_PER_ROW) {
+    modRows.push(filteredResults.slice(i, i + COLUMNS_PER_ROW));
+  }
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: modRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 300, // Estimated height of ModCard + gap
+    overscan: 2, // Render 2 extra rows above and below visible area
+  });
 
   useEffect(() => {
     if (error) {
@@ -63,10 +81,37 @@ const GetModsData = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-4">
-          {filteredResults.map((mod) => (
-            <ModCard key={mod.id} mod={mod} />
-          ))}
+        <div
+          className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto"
+          ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="grid grid-cols-4 gap-4 px-1">
+                  {modRows[virtualRow.index]?.map((mod) => (
+                    <ModCard key={mod.id} mod={mod} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -75,7 +120,7 @@ const GetModsData = () => {
 
 const GetMods = () => {
   return (
-    <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto px-4">
+    <div className="h-[calc(100vh-160px)] w-full px-4">
       <PageTitle
         className="mb-4"
         subtitle="Updated daily, with new mods added every week."

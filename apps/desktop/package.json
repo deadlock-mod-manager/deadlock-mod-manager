@@ -45,6 +45,7 @@
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.5",
     "@tanstack/react-table": "^8.20.6",
+    "@tanstack/react-virtual": "^3.13.12",
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-log": ">=2",
