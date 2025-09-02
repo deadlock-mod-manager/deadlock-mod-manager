@@ -6,7 +6,7 @@ env:
 on:
   schedule:
     # Run at 2 AM UTC every day
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
   workflow_dispatch: # Allow manual triggering
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
         run: |
           # Get the latest nightly release tag
           LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
-          
+
           if [ -z "$LAST_NIGHTLY" ]; then
             echo "No previous nightly build found, will build"
             COMMIT_COUNT=$(git rev-list --count HEAD)
@@ -45,7 +45,7 @@ jobs:
               echo "should_build=false" >> $GITHUB_OUTPUT
             fi
           fi
-          
+
           echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
           echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
@@ -89,7 +89,7 @@ jobs:
           script: |
             const tag = process.env.TAG_NAME;
             const commitCount = ${{ needs.check-commits.outputs.commit_count }};
-            
+
             console.log(`Creating nightly release: ${tag}`);
             const releaseBody = [
               "**Nightly build from latest development**",
@@ -102,7 +102,7 @@ jobs:
               "",
               "*This release was generated automatically from the latest development branch.*"
             ].join('\n');
-            
+
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -112,7 +112,7 @@ jobs:
               draft: true,
               prerelease: true
             });
-            
+
             // Set output for the step
             core.setOutput('tag_name', tag);
             return data.id;
@@ -172,9 +172,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Prisma Generate
-        run: pnpm generate
-
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -228,15 +225,15 @@ jobs:
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             // Filter nightly releases and sort by creation date
             const nightlyReleases = releases
               .filter(release => release.tag_name.startsWith('nightly-'))
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            
+
             // Keep only the latest 7 nightly releases, delete older ones
             const releasesToDelete = nightlyReleases.slice(7);
-            
+
             for (const release of releasesToDelete) {
               console.log(`Deleting old nightly release: ${release.tag_name}`);
               
