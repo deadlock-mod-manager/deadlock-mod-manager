@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Development files
+.git
+.gitignore
+README.md
+docs/
+.vscode/
+.cursor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+dist
+build
+.turbo
+target
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Desktop app specific
+apps/desktop/src-tauri/target
+apps/desktop/dist

@@ -1,17 +1,32 @@
 volumes:
-    database:
-        driver: local
+  database:
+    driver: local
 
 services:
-    postgres:
-        image: postgres
-        restart: unless-stopped
-        container_name: turborepo_postgres
-        shm_size: 128mb
-        ports:
-            - "5435:5432"
-        environment:
-            POSTGRES_USER: turborepo
-            POSTGRES_PASSWORD: 123456789
-        volumes:
-            - database:/var/lib/postgresql/data
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    container_name: turborepo_postgres
+    shm_size: 128mb
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: turborepo
+      POSTGRES_PASSWORD: 123456789
+    volumes:
+      - database:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: deadlock_api
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
+    depends_on:
+      - postgres

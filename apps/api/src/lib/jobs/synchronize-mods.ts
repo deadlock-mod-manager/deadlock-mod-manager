@@ -1,6 +1,7 @@
 import type { GameBanana } from '@deadlock-mods/utils';
 import * as Sentry from '@sentry/node';
 import { Cron } from 'croner';
+import { MONITOR_SLUG } from '../constants';
 import Logger from '../logger';
 import { providerRegistry } from '../providers';
 import { registerJob } from '.';
@@ -8,7 +9,6 @@ import { registerJob } from '.';
 const logger = Logger.getSubLogger({
   name: 'synchronize-mods',
 });
-const MONITOR_SLUG = 'mods-synchronization';
 
 const job = new Cron(
   '0 0 0 * * *',

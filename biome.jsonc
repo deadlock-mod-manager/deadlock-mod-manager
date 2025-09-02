@@ -21,8 +21,7 @@
         "noNamespaceImport": "off"
       },
       "suspicious": {
-        "useAwait": "off",
-        "noConstantCondition": "off"
+        "useAwait": "off"
       }
     }
   }

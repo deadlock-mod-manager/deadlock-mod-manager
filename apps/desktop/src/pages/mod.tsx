@@ -1,3 +1,4 @@
+import { open } from '@tauri-apps/plugin-shell';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -319,7 +320,13 @@ const Mod = () => {
             {data.remoteUrl && (
               <Button
                 className="px-0"
-                onClick={() => window.open(data.remoteUrl, '_blank')}
+                onClick={async () => {
+                  try {
+                    await open(data.remoteUrl);
+                  } catch (error) {
+                    toast.error('Failed to open forum post');
+                  }
+                }}
                 variant="link"
               >
                 View original forum post
