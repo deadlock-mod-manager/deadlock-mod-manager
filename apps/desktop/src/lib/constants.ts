@@ -17,3 +17,19 @@ export enum SortType {
   RATING = 'rating',
   RELEASE_DATE = 'release date',
 }
+
+export enum ModCategory {
+  SKINS = 'Skins',
+  GAMEPLAY_MODIFICATIONS = 'Gameplay Modifications',
+  HUD = 'HUD',
+  MODEL_REPLACEMENT = 'Model Replacement',
+  OTHER_MISC = 'Other/Misc',
+}
+
+export const MOD_CATEGORY_ORDER = [
+  ModCategory.SKINS,
+  ModCategory.GAMEPLAY_MODIFICATIONS,
+  ModCategory.HUD,
+  ModCategory.MODEL_REPLACEMENT,
+  ModCategory.OTHER_MISC,
+] as const;

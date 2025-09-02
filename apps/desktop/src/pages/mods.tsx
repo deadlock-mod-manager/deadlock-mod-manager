@@ -7,22 +7,58 @@ import ErrorBoundary from '@/components/error-boundary';
 import ModCard from '@/components/mod-card';
 import PageTitle from '@/components/page-title';
 import SearchBar from '@/components/search-bar';
+import SearchBarSkeleton from '@/components/search-bar-skeleton';
 import { useSearch } from '@/hooks/use-search';
 import { getMods } from '@/lib/api';
+import { ModCategory } from '@/lib/constants';
 import { isModOutdated } from '@/lib/utils';
 
 const GetModsData = () => {
   const { data, error } = useQuery('mods', getMods, { suspense: true });
   const [hideOutdated, setHideOutdated] = useState(true);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
     keys: ['name', 'description', 'author'],
   });
 
+  // Apply all filters
+  let filteredResults = results;
+
   // Filter out outdated mods if hideOutdated is enabled
-  const filteredResults = hideOutdated
-    ? results.filter((mod) => !isModOutdated(mod))
-    : results;
+  if (hideOutdated) {
+    filteredResults = filteredResults.filter((mod) => !isModOutdated(mod));
+  }
+
+  // Filter by categories
+  if (selectedCategories.length > 0) {
+    filteredResults = filteredResults.filter((mod) => {
+      // Check if mod category is in selected categories
+      if (selectedCategories.includes(mod.category)) {
+        return true;
+      }
+
+      // If OTHER_MISC is selected, include mods with non-predefined categories
+      if (selectedCategories.includes(ModCategory.OTHER_MISC)) {
+        const predefinedCategories = Object.values(ModCategory);
+        return !predefinedCategories.includes(mod.category as ModCategory);
+      }
+
+      return false;
+    });
+  }
+
+  // Filter by heroes
+  if (selectedHeroes.length > 0) {
+    filteredResults = filteredResults.filter((mod) => {
+      if (selectedHeroes.includes('None')) {
+        // Include mods without heroes and mods with selected heroes
+        return !mod.hero || selectedHeroes.includes(mod.hero);
+      }
+      return mod.hero && selectedHeroes.includes(mod.hero);
+    });
+  }
 
   // Group mods into rows of 4 for virtualization
   const COLUMNS_PER_ROW = 4;
@@ -52,13 +88,18 @@ const GetModsData = () => {
     <div className="flex flex-col gap-4">
       <SearchBar
         hideOutdated={hideOutdated}
+        mods={data ?? []}
+        onCategoriesChange={setSelectedCategories}
+        onHeroesChange={setSelectedHeroes}
         query={query}
+        selectedCategories={selectedCategories}
+        selectedHeroes={selectedHeroes}
         setHideOutdated={setHideOutdated}
         setQuery={setQuery}
         setSortType={setSortType}
         sortType={sortType}
       />
-      {filteredResults.length === 0 && query.trim() ? (
+      {filteredResults.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="mb-2 text-muted-foreground">
             <svg
@@ -77,8 +118,17 @@ const GetModsData = () => {
           </div>
           <h3 className="mb-1 font-medium text-lg">No mods found</h3>
           <p className="text-muted-foreground text-sm">
-            No mods match your search for "{query}"
+            {query.trim() ||
+            selectedCategories.length > 0 ||
+            selectedHeroes.length > 0
+              ? 'No mods match your current search and filters'
+              : 'No mods available'}
           </p>
+          {(selectedCategories.length > 0 || selectedHeroes.length > 0) && (
+            <p className="mt-2 text-muted-foreground text-xs">
+              Try clearing some filters to see more results
+            </p>
+          )}
         </div>
       ) : (
         <div
@@ -128,10 +178,13 @@ const GetMods = () => {
       />
       <Suspense
         fallback={
-          <div className="grid grid-cols-4 gap-4">
-            {Array.from({ length: 25 }, () => (
-              <ModCard key={crypto.randomUUID()} mod={undefined} />
-            ))}
+          <div className="flex flex-col gap-4">
+            <SearchBarSkeleton />
+            <div className="grid grid-cols-4 gap-4">
+              {Array.from({ length: 25 }, () => (
+                <ModCard key={crypto.randomUUID()} mod={undefined} />
+              ))}
+            </div>
           </div>
         }
       >
