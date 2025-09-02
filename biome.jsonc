@@ -57,6 +57,15 @@
         "useValidLang": "off",
         "noNoninteractiveElementInteractions": "off"
       },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
+      },
+      "correctness": {
+        "noUnusedImports": {
+          "level": "error",
+          "fix": "safe"
+        }
+      },
       "performance": {
         "noNamespaceImport": "off",
         "noBarrelFile": "off",
@@ -64,15 +73,18 @@
       },
       "suspicious": {
         "useAwait": "off",
+        "noDocumentCookie": "off",
         "noUnknownAtRules": "off"
       },
       "nursery": {
         "noShadow": "off"
       },
       "style": {
+        "noNonNullAssertion": "off",
         "noEnum": "off",
         "noNestedTernary": "off",
-        "noMagicNumbers": "off"
+        "noMagicNumbers": "off",
+        "noParameterProperties": "off"
       }
     }
   }

@@ -52,6 +52,7 @@ const PaginationLink = ({
       }),
       className
     )}
+    href="#"
     {...props}
   />
 );

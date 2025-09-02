@@ -88,7 +88,10 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
             </h3>
             <ul className="space-y-2 text-muted-foreground text-sm">
               {currentUpdate.features.map((feature, index) => (
-                <li className="flex items-start gap-2" key={index}>
+                <li
+                  className="flex items-start gap-2"
+                  key={`feature-${index}-${feature.slice(0, 10)}`}
+                >
                   <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                   <span>{feature}</span>
                 </li>

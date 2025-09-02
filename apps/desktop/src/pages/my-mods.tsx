@@ -57,7 +57,9 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           <img
             alt={mod.name}
             className="h-48 w-full rounded-t-xl object-cover"
+            height="192"
             src={mod.images[0]}
+            width="320"
           />
         </div>
         {isModOutdated(mod) && (
@@ -179,7 +181,9 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
           <img
             alt={mod.name}
             className="h-full w-full cursor-pointer rounded-l-xl object-cover"
+            height="160"
             src={mod.images[0]}
+            width="160"
           />
           {isModOutdated(mod) && (
             <div className="absolute top-1 right-1">

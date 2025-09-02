@@ -45,7 +45,12 @@ const Mod = () => {
   const navigate = useNavigate();
   const { data, error } = useQuery({
     queryKey: ['mod', params.id],
-    queryFn: () => getMod(params.id!),
+    queryFn: () => {
+      if (!params.id) {
+        throw new Error('Mod ID is required');
+      }
+      return getMod(params.id);
+    },
     enabled: !!params.id,
     suspense: true,
   });
@@ -154,7 +159,9 @@ const Mod = () => {
               <img
                 alt={`${data.name} hero`}
                 className="h-full w-full object-cover opacity-70"
+                height="256"
                 src={data.images[0]}
+                width="1200"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-0 left-0 p-6">
@@ -346,13 +353,15 @@ const Mod = () => {
                 <div className="relative">
                   <CarouselContent>
                     {data.images.map((image, index) => (
-                      <CarouselItem key={index}>
+                      <CarouselItem key={`image-${image}`}>
                         <div className="p-1">
                           <Card className="overflow-hidden">
                             <img
                               alt={`Screenshot ${index + 1}`}
                               className="aspect-video w-full object-cover"
+                              height="225"
                               src={image}
+                              width="400"
                             />
                           </Card>
                         </div>

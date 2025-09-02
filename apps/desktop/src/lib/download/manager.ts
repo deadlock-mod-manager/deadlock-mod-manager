@@ -59,7 +59,15 @@ class DownloadManager {
   }
 
   // Throttled progress update to prevent storage spam
-  private throttledProgressUpdate(mod: DownloadableMod, progress: any) {
+  private throttledProgressUpdate(
+    mod: DownloadableMod,
+    progress: {
+      progress: number;
+      progressTotal: number;
+      total: number;
+      transferSpeed: number;
+    }
+  ) {
     const now = Date.now();
     const modId = mod.remoteId;
 

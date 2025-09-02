@@ -9,6 +9,8 @@ if (!connectionString) {
 }
 export const db = drizzle(connectionString, { schema });
 
+export type Database = typeof db;
+
 // Repository service - centralized access to all repositories
 export const repositories = new RepositoryService(db);
 

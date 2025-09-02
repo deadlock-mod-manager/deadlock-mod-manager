@@ -1,10 +1,10 @@
 import { desc, eq } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { Database } from '../client';
 import type { Mod, NewMod } from '../schema';
 import { mods } from '../schema';
 
 export class ModRepository {
-  constructor(private readonly db: NodePgDatabase<any>) {}
+  constructor(private readonly db: Database) {}
 
   async findAll(): Promise<Mod[]> {
     return await this.db

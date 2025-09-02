@@ -11,7 +11,7 @@ import { isModOutdated } from '@/lib/utils';
 
 const GetModsData = () => {
   const { data, error } = useQuery('mods', getMods, { suspense: true });
-  const [hideOutdated, setHideOutdated] = useState(false);
+  const [hideOutdated, setHideOutdated] = useState(true);
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
     keys: ['name', 'description', 'author'],
@@ -84,8 +84,8 @@ const GetMods = () => {
       <Suspense
         fallback={
           <div className="grid grid-cols-4 gap-4">
-            {Array.from({ length: 25 }).map((_, index) => (
-              <ModCard key={index} mod={undefined} />
+            {Array.from({ length: 25 }, () => (
+              <ModCard key={crypto.randomUUID()} mod={undefined} />
             ))}
           </div>
         }

@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { Database } from '../client';
 import type { CustomSetting, NewCustomSetting } from '../schema';
 import { customSettings } from '../schema';
 
 export class CustomSettingsRepository {
-  constructor(private readonly db: NodePgDatabase<any>) {}
+  constructor(private readonly db: Database) {}
 
   async findAll(): Promise<CustomSetting[]> {
     return await this.db.select().from(customSettings);

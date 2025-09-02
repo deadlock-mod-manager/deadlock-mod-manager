@@ -2,7 +2,7 @@
 
 import { RefreshCwIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Status = 'operational' | 'downtime' | 'degraded';
 
@@ -14,7 +14,7 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
   const [status, setStatus] = useState<Status>('operational');
   const [loading, setLoading] = useState(true);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/status', {
@@ -27,7 +27,7 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStatus();
