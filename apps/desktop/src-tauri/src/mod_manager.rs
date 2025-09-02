@@ -24,11 +24,12 @@ const MODDED_SEARCH_PATHS: &str = r#"
             Mod                 citadel
             Write               citadel          
             Game                citadel
-            Write               core
             Mod                 core
+            Write               core
             Game                core        
-        }
-            "#;
+            AddonRoot           citadel_addons
+    		OfficialAddonRoot   citadel_community_addons
+        }"#;
 
 const VANILLA_SEARCH_PATHS: &str = r#"
 		SearchPaths
@@ -38,8 +39,7 @@ const VANILLA_SEARCH_PATHS: &str = r#"
             Game                citadel
             Write               core
             Game                core        
-        }
-            "#;
+        }"#;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
