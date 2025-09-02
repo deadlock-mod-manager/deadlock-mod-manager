@@ -56,6 +56,8 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
         return 'All systems are down';
       case 'degraded':
         return 'Some systems are degraded';
+      default:
+        return 'Unknown status';
     }
   };
 

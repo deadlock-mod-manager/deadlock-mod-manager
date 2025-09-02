@@ -323,7 +323,7 @@ const Mod = () => {
                 onClick={async () => {
                   try {
                     await open(data.remoteUrl);
-                  } catch (error) {
+                  } catch (_error) {
                     toast.error('Failed to open forum post');
                   }
                 }}

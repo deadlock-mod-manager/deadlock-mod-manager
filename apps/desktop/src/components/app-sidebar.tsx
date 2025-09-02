@@ -101,7 +101,7 @@ const DownloadProgress = () => {
   let totalProgress = 0;
   let modsWithProgress = 0;
 
-  downloadingMods.forEach((mod) => {
+  for (const mod of downloadingMods) {
     const progress = modProgress[mod.remoteId];
     if (
       progress?.percentage &&
@@ -111,7 +111,7 @@ const DownloadProgress = () => {
       totalProgress += progress.percentage;
       modsWithProgress++;
     }
-  });
+  }
 
   const averageProgress =
     modsWithProgress > 0 ? totalProgress / modsWithProgress : 0;

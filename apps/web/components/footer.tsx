@@ -2,15 +2,12 @@
 
 import Link from 'next/link';
 import { GoogleAnalytics } from 'nextjs-google-analytics';
-import type React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { APP_NAME, COPYRIGHT } from '@/lib/constants';
 import Logo from './logo';
 import { StatusWidget } from './status-widget';
 
-export const Footer: React.FC<{ children?: React.ReactNode }> = ({
-  children,
-}) => {
+export const Footer = () => {
   return (
     <>
       <GoogleAnalytics trackPageViews />

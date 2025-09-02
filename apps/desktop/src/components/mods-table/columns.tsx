@@ -25,7 +25,9 @@ export const createColumns = (
           <img
             alt="Thumbnail"
             className="h-16 w-16 rounded-md object-cover"
+            height="64"
             src={src}
+            width="64"
           />
         );
       },

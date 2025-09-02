@@ -2,7 +2,7 @@ import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
 import type { ISettingsParam } from 'tslog';
 import { Logger as TsLogger } from 'tslog';
 
-type ILogObj = {};
+type ILogObj = Record<string, unknown>;
 const defaultLogObject: ILogObj = {};
 
 export class Logger extends TsLogger<ILogObj> {

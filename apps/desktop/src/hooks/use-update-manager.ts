@@ -35,6 +35,9 @@ const useUpdateManager = () => {
         case 'Finished':
           logger.info('download finished');
           break;
+        default:
+          logger.info('Unknown update event:', event);
+          break;
       }
     });
     await relaunch();

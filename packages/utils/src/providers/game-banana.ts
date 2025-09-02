@@ -153,7 +153,7 @@ export type GameBananaModProfile = BaseSubmission & {
   _nAllTodosCount: number;
   _bHasTodos: boolean;
   _nPostCount: number;
-  _aAttributes: any[];
+  _aAttributes: unknown[];
   _aTags: string[] | Array<{ _sTitle: string; _sValue: string }>;
   _bCreatedBySubmitter: boolean;
   _bIsPorted: boolean;
@@ -162,7 +162,7 @@ export type GameBananaModProfile = BaseSubmission & {
   _nDownloadCount: number;
   _aFiles: GameBananaFile[];
   _nSubscriberCount: number;
-  _aContributingStudios: any[];
+  _aContributingStudios: unknown[];
   _sLicense: string;
   _aLicenseChecklist: {
     yes: string[];
@@ -191,10 +191,10 @@ export type GameBananaModProfile = BaseSubmission & {
     _nPointsRank: number;
     _aNormalMedals: [string, string, string, number][];
     _aRareMedals: [string, string, string, number][];
-    _aLegendaryMedals: any[];
+    _aLegendaryMedals: unknown[];
     _nBuddyCount: number;
     _nSubscriberCount: number;
-    _aDonationMethods: any[];
+    _aDonationMethods: unknown[];
     _bAccessorIsBuddy: boolean;
     _bBuddyRequestExistsWithAccessor: boolean;
     _bAccessorIsSubscribed: boolean;

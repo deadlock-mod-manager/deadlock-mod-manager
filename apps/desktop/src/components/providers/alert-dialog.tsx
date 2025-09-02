@@ -128,7 +128,11 @@ export const AlertDialogProvider = ({
     actionButtonVariant: 'default',
   });
 
-  const resolveRef = React.useRef<(tf: any) => void>(() => {});
+  const resolveRef = React.useRef<(value: boolean | string | null) => void>(
+    () => {
+      // Default no-op function
+    }
+  );
 
   const close = () => {
     dispatch({ type: 'close' });
@@ -146,7 +150,7 @@ export const AlertDialogProvider = ({
     return new Promise<
       T['type'] extends 'alert' | 'confirm' ? boolean : null | string
     >((resolve) => {
-      resolveRef.current = resolve;
+      resolveRef.current = resolve as (value: boolean | string | null) => void;
     });
   }, []);
 

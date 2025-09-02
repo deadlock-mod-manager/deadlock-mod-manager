@@ -52,14 +52,15 @@ export const AboutDialog = () => {
               Version {version}
               <span className="font-medium font-sans text-gray-400">
                 (
-                <span
-                  className="cursor-pointer text-primary"
+                <button
+                  className="cursor-pointer text-primary hover:underline"
                   onClick={() =>
                     open(`${GITHUB_REPO}/releases/tag/v${version}`)
                   }
+                  type="button"
                 >
                   release notes
-                </span>
+                </button>
                 )
               </span>
             </span>
@@ -74,12 +75,13 @@ export const AboutDialog = () => {
           <Separator className="w-8" />
           <div className="text-muted-foreground text-xs">
             Powered by{' '}
-            <span
+            <button
               className="cursor-pointer font-medium text-primary hover:underline"
               onClick={() => open('https://gamebanana.com/')}
+              type="button"
             >
               GameBanana
-            </span>{' '}
+            </button>{' '}
             for mod content and community
           </div>
           <div className="font-bold text-xs">{COPYRIGHT}</div>

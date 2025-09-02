@@ -22,7 +22,7 @@ export const formatSpeed = (speed: number) => {
 };
 
 export const getAdditionalArgs = (settings: LocalSetting[]) => {
-  const additionalArgs = [];
+  const additionalArgs: string[] = [];
 
   for (const setting of settings.filter(
     (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled

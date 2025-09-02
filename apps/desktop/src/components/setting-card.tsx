@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { usePersistedStore } from '@/lib/store';
 import type { LocalSetting } from '@/types/settings';
+
+const WHITESPACE_REGEX = /\s+/;
+
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
@@ -27,7 +30,7 @@ type SettingsCardProps = {
 function parseCommand(input: string): { key: string; value: string } {
   const t = input.trim();
   const noPlus = t.startsWith('+') ? t.slice(1) : t;
-  const [k, ...rest] = noPlus.split(/\s+/);
+  const [k, ...rest] = noPlus.split(WHITESPACE_REGEX);
   const key = (k || '').trim();
   const value = (rest.join(' ') || '').trim();
   return { key, value };
@@ -50,15 +53,16 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
     <Tooltip>
       <TooltipTrigger className="flex flex-row items-center gap-2">
         Command:
-        <code
-          className="cursor-copy underline decoration-dotted underline-offset-4"
+        <button
+          className="cursor-copy bg-transparent p-0 font-mono text-sm underline decoration-dotted underline-offset-4"
           onClick={() => {
             navigator.clipboard.writeText(`+${setting.key} ${setting.value}`);
             toast.success('Copied to clipboard');
           }}
+          type="button"
         >
           +{setting.key} {setting.value}
-        </code>
+        </button>
       </TooltipTrigger>
       <TooltipContent>
         <p>Copy to clipboard</p>

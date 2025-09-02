@@ -28,6 +28,8 @@ const Status = ({ status }: { status: ModStatus }) => {
         return 'Installed';
       case ModStatus.ERROR:
         return 'Error';
+      default:
+        return 'Unknown';
     }
   }, [status]);
 

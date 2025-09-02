@@ -8,7 +8,7 @@ type AppProviderProps = {
 };
 
 type AppProviderState = {
-  // TODO
+  _placeholder?: unknown; // Just a placeholder
 };
 
 const AppProviderContext = createContext<AppProviderState>({});

@@ -200,84 +200,83 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource
   ): Promise<NewMod> {
-    switch (source) {
-      case 'featured': {
-        const submission = mod as GameBanana.GameBananaSubmission;
-        return {
-          remoteId: submission._idRow.toString(),
-          name: submission._sName,
-          tags: parseTags(submission._aTags),
-          author: submission._aSubmitter._sName,
-          likes: submission._nLikeCount ?? 0,
-          hero: guessHero(submission._sName),
-          downloadCount: submission._nViewCount ?? 0,
-          remoteUrl: submission._sProfileUrl,
-          category: submission._sModelName,
-          downloadable: submission._bHasFiles,
-          remoteAddedAt: new Date(
-            submission._tsDateAdded * MILLISECONDS_PER_SECOND
-          ),
-          remoteUpdatedAt: new Date(
-            submission._tsDateModified * MILLISECONDS_PER_SECOND
-          ),
-          images: submission._aPreviewMedia._aImages.map(
-            (image) => `${image._sBaseUrl}/${image._sFile}`
-          ),
-        };
-      }
-      case 'top': {
-        const topSubmission = mod as GameBanana.GameBananaTopSubmission;
-        const submission = await this.getMod(topSubmission._idRow.toString());
-        return {
-          remoteId: topSubmission._idRow.toString(),
-          name: topSubmission._sName,
-          tags: parseTags(submission._aTags),
-          author: topSubmission._aSubmitter._sName,
-          likes: topSubmission._nLikeCount,
-          hero: guessHero(topSubmission._sName),
-          downloadCount: submission._nViewCount,
-          remoteUrl: topSubmission._sProfileUrl,
-          category: topSubmission._sModelName,
-          downloadable: submission._aFiles.length > 0,
-          remoteAddedAt: new Date(
-            submission._tsDateAdded * MILLISECONDS_PER_SECOND
-          ),
-          remoteUpdatedAt: new Date(
-            submission._tsDateModified * MILLISECONDS_PER_SECOND
-          ),
-          images: submission._aPreviewMedia._aImages.map(
-            (image) => `${image._sBaseUrl}/${image._sFile}`
-          ),
-        };
-      }
-      case 'all': {
-        const submission = await this.getMod(mod._idRow.toString());
-        return {
-          remoteId: submission._idRow.toString(),
-          name: submission._sName,
-          tags: parseTags(submission._aTags),
-          author: submission._aSubmitter._sName,
-          likes: submission._nLikeCount,
-          hero: guessHero(submission._sName),
-          downloadCount: submission._nViewCount,
-          remoteUrl: submission._sProfileUrl,
-          category: submission._aCategory._sName,
-          downloadable: submission._aFiles.length > 0,
-          remoteAddedAt: new Date(
-            submission._tsDateAdded * MILLISECONDS_PER_SECOND
-          ),
-          remoteUpdatedAt: new Date(
-            submission._tsDateModified * MILLISECONDS_PER_SECOND
-          ),
-          images: submission._aPreviewMedia._aImages.map(
-            (image) => `${image._sBaseUrl}/${image._sFile}`
-          ),
-        };
-      }
-      default: {
-        throw new Error(`Invalid source: ${source}`);
-      }
+    if (source === 'featured') {
+      const submission = mod as GameBanana.GameBananaSubmission;
+      return {
+        remoteId: submission._idRow.toString(),
+        name: submission._sName,
+        tags: parseTags(submission._aTags),
+        author: submission._aSubmitter._sName,
+        likes: submission._nLikeCount ?? 0,
+        hero: guessHero(submission._sName),
+        downloadCount: submission._nViewCount ?? 0,
+        remoteUrl: submission._sProfileUrl,
+        category: submission._sModelName,
+        downloadable: submission._bHasFiles,
+        remoteAddedAt: new Date(
+          submission._tsDateAdded * MILLISECONDS_PER_SECOND
+        ),
+        remoteUpdatedAt: new Date(
+          submission._tsDateModified * MILLISECONDS_PER_SECOND
+        ),
+        images: submission._aPreviewMedia._aImages.map(
+          (image) => `${image._sBaseUrl}/${image._sFile}`
+        ),
+      };
     }
+
+    if (source === 'top') {
+      const topSubmission = mod as GameBanana.GameBananaTopSubmission;
+      const submission = await this.getMod(topSubmission._idRow.toString());
+      return {
+        remoteId: topSubmission._idRow.toString(),
+        name: topSubmission._sName,
+        tags: parseTags(submission._aTags),
+        author: topSubmission._aSubmitter._sName,
+        likes: topSubmission._nLikeCount,
+        hero: guessHero(topSubmission._sName),
+        downloadCount: submission._nViewCount,
+        remoteUrl: topSubmission._sProfileUrl,
+        category: topSubmission._sModelName,
+        downloadable: submission._aFiles.length > 0,
+        remoteAddedAt: new Date(
+          submission._tsDateAdded * MILLISECONDS_PER_SECOND
+        ),
+        remoteUpdatedAt: new Date(
+          submission._tsDateModified * MILLISECONDS_PER_SECOND
+        ),
+        images: submission._aPreviewMedia._aImages.map(
+          (image) => `${image._sBaseUrl}/${image._sFile}`
+        ),
+      };
+    }
+
+    if (source === 'all') {
+      const submission = await this.getMod(mod._idRow.toString());
+      return {
+        remoteId: submission._idRow.toString(),
+        name: submission._sName,
+        tags: parseTags(submission._aTags),
+        author: submission._aSubmitter._sName,
+        likes: submission._nLikeCount,
+        hero: guessHero(submission._sName),
+        downloadCount: submission._nViewCount,
+        remoteUrl: submission._sProfileUrl,
+        category: submission._aCategory._sName,
+        downloadable: submission._aFiles.length > 0,
+        remoteAddedAt: new Date(
+          submission._tsDateAdded * MILLISECONDS_PER_SECOND
+        ),
+        remoteUpdatedAt: new Date(
+          submission._tsDateModified * MILLISECONDS_PER_SECOND
+        ),
+        images: submission._aPreviewMedia._aImages.map(
+          (image) => `${image._sBaseUrl}/${image._sFile}`
+        ),
+      };
+    }
+
+    throw new Error(`Invalid source: ${source}`);
   }
 
   async createMod(

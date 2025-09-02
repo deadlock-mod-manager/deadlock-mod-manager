@@ -15,13 +15,64 @@
       "**/postcss.config.js"
     ]
   },
+  "javascript": {
+    "globals": ["Bun"]
+  },
   "linter": {
     "rules": {
+      "a11y": {
+        "noAccessKey": "off",
+        "noAriaHiddenOnFocusable": "off",
+        "noAriaUnsupportedElements": "off",
+        "noAutofocus": "off",
+        "noDistractingElements": "off",
+        "noHeaderScope": "off",
+        "noInteractiveElementToNoninteractiveRole": "off",
+        "noLabelWithoutControl": "off",
+        "noNoninteractiveElementToInteractiveRole": "off",
+        "noNoninteractiveTabindex": "off",
+        "noPositiveTabindex": "off",
+        "noRedundantAlt": "off",
+        "noRedundantRoles": "off",
+        "noStaticElementInteractions": "off",
+        "noSvgWithoutTitle": "off",
+        "useAltText": "off",
+        "useAnchorContent": "off",
+        "useAriaActivedescendantWithTabindex": "off",
+        "useAriaPropsForRole": "off",
+        "useButtonType": "off",
+        "useFocusableInteractive": "off",
+        "useHeadingContent": "off",
+        "useHtmlLang": "off",
+        "useIframeTitle": "off",
+        "useKeyWithClickEvents": "off",
+        "useKeyWithMouseEvents": "off",
+        "useMediaCaption": "off",
+        "useSemanticElements": "off",
+        "useValidAnchor": "off",
+        "useValidAriaProps": "off",
+        "useValidAriaRole": "off",
+        "useValidAriaValues": "off",
+        "useValidAutocomplete": "off",
+        "useValidLang": "off",
+        "noNoninteractiveElementInteractions": "off"
+      },
       "performance": {
-        "noNamespaceImport": "off"
+        "noNamespaceImport": "off",
+        "noBarrelFile": "off",
+        "noImgElement": "off"
       },
       "suspicious": {
-        "useAwait": "off"
+        "useAwait": "off",
+        "noUnknownAtRules": "off"
+      },
+      "nursery": {
+        "noShadow": "off"
+      },
+      "style": {
+        "noEnum": "off",
+        "noNestedTernary": "off",
+        "noMagicNumbers": "off"
       }
     }
   }

@@ -12,7 +12,7 @@
     "docker:api:stop": "docker compose down",
     "docker:api:logs": "docker compose logs -f api",
     "docker": "docker compose up -d",
-    "format": "npx ultracite@latest format",
+    "format": "npx ultracite@latest fix",
     "lint": "npx ultracite@latest lint",
     "publish-packages": "turbo run build && changeset version && changeset publish"
   },

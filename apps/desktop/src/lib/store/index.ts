@@ -22,7 +22,7 @@ export const usePersistedStore = create<State>()(
       partialize: (state) => {
         // Only include stable state that should be persisted
         // Completely exclude modProgress from persistence to avoid spamming storage
-        const { modProgress, ...rest } = state;
+        const { modProgress: _modProgress, ...rest } = state;
         return rest;
       },
     }

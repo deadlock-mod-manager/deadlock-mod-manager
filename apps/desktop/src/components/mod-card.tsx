@@ -59,9 +59,10 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   return (
     <>
       {showLargeImage && mod.images.length > 0 && (
-        <div
+        <button
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-8"
           onClick={() => setShowLargeImage(false)}
+          type="button"
         >
           <div className="relative max-h-[90vh] max-w-5xl overflow-hidden rounded-xl bg-background shadow-2xl">
             <Button
@@ -75,10 +76,12 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             <img
               alt={`${mod.name} (enlarged)`}
               className="max-h-[90vh] max-w-full object-contain p-2"
+              height="720"
               src={mod.images[0]}
+              width="1280"
             />
           </div>
-        </div>
+        </button>
       )}
       <Card
         className="cursor-pointer shadow"
@@ -88,7 +91,9 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           <img
             alt={mod.name}
             className="h-48 w-full rounded-t-xl object-cover"
+            height="192"
             src={mod.images[0]}
+            width="320"
           />
           <div className="absolute top-2 right-2 flex flex-col gap-1">
             {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}

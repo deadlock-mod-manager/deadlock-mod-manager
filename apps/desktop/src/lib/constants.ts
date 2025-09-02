@@ -6,7 +6,9 @@ export const COPYRIGHT =
   'Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation.';
 
 export const STORE_NAME = 'state.json';
-export const NOOP = () => {};
+export const NOOP = () => {
+  // Intentionally empty function
+};
 
 export enum SortType {
   DEFAULT = 'default',
