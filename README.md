@@ -12,6 +12,8 @@
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 [![License][license-status]][license-url]
+![Discord](https://img.shields.io/discord/1322369530386710568?label=discord)
+
 
 <br />
 <div align="center">
