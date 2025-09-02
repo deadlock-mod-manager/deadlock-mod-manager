@@ -36,7 +36,7 @@ const GetModsData = () => {
   const rowVirtualizer = useVirtualizer({
     count: modRows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 300, // Estimated height of ModCard + gap
+    estimateSize: () => 320 + 20, // Estimated height of ModCard + gap (updated for better spacing)
     overscan: 2, // Render 2 extra rows above and below visible area
   });
 

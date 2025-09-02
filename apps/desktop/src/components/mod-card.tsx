@@ -1,7 +1,14 @@
 import type { ModDto } from '@deadlock-mods/utils';
-import { CheckIcon, DownloadIcon, Loader2, XIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import {
+  CalendarIcon,
+  CheckIcon,
+  DownloadIcon,
+  HeartIcon,
+  Loader2,
+  XIcon,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FiZoomIn } from 'react-icons/fi';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownload } from '@/hooks/use-download';
@@ -35,15 +42,21 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
     return (
       <Card className="cursor-pointer shadow">
         <Skeleton className="h-48 w-full rounded-t-xl bg-muted object-cover" />
-        <CardHeader className="px-2 py-3">
+        <CardHeader className="px-3 py-4">
           <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-2">
-              <CardTitle>
-                <Skeleton className="h-4 w-32" />
-              </CardTitle>
-              <CardDescription>
-                <Skeleton className="h-4 w-32" />
-              </CardDescription>
+            <div className="flex flex-col gap-3">
+              <div className="space-y-1">
+                <CardTitle>
+                  <Skeleton className="h-4 w-32" />
+                </CardTitle>
+                <CardDescription>
+                  <Skeleton className="h-4 w-32" />
+                </CardDescription>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-20" />
+              </div>
             </div>
             <div className="flex flex-col">
               <Button disabled size="icon" variant="outline">
@@ -99,7 +112,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}
             {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
           </div>
-          <Button
+          {/* <Button
             className="absolute right-2 bottom-2 opacity-80 hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
@@ -109,44 +122,68 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             variant="secondary"
           >
             <FiZoomIn className="h-4 w-4" />
-          </Button>
+          </Button> */}
         </div>
-        <CardHeader className="px-2 py-3">
+        <CardHeader className="px-3 py-4">
           <div className="flex items-start justify-between">
-            <div className="flex flex-col">
-              <CardTitle
-                className="w-36 overflow-clip text-ellipsis text-nowrap"
-                title={mod.name}
-              >
-                {mod.name}
-              </CardTitle>
-              <CardDescription
-                className="w-36 overflow-clip text-ellipsis text-nowrap"
-                title={mod.author}
-              >
-                By {mod.author}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col">
-              <Button
-                disabled={
-                  status &&
-                  [
-                    ModStatus.DOWNLOADING,
-                    ModStatus.DOWNLOADED,
-                    ModStatus.INSTALLED,
-                  ].includes(status)
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  download();
-                }}
-                size="icon"
-                title="Download Mod"
-                variant="outline"
-              >
-                {Icon}
-              </Button>
+            <div className="flex w-full flex-col gap-3">
+              <div className="space-y-1">
+                <CardTitle
+                  className="overflow-clip text-ellipsis text-nowrap leading-tight"
+                  title={mod.name}
+                >
+                  {mod.name}
+                </CardTitle>
+                <CardDescription
+                  className="overflow-clip text-ellipsis text-nowrap"
+                  title={mod.author}
+                >
+                  By {mod.author}
+                </CardDescription>
+              </div>
+
+              <div className="flex flex-row justify-between">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <DownloadIcon className="h-3 w-3 flex-shrink-0" />
+                      <span>{mod.downloadCount.toLocaleString()}</span>
+                    </div>
+                    {mod.likes > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <HeartIcon className="ml-2 h-3 w-3 flex-shrink-0" />
+                        <span>{mod.likes.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <CalendarIcon className="h-3 w-3 flex-shrink-0" />
+                    <span title={format(new Date(mod.remoteUpdatedAt), 'PPP')}>
+                      {format(new Date(mod.remoteUpdatedAt), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  disabled={
+                    status &&
+                    [
+                      ModStatus.DOWNLOADING,
+                      ModStatus.DOWNLOADED,
+                      ModStatus.INSTALLED,
+                    ].includes(status)
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    download();
+                  }}
+                  size="icon"
+                  title="Download Mod"
+                  variant="outline"
+                >
+                  {Icon}
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
