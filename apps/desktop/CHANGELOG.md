@@ -1,5 +1,11 @@
 # desktop
 
+## 0.6.1
+
+### Patch Changes
+
+- 9dcc699: Support for 1-click deep links
+
 ## 0.6.0
 
 ### Minor Changes

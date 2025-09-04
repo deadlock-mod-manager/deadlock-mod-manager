@@ -20,9 +20,22 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { data } = useAbout();
 
   // Use a fallback version if data is not yet available
-  const version = data?.version || '0.5.1';
+  const version = data?.version || '0.6.1';
 
   const updateContent = {
+    '0.6.1': {
+      title: 'Deep Links & Improvements',
+      features: ['🔗 Added support for 1-click install links on GameBanana'],
+    },
+    '0.6.0': {
+      title: 'Audio Mod Support & Launch Options',
+      features: [
+        '🎵 Added support for audio mods - customize your Deadlock sounds',
+        '🚀 Improved launch options handling - no longer assumes "+" prefix requirement',
+        '🔧 Enhanced mod compatibility and installation process',
+        '⚡ Various performance optimizations and stability improvements',
+      ],
+    },
     '0.5.1': {
       title: 'Performance & Bug Fixes',
       features: [
