@@ -29,6 +29,8 @@ export const mods = pgTable('mod', {
   tags: text('tags').array().notNull(),
   images: text('images').array().notNull(),
   hero: text('hero'),
+  isAudio: boolean('is_audio').notNull().default(false),
+  audioUrl: text('audio_url'),
   downloadCount: integer('download_count').notNull().default(0),
 });
 
@@ -52,15 +54,13 @@ export const modDownloads = pgTable(
       .$defaultFn(() => new Date()),
     size: integer('size').notNull(),
   },
-  (table) => {
-    return {
-      unq: uniqueIndex('mod_download_mod_id_remote_id_idx').on(
-        table.modId,
-        table.remoteId
-      ),
-      modIdIdx: uniqueIndex('mod_download_mod_id_idx').on(table.modId),
-    };
-  }
+  (table) => [
+    uniqueIndex('mod_download_mod_id_remote_id_idx').on(
+      table.modId,
+      table.remoteId
+    ),
+    uniqueIndex('mod_download_mod_id_idx').on(table.modId),
+  ]
 );
 
 export const customSettings = pgTable('custom_setting', {

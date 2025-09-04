@@ -229,6 +229,112 @@ export type GameBananaModProfile = BaseSubmission & {
   }>;
 };
 
+export type GameBananaSoundProfile = BaseSubmission & {
+  _nStatus: string;
+  _bIsPrivate: boolean;
+  _tsDateModified: number;
+  _tsDateAdded: number;
+  _aPreviewMedia: {
+    _aMetadata: {
+      _sAudioUrl: string;
+    };
+  };
+  _sCommentsMode: string;
+  _bAccessorIsSubmitter: boolean;
+  _bIsTrashed: boolean;
+  _bIsWithheld: boolean;
+  _nUpdatesCount: number;
+  _bHasUpdates: boolean;
+  _nAllTodosCount: number;
+  _bHasTodos: boolean;
+  _nPostCount: number;
+  _aTags: Array<{ _sTitle: string; _sValue: string }>;
+  _bCreatedBySubmitter: boolean;
+  _bIsPorted: boolean;
+  _nThanksCount: number;
+  _sDownloadUrl: string;
+  _nDownloadCount: number;
+  _aFiles: Array<{
+    _idRow: number;
+    _sFile: string;
+    _nFilesize: number;
+    _tsDateAdded: number;
+    _nDownloadCount: number;
+    _sDownloadUrl: string;
+    _sMd5Checksum: string;
+    _sAnalysisState: string;
+    _sAnalysisResult: string;
+    _sAnalysisResultVerbose: string;
+    _sAvState: string;
+    _sAvResult: string;
+    _bIsArchived: boolean;
+    _bHasContents: boolean;
+  }>;
+  _nSubscriberCount: number;
+  _aContributingStudios: unknown[];
+  _sLicense: string;
+  _aLicenseChecklist: {
+    yes: string[];
+    ask: string[];
+    no: string[];
+  };
+  _sDescription: string;
+  _bGenerateTableOfContents: boolean;
+  _sText: string;
+  _bAcceptsDonations: boolean;
+  _bShowRipePromo: boolean;
+  _aEmbeddables: {
+    _sEmbeddableImageBaseUrl: string;
+    _aVariants: string[];
+  };
+  _aSubmitter: BaseUser & {
+    _sUserTitle: string;
+    _sHonoraryTitle: string;
+    _tsJoinDate: number;
+    _sSigUrl: string;
+    _sPointsUrl: string;
+    _sMedalsUrl: string;
+    _sLocation: string;
+    _sOnlineTitle: string;
+    _sOfflineTitle: string;
+    _nPoints: number;
+    _nPointsRank: number;
+    _aNormalMedals: [string, string, string, number][];
+    _aRareMedals: [string, string, string, number][];
+    _aLegendaryMedals: unknown[];
+    _nBuddyCount: number;
+    _nSubscriberCount: number;
+    _aDonationMethods: unknown[];
+    _bAccessorIsBuddy: boolean;
+    _bBuddyRequestExistsWithAccessor: boolean;
+    _bAccessorIsSubscribed: boolean;
+    _aDefaultLicenseChecklist: string[];
+    _sDefaultLicense: string;
+  };
+  _bFollowLinks: boolean;
+  _aGame: BaseGame & {
+    _sAbbreviation: string;
+    _sBannerUrl: string;
+    _nSubscriberCount: number;
+    _bHasSubmissionQueue: boolean;
+    _bAccessorIsSubscribed: boolean;
+  };
+  _aCategory: BaseCategory & {
+    _idRow: number;
+    _sModelName: string;
+  };
+  _aCredits: Array<{
+    _sGroupName: string;
+    _aAuthors: Array<{
+      _sRole: string;
+      _idRow: number;
+      _sName: string;
+      _sProfileUrl: string;
+      _bIsOnline: boolean;
+    }>;
+  }>;
+};
+
 export type GameBananaIndexSubmission = BaseSubmission & {
   _sSingularTitle: string;
   _sIconClasses: string;
@@ -242,4 +348,15 @@ export type GameBananaIndexSubmission = BaseSubmission & {
   _bHasContentRatings: boolean;
   _bWasFeatured: boolean;
   _bIsOwnedByAccessor: boolean;
+};
+
+export type GameBananaSoundSubmission = Omit<
+  GameBananaIndexSubmission,
+  '_aPreviewMedia'
+> & {
+  _aPreviewMedia: {
+    _aMetadata: {
+      _sAudioUrl: string;
+    };
+  };
 };

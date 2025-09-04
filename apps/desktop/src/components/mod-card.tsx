@@ -6,9 +6,12 @@ import {
   DownloadIcon,
   HeartIcon,
   Loader2,
+  Music,
+  Pause,
+  Play,
   XIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownload } from '@/hooks/use-download';
@@ -24,6 +27,26 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   const status = localMod?.status;
   const navigate = useNavigate();
   const [showLargeImage, setShowLargeImage] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
 
   const Icon = useMemo(() => {
     switch (status) {
@@ -41,7 +64,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   if (!mod) {
     return (
       <Card className="cursor-pointer shadow">
-        <Skeleton className="h-48 w-full rounded-t-xl bg-muted object-cover" />
+        <Skeleton className="h-48 w-full rounded-t-xl bg-muted" />
         <CardHeader className="px-3 py-4">
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-3">
@@ -101,28 +124,60 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
         onClick={() => navigate(`/mods/${mod.remoteId}`)}
       >
         <div className="relative">
-          <img
-            alt={mod.name}
-            className="h-48 w-full rounded-t-xl object-cover"
-            height="192"
-            src={mod.images[0]}
-            width="320"
-          />
+          {mod.isAudio ? (
+            // Audio-only mod display
+            <div className="relative flex h-48 w-full flex-col items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-muted via-secondary to-accent">
+              <div className="relative z-10 flex flex-col items-center gap-2">
+                <Music className="h-8 w-8 text-primary" />
+                <Button
+                  className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleAudioPlayback();
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {isPlaying ? 'Pause' : 'Preview'}
+                </Button>
+              </div>
+              {mod.audioUrl && (
+                <audio
+                  onEnded={handleAudioEnded}
+                  preload="metadata"
+                  ref={audioRef}
+                  src={mod.audioUrl}
+                />
+              )}
+            </div>
+          ) : mod.images.length > 0 ? (
+            // Regular mod with images
+            <img
+              alt={mod.name}
+              className="h-48 w-full rounded-t-xl object-cover"
+              height="192"
+              src={mod.images[0]}
+              width="320"
+            />
+          ) : (
+            // Fallback for mods without images or audio
+            <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-muted">
+              <div className="text-center text-muted-foreground">
+                <DownloadIcon className="mx-auto mb-2 h-12 w-12" />
+                <p className="text-sm">No preview available</p>
+              </div>
+            </div>
+          )}
           <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {mod.isAudio && <Badge variant="secondary">Audio</Badge>}
             {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}
             {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
           </div>
-          {/* <Button
-            className="absolute right-2 bottom-2 opacity-80 hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowLargeImage(true);
-            }}
-            size="icon"
-            variant="secondary"
-          >
-            <FiZoomIn className="h-4 w-4" />
-          </Button> */}
         </div>
         <CardHeader className="px-3 py-4">
           <div className="flex items-start justify-between">
