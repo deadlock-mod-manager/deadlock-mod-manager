@@ -25,7 +25,7 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
     () =>
       new Fuse(data, {
         keys: keys as FuseOptionKey<T>[],
-        shouldSort: false,
+        shouldSort: true,
         useExtendedSearch: true,
       }),
     [data, keys]
@@ -37,10 +37,7 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
         return sortMods(data as LocalMod[], sortType);
       }
       const results = fuse.search(q);
-      return sortMods(
-        results.map((result) => result.item) as LocalMod[],
-        sortType
-      );
+      return results.map((result) => result.item) as LocalMod[];
     },
     [fuse, data, sortType]
   );
