@@ -1,5 +1,17 @@
 # desktop
 
+## 0.6.0
+
+### Minor Changes
+
+- ba5faa1: Added support for audio mods
+
+### Patch Changes
+
+- 2cc1984: Removed the assumption that every launch option has a "+" prefix
+- Updated dependencies [ba5faa1]
+  - @deadlock-mods/utils@1.3.0
+
 ## 0.5.1
 
 ### Minor Changes
