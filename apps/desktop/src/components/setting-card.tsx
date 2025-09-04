@@ -27,14 +27,13 @@ type SettingsCardProps = {
   onChange: (newValue: boolean) => void;
 };
 
-function parseCommand(input: string): { key: string; value: string } {
+const parseCommand = (input: string) => {
   const t = input.trim();
-  const noPlus = t.startsWith('+') ? t.slice(1) : t;
-  const [k, ...rest] = noPlus.split(WHITESPACE_REGEX);
+  const [k, ...rest] = t.split(WHITESPACE_REGEX);
   const key = (k || '').trim();
   const value = (rest.join(' ') || '').trim();
   return { key, value };
-}
+};
 
 const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
   if (!setting) {
@@ -56,12 +55,14 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
         <button
           className="cursor-copy bg-transparent p-0 font-mono text-sm underline decoration-dotted underline-offset-4"
           onClick={() => {
-            navigator.clipboard.writeText(`+${setting.key} ${setting.value}`);
+            navigator.clipboard.writeText(
+              `${setting.key} ${setting.value}`.trim()
+            );
             toast.success('Copied to clipboard');
           }}
           type="button"
         >
-          +{setting.key} {setting.value}
+          {`${setting.key} ${setting.value}`.trim()}
         </button>
       </TooltipTrigger>
       <TooltipContent>
@@ -107,10 +108,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
 
   const openEdit = () => {
     setEditName(setting.description ?? '');
-    const cmd =
-      setting.type === CustomSettingType.LAUNCH_OPTION
-        ? `+${setting.key}${setting.value ? ` ${setting.value}` : ''}`
-        : `${setting.key}${setting.value ? ` ${setting.value}` : ''}`;
+    const cmd = `${setting.key}${setting.value ? ` ${setting.value}` : ''}`;
     setEditCmd(cmd.trim());
     setEditOpen(true);
   };

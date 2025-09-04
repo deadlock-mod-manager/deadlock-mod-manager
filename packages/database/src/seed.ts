@@ -5,7 +5,7 @@ import { customSettings, db } from './client';
     await db
       .insert(customSettings)
       .values({
-        key: 'citadel_unit_status_use_new',
+        key: '+citadel_unit_status_use_new',
         value: 'true',
         type: 'launch_option', // TODO: enum
         description: 'Use new unit status system (new healthbar, etc.)',

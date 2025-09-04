@@ -83,7 +83,7 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
                   <FormLabel>Key</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="For example: citadel_unit_status_use_new"
+                      placeholder="For example: +citadel_unit_status_use_new"
                       {...field}
                     />
                   </FormControl>

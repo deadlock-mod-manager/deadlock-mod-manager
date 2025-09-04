@@ -27,7 +27,7 @@ export const getAdditionalArgs = (settings: LocalSetting[]) => {
   for (const setting of settings.filter(
     (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled
   )) {
-    additionalArgs.push(`+${setting.key} ${setting.value}`);
+    additionalArgs.push(`${setting.key} ${setting.value || ''}`.trim());
   }
 
   return additionalArgs.join(' ');

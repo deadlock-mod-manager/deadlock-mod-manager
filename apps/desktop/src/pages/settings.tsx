@@ -148,8 +148,8 @@ const CustomSettings = () => {
       <PageTitle
         action={
           <AddSettingDialog>
-            <Button size="icon" variant="outline">
-              <PlusIcon className="h-4 w-4" />
+            <Button variant="outline">
+              <PlusIcon className="h-4 w-4" /> New Launch Option
             </Button>
           </AddSettingDialog>
         }
