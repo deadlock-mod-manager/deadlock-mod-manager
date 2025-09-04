@@ -7,6 +7,7 @@ import { AppProvider } from './components/providers/app';
 import { ThemeProvider } from './components/providers/theme';
 import { TooltipProvider } from './components/ui/tooltip';
 import { fetchAboutData } from './hooks/use-about';
+import { useDeepLink } from './hooks/use-deep-link';
 import { Layout } from './layout';
 import { getCustomSettings, getMods } from './lib/api';
 import { queryClient } from './lib/client';
@@ -15,6 +16,9 @@ import logger from './lib/logger';
 import { usePersistedStore } from './lib/store';
 
 const App = () => {
+  // Initialize deep link listener
+  useDeepLink();
+
   const hydrateStore = async () => {
     // Prefetch data
     await queryClient.prefetchQuery('about', fetchAboutData);

@@ -2,9 +2,74 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::{Mod, ModManager};
+use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeepLinkData {
+    pub download_url: String,
+    pub mod_type: String,
+    pub mod_id: String,
+}
+
+#[tauri::command]
+pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
+    log::info!("Parsing deep link: {}", url);
+
+    // Expected format: deadlock-mod-manager:https://gamebanana.com/mmdl/1507124,Mod,616792
+    // or: deadlock-modmanager:https://gamebanana.com/mmdl/1507124,Mod,616792
+
+    let url = url.trim();
+
+    // Remove the protocol prefix
+    let data_part = if let Some(stripped) = url.strip_prefix("deadlock-mod-manager:") {
+        stripped
+    } else if let Some(stripped) = url.strip_prefix("deadlock-modmanager:") {
+        stripped
+    } else {
+        return Err(Error::InvalidInput("Invalid deep link format".to_string()));
+    };
+
+    // Split by comma to get the three parts
+    let parts: Vec<&str> = data_part.split(',').collect();
+
+    if parts.len() != 3 {
+        return Err(Error::InvalidInput(
+            "Deep link must contain exactly 3 parts separated by commas".to_string(),
+        ));
+    }
+
+    let download_url = parts[0].to_string();
+    let mod_type = parts[1].to_string();
+    let mod_id = parts[2].to_string();
+
+    // Validate that the download URL is from gamebanana
+    if !download_url.contains("gamebanana.com") {
+        return Err(Error::InvalidInput(
+            "Download URL must be from gamebanana.com".to_string(),
+        ));
+    }
+
+    // Validate that mod_id is numeric
+    if mod_id.parse::<u32>().is_err() {
+        return Err(Error::InvalidInput("Mod ID must be numeric".to_string()));
+    }
+
+    log::info!(
+        "Parsed deep link - Download URL: {}, Type: {}, Mod ID: {}",
+        download_url,
+        mod_type,
+        mod_id
+    );
+
+    Ok(DeepLinkData {
+        download_url,
+        mod_type,
+        mod_id,
+    })
+}
 
 #[tauri::command]
 pub async fn find_game_path() -> Result<String, Error> {

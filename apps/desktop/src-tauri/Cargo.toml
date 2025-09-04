@@ -23,6 +23,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
+tauri-plugin-http = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-os = "2.2.0"
@@ -43,6 +44,7 @@ tauri-plugin-process = "2.2.0"
 sevenz-rust = "0.5"
 tauri-plugin-sentry = "0.3"
 steamlocate = "2.0.0"
+tauri-plugin-deep-link = "2"
 
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
@@ -54,5 +56,5 @@ strip = true      # Automatically strip symbols from the binary.
 debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-single-instance = "2.2.2"
+tauri-plugin-single-instance = { version = "2.2.2", features = ["deep-link"] }
 tauri-plugin-updater = "2.3.0"

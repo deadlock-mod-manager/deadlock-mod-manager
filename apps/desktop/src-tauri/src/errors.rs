@@ -34,6 +34,8 @@ pub enum Error {
     FailedToOpenFolder(String),
     #[error("Failed to extract mod: {0}")]
     ModExtractionFailed(String),
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 impl serde::Serialize for Error {
@@ -63,6 +65,7 @@ impl serde::Serialize for Error {
             Error::GameLaunchFailed(_) => "gameLaunchFailed",
             Error::FailedToOpenFolder(_) => "failedToOpenFolder",
             Error::ModExtractionFailed(_) => "modExtractionFailed",
+            Error::InvalidInput(_) => "invalidInput",
         };
 
         state.serialize_field("kind", kind)?;

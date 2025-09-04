@@ -41,6 +41,11 @@
       "endpoints": [
         "https://github.com/stormix/deadlock-modmanager/releases/latest/download/latest.json"
       ]
+    },
+    "deepLink": {
+      "desktop": {
+        "schemes": ["deadlock-mod-manager", "deadlock-modmanager"]
+      }
     }
   }
 }

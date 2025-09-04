@@ -28,6 +28,14 @@
     "fs:allow-applocaldata-write-recursive",
     "fs:allow-applocaldata-meta-recursive",
     "upload:allow-download",
-    "shell:allow-open"
+    "shell:allow-open",
+    "deep-link:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://gamebanana.com/**" },
+        { "url": "https://*.gamebanana.com/**" }
+      ]
+    }
   ]
 }

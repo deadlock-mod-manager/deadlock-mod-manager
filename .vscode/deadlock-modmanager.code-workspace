@@ -38,6 +38,9 @@
       "source.fixAll.biome": "explicit",
       "source.organizeImports.biome": "explicit"
     },
-    "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"]
+    "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"],
+    "[rust]": {
+      "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    }
   }
 }

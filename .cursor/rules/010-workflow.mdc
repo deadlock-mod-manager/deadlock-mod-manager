@@ -1,17 +1,20 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 # Workflow Guidelines
 
 ## First Step for Any Task
+
 - Before starting work on any task, always check the `.cursor/rules` directory for relevant guidance
 - These documents contain established workflows, conventions, and requirements for different aspects of the project
 - Following these rule files will ensure consistency and reduce rework
 - If multiple rule files seem relevant, review all of them before proceeding
 
 ## Last Step for Any Task
+
 - If you've learned new concepts, workflows, or best practices during task completion, suggest updates to the relevant rules
 - For new workflows that aren't covered by existing rules, suggest creating a new rule file
 - Evaluate whether tests should be added for your changes:
@@ -24,3 +27,21 @@ alwaysApply: true
   pnpm format
   ```
 - Verify that no regressions are introduced by your changes
+
+## Available Rules
+
+The following rules are available in the `.cursor/rules` directory:
+
+### Core Project Rules
+
+- **010-workflow.mdc** - Workflow guidelines and task management procedures
+- **020-codebase-structure.mdc** - Project structure, commands, and development setup
+- **030-coding-style.mdc** - Coding standards and style guidelines for all technologies
+- **040-ultracite.mdc** - Code quality enforcement using Biome formatter and linter
+- **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
+
+### Special Rules
+
+- **999-mdc-format.mdc** - Guide for creating and maintaining MDC rule files
+
+When working on specific aspects of the project, consult the relevant rules above to ensure compliance with established patterns and standards.
