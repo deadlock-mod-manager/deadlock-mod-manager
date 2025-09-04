@@ -9,7 +9,7 @@ import { Provider, providerRegistry } from './registry';
 
 export const DEADLOCK_GAME_ID = 20_948; // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
 export const GAME_BANANA_BASE_URL = 'https://gamebanana.com/apiv11';
-export const ACCEPTED_MODELS = ['Mod'];
+export const ACCEPTED_MODELS = ['Mod', 'Sound'];
 const MILLISECONDS_PER_SECOND = 1000;
 
 const parseTags = (
@@ -20,11 +20,12 @@ const parseTags = (
   );
 };
 
-export type GameBananaSubmissionSource = 'featured' | 'top' | 'all';
+export type GameBananaSubmissionSource = 'featured' | 'top' | 'all' | 'sound';
 export type GameBananaSubmission =
   | GameBanana.GameBananaSubmission
   | GameBanana.GameBananaTopSubmission
-  | GameBanana.GameBananaIndexSubmission;
+  | GameBanana.GameBananaIndexSubmission
+  | GameBanana.GameBananaSoundSubmission;
 
 export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getAllSubmissions(
@@ -43,6 +44,32 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>;
       this.logger.debug('Fetched all submissions', {
+        page,
+        count: data._aRecords.length,
+      });
+      return data;
+    } catch (error) {
+      this.logger.error('Failed to fetch submissions', { error, page });
+      throw error;
+    }
+  }
+
+  async getAllSoundSubmissions(
+    page: number
+  ): Promise<
+    GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>
+  > {
+    this.logger.debug('Fetching all submissions', { page });
+    try {
+      const response = await fetch(
+        `${GAME_BANANA_BASE_URL}/Sound/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data =
+        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>;
+      this.logger.debug('Fetched all sound submissions', {
         page,
         count: data._aRecords.length,
       });
@@ -135,30 +162,52 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
   }
 
+  async *getSoundSubmissions(): AsyncGenerator<{
+    submission: GameBanana.GameBananaSoundSubmission;
+    source: GameBananaSubmissionSource;
+  }> {
+    let isComplete = false;
+    let page = 1;
+
+    while (!isComplete) {
+      const submissions = await this.getAllSoundSubmissions(page);
+      for (const submission of submissions._aRecords) {
+        yield { submission, source: 'sound' };
+      }
+      isComplete = submissions._aMetadata._bIsComplete;
+      page++;
+    }
+  }
+
   async *getMods(): AsyncGenerator<{
     submission: GameBananaSubmission;
     source: GameBananaSubmissionSource;
   }> {
+    yield* this.getSoundSubmissions();
     yield* this.getAllMods();
     yield* this.getFeaturedMods(); // These two are most likely redundant, but I haven't checked
     yield* this.getTopMods(); // These two are most likely redundant, but I haven't checked
   }
 
   async getModDownload<D = GameBanana.GameBananaModDownload>(
-    remoteId: string
+    remoteId: string,
+    modType: 'Mod' | 'Sound' = 'Mod'
   ): Promise<D> {
     const response = await fetch(
-      `${GAME_BANANA_BASE_URL}/Mod/${remoteId}/DownloadPage`
+      `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/DownloadPage`
     );
     const data = (await response.json()) as D;
     return data;
   }
 
-  async getMod<D = GameBanana.GameBananaModProfile>(
-    remoteId: string
-  ): Promise<D> {
+  async getMod<
+    T extends 'Mod' | 'Sound' = 'Mod',
+    D = T extends 'Mod'
+      ? GameBanana.GameBananaModProfile
+      : GameBanana.GameBananaSoundProfile,
+  >(remoteId: string, modType: T): Promise<D> {
     const response = await fetch(
-      `${GAME_BANANA_BASE_URL}/Mod/${remoteId}/ProfilePage`
+      `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/ProfilePage`
     );
     const data = (await response.json()) as D;
     return data;
@@ -227,7 +276,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
     if (source === 'top') {
       const topSubmission = mod as GameBanana.GameBananaTopSubmission;
-      const submission = await this.getMod(topSubmission._idRow.toString());
+      const submission = await this.getMod(
+        topSubmission._idRow.toString(),
+        'Mod'
+      );
       return {
         remoteId: topSubmission._idRow.toString(),
         name: topSubmission._sName,
@@ -238,7 +290,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         downloadCount: submission._nViewCount,
         remoteUrl: topSubmission._sProfileUrl,
         category: topSubmission._sModelName,
-        downloadable: submission._aFiles.length > 0,
+        downloadable: (submission?._aFiles?.length ?? 0) > 0,
         remoteAddedAt: new Date(
           submission._tsDateAdded * MILLISECONDS_PER_SECOND
         ),
@@ -252,7 +304,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
 
     if (source === 'all') {
-      const submission = await this.getMod(mod._idRow.toString());
+      const submission = await this.getMod(mod._idRow.toString(), 'Mod');
       return {
         remoteId: submission._idRow.toString(),
         name: submission._sName,
@@ -263,7 +315,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         downloadCount: submission._nViewCount,
         remoteUrl: submission._sProfileUrl,
         category: submission._aCategory._sName,
-        downloadable: submission._aFiles.length > 0,
+        downloadable: (submission?._aFiles?.length ?? 0) > 0,
         remoteAddedAt: new Date(
           submission._tsDateAdded * MILLISECONDS_PER_SECOND
         ),
@@ -273,6 +325,31 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`
         ),
+      };
+    }
+
+    if (source === 'sound') {
+      const submission = await this.getMod(mod._idRow.toString(), 'Sound');
+      return {
+        remoteId: submission._idRow.toString(),
+        name: submission._sName,
+        tags: parseTags(submission._aTags),
+        author: submission._aSubmitter._sName,
+        likes: submission._nLikeCount,
+        hero: guessHero(submission._sName),
+        downloadCount: submission._nViewCount,
+        remoteUrl: submission._sProfileUrl,
+        category: submission._aCategory._sName,
+        downloadable: (submission?._aFiles?.length ?? 0) > 0,
+        remoteAddedAt: new Date(
+          submission._tsDateAdded * MILLISECONDS_PER_SECOND
+        ),
+        remoteUpdatedAt: new Date(
+          submission._tsDateModified * MILLISECONDS_PER_SECOND
+        ),
+        images: [],
+        isAudio: true,
+        audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
       };
     }
 
@@ -310,7 +387,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   async refreshModDownloads(dbMod: Mod): Promise<void> {
     try {
-      const download = await this.getModDownload(dbMod.remoteId);
+      const download = await this.getModDownload(
+        dbMod.remoteId,
+        dbMod.isAudio ? 'Sound' : 'Mod'
+      );
 
       if (!download?._aFiles || download._aFiles.length === 0) {
         this.logger.warn('No download found for mod', {

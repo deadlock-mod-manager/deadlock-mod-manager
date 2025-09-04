@@ -1,11 +1,20 @@
 import { Trash } from '@phosphor-icons/react';
-import { LayoutGrid, LayoutList, Loader2, Search } from 'lucide-react';
-import { useState } from 'react';
+import {
+  LayoutGrid,
+  LayoutList,
+  Loader2,
+  Music,
+  Pause,
+  Play,
+  Search,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
 import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import PageTitle from '@/components/page-title';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -46,6 +55,26 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
 
   return (
     <Card className="shadow">
@@ -54,19 +83,60 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           className="cursor-pointer"
           onClick={() => navigate(`/mods/${mod.remoteId}`)}
         >
-          <img
-            alt={mod.name}
-            className="h-48 w-full rounded-t-xl object-cover"
-            height="192"
-            src={mod.images[0]}
-            width="320"
-          />
+          {mod.isAudio ? (
+            // Audio-only mod display
+            <div className="relative flex h-48 w-full flex-col items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-muted via-secondary to-accent">
+              <div className="relative z-10 flex flex-col items-center gap-2">
+                <Music className="h-8 w-8 text-primary" />
+                <Button
+                  className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleAudioPlayback();
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {isPlaying ? 'Pause' : 'Preview'}
+                </Button>
+              </div>
+              {mod.audioUrl && (
+                <audio
+                  onEnded={handleAudioEnded}
+                  preload="metadata"
+                  ref={audioRef}
+                  src={mod.audioUrl}
+                />
+              )}
+            </div>
+          ) : mod.images && mod.images.length > 0 ? (
+            // Regular mod with images
+            <img
+              alt={mod.name}
+              className="h-48 w-full rounded-t-xl object-cover"
+              height="192"
+              src={mod.images[0]}
+              width="320"
+            />
+          ) : (
+            // Fallback for mods without images or audio
+            <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-muted">
+              <div className="text-center text-muted-foreground">
+                <div className="mx-auto mb-2 h-12 w-12" />
+                <p className="text-sm">No preview available</p>
+              </div>
+            </div>
+          )}
         </div>
-        {isModOutdated(mod) && (
-          <div className="absolute top-2 right-2">
-            <OutdatedModWarning variant="indicator" />
-          </div>
-        )}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {mod.isAudio && <Badge variant="secondary">Audio</Badge>}
+          {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
+        </div>
         {mod.status === ModStatus.INSTALLING && (
           <div className="absolute inset-0 flex items-center justify-center rounded-t-xl bg-black/50">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -167,10 +237,30 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef.current) {
+      return;
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
 
   return (
     <Card className="shadow">
-      <div className="flex">
+      <div className="flex items-center">
         <div
           className={cn(
             'relative h-24 w-24 min-w-24',
@@ -178,18 +268,66 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
           )}
           onClick={() => navigate(`/mods/${mod.remoteId}`)}
         >
-          <img
-            alt={mod.name}
-            className="h-full w-full cursor-pointer rounded-l-xl object-cover"
-            height="160"
-            src={mod.images[0]}
-            width="160"
-          />
-          {isModOutdated(mod) && (
-            <div className="absolute top-1 right-1">
-              <OutdatedModWarning className="text-xs" variant="indicator" />
+          {mod.isAudio ? (
+            // Audio-only mod display - Clean design for list view
+            <div className="relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-l-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5">
+              <div className="relative z-10 flex items-center justify-center">
+                <Button
+                  className={`h-8 w-8 border-primary/40 p-0 text-primary shadow-sm transition-all duration-200 ${
+                    isPlaying
+                      ? 'scale-105 bg-primary/30 hover:bg-primary/40'
+                      : 'bg-primary/20 hover:scale-110 hover:bg-primary/30'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleAudioPlayback();
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="ml-0.5 h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {mod.audioUrl && (
+                <audio
+                  onEnded={handleAudioEnded}
+                  preload="metadata"
+                  ref={audioRef}
+                  src={mod.audioUrl}
+                />
+              )}
+            </div>
+          ) : mod.images && mod.images.length > 0 ? (
+            // Regular mod with images
+            <img
+              alt={mod.name}
+              className="h-full w-full cursor-pointer rounded-l-xl object-cover"
+              height="160"
+              src={mod.images[0]}
+              width="160"
+            />
+          ) : (
+            // Fallback for mods without images or audio
+            <div className="flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-muted">
+              <div className="text-center text-muted-foreground">
+                <div className="mx-auto h-6 w-6" />
+              </div>
             </div>
           )}
+          <div className="absolute top-1 right-1 flex flex-col gap-1">
+            {mod.isAudio && (
+              <Badge className="text-xs" variant="secondary">
+                Audio
+              </Badge>
+            )}
+            {isModOutdated(mod) && (
+              <OutdatedModWarning className="text-xs" variant="indicator" />
+            )}
+          </div>
           {mod.status === ModStatus.INSTALLING && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -204,7 +342,9 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
             >
               {mod.name}
             </h3>
-            <p className="text-muted-foreground text-sm">By {mod.author}</p>
+            <p className="text-muted-foreground text-sm">
+              By {mod.author} {mod.isAudio && '• Audio Mod'}
+            </p>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
