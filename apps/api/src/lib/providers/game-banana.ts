@@ -196,6 +196,20 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const response = await fetch(
       `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/DownloadPage`
     );
+
+    if (!response.ok) {
+      let errorBody: string;
+      try {
+        // Try to parse as JSON first
+        const errorData = await response.json();
+        errorBody = JSON.stringify(errorData);
+      } catch {
+        // Fall back to text if JSON parsing fails
+        errorBody = await response.text();
+      }
+      throw new Error(`HTTP ${response.status}: ${errorBody}`);
+    }
+
     const data = (await response.json()) as D;
     return data;
   }
