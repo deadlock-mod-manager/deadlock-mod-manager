@@ -32,7 +32,7 @@
   },
   "name": "@deadlock-mods/root",
   "dependencies": {
-    "@changesets/cli": "^2.27.11"
+    "@changesets/cli": "^2.29.6"
   },
   "pnpm": {
     "overrides": {

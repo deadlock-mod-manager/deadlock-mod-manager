@@ -222,12 +222,20 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     try {
       for await (const { submission, source } of mods) {
         count++;
-        await this.createMod(submission, source);
-        this.logger.info('Synchronized GameBanana mod', {
-          name: submission._sName,
-          id: submission._idRow,
-          source,
-        });
+        const mod = await this.createMod(submission, source);
+        if (mod) {
+          this.logger.info('Synchronized GameBanana mod', {
+            name: submission._sName,
+            id: submission._idRow,
+            source,
+          });
+        } else {
+          this.logger.warn('Failed to create mod, skipping...', {
+            name: submission._sName,
+            id: submission._idRow,
+            source,
+          });
+        }
       }
 
       const duration = Date.now() - startTime;
@@ -359,7 +367,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createMod(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource
-  ): Promise<Mod> {
+  ): Promise<Mod | undefined> {
     this.logger.debug('Creating/updating mod', {
       modId: mod._idRow.toString(),
       source,
@@ -381,7 +389,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         modId: mod._idRow.toString(),
         source,
       });
-      throw error;
     }
   }
 

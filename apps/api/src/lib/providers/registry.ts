@@ -16,7 +16,7 @@ export abstract class Provider<T> {
     source: string;
   }>;
   abstract synchronize(): Promise<void>;
-  abstract createMod(mod: T, source: string): Promise<Mod>;
+  abstract createMod(mod: T, source: string): Promise<Mod | undefined>;
   abstract getModDownload<D>(remoteId: string): Promise<D>;
 }
 
