@@ -32,6 +32,7 @@ export const mods = pgTable('mod', {
   isAudio: boolean('is_audio').notNull().default(false),
   audioUrl: text('audio_url'),
   downloadCount: integer('download_count').notNull().default(0),
+  isNSFW: boolean('is_nsfw').notNull().default(false),
 });
 
 export const modDownloads = pgTable(

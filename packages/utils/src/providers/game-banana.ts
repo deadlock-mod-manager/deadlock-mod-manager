@@ -141,9 +141,11 @@ export type GameBananaModProfile = BaseSubmission & {
   _bIsPrivate: boolean;
   _tsDateModified: number;
   _tsDateAdded: number;
+  _tsDateUpdated?: number;
   _aPreviewMedia: {
     _aImages: BaseMedia[];
   };
+  _sFeedbackInstructions?: string;
   _sCommentsMode: string;
   _bAccessorIsSubmitter: boolean;
   _bIsTrashed: boolean;
@@ -158,9 +160,29 @@ export type GameBananaModProfile = BaseSubmission & {
   _bCreatedBySubmitter: boolean;
   _bIsPorted: boolean;
   _nThanksCount: number;
+  _aContentRatings?: Record<string, string>; // CRITICAL: NSFW content ratings
+  _sInitialVisibility?: string; // CRITICAL: Visibility hint for NSFW
   _sDownloadUrl: string;
   _nDownloadCount: number;
   _aFiles: GameBananaFile[];
+  _aArchivedFiles?: Array<{
+    _idRow: number;
+    _sFile: string;
+    _nFilesize: number;
+    _tsDateAdded: number;
+    _nDownloadCount: number;
+    _sDownloadUrl: string;
+    _sMd5Checksum: string;
+    _sAnalysisState: string;
+    _sAnalysisResult: string;
+    _sAnalysisResultVerbose: string;
+    _sAvState: string;
+    _sAvResult: string;
+    _bIsArchived: boolean;
+    _bHasContents: boolean;
+    _sVersion: string;
+    _sDescription: string;
+  }>;
   _nSubscriberCount: number;
   _aContributingStudios: unknown[];
   _sLicense: string;
@@ -169,14 +191,20 @@ export type GameBananaModProfile = BaseSubmission & {
     ask: string[];
     no: string[];
   };
+  _sDescription?: string; // CRITICAL: Description text for keyword detection
   _bGenerateTableOfContents: boolean;
-  _sText: string;
+  _sText: string; // CRITICAL: Main text content for keyword detection
+  _bIsObsolete?: boolean;
+  _nLikeCount?: number;
+  _nViewCount?: number;
+  _sVersion?: string;
   _bAcceptsDonations: boolean;
   _bShowRipePromo: boolean;
   _aEmbeddables: {
     _sEmbeddableImageBaseUrl: string;
     _aVariants: string[];
   };
+  _bFollowLinks?: boolean;
   _aSubmitter: BaseUser & {
     _sUserTitle: string;
     _sHonoraryTitle: string;
@@ -198,6 +226,8 @@ export type GameBananaModProfile = BaseSubmission & {
     _bAccessorIsBuddy: boolean;
     _bBuddyRequestExistsWithAccessor: boolean;
     _bAccessorIsSubscribed: boolean;
+    _aDefaultLicenseChecklist?: string[];
+    _sDefaultLicense?: string;
   };
   _aGame: BaseGame & {
     _sAbbreviation: string;
@@ -218,13 +248,14 @@ export type GameBananaModProfile = BaseSubmission & {
       _tsDate: number;
     };
   };
-  _aCredits: Array<{
+  _aCredits?: Array<{
     _sGroupName: string;
     _aAuthors: Array<{
-      _idRow: number;
+      _sRole?: string;
       _sName: string;
-      _sProfileUrl: string;
-      _bIsOnline: boolean;
+      _idRow?: number;
+      _sProfileUrl?: string;
+      _bIsOnline?: boolean;
     }>;
   }>;
 };

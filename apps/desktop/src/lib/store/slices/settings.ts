@@ -1,4 +1,5 @@
-import type { CustomSettingDto } from '@deadlock-mods/utils';
+import type { CustomSettingDto, NSFWSettings } from '@deadlock-mods/utils';
+import { DEFAULT_NSFW_SETTINGS } from '@deadlock-mods/utils';
 import { v4 as uuidv4 } from 'uuid';
 import type { StateCreator } from 'zustand';
 import type { CreateSettingSchema } from '@/lib/validation/create-setting';
@@ -7,6 +8,8 @@ import type { State } from '..';
 
 export type SettingsState = {
   settings: Record<LocalSetting['id'], LocalSetting>;
+  nsfwSettings: NSFWSettings;
+  perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -16,12 +19,21 @@ export type SettingsState = {
     setting: LocalSetting | SystemSetting | CustomSettingDto,
     newValue?: boolean
   ) => void;
+
+  // NSFW settings management
+  updateNSFWSettings: (updates: Partial<NSFWSettings>) => void;
+  setPerItemNSFWOverride: (modId: string, isVisible: boolean) => void;
+  removePerItemNSFWOverride: (modId: string) => void;
+  getPerItemNSFWOverride: (modId: string) => boolean | undefined;
 };
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
-  set
+  set,
+  get
 ) => ({
   settings: {},
+  nsfwSettings: DEFAULT_NSFW_SETTINGS,
+  perItemNSFWOverrides: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
@@ -79,4 +91,29 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
         },
       };
     }),
+
+  // NSFW settings management
+  updateNSFWSettings: (updates: Partial<NSFWSettings>) =>
+    set((state) => ({
+      nsfwSettings: { ...state.nsfwSettings, ...updates },
+    })),
+
+  setPerItemNSFWOverride: (modId: string, isVisible: boolean) =>
+    set((state) => ({
+      perItemNSFWOverrides: {
+        ...state.perItemNSFWOverrides,
+        [modId]: isVisible,
+      },
+    })),
+
+  removePerItemNSFWOverride: (modId: string) =>
+    set((state) => {
+      const newOverrides = { ...state.perItemNSFWOverrides };
+      delete newOverrides[modId];
+      return { perItemNSFWOverrides: newOverrides };
+    }),
+
+  getPerItemNSFWOverride: (modId: string) => {
+    return get().perItemNSFWOverrides[modId];
+  },
 });

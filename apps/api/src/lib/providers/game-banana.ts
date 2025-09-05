@@ -20,6 +20,89 @@ const parseTags = (
   );
 };
 
+// NSFW detection keywords - case insensitive
+const NSFW_KEYWORDS = [
+  'nsfw',
+  'adult',
+  '18+',
+  'nude',
+  'nudity',
+  'full nudity',
+  'partial nudity',
+  'lewd',
+  'skimpy',
+  'sex',
+  'sexual',
+  'explicit',
+];
+
+// Direct content rating flags from GameBanana
+const NSFW_CONTENT_RATINGS = {
+  st: 'Sexual Themes',
+  sa: 'Skimpy Attire',
+  lp: 'Lewd Angles & Poses',
+  pn: 'Partial Nudity',
+  nu: 'Full Nudity',
+};
+
+/**
+ * Classify if a GameBanana mod contains NSFW content
+ * @param mod GameBanana mod submission data
+ * @returns boolean indicating if the mod is NSFW
+ */
+const classifyNSFW = (
+  mod:
+    | GameBananaSubmission
+    | GameBanana.GameBananaModProfile
+    | GameBanana.GameBananaSoundProfile
+): boolean => {
+  // Check if mod has extended fields (full mod profile)
+  const extendedMod = mod as GameBanana.GameBananaModProfile;
+
+  // 1. Direct flags (authoritative) - check _aContentRatings
+  if (extendedMod._aContentRatings) {
+    for (const key of Object.keys(extendedMod._aContentRatings)) {
+      if (NSFW_CONTENT_RATINGS[key as keyof typeof NSFW_CONTENT_RATINGS]) {
+        return true; // Any content rating flag = NSFW
+      }
+    }
+  }
+
+  // 2. Secondary hints (soft indicators)
+  let hintScore = 0;
+
+  // Check _sInitialVisibility
+  if (extendedMod._sInitialVisibility === 'hide') {
+    hintScore += 1;
+  }
+
+  // Check text content for NSFW keywords
+  const hasName = '_sName' in mod;
+  const hasTags = '_aTags' in mod;
+  const tags = hasTags ? (mod as { _aTags: unknown })._aTags : [];
+  const modName = hasName ? (mod as { _sName: string })._sName : '';
+
+  const textContent = [
+    modName,
+    extendedMod._sDescription || '',
+    extendedMod._sText || '',
+    ...parseTags(tags as GameBanana.GameBananaSubmission['_aTags']),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  const foundKeywords = NSFW_KEYWORDS.filter((keyword) =>
+    textContent.includes(keyword.toLowerCase())
+  );
+
+  if (foundKeywords.length > 0) {
+    hintScore += 1;
+  }
+
+  // Return true if hint score >= 2 (medium confidence threshold)
+  return hintScore >= 2;
+};
+
 export type GameBananaSubmissionSource = 'featured' | 'top' | 'all' | 'sound';
 export type GameBananaSubmission =
   | GameBanana.GameBananaSubmission
@@ -293,6 +376,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`
         ),
+        isNSFW: classifyNSFW(submission),
       };
     }
 
@@ -322,6 +406,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`
         ),
+        isNSFW: classifyNSFW(submission),
       };
     }
 
@@ -347,6 +432,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`
         ),
+        isNSFW: classifyNSFW(submission),
       };
     }
 
@@ -372,6 +458,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         images: [],
         isAudio: true,
         audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
+        isNSFW: classifyNSFW(submission),
       };
     }
 

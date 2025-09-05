@@ -11,10 +11,11 @@ import {
   User,
   Volume2,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import NSFWBlur from '@/components/nsfw-blur';
 import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ import useInstall from '@/hooks/use-install';
 import useUninstall from '@/hooks/use-uninstall';
 import { getMod } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
-import { isModOutdated } from '@/lib/utils';
+import { cn, isModOutdated } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
 
 const Mod = () => {
@@ -61,9 +62,34 @@ const Mod = () => {
   const { download, localMod } = useDownload(data);
   const { uninstall } = useUninstall();
   const { install } = useInstall();
-  const { setModStatus, setInstalledVpks, getModProgress } =
-    usePersistedStore();
+  const {
+    setModStatus,
+    setInstalledVpks,
+    getModProgress,
+    nsfwSettings,
+    setPerItemNSFWOverride,
+    getPerItemNSFWOverride,
+  } = usePersistedStore();
   const modProgress = localMod ? getModProgress(localMod.remoteId) : undefined;
+
+  const shouldBlur = useMemo(() => {
+    if (!data?.isNSFW) {
+      return false; // Not NSFW, no need to blur
+    }
+    // Check for per-item override first
+    const override = getPerItemNSFWOverride(data.remoteId);
+    if (override !== undefined) {
+      return !override; // If override says show (true), don't blur (false)
+    }
+    // Use global setting if no per-item override
+    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
+  }, [data, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
+
+  const handleNSFWToggle = (visible: boolean) => {
+    if (data && nsfwSettings.rememberPerItemOverrides) {
+      setPerItemNSFWOverride(data.remoteId, visible);
+    }
+  };
 
   useEffect(() => {
     if (error) {
@@ -176,15 +202,20 @@ const Mod = () => {
               )}
             </div>
           ) : data.hero && hasImages ? (
-            <div className="relative h-64 w-full bg-gradient-to-r from-gray-900 to-gray-800">
+            <div className="relative z-10 h-64 w-full">
               <img
                 alt={`${data.name} hero`}
-                className="h-full w-full object-cover opacity-70"
+                className={cn(
+                  'h-full w-full object-cover opacity-70',
+                  shouldBlur && 'blur-lg'
+                )}
                 height="256"
                 src={data.images[0]}
                 width="1200"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              {!shouldBlur && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              )}
               <div className="absolute bottom-0 left-0 p-6">
                 <h1 className="font-bold text-3xl text-white">{data.name}</h1>
                 <p className="mt-2 text-gray-200">{data.category}</p>
@@ -193,7 +224,7 @@ const Mod = () => {
           ) : null}
 
           {/* Main content */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="z-20 grid grid-cols-1 gap-6 bg-card md:grid-cols-3">
             {/* Left side - Info */}
             <div className="md:col-span-2">
               {!(data.hero || data.isAudio) && (
@@ -343,7 +374,7 @@ const Mod = () => {
             </div>
           </div>
 
-          <CardFooter className="flex flex-col items-start">
+          <CardFooter className="z-20 flex flex-col items-start bg-card">
             {/* Link back to mod website */}
             {data.remoteUrl && (
               <Button
@@ -396,13 +427,21 @@ const Mod = () => {
                       <CarouselItem key={`image-${image}`}>
                         <div className="p-1">
                           <Card className="overflow-hidden">
-                            <img
-                              alt={`Screenshot ${index + 1}`}
-                              className="aspect-video w-full object-cover"
-                              height="225"
-                              src={image}
-                              width="400"
-                            />
+                            <NSFWBlur
+                              blurStrength={nsfwSettings.blurStrength}
+                              className="aspect-video w-full"
+                              disableBlur={nsfwSettings.disableBlur}
+                              isNSFW={shouldBlur}
+                              onToggleVisibility={handleNSFWToggle}
+                            >
+                              <img
+                                alt={`Screenshot ${index + 1}`}
+                                className="aspect-video w-full object-cover"
+                                height="225"
+                                src={image}
+                                width="400"
+                              />
+                            </NSFWBlur>
                           </Card>
                         </div>
                       </CarouselItem>

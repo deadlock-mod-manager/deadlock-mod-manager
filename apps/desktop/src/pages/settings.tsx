@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import AddSettingDialog from '@/components/add-setting';
 import ErrorBoundary from '@/components/error-boundary';
 import PageTitle from '@/components/page-title';
+import PrivacySettings from '@/components/privacy-settings';
 import { useConfirm } from '@/components/providers/alert-dialog';
 import Section, { SectionSkeleton } from '@/components/section';
 import SettingCard, { SettingCardSkeleton } from '@/components/setting-card';
@@ -177,6 +178,15 @@ const CustomSettings = () => {
       >
         <div className="grid grid-cols-1 gap-4">
           <SystemSettings />
+        </div>
+      </Section>
+
+      <Section
+        description="Control how NSFW (Not Safe For Work) content is displayed and filtered."
+        title="Privacy & Content"
+      >
+        <div className="grid grid-cols-1 gap-4">
+          <PrivacySettings />
         </div>
       </Section>
 

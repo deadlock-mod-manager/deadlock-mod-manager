@@ -4,7 +4,6 @@ import { ModCategory, SortType } from '@/lib/constants';
 import FiltersDropdown from './filters-dropdown';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 import {
   Select,
   SelectContent,
@@ -13,20 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Switch } from './ui/switch';
 
 type SearchBarProps = {
   query: string;
   setQuery: (query: string) => void;
   sortType: SortType;
   setSortType: (sortType: SortType) => void;
-  hideOutdated: boolean;
-  setHideOutdated: (hideOutdated: boolean) => void;
   mods: ModDto[];
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
+  showNSFW: boolean;
+  onShowNSFWChange: (showNSFW: boolean) => void;
+  hideOutdated: boolean;
+  onHideOutdatedChange: (hideOutdated: boolean) => void;
+  showAudioOnly: boolean;
+  onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
 };
 
 const SearchBar = ({
@@ -34,13 +36,17 @@ const SearchBar = ({
   setQuery,
   sortType,
   setSortType,
-  hideOutdated,
-  setHideOutdated,
   mods,
   selectedCategories,
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
+  showNSFW,
+  onShowNSFWChange,
+  hideOutdated,
+  onHideOutdatedChange,
+  showAudioOnly,
+  onShowAudioOnlyChange,
 }: SearchBarProps) => {
   const getHeroDisplayName = (hero: string) => {
     if (hero === 'None') {
@@ -75,10 +81,17 @@ const SearchBar = ({
   const clearAllFilters = () => {
     onCategoriesChange([]);
     onHeroesChange([]);
+    onShowNSFWChange(false);
+    onShowAudioOnlyChange(false);
+    onHideOutdatedChange(false); // Clear all filters including hide outdated
   };
 
   const hasActiveFilters =
-    selectedCategories.length > 0 || selectedHeroes.length > 0;
+    selectedCategories.length > 0 ||
+    selectedHeroes.length > 0 ||
+    showNSFW ||
+    showAudioOnly ||
+    hideOutdated;
 
   return (
     <div className="flex flex-col gap-3">
@@ -105,11 +118,17 @@ const SearchBar = ({
             )}
           </div>
           <FiltersDropdown
+            hideOutdated={hideOutdated}
             mods={mods}
             onCategoriesChange={onCategoriesChange}
             onHeroesChange={onHeroesChange}
+            onHideOutdatedChange={onHideOutdatedChange}
+            onShowAudioOnlyChange={onShowAudioOnlyChange}
+            onShowNSFWChange={onShowNSFWChange}
             selectedCategories={selectedCategories}
             selectedHeroes={selectedHeroes}
+            showAudioOnly={showAudioOnly}
+            showNSFW={showNSFW}
           />
         </div>
         <div className="flex items-center gap-4">
@@ -127,16 +146,6 @@ const SearchBar = ({
               </SelectGroup>
             </SelectContent>
           </Select>
-          <div className="flex h-10 items-center gap-2">
-            <Switch
-              checked={hideOutdated}
-              id="hide-outdated"
-              onCheckedChange={setHideOutdated}
-            />
-            <Label className="text-sm" htmlFor="hide-outdated">
-              Hide outdated
-            </Label>
-          </div>
         </div>
       </div>
 
@@ -180,6 +189,48 @@ const SearchBar = ({
               </button>
             </Badge>
           ))}
+
+          {/* Hide outdated filter badge */}
+          {hideOutdated && (
+            <Badge className="flex items-center gap-1" variant="secondary">
+              Hide Outdated
+              <button
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                onClick={() => onHideOutdatedChange(false)}
+                type="button"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
+          {/* NSFW filter badge */}
+          {showNSFW && (
+            <Badge className="flex items-center gap-1" variant="destructive">
+              Show NSFW
+              <button
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                onClick={() => onShowNSFWChange(false)}
+                type="button"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
+          {/* Audio only filter badge */}
+          {showAudioOnly && (
+            <Badge className="flex items-center gap-1" variant="secondary">
+              Audio Only
+              <button
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                onClick={() => onShowAudioOnlyChange(false)}
+                type="button"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
 
           {/* Clear all button */}
           <button

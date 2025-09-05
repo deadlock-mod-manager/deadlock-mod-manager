@@ -11,6 +11,7 @@ import SearchBarSkeleton from '@/components/search-bar-skeleton';
 import { useSearch } from '@/hooks/use-search';
 import { getMods } from '@/lib/api';
 import { ModCategory } from '@/lib/constants';
+import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
 
 const GetModsData = () => {
@@ -18,6 +19,8 @@ const GetModsData = () => {
   const [hideOutdated, setHideOutdated] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+  const [showAudioOnly, setShowAudioOnly] = useState(false);
+  const { nsfwSettings, updateNSFWSettings } = usePersistedStore();
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
     keys: ['name', 'description', 'author'],
@@ -60,6 +63,16 @@ const GetModsData = () => {
     });
   }
 
+  // Filter NSFW mods based on global privacy settings
+  if (nsfwSettings.hideNSFW) {
+    filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
+  }
+
+  // Filter by audio mods only if enabled
+  if (showAudioOnly) {
+    filteredResults = filteredResults.filter((mod) => mod.isAudio);
+  }
+
   // Group mods into rows of 4 for virtualization
   const COLUMNS_PER_ROW = 4;
   const modRows: ModDto[][] = [];
@@ -91,12 +104,16 @@ const GetModsData = () => {
         mods={data ?? []}
         onCategoriesChange={setSelectedCategories}
         onHeroesChange={setSelectedHeroes}
+        onHideOutdatedChange={setHideOutdated}
+        onShowAudioOnlyChange={setShowAudioOnly}
+        onShowNSFWChange={(show) => updateNSFWSettings({ hideNSFW: !show })}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
-        setHideOutdated={setHideOutdated}
         setQuery={setQuery}
         setSortType={setSortType}
+        showAudioOnly={showAudioOnly}
+        showNSFW={!nsfwSettings.hideNSFW}
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (
@@ -120,11 +137,18 @@ const GetModsData = () => {
           <p className="text-muted-foreground text-sm">
             {query.trim() ||
             selectedCategories.length > 0 ||
-            selectedHeroes.length > 0
+            selectedHeroes.length > 0 ||
+            !nsfwSettings.hideNSFW ||
+            hideOutdated ||
+            showAudioOnly
               ? 'No mods match your current search and filters'
               : 'No mods available'}
           </p>
-          {(selectedCategories.length > 0 || selectedHeroes.length > 0) && (
+          {(selectedCategories.length > 0 ||
+            selectedHeroes.length > 0 ||
+            !nsfwSettings.hideNSFW ||
+            hideOutdated ||
+            showAudioOnly) && (
             <p className="mt-2 text-muted-foreground text-xs">
               Try clearing some filters to see more results
             </p>

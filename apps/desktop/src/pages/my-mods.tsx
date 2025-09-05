@@ -8,10 +8,11 @@ import {
   Play,
   Search,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
+import NSFWBlur from '@/components/nsfw-blur';
 import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import PageTitle from '@/components/page-title';
 import { Badge } from '@/components/ui/badge';
@@ -52,11 +53,36 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
-  const { setModStatus, setInstalledVpks } = usePersistedStore();
+  const {
+    setModStatus,
+    setInstalledVpks,
+    nsfwSettings,
+    setPerItemNSFWOverride,
+    getPerItemNSFWOverride,
+  } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const shouldBlur = useMemo(() => {
+    if (!mod?.isNSFW) {
+      return false; // Not NSFW, no need to blur
+    }
+    // Check for per-item override first
+    const override = getPerItemNSFWOverride(mod.remoteId);
+    if (override !== undefined) {
+      return !override; // If override says show (true), don't blur (false)
+    }
+    // Use global setting if no per-item override
+    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
+  }, [mod, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
+
+  const handleNSFWToggle = (visible: boolean) => {
+    if (mod && nsfwSettings.rememberPerItemOverrides) {
+      setPerItemNSFWOverride(mod.remoteId, visible);
+    }
+  };
 
   const toggleAudioPlayback = () => {
     if (!audioRef.current) {
@@ -116,13 +142,21 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             </div>
           ) : mod.images && mod.images.length > 0 ? (
             // Regular mod with images
-            <img
-              alt={mod.name}
-              className="h-48 w-full rounded-t-xl object-cover"
-              height="192"
-              src={mod.images[0]}
-              width="320"
-            />
+            <NSFWBlur
+              blurStrength={nsfwSettings.blurStrength}
+              className="h-48 w-full overflow-hidden rounded-t-xl"
+              disableBlur={nsfwSettings.disableBlur}
+              isNSFW={shouldBlur}
+              onToggleVisibility={handleNSFWToggle}
+            >
+              <img
+                alt={mod.name}
+                className="h-48 w-full object-cover"
+                height="192"
+                src={mod.images[0]}
+                width="320"
+              />
+            </NSFWBlur>
           ) : (
             // Fallback for mods without images or audio
             <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-muted">
@@ -234,11 +268,36 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
-  const { setModStatus, setInstalledVpks } = usePersistedStore();
+  const {
+    setModStatus,
+    setInstalledVpks,
+    nsfwSettings,
+    setPerItemNSFWOverride,
+    getPerItemNSFWOverride,
+  } = usePersistedStore();
   const { install } = useInstall();
   const { uninstall } = useUninstall();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const shouldBlur = useMemo(() => {
+    if (!mod?.isNSFW) {
+      return false; // Not NSFW, no need to blur
+    }
+    // Check for per-item override first
+    const override = getPerItemNSFWOverride(mod.remoteId);
+    if (override !== undefined) {
+      return !override; // If override says show (true), don't blur (false)
+    }
+    // Use global setting if no per-item override
+    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
+  }, [mod, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
+
+  const handleNSFWToggle = (visible: boolean) => {
+    if (mod && nsfwSettings.rememberPerItemOverrides) {
+      setPerItemNSFWOverride(mod.remoteId, visible);
+    }
+  };
 
   const toggleAudioPlayback = () => {
     if (!audioRef.current) {
@@ -303,13 +362,21 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
             </div>
           ) : mod.images && mod.images.length > 0 ? (
             // Regular mod with images
-            <img
-              alt={mod.name}
-              className="h-full w-full cursor-pointer rounded-l-xl object-cover"
-              height="160"
-              src={mod.images[0]}
-              width="160"
-            />
+            <NSFWBlur
+              blurStrength={nsfwSettings.blurStrength}
+              className="h-full w-full cursor-pointer overflow-hidden rounded-l-xl"
+              disableBlur={nsfwSettings.disableBlur}
+              isNSFW={shouldBlur}
+              onToggleVisibility={handleNSFWToggle}
+            >
+              <img
+                alt={mod.name}
+                className="h-full w-full object-cover"
+                height="160"
+                src={mod.images[0]}
+                width="160"
+              />
+            </NSFWBlur>
           ) : (
             // Fallback for mods without images or audio
             <div className="flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-muted">

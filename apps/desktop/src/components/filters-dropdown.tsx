@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import CategoryFilter from './category-filter';
 import HeroFilter from './hero-filter';
 
@@ -15,6 +18,12 @@ type FiltersDropdownProps = {
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
+  showNSFW: boolean;
+  onShowNSFWChange: (showNSFW: boolean) => void;
+  hideOutdated: boolean;
+  onHideOutdatedChange: (hideOutdated: boolean) => void;
+  showAudioOnly: boolean;
+  onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
 };
 
 const FiltersDropdown = ({
@@ -23,10 +32,25 @@ const FiltersDropdown = ({
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
+  showNSFW,
+  onShowNSFWChange,
+  hideOutdated,
+  onHideOutdatedChange,
+  showAudioOnly,
+  onShowAudioOnlyChange,
 }: FiltersDropdownProps) => {
   const hasActiveFilters =
-    selectedCategories.length > 0 || selectedHeroes.length > 0;
-  const totalActiveFilters = selectedCategories.length + selectedHeroes.length;
+    selectedCategories.length > 0 ||
+    selectedHeroes.length > 0 ||
+    showNSFW ||
+    hideOutdated ||
+    showAudioOnly;
+  const totalActiveFilters =
+    selectedCategories.length +
+    selectedHeroes.length +
+    (showNSFW ? 1 : 0) +
+    (hideOutdated ? 1 : 0) +
+    (showAudioOnly ? 1 : 0);
 
   return (
     <DropdownMenu>
@@ -55,6 +79,28 @@ const FiltersDropdown = ({
           onHeroesChange={onHeroesChange}
           selectedHeroes={selectedHeroes}
         />
+        <DropdownMenuSeparator />
+        <div className="space-y-2">
+          <Label className="font-medium text-sm">Content</Label>
+          <div className="flex items-center justify-between">
+            <Label className="font-normal text-sm">Hide Outdated</Label>
+            <Switch
+              checked={hideOutdated}
+              onCheckedChange={onHideOutdatedChange}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="font-normal text-sm">Show NSFW Content</Label>
+            <Switch checked={showNSFW} onCheckedChange={onShowNSFWChange} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="font-normal text-sm">Audio Mods Only</Label>
+            <Switch
+              checked={showAudioOnly}
+              onCheckedChange={onShowAudioOnlyChange}
+            />
+          </div>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

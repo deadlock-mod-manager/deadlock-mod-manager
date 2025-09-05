@@ -1,0 +1,1 @@
+ALTER TABLE "mod" ADD COLUMN "is_nsfw" boolean DEFAULT false NOT NULL;

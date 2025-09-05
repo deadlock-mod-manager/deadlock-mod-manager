@@ -15,8 +15,10 @@ import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownload } from '@/hooks/use-download';
+import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
+import NSFWBlur from './nsfw-blur';
 import { OutdatedModWarning } from './outdated-mod-warning';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -29,6 +31,31 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   const [showLargeImage, setShowLargeImage] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // NSFW settings and visibility
+  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
+    usePersistedStore();
+
+  const shouldBlur = useMemo(() => {
+    if (!mod?.isNSFW) {
+      return false; // Not NSFW, no need to blur
+    }
+
+    // Check for per-item override first
+    const override = getPerItemNSFWOverride(mod.remoteId);
+    if (override !== undefined) {
+      return !override; // If override says show (true), don't blur (false)
+    }
+
+    // Use global setting if no per-item override
+    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
+  }, [mod, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
+
+  const handleNSFWToggle = (visible: boolean) => {
+    if (mod && nsfwSettings.rememberPerItemOverrides) {
+      setPerItemNSFWOverride(mod.remoteId, visible);
+    }
+  };
 
   const toggleAudioPlayback = () => {
     if (!audioRef.current) {
@@ -157,13 +184,21 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             </div>
           ) : mod.images.length > 0 ? (
             // Regular mod with images
-            <img
-              alt={mod.name}
-              className="h-48 w-full rounded-t-xl object-cover"
-              height="192"
-              src={mod.images[0]}
-              width="320"
-            />
+            <NSFWBlur
+              blurStrength={nsfwSettings.blurStrength}
+              className="h-48 w-full overflow-hidden rounded-t-xl"
+              disableBlur={nsfwSettings.disableBlur}
+              isNSFW={shouldBlur}
+              onToggleVisibility={handleNSFWToggle}
+            >
+              <img
+                alt={mod.name}
+                className="h-48 w-full object-cover"
+                height="192"
+                src={mod.images[0]}
+                width="320"
+              />
+            </NSFWBlur>
           ) : (
             // Fallback for mods without images or audio
             <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-muted">
