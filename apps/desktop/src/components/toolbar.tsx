@@ -1,6 +1,7 @@
 import { Check, GameController, Play, Stop, X } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
 import { useQuery } from 'react-query';
+import { useState } from 'react';
 import { useLaunch } from '@/hooks/use-launch';
 import { isGameRunning } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -12,6 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 export const Toolbar = () => {
   const { gamePath } = usePersistedStore();
   const { launch } = useLaunch();
+  const [vanillaAnimating, setVanillaAnimating] = useState(false);
+  const [moddedAnimating, setModdedAnimating] = useState(false);
 
   const { data: isRunning, refetch } = useQuery({
     queryKey: ['is-game-running'],
@@ -44,23 +47,49 @@ export const Toolbar = () => {
       {!isRunning && (
         <Button
           disabled={!gamePath}
-          onClick={() => launch(true)}
+          onClick={() => {
+            setVanillaAnimating(true);
+            launch(true);
+            setTimeout(() => setVanillaAnimating(false), 500);
+          }}
           size="lg"
           variant="ghost"
+          className="relative overflow-hidden"
         >
+          <div
+            className={cn(
+              'absolute inset-0 bg-white/30',
+              vanillaAnimating ? 'w-full transition-all duration-500 ease-in-out' : 'w-0'
+            )}
+          />
           <Play />
-          <span className="font-medium text-md">Launch Vanilla</span>
+          <span className="font-medium text-md relative z-10">Launch Vanilla</span>
         </Button>
       )}
       <Button
         disabled={!gamePath}
-        onClick={() =>
-          isRunning ? invoke('stop_game').then(() => refetch()) : launch()
-        }
+        onClick={() => {
+          if (isRunning) {
+            invoke('stop_game').then(() => refetch());
+          } else {
+            setModdedAnimating(true);
+            launch();
+            setTimeout(() => setModdedAnimating(false), 500);
+          }
+        }}
         size="lg"
+        className="relative overflow-hidden"
       >
-        {isRunning ? <Stop /> : <GameController />}
-        <span className="font-medium text-md">
+        <div
+          className={cn(
+            'absolute inset-0 bg-amber-200',
+            moddedAnimating ? 'w-full transition-all duration-500 ease-in-out' : 'w-0'
+          )}
+        />
+        <div className="relative z-10">
+          {isRunning ? <Stop /> : <GameController />}
+        </div>
+        <span className="font-medium text-md relative z-10">
           {isRunning ? 'Stop Game' : 'Launch Modded'}
         </span>
       </Button>
