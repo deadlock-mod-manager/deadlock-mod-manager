@@ -12,12 +12,15 @@ import {
   XIcon,
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { useQuery } from 'react-query';
 import { useNavigate } from 'react-router';
+import { MultiFileDownloadDialog } from '@/components/multi-file-download-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDownload } from '@/hooks/use-download';
+import { useMultiFileDownload } from '@/hooks/use-multi-file-download';
+import { getModDownloads } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
-import { ModStatus } from '@/types/mods';
+import { type ModDownloadItem, ModStatus } from '@/types/mods';
 import NSFWBlur from './nsfw-blur';
 import { OutdatedModWarning } from './outdated-mod-warning';
 import { Badge } from './ui/badge';
@@ -25,7 +28,28 @@ import { Button } from './ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
-  const { download, localMod } = useDownload(mod);
+  const { data: downloadData, isLoading: isLoadingFiles } = useQuery({
+    queryKey: ['mod-downloads', mod?.remoteId],
+    queryFn: () => {
+      if (!mod?.remoteId) {
+        throw new Error('Mod ID is required');
+      }
+      return getModDownloads(mod.remoteId);
+    },
+    enabled: !!mod?.remoteId && !!mod?.downloadable,
+  });
+
+  const availableFiles = (downloadData?.downloads ||
+    []) as unknown as ModDownloadItem[];
+
+  const {
+    download,
+    downloadSelectedFiles,
+    closeDialog,
+    localMod,
+    isDialogOpen,
+  } = useMultiFileDownload(mod, availableFiles);
+
   const status = localMod?.status;
   const navigate = useNavigate();
   const [showLargeImage, setShowLargeImage] = useState(false);
@@ -278,6 +302,15 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           </div>
         </CardHeader>
       </Card>
+
+      <MultiFileDownloadDialog
+        files={availableFiles}
+        isDownloading={isLoadingFiles}
+        isOpen={isDialogOpen}
+        modName={mod?.name || 'Unknown Mod'}
+        onClose={closeDialog}
+        onDownload={downloadSelectedFiles}
+      />
     </>
   );
 };

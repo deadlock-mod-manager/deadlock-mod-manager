@@ -12,6 +12,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
+import InstallWithCollection from '@/components/install-with-collection';
 import NSFWBlur from '@/components/nsfw-blur';
 import { OutdatedModWarning } from '@/components/outdated-mod-warning';
 import PageTitle from '@/components/page-title';
@@ -32,7 +33,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import useInstall from '@/hooks/use-install';
+import type {
+  InstallWithCollectionFunction,
+  InstallWithCollectionOptions,
+} from '@/hooks/use-install-with-collection';
 import { useSearch } from '@/hooks/use-search';
 import useUninstall from '@/hooks/use-uninstall';
 import { createLogger } from '@/lib/logger';
@@ -49,18 +53,20 @@ enum ViewMode {
 }
 
 // Custom ModCard for Grid View
-const GridModCard = ({ mod }: { mod: LocalMod }) => {
+const GridModCard = ({
+  mod,
+  install,
+  installOptions,
+}: {
+  mod: LocalMod;
+  install: InstallWithCollectionFunction;
+  installOptions: InstallWithCollectionOptions;
+}) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
-  const {
-    setModStatus,
-    setInstalledVpks,
-    nsfwSettings,
-    setPerItemNSFWOverride,
-    getPerItemNSFWOverride,
-  } = usePersistedStore();
-  const { install } = useInstall();
+  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
+    usePersistedStore();
   const { uninstall } = useUninstall();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -204,34 +210,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             id={`install-mod-${mod.remoteId}`}
             onCheckedChange={(value) => {
               if (value) {
-                install(mod, {
-                  onStart: (mod) => {
-                    logger.info('Starting installation', { mod: mod.remoteId });
-                    setModStatus(mod.remoteId, ModStatus.INSTALLING);
-                  },
-                  onComplete: (mod, result) => {
-                    logger.info('Installation complete', {
-                      mod: mod.remoteId,
-                      result: result.installed_vpks,
-                    });
-                    setInstalledVpks(mod.remoteId, result.installed_vpks);
-                  },
-                  onError: (mod, error) => {
-                    logger.error('Installation error', {
-                      mod: mod.remoteId,
-                      error,
-                    });
-                    toast.error(error.message);
-
-                    switch (error.kind) {
-                      case 'modAlreadyInstalled':
-                        setModStatus(mod.remoteId, ModStatus.INSTALLED);
-                        break;
-                      default:
-                        setModStatus(mod.remoteId, ModStatus.ERROR);
-                    }
-                  },
-                });
+                install(mod, installOptions);
               } else {
                 uninstall(mod, false);
               }
@@ -264,18 +243,20 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
 };
 
 // List view card for mods
-const ListModCard = ({ mod }: { mod: LocalMod }) => {
+const ListModCard = ({
+  mod,
+  install,
+  installOptions,
+}: {
+  mod: LocalMod;
+  install: InstallWithCollectionFunction;
+  installOptions: InstallWithCollectionOptions;
+}) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
-  const {
-    setModStatus,
-    setInstalledVpks,
-    nsfwSettings,
-    setPerItemNSFWOverride,
-    getPerItemNSFWOverride,
-  } = usePersistedStore();
-  const { install } = useInstall();
+  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
+    usePersistedStore();
   const { uninstall } = useUninstall();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -421,35 +402,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 id={`list-install-mod-${mod.remoteId}`}
                 onCheckedChange={(value) => {
                   if (value) {
-                    install(mod, {
-                      onStart: (mod) => {
-                        logger.info('Starting installation', {
-                          mod: mod.remoteId,
-                        });
-                        setModStatus(mod.remoteId, ModStatus.INSTALLING);
-                      },
-                      onComplete: (mod, result) => {
-                        logger.info('Installation complete', {
-                          mod: mod.remoteId,
-                          result: result.installed_vpks,
-                        });
-                        setInstalledVpks(mod.remoteId, result.installed_vpks);
-                      },
-                      onError: (mod, error) => {
-                        logger.error('Installation error', {
-                          mod: mod.remoteId,
-                          error,
-                        });
-
-                        switch (error.kind) {
-                          case 'modAlreadyInstalled':
-                            setModStatus(mod.remoteId, ModStatus.INSTALLED);
-                            break;
-                          default:
-                            setModStatus(mod.remoteId, ModStatus.ERROR);
-                        }
-                      },
-                    });
+                    install(mod, installOptions);
                   } else {
                     uninstall(mod, false);
                   }
@@ -509,6 +462,7 @@ const SimpleSearchBar = ({
 
 const MyMods = () => {
   const mods = usePersistedStore((state) => state.mods);
+  const { setModStatus, setInstalledVpks } = usePersistedStore();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -519,51 +473,124 @@ const MyMods = () => {
     <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4">
       <PageTitle className="mb-8" title="My Mods" />
       <ErrorBoundary>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <SimpleSearchBar query={query} setQuery={setQuery} />
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setViewMode(ViewMode.GRID)}
-                    size="icon"
-                    variant={viewMode === ViewMode.GRID ? 'default' : 'outline'}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Grid view</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setViewMode(ViewMode.LIST)}
-                    size="icon"
-                    variant={viewMode === ViewMode.LIST ? 'default' : 'outline'}
-                  >
-                    <LayoutList className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>List view</TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
+        <InstallWithCollection>
+          {({ install }) => {
+            const installOptions: InstallWithCollectionOptions = {
+              onStart: (mod) => {
+                logger.info('Starting installation', { mod: mod.remoteId });
+                setModStatus(mod.remoteId, ModStatus.INSTALLING);
+              },
+              onComplete: (mod, result) => {
+                logger.info('Installation complete', {
+                  mod: mod.remoteId,
+                  result: result.installed_vpks,
+                  hasFileTree: !!result.file_tree,
+                });
+                setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                setInstalledVpks(
+                  mod.remoteId,
+                  result.installed_vpks,
+                  result.file_tree
+                );
+                toast.success('Mod installed successfully');
+              },
+              onError: (mod, error) => {
+                logger.error('Installation error', {
+                  mod: mod.remoteId,
+                  error,
+                });
+                toast.error(error.message || 'Failed to install mod');
 
-          {viewMode === ViewMode.GRID ? (
-            <div className="grid grid-cols-4 gap-4">
-              {results.map((mod) => (
-                <GridModCard key={mod.remoteId} mod={mod} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {results.map((mod) => (
-                <ListModCard key={mod.remoteId} mod={mod} />
-              ))}
-            </div>
-          )}
-        </div>
+                switch (error.kind) {
+                  case 'modAlreadyInstalled':
+                    setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                    break;
+                  default:
+                    setModStatus(mod.remoteId, ModStatus.ERROR);
+                }
+              },
+              onCancel: (mod) => {
+                logger.info('Installation canceled', { mod: mod.remoteId });
+                setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+                toast.info('Installation canceled');
+              },
+              onFileTreeAnalyzed: (mod, fileTree) => {
+                logger.info('File tree analyzed', {
+                  mod: mod.remoteId,
+                  hasMultipleFiles: fileTree.has_multiple_files,
+                  totalFiles: fileTree.total_files,
+                });
+                if (fileTree.has_multiple_files) {
+                  toast.info(
+                    `${mod.name} contains ${fileTree.total_files} files. Select which ones to install.`
+                  );
+                }
+              },
+            };
+
+            return (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <SimpleSearchBar query={query} setQuery={setQuery} />
+                  <div className="flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setViewMode(ViewMode.GRID)}
+                          size="icon"
+                          variant={
+                            viewMode === ViewMode.GRID ? 'default' : 'outline'
+                          }
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Grid view</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setViewMode(ViewMode.LIST)}
+                          size="icon"
+                          variant={
+                            viewMode === ViewMode.LIST ? 'default' : 'outline'
+                          }
+                        >
+                          <LayoutList className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>List view</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {viewMode === ViewMode.GRID ? (
+                  <div className="grid grid-cols-4 gap-4">
+                    {results.map((mod) => (
+                      <GridModCard
+                        install={install}
+                        installOptions={installOptions}
+                        key={mod.remoteId}
+                        mod={mod}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {results.map((mod) => (
+                      <ListModCard
+                        install={install}
+                        installOptions={installOptions}
+                        key={mod.remoteId}
+                        mod={mod}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }}
+        </InstallWithCollection>
       </ErrorBoundary>
     </div>
   );

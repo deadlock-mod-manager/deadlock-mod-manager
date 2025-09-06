@@ -371,18 +371,23 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     source: GameBananaSubmissionSource
   ): Promise<NewMod> {
     if (source === 'featured') {
-      const submission = mod as GameBanana.GameBananaSubmission;
+      const featuredSubmission = mod as GameBanana.GameBananaSubmission;
+      const submission = await this.getMod(
+        featuredSubmission._idRow.toString(),
+        'Mod'
+      );
       return {
-        remoteId: submission._idRow.toString(),
-        name: submission._sName,
+        remoteId: featuredSubmission._idRow.toString(),
+        name: featuredSubmission._sName,
+        description: submission._sText || submission._sDescription || '',
         tags: parseTags(submission._aTags),
-        author: submission._aSubmitter._sName,
-        likes: submission._nLikeCount ?? 0,
-        hero: guessHero(submission._sName),
+        author: featuredSubmission._aSubmitter._sName,
+        likes: featuredSubmission._nLikeCount ?? 0,
+        hero: guessHero(featuredSubmission._sName),
         downloadCount: submission._nViewCount ?? 0,
-        remoteUrl: submission._sProfileUrl,
-        category: submission._sModelName,
-        downloadable: submission._bHasFiles,
+        remoteUrl: featuredSubmission._sProfileUrl,
+        category: featuredSubmission._sModelName,
+        downloadable: featuredSubmission._bHasFiles,
         remoteAddedAt: new Date(
           submission._tsDateAdded * MILLISECONDS_PER_SECOND
         ),
@@ -405,6 +410,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       return {
         remoteId: topSubmission._idRow.toString(),
         name: topSubmission._sName,
+        description: submission._sText || submission._sDescription || '',
         tags: parseTags(submission._aTags),
         author: topSubmission._aSubmitter._sName,
         likes: topSubmission._nLikeCount,
@@ -431,6 +437,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       return {
         remoteId: submission._idRow.toString(),
         name: submission._sName,
+        description: submission._sText || submission._sDescription || '',
         tags: parseTags(submission._aTags),
         author: submission._aSubmitter._sName,
         likes: submission._nLikeCount,
@@ -457,6 +464,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       return {
         remoteId: submission._idRow.toString(),
         name: submission._sName,
+        description: submission._sText || submission._sDescription || '',
         tags: parseTags(submission._aTags),
         author: submission._aSubmitter._sName,
         likes: submission._nLikeCount,
