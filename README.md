@@ -2,9 +2,11 @@
 
 <a id="readme-top"></a>
 
-# Deadlock Mod Manager [![Built with Tauri][tauri-status]][tauri-url]
-
+<div align="center">
+<h1> Deadlock Mod Manager</h1>
+</div>
 <!-- Project Stats -->
+<div align="center">
 
 [![Downloads][downloads-status]][downloads-url]
 [![Contributors][contributors-status]][contributors-url]
@@ -13,8 +15,9 @@
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 [![License][license-status]][license-url]
 ![Discord](https://img.shields.io/discord/1322369530386710568?label=discord)
+ [![Built with Tauri][tauri-status]][tauri-url]
 
-
+</div>
 <br />
 <div align="center">
   <a href="https://github.com/stormix/deadlock-modmanager">
@@ -40,7 +43,7 @@
 [![Linux][linux-status]][linux-url]
 [![AUR][aur-status]][aur-url]
 
-  <img src="./docs/assets/download.png" alt="Deadlock Mod Manager" width="600">
+  <img src="./docs/assets/mods.png" alt="Deadlock Mod Manager" width="600">
   
 </div>
 
@@ -73,21 +76,47 @@
 <details>
 <summary>Click to view screenshots</summary>
 
-### About Dialog
+### Main Application
 
-![About Dialog](./docs/assets/about.png)
+![Deadlock Mod Manager](./docs/assets/mods.png)
 
-### Download Page
+### Mods Browser
 
-![Download Page](./docs/assets/download.png)
+![Mods Browser](./docs/assets/mods.png)
+
+### Individual Mod Pages
+
+![Mod Page](./docs/assets/mod.png)
+
+![Mod Page Details](./docs/assets/mod-2.png)
+
+![Mod Page Installation](./docs/assets/mod-3.png)
+
+### Installation Process
+
+![Install Process](./docs/assets/install.png)
 
 ### My Mods Page
 
 ![My Mods](./docs/assets/my-mods.png)
 
-### Mods Browser
+### Downloads Management
 
-![Mods Browser](./docs/assets/mods.png)
+![Download Page](./docs/assets/download.png)
+
+![Downloads Page](./docs/assets/downloads.png)
+
+### Settings
+
+![Settings](./docs/assets/settings.png)
+
+![Settings - General](./docs/assets/settings-2.png)
+
+![Settings - Game Path](./docs/assets/settings-3.png)
+
+![Settings - Advanced](./docs/assets/settings-4.png)
+
+![Settings - About](./docs/assets/settings-5.png)
 
 </details>
 

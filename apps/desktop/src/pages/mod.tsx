@@ -441,7 +441,7 @@ const Mod = () => {
                         }}
                         variant="link"
                       >
-                        View original forum post (Mod: {data.remoteId})
+                        View original forum post
                       </Button>
                     )}
                   </CardFooter>
