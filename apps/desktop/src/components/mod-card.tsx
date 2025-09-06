@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router';
 import { MultiFileDownloadDialog } from '@/components/multi-file-download-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMultiFileDownload } from '@/hooks/use-multi-file-download';
+import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { getModDownloads } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
@@ -55,6 +56,9 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
   const [showLargeImage, setShowLargeImage] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const { saveScrollPosition } = useScrollPosition('/mods');
+  const { setScrollPosition } = usePersistedStore();
 
   // NSFW settings and visibility
   const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
@@ -172,7 +176,18 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
       )}
       <Card
         className="cursor-pointer shadow"
-        onClick={() => navigate(`/mods/${mod.remoteId}`)}
+        onClick={(e) => {
+          const scrollContainer = (e.currentTarget as HTMLElement).closest(
+            '.overflow-auto'
+          );
+          if (scrollContainer) {
+            const scrollTop = scrollContainer.scrollTop;
+            setScrollPosition('/mods', scrollTop);
+          } else {
+            saveScrollPosition();
+          }
+          navigate(`/mods/${mod.remoteId}`);
+        }}
       >
         <div className="relative">
           {mod.isAudio ? (

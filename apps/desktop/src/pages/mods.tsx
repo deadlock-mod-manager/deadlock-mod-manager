@@ -8,6 +8,7 @@ import ModCard from '@/components/mod-card';
 import PageTitle from '@/components/page-title';
 import SearchBar from '@/components/search-bar';
 import SearchBarSkeleton from '@/components/search-bar-skeleton';
+import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { useSearch } from '@/hooks/use-search';
 import { getMods } from '@/lib/api';
 import { ModCategory } from '@/lib/constants';
@@ -25,6 +26,9 @@ const GetModsData = () => {
     data: data ?? [],
     keys: ['name', 'description', 'author'],
   });
+
+  // Initialize scroll position management
+  const { setScrollElement, scrollY } = useScrollPosition('/mods');
 
   // Apply all filters
   let filteredResults = results;
@@ -87,7 +91,16 @@ const GetModsData = () => {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 320 + 20, // Estimated height of ModCard + gap (updated for better spacing)
     overscan: 2, // Render 2 extra rows above and below visible area
+    // Use saved scroll position as initial offset - this is the key to smooth restoration!
+    initialOffset: scrollY,
   });
+
+  // Set scroll element for position tracking
+  useEffect(() => {
+    if (parentRef.current) {
+      setScrollElement(parentRef.current);
+    }
+  }, [setScrollElement]);
 
   useEffect(() => {
     if (error) {
