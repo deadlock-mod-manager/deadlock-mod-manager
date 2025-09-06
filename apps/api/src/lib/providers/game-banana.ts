@@ -555,6 +555,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         file: file._sFile,
         size: file._nFilesize,
         modId: dbMod.id,
+        createdAt: new Date(file._tsDateAdded * MILLISECONDS_PER_SECOND),
+        updatedAt: new Date(file._tsDateAdded * MILLISECONDS_PER_SECOND),
       }));
 
       // Upsert all mod downloads using repository

@@ -62,6 +62,9 @@ export const useMultiFileDownload = (
   };
 
   const closeDialog = () => {
+    if (mod) {
+      removeMod(mod.remoteId);
+    }
     setIsDialogOpen(false);
   };
 
