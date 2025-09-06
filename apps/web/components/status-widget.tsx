@@ -18,7 +18,7 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
     setLoading(true);
     try {
       const response = await fetch('/api/status', {
-        cache: 'no-store',
+        cache: 'force-cache',
       });
       const data = await response.json();
       setStatus(data.status.toLowerCase() as Status);
