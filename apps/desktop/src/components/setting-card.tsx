@@ -50,10 +50,9 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
 
   return (
     <Tooltip>
-      <TooltipTrigger className="flex flex-row items-center gap-2">
-        Command:
+      <TooltipTrigger asChild>
         <button
-          className="cursor-copy bg-transparent p-0 font-mono text-sm underline decoration-dotted underline-offset-4"
+          className="flex cursor-copy flex-row items-center gap-2 bg-transparent p-0 text-left"
           onClick={() => {
             navigator.clipboard.writeText(
               `${setting.key} ${setting.value}`.trim()
@@ -62,7 +61,10 @@ const Command = ({ setting }: Pick<SettingsCardProps, 'setting'>) => {
           }}
           type="button"
         >
-          {`${setting.key} ${setting.value}`.trim()}
+          Command:
+          <span className="font-mono text-sm underline decoration-dotted underline-offset-4">
+            {`${setting.key} ${setting.value}`.trim()}
+          </span>
         </button>
       </TooltipTrigger>
       <TooltipContent>

@@ -21,7 +21,7 @@ import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { getModDownloads } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
-import { type ModDownloadItem, ModStatus } from '@/types/mods';
+import { ModStatus } from '@/types/mods';
 import NSFWBlur from './nsfw-blur';
 import { OutdatedModWarning } from './outdated-mod-warning';
 import { Badge } from './ui/badge';
@@ -40,8 +40,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
     enabled: !!mod?.remoteId && !!mod?.downloadable,
   });
 
-  const availableFiles = (downloadData?.downloads ||
-    []) as unknown as ModDownloadItem[];
+  const availableFiles = downloadData?.downloads ?? [];
 
   const {
     download,

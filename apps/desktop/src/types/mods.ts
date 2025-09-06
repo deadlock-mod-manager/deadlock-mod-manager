@@ -1,11 +1,7 @@
-import type { ModDto } from '@deadlock-mods/utils';
+import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
 
 // Individual download item type extracted from ModDownloadDto array
-export type ModDownloadItem = {
-  url: string;
-  size: number;
-  name: string;
-};
+export type ModDownloadItem = ModDownloadDto[number];
 
 export type Progress = {
   progress: number;

@@ -38,7 +38,6 @@ modsV2Router.get('/:id/downloads', async (c) => {
   return c.json({
     downloads: toModDownloadDto(sortedDownloads),
     count: sortedDownloads.length,
-    primary: toModDownloadDto([sortedDownloads[0]])[0], // Primary download for convenience
   });
 });
 

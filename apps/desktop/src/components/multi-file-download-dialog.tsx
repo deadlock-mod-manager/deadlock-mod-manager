@@ -1,6 +1,6 @@
-import { Check, Download, FileText, HardDrive } from 'lucide-react';
+import { format } from 'date-fns';
+import { Download, HardDrive } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -99,12 +99,12 @@ export function MultiFileDownloadDialog({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
           {files
             .sort((a, b) => b.size - a.size) // Sort by size, largest first
-            .map((file, index) => (
+            .map((file) => (
               <div
-                className="flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                className="flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 key={file.name}
               >
                 <Checkbox
@@ -114,24 +114,31 @@ export function MultiFileDownloadDialog({
                   onCheckedChange={() => handleFileToggle(file.name)}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <FileText className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate font-medium" title={file.name}>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="truncate font-medium text-foreground"
+                      title={file.name}
+                    >
                       {file.name}
                     </span>
-                    {index === 0 && (
-                      <Badge className="text-xs" variant="secondary">
-                        Default
-                      </Badge>
-                    )}
                   </div>
-                  <div className="text-muted-foreground text-sm">
-                    {formatSize(file.size)}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <div className="text-muted-foreground text-sm">
+                        <span className="font-medium">
+                          {formatSize(file.size)}
+                        </span>
+                      </div>
+                      {(file.updatedAt || file.createdAt) && (
+                        <div className="text-muted-foreground text-xs">
+                          {file.updatedAt
+                            ? `Updated at ${format(file.updatedAt, 'dd-MM-yyyy HH:mm')}`
+                            : `Created ${format(file.createdAt!, 'dd-MM-yyyy HH:mm')}`}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {selectedFiles.has(file.name) && (
-                  <Check className="h-4 w-4 flex-shrink-0 text-green-600" />
-                )}
               </div>
             ))}
         </div>

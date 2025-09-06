@@ -1,4 +1,4 @@
-import type { ModDto } from '@deadlock-mods/utils';
+import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { downloadManager } from '@/lib/download/manager';
@@ -7,7 +7,7 @@ import { type ModDownloadItem, ModStatus } from '@/types/mods';
 
 export const useMultiFileDownload = (
   mod: ModDto | undefined,
-  availableFiles: ModDownloadItem[]
+  availableFiles: ModDownloadDto
 ) => {
   const { addMod, mods, setModStatus, removeMod, setModPath, setModProgress } =
     usePersistedStore();
