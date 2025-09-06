@@ -15,7 +15,7 @@
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 [![License][license-status]][license-url]
 ![Discord](https://img.shields.io/discord/1322369530386710568?label=discord)
- [![Built with Tauri][tauri-status]][tauri-url]
+[![Built with Tauri][tauri-status]][tauri-url]
 
 </div>
 <br />
@@ -248,14 +248,6 @@ pnpm api:dev
 
 ```bash
 pnpm desktop:dev
-```
-
-### Development
-
-To develop all apps and packages:
-
-```bash
-pnpm dev
 ```
 
 ## Contributing
