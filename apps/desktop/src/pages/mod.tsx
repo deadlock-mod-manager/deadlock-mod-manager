@@ -1,5 +1,6 @@
 import { open } from '@tauri-apps/plugin-shell';
 import { format } from 'date-fns';
+import { Markup } from 'interweave';
 import {
   ArrowLeft,
   Calendar,
@@ -281,14 +282,9 @@ const Mod = () => {
                       )}
 
                       <CardContent
-                        className={data.hero || data.isAudio ? '' : 'pt-2'}
+                        className={data.hero || data.isAudio ? '' : 'pt-6'}
                       >
                         <div className="space-y-4">
-                          <div className="prose prose-sm dark:prose-invert">
-                            <p className="whitespace-pre-line">
-                              {data.description}
-                            </p>
-                          </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="flex items-center gap-2">
                               <Hash className="text-muted-foreground" />
@@ -450,6 +446,22 @@ const Mod = () => {
                     )}
                   </CardFooter>
                 </Card>
+
+                {data.description && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Description</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <Markup
+                          className="whitespace-pre-line text-sm leading-relaxed"
+                          content={data.description}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {isInstalled && localMod?.installedFileTree && (
                   <InstalledFilesDisplay
