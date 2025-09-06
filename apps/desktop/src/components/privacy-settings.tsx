@@ -7,8 +7,7 @@ const PrivacySettings = () => {
   const { nsfwSettings, updateNSFWSettings } = usePersistedStore();
 
   return (
-    <div className="space-y-6 pl-8">
-      {/* Hide NSFW Content */}
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-base">Hide NSFW Content</Label>
@@ -24,7 +23,6 @@ const PrivacySettings = () => {
         />
       </div>
 
-      {/* Show Likely NSFW Content */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-base">Show Likely NSFW Content</Label>
@@ -41,7 +39,6 @@ const PrivacySettings = () => {
         />
       </div>
 
-      {/* Disable Blur */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-base">Disable NSFW Blur</Label>
@@ -58,7 +55,6 @@ const PrivacySettings = () => {
         />
       </div>
 
-      {/* Blur Strength */}
       {!nsfwSettings.disableBlur && (
         <div className="space-y-3">
           <div className="space-y-0.5">
@@ -87,7 +83,6 @@ const PrivacySettings = () => {
         </div>
       )}
 
-      {/* Remember Per-Item Overrides */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-base">Remember Per-Item Choices</Label>

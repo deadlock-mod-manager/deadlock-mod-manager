@@ -5,7 +5,16 @@ import {
 } from '@deadlock-mods/utils';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-shell';
-import { FolderOpen, PlusIcon, TrashIcon } from 'lucide-react';
+import {
+  FolderOpen,
+  GamepadIcon,
+  InfoIcon,
+  MonitorIcon,
+  PlusIcon,
+  Settings,
+  ShieldIcon,
+  TrashIcon,
+} from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
@@ -28,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getCustomSettings } from '@/lib/api';
 import { SortType } from '@/lib/constants';
 import logger from '@/lib/logger';
@@ -83,6 +93,13 @@ const CustomSettingsData = () => {
     <>
       {Object.values(CustomSettingType).map((type) => (
         <Section
+          action={
+            <AddSettingDialog>
+              <Button variant="outline">
+                <PlusIcon className="h-4 w-4" /> Create
+              </Button>
+            </AddSettingDialog>
+          }
           description={customSettingTypeHuman[type].description}
           key={type}
           title={customSettingTypeHuman[type].title}
@@ -146,161 +163,271 @@ const CustomSettings = () => {
   };
 
   return (
-    <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto px-4">
-      <PageTitle
-        action={
-          <AddSettingDialog>
-            <Button variant="outline">
-              <PlusIcon className="h-4 w-4" /> New Launch Option
-            </Button>
-          </AddSettingDialog>
-        }
-        className="mb-8"
-        title="Settings"
-      />
-      <Suspense
-        fallback={
-          <div className="grid grid-cols-1 gap-4">
-            <SectionSkeleton>
-              {Array.from({ length: 2 }, () => (
-                <SettingCardSkeleton key={crypto.randomUUID()} />
-              ))}
-            </SectionSkeleton>
-          </div>
-        }
-      >
-        <ErrorBoundary>
-          <CustomSettingsData />
-        </ErrorBoundary>
-      </Suspense>
-      <Section
-        description="Manage gameinfo.gi file backup, restoration, and validation for safe modding."
-        title="Game Configuration Management"
-      >
-        <GameInfoManagement />
-      </Section>
+    <div className="flex h-[calc(100vh-160px)] w-full">
+      <div className="flex w-full flex-col gap-4">
+        <PageTitle className="px-4" title="Settings" />
 
-      <Section
-        description="Mod Manager Settings. These do not affect the game."
-        title="System Settings"
-      >
-        <div className="grid grid-cols-1 gap-4">
-          <SystemSettings />
-        </div>
-      </Section>
+        <Tabs className="flex h-full gap-6" defaultValue="launch-options">
+          <TabsList className="h-fit w-48 flex-col gap-1 bg-background p-3">
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              value="launch-options"
+            >
+              <Settings className="h-5 w-5" />
+              Launch Options
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              value="game"
+            >
+              <GamepadIcon className="h-5 w-5" />
+              Game
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              value="application"
+            >
+              <MonitorIcon className="h-5 w-5" />
+              Application
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              value="privacy"
+            >
+              <ShieldIcon className="h-5 w-5" />
+              Privacy
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              value="about"
+            >
+              <InfoIcon className="h-5 w-5" />
+              About
+            </TabsTrigger>
+          </TabsList>
 
-      <Section
-        description="Control how NSFW (Not Safe For Work) content is displayed and filtered."
-        title="Privacy & Content"
-      >
-        <div className="grid grid-cols-1 gap-4">
-          <PrivacySettings />
-        </div>
-      </Section>
-
-      <Section
-        description="Choose the default sort order for the Mods page."
-        title="Default Sort Value"
-      >
-        <div className="flex flex-col gap-2">
-          <Label className="font-bold text-sm">Default Sort</Label>
-          <Select
-            onValueChange={(v) => setDefaultSort(v as SortType)}
-            value={defaultSort}
-          >
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Select default sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {Object.values(SortType).map((type) => (
-                  <SelectItem className="capitalize" key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-      </Section>
-
-      <Section
-        description="Utility functions for managing your mods"
-        title="Tools"
-      >
-        <div className="flex gap-4">
-          <Button
-            className="w-fit"
-            onClick={() => invoke('open_game_folder')}
-            variant="outline"
-          >
-            <FolderOpen className="h-4 w-4" />
-            Open Game Folder
-          </Button>
-          <Button
-            className="w-fit"
-            onClick={() => invoke('open_mods_folder')}
-            variant="outline"
-          >
-            <FolderOpen className="h-4 w-4" />
-            Open Mods Folder
-          </Button>
-          <Button
-            className="w-fit"
-            onClick={() => invoke('open_mods_store')}
-            variant="outline"
-          >
-            <FolderOpen className="h-4 w-4" />
-            Open Mods Store
-          </Button>
-          <Button
-            className="w-fit"
-            onClick={clearAllMods}
-            variant="destructive"
-          >
-            <TrashIcon className="h-4 w-4" />
-            Clear All Mods
-          </Button>
-        </div>
-      </Section>
-
-      <Section
-        description="Special thanks to the platforms and communities that make this project possible"
-        title="Acknowledgments"
-      >
-        <div className="space-y-4">
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex flex-col gap-2">
-              <h3 className="font-semibold text-primary">GameBanana</h3>
-              <p className="text-muted-foreground text-sm">
-                Our primary mod source and the backbone of this application.
-                GameBanana provides the comprehensive mod database and API that
-                makes browsing, discovering, and downloading Deadlock mods
-                possible.
-              </p>
-              <Button
-                className="mt-2 w-fit"
-                onClick={() => open('https://gamebanana.com/')}
-                size="sm"
-                variant="outline"
+          <div className="scrollbar-thin scrollbar-thumb-primary scrollbar-track-secondary flex-1 overflow-y-auto pr-4">
+            <TabsContent className="mt-0 space-y-2" value="launch-options">
+              <Suspense
+                fallback={
+                  <div className="grid grid-cols-1 gap-4">
+                    <SectionSkeleton>
+                      {Array.from({ length: 2 }, () => (
+                        <SettingCardSkeleton key={crypto.randomUUID()} />
+                      ))}
+                    </SectionSkeleton>
+                  </div>
+                }
               >
-                Visit GameBanana
-              </Button>
-            </div>
-          </div>
+                <ErrorBoundary>
+                  <CustomSettingsData />
+                </ErrorBoundary>
+              </Suspense>
+            </TabsContent>
 
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex flex-col gap-2">
-              <h3 className="font-semibold">Open Source Community</h3>
-              <p className="text-muted-foreground text-sm">
-                Built with amazing open source technologies including Tauri,
-                React, TypeScript, and many other libraries that make modern
-                desktop applications possible.
-              </p>
-            </div>
+            <TabsContent className="mt-0 space-y-2" value="game">
+              <Section
+                description="Manage gameinfo.gi file backup, restoration, and validation for safe modding."
+                title="Game Configuration Management"
+              >
+                <GameInfoManagement />
+              </Section>
+            </TabsContent>
+
+            <TabsContent className="mt-0 space-y-2" value="application">
+              <Section
+                description="Mod Manager Settings. These do not affect the game."
+                title="System Settings"
+              >
+                <div className="grid grid-cols-1 gap-4">
+                  <SystemSettings />
+                </div>
+              </Section>
+
+              <Section
+                description="Choose the default sort order for the Mods page."
+                title="Default Sort Value"
+              >
+                <div className="flex flex-col gap-2">
+                  <Label className="font-bold text-sm">Default Sort</Label>
+                  <Select
+                    onValueChange={(v) => setDefaultSort(v as SortType)}
+                    value={defaultSort}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="Select default sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {Object.values(SortType).map((type) => (
+                          <SelectItem
+                            className="capitalize"
+                            key={type}
+                            value={type}
+                          >
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </Section>
+
+              <Section
+                description="Utility functions for managing your mods"
+                title="Tools"
+              >
+                <div className="flex flex-wrap gap-4">
+                  <Button
+                    className="w-fit"
+                    onClick={() => invoke('open_game_folder')}
+                    variant="outline"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    Open Game Folder
+                  </Button>
+                  <Button
+                    className="w-fit"
+                    onClick={() => invoke('open_mods_folder')}
+                    variant="outline"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    Open Mods Folder
+                  </Button>
+                  <Button
+                    className="w-fit"
+                    onClick={() => invoke('open_mods_store')}
+                    variant="outline"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    Open Mods Store
+                  </Button>
+                  <Button
+                    className="w-fit"
+                    onClick={clearAllMods}
+                    variant="destructive"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    Clear All Mods
+                  </Button>
+                </div>
+              </Section>
+            </TabsContent>
+
+            <TabsContent className="mt-0 space-y-2" value="privacy">
+              <Section
+                description="Control how NSFW (Not Safe For Work) content is displayed and filtered."
+                title="Privacy & Content"
+              >
+                <div className="grid grid-cols-1 gap-4">
+                  <PrivacySettings />
+                </div>
+              </Section>
+            </TabsContent>
+
+            <TabsContent className="mt-0 space-y-2" value="about">
+              <Section
+                description="Special thanks to the platforms and communities that make this project possible"
+                title="Acknowledgments"
+              >
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-semibold text-primary">GameBanana</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Our primary mod source and the backbone of this
+                        application. GameBanana provides the comprehensive mod
+                        database and API that makes browsing, discovering, and
+                        downloading Deadlock mods possible.
+                      </p>
+                      <Button
+                        className="mt-2 w-fit"
+                        onClick={() => open('https://gamebanana.com/')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Visit GameBanana
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-semibold text-primary">Tauri</h3>
+                      <p className="text-muted-foreground text-sm">
+                        The powerful framework that enables this cross-platform
+                        desktop application. Tauri combines the best of web
+                        technologies with native performance and security.
+                      </p>
+                      <Button
+                        className="mt-2 w-fit"
+                        onClick={() => open('https://tauri.app/')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Visit Tauri
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-semibold text-primary">shadcn/ui</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Beautiful and accessible React components that provide
+                        the foundation for our modern user interface. Copy,
+                        paste, and customize to perfection.
+                      </p>
+                      <Button
+                        className="mt-2 w-fit"
+                        onClick={() => open('https://ui.shadcn.com/')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Visit shadcn/ui
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-semibold text-primary">
+                        Tailwind CSS
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        The utility-first CSS framework that powers our
+                        responsive design and consistent styling throughout the
+                        application.
+                      </p>
+                      <Button
+                        className="mt-2 w-fit"
+                        onClick={() => open('https://tailwindcss.com/')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Visit Tailwind CSS
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-semibold">Open Source Community</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Built with amazing open source technologies including
+                        React, TypeScript, and many other libraries that make
+                        modern applications possible. Thank you to all
+                        contributors and maintainers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+            </TabsContent>
           </div>
-        </div>
-      </Section>
+        </Tabs>
+      </div>
     </div>
   );
 };

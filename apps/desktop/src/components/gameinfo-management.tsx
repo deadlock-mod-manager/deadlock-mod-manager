@@ -319,7 +319,7 @@ const GameInfoManagement = () => {
 
       {/* File Information */}
       <div className="rounded-lg border bg-muted/50 p-3">
-        <div className="grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
+        <div className="flex flex-col gap-2 text-sm">
           <div>
             <span className="text-muted-foreground">File Hash:</span>{' '}
             <code className="font-mono">{status.current_hash}</code>

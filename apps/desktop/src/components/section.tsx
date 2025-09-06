@@ -8,19 +8,28 @@ const Section = ({
   children,
   className,
   innerClassName,
+  action,
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   innerClassName?: string;
+  action?: React.ReactNode;
 }) => {
   return (
     <div className={cn('flex flex-col py-4', className)}>
-      <h3 className="font-semibold text-primary/10 text-xl">{title}</h3>
-      {description && (
-        <div className="text-muted-foreground text-sm">{description}</div>
-      )}
+      <div className="flex w-full flex-row items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-semibold text-primary/10 text-xl">{title}</h3>
+          {description && (
+            <div className="flex-wrap text-muted-foreground text-sm">
+              {description}
+            </div>
+          )}
+        </div>
+        {action && <div className="mt-2 flex flex-col">{action}</div>}
+      </div>
       <Separator className="mt-2" />
       <div className={cn('mt-4', innerClassName)}>{children}</div>
     </div>

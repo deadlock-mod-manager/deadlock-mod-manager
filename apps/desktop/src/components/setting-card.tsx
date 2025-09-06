@@ -149,9 +149,9 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between pl-8">
+      <div className="flex flex-row items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h3 className="font-medium text-lg">
+          <h3 className="font-medium">
             {setting.description} {custom && <Badge>Custom</Badge>}
           </h3>
           <p className="text-muted-foreground text-sm">
