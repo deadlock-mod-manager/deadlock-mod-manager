@@ -1,13 +1,13 @@
 import type { Mod } from '@deadlock-mods/database';
-import Logger from '../logger';
+import { logger } from '../logger';
 
 export abstract class Provider<T> {
   // Do we even need the T  ?
-  protected logger: typeof Logger;
+  protected logger: typeof logger;
 
   constructor() {
-    this.logger = Logger.getSubLogger({
-      name: this.constructor.name,
+    this.logger = logger.child().withContext({
+      provider: this.constructor.name,
     });
   }
 
