@@ -2,7 +2,7 @@ import { appLocalDataDir, join } from '@tauri-apps/api/path';
 import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { download } from '@tauri-apps/plugin-upload';
 import { toast } from 'sonner';
-import type { DownloadableMod } from '@/types/mods';
+import type { DownloadableMod, ModDownloadItem } from '@/types/mods';
 import { getModDownload } from '../api';
 import { createLogger } from '../logger';
 
@@ -66,20 +66,21 @@ class DownloadManager {
       progressTotal: number;
       total: number;
       transferSpeed: number;
-    }
+    },
+    index = 0
   ) {
     const now = Date.now();
     const modId = mod.remoteId;
 
     // Initialize timer entry if it doesn't exist
-    if (!this.progressUpdateTimers[modId]) {
-      this.progressUpdateTimers[modId] = {
+    if (!this.progressUpdateTimers[`${modId}-${index}`]) {
+      this.progressUpdateTimers[`${modId}-${index}`] = {
         lastUpdate: 0,
         timerId: null,
       };
     }
 
-    const timerEntry = this.progressUpdateTimers[modId];
+    const timerEntry = this.progressUpdateTimers[`${modId}-${index}`];
 
     // Always process 100% complete updates immediately
     const isComplete = progress.progressTotal === progress.total;
@@ -98,7 +99,7 @@ class DownloadManager {
 
       // Handle completion
       if (isComplete) {
-        logger.info('Download complete', { mod: modId });
+        logger.info('Download complete', { mod: modId, index });
       }
     }
     // If there's no pending timer and we're not at the throttle interval yet
@@ -112,6 +113,34 @@ class DownloadManager {
       }, delay) as unknown as number;
     }
     // Otherwise, we already have a pending update scheduled, so do nothing
+  }
+
+  private async downloadFiles(mod: DownloadableMod, modDir: string) {
+    if (!mod.downloads || mod.downloads.length === 0) {
+      throw new Error('No downloads available for this mod');
+    }
+
+    await Promise.allSettled(
+      mod.downloads.map(async (file, index) => {
+        logger.info('Downloading file', {
+          mod: mod.remoteId,
+          file: file.name,
+          size: file.size,
+        });
+
+        await download(file.url, await join(modDir, file.name), (progress) => {
+          this.throttledProgressUpdate(mod, progress, index);
+          if (
+            progress.progressTotal === progress.total &&
+            this.progressUpdateTimers[`${mod.remoteId}-${index}`]
+          ) {
+            delete this.progressUpdateTimers[`${mod.remoteId}-${index}`];
+          }
+        });
+      })
+    );
+
+    mod.onComplete(modDir);
   }
 
   async process() {
@@ -135,30 +164,19 @@ class DownloadManager {
       if (!mod.downloads) {
         logger.info('Getting mod download links', { mod: mod.remoteId });
         const downloads = await getModDownload(mod.remoteId);
-        mod.downloads = downloads;
+        mod.downloads = downloads as unknown as ModDownloadItem[]; // Type assertion since the API returns compatible structure
+      }
+
+      if (!mod.downloads || mod.downloads.length === 0) {
+        throw new Error('No downloads available for this mod');
       }
 
       logger.info(`Mod has ${mod.downloads.length} downloadable files`, {
         mod: mod.remoteId,
       });
 
-      const file = mod.downloads[0]; // TODO: handle multiple files
-
-      logger.info('Downloading mod', { mod: mod.remoteId });
-      await download(
-        file.url,
-        await join(modDir, `${file.name}`),
-        (progress) => {
-          this.throttledProgressUpdate(mod, progress);
-          if (progress.progressTotal === progress.total) {
-            mod.onComplete(modDir);
-            // Clean up timer entry when done
-            if (this.progressUpdateTimers[mod.remoteId]) {
-              delete this.progressUpdateTimers[mod.remoteId];
-            }
-          }
-        }
-      );
+      // Download all files for now, but this can be made selective in the future
+      await this.downloadFiles(mod, modDir);
     } catch (error) {
       logger.error(error);
       toast.error('Failed to download mod');

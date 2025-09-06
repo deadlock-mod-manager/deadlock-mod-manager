@@ -2,7 +2,12 @@ import type { ModDto } from '@deadlock-mods/utils';
 import type { StateCreator } from 'zustand';
 import { SortType } from '@/lib/constants';
 import { createLogger } from '@/lib/logger';
-import { type LocalMod, ModStatus, type Progress } from '@/types/mods';
+import {
+  type LocalMod,
+  type ModFileTree,
+  ModStatus,
+  type Progress,
+} from '@/types/mods';
 import type { State } from '..';
 
 const logger = createLogger('mods-state');
@@ -24,7 +29,11 @@ export type ModsState = {
   setModPath: (remoteId: string, path: string) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
-  setInstalledVpks: (remoteId: string, vpks: string[]) => void;
+  setInstalledVpks: (
+    remoteId: string,
+    vpks: string[],
+    fileTree?: ModFileTree
+  ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
 };
 
@@ -54,6 +63,9 @@ export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
   }
   if (next === ModStatus.INSTALLED) {
     return ModStatus.INSTALLED;
+  }
+  if (current === ModStatus.ERROR && next === ModStatus.DOWNLOADED) {
+    return ModStatus.DOWNLOADED;
   }
   return current;
 };
@@ -118,11 +130,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   clearMods: () => set({ mods: [], modProgress: {} }),
 
-  setModProgress: (remoteId, progress) =>
+  setModProgress: (remoteId, progress, index = 0) =>
     set((state) => ({
       modProgress: {
         ...state.modProgress,
-        [remoteId]: {
+        [`${remoteId}-${index}`]: {
           percentage:
             ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
           speed: progress?.transferSpeed,
@@ -130,14 +142,21 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       },
     })),
 
-  getModProgress: (remoteId) => get().modProgress[remoteId],
+  getModProgress: (remoteId, index = 0) =>
+    get().modProgress[`${remoteId}-${index}`],
 
-  setInstalledVpks: (remoteId: string, vpks: string[]) =>
+  setInstalledVpks: (
+    remoteId: string,
+    vpks: string[],
+    fileTree?: ModFileTree
+  ) =>
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? ModStatus.INSTALLED : mod.status,
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
+        installedFileTree:
+          mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
       })),
     })),
 });

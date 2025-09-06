@@ -1,4 +1,11 @@
-import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
+import type { ModDto } from '@deadlock-mods/utils';
+
+// Individual download item type extracted from ModDownloadDto array
+export type ModDownloadItem = {
+  url: string;
+  size: number;
+  name: string;
+};
 
 export type Progress = {
   progress: number;
@@ -19,8 +26,9 @@ export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
   path?: string;
-  downloads?: ModDownloadDto;
+  downloads?: ModDownloadItem[];
   installedVpks?: string[];
+  installedFileTree?: ModFileTree;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, 'status'> {
@@ -35,4 +43,23 @@ export type InstallableMod = {
   name: string;
   path: string;
   installed_vpks: string[];
+  file_tree?: ModFileTree;
 };
+
+export interface ModFile {
+  name: string;
+  path: string;
+  size: number;
+  is_selected: boolean;
+  archive_name: string;
+}
+
+export interface ModFileTree {
+  files: ModFile[];
+  total_files: number;
+  has_multiple_files: boolean;
+}
+
+export interface LocalModWithFiles extends LocalMod {
+  file_tree?: ModFileTree;
+}

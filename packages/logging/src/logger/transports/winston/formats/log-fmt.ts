@@ -19,10 +19,14 @@ export const devFormat = format.combine(
 
     // Extract app and version before processing splat to avoid duplicates
     const app = meta?.app ?? '';
-    if (app) seenKeys.add('app');
+    if (app) {
+      seenKeys.add('app');
+    }
 
     const version = meta?.version ? `(${meta?.version})` : '';
-    if (meta?.version) seenKeys.add('version');
+    if (meta?.version) {
+      seenKeys.add('version');
+    }
 
     // Remove app and version from meta to avoid duplicates
     const metadata = { ...meta };
