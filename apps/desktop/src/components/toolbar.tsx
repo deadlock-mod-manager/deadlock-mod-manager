@@ -1,7 +1,7 @@
 import { Check, GameController, Play, Stop, X } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
-import { useQuery } from 'react-query';
 import { useState } from 'react';
+import { useQuery } from 'react-query';
 import { useLaunch } from '@/hooks/use-launch';
 import { isGameRunning } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -46,6 +46,7 @@ export const Toolbar = () => {
 
       {!isRunning && (
         <Button
+          className="relative overflow-hidden"
           disabled={!gamePath}
           onClick={() => {
             setVanillaAnimating(true);
@@ -54,19 +55,23 @@ export const Toolbar = () => {
           }}
           size="lg"
           variant="ghost"
-          className="relative overflow-hidden"
         >
           <div
             className={cn(
               'absolute inset-0 bg-white/30',
-              vanillaAnimating ? 'w-full transition-all duration-500 ease-in-out' : 'w-0'
+              vanillaAnimating
+                ? 'w-full transition-all duration-500 ease-in-out'
+                : 'w-0'
             )}
           />
           <Play />
-          <span className="font-medium text-md relative z-10">Launch Vanilla</span>
+          <span className="relative z-10 font-medium text-md">
+            Launch Vanilla
+          </span>
         </Button>
       )}
       <Button
+        className="relative overflow-hidden"
         disabled={!gamePath}
         onClick={() => {
           if (isRunning) {
@@ -78,18 +83,19 @@ export const Toolbar = () => {
           }
         }}
         size="lg"
-        className="relative overflow-hidden"
       >
         <div
           className={cn(
             'absolute inset-0 bg-amber-200',
-            moddedAnimating ? 'w-full transition-all duration-500 ease-in-out' : 'w-0'
+            moddedAnimating
+              ? 'w-full transition-all duration-500 ease-in-out'
+              : 'w-0'
           )}
         />
         <div className="relative z-10">
           {isRunning ? <Stop /> : <GameController />}
         </div>
-        <span className="font-medium text-md relative z-10">
+        <span className="relative z-10 font-medium text-md">
           {isRunning ? 'Stop Game' : 'Launch Modded'}
         </span>
       </Button>
