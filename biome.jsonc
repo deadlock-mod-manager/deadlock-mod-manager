@@ -77,7 +77,8 @@
         "noUnknownAtRules": "off"
       },
       "nursery": {
-        "noShadow": "off"
+        "noShadow": "off",
+        "useConsistentTypeDefinitions": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
