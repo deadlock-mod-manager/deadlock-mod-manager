@@ -18,8 +18,6 @@ const MODDED_SEARCH_PATHS: &str = r#"
             Mod                 core
             Write               core
             Game                core        
-            AddonRoot           citadel_addons
-    		OfficialAddonRoot   citadel_community_addons
         }"#;
 
 const VANILLA_SEARCH_PATHS: &str = r#"
@@ -556,29 +554,65 @@ impl GameConfigManager {
             fs::copy(gameinfo_path, &backup_path)?;
         }
 
-        // Remove existing mod manager markers if present
-        if gameinfo_content.contains(MOD_MANAGER_MARKER_START) {
-            if let Some(start) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
-                if let Some(end) = gameinfo_content.find(MOD_MANAGER_MARKER_END) {
-                    let end_pos = end + MOD_MANAGER_MARKER_END.len();
-                    gameinfo_content.replace_range(start..end_pos, "");
-                }
-            }
-        }
+        // Find what section to replace based on whether markers exist
+        let (section_start, section_end, section_content) = if gameinfo_content
+            .contains(MOD_MANAGER_MARKER_START)
+        {
+            // If markers exist, replace the entire marked section
+            let marker_start =
+                gameinfo_content
+                    .find(MOD_MANAGER_MARKER_START)
+                    .ok_or_else(|| {
+                        Error::GameConfigParse("Mod manager start marker not found".into())
+                    })?;
+            let marker_end_pos = gameinfo_content
+                .find(MOD_MANAGER_MARKER_END)
+                .ok_or_else(|| Error::GameConfigParse("Mod manager end marker not found".into()))?;
+            let marker_end = marker_end_pos + MOD_MANAGER_MARKER_END.len();
 
-        // Find the SearchPaths section
-        let search_paths_start = gameinfo_content
-            .find("SearchPaths")
-            .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
+            // Find the actual start (include preceding whitespace/newline)
+            let actual_start = if marker_start > 0
+                && gameinfo_content.chars().nth(marker_start - 1) == Some('\n')
+            {
+                marker_start - 1
+            } else {
+                marker_start
+            };
 
-        let relative_end = gameinfo_content[search_paths_start..]
-            .find('}')
-            .ok_or_else(|| {
-                Error::GameConfigParse("Could not find end of SearchPaths section".into())
-            })?;
+            (
+                actual_start,
+                marker_end,
+                &gameinfo_content[actual_start..marker_end],
+            )
+        } else {
+            // No markers, find and replace just the SearchPaths section
+            let search_paths_start = gameinfo_content
+                .find("SearchPaths")
+                .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
 
-        let search_paths_end = search_paths_start + relative_end + 1;
-        let search_paths_section = &gameinfo_content[search_paths_start - 1..search_paths_end];
+            let relative_end = gameinfo_content[search_paths_start..]
+                .find('}')
+                .ok_or_else(|| {
+                    Error::GameConfigParse("Could not find end of SearchPaths section".into())
+                })?;
+
+            let search_paths_end = search_paths_start + relative_end + 1;
+
+            // Include the tab/whitespace before SearchPaths
+            let section_start = if search_paths_start > 0
+                && gameinfo_content.chars().nth(search_paths_start - 1) == Some('\t')
+            {
+                search_paths_start - 1
+            } else {
+                search_paths_start
+            };
+
+            (
+                section_start,
+                search_paths_end,
+                &gameinfo_content[section_start..search_paths_end],
+            )
+        };
 
         // Use the appropriate search paths based on vanilla flag
         let base_search_paths = if vanilla {
@@ -587,19 +621,19 @@ impl GameConfigManager {
             MODDED_SEARCH_PATHS
         };
 
-        // Add tracking markers for non-vanilla modifications
-        let new_search_paths_section = if vanilla {
+        // Create the replacement content
+        let replacement_content = if vanilla {
             base_search_paths.to_string()
         } else {
             format!(
-                "{}\n{}\n{}\n{}",
-                MOD_MANAGER_MARKER_START, base_search_paths, MOD_MANAGER_MARKER_END, ""
+                "\n{}\n{}\n{}",
+                MOD_MANAGER_MARKER_START, base_search_paths, MOD_MANAGER_MARKER_END
             )
         };
 
-        // Replace the old search paths section with the new one
-        let new_gameinfo_content =
-            gameinfo_content.replace(search_paths_section, &new_search_paths_section);
+        // Replace the identified section with the new content
+        let mut new_gameinfo_content = gameinfo_content.clone();
+        new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
 
         // Validate the new content before writing
         let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -617,10 +651,10 @@ impl GameConfigManager {
         }
 
         log::info!("Writing updated gameinfo.gi: {:?}", gameinfo_path);
-        log::debug!("New search paths section: {}", new_search_paths_section);
+        log::debug!("Replacement content: {}", replacement_content);
 
         // Write the new content
-        fs::write(gameinfo_path, new_gameinfo_content)?;
+        fs::write(gameinfo_path, &new_gameinfo_content)?;
 
         // Final validation
         let final_validation = self.validate_gameinfo_syntax(gameinfo_path)?;
