@@ -11,11 +11,11 @@ import { trimTrailingSlash } from 'hono/trailing-slash';
 import { SENTRY_OPTIONS } from './lib/constants';
 import { startJobs } from './lib/jobs';
 import { logger } from './lib/logger';
-
 import customSettingsRouter from './routes/custom-settings';
 import modsRouter from './routes/mods';
 import modsV1Router from './routes/v1/mods';
 import modsV2Router from './routes/v2/mods';
+import { version } from './version';
 
 import './lib/jobs/synchronize-mods';
 
@@ -41,7 +41,7 @@ app.use('*', cors());
 app.get('/', (c) => {
   return c.json({
     health: 'ok',
-    version: '2.0.0',
+    version,
   });
 });
 
