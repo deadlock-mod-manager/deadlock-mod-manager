@@ -9,6 +9,9 @@ mod errors;
 mod mod_manager;
 mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -81,7 +84,7 @@ pub fn run() {
         builder = builder
             .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
                 println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
-                
+
                 // Handle deep links passed through single instance
                 for arg in argv {
                     if arg.starts_with("deadlock-mod-manager:") || arg.starts_with("deadlock-modmanager:") {
@@ -89,7 +92,7 @@ pub fn run() {
                         if let Err(e) = handle_deep_link_url(&app, &arg) {
                             log::error!("Failed to handle deep link from single instance: {}", e);
                         }
-                        
+
                         // Bring window to focus when deep link is triggered
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.set_focus();
@@ -133,7 +136,7 @@ pub fn run() {
 
             // Prepare store
             let _store = handle.store("state.json")?;
- 
+
             #[cfg(desktop)]
             app.deep_link().register("deadlock-mod-manager")?;
 
@@ -153,6 +156,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::find_game_path,
+            commands::get_mod_file_tree,
             commands::install_mod,
             commands::stop_game,
             commands::start_game,

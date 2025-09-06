@@ -13,6 +13,7 @@ pub enum Error {
     #[error("Failed to parse game configuration: {0}")]
     GameConfigParse(String),
     #[error("Mod {0} is already installed")]
+    #[allow(dead_code)]
     ModAlreadyInstalled(String),
     #[error("Mod file not found at path")]
     ModFileNotFound,

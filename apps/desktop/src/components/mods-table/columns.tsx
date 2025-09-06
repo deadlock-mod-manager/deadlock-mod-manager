@@ -1,6 +1,9 @@
 import { Trash } from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { InstallFunction, InstallOptions } from '@/hooks/use-install';
+import type {
+  InstallWithCollectionFunction,
+  InstallWithCollectionOptions,
+} from '@/hooks/use-install-with-collection';
 import { type LocalMod, ModStatus } from '@/types/mods';
 import Status from '../status';
 import { Button } from '../ui/button';
@@ -10,8 +13,8 @@ import { Switch } from '../ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 export const createColumns = (
-  install: InstallFunction,
-  options: InstallOptions,
+  install: InstallWithCollectionFunction,
+  options: InstallWithCollectionOptions,
   remove: (mod: LocalMod) => void,
   uninstall: (mod: LocalMod) => void
 ) => {

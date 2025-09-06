@@ -142,12 +142,8 @@
           "name": "mod_download_mod_id_mod_id_fk",
           "tableFrom": "mod_download",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mod_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -296,9 +292,7 @@
         "mod_remote_id_unique": {
           "name": "mod_remote_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "remote_id"
-          ]
+          "columns": ["remote_id"]
         }
       },
       "policies": {},

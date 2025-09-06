@@ -59,7 +59,9 @@ export const formatLogComponents = ({
     const filteredMeta = Object.entries(meta).reduce(
       (acc, [key, value]) => {
         // Skip special symbols
-        if (typeof key === 'symbol') return acc;
+        if (typeof key === 'symbol') {
+          return acc;
+        }
 
         if (!seenKeys.has(key)) {
           seenKeys.add(key);

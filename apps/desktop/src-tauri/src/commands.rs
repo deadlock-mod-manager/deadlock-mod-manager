@@ -1,8 +1,9 @@
 use std::sync::Mutex;
 
 use crate::errors::Error;
-use crate::mod_manager::{Mod, ModManager};
+use crate::mod_manager::{ModFileTree, Mod, ModManager};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::LazyLock;
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
@@ -88,6 +89,26 @@ pub async fn find_game_path() -> Result<String, Error> {
             Err(e)
         }
     }
+}
+
+#[tauri::command]
+pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    let path = PathBuf::from(&mod_path);
+
+    if !path.exists() {
+        return Err(Error::ModFileNotFound);
+    }
+
+    let file_tree = mod_manager.get_mod_file_tree(&path)?;
+    
+    log::info!(
+        "Got file tree for mod: {} files, has_multiple: {}",
+        file_tree.total_files,
+        file_tree.has_multiple_files
+    );
+
+    Ok(file_tree)
 }
 
 #[tauri::command]

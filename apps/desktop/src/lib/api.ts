@@ -24,7 +24,18 @@ export const getMod = async (remoteId: string) => {
 };
 
 export const getModDownload = async (remoteId: string) => {
-  const response = await api.get<ModDownloadDto>(`/mods/${remoteId}/download`);
+  const response = await api.get<ModDownloadDto[]>(
+    `/api/v2/mods/${remoteId}/download`
+  );
+  return response.data;
+};
+
+export const getModDownloads = async (remoteId: string) => {
+  const response = await api.get<{
+    downloads: ModDownloadDto[];
+    count: number;
+    primary: ModDownloadDto;
+  }>(`/api/v2/mods/${remoteId}/downloads`);
   return response.data;
 };
 
