@@ -47,3 +47,28 @@ export const getCustomSettings = async () => {
 export const isGameRunning = async () => {
   return !!(await invoke('is_game_running'));
 };
+
+// Gameinfo.gi management functions
+export const backupGameInfo = async () => {
+  return await invoke('backup_gameinfo');
+};
+
+export const restoreGameInfoBackup = async () => {
+  return await invoke('restore_gameinfo_backup');
+};
+
+export const resetToVanilla = async () => {
+  return await invoke('reset_to_vanilla');
+};
+
+export const validateGameInfoPatch = async (expectedVanilla: boolean) => {
+  return await invoke('validate_gameinfo_patch', { expectedVanilla });
+};
+
+export const getGameInfoStatus = async () => {
+  return await invoke('get_gameinfo_status');
+};
+
+export const openGameInfoEditor = async () => {
+  return await invoke('open_gameinfo_editor');
+};

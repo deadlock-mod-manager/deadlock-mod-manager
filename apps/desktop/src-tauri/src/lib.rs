@@ -168,7 +168,13 @@ pub fn run() {
             commands::uninstall_mod,
             commands::purge_mod,
             commands::is_game_running,
-            commands::parse_deep_link
+            commands::parse_deep_link,
+            commands::backup_gameinfo,
+            commands::restore_gameinfo_backup,
+            commands::reset_to_vanilla,
+            commands::validate_gameinfo_patch,
+            commands::get_gameinfo_status,
+            commands::open_gameinfo_editor
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use crate::errors::Error;
-use crate::mod_manager::{ModFileTree, Mod, ModManager};
+use crate::mod_manager::{Mod, ModFileTree, ModManager};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -101,7 +101,7 @@ pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
     }
 
     let file_tree = mod_manager.get_mod_file_tree(&path)?;
-    
+
     log::info!(
         "Got file tree for mod: {} files, has_multiple: {}",
         file_tree.total_files,
@@ -179,4 +179,77 @@ pub async fn purge_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
 pub async fn is_game_running() -> Result<bool, Error> {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.is_game_running()
+}
+
+#[tauri::command]
+pub async fn backup_gameinfo() -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager_mut()
+        .backup_gameinfo(&game_path)
+}
+
+#[tauri::command]
+pub async fn restore_gameinfo_backup() -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager_mut()
+        .restore_gameinfo_backup(&game_path)
+}
+
+#[tauri::command]
+pub async fn reset_to_vanilla() -> Result<(), Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager_mut()
+        .reset_to_vanilla(&game_path)
+}
+
+#[tauri::command]
+pub async fn validate_gameinfo_patch(expected_vanilla: bool) -> Result<(), Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager()
+        .validate_gameinfo_patch(&game_path, expected_vanilla)
+}
+
+#[tauri::command]
+pub async fn get_gameinfo_status(
+) -> Result<crate::mod_manager::game_config_manager::GameInfoStatus, Error> {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager_mut()
+        .get_gameinfo_status(&game_path)
+}
+
+#[tauri::command]
+pub async fn open_gameinfo_editor() -> Result<(), Error> {
+    let mod_manager = MANAGER.lock().unwrap();
+    let game_path = match mod_manager.get_steam_manager().get_game_path() {
+        Some(path) => path.clone(),
+        None => return Err(Error::GamePathNotSet),
+    };
+    mod_manager
+        .get_config_manager()
+        .open_gameinfo_with_editor(&game_path)
 }

@@ -11,6 +11,7 @@ import { useQuery } from 'react-query';
 import { toast } from 'sonner';
 import AddSettingDialog from '@/components/add-setting';
 import ErrorBoundary from '@/components/error-boundary';
+import GameInfoManagement from '@/components/gameinfo-management';
 import PageTitle from '@/components/page-title';
 import PrivacySettings from '@/components/privacy-settings';
 import { useConfirm } from '@/components/providers/alert-dialog';
@@ -172,6 +173,13 @@ const CustomSettings = () => {
           <CustomSettingsData />
         </ErrorBoundary>
       </Suspense>
+      <Section
+        description="Manage gameinfo.gi file backup, restoration, and validation for safe modding."
+        title="Game Configuration Management"
+      >
+        <GameInfoManagement />
+      </Section>
+
       <Section
         description="Mod Manager Settings. These do not affect the game."
         title="System Settings"

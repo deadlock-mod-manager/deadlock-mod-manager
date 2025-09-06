@@ -985,6 +985,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sevenz-rust",
+ "sha2",
  "steamlocate",
  "sysinfo",
  "tauri",

@@ -37,6 +37,14 @@ pub enum Error {
     ModExtractionFailed(String),
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+    #[error("Backup operation failed: {0}")]
+    BackupFailed(String),
+    #[error("Backup integrity check failed: {0}")]
+    BackupIntegrityFailed(String),
+    #[error("gameinfo.gi validation failed: {0}")]
+    GameInfoValidationFailed(String),
+    #[error("External file modification detected: {0}")]
+    ExternalModification(String),
 }
 
 impl serde::Serialize for Error {
@@ -67,6 +75,10 @@ impl serde::Serialize for Error {
             Error::FailedToOpenFolder(_) => "failedToOpenFolder",
             Error::ModExtractionFailed(_) => "modExtractionFailed",
             Error::InvalidInput(_) => "invalidInput",
+            Error::BackupFailed(_) => "backupFailed",
+            Error::BackupIntegrityFailed(_) => "backupIntegrityFailed",
+            Error::GameInfoValidationFailed(_) => "gameInfoValidationFailed",
+            Error::ExternalModification(_) => "externalModification",
         };
 
         state.serialize_field("kind", kind)?;

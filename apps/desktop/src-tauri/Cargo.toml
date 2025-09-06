@@ -45,6 +45,7 @@ sevenz-rust = "0.5"
 tauri-plugin-sentry = "0.3"
 steamlocate = "2.0.0"
 tauri-plugin-deep-link = "2"
+sha2 = "0.10"
 
 [dev-dependencies]
 tempfile = "3.14.0"

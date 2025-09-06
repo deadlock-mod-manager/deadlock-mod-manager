@@ -367,6 +367,21 @@ impl ModManager {
     pub fn open_mods_store(&self) -> Result<(), Error> {
         self.filesystem.open_mods_store()
     }
+
+    /// Get a reference to the steam manager
+    pub fn get_steam_manager(&self) -> &SteamManager {
+        &self.steam_manager
+    }
+
+    /// Get a reference to the config manager
+    pub fn get_config_manager(&self) -> &GameConfigManager {
+        &self.config_manager
+    }
+
+    /// Get a mutable reference to the config manager
+    pub fn get_config_manager_mut(&mut self) -> &mut GameConfigManager {
+        &mut self.config_manager
+    }
 }
 
 impl Default for ModManager {
