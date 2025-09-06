@@ -71,7 +71,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
             alt="dashboard"
             className="rouded-lg relative mx-auto flex w-full items-center rounded-lg border border-secondary border-t-2 border-t-[#efe0be]/30 leading-none md:w-[1200px]"
             height={1200}
-            src="/download.png"
+            src="/mods.png"
             width={1200}
           />
 
