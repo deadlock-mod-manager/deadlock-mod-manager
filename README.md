@@ -18,7 +18,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/stormix/deadlock-modmanager">
-    <img src="./docs/assets/deadlock.png" alt="Logo" width="80" height="80">
+    <img src="./apps/desktop/src-tauri/icons/128x128.png" alt="Logo" width="80" height="80">
   </a>
 
   <h3 align="center">Deadlock Mod Manager</h3>
