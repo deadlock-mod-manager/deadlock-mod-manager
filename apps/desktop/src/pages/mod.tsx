@@ -312,6 +312,18 @@ const Mod = () => {
                                 {format(new Date(data.remoteUpdatedAt), 'PPP')}
                               </span>
                             </div>
+                            {isInstalled && localMod?.installedAt && (
+                              <div className="flex items-center gap-2">
+                                <Calendar className="text-muted-foreground" />
+                                <span className="text-sm">
+                                  Installed:{' '}
+                                  {format(
+                                    new Date(localMod.installedAt),
+                                    'PPP'
+                                  )}
+                                </span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-2">
                               <Download className="text-muted-foreground" />
                               <span className="text-sm">

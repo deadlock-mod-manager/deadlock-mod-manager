@@ -2,6 +2,7 @@ import { CustomSettingType } from '@deadlock-mods/utils';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { LocalMod } from '@/types/mods';
+import { ModStatus } from '@/types/mods';
 import type { LocalSetting } from '@/types/settings';
 import { SortType } from './constants';
 
@@ -66,4 +67,19 @@ export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
   const cutoffDate = new Date('2025-08-19');
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
   return modUpdatedDate < cutoffDate;
+};
+
+export const hasModUpdate = (mod: LocalMod): boolean => {
+  if (!mod.installedAt) {
+    return false;
+  }
+
+  const installedAt = new Date(mod.installedAt);
+  const remoteUpdatedAt = new Date(mod.remoteUpdatedAt);
+
+  return remoteUpdatedAt > installedAt;
+};
+
+export const canModUpdate = (mod: LocalMod): boolean => {
+  return mod.status === ModStatus.INSTALLED && hasModUpdate(mod);
 };

@@ -1,5 +1,6 @@
 import { Trash } from '@phosphor-icons/react';
 import {
+  Download,
   LayoutGrid,
   LayoutList,
   Loader2,
@@ -9,6 +10,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { useQuery } from 'react-query';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
@@ -37,11 +39,14 @@ import type {
   InstallWithCollectionFunction,
   InstallWithCollectionOptions,
 } from '@/hooks/use-install-with-collection';
+import { useMultiFileDownload } from '@/hooks/use-multi-file-download';
 import { useSearch } from '@/hooks/use-search';
 import useUninstall from '@/hooks/use-uninstall';
+import useUpdateMod from '@/hooks/use-update-mod';
+import { getModDownloads } from '@/lib/api';
 import { createLogger } from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
-import { cn, isModOutdated } from '@/lib/utils';
+import { canModUpdate, cn, isModOutdated } from '@/lib/utils';
 import { type LocalMod, ModStatus } from '@/types/mods';
 
 const logger = createLogger('installation');
@@ -64,12 +69,29 @@ const GridModCard = ({
 }) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
+  const hasUpdate = canModUpdate(mod);
   const navigate = useNavigate();
   const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
     usePersistedStore();
   const { uninstall } = useUninstall();
+  const { update, isUpdating } = useUpdateMod(mod);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Fetch downloadable files for updates
+  const { data: downloadData } = useQuery({
+    queryKey: ['mod-downloads', mod.remoteId],
+    queryFn: () => getModDownloads(mod.remoteId),
+    enabled: hasUpdate && !!mod.downloadable,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const availableFiles = downloadData?.downloads || [];
+
+  const { download: downloadWithSelection } = useMultiFileDownload(
+    mod,
+    availableFiles
+  );
 
   const shouldBlur = useMemo(() => {
     if (!mod?.isNSFW) {
@@ -175,6 +197,14 @@ const GridModCard = ({
         </div>
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {mod.isAudio && <Badge variant="secondary">Audio</Badge>}
+          {hasUpdate && (
+            <Badge
+              className="animate-pulse bg-primary text-primary-foreground"
+              variant="secondary"
+            >
+              Update
+            </Badge>
+          )}
           {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
         </div>
         {mod.status === ModStatus.INSTALLING && (
@@ -206,7 +236,7 @@ const GridModCard = ({
         <div className="flex items-center gap-2">
           <Switch
             checked={mod.status === ModStatus.INSTALLED}
-            disabled={isInstalling}
+            disabled={isInstalling || isUpdating(mod)}
             id={`install-mod-${mod.remoteId}`}
             onCheckedChange={(value) => {
               if (value) {
@@ -219,24 +249,42 @@ const GridModCard = ({
           <Label className="text-xs" htmlFor={`install-mod-${mod.remoteId}`}>
             {isInstalling
               ? 'Installing...'
-              : mod.status === ModStatus.INSTALLED
-                ? 'Disable'
-                : 'Enable'}
+              : isUpdating(mod)
+                ? 'Updating...'
+                : mod.status === ModStatus.INSTALLED
+                  ? 'Disable'
+                  : 'Enable'}
           </Label>
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              disabled={isInstalling}
-              onClick={() => uninstall(mod, true)}
-              size="icon"
-              variant="outline"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Remove mod</TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          {hasUpdate && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  disabled={isInstalling || isUpdating(mod)}
+                  onClick={() => update(mod, install, downloadWithSelection)}
+                  size="icon"
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Update mod</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => uninstall(mod, true)}
+                size="icon"
+                variant="outline"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Remove mod</TooltipContent>
+          </Tooltip>
+        </div>
       </CardFooter>
     </Card>
   );
@@ -254,12 +302,30 @@ const ListModCard = ({
 }) => {
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
+  const hasUpdate = canModUpdate(mod);
   const navigate = useNavigate();
   const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
     usePersistedStore();
   const { uninstall } = useUninstall();
+  const { update, isUpdating } = useUpdateMod(mod);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Fetch downloadable files for updates
+  const { data: downloadData } = useQuery({
+    queryKey: ['mod-downloads', mod.remoteId],
+    queryFn: () => getModDownloads(mod.remoteId),
+    enabled: hasUpdate && !!mod.downloadable,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const availableFiles = (downloadData?.downloads ||
+    []) as unknown as import('@/types/mods').ModDownloadItem[];
+
+  const { download: downloadWithSelection } = useMultiFileDownload(
+    mod,
+    availableFiles
+  );
 
   const shouldBlur = useMemo(() => {
     if (!mod?.isNSFW) {
@@ -372,6 +438,11 @@ const ListModCard = ({
                 Audio
               </Badge>
             )}
+            {hasUpdate && (
+              <Badge className="animate-pulse text-xs" variant="secondary">
+                Update
+              </Badge>
+            )}
             {isModOutdated(mod) && (
               <OutdatedModWarning className="text-xs" variant="indicator" />
             )}
@@ -398,7 +469,7 @@ const ListModCard = ({
             <div className="flex items-center gap-2">
               <Switch
                 checked={mod.status === ModStatus.INSTALLED}
-                disabled={isInstalling}
+                disabled={isInstalling || isUpdating(mod)}
                 id={`list-install-mod-${mod.remoteId}`}
                 onCheckedChange={(value) => {
                   if (value) {
@@ -414,24 +485,45 @@ const ListModCard = ({
               >
                 {isInstalling
                   ? 'Installing...'
-                  : mod.status === ModStatus.INSTALLED
-                    ? 'Disable'
-                    : 'Enable'}
+                  : isUpdating(mod)
+                    ? 'Updating...'
+                    : mod.status === ModStatus.INSTALLED
+                      ? 'Disable'
+                      : 'Enable'}
               </Label>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  disabled={isInstalling}
-                  onClick={() => uninstall(mod, true)}
-                  size="icon"
-                  variant="outline"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Remove mod</TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1">
+              {hasUpdate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      disabled={isInstalling || isUpdating(mod)}
+                      onClick={() =>
+                        update(mod, install, downloadWithSelection)
+                      }
+                      size="icon"
+                      variant="outline"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Update mod</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    disabled={isInstalling || isUpdating(mod)}
+                    onClick={() => uninstall(mod, true)}
+                    size="icon"
+                    variant="outline"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Remove mod</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
       </div>

@@ -34,6 +34,7 @@ export type ModsState = {
     vpks: string[],
     fileTree?: ModFileTree
   ) => void;
+  setInstalledAt: (remoteId: string, installedAt: Date) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
 };
 
@@ -157,6 +158,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+        installedAt: mod.remoteId === remoteId ? new Date() : mod.installedAt,
+      })),
+    })),
+
+  setInstalledAt: (remoteId: string, installedAt: Date) =>
+    set((state) => ({
+      mods: state.mods.map((mod) => ({
+        ...mod,
+        installedAt: mod.remoteId === remoteId ? installedAt : mod.installedAt,
       })),
     })),
 });

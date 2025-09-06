@@ -21,6 +21,7 @@ export enum ModStatus {
 export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
+  installedAt?: Date;
   path?: string;
   downloads?: ModDownloadItem[];
   installedVpks?: string[];
