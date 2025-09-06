@@ -20,9 +20,21 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { data } = useAbout();
 
   // Use a fallback version if data is not yet available
-  const version = data?.version || '0.6.1';
+  const version = data?.version || '0.7.0';
 
   const updateContent = {
+    '0.7.0': {
+      title: 'Major Features & UI Refresh',
+      features: [
+        '📦 Multi-file download support - choose which files to install when mods have multiple archives',
+        '🔒 NSFW content filtering with user controls for safe browsing',
+        '⚙️ Advanced gameinfo.gi management for better mod compatibility',
+        '🎨 Brand new logo design and enhanced UI styling throughout the app',
+        '🚀 Improved launch button animations and enhanced settings layout',
+        '📍 Smart scroll position management - keep your scroll position while browsing mods',
+        '🔍 Enhanced search relevance and sorting capabilities for better mod discovery',
+      ],
+    },
     '0.6.1': {
       title: 'Deep Links & Improvements',
       features: ['🔗 Added support for 1-click install links on GameBanana'],
