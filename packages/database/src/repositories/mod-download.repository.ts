@@ -80,6 +80,38 @@ export class ModDownloadRepository {
     return await this.create({ ...modDownload, modId });
   }
 
+  async upsertMultipleByModId(
+    modId: string,
+    modDownloads: NewModDownload[]
+  ): Promise<ModDownload[]> {
+    // Delete existing downloads for this mod
+    await this.deleteByModId(modId);
+
+    // Create new downloads
+    const results: ModDownload[] = [];
+    for (const modDownload of modDownloads) {
+      const created = await this.create({ ...modDownload, modId });
+      results.push(created);
+    }
+
+    return results;
+  }
+
+  async createMultiple(
+    newModDownloads: NewModDownload[]
+  ): Promise<ModDownload[]> {
+    if (newModDownloads.length === 0) {
+      return [];
+    }
+
+    const result = await this.db
+      .insert(modDownloads)
+      .values(newModDownloads)
+      .returning();
+
+    return result;
+  }
+
   async delete(id: string): Promise<void> {
     await this.db.delete(modDownloads).where(eq(modDownloads.id, id));
   }

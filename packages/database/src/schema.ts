@@ -60,7 +60,6 @@ export const modDownloads = pgTable(
       table.modId,
       table.remoteId
     ),
-    uniqueIndex('mod_download_mod_id_idx').on(table.modId),
   ]
 );
 

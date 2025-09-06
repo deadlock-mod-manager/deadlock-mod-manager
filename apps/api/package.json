@@ -5,18 +5,20 @@
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
     "test": "dotenv -e ../../.env -- bun run src/test.ts",
-    "desktop:dev": "pnpm dev"
+    "desktop:dev": "pnpm dev",
+    "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
   },
   "dependencies": {
     "@deadlock-mods/database": "workspace:*",
+    "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/utils": "workspace:*",
     "@hono/sentry": "^1.0.10",
-    "@sentry/bun": "^8.47.0",
-    "@sentry/node": "^8.47.0",
+    "@sentry/node": "^9.15.0",
     "@sentry/profiling-node": "^8.47.0",
     "croner": "^9.0.0",
     "dotenv-cli": "^7.4.4",
     "drizzle-orm": "^0.42.0",
+    "genversion": "^3.2.0",
     "hono": "^4.4.11",
     "tslog": "^4.9.3",
     "zod": "^3.24.1"

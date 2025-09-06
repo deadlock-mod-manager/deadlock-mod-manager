@@ -116,7 +116,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   ): Promise<
     GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>
   > {
-    this.logger.debug('Fetching all submissions', { page });
+    this.logger.withMetadata({ page }).debug('Fetching all submissions');
     try {
       const response = await fetch(
         `${GAME_BANANA_BASE_URL}/Mod/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`
@@ -126,13 +126,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       }
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>;
-      this.logger.debug('Fetched all submissions', {
-        page,
-        count: data._aRecords.length,
-      });
+      this.logger
+        .withMetadata({ page, count: data._aRecords.length })
+        .debug('Fetched all submissions');
       return data;
     } catch (error) {
-      this.logger.error('Failed to fetch submissions', { error, page });
+      this.logger
+        .withError(error)
+        .withMetadata({ page })
+        .error('Failed to fetch submissions');
       throw error;
     }
   }
@@ -142,7 +144,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   ): Promise<
     GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>
   > {
-    this.logger.debug('Fetching all submissions', { page });
+    this.logger.withMetadata({ page }).debug('Fetching all submissions');
     try {
       const response = await fetch(
         `${GAME_BANANA_BASE_URL}/Sound/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`
@@ -152,13 +154,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       }
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>;
-      this.logger.debug('Fetched all sound submissions', {
-        page,
-        count: data._aRecords.length,
-      });
+      this.logger
+        .withMetadata({ page, count: data._aRecords.length })
+        .debug('Fetched all sound submissions');
+
       return data;
     } catch (error) {
-      this.logger.error('Failed to fetch submissions', { error, page });
+      this.logger
+        .withError(error)
+        .withMetadata({ page })
+        .error('Failed to fetch submissions');
       throw error;
     }
   }
@@ -175,7 +180,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         (await response.json()) as GameBanana.GameBananaTopSubmission[];
       return data;
     } catch (error) {
-      this.logger.error('Failed to fetch top submissions', { error });
+      this.logger.withError(error).error('Failed to fetch top submissions');
       throw error;
     }
   }
@@ -196,7 +201,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission>;
       return data;
     } catch (error) {
-      this.logger.error('Failed to fetch submissions', { error, page });
+      this.logger
+        .withError(error)
+        .withMetadata({ page })
+        .error('Failed to fetch submissions');
       throw error;
     }
   }
@@ -321,31 +329,39 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         count++;
         const mod = await this.createMod(submission, source);
         if (mod) {
-          this.logger.info('Synchronized GameBanana mod', {
-            name: submission._sName,
-            id: submission._idRow,
-            source,
-          });
+          this.logger
+            .withMetadata({
+              name: submission._sName,
+              id: submission._idRow,
+              source,
+            })
+            .info('Synchronized GameBanana mod');
         } else {
-          this.logger.warn('Failed to create mod, skipping...', {
-            name: submission._sName,
-            id: submission._idRow,
-            source,
-          });
+          this.logger
+            .withMetadata({
+              name: submission._sName,
+              id: submission._idRow,
+              source,
+            })
+            .warn('Failed to create mod, skipping...');
         }
       }
 
       const duration = Date.now() - startTime;
-      this.logger.info('Completed GameBanana synchronization', {
-        count,
-        durationMs: duration,
-        modsPerSecond: count / (duration / MILLISECONDS_PER_SECOND),
-      });
+      this.logger
+        .withMetadata({
+          count,
+          durationMs: duration,
+          modsPerSecond: count / (duration / MILLISECONDS_PER_SECOND),
+        })
+        .info('Completed GameBanana synchronization');
     } catch (error) {
-      this.logger.error('Synchronization failed', {
-        error,
-        processedCount: count,
-      });
+      this.logger
+        .withError(error)
+        .withMetadata({
+          processedCount: count,
+        })
+        .error('Synchronization failed');
       throw error;
     }
   }
@@ -469,27 +485,34 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource
   ): Promise<Mod | undefined> {
-    this.logger.debug('Creating/updating mod', {
-      modId: mod._idRow.toString(),
-      source,
-    });
+    this.logger
+      .withMetadata({
+        modId: mod._idRow.toString(),
+        source,
+      })
+      .debug('Creating/updating mod');
     try {
       const payload = await this.createModPayload(mod, source);
 
       // Upsert mod using repository
       const dbMod = await modRepository.upsertByRemoteId(payload);
 
-      this.logger.debug('Mod upserted successfully', { modId: dbMod.id });
+      this.logger
+        .withMetadata({ modId: dbMod.id })
+        .debug('Mod upserted successfully');
 
       await this.refreshModDownloads(dbMod);
 
       return dbMod;
     } catch (error) {
-      this.logger.error('Failed to create/update mod', {
-        error,
-        modId: mod._idRow.toString(),
-        source,
-      });
+      this.logger
+        .withError(error)
+        .withMetadata({
+          error,
+          modId: mod._idRow.toString(),
+          source,
+        })
+        .error('Failed to create/update mod');
     }
   }
 
@@ -501,50 +524,60 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       );
 
       if (!download?._aFiles || download._aFiles.length === 0) {
-        this.logger.warn('No download found for mod', {
-          modId: dbMod.id,
-          remoteId: dbMod.remoteId,
-        });
+        this.logger
+          .withMetadata({
+            modId: dbMod.id,
+            remoteId: dbMod.remoteId,
+          })
+          .warn('No download found for mod');
         return;
       }
 
-      this.logger.debug('Processing mod downloads', {
-        modId: dbMod.id,
-        fileCount: download._aFiles.length,
-      });
+      this.logger
+        .withMetadata({
+          modId: dbMod.id,
+          fileCount: download._aFiles.length,
+        })
+        .debug('Processing mod downloads');
 
-      // Since a mod can only have one download, we need to select the most appropriate file
-      // We'll prioritize by size (largest first) as it's likely the main mod file
-      const sortedFiles = [...download._aFiles].sort(
-        (a, b) => b._nFilesize - a._nFilesize
+      // Store all downloadable files for the mod
+      const downloadEntries = download._aFiles.map((file) => ({
+        remoteId: file._idRow.toString(),
+        url: file._sDownloadUrl,
+        file: file._sFile,
+        size: file._nFilesize,
+        modId: dbMod.id,
+      }));
+
+      // Upsert all mod downloads using repository
+      await modDownloadRepository.upsertMultipleByModId(
+        dbMod.id,
+        downloadEntries
       );
-      const primaryFile = sortedFiles[0];
 
-      // Upsert mod download using repository
-      await modDownloadRepository.upsertByModId(dbMod.id, {
-        remoteId: primaryFile._idRow.toString(),
-        url: primaryFile._sDownloadUrl,
-        file: primaryFile._sFile,
-        size: primaryFile._nFilesize,
-        modId: dbMod.id,
-      });
+      this.logger
+        .withMetadata({
+          modId: dbMod.id,
+          downloadCount: downloadEntries.length,
+          files: downloadEntries.map((d) => d.file),
+        })
+        .debug('Upserted mod downloads');
 
-      this.logger.debug('Upserted mod download', {
-        modId: dbMod.id,
-        fileName: primaryFile._sFile,
-        fileSize: primaryFile._nFilesize,
-      });
-
-      this.logger.info('Refreshed mod download successfully', {
-        modId: dbMod.id,
-        fileName: primaryFile._sFile,
-      });
+      this.logger
+        .withMetadata({
+          modId: dbMod.id,
+          downloadCount: downloadEntries.length,
+        })
+        .info('Refreshed mod downloads successfully');
     } catch (error) {
-      this.logger.error('Failed to refresh mod downloads', {
-        error,
-        modId: dbMod.id,
-        remoteId: dbMod.remoteId,
-      });
+      this.logger
+        .withError(error)
+        .withMetadata({
+          error,
+          modId: dbMod.id,
+          remoteId: dbMod.remoteId,
+        })
+        .error('Failed to refresh mod downloads');
       throw error;
     }
   }
@@ -558,30 +591,39 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async refreshAllModDownloads(): Promise<void> {
     const allMods = await modRepository.findAll();
 
-    this.logger.info('Starting refresh of all mod downloads', {
-      count: allMods.length,
-    });
+    this.logger
+      .withMetadata({
+        count: allMods.length,
+      })
+      .info('Starting refresh of all mod downloads');
 
     for (const mod of allMods) {
       try {
         await this.refreshModDownloads(mod);
-        this.logger.info('Refreshed mod downloads', {
-          modId: mod.id,
-          name: mod.name,
-        });
+        this.logger
+          .withMetadata({
+            modId: mod.id,
+            name: mod.name,
+          })
+          .info('Refreshed mod downloads');
       } catch (error) {
-        this.logger.error('Failed to refresh mod downloads', {
-          error,
-          modId: mod.id,
-          name: mod.name,
-        });
+        this.logger
+          .withError(error)
+          .withMetadata({
+            error,
+            modId: mod.id,
+            name: mod.name,
+          })
+          .error('Failed to refresh mod downloads');
         // Continue with other mods even if one fails
       }
     }
 
-    this.logger.info('Completed refreshing all mod downloads', {
-      count: allMods.length,
-    });
+    this.logger
+      .withMetadata({
+        count: allMods.length,
+      })
+      .info('Completed refreshing all mod downloads');
   }
 }
 
