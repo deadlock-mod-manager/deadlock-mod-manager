@@ -27,6 +27,7 @@ import { useConfirm } from '@/components/providers/alert-dialog';
 import Section, { SectionSkeleton } from '@/components/section';
 import SettingCard, { SettingCardSkeleton } from '@/components/setting-card';
 import SystemSettings from '@/components/system-settings';
+import ThemeSwitcher from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -241,6 +242,23 @@ const CustomSettings = () => {
               >
                 <div className="grid grid-cols-1 gap-4">
                   <SystemSettings />
+                </div>
+              </Section>
+
+              <Section
+                description="Customize the appearance of the application."
+                title="Appearance"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="font-bold text-sm">Theme</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose between light, dark, or system theme
+                      </p>
+                    </div>
+                    <ThemeSwitcher />
+                  </div>
                 </div>
               </Section>
 
