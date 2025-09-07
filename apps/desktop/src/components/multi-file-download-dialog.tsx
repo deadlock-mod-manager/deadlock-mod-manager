@@ -31,9 +31,7 @@ export function MultiFileDownloadDialog({
   modName,
   isDownloading = false,
 }: MultiFileDownloadDialogProps) {
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(
-    () => new Set(files.length > 0 ? [files[0].name] : []) // Select primary file by default
-  );
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   const handleFileToggle = (fileName: string) => {
     const newSelected = new Set(selectedFiles);
