@@ -18,6 +18,7 @@ import modsV2Router from './routes/v2/mods';
 import { version } from './version';
 
 import './lib/jobs/synchronize-mods';
+import { HealthService } from './lib/services/health';
 
 const app = new Hono();
 
@@ -38,11 +39,10 @@ app.use(
 app.use('*', requestId());
 app.use('*', cors());
 
-app.get('/', (c) => {
-  return c.json({
-    health: 'ok',
-    version,
-  });
+app.get('/', async (c) => {
+  const service = HealthService.getInstance();
+  const result = await service.check();
+  return c.json({ ...result, version }, result.status === 'ok' ? 200 : 503);
 });
 
 // Legacy routes (unchanged for backward compatibility)
