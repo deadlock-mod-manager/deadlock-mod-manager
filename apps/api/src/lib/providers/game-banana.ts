@@ -15,6 +15,9 @@ const MILLISECONDS_PER_SECOND = 1000;
 const parseTags = (
   tags: GameBanana.GameBananaSubmission['_aTags']
 ): string[] => {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
   return tags.map((tag) =>
     typeof tag === 'string' ? tag : `${tag._sTitle} ${tag._sValue}`
   );
