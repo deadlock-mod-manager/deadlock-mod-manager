@@ -2,13 +2,14 @@ import './instrument';
 
 import { sentry } from '@hono/sentry';
 import { Hono } from 'hono';
+import { cache } from 'hono/cache';
 import { cors } from 'hono/cors';
 import { etag } from 'hono/etag';
 import { logger as loggerMiddleware } from 'hono/logger';
 import { requestId } from 'hono/request-id';
 import { secureHeaders } from 'hono/secure-headers';
 import { trimTrailingSlash } from 'hono/trailing-slash';
-import { SENTRY_OPTIONS } from './lib/constants';
+import { MODS_CACHE_CONFIG, SENTRY_OPTIONS } from './lib/constants';
 import { startJobs } from './lib/jobs';
 import { logger } from './lib/logger';
 import customSettingsRouter from './routes/custom-settings';
@@ -44,6 +45,11 @@ app.get('/', async (c) => {
   const result = await service.check();
   return c.json({ ...result, version }, result.status === 'ok' ? 200 : 503);
 });
+
+// Apply cache middleware to all mod endpoints
+app.use('/mods/*', cache(MODS_CACHE_CONFIG));
+app.use('/api/v1/mods/*', cache(MODS_CACHE_CONFIG));
+app.use('/api/v2/mods/*', cache(MODS_CACHE_CONFIG));
 
 // Legacy routes (unchanged for backward compatibility)
 app.route('/mods', modsRouter);

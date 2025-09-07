@@ -26,7 +26,6 @@ modsRouter.get('/:id/download', async (c) => {
   }
 
   const downloads = await modDownloadRepository.findByModId(mod.id);
-
   return c.json(toModDownloadDto(downloads));
 });
 
