@@ -4,20 +4,59 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Dark Deadlock Brown */
+    /* Dark Mode als Standard (Deadlock Theme) */
+    --background: 20, 9%, 6%; /* Deadlock dark brown */
+    --foreground: 38, 65%, 97%; /* Deadlock White */
+    --card: 20, 9%, 6%;
+    --card-foreground: 38, 65%, 97%;
+    --popover: 20, 9%, 6%;
+    --popover-foreground: 38, 65%, 97%;
+    --primary: 42, 60%, 84%; /* Deadlock Beige */
+    --primary-foreground: 20, 9%, 6%; /* Deadlock dark brown */
+    --secondary: 15, 10%, 16%; /* Deadlock Brown */
+    --secondary-foreground: 41.6 60% 63%; /* Darker Deadlock Beige */
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 38, 65%, 97%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 38, 65%, 97%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 15, 10%, 16%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+
+    --sidebar-background: 20, 9%, 6%; /* Deadlock dark brown */
+    --sidebar-foreground: 38, 65%, 97%; /* Deadlock White */
+    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .light {
+    /* Light Mode Variablen */
+    --background: 0 0% 100%; /* Weiß */
     --foreground: 15, 10%, 16%; /* Deadlock Brown */
     --card: 0 0% 100%;
     --card-foreground: 15, 10%, 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 15, 10%, 16%;
     --primary: 42, 60%, 84%; /* Deadlock Beige */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --primary-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --secondary: 0 0% 96.1%; /* Sehr helles Grau */
+    --secondary-foreground: 15, 10%, 16%; /* Deadlock Brown */
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent-foreground: 15, 10%, 16%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
@@ -28,17 +67,19 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+
+    --sidebar-background: 0 0% 98%; /* Sehr helles Grau */
+    --sidebar-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-primary-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-accent: 0 0% 96.1%; /* Sehr helles Grau */
+    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-border: 0 0% 89.8%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
+    /* Dark Mode bleibt wie vorher (für explizite Dark Mode Klasse) */
     --background: 20, 9%, 6%; /* Deadlock dark brown */
     --foreground: 38, 65%, 97%; /* Deadlock White */
     --card: 20, 9%, 6%;
@@ -81,5 +122,27 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Smoothe Theme-Übergänge */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Smoothe Übergänge für alle Theme-abhängigen Eigenschaften */
+  * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+  }
+  
+  /* Icon-Invertierung für Light Mode */
+  .light img[src*=".svg"],
+  .light svg {
+    filter: invert(0.2);
+  }
+  
+  /* Spezielle Behandlung für Icons die bereits invertiert sind */
+  .light img[src*="inverted"],
+  .light svg.inverted {
+    filter: invert(0.8);
   }
 }
