@@ -1,0 +1,41 @@
+{
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "nativeName": "English",
+      "flag": "🇺🇸",
+      "status": "complete",
+      "isDefault": true,
+      "contributors": []
+    },
+    {
+      "code": "de",
+      "name": "German",
+      "nativeName": "Deutsch",
+      "flag": "🇩🇪",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "skeptic",
+          "discord": "__skeptic__"
+        }
+      ]
+    },
+    {
+      "code": "fr",
+      "name": "French",
+      "nativeName": "Français",
+      "flag": "🇫🇷",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "stormix",
+          "github": "stormix"
+        }
+      ]
+    }
+  ]
+}

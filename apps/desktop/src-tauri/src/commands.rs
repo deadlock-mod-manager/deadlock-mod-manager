@@ -5,8 +5,27 @@ use crate::mod_manager::{Mod, ModFileTree, ModManager};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
+use tauri::{AppHandle, Emitter, Manager};
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
+
+#[tauri::command]
+pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
+    log::info!("Setting language to: {}", language);
+    
+    // Validate language code
+    let supported_languages = ["en", "de", "fr"];
+    if !supported_languages.contains(&language.as_str()) {
+        return Err(Error::InvalidInput(format!("Unsupported language: {}", language)));
+    }
+    
+    // Emit event to frontend to change language
+    if let Some(window) = app_handle.get_webview_window("main") {
+        window.emit("set-language", &language)?;
+    }
+    
+    Ok(())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeepLinkData {

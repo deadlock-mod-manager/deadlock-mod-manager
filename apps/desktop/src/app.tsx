@@ -8,6 +8,7 @@ import { ThemeProvider } from './components/providers/theme';
 import { TooltipProvider } from './components/ui/tooltip';
 import { fetchAboutData } from './hooks/use-about';
 import { useDeepLink } from './hooks/use-deep-link';
+import { useLanguageListener } from './hooks/use-language-listener';
 import { Layout } from './layout';
 import { getCustomSettings, getMods } from './lib/api';
 import { queryClient } from './lib/client';
@@ -18,6 +19,9 @@ import { usePersistedStore } from './lib/store';
 const App = () => {
   // Initialize deep link listener
   useDeepLink();
+  
+  // Initialize language listener
+  useLanguageListener();
 
   const hydrateStore = async () => {
     // Prefetch data

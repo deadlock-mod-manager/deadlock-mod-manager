@@ -1,8 +1,10 @@
 import { ArrowLineLeft } from '@phosphor-icons/react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 
 export const SidebarCollapse = () => {
+  const { t } = useTranslation();
   const { toggleSidebar, open } = useSidebar();
   return (
     <SidebarMenuItem>
@@ -14,7 +16,7 @@ export const SidebarCollapse = () => {
           )}
           weight="duotone"
         />
-        <span>Collapse menu</span>
+        <span>{t('navigation.collapseMenu')}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

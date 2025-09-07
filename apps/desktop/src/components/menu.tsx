@@ -1,5 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WindowTitlebar } from 'tauri-controls';
 import {
   Menubar,
@@ -9,12 +10,16 @@ import {
   MenubarSeparator,
   MenubarShortcut,
   MenubarTrigger,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
 } from '@/components/ui/menubar';
 import { AboutDialog } from './about-dialog';
 import Logo from './logo';
 import { Dialog, DialogTrigger } from './ui/dialog';
 
 export function Menu() {
+  const { t } = useTranslation();
   const appWindow = getCurrentWindow();
 
   const closeWindow = useCallback(async () => {
@@ -34,12 +39,12 @@ export function Menu() {
           <Dialog modal={false}>
             <MenubarContent>
               <DialogTrigger asChild>
-                <MenubarItem>About</MenubarItem>
+                <MenubarItem>{t('menu.about')}</MenubarItem>
               </DialogTrigger>
               <MenubarSeparator />
               <MenubarShortcut />
               <MenubarItem onClick={closeWindow}>
-                Quit<MenubarShortcut>⌘Q</MenubarShortcut>
+                {t('menu.quit')}<MenubarShortcut>⌘Q</MenubarShortcut>
               </MenubarItem>
             </MenubarContent>
             <AboutDialog />
@@ -52,7 +57,7 @@ export function Menu() {
           <Dialog modal={false}>
             <DialogTrigger asChild>
               <MenubarTrigger className="relative text-sm">
-                About
+                {t('menu.about')}
               </MenubarTrigger>
             </DialogTrigger>
             <AboutDialog />

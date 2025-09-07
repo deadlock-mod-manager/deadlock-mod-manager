@@ -1,20 +1,20 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NOOP } from '@/lib/constants';
 import { usePersistedStore } from '@/lib/store';
 import type { SystemSetting } from '@/types/settings';
 import SettingCard from './setting-card';
 
-const SYSTEM_SETTINGS: SystemSetting[] = [
+const getSystemSettings = (t: (key: string) => string): SystemSetting[] => [
   {
     id: 'auto-reapply-mods',
-    description: 'Automatically reapply mods when the mod manager is launched.',
+    description: t('settings.autoReapplyMods'),
     enabled: false,
     onChange: NOOP,
   },
   {
     id: 'launch-vanilla-no-args',
-    description:
-      'Launch the game in vanilla mode without additional arguments.',
+    description: t('settings.launchVanillaNoArgs'),
     enabled: false,
     onChange: NOOP,
   },
@@ -28,6 +28,7 @@ const SYSTEM_SETTINGS: SystemSetting[] = [
 }));
 
 const SystemSettings = () => {
+  const { t } = useTranslation();
   const { settings, toggleSetting } = usePersistedStore();
 
   const settingStatusById = useMemo(() => {
@@ -37,14 +38,14 @@ const SystemSettings = () => {
   }, [settings]);
 
   const systemSettings = useMemo(() => {
-    return SYSTEM_SETTINGS.map((setting) => ({
+    return getSystemSettings(t).map((setting) => ({
       ...setting,
       enabled: settingStatusById[setting.id] ?? false,
       onChange: (newValue: boolean) => {
         toggleSetting(setting.id, setting, newValue);
       },
     }));
-  }, [settingStatusById, toggleSetting]);
+  }, [settingStatusById, toggleSetting, t]);
 
   return (
     <>

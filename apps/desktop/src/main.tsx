@@ -10,6 +10,7 @@ import CustomSettings from './pages/settings';
 import Splash from './pages/splash';
 
 import './index.css';
+import './lib/i18n';
 import Downloads from './pages/downloads';
 import Mod from './pages/mod';
 

@@ -31,14 +31,14 @@
   <h3 align="center">Deadlock Mod Manager</h3>
 
   <p align="center">
-    A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript.
+    Un gestionnaire de mods pour le jeu Deadlock de Valve, développé avec Tauri, React et TypeScript.
     <br />
     <br />
-    <a href="https://github.com/stormix/deadlock-modmanager/releases/latest">Download</a>
+    <a href="https://github.com/stormix/deadlock-modmanager/releases/latest">Télécharger</a>
     ·
-    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md">Signaler un Bug</a>
     ·
-    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Demander une Fonctionnalité</a>
   </p>
   
 <!-- Distribution & Platforms -->
@@ -53,64 +53,64 @@
 
 <br />
 
-<!-- TABLE OF CONTENTS -->
+<!-- TABLE DES MATIERES -->
 <details>
-  <summary>Table of Contents</summary>
+  <summary>Table des Matières</summary>
   <ol>
-    <li><a href="#screenshots">Screenshots</a></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#whats-inside">What's inside?</a></li>
+    <li><a href="#captures-décran">Captures d'écran</a></li>
+    <li><a href="#utilisation">Utilisation</a></li>
+    <li><a href="#quest-ce-qui-est-inclus">Qu'est-ce qui est inclus ?</a></li>
     <li>
-      <a href="#getting-started">Getting Started</a>
+      <a href="#commencer">Commencer</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#prérequis">Prérequis</a></li>
         <li><a href="#installation">Installation</a></li>
-        <li><a href="#development">Development</a></li>
+        <li><a href="#développement">Développement</a></li>
       </ul>
     </li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
+    <li><a href="#contribuer">Contribuer</a></li>
+    <li><a href="#licence">Licence</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#remerciements">Remerciements</a></li>
   </ol>
 </details>
 
-## Screenshots
+## Captures d'écran
 
 <details>
-<summary>Click to view screenshots</summary>
+<summary>Cliquez pour voir les captures d'écran</summary>
 
-### Main Application
+### Application Principale
 
 ![Deadlock Mod Manager](./docs/assets/mods.png)
 
-### Mods Browser
+### Navigateur de Mods
 
-![Mods Browser](./docs/assets/mods.png)
+![Navigateur de Mods](./docs/assets/mods.png)
 
-### Individual Mod Pages
+### Pages de Mods Individuelles
 
-![Mod Page](./docs/assets/mod.png)
+![Page de Mod](./docs/assets/mod.png)
 
-![Mod Page Details](./docs/assets/mod-2.png)
+![Détails de la Page de Mod](./docs/assets/mod-2.png)
 
-![Mod Page Installation](./docs/assets/mod-3.png)
+![Installation de la Page de Mod](./docs/assets/mod-3.png)
 
-### Installation Process
+### Processus d'Installation
 
-![Install Process](./docs/assets/install.png)
+![Processus d'Installation](./docs/assets/install.png)
 
-### My Mods Page
+### Page Mes Mods
 
-![My Mods](./docs/assets/my-mods.png)
+![Mes Mods](./docs/assets/my-mods.png)
 
-### Downloads Management
+### Gestion des Téléchargements
 
-![Download Page](./docs/assets/download.png)
+![Page de Téléchargement](./docs/assets/download.png)
 
-![Downloads Page](./docs/assets/downloads.png)
+![Page des Téléchargements](./docs/assets/downloads.png)
 
-### Settings
+### Paramètres
 
 ![Settings](./docs/assets/settings.png)
 
@@ -124,19 +124,19 @@
 
 </details>
 
-## Usage
+## Utilisation
 
 ### Installation
 
-#### Download Options
+#### Options de Téléchargement
 
-**Option 1: Direct Download**
+**Option 1 : Téléchargement Direct**
 
-- Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
-- Download the appropriate installer for your operating system (Windows, macOS, or Linux)
-- Run the installer and follow the setup instructions
+- Visitez la [page des versions](https://github.com/stormix/deadlock-modmanager/releases/latest)
+- Téléchargez l'installateur approprié pour votre système d'exploitation (Windows, macOS ou Linux)
+- Exécutez l'installateur et suivez les instructions de configuration
 
-**Option 2: Package Managers**
+**Option 2 : Gestionnaires de Paquets**
 
 _Windows (winget):_
 
@@ -147,70 +147,70 @@ winget install --id=Stormix.DeadlockModManager
 _Arch Linux (AUR):_
 
 ```bash
-# Latest stable release
+# Dernière version stable
 yay -S deadlock-modmanager
 
-# Latest development build
+# Dernière version de développement
 yay -S deadlock-modmanager-git
 ```
 
-#### Security & Safety
+#### Sécurité et Sûreté
 
 > [!NOTE]
-> You might get a prompt saying "Windows has protected your PC". In this case, click More Info and Run Anyway.
+> Vous pourriez recevoir une invite disant "Windows a protégé votre PC". Dans ce cas, cliquez sur Plus d'informations et Exécuter quand même.
 
 > [!TIP]
-> If you're unsure about the safety of this app, I would suggest running it through a service like [VirusTotal](https://www.virustotal.com/).
+> Si vous n'êtes pas sûr de la sécurité de cette application, je suggère de la faire analyser par un service comme [VirusTotal](https://www.virustotal.com/).
 
-#### Platform-Specific Notes
+#### Notes Spécifiques aux Plateformes
 
-**Linux Compatibility (Wayland + NVIDIA)**
+**Compatibilité Linux (Wayland + NVIDIA)**
 
-If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs, run the application with:
+Si vous rencontrez des problèmes avec l'application qui ne s'affiche pas correctement ou qui plante sur Wayland avec des GPU NVIDIA, exécutez l'application avec :
 
 ```bash
 WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
 ```
 
-This resolves a known issue with webkit2gtk on NVIDIA drivers. AUR users have this automatically handled in the .desktop file.
+Cela résout un problème connu avec webkit2gtk sur les pilotes NVIDIA. Les utilisateurs AUR ont cela géré automatiquement dans le fichier .desktop.
 
-### Getting Started
+### Commencer
 
-1. **First Time Setup**
+1. **Configuration Initiale**
 
-   - Launch the Deadlock Mod Manager
-   - The application will automatically detect your Deadlock installation
-   - If not detected automatically, you can manually set the game directory in Settings
+   - Lancez le Deadlock Mod Manager
+   - L'application détectera automatiquement votre installation Deadlock
+   - Si elle n'est pas détectée automatiquement, vous pouvez définir manuellement le répertoire du jeu dans les Paramètres
 
-2. **Browse and Install Mods**
+2. **Parcourir et Installer des Mods**
 
-   - Browse available mods in the "Mods" tab
-   - Use the search functionality to find specific mods
-   - Click "Download" on any mod you want to install
-   - The mod will be automatically downloaded and installed
+   - Parcourez les mods disponibles dans l'onglet "Mods"
+   - Utilisez la fonction de recherche pour trouver des mods spécifiques
+   - Cliquez sur "Télécharger" sur n'importe quel mod que vous voulez installer
+   - Le mod sera automatiquement téléchargé et installé
 
-3. **Manage Your Mods**
-   - View your installed mods in the "My Mods" tab
-   - Enable/disable mods as needed
-   - Uninstall mods you no longer want
-   - Update outdated mods when new versions are available
+3. **Gérer vos Mods**
+   - Visualisez vos mods installés dans l'onglet "Mes Mods"
+   - Activez/désactivez les mods selon vos besoins
+   - Désinstallez les mods que vous ne voulez plus
+   - Mettez à jour les mods obsolètes lorsque de nouvelles versions sont disponibles
 
-## What's inside?
+## Qu'est-ce qui est inclus ?
 
-This monorepo includes the following packages/apps:
+Ce monorepo inclut les paquets/applications suivants :
 
-### Apps
+### Applications
 
-- `web`: A [Next.js](https://nextjs.org/) web application that provides project information and status
-- `desktop`: A [Tauri](https://tauri.app/) + React desktop application (the main mod manager)
-- `api`: A [Bun](https://bun.sh/) + [Hono](https://hono.dev/) API server that syncs mod data from GameBanana
+- `web` : Une application web [Next.js](https://nextjs.org/) qui fournit des informations sur le projet et le statut
+- `desktop` : Une application de bureau [Tauri](https://tauri.app/) + React (le gestionnaire de mods principal)
+- `api` : Un serveur API [Bun](https://bun.sh/) + [Hono](https://hono.dev/) qui synchronise les données de mods depuis GameBanana
 
-### Packages
+### Paquets
 
-- `@deadlock-mods/database`: [Drizzle ORM](https://orm.drizzle.team/) wrapper to manage & access the database
-- `@deadlock-mods/utils`: Shared utilities and type definitions
+- `@deadlock-mods/database` : Wrapper [Drizzle ORM](https://orm.drizzle.team/) pour gérer et accéder à la base de données
+- `@deadlock-mods/utils` : Utilitaires partagés et définitions de types
 
-- `@deadlock-mods/typescript-config`: TypeScript configurations
+- `@deadlock-mods/typescript-config` : Configurations TypeScript
 
 ## Getting Started
 
@@ -254,13 +254,13 @@ pnpm api:dev
 pnpm desktop:dev
 ```
 
-## Translation & Localization
+## Traduction & Localisation
 
-🌍 **Help us translate Deadlock Mod Manager!**
+🌍 **Aidez-nous à traduire Deadlock Mod Manager !**
 
-We're actively working to make Deadlock Mod Manager accessible to users worldwide. Join our translation efforts and help bring the mod manager to your language!
+Nous travaillons activement pour rendre Deadlock Mod Manager accessible aux utilisateurs du monde entier. Rejoignez nos efforts de traduction et aidez à apporter le gestionnaire de mods dans votre langue !
 
-### Currently Supported Languages
+### Langues actuellement supportées
 
 <!-- LANGUAGE_TABLE_START -->
 
@@ -272,14 +272,14 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 <!-- LANGUAGE_TABLE_END -->
 
-### How to Help
+### Comment aider
 
-1. **Join our Discord server**: First [join our Discord server](https://discord.gg/KSB2kzQWWE) to access the translation channels
-2. **Visit the translation channel**: Head to the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel
-3. **Suggest a new language**: Open an issue to request support for your language
-4. **Improve existing translations**: Found an error or better phrasing? Submit a PR!
+1. **Rejoignez notre serveur Discord** : D'abord [rejoignez notre serveur Discord](https://discord.gg/KSB2kzQWWE) pour accéder aux canaux de traduction
+2. **Visitez le canal de traduction** : Allez sur le canal [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067)
+3. **Suggérez une nouvelle langue** : Ouvrez une issue pour demander le support de votre langue
+4. **Améliorez les traductions existantes** : Trouvé une erreur ou une meilleure formulation ? Soumettez une PR !
 
-Translation files are located in `apps/desktop/public/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
+Les fichiers de traduction se trouvent dans `apps/desktop/public/locales/` - nous utilisons [react-i18next](https://react.i18next.com/) pour l'internationalisation.
 
 ---
 

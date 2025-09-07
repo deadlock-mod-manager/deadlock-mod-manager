@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/providers/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ type GameInfoStatus = {
 };
 
 const GameInfoManagement = () => {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const [isOperating, setIsOperating] = useState(false);
 
@@ -273,7 +275,7 @@ const GameInfoManagement = () => {
           variant="outline"
         >
           <Database className="h-4 w-4" />
-          Create Backup
+          {t('game.createBackup')}
         </Button>
 
         <Button
@@ -283,7 +285,7 @@ const GameInfoManagement = () => {
           variant="outline"
         >
           <RefreshCcw className="h-4 w-4" />
-          Restore Backup
+          {t('game.restoreBackup')}
         </Button>
 
         <Button
@@ -293,7 +295,7 @@ const GameInfoManagement = () => {
           variant="outline"
         >
           <RotateCcw className="h-4 w-4" />
-          Reset to Vanilla
+          {t('game.resetToVanilla')}
         </Button>
 
         <Button
@@ -303,7 +305,7 @@ const GameInfoManagement = () => {
           variant="outline"
         >
           <FileCheck className="h-4 w-4" />
-          Validate Configuration
+          {t('game.validateConfiguration')}
         </Button>
 
         <Button
@@ -313,7 +315,7 @@ const GameInfoManagement = () => {
           variant="outline"
         >
           <Edit className="h-4 w-4" />
-          Open in Editor
+          {t('game.openInEditor')}
         </Button>
       </div>
 
