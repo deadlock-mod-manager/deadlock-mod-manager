@@ -1,0 +1,9 @@
+CREATE TABLE "job_lock" (
+	"id" text PRIMARY KEY DEFAULT concat('job_lock_', gen_random_uuid()) NOT NULL,
+	"job_name" text NOT NULL,
+	"locked_by" text NOT NULL,
+	"locked_at" timestamp NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"heartbeat_at" timestamp NOT NULL,
+	CONSTRAINT "job_lock_job_name_unique" UNIQUE("job_name")
+);

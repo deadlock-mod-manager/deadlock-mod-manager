@@ -58,7 +58,8 @@
         "noNoninteractiveElementInteractions": "off"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "off"
+        "noExcessiveCognitiveComplexity": "off",
+        "noForEach": "off"
       },
       "correctness": {
         "noUnusedImports": {
