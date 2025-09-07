@@ -174,7 +174,8 @@ pub fn run() {
             commands::reset_to_vanilla,
             commands::validate_gameinfo_patch,
             commands::get_gameinfo_status,
-            commands::open_gameinfo_editor
+            commands::open_gameinfo_editor,
+            commands::set_language
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

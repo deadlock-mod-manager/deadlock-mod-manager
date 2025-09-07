@@ -2,6 +2,7 @@ import { Check, GameController, Play, Stop, X } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
 import { useState } from 'react';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { useLaunch } from '@/hooks/use-launch';
 import { isGameRunning } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -11,6 +12,7 @@ import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 export const Toolbar = () => {
+  const { t } = useTranslation();
   const { gamePath } = usePersistedStore();
   const { launch } = useLaunch();
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
@@ -33,12 +35,12 @@ export const Toolbar = () => {
                 'text-red-500': !gamePath,
               })}
             >
-              <div className="font-medium text-sm">Game Detected</div>
+              <div className="font-medium text-sm">{t('common.gameDetected')}</div>
               <div className="">{gamePath ? <Check /> : <X />}</div>
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Game installed at {gamePath}</p>
+            <p>{t('common.gameInstalledAt', { path: gamePath })}</p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -66,7 +68,7 @@ export const Toolbar = () => {
           />
           <Play />
           <span className="relative z-10 font-medium text-md">
-            Launch Vanilla
+            {t('common.launchVanilla')}
           </span>
         </Button>
       )}
@@ -96,7 +98,7 @@ export const Toolbar = () => {
           {isRunning ? <Stop /> : <GameController />}
         </div>
         <span className="relative z-10 font-medium text-md">
-          {isRunning ? 'Stop Game' : 'Launch Modded'}
+          {isRunning ? t('common.stopGame') : t('common.launchModded')}
         </span>
       </Button>
     </div>

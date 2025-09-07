@@ -1,5 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -29,6 +30,7 @@ const CategoryFilter = ({
   selectedCategories,
   onCategoriesChange,
 }: CategoryFilterProps) => {
+  const { t } = useTranslation();
   // Get categories that actually have mods available
   const modsWithCategories = new Set(
     mods.map((mod) => mod.category).filter(Boolean)
@@ -60,7 +62,7 @@ const CategoryFilter = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <Label className="font-medium text-sm">Category</Label>
+      <Label className="font-medium text-sm">{t('filters.category')}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -70,18 +72,18 @@ const CategoryFilter = ({
           >
             <span className="truncate">
               {selectedCategories.length === 0
-                ? 'All Categories'
+                ? t('filters.allCategories')
                 : selectedCategories.length === 1
                   ? selectedCategories[0]
-                  : `${selectedCategories.length} selected`}
+                  : `${selectedCategories.length} ${t('filters.selected')}`}
             </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[240px] p-0">
           <Command>
-            <CommandInput placeholder="Search categories..." />
+            <CommandInput placeholder={t('filters.searchCategories')} />
             <CommandList>
-              <CommandEmpty>No categories found.</CommandEmpty>
+              <CommandEmpty>{t('filters.noCategoriesFound')}</CommandEmpty>
               <CommandGroup>
                 {allCategories.map((category) => (
                   <CommandItem

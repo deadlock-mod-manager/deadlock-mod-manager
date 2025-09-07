@@ -1,6 +1,7 @@
 import { CloudArrowDown, DiscordLogo, GithubLogo } from '@phosphor-icons/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { open } from '@tauri-apps/plugin-shell';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useAbout from '@/hooks/use-about';
 import useUpdateManager from '@/hooks/use-update-manager';
@@ -22,6 +23,7 @@ import {
 import { Separator } from './ui/separator';
 
 export const AboutDialog = () => {
+  const { t } = useTranslation();
   const { data } = useAbout();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   if (!data) {
@@ -47,22 +49,22 @@ export const AboutDialog = () => {
                 onClick={() => open(`${GITHUB_REPO}/releases/tag/v${version}`)}
                 type="button"
               >
-                release notes
+                {t('about.releaseNotes')}
               </button>
               )
             </span>
           </span>
           <span className="font-medium font-mono text-gray-400 text-xs">
-            Tauri version: {tauriVersion}
+            {t('about.tauriVersion')} {tauriVersion}
           </span>
         </DialogTitle>
       </DialogHeader>
 
       <DialogDescription className="flex flex-col items-center gap-4 text-center text-foreground">
-        <div>{APP_DESCRIPTION}</div>
+        <div>{t('about.description')}</div>
         <Separator className="w-8" />
         <div className="text-muted-foreground text-xs">
-          Powered by{' '}
+          {t('about.poweredBy')}{' '}
           <button
             className="cursor-pointer font-medium text-primary hover:underline"
             onClick={() => open('https://gamebanana.com/')}
@@ -70,9 +72,9 @@ export const AboutDialog = () => {
           >
             GameBanana
           </button>{' '}
-          for mod content and community
+          {t('about.forModContent')}
         </div>
-        <div className="font-bold text-xs">{COPYRIGHT}</div>
+        <div className="font-bold text-xs">{t('about.copyright')}</div>
       </DialogDescription>
 
       <DialogFooter className="flex flex-row items-center border-t pt-2 text-foreground">
@@ -92,27 +94,25 @@ export const AboutDialog = () => {
           onClick={async () => {
             try {
               if (await checkForUpdates()) {
-                toast.info('Downloading update...');
+                toast.info(t('about.downloadingUpdate'));
                 await updateAndRelaunch();
               } else {
-                toast.info('You have the latest version.');
+                toast.info(t('about.latestVersion'));
               }
             } catch (_e) {
-              toast.error(
-                'Failed to check for updates, you may need to manually update the app.'
-              );
+              toast.error(t('about.updateFailed'));
             }
           }}
           type="submit"
           variant="outline"
         >
-          <CloudArrowDown /> Check for Updates
+          <CloudArrowDown /> {t('about.checkForUpdates')}
         </Button>
         <DialogPrimitive.Close
           className={buttonVariants({ variant: 'ghost', className: 'h-7' })}
           type="submit"
         >
-          Close
+          {t('about.close')}
         </DialogPrimitive.Close>
       </DialogFooter>
     </DialogContent>

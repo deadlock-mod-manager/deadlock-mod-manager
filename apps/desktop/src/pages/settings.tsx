@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import AddSettingDialog from '@/components/add-setting';
 import ErrorBoundary from '@/components/error-boundary';
 import GameInfoManagement from '@/components/gameinfo-management';
+import { LanguageSettings } from '@/components/language-settings';
 import PageTitle from '@/components/page-title';
 import PrivacySettings from '@/components/privacy-settings';
 import { useConfirm } from '@/components/providers/alert-dialog';
@@ -45,6 +47,7 @@ import { usePersistedStore } from '@/lib/store';
 import type { LocalSetting } from '@/types/settings';
 
 const CustomSettingsData = () => {
+  const { t } = useTranslation();
   const { data, error } = useQuery('custom-settings', getCustomSettings, {
     suspense: true,
   });
@@ -53,10 +56,10 @@ const CustomSettingsData = () => {
   useEffect(() => {
     if (error) {
       toast.error(
-        (error as Error)?.message ?? 'Failed to fetch mods. Try again later.'
+        (error as Error)?.message ?? t('common.failedToFetchMods')
       );
     }
-  }, [error]);
+  }, [error, t]);
 
   const settingByType = data?.reduce(
     (acc, setting) => {
@@ -96,13 +99,13 @@ const CustomSettingsData = () => {
           action={
             <AddSettingDialog>
               <Button variant="outline">
-                <PlusIcon className="h-4 w-4" /> Create
+                <PlusIcon className="h-4 w-4" /> {t('common.create')}
               </Button>
             </AddSettingDialog>
           }
-          description={customSettingTypeHuman[type].description}
+          description={type === CustomSettingType.LAUNCH_OPTION ? t('settings.launchOptionsDescription') : customSettingTypeHuman[type].description}
           key={type}
-          title={customSettingTypeHuman[type].title}
+          title={type === CustomSettingType.LAUNCH_OPTION ? t('settings.launchOptions') : customSettingTypeHuman[type].title}
         >
           <div className="grid grid-cols-1 gap-4">
             {(settingByType?.[type] ?? []).map((setting) => (
@@ -130,6 +133,7 @@ const CustomSettingsData = () => {
 };
 
 const CustomSettings = () => {
+  const { t } = useTranslation();
   const { clearMods, mods } = usePersistedStore();
   const confirm = useConfirm();
 
@@ -140,7 +144,7 @@ const CustomSettings = () => {
   const clearAllMods = async () => {
     if (
       !(await confirm(
-        'Are you sure you want to clear all mods? This action cannot be undone.'
+        t('settings.confirmClearAllMods')
       ))
     ) {
       return;
@@ -155,17 +159,17 @@ const CustomSettings = () => {
         )
       );
       clearMods();
-      toast.success('All mods have been cleared');
+      toast.success(t('settings.allModsCleared'));
     } catch (error) {
       logger.error(error);
-      toast.error('Failed to clear mods');
+      toast.error(t('settings.failedToClearMods'));
     }
   };
 
   return (
     <div className="flex h-[calc(100vh-160px)] w-full">
       <div className="flex w-full flex-col gap-4">
-        <PageTitle className="px-4" title="Settings" />
+        <PageTitle className="px-4" title={t('navigation.settings')} />
 
         <Tabs className="flex h-full gap-6" defaultValue="launch-options">
           <TabsList className="h-fit w-48 flex-col gap-1 bg-background p-3">
@@ -174,35 +178,35 @@ const CustomSettings = () => {
               value="launch-options"
             >
               <Settings className="h-5 w-5" />
-              Launch Options
+              {t('settings.launchOptions')}
             </TabsTrigger>
             <TabsTrigger
               className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
               value="game"
             >
               <GamepadIcon className="h-5 w-5" />
-              Game
+              {t('settings.game')}
             </TabsTrigger>
             <TabsTrigger
               className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
               value="application"
             >
               <MonitorIcon className="h-5 w-5" />
-              Application
+              {t('settings.application')}
             </TabsTrigger>
             <TabsTrigger
               className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
               value="privacy"
             >
               <ShieldIcon className="h-5 w-5" />
-              Privacy
+              {t('settings.privacy')}
             </TabsTrigger>
             <TabsTrigger
               className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
               value="about"
             >
               <InfoIcon className="h-5 w-5" />
-              About
+                     {t('settings.information')}
             </TabsTrigger>
           </TabsList>
 
@@ -227,8 +231,8 @@ const CustomSettings = () => {
 
             <TabsContent className="mt-0 space-y-2" value="game">
               <Section
-                description="Manage gameinfo.gi file backup, restoration, and validation for safe modding."
-                title="Game Configuration Management"
+                description={t('settings.gameConfigDescription')}
+                title={t('settings.gameConfigManagement')}
               >
                 <GameInfoManagement />
               </Section>
@@ -236,8 +240,8 @@ const CustomSettings = () => {
 
             <TabsContent className="mt-0 space-y-2" value="application">
               <Section
-                description="Mod Manager Settings. These do not affect the game."
-                title="System Settings"
+                description={t('settings.systemSettingsDescription')}
+                title={t('settings.systemSettings')}
               >
                 <div className="grid grid-cols-1 gap-4">
                   <SystemSettings />
@@ -245,17 +249,24 @@ const CustomSettings = () => {
               </Section>
 
               <Section
-                description="Choose the default sort order for the Mods page."
-                title="Default Sort Value"
+                description={t('settings.languageSettingsDescription')}
+                title={t('settings.languageSettings')}
+              >
+                <LanguageSettings />
+              </Section>
+
+              <Section
+                description={t('settings.defaultSortDescription')}
+                title={t('settings.defaultSortValue')}
               >
                 <div className="flex flex-col gap-2">
-                  <Label className="font-bold text-sm">Default Sort</Label>
+                  <Label className="font-bold text-sm">{t('settings.defaultSort')}</Label>
                   <Select
                     onValueChange={(v) => setDefaultSort(v as SortType)}
                     value={defaultSort}
                   >
                     <SelectTrigger className="w-36">
-                      <SelectValue placeholder="Select default sort" />
+                      <SelectValue placeholder={t('settings.selectDefaultSort')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -265,7 +276,7 @@ const CustomSettings = () => {
                             key={type}
                             value={type}
                           >
-                            {type}
+                            {t(`sorting.${type.replace(/\s+/g, '').toLowerCase()}`)}
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -275,8 +286,8 @@ const CustomSettings = () => {
               </Section>
 
               <Section
-                description="Utility functions for managing your mods"
-                title="Tools"
+                description={t('settings.toolsDescription')}
+                title={t('settings.tools')}
               >
                 <div className="flex flex-wrap gap-4">
                   <Button
@@ -285,7 +296,7 @@ const CustomSettings = () => {
                     variant="outline"
                   >
                     <FolderOpen className="h-4 w-4" />
-                    Open Game Folder
+                    {t('settings.openGameFolder')}
                   </Button>
                   <Button
                     className="w-fit"
@@ -293,7 +304,7 @@ const CustomSettings = () => {
                     variant="outline"
                   >
                     <FolderOpen className="h-4 w-4" />
-                    Open Mods Folder
+                    {t('settings.openModsFolder')}
                   </Button>
                   <Button
                     className="w-fit"
@@ -301,7 +312,7 @@ const CustomSettings = () => {
                     variant="outline"
                   >
                     <FolderOpen className="h-4 w-4" />
-                    Open Mods Store
+                    {t('settings.openModsStore')}
                   </Button>
                   <Button
                     className="w-fit"
@@ -309,7 +320,7 @@ const CustomSettings = () => {
                     variant="destructive"
                   >
                     <TrashIcon className="h-4 w-4" />
-                    Clear All Mods
+                    {t('settings.clearAllMods')}
                   </Button>
                 </div>
               </Section>
@@ -317,8 +328,8 @@ const CustomSettings = () => {
 
             <TabsContent className="mt-0 space-y-2" value="privacy">
               <Section
-                description="Control how NSFW (Not Safe For Work) content is displayed and filtered."
-                title="Privacy & Content"
+                description={t('privacy.description')}
+                title={t('privacy.title')}
               >
                 <div className="grid grid-cols-1 gap-4">
                   <PrivacySettings />
@@ -328,18 +339,15 @@ const CustomSettings = () => {
 
             <TabsContent className="mt-0 space-y-2" value="about">
               <Section
-                description="Special thanks to the platforms and communities that make this project possible"
-                title="Acknowledgments"
+                description={t('about.description')}
+                title={t('about.title')}
               >
                 <div className="space-y-4">
                   <div className="rounded-lg border bg-card p-4">
                     <div className="flex flex-col gap-2">
                       <h3 className="font-semibold text-primary">GameBanana</h3>
                       <p className="text-muted-foreground text-sm">
-                        Our primary mod source and the backbone of this
-                        application. GameBanana provides the comprehensive mod
-                        database and API that makes browsing, discovering, and
-                        downloading Deadlock mods possible.
+                        {t('about.gamebananaDescription')}
                       </p>
                       <Button
                         className="mt-2 w-fit"
@@ -347,7 +355,7 @@ const CustomSettings = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Visit GameBanana
+                        {t('about.visitGamebanana')}
                       </Button>
                     </div>
                   </div>
@@ -356,9 +364,7 @@ const CustomSettings = () => {
                     <div className="flex flex-col gap-2">
                       <h3 className="font-semibold text-primary">Tauri</h3>
                       <p className="text-muted-foreground text-sm">
-                        The powerful framework that enables this cross-platform
-                        desktop application. Tauri combines the best of web
-                        technologies with native performance and security.
+                        {t('about.tauriDescription')}
                       </p>
                       <Button
                         className="mt-2 w-fit"
@@ -366,7 +372,7 @@ const CustomSettings = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Visit Tauri
+                        {t('about.visitTauri')}
                       </Button>
                     </div>
                   </div>
@@ -375,9 +381,7 @@ const CustomSettings = () => {
                     <div className="flex flex-col gap-2">
                       <h3 className="font-semibold text-primary">shadcn/ui</h3>
                       <p className="text-muted-foreground text-sm">
-                        Beautiful and accessible React components that provide
-                        the foundation for our modern user interface. Copy,
-                        paste, and customize to perfection.
+                        {t('about.shadcnDescription')}
                       </p>
                       <Button
                         className="mt-2 w-fit"
@@ -385,7 +389,7 @@ const CustomSettings = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Visit shadcn/ui
+                        {t('about.visitShadcn')}
                       </Button>
                     </div>
                   </div>
@@ -396,9 +400,7 @@ const CustomSettings = () => {
                         Tailwind CSS
                       </h3>
                       <p className="text-muted-foreground text-sm">
-                        The utility-first CSS framework that powers our
-                        responsive design and consistent styling throughout the
-                        application.
+                        {t('about.tailwindDescription')}
                       </p>
                       <Button
                         className="mt-2 w-fit"
@@ -406,19 +408,16 @@ const CustomSettings = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Visit Tailwind CSS
+                        {t('about.visitTailwind')}
                       </Button>
                     </div>
                   </div>
 
                   <div className="rounded-lg border bg-card p-4">
                     <div className="flex flex-col gap-2">
-                      <h3 className="font-semibold">Open Source Community</h3>
+                      <h3 className="font-semibold">{t('about.openSourceCommunity')}</h3>
                       <p className="text-muted-foreground text-sm">
-                        Built with amazing open source technologies including
-                        React, TypeScript, and many other libraries that make
-                        modern applications possible. Thank you to all
-                        contributors and maintainers.
+                        {t('about.openSourceDescription')}
                       </p>
                     </div>
                   </div>

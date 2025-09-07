@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
 import { Link, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Sidebar,
   SidebarContent,
@@ -42,12 +43,12 @@ type SidebarItem = {
   icon: Icon;
 };
 
-const items: SidebarItem[] = [
+const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
   {
     id: 'my-mods',
     title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
       <div className="flex items-center gap-2">
-        My mods{' '}
+        {t('navigation.myMods')}{' '}
         {count !== undefined && (
           <Badge
             className="px-1 py-0.1 text-xs"
@@ -63,7 +64,7 @@ const items: SidebarItem[] = [
   },
   {
     id: 'get-mods',
-    title: () => <span>Get mods</span>,
+    title: () => <span>{t('navigation.getMods')}</span>,
     url: '/mods',
     icon: MagnifyingGlass,
   },
@@ -71,7 +72,7 @@ const items: SidebarItem[] = [
     id: 'downloads',
     title: ({ downloads }: { downloads?: number }) => (
       <span>
-        Downloads{' '}
+        {t('navigation.downloads')}{' '}
         {downloads !== undefined && downloads > 0 && (
           <Badge className="px-1 py-0.1 text-xs">{downloads}</Badge>
         )}
@@ -82,13 +83,14 @@ const items: SidebarItem[] = [
   },
   {
     id: 'settings',
-    title: () => <span>Settings</span>,
+    title: () => <span>{t('navigation.settings')}</span>,
     url: '/settings',
     icon: Gear,
   },
 ];
 
 const DownloadProgress = () => {
+  const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.mods);
   const modProgress = usePersistedStore((state) => state.modProgress);
 
@@ -126,10 +128,9 @@ const DownloadProgress = () => {
     <div className="px-3 py-2">
       <div className="mb-1 flex items-center justify-between text-xs">
         <span>
-          Downloading {downloadingMods.length} mod
-          {downloadingMods.length !== 1 ? 's' : ''}
+          {t('downloads.downloading', { count: downloadingMods.length })}
         </span>
-        <span>{displayPercentage}%</span>
+        <span>{t('downloads.percentage', { percentage: displayPercentage })}</span>
       </div>
       <Progress className="h-1" value={displayPercentage} />
     </div>
@@ -137,9 +138,13 @@ const DownloadProgress = () => {
 };
 
 export const AppSidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const mods = usePersistedStore((state) => state.mods);
   const { forceShow } = useWhatsNew();
+  
+  const items = getSidebarItems(t);
+  
   return (
     <Sidebar
       className="absolute top-10 left-0 z-10 flex h-[calc(100vh-40px)] w-[12rem] flex-col"
@@ -188,7 +193,7 @@ export const AppSidebar = () => {
                   onClick={() => forceShow()}
                 >
                   <Sparkle weight="duotone" />
-                  <span>What's New</span>
+                  <span>{t('navigation.whatsNew')}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -197,7 +202,7 @@ export const AppSidebar = () => {
                   onClick={() => open('https://discord.gg/KSB2kzQWWE')}
                 >
                   <DiscordLogo weight="duotone" />
-                  <span>Need Help ?</span>
+                  <span>{t('help.needHelp')}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarCollapse />

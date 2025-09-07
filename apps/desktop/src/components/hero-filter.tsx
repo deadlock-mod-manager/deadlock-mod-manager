@@ -1,5 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -28,6 +29,7 @@ const HeroFilter = ({
   selectedHeroes,
   onHeroesChange,
 }: HeroFilterProps) => {
+  const { t } = useTranslation();
   // Get heroes that actually have mods available
   const availableHeroes = Array.from(
     new Set(
@@ -59,7 +61,7 @@ const HeroFilter = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <Label className="font-medium text-sm">Hero</Label>
+      <Label className="font-medium text-sm">{t('filters.hero')}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -69,18 +71,18 @@ const HeroFilter = ({
           >
             <span className="truncate">
               {selectedHeroes.length === 0
-                ? 'All Heroes'
+                ? t('filters.allHeroes')
                 : selectedHeroes.length === 1
                   ? getHeroDisplayName(selectedHeroes[0])
-                  : `${selectedHeroes.length} selected`}
+                  : `${selectedHeroes.length} ${t('filters.selected')}`}
             </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[240px] p-0">
           <Command>
-            <CommandInput placeholder="Search heroes..." />
+            <CommandInput placeholder={t('filters.searchHeroes')} />
             <CommandList>
-              <CommandEmpty>No heroes found.</CommandEmpty>
+              <CommandEmpty>{t('filters.noHeroesFound')}</CommandEmpty>
               <CommandGroup>
                 {availableHeroes.map((hero) => (
                   <CommandItem

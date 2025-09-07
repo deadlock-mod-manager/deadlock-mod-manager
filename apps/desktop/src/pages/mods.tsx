@@ -2,6 +2,7 @@ import type { ModDto } from '@deadlock-mods/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
 import ModCard from '@/components/mod-card';
@@ -16,6 +17,7 @@ import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
 
 const GetModsData = () => {
+  const { t } = useTranslation();
   const { data, error } = useQuery('mods', getMods, { suspense: true });
   const [hideOutdated, setHideOutdated] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -105,10 +107,10 @@ const GetModsData = () => {
   useEffect(() => {
     if (error) {
       toast.error(
-        (error as Error)?.message ?? 'Failed to fetch mods. Try again later.'
+        (error as Error)?.message ?? t('common.failedToFetchMods')
       );
     }
-  }, [error]);
+  }, [error, t]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -146,7 +148,7 @@ const GetModsData = () => {
               />
             </svg>
           </div>
-          <h3 className="mb-1 font-medium text-lg">No mods found</h3>
+          <h3 className="mb-1 font-medium text-lg">{t('mods.noModsFound')}</h3>
           <p className="text-muted-foreground text-sm">
             {query.trim() ||
             selectedCategories.length > 0 ||
@@ -154,8 +156,8 @@ const GetModsData = () => {
             !nsfwSettings.hideNSFW ||
             hideOutdated ||
             showAudioOnly
-              ? 'No mods match your current search and filters'
-              : 'No mods available'}
+              ? t('mods.noModsMatchFilters')
+              : t('mods.noModsAvailable')}
           </p>
           {(selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
@@ -206,12 +208,14 @@ const GetModsData = () => {
 };
 
 const GetMods = () => {
+  const { t } = useTranslation();
+  
   return (
     <div className="h-[calc(100vh-160px)] w-full px-4">
       <PageTitle
         className="mb-4"
-        subtitle="Updated daily, with new mods added every week."
-        title="Mods"
+        subtitle={t('mods.subtitle')}
+        title={t('navigation.getMods')}
       />
       <Suspense
         fallback={

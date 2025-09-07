@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
 import InstallWithCollection from '@/components/install-with-collection';
@@ -62,6 +63,7 @@ const GridModCard = ({
   install: InstallWithCollectionFunction;
   installOptions: InstallWithCollectionOptions;
 }) => {
+  const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
@@ -197,7 +199,7 @@ const GridModCard = ({
               className="w-48 overflow-clip text-ellipsis text-nowrap"
               title={mod.author}
             >
-              By {mod.author}
+              {t('mods.by')} {mod.author}
             </CardDescription>
           </div>
         </div>
@@ -218,10 +220,10 @@ const GridModCard = ({
           />
           <Label className="text-xs" htmlFor={`install-mod-${mod.remoteId}`}>
             {isInstalling
-              ? 'Installing...'
+              ? t('mods.installing')
               : mod.status === ModStatus.INSTALLED
-                ? 'Disable'
-                : 'Enable'}
+                ? t('mods.disable')
+                : t('mods.enable')}
           </Label>
         </div>
         <Tooltip>
@@ -235,7 +237,7 @@ const GridModCard = ({
               <Trash className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Remove mod</TooltipContent>
+          <TooltipContent>{t('mods.removeMod')}</TooltipContent>
         </Tooltip>
       </CardFooter>
     </Card>
@@ -252,6 +254,7 @@ const ListModCard = ({
   install: InstallWithCollectionFunction;
   installOptions: InstallWithCollectionOptions;
 }) => {
+  const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.INSTALLED;
   const isInstalling = mod.status === ModStatus.INSTALLING;
   const navigate = useNavigate();
@@ -391,7 +394,7 @@ const ListModCard = ({
               {mod.name}
             </h3>
             <p className="text-muted-foreground text-sm">
-              By {mod.author} {mod.isAudio && '• Audio Mod'}
+              {t('mods.by')} {mod.author} {mod.isAudio && `• ${t('mods.audioMod')}`}
             </p>
           </div>
           <div className="flex items-center justify-between">
@@ -413,10 +416,10 @@ const ListModCard = ({
                 htmlFor={`list-install-mod-${mod.remoteId}`}
               >
                 {isInstalling
-                  ? 'Installing...'
+                  ? t('mods.installing')
                   : mod.status === ModStatus.INSTALLED
-                    ? 'Disable'
-                    : 'Enable'}
+                    ? t('mods.disable')
+                    : t('mods.enable')}
               </Label>
             </div>
             <Tooltip>
@@ -430,7 +433,7 @@ const ListModCard = ({
                   <Trash className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Remove mod</TooltipContent>
+              <TooltipContent>{t('mods.removeMod')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -447,13 +450,15 @@ const SimpleSearchBar = ({
   query: string;
   setQuery: (query: string) => void;
 }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="relative w-full max-w-sm">
       <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
       <Input
         className="pl-8"
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search mods"
+        placeholder={t('mods.searchPlaceholder')}
         value={query}
       />
     </div>
@@ -461,6 +466,7 @@ const SimpleSearchBar = ({
 };
 
 const MyMods = () => {
+  const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.mods);
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
@@ -471,7 +477,7 @@ const MyMods = () => {
 
   return (
     <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4">
-      <PageTitle className="mb-8" title="My Mods" />
+      <PageTitle className="mb-8" title={t('navigation.myMods')} />
       <ErrorBoundary>
         <InstallWithCollection>
           {({ install }) => {
@@ -545,7 +551,7 @@ const MyMods = () => {
                           <LayoutGrid className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Grid view</TooltipContent>
+                      <TooltipContent>{t('mods.gridView')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -559,7 +565,7 @@ const MyMods = () => {
                           <LayoutList className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>List view</TooltipContent>
+                      <TooltipContent>{t('mods.listView')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>

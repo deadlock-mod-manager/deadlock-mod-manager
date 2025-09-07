@@ -1,5 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ModCategory, SortType } from '@/lib/constants';
 import FiltersDropdown from './filters-dropdown';
 import { Badge } from './ui/badge';
@@ -48,6 +49,7 @@ const SearchBar = ({
   showAudioOnly,
   onShowAudioOnlyChange,
 }: SearchBarProps) => {
+  const { t } = useTranslation();
   const getHeroDisplayName = (hero: string) => {
     if (hero === 'None') {
       return 'General/Other';
@@ -103,7 +105,7 @@ const SearchBar = ({
               className="w-80 pr-8 pl-8"
               id="search"
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for a mod"
+              placeholder={t('mods.searchPlaceholder')}
               value={query}
             />
             {query && (
@@ -134,13 +136,13 @@ const SearchBar = ({
         <div className="flex items-center gap-4">
           <Select onValueChange={setSortType} value={sortType}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t('filters.sortBy')} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {Object.values(SortType).map((type) => (
                   <SelectItem className="capitalize" key={type} value={type}>
-                    {type}
+                    {t(`sorting.${type.replace(/\s+/g, '').toLowerCase()}`)}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -152,7 +154,7 @@ const SearchBar = ({
       {/* Active Filters */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-sm">Active filters:</span>
+          <span className="text-muted-foreground text-sm">{t('filters.activeFilters')}</span>
 
           {/* Category badges */}
           {selectedCategories.map((category) => (
@@ -161,7 +163,7 @@ const SearchBar = ({
               key={`category-${category}`}
               variant="secondary"
             >
-              Category: {getCategoryDisplayName(category)}
+              {t('filters.categoryLabel')} {getCategoryDisplayName(category)}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => removeCategory(category)}
@@ -179,7 +181,7 @@ const SearchBar = ({
               key={`hero-${hero}`}
               variant="secondary"
             >
-              Hero: {getHeroDisplayName(hero)}
+              {t('filters.heroLabel')} {getHeroDisplayName(hero)}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => removeHero(hero)}
@@ -193,7 +195,7 @@ const SearchBar = ({
           {/* Hide outdated filter badge */}
           {hideOutdated && (
             <Badge className="flex items-center gap-1" variant="secondary">
-              Hide Outdated
+              {t('filters.hideOutdated')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onHideOutdatedChange(false)}
@@ -207,7 +209,7 @@ const SearchBar = ({
           {/* NSFW filter badge */}
           {showNSFW && (
             <Badge className="flex items-center gap-1" variant="destructive">
-              Show NSFW
+              {t('filters.showNSFW')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onShowNSFWChange(false)}
@@ -221,7 +223,7 @@ const SearchBar = ({
           {/* Audio only filter badge */}
           {showAudioOnly && (
             <Badge className="flex items-center gap-1" variant="secondary">
-              Audio Only
+              {t('filters.audioOnly')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onShowAudioOnlyChange(false)}
@@ -238,7 +240,7 @@ const SearchBar = ({
             onClick={clearAllFilters}
             type="button"
           >
-            Clear all
+            {t('filters.clearAll')}
           </button>
         </div>
       )}
