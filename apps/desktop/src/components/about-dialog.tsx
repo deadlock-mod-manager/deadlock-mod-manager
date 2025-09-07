@@ -55,21 +55,23 @@ export const AboutDialog = () => {
         </DialogTitle>
       </DialogHeader>
 
-      <DialogDescription className="flex flex-col items-center gap-4 text-center text-foreground">
-        <div>{t('about.description')}</div>
-        <Separator className="w-8" />
-        <div className="text-muted-foreground text-xs">
-          {t('about.poweredBy')}{' '}
-          <button
-            className="cursor-pointer font-medium text-primary hover:underline"
-            onClick={() => open('https://gamebanana.com/')}
-            type="button"
-          >
-            GameBanana
-          </button>{' '}
-          {t('about.forModContent')}
+      <DialogDescription asChild>
+        <div className="flex flex-col items-center gap-4 text-center text-foreground">
+          <div>{t('about.description')}</div>
+          <Separator className="w-8" />
+          <div className="text-muted-foreground text-xs">
+            {t('about.poweredBy')}{' '}
+            <button
+              className="cursor-pointer font-medium text-primary hover:underline"
+              onClick={() => open('https://gamebanana.com/')}
+              type="button"
+            >
+              GameBanana
+            </button>{' '}
+            {t('about.forModContent')}
+          </div>
+          <div className="font-bold text-xs">{t('about.copyright')}</div>
         </div>
-        <div className="font-bold text-xs">{t('about.copyright')}</div>
       </DialogDescription>
 
       <DialogFooter className="flex flex-row items-center border-t pt-2 text-foreground">

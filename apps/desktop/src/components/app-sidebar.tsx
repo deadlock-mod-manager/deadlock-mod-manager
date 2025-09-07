@@ -6,6 +6,7 @@ import {
   MagnifyingGlass,
   Package,
   Sparkle,
+  UploadSimple,
 } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +68,12 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
     title: () => <span>{t('navigation.getMods')}</span>,
     url: '/mods',
     icon: MagnifyingGlass,
+  },
+  {
+    id: 'add-mods',
+    title: () => <span>{t('navigation.addMods')}</span>,
+    url: '/add-mods',
+    icon: UploadSimple,
   },
   {
     id: 'downloads',

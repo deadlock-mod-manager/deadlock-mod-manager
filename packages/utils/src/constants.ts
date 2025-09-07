@@ -44,7 +44,10 @@ export enum CustomSettingType {
   LAUNCH_OPTION = 'launch_option',
 }
 
-export const customSettingTypeHuman = {
+export const customSettingTypeHuman: Record<
+  CustomSettingType,
+  { title: string; description: string }
+> = {
   [CustomSettingType.LAUNCH_OPTION]: {
     title: 'Custom Launch Options',
     description:

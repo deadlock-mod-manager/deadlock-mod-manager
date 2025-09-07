@@ -45,6 +45,8 @@ pub enum Error {
     GameInfoValidationFailed(String),
     #[error("External file modification detected: {0}")]
     ExternalModification(String),
+    #[error("Unauthorized path access attempted: {0}")]
+    UnauthorizedPath(String),
     #[error("Tauri error: {0}")]
     Tauri(#[from] tauri::Error),
 }
@@ -81,6 +83,7 @@ impl serde::Serialize for Error {
             Error::BackupIntegrityFailed(_) => "backupIntegrityFailed",
             Error::GameInfoValidationFailed(_) => "gameInfoValidationFailed",
             Error::ExternalModification(_) => "externalModification",
+            Error::UnauthorizedPath(_) => "unauthorizedPath",
             Error::Tauri(_) => "tauri",
         };
 

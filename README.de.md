@@ -153,6 +153,59 @@ yay -S deadlock-modmanager
 # Neueste Entwicklungsversion
 yay -S deadlock-modmanager-git
 ```
+## Loslegen im Dev Modus
+
+### Benötigte Schritte
+
+- Node.js >= 18
+- pnpm
+- Docker (for local database)
+- Rust (for desktop app)
+
+### Installation
+
+1. Install dependencies:
+
+```bash
+pnpm install
+```
+
+2. Set up the database:
+
+```bash
+# Start the database (benötigt Docker)
+docker compose up -d
+```
+
+3. Copy .env file:
+
+```bash
+cp example.env .env
+```
+
+4. Run the migrations:
+
+```bash
+pnpm db:push
+```
+
+5. Fill db with data:
+
+```bash
+docker exec api bun run src/test.ts
+```
+
+6. Run the API server:
+
+```bash
+pnpm api:dev
+```
+
+7. Run the desktop app:
+
+```bash
+pnpm desktop:dev
+```
 
 ## Übersetzung & Lokalisierung
 
@@ -169,6 +222,11 @@ Wir arbeiten aktiv daran, den Deadlock Mod Manager für Nutzer weltweit zugängl
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
 | 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://discordapp.com/users/__skeptic__/) |
 | 🇫🇷 **French** | Français | ✅ Complete | [stormix](https://github.com/stormix) |
+| 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/) |
+| 🇸🇦 **Arabic** | العربية | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
+| 🇵🇱 **Polish** | Polski | ✅ Complete | [_manio](https://discordapp.com/users/_manio/) |
+| 🇨🇭 **Swiss German** | Schwiizerdütsch | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇷 **Turkish** | Türkçe | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 
 <!-- LANGUAGE_TABLE_END -->
 

@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import ErrorBoundary from '@/components/error-boundary';
 import InstallWithCollection from '@/components/install-with-collection';
 import { InstalledFilesDisplay } from '@/components/installed-files-display';
 import { MultiFileDownloadDialog } from '@/components/multi-file-download-dialog';
@@ -62,8 +63,9 @@ const Mod = () => {
       }
       return getMod(params.id);
     },
-    enabled: !!params.id,
+    enabled: !!params.id && !params.id?.includes('local'),
     suspense: true,
+    retry: 1,
   });
 
   // Fetch downloadable files separately
@@ -75,7 +77,8 @@ const Mod = () => {
       }
       return getModDownloads(params.id);
     },
-    enabled: !!params.id && !!data?.downloadable,
+    enabled:
+      !!params.id && !!data?.downloadable && !params.id?.includes('local'),
   });
 
   const availableFiles = (downloadData?.downloads ||
@@ -124,8 +127,9 @@ const Mod = () => {
       toast.error(
         (error as Error)?.message ?? 'Failed to fetch mods. Try again later.'
       );
+      navigate('/mods');
     }
-  }, [error]);
+  }, [error, navigate]);
 
   if (!data) {
     return null;
@@ -195,7 +199,7 @@ const Mod = () => {
     };
 
   return (
-    <>
+    <ErrorBoundary>
       <InstallWithCollection>
         {({ install }) => {
           const handleInstall = createInstallHandler(install);
@@ -586,7 +590,7 @@ const Mod = () => {
         onClose={closeDialog}
         onDownload={downloadSelectedFiles}
       />
-    </>
+    </ErrorBoundary>
   );
 };
 
