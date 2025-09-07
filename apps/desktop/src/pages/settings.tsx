@@ -260,12 +260,14 @@ const CustomSettings = () => {
                 title={t('settings.defaultSortValue')}
               >
                 <div className="flex flex-col gap-2">
-                  <Label className="font-bold text-sm">{t('settings.defaultSort')}</Label>
+                  <Label id="default-sort-label" className="font-bold text-sm">
+                    {t('settings.defaultSort')}
+                  </Label>
                   <Select
                     onValueChange={(v) => setDefaultSort(v as SortType)}
                     value={defaultSort}
                   >
-                    <SelectTrigger className="w-36">
+                    <SelectTrigger aria-labelledby="default-sort-label" className="w-36">
                       <SelectValue placeholder={t('settings.selectDefaultSort')} />
                     </SelectTrigger>
                     <SelectContent>

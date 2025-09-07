@@ -39,9 +39,11 @@ export const Toolbar = () => {
               <div className="">{gamePath ? <Check /> : <X />}</div>
             </div>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>{t('common.gameInstalledAt', { path: gamePath })}</p>
-          </TooltipContent>
+          {gamePath && (
+            <TooltipContent>
+              <p>{t('common.gameInstalledAt', { path: gamePath })}</p>
+            </TooltipContent>
+          )}
         </Tooltip>
       </div>
       <DevTools />

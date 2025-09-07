@@ -85,19 +85,27 @@ const FiltersDropdown = ({
         <div className="space-y-2">
           <Label className="font-medium text-sm">{t('filters.content')}</Label>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">{t('filters.hideOutdated')}</Label>
+            <Label htmlFor="hideOutdatedSwitch" className="font-normal text-sm">
+              {t('filters.hideOutdated')}
+            </Label>
             <Switch
+              id="hideOutdatedSwitch"
               checked={hideOutdated}
               onCheckedChange={onHideOutdatedChange}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">{t('filters.showNSFWContent')}</Label>
-            <Switch checked={showNSFW} onCheckedChange={onShowNSFWChange} />
+            <Label htmlFor="showNsfwSwitch" className="font-normal text-sm">
+              {t('filters.showNSFWContent')}
+            </Label>
+            <Switch id="showNsfwSwitch" checked={showNSFW} onCheckedChange={onShowNSFWChange} />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">{t('filters.audioModsOnly')}</Label>
+            <Label htmlFor="audioOnlySwitch" className="font-normal text-sm">
+              {t('filters.audioModsOnly')}
+            </Label>
             <Switch
+              id="audioOnlySwitch"
               checked={showAudioOnly}
               onCheckedChange={onShowAudioOnlyChange}
             />

@@ -7,10 +7,6 @@
     "whatsNew": "Was ist neu",
     "collapseMenu": "Menü einklappen"
   },
-  "menu": {
-    "about": "Über",
-    "quit": "Beenden"
-  },
   "mods": {
     "searchPlaceholder": "Mods durchsuchen",
     "noPreviewAvailable": "Keine Vorschau verfügbar",
@@ -113,20 +109,6 @@
     "validateConfiguration": "Konfiguration validieren",
     "openInEditor": "Im Editor öffnen"
   },
-  "about": {
-    "title": "Danksagungen",
-    "description": "Besonderen Dank an die Plattformen und Communities, die dieses Projekt ermöglichen",
-    "gamebananaDescription": "Unsere primäre Mod-Quelle und das Rückgrat dieser Anwendung. GameBanana bietet die umfassende Mod-Datenbank und API, die das Durchsuchen, Entdecken und Herunterladen von Deadlock-Mods ermöglicht.",
-    "visitGamebanana": "GameBanana besuchen",
-    "tauriDescription": "Das leistungsstarke Framework, das diese plattformübergreifende Desktop-Anwendung ermöglicht. Tauri kombiniert die besten Web-Technologien mit nativer Leistung und Sicherheit.",
-    "visitTauri": "Tauri besuchen",
-    "shadcnDescription": "Schöne und zugängliche React-Komponenten, die die Grundlage für unsere moderne Benutzeroberfläche bilden. Kopieren, einfügen und perfekt anpassen.",
-    "visitShadcn": "shadcn/ui besuchen",
-    "tailwindDescription": "Das Utility-First CSS-Framework, das unser responsives Design und konsistentes Styling in der gesamten Anwendung unterstützt.",
-    "visitTailwind": "Tailwind CSS besuchen",
-    "openSourceCommunity": "Open Source Community",
-    "openSourceDescription": "Erstellt mit erstaunlichen Open Source-Technologien einschließlich React, TypeScript und vielen anderen Bibliotheken, die moderne Anwendungen ermöglichen. Vielen Dank an alle Mitwirkenden und Betreuer."
-  },
   "privacy": {
     "title": "Datenschutz & Inhalte",
     "description": "Steuern Sie, wie NSFW (Not Safe For Work) Inhalte angezeigt und gefiltert werden.",
@@ -191,7 +173,6 @@
     "categoryLabel": "Kategorie:",
     "heroLabel": "Held:",
     "sortBy": "Sortieren nach",
-    "hideOutdated": "Veraltete ausblenden",
     "showNSFW": "NSFW anzeigen",
     "audioOnly": "Nur Audio",
     "clearAll": "Alle löschen"

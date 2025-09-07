@@ -115,20 +115,6 @@
     "validateConfiguration": "Validate Configuration",
     "openInEditor": "Open in Editor"
   },
-  "about": {
-    "title": "Acknowledgments",
-    "description": "Special thanks to the platforms and communities that make this project possible",
-    "gamebananaDescription": "Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.",
-    "visitGamebanana": "Visit GameBanana",
-    "tauriDescription": "The powerful framework that enables this cross-platform desktop application. Tauri combines the best of web technologies with native performance and security.",
-    "visitTauri": "Visit Tauri",
-    "shadcnDescription": "Beautiful and accessible React components that provide the foundation for our modern user interface. Copy, paste, and customize to perfection.",
-    "visitShadcn": "Visit shadcn/ui",
-    "tailwindDescription": "The utility-first CSS framework that powers our responsive design and consistent styling throughout the application.",
-    "visitTailwind": "Visit Tailwind CSS",
-    "openSourceCommunity": "Open Source Community",
-    "openSourceDescription": "Built with amazing open source technologies including React, TypeScript, and many other libraries that make modern applications possible. Thank you to all contributors and maintainers."
-  },
   "privacy": {
     "title": "Privacy & Content",
     "description": "Control how NSFW (Not Safe For Work) content is displayed and filtered.",
@@ -193,7 +179,6 @@
     "categoryLabel": "Category:",
     "heroLabel": "Hero:",
     "sortBy": "Sort by",
-    "hideOutdated": "Hide Outdated",
     "showNSFW": "Show NSFW",
     "audioOnly": "Audio Only",
     "clearAll": "Clear all"

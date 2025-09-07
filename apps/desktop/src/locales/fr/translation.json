@@ -115,20 +115,6 @@
     "validateConfiguration": "Valider la configuration",
     "openInEditor": "Ouvrir dans l'éditeur"
   },
-  "about": {
-    "title": "Remerciements",
-    "description": "Remerciements spéciaux aux plateformes et communautés qui rendent ce projet possible",
-    "gamebananaDescription": "Notre source principale de mods et l'épine dorsale de cette application. GameBanana fournit la base de données complète de mods et l'API qui rend possible la navigation, la découverte et le téléchargement de mods Deadlock.",
-    "visitGamebanana": "Visiter GameBanana",
-    "tauriDescription": "Le framework puissant qui permet cette application de bureau multiplateforme. Tauri combine le meilleur des technologies web avec des performances et une sécurité natives.",
-    "visitTauri": "Visiter Tauri",
-    "shadcnDescription": "De beaux composants React accessibles qui fournissent la base de notre interface utilisateur moderne. Copiez, collez et personnalisez à la perfection.",
-    "visitShadcn": "Visiter shadcn/ui",
-    "tailwindDescription": "Le framework CSS utility-first qui alimente notre design responsive et notre style cohérent dans toute l'application.",
-    "visitTailwind": "Visiter Tailwind CSS",
-    "openSourceCommunity": "Communauté Open Source",
-    "openSourceDescription": "Construit avec d'incroyables technologies open source incluant React, TypeScript et de nombreuses autres bibliothèques qui rendent les applications modernes possibles. Merci à tous les contributeurs et mainteneurs."
-  },
   "privacy": {
     "title": "Confidentialité & Contenu",
     "description": "Contrôlez comment le contenu NSFW (Not Safe For Work) est affiché et filtré.",
@@ -193,7 +179,6 @@
     "categoryLabel": "Catégorie :",
     "heroLabel": "Héros :",
     "sortBy": "Trier par",
-    "hideOutdated": "Masquer les obsolètes",
     "showNSFW": "Afficher NSFW",
     "audioOnly": "Audio uniquement",
     "clearAll": "Tout effacer"
