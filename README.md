@@ -264,11 +264,11 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language                 | Native Name | Status      | Contributors                                         |
-| ------------------------ | ----------- | ----------- | ---------------------------------------------------- |
-| 🇺🇸 **English** (Default) | English     | ✅ Complete | -                                                    |
-| 🇩🇪 **German**            | Deutsch     | ✅ Complete | [skeptic](https://discordapp.com/users/__skeptic__/) |
-| 🇫🇷 **French**            | Français    | ✅ Complete | [stormix](https://github.com/stormix)                |
+| Language | Native Name | Status | Contributors |
+|----------|-------------|--------|-------------|
+| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
+| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://discordapp.com/users/__skeptic__/) |
+| 🇫🇷 **French** | Français | ✅ Complete | [stormix](https://github.com/stormix) |
 
 <!-- LANGUAGE_TABLE_END -->
 
