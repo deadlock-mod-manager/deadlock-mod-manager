@@ -107,7 +107,7 @@ export const useDeepLink = () => {
 
     const setupDeepLinkListener = async () => {
       try {
-        logger.info('Setting up deep link listener...');
+        logger.debug('Setting up deep link listener...');
 
         unlisten = await listen<DeepLinkData>(
           'deep-link-received',
@@ -140,7 +140,7 @@ export const useDeepLink = () => {
                   'Mod already installed, skipping download and installation:',
                   modData.remoteId
                 );
-                toast.success(`✅ ${modData.name} is already installed!`);
+                toast.success(`${modData.name} is already installed!`);
                 // Just navigate to the mod page to show it's installed
                 navigate(`/mods/${mod_id}`);
                 // Remove from processing set since we're done
@@ -165,6 +165,8 @@ export const useDeepLink = () => {
                     url: download_url,
                     name: fileInfo.name,
                     size: fileInfo.size,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                   },
                 ],
                 onStart: () => {
@@ -211,7 +213,7 @@ export const useDeepLink = () => {
                         setModStatus(mod.remoteId, ModStatus.INSTALLED);
                         setInstalledVpks(mod.remoteId, result.installed_vpks);
                         toast.success(
-                          `🎉 ${mod.name} installed successfully via 1-click!`
+                          `${mod.name} installed successfully via 1-click!`
                         );
                         logger.info(
                           'Auto-installation completed for mod:',

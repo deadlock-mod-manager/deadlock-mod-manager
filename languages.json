@@ -36,6 +36,84 @@
           "github": "stormix"
         }
       ]
+    },
+    {
+      "code": "ru",
+      "name": "Russian",
+      "nativeName": "Русский",
+      "flag": "🇷🇺",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "awkward_akio",
+          "discord": "awkward_akio"
+        }
+      ]
+    },
+    {
+      "code": "ar",
+      "name": "Arabic",
+      "nativeName": "العربية",
+      "flag": "🇸🇦",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "archeroflegend",
+          "discord": "archeroflegend"
+        }
+      ]
+    },
+    {
+      "code": "pl",
+      "name": "Polish",
+      "nativeName": "Polski",
+      "flag": "🇵🇱",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "_manio",
+          "discord": "_manio"
+        }
+      ]
+    },
+    {
+      "code": "gsw",
+      "name": "Swiss German",
+      "nativeName": "Schwiizerdütsch",
+      "flag": "🇨🇭",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "kenanala",
+          "discord": "kenanala"
+        },
+        {
+          "name": "degoods_deedos",
+          "discord": "degoods_deedos"
+        }
+      ]
+    },
+    {
+      "code": "tr",
+      "name": "Turkish",
+      "nativeName": "Türkçe",
+      "flag": "🇹🇷",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "kenanala",
+          "discord": "kenanala"
+        },
+        {
+          "name": "degoods_deedos",
+          "discord": "degoods_deedos"
+        }
+      ]
     }
   ]
 }

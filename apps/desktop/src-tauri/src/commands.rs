@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use crate::errors::Error;
+use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{Mod, ModFileTree, ModManager};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -12,18 +13,21 @@ static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModMan
 #[tauri::command]
 pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
     log::info!("Setting language to: {}", language);
-    
+
     // Validate language code
-    let supported_languages = ["en", "de", "fr"];
+    let supported_languages = ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru"];
     if !supported_languages.contains(&language.as_str()) {
-        return Err(Error::InvalidInput(format!("Unsupported language: {}", language)));
+        return Err(Error::InvalidInput(format!(
+            "Unsupported language: {}",
+            language
+        )));
     }
-    
+
     // Emit event to frontend to change language
     if let Some(window) = app_handle.get_webview_window("main") {
         window.emit("set-language", &language)?;
     }
-    
+
     Ok(())
 }
 
@@ -271,4 +275,65 @@ pub async fn open_gameinfo_editor() -> Result<(), Error> {
     mod_manager
         .get_config_manager()
         .open_gameinfo_with_editor(&game_path)
+}
+
+#[tauri::command]
+pub async fn extract_archive(
+    archive_path: String,
+    target_path: String,
+) -> Result<Vec<String>, Error> {
+    log::info!("Extracting archive: {} to {}", archive_path, target_path);
+
+    let archive_path = PathBuf::from(&archive_path);
+    let target_path = PathBuf::from(&target_path);
+
+    // Validate paths
+    if !archive_path.exists() {
+        return Err(Error::ModFileNotFound);
+    }
+
+    // Validate that target path is within the allowed mods directory
+    let mod_manager = MANAGER.lock().unwrap();
+    let validated_target_path = mod_manager.validate_extract_target_path(&target_path)?;
+    drop(mod_manager); // Release the lock before the potentially long-running extraction
+
+    // Create target directory if it doesn't exist
+    std::fs::create_dir_all(&validated_target_path)?;
+
+    let extractor = ArchiveExtractor::new();
+    extractor.extract_archive(&archive_path, &validated_target_path)?;
+
+    // Find all VPK files in the extracted directory
+    let mut vpk_files = Vec::new();
+    find_vpk_files(&validated_target_path, &mut vpk_files)?;
+
+    log::info!("Extracted {} VPK files", vpk_files.len());
+    Ok(vpk_files)
+}
+
+fn find_vpk_files(dir: &PathBuf, vpk_files: &mut Vec<String>) -> Result<(), Error> {
+    if dir.is_dir() {
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                find_vpk_files(&path, vpk_files)?;
+            } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+                vpk_files.push(path.file_name().unwrap().to_string_lossy().to_string());
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn remove_mod_folder(mod_path: String) -> Result<(), Error> {
+    log::info!("Removing mod folder: {}", mod_path);
+    let mod_manager = MANAGER.lock().unwrap();
+    let path = PathBuf::from(&mod_path);
+
+    // ModManager now handles path validation and canonicalization
+    mod_manager.remove_mod_folder(&path)?;
+    Ok(())
 }

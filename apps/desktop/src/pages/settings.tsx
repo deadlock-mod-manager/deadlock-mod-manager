@@ -21,6 +21,7 @@ import { useQuery } from 'react-query';
 import { toast } from 'sonner';
 import AddSettingDialog from '@/components/add-setting';
 import ErrorBoundary from '@/components/error-boundary';
+import { FlashbangToggle } from '@/components/flashbang-toggle';
 import GameInfoManagement from '@/components/gameinfo-management';
 import { LanguageSettings } from '@/components/language-settings';
 import PageTitle from '@/components/page-title';
@@ -93,7 +94,7 @@ const CustomSettingsData = () => {
 
   return (
     <>
-      {Object.values(CustomSettingType).map((type) => (
+      {Object.values(CustomSettingType).map((type: CustomSettingType) => (
         <Section
           action={
             <AddSettingDialog>
@@ -105,13 +106,13 @@ const CustomSettingsData = () => {
           description={
             type === CustomSettingType.LAUNCH_OPTION
               ? t('settings.launchOptionsDescription')
-              : customSettingTypeHuman[type].description
+              : customSettingTypeHuman[type]?.description || ''
           }
           key={type}
           title={
             type === CustomSettingType.LAUNCH_OPTION
               ? t('settings.launchOptions')
-              : customSettingTypeHuman[type].title
+              : customSettingTypeHuman[type]?.title || ''
           }
         >
           <div className="grid grid-cols-1 gap-4">
@@ -177,35 +178,35 @@ const CustomSettings = () => {
         <Tabs className="flex h-full gap-6" defaultValue="launch-options">
           <TabsList className="h-fit w-48 flex-col gap-1 bg-background p-3">
             <TabsTrigger
-              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="launch-options"
             >
               <Settings className="h-5 w-5" />
               {t('settings.launchOptions')}
             </TabsTrigger>
             <TabsTrigger
-              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="game"
             >
               <GamepadIcon className="h-5 w-5" />
               {t('settings.game')}
             </TabsTrigger>
             <TabsTrigger
-              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="application"
             >
               <MonitorIcon className="h-5 w-5" />
               {t('settings.application')}
             </TabsTrigger>
             <TabsTrigger
-              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="privacy"
             >
               <ShieldIcon className="h-5 w-5" />
               {t('settings.privacy')}
             </TabsTrigger>
             <TabsTrigger
-              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm"
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="about"
             >
               <InfoIcon className="h-5 w-5" />
@@ -252,19 +253,23 @@ const CustomSettings = () => {
               </Section>
 
               <Section
-                description="Customize the appearance of the application."
-                title="Appearance"
+                description={t('settings.appearanceDescription')}
+                title={t('settings.appearance')}
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <Label className="font-bold text-sm">Theme</Label>
+                      <Label className="font-bold text-sm">
+                        {t('settings.theme')}
+                      </Label>
                       <p className="text-muted-foreground text-sm">
-                        Choose between light, dark, or system theme
+                        {t('settings.themeDescription')}
                       </p>
                     </div>
                     <ThemeSwitcher />
                   </div>
+
+                  <FlashbangToggle />
                 </div>
               </Section>
 
@@ -273,23 +278,6 @@ const CustomSettings = () => {
                 title={t('settings.languageSettings')}
               >
                 <LanguageSettings />
-              </Section>
-
-              <Section
-                description="Customize the appearance of the application."
-                title="Appearance"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label className="font-bold text-sm">Theme</Label>
-                      <p className="text-muted-foreground text-sm">
-                        Choose between light, dark, or system theme
-                      </p>
-                    </div>
-                    <ThemeSwitcher />
-                  </div>
-                </div>
               </Section>
 
               <Section

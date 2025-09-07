@@ -115,7 +115,11 @@ const GridModCard = ({
       <div className={cn('relative', isDisabled && 'grayscale')}>
         <div
           className="cursor-pointer"
-          onClick={() => navigate(`/mods/${mod.remoteId}`)}
+          onClick={() =>
+            mod.id?.includes('local')
+              ? toast.info('Local mod cannot be previewed (this is temporary)')
+              : navigate(`/mods/${mod.remoteId}`)
+          }
         >
           {mod.isAudio ? (
             // Audio-only mod display

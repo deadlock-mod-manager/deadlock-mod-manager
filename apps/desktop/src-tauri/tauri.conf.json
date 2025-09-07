@@ -16,7 +16,8 @@
         "width": 1280,
         "height": 720,
         "decorations": false,
-        "label": "main"
+        "label": "main",
+        "dragDropEnabled": false
       }
     ],
     "security": {

@@ -175,7 +175,9 @@ pub fn run() {
             commands::validate_gameinfo_patch,
             commands::get_gameinfo_status,
             commands::open_gameinfo_editor,
-            commands::set_language
+            commands::set_language,
+            commands::extract_archive,
+            commands::remove_mod_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

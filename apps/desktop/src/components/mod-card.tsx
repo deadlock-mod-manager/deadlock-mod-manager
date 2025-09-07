@@ -185,6 +185,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           } else {
             saveScrollPosition();
           }
+
           navigate(`/mods/${mod.remoteId}`);
         }}
       >

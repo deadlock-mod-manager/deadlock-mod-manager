@@ -4,6 +4,7 @@ import { QueryClientProvider } from 'react-query';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import App from './app';
 import { queryClient } from './lib/client';
+import AddMods from './pages/add-mods';
 import GetMods from './pages/mods';
 import MyMods from './pages/my-mods';
 import CustomSettings from './pages/settings';
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
               <Route element={<MyMods />} path="/" />
               <Route element={<GetMods />} path="/mods" />
               <Route element={<Mod />} path="/mods/:id" />
+              <Route element={<AddMods />} path="/add-mods" />
               <Route element={<Downloads />} path="/downloads" />
               <Route element={<CustomSettings />} path="/settings" />
             </Route>
