@@ -1,18 +1,20 @@
+import { useTranslation } from 'react-i18next';
 import { usePersistedStore } from '@/lib/store';
 import { Label } from './ui/label';
 import { Slider } from './ui/slider';
 import { Switch } from './ui/switch';
 
 const PrivacySettings = () => {
+  const { t } = useTranslation();
   const { nsfwSettings, updateNSFWSettings } = usePersistedStore();
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base">Hide NSFW Content</Label>
+          <Label className="text-base">{t('privacy.hideNSFWContent')}</Label>
           <div className="text-muted-foreground text-sm">
-            Completely hide mods marked as NSFW from lists and search results
+            {t('privacy.hideNSFWDescription')}
           </div>
         </div>
         <Switch
@@ -25,10 +27,9 @@ const PrivacySettings = () => {
 
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base">Show Likely NSFW Content</Label>
+          <Label className="text-base">{t('privacy.showLikelyNSFW')}</Label>
           <div className="text-muted-foreground text-sm">
-            Show content that might be NSFW but isn't explicitly marked
-            (overrides hiding)
+            {t('privacy.showLikelyNSFWDescription')}
           </div>
         </div>
         <Switch
@@ -41,10 +42,9 @@ const PrivacySettings = () => {
 
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base">Disable NSFW Blur</Label>
+          <Label className="text-base">{t('privacy.disableNSFWBlur')}</Label>
           <div className="text-muted-foreground text-sm">
-            Show NSFW content without any blur effect (content still shows NSFW
-            badge)
+            {t('privacy.disableNSFWBlurDescription')}
           </div>
         </div>
         <Switch
@@ -58,9 +58,9 @@ const PrivacySettings = () => {
       {!nsfwSettings.disableBlur && (
         <div className="space-y-3">
           <div className="space-y-0.5">
-            <Label className="text-base">Blur Strength</Label>
+            <Label className="text-base">{t('privacy.blurStrength')}</Label>
             <div className="text-muted-foreground text-sm">
-              How much to blur NSFW content when visible (pixels)
+              {t('privacy.blurStrengthDescription')}
             </div>
           </div>
           <div className="px-3">
@@ -85,9 +85,9 @@ const PrivacySettings = () => {
 
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base">Remember Per-Item Choices</Label>
+          <Label className="text-base">{t('privacy.rememberPerItemChoices')}</Label>
           <div className="text-muted-foreground text-sm">
-            Remember when you choose to show/hide specific NSFW items
+            {t('privacy.rememberPerItemChoicesDescription')}
           </div>
         </div>
         <Switch

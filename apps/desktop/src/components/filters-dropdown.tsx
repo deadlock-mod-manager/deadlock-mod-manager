@@ -1,5 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ const FiltersDropdown = ({
   showAudioOnly,
   onShowAudioOnlyChange,
 }: FiltersDropdownProps) => {
+  const { t } = useTranslation();
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
@@ -60,7 +62,7 @@ const FiltersDropdown = ({
           variant={hasActiveFilters ? 'default' : 'outline'}
         >
           <Filter className="mr-2 h-4 w-4" />
-          Filters
+          {t('filters.filters')}
           {hasActiveFilters && (
             <span className="ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs">
               {totalActiveFilters}
@@ -81,21 +83,29 @@ const FiltersDropdown = ({
         />
         <DropdownMenuSeparator />
         <div className="space-y-2">
-          <Label className="font-medium text-sm">Content</Label>
+          <Label className="font-medium text-sm">{t('filters.content')}</Label>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">Hide Outdated</Label>
+            <Label htmlFor="hideOutdatedSwitch" className="font-normal text-sm">
+              {t('filters.hideOutdated')}
+            </Label>
             <Switch
+              id="hideOutdatedSwitch"
               checked={hideOutdated}
               onCheckedChange={onHideOutdatedChange}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">Show NSFW Content</Label>
-            <Switch checked={showNSFW} onCheckedChange={onShowNSFWChange} />
+            <Label htmlFor="showNsfwSwitch" className="font-normal text-sm">
+              {t('filters.showNSFWContent')}
+            </Label>
+            <Switch id="showNsfwSwitch" checked={showNSFW} onCheckedChange={onShowNSFWChange} />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm">Audio Mods Only</Label>
+            <Label htmlFor="audioOnlySwitch" className="font-normal text-sm">
+              {t('filters.audioModsOnly')}
+            </Label>
             <Switch
+              id="audioOnlySwitch"
               checked={showAudioOnly}
               onCheckedChange={onShowAudioOnlyChange}
             />

@@ -45,6 +45,8 @@ pub enum Error {
     GameInfoValidationFailed(String),
     #[error("External file modification detected: {0}")]
     ExternalModification(String),
+    #[error("Tauri error: {0}")]
+    Tauri(#[from] tauri::Error),
 }
 
 impl serde::Serialize for Error {
@@ -79,6 +81,7 @@ impl serde::Serialize for Error {
             Error::BackupIntegrityFailed(_) => "backupIntegrityFailed",
             Error::GameInfoValidationFailed(_) => "gameInfoValidationFailed",
             Error::ExternalModification(_) => "externalModification",
+            Error::Tauri(_) => "tauri",
         };
 
         state.serialize_field("kind", kind)?;

@@ -15,6 +15,7 @@
     "docker": "docker compose up -d",
     "format": "npx ultracite@latest fix",
     "lint": "npx ultracite@latest lint",
+    "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version && changeset publish"
   },
   "devDependencies": {

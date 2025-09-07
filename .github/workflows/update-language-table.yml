@@ -1,0 +1,67 @@
+name: Update Language Table
+
+on:
+  push:
+    paths:
+      - "languages.json"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-language-table:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate language table
+        run: bun scripts/generate-language-table.ts --update-readme
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet HEAD -- README*.md; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in README files"
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in README files"
+          fi
+
+      - name: Commit and push changes (if on main/master)
+        if: steps.check-changes.outputs.changes == 'true' && (github.ref == 'refs/heads/main')
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README*.md
+          git commit -m "chore: update language table from languages.json"
+          git push
+
+      - name: Output summary
+        run: |
+          echo "## Language Table Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-changes.outputs.changes }}" == "true" ]; then
+            echo "✅ Language table was updated successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Updated Files:" >> $GITHUB_STEP_SUMMARY
+            echo "- All README*.md files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No changes were needed - language table is already up to date" >> $GITHUB_STEP_SUMMARY
+          fi
