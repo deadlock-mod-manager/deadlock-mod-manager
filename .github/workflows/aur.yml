@@ -15,7 +15,10 @@ jobs:
       - name: Update pkgver
         run: |
           cd deadlock-modmanager
-          sed -i "s/^pkgver=.*/pkgver=${GITHUB_REF##*/v}/" PKGBUILD
+          VERSION=${GITHUB_REF##*/v}
+          VERSION=${VERSION//-/_}
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i -E "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
