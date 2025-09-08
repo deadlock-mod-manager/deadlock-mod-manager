@@ -18,7 +18,7 @@ jobs:
           sed -i "s/^pkgver=.*/pkgver=${GITHUB_REF##*/v}/" PKGBUILD
 
       - name: Publish to AUR
-        uses: KSXGitHub/github-actions-deploy-aur@master
+        uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
         with:
           pkgname: deadlock-modmanager
           pkgbuild: deadlock-modmanager/PKGBUILD
