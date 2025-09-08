@@ -19,7 +19,7 @@ const lockService = new DistributedLockService(db);
 const JOB_NAME = 'synchronize-mods';
 
 const job = new Cron(
-  '0 0 0 * * *',
+  '0 0 * * * *',
   {
     paused: true,
   },
@@ -32,7 +32,7 @@ const job = new Cron(
       {
         schedule: {
           type: 'crontab',
-          value: '0 0 0 * * *',
+          value: '0 0 * * * *',
         },
         checkinMargin: 1,
         maxRuntime: 10,
