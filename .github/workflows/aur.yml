@@ -1,0 +1,29 @@
+name: Update AUR PKGBUILD for new release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  aur-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone from AUR
+        run: git clone https://aur.archlinux.org/deadlock-modmanager.git
+
+      - name: Update pkgver
+        run: |
+          cd deadlock-modmanager
+          sed -i "s/^pkgver=.*/pkgver=${GITHUB_REF##*/v}/" PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@master
+        with:
+          pkgname: deadlock-modmanager
+          pkgbuild: deadlock-modmanager/PKGBUILD
+          commit_username: GitHub Actions
+          commit_email: github-actions@github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: ${{ github.ref_name }}
+          updpkgsums: true
