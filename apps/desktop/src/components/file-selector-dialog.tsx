@@ -171,7 +171,7 @@ export const FileSelectorDialog = ({
             </span>
           </div>
 
-          <ScrollArea className="max-h-[50vh] pr-4">
+          <ScrollArea className="max-h-[50vh] overflow-y-auto pr-4">
             <div className="space-y-4">
               {hasMultipleArchives ? (
                 // Group view - show files grouped by archive
