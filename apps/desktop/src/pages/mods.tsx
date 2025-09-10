@@ -1,8 +1,8 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from 'react-query';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
 import ModCard from '@/components/mod-card';
@@ -106,9 +106,7 @@ const GetModsData = () => {
 
   useEffect(() => {
     if (error) {
-      toast.error(
-        (error as Error)?.message ?? t('common.failedToFetchMods')
-      );
+      toast.error((error as Error)?.message ?? t('common.failedToFetchMods'));
     }
   }, [error, t]);
 
@@ -209,7 +207,7 @@ const GetModsData = () => {
 
 const GetMods = () => {
   const { t } = useTranslation();
-  
+
   return (
     <div className="h-[calc(100vh-160px)] w-full px-4">
       <PageTitle

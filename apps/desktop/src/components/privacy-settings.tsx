@@ -85,7 +85,9 @@ const PrivacySettings = () => {
 
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="text-base">{t('privacy.rememberPerItemChoices')}</Label>
+          <Label className="text-base">
+            {t('privacy.rememberPerItemChoices')}
+          </Label>
           <div className="text-muted-foreground text-sm">
             {t('privacy.rememberPerItemChoicesDescription')}
           </div>

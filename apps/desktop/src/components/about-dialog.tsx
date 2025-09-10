@@ -5,12 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useAbout from '@/hooks/use-about';
 import useUpdateManager from '@/hooks/use-update-manager';
-import {
-  APP_DESCRIPTION,
-  APP_NAME,
-  COPYRIGHT,
-  GITHUB_REPO,
-} from '@/lib/constants';
+import { APP_NAME, GITHUB_REPO } from '@/lib/constants';
 import Logo from './logo';
 import { Button, buttonVariants } from './ui/button';
 import {

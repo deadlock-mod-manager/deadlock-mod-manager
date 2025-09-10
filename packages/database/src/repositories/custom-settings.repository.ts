@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm';
 import type { Database } from '../client';
-import type { CustomSetting, NewCustomSetting } from '../schema';
-import { customSettings } from '../schema';
+import type {
+  CustomSetting,
+  NewCustomSetting,
+} from '../schema/custom-settings';
+import { customSettings } from '../schema/custom-settings';
 
 export class CustomSettingsRepository {
   constructor(private readonly db: Database) {}

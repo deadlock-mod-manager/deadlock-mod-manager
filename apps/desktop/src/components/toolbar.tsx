@@ -1,8 +1,8 @@
 import { Check, GameController, Play, Stop, X } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
 import { useState } from 'react';
-import { useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from 'react-query';
 import { useLaunch } from '@/hooks/use-launch';
 import { isGameRunning } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -35,7 +35,9 @@ export const Toolbar = () => {
                 'text-red-500': !gamePath,
               })}
             >
-              <div className="font-medium text-sm">{t('common.gameDetected')}</div>
+              <div className="font-medium text-sm">
+                {t('common.gameDetected')}
+              </div>
               <div className="">{gamePath ? <Check /> : <X />}</div>
             </div>
           </TooltipTrigger>

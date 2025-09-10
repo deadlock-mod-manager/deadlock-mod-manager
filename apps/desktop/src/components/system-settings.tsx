@@ -5,27 +5,28 @@ import { usePersistedStore } from '@/lib/store';
 import type { SystemSetting } from '@/types/settings';
 import SettingCard from './setting-card';
 
-const getSystemSettings = (t: (key: string) => string): SystemSetting[] => [
-  {
-    id: 'auto-reapply-mods',
-    description: t('settings.autoReapplyMods'),
-    enabled: false,
-    onChange: NOOP,
-  },
-  {
-    id: 'launch-vanilla-no-args',
-    description: t('settings.launchVanillaNoArgs'),
-    enabled: false,
-    onChange: NOOP,
-  },
-].map((setting) => ({
-  ...setting,
-  key: '',
-  value: '',
-  type: 'boolean',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}));
+const getSystemSettings = (t: (key: string) => string): SystemSetting[] =>
+  [
+    {
+      id: 'auto-reapply-mods',
+      description: t('settings.autoReapplyMods'),
+      enabled: false,
+      onChange: NOOP,
+    },
+    {
+      id: 'launch-vanilla-no-args',
+      description: t('settings.launchVanillaNoArgs'),
+      enabled: false,
+      onChange: NOOP,
+    },
+  ].map((setting) => ({
+    ...setting,
+    key: '',
+    value: '',
+    type: 'boolean',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
 
 const SystemSettings = () => {
   const { t } = useTranslation();

@@ -20,6 +20,7 @@ export const modDownloadRepository = repositories.modDownloads;
 export const customSettingsRepository = repositories.customSettings;
 
 export { sql } from 'drizzle-orm';
-// Types re-export
+
 export * from './repositories';
 export * from './schema';
+export * as schema from './schema';

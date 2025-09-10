@@ -259,7 +259,7 @@ const CustomSettings = () => {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label className="font-bold text-sm">Theme</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Choose between light, dark, or system theme
                       </p>
                     </div>

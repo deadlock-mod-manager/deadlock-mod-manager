@@ -1,4 +1,4 @@
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from './providers/theme';
 import { Button } from './ui/button';
 import {
@@ -40,7 +40,11 @@ export function ThemeSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="w-32 justify-start gap-2">
+        <Button
+          className="w-32 justify-start gap-2"
+          size="sm"
+          variant="outline"
+        >
           {getThemeIcon()}
           <span className="hidden sm:inline">{getThemeLabel()}</span>
         </Button>

@@ -154,7 +154,9 @@ const SearchBar = ({
       {/* Active Filters */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-sm">{t('filters.activeFilters')}</span>
+          <span className="text-muted-foreground text-sm">
+            {t('filters.activeFilters')}
+          </span>
 
           {/* Category badges */}
           {selectedCategories.map((category) => (

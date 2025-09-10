@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { Database } from '../client';
-import type { ModDownload, NewModDownload } from '../schema';
-import { modDownloads } from '../schema';
+import type { ModDownload, NewModDownload } from '../schema/mods';
+import { modDownloads } from '../schema/mods';
 
 export class ModDownloadRepository {
   constructor(private readonly db: Database) {}

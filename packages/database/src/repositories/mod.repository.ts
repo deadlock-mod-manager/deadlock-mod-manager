@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import type { Database } from '../client';
-import type { Mod, NewMod } from '../schema';
-import { mods } from '../schema';
+import type { Mod, NewMod } from '../schema/mods';
+import { mods } from '../schema/mods';
 
 export class ModRepository {
   constructor(private readonly db: Database) {}

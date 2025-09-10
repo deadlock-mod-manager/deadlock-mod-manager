@@ -44,6 +44,7 @@
     "onlyBuiltDependencies": [
       "@sentry/profiling-node",
       "@swc/core",
+      "@tailwindcss/oxide",
       "esbuild",
       "lefthook",
       "sharp"

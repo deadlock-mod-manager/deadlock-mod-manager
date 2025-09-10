@@ -10,9 +10,6 @@ import {
   MenubarSeparator,
   MenubarShortcut,
   MenubarTrigger,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
 } from '@/components/ui/menubar';
 import { AboutDialog } from './about-dialog';
 import Logo from './logo';
@@ -44,7 +41,8 @@ export function Menu() {
               <MenubarSeparator />
               <MenubarShortcut />
               <MenubarItem onClick={closeWindow}>
-                {t('menu.quit')}<MenubarShortcut>⌘Q</MenubarShortcut>
+                {t('menu.quit')}
+                <MenubarShortcut>⌘Q</MenubarShortcut>
               </MenubarItem>
             </MenubarContent>
             <AboutDialog />

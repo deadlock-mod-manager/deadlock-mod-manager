@@ -9,8 +9,8 @@ import {
   Search,
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error-boundary';
 import InstallWithCollection from '@/components/install-with-collection';
@@ -394,7 +394,8 @@ const ListModCard = ({
               {mod.name}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {t('mods.by')} {mod.author} {mod.isAudio && `• ${t('mods.audioMod')}`}
+              {t('mods.by')} {mod.author}{' '}
+              {mod.isAudio && `• ${t('mods.audioMod')}`}
             </p>
           </div>
           <div className="flex items-center justify-between">
@@ -451,7 +452,7 @@ const SimpleSearchBar = ({
   setQuery: (query: string) => void;
 }) => {
   const { t } = useTranslation();
-  
+
   return (
     <div className="relative w-full max-w-sm">
       <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />

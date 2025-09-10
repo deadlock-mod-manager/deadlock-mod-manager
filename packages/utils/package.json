@@ -8,6 +8,9 @@
     "test": "vitest",
     "dev": "tsup src/* --watch"
   },
+  "dependencies": {
+    "zod": "^4.0.2"
+  },
   "devDependencies": {
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",

@@ -10,8 +10,8 @@ import {
   Shield,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from 'react-query';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/providers/alert-dialog';
 import { Badge } from '@/components/ui/badge';

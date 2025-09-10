@@ -8,8 +8,8 @@ import {
   Sparkle,
 } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
-import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { Link, useLocation } from 'react-router';
 import {
   Sidebar,
   SidebarContent,
@@ -130,7 +130,9 @@ const DownloadProgress = () => {
         <span>
           {t('downloads.downloading', { count: downloadingMods.length })}
         </span>
-        <span>{t('downloads.percentage', { percentage: displayPercentage })}</span>
+        <span>
+          {t('downloads.percentage', { percentage: displayPercentage })}
+        </span>
       </div>
       <Progress className="h-1" value={displayPercentage} />
     </div>
@@ -142,9 +144,9 @@ export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.mods);
   const { forceShow } = useWhatsNew();
-  
+
   const items = getSidebarItems(t);
-  
+
   return (
     <Sidebar
       className="absolute top-10 left-0 z-10 flex h-[calc(100vh-40px)] w-[12rem] flex-col"

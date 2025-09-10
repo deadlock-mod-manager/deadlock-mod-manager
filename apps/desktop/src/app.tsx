@@ -19,7 +19,7 @@ import { usePersistedStore } from './lib/store';
 const App = () => {
   // Initialize deep link listener
   useDeepLink();
-  
+
   // Initialize language listener
   useLanguageListener();
 

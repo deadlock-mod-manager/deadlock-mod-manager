@@ -10,6 +10,9 @@ export const envSchema = z.object({
       'https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200'
     ),
   POD_NAME: z.string().optional(),
+  CORS_ORIGIN: z.string().optional(),
+  BETTER_AUTH_SECRET: z.string().optional(),
+  BETTER_AUTH_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

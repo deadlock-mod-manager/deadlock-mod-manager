@@ -22,7 +22,8 @@ export const LanguageSettings = () => {
     i18n.changeLanguage(languageCode);
   };
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const currentLanguage =
+    languages.find((lang) => lang.code === i18n.language) || languages[0];
 
   return (
     <div className="space-y-4">
@@ -36,8 +37,8 @@ export const LanguageSettings = () => {
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-muted-foreground" />
           <Select
-            value={currentLanguage.code}
             onValueChange={handleLanguageChange}
+            value={currentLanguage.code}
           >
             <SelectTrigger className="w-48">
               <SelectValue>
