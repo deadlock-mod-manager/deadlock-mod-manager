@@ -14,12 +14,12 @@ export const api = axios.create({
 });
 
 export const getMods = async () => {
-  const response = await api.get<ModDto[]>('/mods');
+  const response = await api.get<ModDto[]>('/api/v2/mods');
   return response.data;
 }; // TODO: pagination
 
 export const getMod = async (remoteId: string) => {
-  const response = await api.get<ModDto>(`/mods/${remoteId}`);
+  const response = await api.get<ModDto>(`/api/v2/mods/${remoteId}`);
   return response.data;
 };
 

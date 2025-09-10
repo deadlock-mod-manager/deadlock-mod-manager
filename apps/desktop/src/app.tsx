@@ -40,7 +40,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="deadlock-theme">
+      <ThemeProvider storageKey="deadlock-theme-v2">
         <AppProvider>
           <TooltipProvider>
             <AlertDialogProvider>

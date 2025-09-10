@@ -6,8 +6,9 @@ import { APP_NAME, GITHUB_REPO } from '@/lib/constants';
 const Splash = () => {
   const { data, isLoading } = useAbout();
   const { version, tauriVersion } = data || {};
+
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4">
+    <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
       <Logo className="h-32 w-32" />
       <div className="flex flex-col items-center gap-2">
         <h1 className="font-bold font-primary text-3xl">{APP_NAME}</h1>
