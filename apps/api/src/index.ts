@@ -2,6 +2,7 @@ import './instrument';
 
 import { sentry } from '@hono/sentry';
 import { Hono } from 'hono';
+import { cache } from 'hono/cache';
 import { cors } from 'hono/cors';
 import { etag } from 'hono/etag';
 import { logger as loggerMiddleware } from 'hono/logger';
@@ -21,9 +22,11 @@ import { RPCHandler } from '@orpc/server/fetch';
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 import { auth } from './lib/auth';
 import { createContext } from './lib/context';
-import { env } from './lib/env';
 import { HealthService } from './lib/services/health';
 import { appRouter } from './routers';
+
+import customSettingsRouter from './routers/legacy/custom-settings';
+import modsRouter from './routers/legacy/mods';
 
 const app = new Hono();
 
@@ -31,7 +34,7 @@ app.use(
   '*',
   requestId(),
   cors({
-    origin: env.CORS_ORIGIN || '',
+    origin: '*',
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -110,6 +113,12 @@ app.use('/api/*', async (c, next) => {
 
   await next();
 });
+
+app.use('/mods/*', cache(MODS_CACHE_CONFIG));
+
+// Legacy routes (unchanged for backward compatibility)
+app.route('/mods', modsRouter);
+app.route('/custom-settings', customSettingsRouter);
 
 app.get('/', async (c) => {
   const service = HealthService.getInstance();
