@@ -1,5 +1,5 @@
-import { MenuIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { MenuIcon } from 'lucide-react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -119,8 +119,8 @@ export const Navbar = () => {
           <a
             aria-label="Join Discord Server"
             href={DISCORD_URL}
-            target="_blank"
             rel="noopener noreferrer"
+            target="_blank"
           >
             <DiscordIcon className="h-5 w-5" />
           </a>

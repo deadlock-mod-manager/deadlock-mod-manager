@@ -16,8 +16,8 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
               <a
                 className="cursor-pointer text-secondary-foreground"
                 href={`${GITHUB_REPO}/releases/tag/v${version}`}
-                target="_blank"
                 rel="noopener noreferrer"
+                target="_blank"
               >
                 View Release Notes
               </a>
@@ -40,7 +40,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
 
           <div className="space-y-4 md:space-x-4 md:space-y-0">
             <Button asChild className="w-5/6 font-bold md:w-1/4" size={'lg'}>
-              <a href={DOWNLOAD_URL} target="_blank" rel="noopener noreferrer">
+              <a href={DOWNLOAD_URL} rel="noopener noreferrer" target="_blank">
                 <DownloadIcon className="h-4 w-4" />
                 Download Now
               </a>
@@ -52,7 +52,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
               size={'lg'}
               variant="ghost"
             >
-              <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
+              <a href={GITHUB_REPO} rel="noopener noreferrer" target="_blank">
                 <GithubIcon className="h-4 w-4" />
                 View on GitHub
               </a>
