@@ -13,6 +13,7 @@ export const envSchema = z.object({
   CORS_ORIGIN: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().optional(),
+  BETTERSTACK_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

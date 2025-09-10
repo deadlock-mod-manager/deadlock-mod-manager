@@ -21,6 +21,7 @@ import { RPCHandler } from '@orpc/server/fetch';
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 import { auth } from './lib/auth';
 import { createContext } from './lib/context';
+import { env } from './lib/env';
 import { HealthService } from './lib/services/health';
 import { appRouter } from './routers';
 
@@ -29,7 +30,12 @@ const app = new Hono();
 app.use(
   '*',
   requestId(),
-  cors(),
+  cors({
+    origin: env.CORS_ORIGIN || '',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }),
   sentry({
     ...SENTRY_OPTIONS,
   })
