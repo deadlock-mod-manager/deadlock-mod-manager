@@ -15,18 +15,20 @@
     "docker": "docker compose up -d",
     "format": "npx ultracite@latest fix",
     "lint": "npx ultracite@latest lint",
+    "check-types": "turbo run check-types",
     "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
-    "publish-packages": "turbo run build && changeset version"
+    "publish-packages": "turbo run build && changeset version",
+    "upgrade-dependencies": "pnpm dlx taze -r"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "dotenv-cli": "^7.4.4",
     "husky": "^9.1.7",
-    "lefthook": "^1.12.3",
-    "lint-staged": "^16.1.5",
+    "lefthook": "^1.13.0",
+    "lint-staged": "^16.1.6",
     "tsx": "4.19.1",
-    "turbo": "^2.5.0",
-    "typescript": "^5.2.2",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2",
     "ultracite": "5.2.16"
   },
   "engines": {
@@ -34,7 +36,7 @@
   },
   "name": "@deadlock-mods/root",
   "dependencies": {
-    "@changesets/cli": "^2.29.6"
+    "@changesets/cli": "^2.29.7"
   },
   "pnpm": {
     "overrides": {
@@ -53,7 +55,7 @@
       "better-sqlite3"
     ]
   },
-  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67",
+  "packageManager": "pnpm@10.15.1",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "pnpm dlx ultracite format"

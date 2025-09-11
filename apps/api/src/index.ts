@@ -2,7 +2,6 @@ import './instrument';
 
 import { sentry } from '@hono/sentry';
 import { Hono } from 'hono';
-import { cache } from 'hono/cache';
 import { cors } from 'hono/cors';
 import { etag } from 'hono/etag';
 import { logger as loggerMiddleware } from 'hono/logger';
@@ -117,8 +116,6 @@ app.use('/api/*', async (c, next) => {
 
   await next();
 });
-
-app.use('/mods/*', cache(MODS_CACHE_CONFIG));
 
 // Legacy routes (unchanged for backward compatibility)
 app.route('/mods', modsRouter);

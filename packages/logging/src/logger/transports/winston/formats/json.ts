@@ -1,3 +1,4 @@
+import type winston from 'winston';
 import { format } from 'winston';
 
 const formatMeta = (meta: Record<string | symbol, unknown | unknown[]>) => {
@@ -40,7 +41,7 @@ const customFormat = format.printf((info) => {
   });
 });
 
-export const prodFormat = format.combine(
+export const prodFormat: winston.Logform.Format = format.combine(
   format.timestamp({ format: 'isoDateTime' }),
   format.splat(),
   customFormat

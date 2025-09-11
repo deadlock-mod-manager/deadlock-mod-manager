@@ -9,14 +9,14 @@
     "dev": "tsup src/* --watch"
   },
   "dependencies": {
-    "zod": "^4.0.2"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",
-    "tsup": "^8.0.2",
+    "tsup": "^8.5.0",
     "tsx": "4.19.1",
     "typescript": "5.5.4",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.9"
   }
 }

@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/performance/noDelete: don't care lmao */
 import logfmt from 'logfmt';
+import type winston from 'winston';
 import { format } from 'winston';
 import { formatLogComponents } from '../utils';
 
@@ -9,7 +10,7 @@ import { formatLogComponents } from '../utils';
  * Example:
  * 2025-03-17T15:37:13+01:00 app-api (1.0.0) [error]: Test error app=app-api
  */
-export const devFormat = format.combine(
+export const devFormat: winston.Logform.Format = format.combine(
   format.timestamp({ format: 'isoDateTime' }),
   format.colorize(),
   format.align(),
