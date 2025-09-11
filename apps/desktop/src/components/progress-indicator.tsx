@@ -41,7 +41,9 @@ export const ProgressIndicator = () => {
   const { t } = useTranslation();
   const { isProcessing, processingStatus } = useProgress();
 
-  if (!isProcessing) return null;
+  if (!isProcessing) {
+    return null;
+  }
 
   return (
     <div className="fixed right-4 bottom-4 z-[9999] min-w-[250px] max-w-[400px] rounded-lg border bg-background p-4 shadow-xl">

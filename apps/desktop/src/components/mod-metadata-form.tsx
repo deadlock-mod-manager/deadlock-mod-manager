@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, {
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -64,6 +65,7 @@ const FALLBACK_SVG =
 
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
+const IMAGE_MIME_TYPE_REGEX = /^image\//;
 
 const schema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -132,13 +134,14 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     const fileRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<FormValues>({
+      // @ts-expect-error - Type compatibility issue with Zod resolver
       resolver: zodResolver(schema),
       defaultValues: {
         name: initial?.name ?? '',
         author: initial?.author ?? 'Unknown',
         description: initial?.description ?? '',
         link: initial?.link ?? '',
-        imageFile: initial?.imageFile ?? null,
+        imageFile: initial?.imageFile ?? undefined,
       },
     });
 
@@ -175,19 +178,19 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         setPreview(resolvedDefault);
       }
       return () => sub.unsubscribe();
-    }, []);
+    }, [form.getValues, form.watch, initial?.imageSrc, resolvedDefault]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) {
-        form.setValue('imageFile', null);
+        form.setValue('imageFile', undefined);
         setPreview(resolvedDefault);
         setImgOk(true);
         return;
       }
       const ok =
-        /^image\//.test(file.type) ||
-        /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name);
+        IMAGE_MIME_TYPE_REGEX.test(file.type) ||
+        IMAGE_FILE_EXTENSION_REGEX.test(file.name);
       if (!ok) {
         toast.error('Unsupported image type');
         e.currentTarget.value = '';
@@ -196,19 +199,23 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
       form.setValue('imageFile', file, { shouldValidate: true });
     };
 
-    const clearImage = () => {
-      form.setValue('imageFile', null, { shouldValidate: true });
+    const clearImage = useCallback(() => {
+      form.setValue('imageFile', undefined, { shouldValidate: true });
       setPreview(resolvedDefault);
       setImgOk(true);
-      if (fileRef.current) fileRef.current.value = '';
-    };
+      if (fileRef.current) {
+        fileRef.current.value = '';
+      }
+    }, [form, resolvedDefault]);
 
     useImperativeHandle(
       ref,
       () => ({
         validateAndGet: async () => {
           const valid = await form.trigger();
-          if (!valid) return null;
+          if (!valid) {
+            return null;
+          }
           const values = form.getValues();
           const meta: ModMetadata = {
             name: values.name.trim(),
@@ -227,12 +234,12 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
             author: initial?.author ?? 'Unknown',
             description: initial?.description ?? '',
             link: initial?.link ?? '',
-            imageFile: null,
+            imageFile: undefined,
           });
           clearImage();
         },
       }),
-      [form, preview, imgOk, initial]
+      [form, preview, imgOk, initial, clearImage]
     );
 
     const Body = (
