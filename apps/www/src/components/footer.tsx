@@ -105,6 +105,26 @@ export const Footer = () => {
                 Discussions
               </a>
             </div>
+            <div>
+              <a
+                className="opacity-60 hover:opacity-100"
+                href="https://www.reddit.com/r/DeadlockModManager/"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Reddit
+              </a>
+            </div>
+            <div>
+              <a
+                className="opacity-60 hover:opacity-100"
+                href="https://x.com/DLModManager"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                X (Twitter)
+              </a>
+            </div>
           </div>
         </div>
 

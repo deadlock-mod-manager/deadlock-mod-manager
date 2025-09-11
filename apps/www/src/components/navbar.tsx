@@ -17,8 +17,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { APP_NAME, DISCORD_URL } from '@/lib/constants';
+import { APP_NAME, DISCORD_URL, REDDIT_URL, X_URL } from '@/lib/constants';
 import DiscordIcon from './icons/discord-icon';
+import RedditIcon from './icons/reddit-icon';
+import XIcon from './icons/x-icon';
 import Logo from './logo';
 
 type RouteProps = {
@@ -123,6 +125,33 @@ export const Navbar = () => {
             target="_blank"
           >
             <DiscordIcon className="h-5 w-5" />
+          </a>
+        </Button>
+
+        <Button
+          aria-label="Follow on Reddit"
+          asChild
+          size="icon"
+          variant="ghost"
+        >
+          <a
+            aria-label="Follow on Reddit"
+            href={REDDIT_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <RedditIcon className="h-5 w-5" />
+          </a>
+        </Button>
+
+        <Button aria-label="Follow on X" asChild size="icon" variant="ghost">
+          <a
+            aria-label="Follow on X"
+            href={X_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <XIcon className="h-5 w-5" />
           </a>
         </Button>
       </div>

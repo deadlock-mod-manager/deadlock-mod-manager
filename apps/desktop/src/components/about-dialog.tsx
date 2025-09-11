@@ -1,11 +1,17 @@
-import { CloudArrowDown, DiscordLogo, GithubLogo } from '@phosphor-icons/react';
+import {
+  CloudArrowDown,
+  DiscordLogo,
+  GithubLogo,
+  RedditLogo,
+  XLogo,
+} from '@phosphor-icons/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { open } from '@tauri-apps/plugin-shell';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useAbout from '@/hooks/use-about';
 import useUpdateManager from '@/hooks/use-update-manager';
-import { APP_NAME, GITHUB_REPO } from '@/lib/constants';
+import { APP_NAME, GITHUB_REPO, REDDIT_URL, X_URL } from '@/lib/constants';
 import Logo from './logo';
 import { Button, buttonVariants } from './ui/button';
 import {
@@ -83,6 +89,14 @@ export const AboutDialog = () => {
           <DiscordLogo
             className="h-5 w-5 cursor-pointer transition hover:text-foreground"
             onClick={() => open('https://discord.gg/KSB2kzQWWE')}
+          />
+          <RedditLogo
+            className="h-5 w-5 cursor-pointer transition hover:text-foreground"
+            onClick={() => open(REDDIT_URL)}
+          />
+          <XLogo
+            className="h-5 w-5 cursor-pointer transition hover:text-foreground"
+            onClick={() => open(X_URL)}
           />
         </div>
 
