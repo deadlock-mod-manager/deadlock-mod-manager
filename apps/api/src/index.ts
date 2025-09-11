@@ -22,9 +22,9 @@ import { RPCHandler } from '@orpc/server/fetch';
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 import { auth } from './lib/auth';
 import { createContext } from './lib/context';
+import { env } from './lib/env';
 import { HealthService } from './lib/services/health';
 import { appRouter } from './routers';
-
 import customSettingsRouter from './routers/legacy/custom-settings';
 import modsRouter from './routers/legacy/mods';
 
@@ -34,7 +34,11 @@ app.use(
   '*',
   requestId(),
   cors({
-    origin: '*',
+    origin: [
+      env.CORS_ORIGIN ?? '', // Website
+      'http://tauri.localhost', // Tauri production build
+      'http://localhost:1420', // Tauri dev server
+    ],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
