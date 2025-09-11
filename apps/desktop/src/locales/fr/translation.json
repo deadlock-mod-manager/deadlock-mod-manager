@@ -30,7 +30,15 @@
     "subtitle": "Mis à jour quotidiennement, avec de nouveaux mods ajoutés chaque semaine.",
     "noModsFound": "Aucun mod trouvé",
     "noModsMatchFilters": "Aucun mod ne correspond à votre recherche et filtres actuels",
-    "noModsAvailable": "Aucun mod disponible"
+    "noModsAvailable": "Aucun mod disponible",
+    "deleteConfirmTitle": "Êtes-vous sûr de vouloir supprimer ce mod ? Cela le retirera de votre liste de mods et supprimera tous les fichiers.",
+    "deleteConfirmBody": "Cette action ne peut pas être annulée.",
+    "deleteConfirmAction": "Supprimer",
+    "deleteConfirmCancel": "Annuler",
+    "deleteSuccess": "Mod supprimé avec succès",
+    "disableSuccess": "Mod désactivé avec succès",
+    "deleteError": "Échec de la suppression du mod",
+    "disableError": "Échec de la désactivation du mod"
   },
   "downloads": {
     "downloading": "Téléchargement de {{count}} mod",
@@ -163,10 +171,6 @@
     "tauriVersion": "Version Tauri :",
     "copyright": "Non affilié à Valve. Deadlock et le logo Deadlock sont des marques déposées de Valve Corporation."
   },
-  "menu": {
-    "about": "À propos",
-    "quit": "Quitter"
-  },
   "filters": {
     "filters": "Filtres",
     "category": "Catégorie",
@@ -239,21 +243,5 @@
   },
   "progress": {
     "pleaseWait": "Veuillez patienter..."
-  },
-  "mods": {
-    "enable": "Activer",
-    "disable": "Désactiver",
-    "installing": "Installation...",
-    "by": "by",
-    "audioMod": "Mod Audio",
-    "removeMod": "Supprimer le mod",
-    "deleteConfirmTitle": "Êtes-vous sûr de vouloir supprimer ce mod ? Cela le retirera de votre liste de mods et supprimera tous les fichiers.",
-    "deleteConfirmBody": "Cette action ne peut pas être annulée.",
-    "deleteConfirmAction": "Supprimer",
-    "deleteConfirmCancel": "Annuler",
-    "deleteSuccess": "Mod supprimé avec succès",
-    "disableSuccess": "Mod désactivé avec succès",
-    "deleteError": "Échec de la suppression du mod",
-    "disableError": "Échec de la désactivation du mod"
   }
 }

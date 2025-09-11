@@ -25,7 +25,15 @@
     "subtitle": "Täglich aktualisiert, mit neuen Mods jede Woche.",
     "noModsFound": "Keine Mods gefunden",
     "noModsMatchFilters": "Keine Mods entsprechen Ihrer aktuellen Suche und Filter",
-    "noModsAvailable": "Keine Mods verfügbar"
+    "noModsAvailable": "Keine Mods verfügbar",
+    "deleteConfirmTitle": "Sind Sie sicher, dass Sie diese Mod löschen möchten? Dies wird sie aus Ihrer Mod-Liste entfernen und alle Dateien löschen.",
+    "deleteConfirmBody": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteConfirmAction": "Löschen",
+    "deleteConfirmCancel": "Abbrechen",
+    "deleteSuccess": "Mod erfolgreich gelöscht",
+    "disableSuccess": "Mod erfolgreich deaktiviert",
+    "deleteError": "Fehler beim Löschen der Mod",
+    "disableError": "Fehler beim Deaktivieren der Mod"
   },
   "downloads": {
     "downloading": "Lade {{count}} Mod herunter",
@@ -157,10 +165,6 @@
     "tauriVersion": "Tauri-Version:",
     "copyright": "Nicht mit Valve verbunden. Deadlock und das Deadlock-Logo sind eingetragene Marken der Valve Corporation."
   },
-  "menu": {
-    "about": "Informationen",
-    "quit": "Beenden"
-  },
   "filters": {
     "filters": "Filter",
     "category": "Kategorie",
@@ -233,21 +237,5 @@
   },
   "progress": {
     "pleaseWait": "Bitte warten..."
-  },
-  "mods": {
-    "enable": "Aktivieren",
-    "disable": "Deaktivieren",
-    "installing": "Installiere...",
-    "by": "by",
-    "audioMod": "Audio-Mod",
-    "removeMod": "Mod entfernen",
-    "deleteConfirmTitle": "Sind Sie sicher, dass Sie diese Mod löschen möchten? Dies wird sie aus Ihrer Mod-Liste entfernen und alle Dateien löschen.",
-    "deleteConfirmBody": "Diese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteConfirmAction": "Löschen",
-    "deleteConfirmCancel": "Abbrechen",
-    "deleteSuccess": "Mod erfolgreich gelöscht",
-    "disableSuccess": "Mod erfolgreich deaktiviert",
-    "deleteError": "Fehler beim Löschen der Mod",
-    "disableError": "Fehler beim Deaktivieren der Mod"
   }
 }

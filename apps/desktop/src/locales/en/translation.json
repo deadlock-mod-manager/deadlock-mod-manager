@@ -30,7 +30,15 @@
     "subtitle": "Updated daily, with new mods added every week.",
     "noModsFound": "No mods found",
     "noModsMatchFilters": "No mods match your current search and filters",
-    "noModsAvailable": "No mods available"
+    "noModsAvailable": "No mods available",
+    "deleteConfirmTitle": "Are you sure you want to delete this mod? This will remove it from your mods list and delete all files.",
+    "deleteConfirmBody": "This action cannot be undone.",
+    "deleteConfirmAction": "Delete",
+    "deleteConfirmCancel": "Cancel",
+    "deleteSuccess": "Mod deleted successfully",
+    "disableSuccess": "Mod disabled successfully",
+    "deleteError": "Failed to delete mod",
+    "disableError": "Failed to disable mod"
   },
   "downloads": {
     "downloading": "Downloading {{count}} mod",
@@ -163,10 +171,6 @@
     "tauriVersion": "Tauri version:",
     "copyright": "Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation."
   },
-  "menu": {
-    "about": "About",
-    "quit": "Quit"
-  },
   "filters": {
     "filters": "Filters",
     "category": "Category",
@@ -239,21 +243,5 @@
   },
   "progress": {
     "pleaseWait": "Please wait..."
-  },
-  "mods": {
-    "enable": "Enable",
-    "disable": "Disable",
-    "installing": "Installing...",
-    "by": "by",
-    "audioMod": "Audio Mod",
-    "removeMod": "Remove Mod",
-    "deleteConfirmTitle": "Are you sure you want to delete this mod? This will remove it from your mods list and delete all files.",
-    "deleteConfirmBody": "This action cannot be undone.",
-    "deleteConfirmAction": "Delete",
-    "deleteConfirmCancel": "Cancel",
-    "deleteSuccess": "Mod deleted successfully",
-    "disableSuccess": "Mod disabled successfully",
-    "deleteError": "Failed to delete mod",
-    "disableError": "Failed to disable mod"
   }
 }
