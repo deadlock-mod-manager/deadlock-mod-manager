@@ -33,11 +33,7 @@ app.use(
   '*',
   requestId(),
   cors({
-    origin: [
-      env.CORS_ORIGIN ?? '', // Website
-      'http://tauri.localhost', // Tauri production build
-      'http://localhost:1420', // Tauri dev server
-    ],
+    origin: env.CORS_ORIGIN,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
