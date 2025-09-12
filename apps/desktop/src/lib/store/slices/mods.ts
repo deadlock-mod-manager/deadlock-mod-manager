@@ -1,7 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import type { StateCreator } from 'zustand';
 import { SortType } from '@/lib/constants';
-import { createLogger } from '@/lib/logger';
 import {
   type LocalMod,
   type ModFileTree,
@@ -10,21 +9,22 @@ import {
 } from '@/types/mods';
 import type { State } from '..';
 
-const logger = createLogger('mods-state');
-
 export type ModProgress = {
   percentage: number;
   speed?: number;
 };
 
 export type ModsState = {
-  mods: LocalMod[];
+  localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
   defaultSort: SortType;
   setDefaultSort: (sortType: SortType) => void;
-  addMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
+  addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
+  /**
+   * @deprecated Use the useModStatus hook instead.
+   */
   setModStatus: (remoteId: string, status: ModStatus) => void;
   setModPath: (remoteId: string, path: string) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
@@ -37,70 +37,33 @@ export type ModsState = {
   getModProgress: (remoteId: string) => ModProgress | undefined;
 };
 
-export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
-  logger.debug('Transitioning mod status', { current, next });
-
-  if (current === ModStatus.Downloading && next === ModStatus.Downloaded) {
-    return ModStatus.Downloaded;
-  }
-  if (current === ModStatus.Downloaded && next === ModStatus.Installing) {
-    return ModStatus.Installing;
-  }
-  if (current === ModStatus.Installing && next === ModStatus.Installed) {
-    return ModStatus.Installed;
-  }
-  if (current === ModStatus.Installed && next === ModStatus.Downloading) {
-    return ModStatus.Downloading;
-  }
-  if (current === ModStatus.Downloading && next === ModStatus.Error) {
-    return ModStatus.Error;
-  }
-  if (current === ModStatus.Installing && next === ModStatus.Error) {
-    return ModStatus.Error;
-  }
-  if (current === ModStatus.Installed && next === ModStatus.Downloaded) {
-    return ModStatus.Downloaded;
-  }
-  if (next === ModStatus.Installed) {
-    return ModStatus.Installed;
-  }
-  if (current === ModStatus.Error && next === ModStatus.Downloaded) {
-    return ModStatus.Downloaded;
-  }
-  return current;
-};
-
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   set,
   get
 ) => ({
-  mods: [],
+  localMods: [],
   modProgress: {},
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
-
-  addMod: (mod, additional) =>
+  addLocalMod: (mod, additional) =>
     set((state) => {
-      if (state.mods.some((m) => m.id === mod.id)) {
+      if (state.localMods.some((m) => m.id === mod.id)) {
         return state;
       }
       return {
-        mods: [
-          ...state.mods,
-          { ...mod, status: ModStatus.Downloading, ...additional },
+        localMods: [
+          ...state.localMods,
+          { ...mod, status: ModStatus.Added, ...additional },
         ],
       };
     }),
 
   setModStatus: (remoteId, status) =>
     set((state) => ({
-      mods: state.mods.map((mod) => ({
+      localMods: state.localMods.map((mod) => ({
         ...mod,
-        status:
-          mod.remoteId === remoteId
-            ? transitionModStatus(mod.status, status)
-            : mod.status,
+        status: mod.remoteId === remoteId ? status : mod.status,
         downloadedAt:
           status === ModStatus.Downloaded && mod.status !== ModStatus.Installed
             ? new Date()
@@ -110,7 +73,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setModPath: (remoteId, path) =>
     set((state) => ({
-      mods: state.mods.map((mod) => ({
+      localMods: state.localMods.map((mod) => ({
         ...mod,
         path: mod.remoteId === remoteId ? path : mod.path,
       })),
@@ -121,14 +84,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
       return {
-        mods: state.mods.filter((mod) => mod.remoteId !== remoteId),
+        localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
         modProgress: newProgress,
       };
     }),
 
-  setMods: (mods) => set({ mods }),
+  setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () => set({ mods: [], modProgress: {} }),
+  clearMods: () => set({ localMods: [], modProgress: {} }),
 
   setModProgress: (remoteId, progress, index = 0) =>
     set((state) => ({
@@ -151,7 +114,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     fileTree?: ModFileTree
   ) =>
     set((state) => ({
-      mods: state.mods.map((mod) => ({
+      localMods: state.localMods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? ModStatus.Installed : mod.status,
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,

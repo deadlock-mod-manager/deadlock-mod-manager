@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "npx ultracite lint",
-    "format": "npx ultracite format",
+    "format": "npx ultracite fix",
     "check-types": "tsc --noEmit --skipLibCheck"
   },
   "devDependencies": {

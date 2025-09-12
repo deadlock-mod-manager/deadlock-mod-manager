@@ -40,11 +40,11 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { useDownload } from '@/hooks/use-download';
 import type {
   InstallWithCollectionFunction,
   InstallWithCollectionOptions,
 } from '@/hooks/use-install-with-collection';
-import { useMultiFileDownload } from '@/hooks/use-multi-file-download';
 import useUninstall from '@/hooks/use-uninstall';
 import { getMod, getModDownloads } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -90,7 +90,7 @@ const Mod = () => {
     closeDialog,
     localMod,
     isDialogOpen,
-  } = useMultiFileDownload(data, availableFiles);
+  } = useDownload(data, availableFiles);
 
   const { uninstall } = useUninstall();
   const {

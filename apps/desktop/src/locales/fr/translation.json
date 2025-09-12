@@ -243,5 +243,18 @@
   },
   "progress": {
     "pleaseWait": "Veuillez patienter..."
+  },
+  "modStatus": {
+    "added": "Ajouté à mes mods",
+    "downloading": "Téléchargement...",
+    "downloaded": "Téléchargé",
+    "failedToDownload": "Échec du téléchargement",
+    "installing": "Installation...",
+    "installed": "Installé",
+    "failedToInstall": "Échec de l'installation",
+    "removing": "Suppression...",
+    "removed": "Supprimé",
+    "failedToRemove": "Échec de la suppression",
+    "error": "Erreur survenue"
   }
 }

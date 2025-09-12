@@ -236,20 +236,17 @@
   "progress": {
     "pleaseWait": "يرجى الانتظار..."
   },
-  "mods": {
-    "enable": "تفعيل",
-    "disable": "إلغاء التفعيل",
+  "modStatus": {
+    "added": "تمت الإضافة إلى تعديلاتي",
+    "downloading": "جاري التحميل...",
+    "downloaded": "تم التحميل",
+    "failedToDownload": "فشل التحميل",
     "installing": "جاري التثبيت...",
-    "by": "by",
-    "audioMod": "تعديل صوتي",
-    "removeMod": "إزالة التعديل",
-    "deleteConfirmTitle": "هل أنت متأكد من أنك تريد حذف هذا التعديل؟ سيتم إزالته من قائمة التعديلات وحذف جميع الملفات.",
-    "deleteConfirmBody": "لا يمكن التراجع عن هذا الإجراء.",
-    "deleteConfirmAction": "حذف",
-    "deleteConfirmCancel": "إلغاء",
-    "deleteSuccess": "تم حذف التعديل بنجاح",
-    "disableSuccess": "تم تعطيل التعديل بنجاح",
-    "deleteError": "فشل في حذف التعديل",
-    "disableError": "فشل في تعطيل التعديل"
+    "installed": "مثبت",
+    "failedToInstall": "فشل التثبيت",
+    "removing": "جاري الإزالة...",
+    "removed": "تم الإزالة",
+    "failedToRemove": "فشل الإزالة",
+    "error": "حدث خطأ"
   }
 }

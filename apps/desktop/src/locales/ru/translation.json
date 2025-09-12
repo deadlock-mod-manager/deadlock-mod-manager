@@ -235,5 +235,18 @@
   },
   "progress": {
     "pleaseWait": "Пожалуйста, подождите..."
+  },
+  "modStatus": {
+    "added": "Добавлено в мои моды",
+    "downloading": "Загрузка...",
+    "downloaded": "Загружено",
+    "failedToDownload": "Ошибка загрузки",
+    "installing": "Установка...",
+    "installed": "Установлено",
+    "failedToInstall": "Ошибка установки",
+    "removing": "Удаление...",
+    "removed": "Удалено",
+    "failedToRemove": "Ошибка удаления",
+    "error": "Произошла ошибка"
   }
 }

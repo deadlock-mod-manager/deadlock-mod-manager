@@ -32,7 +32,7 @@ const getDownloadTimestamp = (
 };
 
 const Downloads = () => {
-  const downloads = usePersistedStore((state) => state.mods);
+  const downloads = usePersistedStore((state) => state.localMods);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
   const filteredDownloads = useMemo(() => {

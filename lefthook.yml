@@ -1,7 +1,7 @@
 pre-commit:
   jobs:
-    - run: pnpm dlx ultracite format
-      glob: 
+    - run: pnpm dlx ultracite fix
+      glob:
         - "*.js"
         - "*.jsx"
         - "*.ts"

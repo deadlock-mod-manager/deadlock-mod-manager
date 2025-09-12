@@ -243,5 +243,18 @@
   },
   "progress": {
     "pleaseWait": ""
+  },
+  "modStatus": {
+    "added": "Added to my mods",
+    "downloading": "",
+    "downloaded": "",
+    "failedToDownload": "",
+    "installing": "",
+    "installed": "",
+    "failedToInstall": "",
+    "removing": "",
+    "removed": "",
+    "failedToRemove": "",
+    "error": ""
   }
 }

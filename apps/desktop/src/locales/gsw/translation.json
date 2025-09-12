@@ -242,5 +242,18 @@
   },
   "progress": {
     "pleaseWait": "Bitte warte..."
+  },
+  "modStatus": {
+    "added": "Zu mine Mods hinzuegfüegt",
+    "downloading": "Am Abelade...",
+    "downloaded": "Abelade",
+    "failedToDownload": "Download fehlgschlage",
+    "installing": "Am Instaliere...",
+    "installed": "Instaliert",
+    "failedToInstall": "Installation fehlgschlage",
+    "removing": "Am Entferne...",
+    "removed": "Entfernt",
+    "failedToRemove": "Entfernig fehlgschlage",
+    "error": "Fähler ufträte"
   }
 }

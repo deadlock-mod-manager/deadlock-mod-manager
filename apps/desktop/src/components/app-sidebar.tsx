@@ -9,6 +9,7 @@ import {
   UploadSimple,
 } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
+import { Bug } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 import {
@@ -42,6 +43,7 @@ type SidebarItem = {
   }) => React.ReactNode;
   url: string;
   icon: Icon;
+  bottom?: boolean;
 };
 
 const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
@@ -93,12 +95,24 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
     title: () => <span>{t('navigation.settings')}</span>,
     url: '/settings',
     icon: Gear,
+    bottom: true,
   },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          id: 'debug',
+          title: () => <span>Debug</span>,
+          url: '/debug',
+          icon: Bug,
+          bottom: true,
+        },
+      ]
+    : []),
 ];
 
 const DownloadProgress = () => {
   const { t } = useTranslation();
-  const mods = usePersistedStore((state) => state.mods);
+  const mods = usePersistedStore((state) => state.localMods);
   const modProgress = usePersistedStore((state) => state.modProgress);
 
   const downloadingMods = mods.filter(
@@ -149,7 +163,7 @@ const DownloadProgress = () => {
 export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const mods = usePersistedStore((state) => state.mods);
+  const mods = usePersistedStore((state) => state.localMods);
   const { forceShow } = useWhatsNew();
 
   const items = getSidebarItems(t);
@@ -164,28 +178,31 @@ export const AppSidebar = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                  >
-                    <Link to={item.url}>
-                      <item.icon weight="duotone" />
-                      {item.title({
-                        isActive: location.pathname === item.url,
-                        count: item.id === 'my-mods' ? mods.length : undefined,
-                        downloads:
-                          item.id === 'downloads'
-                            ? mods.filter(
-                                (mod) => mod.status === ModStatus.Downloading
-                              ).length
-                            : undefined,
-                      })}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items
+                .filter((item) => !item.bottom)
+                .map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                    >
+                      <Link to={item.url}>
+                        <item.icon weight="duotone" />
+                        {item.title({
+                          isActive: location.pathname === item.url,
+                          count:
+                            item.id === 'my-mods' ? mods.length : undefined,
+                          downloads:
+                            item.id === 'downloads'
+                              ? mods.filter(
+                                  (mod) => mod.status === ModStatus.Downloading
+                                ).length
+                              : undefined,
+                        })}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -195,6 +212,23 @@ export const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <DownloadProgress />
+              {items
+                .filter((item) => item.bottom)
+                .map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                    >
+                      <Link to={item.url}>
+                        <item.icon weight="duotone" />
+                        {item.title({
+                          isActive: location.pathname === item.url,
+                        })}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               <Separator />
               <SidebarMenuItem>
                 <SidebarMenuButton

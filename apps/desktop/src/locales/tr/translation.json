@@ -242,5 +242,18 @@
   },
   "progress": {
     "pleaseWait": "Lütfen bekleyin..."
+  },
+  "modStatus": {
+    "added": "Modlarıma eklendi",
+    "downloading": "İndiriliyor...",
+    "downloaded": "İndirildi",
+    "failedToDownload": "İndirme başarısız",
+    "installing": "Kuruluyor...",
+    "installed": "Kuruldu",
+    "failedToInstall": "Kurulum başarısız",
+    "removing": "Kaldırılıyor...",
+    "removed": "Kaldırıldı",
+    "failedToRemove": "Kaldırma başarısız",
+    "error": "Hata oluştu"
   }
 }

@@ -15,6 +15,7 @@ export const envSchema = z.object({
     'https://deadlockmods.app',
     'http://tauri.localhost', // Tauri production build
     'http://localhost:1420', // Tauri dev server
+    'http://localhost:3001', // Local web server
   ]),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().optional(),

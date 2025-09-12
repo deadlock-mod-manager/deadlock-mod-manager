@@ -142,7 +142,7 @@ const CustomSettingsData = () => {
 
 const CustomSettings = () => {
   const { t } = useTranslation();
-  const { clearMods, mods } = usePersistedStore();
+  const { clearMods, localMods: mods } = usePersistedStore();
   const confirm = useConfirm();
 
   // Hooks für Default Sort

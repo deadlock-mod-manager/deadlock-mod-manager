@@ -12,6 +12,7 @@ import Splash from './pages/splash';
 
 import './index.css';
 import './lib/i18n';
+import Debug from './pages/debug';
 import Downloads from './pages/downloads';
 import Mod from './pages/mod';
 
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
               <Route element={<AddMods />} path="/add-mods" />
               <Route element={<Downloads />} path="/downloads" />
               <Route element={<CustomSettings />} path="/settings" />
+              <Route element={<Debug />} path="/debug" />
             </Route>
           </Routes>
         </BrowserRouter>

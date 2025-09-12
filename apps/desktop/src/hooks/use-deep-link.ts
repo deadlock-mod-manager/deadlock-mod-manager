@@ -97,8 +97,13 @@ const getFileInfoFromHeaders = async (url: string): Promise<FileInfo> => {
 
 export const useDeepLink = () => {
   const navigate = useNavigate();
-  const { addMod, setModStatus, setModProgress, setModPath, setInstalledVpks } =
-    usePersistedStore();
+  const {
+    addLocalMod: addMod,
+    setModStatus,
+    setModProgress,
+    setModPath,
+    setInstalledVpks,
+  } = usePersistedStore();
   const { install } = useInstall();
   const processingRef = useRef<Set<string>>(new Set());
 
@@ -131,7 +136,7 @@ export const useDeepLink = () => {
               const modData = await getMod(mod_id);
 
               // Check if mod is already installed BEFORE downloading
-              const currentMods = usePersistedStore.getState().mods;
+              const currentMods = usePersistedStore.getState().localMods;
               const existingMod = currentMods.find(
                 (m) => m.remoteId === modData.remoteId
               );

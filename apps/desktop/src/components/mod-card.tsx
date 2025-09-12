@@ -16,7 +16,7 @@ import { useQuery } from 'react-query';
 import { useNavigate } from 'react-router';
 import { MultiFileDownloadDialog } from '@/components/multi-file-download-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMultiFileDownload } from '@/hooks/use-multi-file-download';
+import { useDownload } from '@/hooks/use-download';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { getModDownloads } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
@@ -48,7 +48,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
     closeDialog,
     localMod,
     isDialogOpen,
-  } = useMultiFileDownload(mod, availableFiles);
+  } = useDownload(mod, availableFiles);
 
   const status = localMod?.status;
   const navigate = useNavigate();

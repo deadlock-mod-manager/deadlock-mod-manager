@@ -58,7 +58,7 @@
   "packageManager": "pnpm@10.15.1",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "pnpm dlx ultracite format"
+      "pnpm dlx ultracite fix"
     ]
   }
 }

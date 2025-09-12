@@ -236,20 +236,17 @@
   "progress": {
     "pleaseWait": "Proszę czekać..."
   },
-  "mods": {
-    "enable": "Włącz",
-    "disable": "Wyłącz",
+  "modStatus": {
+    "added": "Dodano do moich modów",
+    "downloading": "Pobieranie...",
+    "downloaded": "Pobrano",
+    "failedToDownload": "Nie udało się pobrać",
     "installing": "Instalowanie...",
-    "by": "by",
-    "audioMod": "Mod Audio",
-    "removeMod": "Usuń mod",
-    "deleteConfirmTitle": "Czy na pewno chcesz usunąć ten mod? Zostanie on usunięty z listy modów i wszystkie pliki zostaną usunięte.",
-    "deleteConfirmBody": "Ta akcja nie może zostać cofnięta.",
-    "deleteConfirmAction": "Usuń",
-    "deleteConfirmCancel": "Anuluj",
-    "deleteSuccess": "Mod został pomyślnie usunięty",
-    "disableSuccess": "Mod został pomyślnie wyłączony",
-    "deleteError": "Nie udało się usunąć moda",
-    "disableError": "Nie udało się wyłączyć moda"
+    "installed": "Zainstalowany",
+    "failedToInstall": "Nie udało się zainstalować",
+    "removing": "Usuwanie...",
+    "removed": "Usunięty",
+    "failedToRemove": "Nie udało się usunąć",
+    "error": "Wystąpił błąd"
   }
 }

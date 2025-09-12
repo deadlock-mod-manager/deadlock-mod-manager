@@ -37,7 +37,7 @@ export interface ModMetadata {
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
-  const { addMod, setModPath, setModStatus } = usePersistedStore();
+  const { addLocalMod: addMod, setModPath, setModStatus } = usePersistedStore();
 
   const processArchive = async (
     file: File,

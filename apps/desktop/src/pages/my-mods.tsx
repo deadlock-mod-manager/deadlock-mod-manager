@@ -472,7 +472,7 @@ const SimpleSearchBar = ({
 
 const MyMods = () => {
   const { t } = useTranslation();
-  const mods = usePersistedStore((state) => state.mods);
+  const mods = usePersistedStore((state) => state.localMods);
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const { results, query, setQuery } = useSearch({
