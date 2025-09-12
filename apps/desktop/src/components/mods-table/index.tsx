@@ -21,7 +21,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
           {
             onStart: (mod) => {
               logger.info('Starting installation', { mod: mod.remoteId });
-              setModStatus(mod.remoteId, ModStatus.INSTALLING);
+              setModStatus(mod.remoteId, ModStatus.Installing);
             },
             onComplete: (mod, result) => {
               logger.info('Installation complete', {
@@ -29,7 +29,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
                 result: result.installed_vpks,
                 hasFileTree: !!result.file_tree,
               });
-              setModStatus(mod.remoteId, ModStatus.INSTALLED);
+              setModStatus(mod.remoteId, ModStatus.Installed);
               setInstalledVpks(
                 mod.remoteId,
                 result.installed_vpks,
@@ -41,7 +41,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
 
               switch (error.kind) {
                 case 'modAlreadyInstalled':
-                  setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                  setModStatus(mod.remoteId, ModStatus.Installed);
                   toast.error(error.message);
                   break;
                 default:
@@ -51,7 +51,7 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
             },
             onCancel: (mod) => {
               logger.info('Installation canceled', { mod: mod.remoteId });
-              setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+              setModStatus(mod.remoteId, ModStatus.Downloaded);
             },
             onFileTreeAnalyzed: (mod, fileTree) => {
               logger.info('File tree analyzed', {

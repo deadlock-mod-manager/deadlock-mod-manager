@@ -64,8 +64,8 @@ const GridModCard = ({
   installOptions: InstallWithCollectionOptions;
 }) => {
   const { t } = useTranslation();
-  const isDisabled = mod.status !== ModStatus.INSTALLED;
-  const isInstalling = mod.status === ModStatus.INSTALLING;
+  const isDisabled = mod.status !== ModStatus.Installed;
+  const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
     usePersistedStore();
@@ -183,7 +183,7 @@ const GridModCard = ({
           {mod.isAudio && <Badge variant="secondary">Audio</Badge>}
           {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
         </div>
-        {mod.status === ModStatus.INSTALLING && (
+        {mod.status === ModStatus.Installing && (
           <div className="absolute inset-0 flex items-center justify-center rounded-t-xl bg-black/50">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -211,7 +211,7 @@ const GridModCard = ({
       <CardFooter className="flex justify-between px-3 py-3 pt-2">
         <div className="flex items-center gap-2">
           <Switch
-            checked={mod.status === ModStatus.INSTALLED}
+            checked={mod.status === ModStatus.Installed}
             disabled={isInstalling}
             id={`install-mod-${mod.remoteId}`}
             onCheckedChange={(value) => {
@@ -225,7 +225,7 @@ const GridModCard = ({
           <Label className="text-xs" htmlFor={`install-mod-${mod.remoteId}`}>
             {isInstalling
               ? t('mods.installing')
-              : mod.status === ModStatus.INSTALLED
+              : mod.status === ModStatus.Installed
                 ? t('mods.disable')
                 : t('mods.enable')}
           </Label>
@@ -259,8 +259,8 @@ const ListModCard = ({
   installOptions: InstallWithCollectionOptions;
 }) => {
   const { t } = useTranslation();
-  const isDisabled = mod.status !== ModStatus.INSTALLED;
-  const isInstalling = mod.status === ModStatus.INSTALLING;
+  const isDisabled = mod.status !== ModStatus.Installed;
+  const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
     usePersistedStore();
@@ -383,7 +383,7 @@ const ListModCard = ({
               <OutdatedModWarning className="text-xs" variant="indicator" />
             )}
           </div>
-          {mod.status === ModStatus.INSTALLING && (
+          {mod.status === ModStatus.Installing && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
             </div>
@@ -405,7 +405,7 @@ const ListModCard = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Switch
-                checked={mod.status === ModStatus.INSTALLED}
+                checked={mod.status === ModStatus.Installed}
                 disabled={isInstalling}
                 id={`list-install-mod-${mod.remoteId}`}
                 onCheckedChange={(value) => {
@@ -422,7 +422,7 @@ const ListModCard = ({
               >
                 {isInstalling
                   ? t('mods.installing')
-                  : mod.status === ModStatus.INSTALLED
+                  : mod.status === ModStatus.Installed
                     ? t('mods.disable')
                     : t('mods.enable')}
               </Label>
@@ -489,7 +489,7 @@ const MyMods = () => {
             const installOptions: InstallWithCollectionOptions = {
               onStart: (mod) => {
                 logger.info('Starting installation', { mod: mod.remoteId });
-                setModStatus(mod.remoteId, ModStatus.INSTALLING);
+                setModStatus(mod.remoteId, ModStatus.Installing);
               },
               onComplete: (mod, result) => {
                 logger.info('Installation complete', {
@@ -497,7 +497,7 @@ const MyMods = () => {
                   result: result.installed_vpks,
                   hasFileTree: !!result.file_tree,
                 });
-                setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                setModStatus(mod.remoteId, ModStatus.Installed);
                 setInstalledVpks(
                   mod.remoteId,
                   result.installed_vpks,
@@ -514,15 +514,15 @@ const MyMods = () => {
 
                 switch (error.kind) {
                   case 'modAlreadyInstalled':
-                    setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                    setModStatus(mod.remoteId, ModStatus.Installed);
                     break;
                   default:
-                    setModStatus(mod.remoteId, ModStatus.ERROR);
+                    setModStatus(mod.remoteId, ModStatus.Error);
                 }
               },
               onCancel: (mod) => {
                 logger.info('Installation canceled', { mod: mod.remoteId });
-                setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+                setModStatus(mod.remoteId, ModStatus.Downloaded);
                 toast.info('Installation canceled');
               },
               onFileTreeAnalyzed: (mod, fileTree) => {

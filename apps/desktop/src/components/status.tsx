@@ -7,11 +7,11 @@ import { Badge } from './ui/badge';
 const Status = ({ status }: { status: ModStatus }) => {
   const StatusIcon = useMemo(() => {
     switch (status) {
-      case ModStatus.DOWNLOADING:
+      case ModStatus.Downloading:
         return Loader2;
-      case ModStatus.INSTALLED:
+      case ModStatus.Installed:
         return Check;
-      case ModStatus.ERROR:
+      case ModStatus.Error:
         return X;
       default:
         return Download;
@@ -20,13 +20,13 @@ const Status = ({ status }: { status: ModStatus }) => {
 
   const StatusText = useMemo(() => {
     switch (status) {
-      case ModStatus.DOWNLOADED:
+      case ModStatus.Downloaded:
         return 'Downloaded';
-      case ModStatus.DOWNLOADING:
+      case ModStatus.Downloading:
         return 'Downloading';
-      case ModStatus.INSTALLED:
+      case ModStatus.Installed:
         return 'Installed';
-      case ModStatus.ERROR:
+      case ModStatus.Error:
         return 'Error';
       default:
         return 'Unknown';
@@ -37,7 +37,7 @@ const Status = ({ status }: { status: ModStatus }) => {
     <Badge className="flex w-fit items-center gap-2" variant="secondary">
       <StatusIcon
         className={cn('h-4 w-4', {
-          'animate-spin': status === ModStatus.DOWNLOADING,
+          'animate-spin': status === ModStatus.Downloading,
         })}
       />
       {StatusText}

@@ -40,32 +40,32 @@ export type ModsState = {
 export const transitionModStatus = (current: ModStatus, next: ModStatus) => {
   logger.debug('Transitioning mod status', { current, next });
 
-  if (current === ModStatus.DOWNLOADING && next === ModStatus.DOWNLOADED) {
-    return ModStatus.DOWNLOADED;
+  if (current === ModStatus.Downloading && next === ModStatus.Downloaded) {
+    return ModStatus.Downloaded;
   }
-  if (current === ModStatus.DOWNLOADED && next === ModStatus.INSTALLING) {
-    return ModStatus.INSTALLING;
+  if (current === ModStatus.Downloaded && next === ModStatus.Installing) {
+    return ModStatus.Installing;
   }
-  if (current === ModStatus.INSTALLING && next === ModStatus.INSTALLED) {
-    return ModStatus.INSTALLED;
+  if (current === ModStatus.Installing && next === ModStatus.Installed) {
+    return ModStatus.Installed;
   }
-  if (current === ModStatus.INSTALLED && next === ModStatus.DOWNLOADING) {
-    return ModStatus.DOWNLOADING;
+  if (current === ModStatus.Installed && next === ModStatus.Downloading) {
+    return ModStatus.Downloading;
   }
-  if (current === ModStatus.DOWNLOADING && next === ModStatus.ERROR) {
-    return ModStatus.ERROR;
+  if (current === ModStatus.Downloading && next === ModStatus.Error) {
+    return ModStatus.Error;
   }
-  if (current === ModStatus.INSTALLING && next === ModStatus.ERROR) {
-    return ModStatus.ERROR;
+  if (current === ModStatus.Installing && next === ModStatus.Error) {
+    return ModStatus.Error;
   }
-  if (current === ModStatus.INSTALLED && next === ModStatus.DOWNLOADED) {
-    return ModStatus.DOWNLOADED;
+  if (current === ModStatus.Installed && next === ModStatus.Downloaded) {
+    return ModStatus.Downloaded;
   }
-  if (next === ModStatus.INSTALLED) {
-    return ModStatus.INSTALLED;
+  if (next === ModStatus.Installed) {
+    return ModStatus.Installed;
   }
-  if (current === ModStatus.ERROR && next === ModStatus.DOWNLOADED) {
-    return ModStatus.DOWNLOADED;
+  if (current === ModStatus.Error && next === ModStatus.Downloaded) {
+    return ModStatus.Downloaded;
   }
   return current;
 };
@@ -88,7 +88,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         mods: [
           ...state.mods,
-          { ...mod, status: ModStatus.DOWNLOADING, ...additional },
+          { ...mod, status: ModStatus.Downloading, ...additional },
         ],
       };
     }),
@@ -102,7 +102,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             ? transitionModStatus(mod.status, status)
             : mod.status,
         downloadedAt:
-          status === ModStatus.DOWNLOADED && mod.status !== ModStatus.INSTALLED
+          status === ModStatus.Downloaded && mod.status !== ModStatus.Installed
             ? new Date()
             : undefined,
       })),
@@ -153,7 +153,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => ({
       mods: state.mods.map((mod) => ({
         ...mod,
-        status: mod.remoteId === remoteId ? ModStatus.INSTALLED : mod.status,
+        status: mod.remoteId === remoteId ? ModStatus.Installed : mod.status,
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,

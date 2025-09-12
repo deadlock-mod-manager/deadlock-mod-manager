@@ -80,7 +80,7 @@ export const createColumns = (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Switch
-              checked={row.original.status === ModStatus.INSTALLED}
+              checked={row.original.status === ModStatus.Installed}
               id="install-mod"
               onCheckedChange={(value) => {
                 if (value) {
@@ -91,7 +91,7 @@ export const createColumns = (
               }}
             />
             <Label className="text-xs" htmlFor="install-mod">
-              {row.original.status === ModStatus.INSTALLED
+              {row.original.status === ModStatus.Installed
                 ? 'Disable'
                 : 'Enable'}
             </Label>

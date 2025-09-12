@@ -245,9 +245,9 @@ export const useModProcessor = () => {
       category,
     };
 
-    addMod(modDto, { path: modDir, status: ModStatus.DOWNLOADED });
+    addMod(modDto, { path: modDir, status: ModStatus.Downloaded });
     setModPath(modId, modDir);
-    setModStatus(modId, ModStatus.DOWNLOADED);
+    setModStatus(modId, ModStatus.Downloaded);
 
     setProcessing(true, t('addMods.modAddedSuccess'));
     toast.success(t('addMods.addedSuccess', { name: metadata.name }));

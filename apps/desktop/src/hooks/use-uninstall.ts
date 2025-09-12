@@ -30,7 +30,7 @@ const useUninstall = () => {
         return;
       }
 
-      if (mod.status === ModStatus.INSTALLED) {
+      if (mod.status === ModStatus.Installed) {
         logger.info('Uninstalling mod', {
           modId: mod.remoteId,
           vpks: mod.installedVpks,
@@ -46,12 +46,12 @@ const useUninstall = () => {
             vpks: mod.installedVpks ?? [],
           });
         }
-        setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+        setModStatus(mod.remoteId, ModStatus.Downloaded);
       }
 
       if (remove) {
         // For non-installed mods, we need to delete the folder manually
-        if (mod.status !== ModStatus.INSTALLED && mod.path) {
+        if (mod.status !== ModStatus.Installed && mod.path) {
           try {
             await invoke('remove_mod_folder', { modPath: mod.path });
           } catch (error) {

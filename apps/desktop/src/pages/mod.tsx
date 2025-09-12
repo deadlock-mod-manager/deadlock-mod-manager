@@ -135,12 +135,12 @@ const Mod = () => {
     return null;
   }
 
-  const isDownloading = localMod?.status === ModStatus.DOWNLOADING;
+  const isDownloading = localMod?.status === ModStatus.Downloading;
   const isDownloaded =
-    localMod?.status === ModStatus.DOWNLOADED ||
-    localMod?.status === ModStatus.INSTALLED;
-  const isInstalled = localMod?.status === ModStatus.INSTALLED;
-  const isInstalling = localMod?.status === ModStatus.INSTALLING;
+    localMod?.status === ModStatus.Downloaded ||
+    localMod?.status === ModStatus.Installed;
+  const isInstalled = localMod?.status === ModStatus.Installed;
+  const isInstalling = localMod?.status === ModStatus.Installing;
   const hasImages = data.images && data.images.length > 0;
 
   const handleDownload = async () => download();
@@ -164,10 +164,10 @@ const Mod = () => {
       try {
         const installOptions: InstallWithCollectionOptions = {
           onStart: (mod) => {
-            setModStatus(mod.remoteId, ModStatus.INSTALLING);
+            setModStatus(mod.remoteId, ModStatus.Installing);
           },
           onComplete: (mod, result) => {
-            setModStatus(mod.remoteId, ModStatus.INSTALLED);
+            setModStatus(mod.remoteId, ModStatus.Installed);
             setInstalledVpks(
               mod.remoteId,
               result.installed_vpks,
@@ -176,11 +176,11 @@ const Mod = () => {
             toast.success('Mod installed successfully');
           },
           onError: (mod, error) => {
-            setModStatus(mod.remoteId, ModStatus.ERROR);
+            setModStatus(mod.remoteId, ModStatus.Error);
             toast.error(error.message || 'Failed to install mod');
           },
           onCancel: (mod) => {
-            setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+            setModStatus(mod.remoteId, ModStatus.Downloaded);
             toast.info('Installation canceled');
           },
           onFileTreeAnalyzed: (mod, fileTree) => {
@@ -368,7 +368,7 @@ const Mod = () => {
                                 </Button>
                               )}
 
-                              {localMod?.status === ModStatus.DOWNLOADED && (
+                              {localMod?.status === ModStatus.Downloaded && (
                                 <p className="text-center text-muted-foreground text-sm">
                                   Mod downloaded but not installed
                                 </p>
@@ -422,7 +422,7 @@ const Mod = () => {
                             </div>
                           )}
 
-                          {localMod?.status === ModStatus.ERROR && (
+                          {localMod?.status === ModStatus.Error && (
                             <p className="text-destructive text-sm">
                               Error with mod
                             </p>

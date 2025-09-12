@@ -11,11 +11,17 @@ export type Progress = {
 };
 
 export enum ModStatus {
-  DOWNLOADED = 'downloaded',
-  INSTALLED = 'installed',
-  DOWNLOADING = 'downloading',
-  INSTALLING = 'installing',
-  ERROR = 'error',
+  Added = 'added',
+  Downloading = 'downloading',
+  Downloaded = 'downloaded',
+  FailedToDownload = 'failedToDownload',
+  Installing = 'installing',
+  Installed = 'installed',
+  FailedToInstall = 'failedToInstall',
+  Removing = 'removing',
+  Removed = 'removed',
+  FailedToRemove = 'failedToRemove',
+  Error = 'error',
 }
 
 export interface LocalMod extends ModDto {

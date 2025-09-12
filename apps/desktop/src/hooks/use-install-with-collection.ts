@@ -107,7 +107,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         throw new Error('Mod is not downloaded! Might be corrupted.');
       }
 
-      if (mod.status === ModStatus.INSTALLED) {
+      if (mod.status === ModStatus.Installed) {
         throw new Error('Mod is already installed!');
       }
 

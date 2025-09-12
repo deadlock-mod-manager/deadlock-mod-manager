@@ -135,7 +135,7 @@ export const useDeepLink = () => {
               const existingMod = currentMods.find(
                 (m) => m.remoteId === modData.remoteId
               );
-              if (existingMod?.status === ModStatus.INSTALLED) {
+              if (existingMod?.status === ModStatus.Installed) {
                 logger.info(
                   'Mod already installed, skipping download and installation:',
                   modData.remoteId
@@ -170,7 +170,7 @@ export const useDeepLink = () => {
                   },
                 ],
                 onStart: () => {
-                  setModStatus(modData.remoteId, ModStatus.DOWNLOADING);
+                  setModStatus(modData.remoteId, ModStatus.Downloading);
                   logger.info(
                     'Started direct download for mod:',
                     modData.remoteId
@@ -181,7 +181,7 @@ export const useDeepLink = () => {
                 },
                 onComplete: async (path) => {
                   // Set mod as downloaded
-                  setModStatus(modData.remoteId, ModStatus.DOWNLOADED);
+                  setModStatus(modData.remoteId, ModStatus.Downloaded);
                   setModPath(modData.remoteId, path);
 
                   logger.info(
@@ -196,21 +196,21 @@ export const useDeepLink = () => {
                   const localMod = {
                     ...modData,
                     path,
-                    status: ModStatus.DOWNLOADED,
+                    status: ModStatus.Downloaded,
                   };
 
                   // Automatically start installation
                   try {
                     await install(localMod, {
                       onStart: (mod) => {
-                        setModStatus(mod.remoteId, ModStatus.INSTALLING);
+                        setModStatus(mod.remoteId, ModStatus.Installing);
                         logger.info(
                           'Started auto-installation for mod:',
                           mod.remoteId
                         );
                       },
                       onComplete: (mod, result) => {
-                        setModStatus(mod.remoteId, ModStatus.INSTALLED);
+                        setModStatus(mod.remoteId, ModStatus.Installed);
                         setInstalledVpks(mod.remoteId, result.installed_vpks);
                         toast.success(
                           `${mod.name} installed successfully via 1-click!`
@@ -223,7 +223,7 @@ export const useDeepLink = () => {
                         processingRef.current.delete(mod_id);
                       },
                       onError: (mod, error) => {
-                        setModStatus(mod.remoteId, ModStatus.ERROR);
+                        setModStatus(mod.remoteId, ModStatus.Error);
                         toast.error(
                           `Failed to install ${mod.name}: ${error.message}`
                         );
@@ -246,7 +246,7 @@ export const useDeepLink = () => {
                   }
                 },
                 onError: (error) => {
-                  setModStatus(modData.remoteId, ModStatus.ERROR);
+                  setModStatus(modData.remoteId, ModStatus.Error);
                   toast.error(
                     `Failed to download ${modData.name}: ${error.message}`
                   );

@@ -104,11 +104,11 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
 
   const Icon = useMemo(() => {
     switch (status) {
-      case ModStatus.DOWNLOADING:
+      case ModStatus.Downloading:
         return <Loader2 className="h-4 w-4 animate-spin" />;
-      case ModStatus.DOWNLOADED:
+      case ModStatus.Downloaded:
         return <CheckIcon className="h-4 w-4" />;
-      case ModStatus.INSTALLED:
+      case ModStatus.Installed:
         return <CheckIcon className="h-4 w-4" />;
       default:
         return <DownloadIcon className="h-4 w-4" />;
@@ -249,7 +249,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           )}
           <div className="absolute top-2 right-2 flex flex-col gap-1">
             {mod.isAudio && <Badge variant="secondary">Audio</Badge>}
-            {status === ModStatus.INSTALLED && <Badge>Installed</Badge>}
+            {status === ModStatus.Installed && <Badge>Installed</Badge>}
             {isModOutdated(mod) && <OutdatedModWarning variant="indicator" />}
           </div>
         </div>
@@ -297,9 +297,9 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
                   disabled={
                     status &&
                     [
-                      ModStatus.DOWNLOADING,
-                      ModStatus.DOWNLOADED,
-                      ModStatus.INSTALLED,
+                      ModStatus.Downloading,
+                      ModStatus.Downloaded,
+                      ModStatus.Installed,
                     ].includes(status)
                   }
                   onClick={(e) => {

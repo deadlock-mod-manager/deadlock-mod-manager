@@ -40,9 +40,9 @@ const Downloads = () => {
       return downloads;
     }
     if (filter === 'active') {
-      return downloads.filter((d) => d.status === ModStatus.DOWNLOADING);
+      return downloads.filter((d) => d.status === ModStatus.Downloading);
     }
-    return downloads.filter((d) => d.status !== ModStatus.DOWNLOADING);
+    return downloads.filter((d) => d.status !== ModStatus.Downloading);
   }, [downloads, filter]);
 
   // Sort downloads: in-progress first, then by downloadedAt date desc
@@ -50,14 +50,14 @@ const Downloads = () => {
     return [...filteredDownloads].sort((a, b) => {
       // If one is in progress and other isn't, in-progress goes first
       if (
-        a.status === ModStatus.DOWNLOADING &&
-        b.status !== ModStatus.DOWNLOADING
+        a.status === ModStatus.Downloading &&
+        b.status !== ModStatus.Downloading
       ) {
         return -1;
       }
       if (
-        b.status === ModStatus.DOWNLOADING &&
-        a.status !== ModStatus.DOWNLOADING
+        b.status === ModStatus.Downloading &&
+        a.status !== ModStatus.Downloading
       ) {
         return 1;
       }
@@ -71,19 +71,19 @@ const Downloads = () => {
   }, [filteredDownloads]);
 
   const activeCount = useMemo(
-    () => downloads.filter((d) => d.status === ModStatus.DOWNLOADING).length,
+    () => downloads.filter((d) => d.status === ModStatus.Downloading).length,
     [downloads]
   );
 
   const completedCount = useMemo(
-    () => downloads.filter((d) => d.status !== ModStatus.DOWNLOADING).length,
+    () => downloads.filter((d) => d.status !== ModStatus.Downloading).length,
     [downloads]
   );
 
   const downloadFolder = useMemo(() => {
     // Get the path of the first completed download
     const completed = downloads.find(
-      (d) => d.status !== ModStatus.DOWNLOADING && d.path
+      (d) => d.status !== ModStatus.Downloading && d.path
     );
     return completed?.path?.split('\\').slice(0, -1).join('\\') || null;
   }, [downloads]);

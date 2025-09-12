@@ -59,7 +59,8 @@
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",
-        "noForEach": "off"
+        "noForEach": "off",
+        "noStaticOnlyClass": "off"
       },
       "correctness": {
         "noUnusedImports": {

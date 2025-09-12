@@ -102,7 +102,7 @@ const DownloadProgress = () => {
   const modProgress = usePersistedStore((state) => state.modProgress);
 
   const downloadingMods = mods.filter(
-    (mod) => mod.status === ModStatus.DOWNLOADING
+    (mod) => mod.status === ModStatus.Downloading
   );
   if (downloadingMods.length === 0) {
     return null;
@@ -178,7 +178,7 @@ export const AppSidebar = () => {
                         downloads:
                           item.id === 'downloads'
                             ? mods.filter(
-                                (mod) => mod.status === ModStatus.DOWNLOADING
+                                (mod) => mod.status === ModStatus.Downloading
                               ).length
                             : undefined,
                       })}

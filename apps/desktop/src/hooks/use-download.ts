@@ -19,14 +19,14 @@ export const useDownload = (mod: ModDto | undefined) => {
 
     return downloadManager.addToQueue({
       ...mod,
-      onStart: () => setModStatus(mod.remoteId, ModStatus.DOWNLOADING),
+      onStart: () => setModStatus(mod.remoteId, ModStatus.Downloading),
       onProgress: (progress) => setModProgress(mod.remoteId, progress),
       onComplete: (path) => {
-        setModStatus(mod.remoteId, ModStatus.DOWNLOADED);
+        setModStatus(mod.remoteId, ModStatus.Downloaded);
         setModPath(mod.remoteId, path);
       },
       onError: () => {
-        setModStatus(mod.remoteId, ModStatus.ERROR);
+        setModStatus(mod.remoteId, ModStatus.Error);
         removeMod(mod.remoteId);
       },
     });
