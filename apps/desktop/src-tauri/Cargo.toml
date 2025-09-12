@@ -22,14 +22,14 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-shell = "2"
-tauri-plugin-http = "2"
+tauri-plugin-shell = "2.3"
+tauri-plugin-http = "2.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri-plugin-os = "2.2.0"
-tauri-plugin-upload = "2"
-tauri-plugin-store = "2.2.0"
-tauri-plugin-fs = "2.2.0"
+tauri-plugin-os = "2.3"
+tauri-plugin-upload = "2.3"
+tauri-plugin-store = "2.4"
+tauri-plugin-fs = "2.4"
 vdf-parser = "0.1.8"
 keyvalues-serde = "0.2"
 regex = "1.11.1"
@@ -38,13 +38,13 @@ tempfile = "3.14.0"
 unrar = "0.5.7"
 thiserror = "2.0.9"
 sysinfo = { version = "0.33.0", features = ["windows"] }
-tauri-plugin-log = "2"
+tauri-plugin-log = "2.7"
 log = "0.4"
-tauri-plugin-process = "2.2.0"
+tauri-plugin-process = "2.3"
 sevenz-rust = "0.5"
 tauri-plugin-sentry = "0.3"
 steamlocate = "2.0.0"
-tauri-plugin-deep-link = "2"
+tauri-plugin-deep-link = "2.4"
 sha2 = "0.10"
 
 [dev-dependencies]
@@ -61,4 +61,4 @@ debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.2.2", features = ["deep-link"] }
-tauri-plugin-updater = "2.3.0"
+tauri-plugin-updater = "2.9"
