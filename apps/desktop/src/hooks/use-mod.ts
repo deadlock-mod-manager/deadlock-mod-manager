@@ -3,7 +3,6 @@ import { getMod } from '@/lib/api';
 
 interface UseModOptions {
   enabled?: boolean;
-  suspense?: boolean;
   retry?: number;
 }
 
@@ -11,7 +10,7 @@ export const useMod = (
   modId: string | undefined,
   options: UseModOptions = {}
 ) => {
-  const { enabled = true, suspense = true, retry = 1 } = options;
+  const { enabled = true, retry = 1 } = options;
 
   const query = useQuery({
     queryKey: ['mod', modId],
@@ -22,8 +21,9 @@ export const useMod = (
       return getMod(modId);
     },
     enabled: !!modId && !modId?.includes('local') && enabled,
-    suspense,
+    suspense: false,
     retry,
+    useErrorBoundary: false,
   });
 
   return {

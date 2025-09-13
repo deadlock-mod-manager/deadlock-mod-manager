@@ -1,6 +1,8 @@
+import { Warning } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-shell';
 import { ArrowLeft, Trash } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import ModButton from '@/components/mod-browsing/mod-button';
@@ -13,6 +15,7 @@ import { ModHero } from '@/components/mod-detail/mod-hero';
 import { ModInfo } from '@/components/mod-detail/mod-info';
 import { OutdatedModWarning } from '@/components/mod-management/outdated-mod-warning';
 import ErrorBoundary from '@/components/shared/error-boundary';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter } from '@/components/ui/card';
 import { useMod } from '@/hooks/use-mod';
@@ -26,8 +29,9 @@ import { type ModDownloadItem, ModStatus } from '@/types/mods';
 const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const { data: mod, error } = useMod(params.id);
+  const { data: mod, error, isLoading } = useMod(params.id);
 
   const { availableFiles: rawAvailableFiles } = useModDownloads({
     remoteId: params.id,
@@ -41,15 +45,6 @@ const Mod = () => {
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(
-        (error as Error)?.message ?? 'Failed to fetch mods. Try again later.'
-      );
-      navigate('/mods');
-    }
-  }, [error, navigate]);
 
   const isInstalled = localMod?.status === ModStatus.Installed;
   const hasImages = mod?.images && mod.images.length > 0;
@@ -72,7 +67,50 @@ const Mod = () => {
     }
   };
 
-  if (!mod) {
+  if (error && !isLoading) {
+    return (
+      <ErrorBoundary>
+        <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4">
+          <div className="container mx-auto max-w-6xl space-y-6 py-6">
+            <div className="mb-4 flex items-center justify-between">
+              <Button
+                className="flex items-center gap-1"
+                onClick={() => navigate('/mods')}
+                size="sm"
+                variant="ghost"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Mods
+              </Button>
+            </div>
+
+            <Alert>
+              <Warning className="h-6 w-6" />
+              <AlertDescription className="flex flex-grow flex-row items-center justify-between gap-2">
+                <div className="flex flex-col gap-2">
+                  <p>{t('errors.genericMessage')}</p>
+                  <pre className="text-sm">
+                    {t('errors.errorCode')}{' '}
+                    {(error as Error)?.message ?? 'Unknown error occurred'}
+                  </pre>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Button onClick={() => window.location.reload()}>
+                    {t('errors.tryAgain')}
+                  </Button>
+                  <Button onClick={() => navigate('/mods')} variant="ghost">
+                    Go Back Home
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  if (isLoading || !mod) {
     return null;
   }
 

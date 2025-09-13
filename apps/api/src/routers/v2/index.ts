@@ -9,7 +9,9 @@ import {
   toModDto,
 } from '@deadlock-mods/utils';
 import { ORPCError } from '@orpc/server';
+import { z } from 'zod';
 import { publicProcedure } from '../../lib/orpc';
+import { ModSyncService } from '../../lib/services/mod-sync';
 
 export const v2Router = {
   listModsV2: publicProcedure
@@ -73,5 +75,34 @@ export const v2Router = {
       // V2: Return all downloads even on the old endpoint
       const sortedDownloads = downloads.sort((a, b) => b.size - a.size);
       return toModDownloadDto(sortedDownloads);
+    }),
+
+  forceSyncV2: publicProcedure
+    .route({ method: 'POST', path: '/v2/sync' })
+    .output(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+      })
+    )
+    .handler(async () => {
+      try {
+        const syncService = ModSyncService.getInstance();
+        const result = await syncService.synchronizeMods();
+
+        if (!result.success) {
+          throw new ORPCError('INTERNAL_SERVER_ERROR', {
+            message: result.message,
+          });
+        }
+
+        return result;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: `Failed to trigger sync: ${errorMessage}`,
+        });
+      }
     }),
 };
