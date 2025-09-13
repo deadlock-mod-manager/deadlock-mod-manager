@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import ModButton from '@/components/mod-browsing/mod-button';
 import NSFWBlur from '@/components/mod-browsing/nsfw-blur';
 import AudioPlayerPreview from '@/components/mod-management/audio-player-preview';
-import InstallWithCollection from '@/components/mod-management/install-with-collection';
 import { OutdatedModWarning } from '@/components/mod-management/outdated-mod-warning';
 import ErrorBoundary from '@/components/shared/error-boundary';
 import PageTitle from '@/components/shared/page-title';
@@ -20,26 +20,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type {
-  InstallWithCollectionFunction,
-  InstallWithCollectionOptions,
-} from '@/hooks/use-install-with-collection';
 import { useNSFWBlur } from '@/hooks/use-nsfw-blur';
 import { useSearch } from '@/hooks/use-search';
 import useUninstall from '@/hooks/use-uninstall';
-import { createLogger } from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
 import { cn, isModOutdated } from '@/lib/utils';
 import { type LocalMod, ModStatus } from '@/types/mods';
-
-const logger = createLogger('installation');
 
 // View mode enum
 enum ViewMode {
@@ -48,23 +39,31 @@ enum ViewMode {
 }
 
 // Custom ModCard for Grid View
-const GridModCard = ({
-  mod,
-  install,
-  installOptions,
-}: {
-  mod: LocalMod;
-  install: InstallWithCollectionFunction;
-  installOptions: InstallWithCollectionOptions;
-}) => {
+const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
+  const [deleting, setDeleting] = useState(false);
 
   // NSFW settings and visibility using custom hook
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
+
+  const deleteMod = async () => {
+    if (!mod) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await uninstall(mod, true);
+    } catch (error) {
+      toast.error(`Failed to remove mod: ${error}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Card className="shadow">
@@ -140,34 +139,16 @@ const GridModCard = ({
         </div>
       </CardHeader>
       <CardFooter className="flex justify-between px-3 py-3 pt-2">
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={mod.status === ModStatus.Installed}
-            disabled={isInstalling}
-            id={`install-mod-${mod.remoteId}`}
-            onCheckedChange={(value) => {
-              if (value) {
-                install(mod, installOptions);
-              } else {
-                uninstall(mod, false);
-              }
-            }}
-          />
-          <Label className="text-xs" htmlFor={`install-mod-${mod.remoteId}`}>
-            {isInstalling
-              ? t('mods.installing')
-              : mod.status === ModStatus.Installed
-                ? t('mods.disable')
-                : t('mods.enable')}
-          </Label>
-        </div>
+        {/* Although mod is a LocalMod instance, this is okey. */}
+        <ModButton remoteMod={mod} variant="iconOnly" />{' '}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              disabled={isInstalling}
-              onClick={() => uninstall(mod, true)}
+              disabled={isInstalling || deleting}
+              isLoading={deleting}
+              onClick={deleteMod}
               size="icon"
-              variant="outline"
+              variant="destructive"
             >
               <Trash className="h-4 w-4" />
             </Button>
@@ -180,27 +161,35 @@ const GridModCard = ({
 };
 
 // List view card for mods
-const ListModCard = ({
-  mod,
-  install,
-  installOptions,
-}: {
-  mod: LocalMod;
-  install: InstallWithCollectionFunction;
-  installOptions: InstallWithCollectionOptions;
-}) => {
+const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
+  const [deleting, setDeleting] = useState(false);
 
   // NSFW settings and visibility using custom hook
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
+  const deleteMod = async () => {
+    if (!mod) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await uninstall(mod, true);
+    } catch (error) {
+      toast.error(`Failed to remove mod: ${error}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Card className="shadow">
-      <div className="flex items-center">
+      <div className="flex items-center pr-4">
         <div
           className={cn(
             'relative h-24 w-24 min-w-24',
@@ -268,45 +257,24 @@ const ListModCard = ({
               {mod.isAudio && `• ${t('mods.audioMod')}`}
             </p>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={mod.status === ModStatus.Installed}
-                disabled={isInstalling}
-                id={`list-install-mod-${mod.remoteId}`}
-                onCheckedChange={(value) => {
-                  if (value) {
-                    install(mod, installOptions);
-                  } else {
-                    uninstall(mod, false);
-                  }
-                }}
-              />
-              <Label
-                className="text-xs"
-                htmlFor={`list-install-mod-${mod.remoteId}`}
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <ModButton remoteMod={mod} variant="iconOnly" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                disabled={isInstalling || deleting}
+                isLoading={deleting}
+                onClick={deleteMod}
+                size="icon"
+                variant="destructive"
               >
-                {isInstalling
-                  ? t('mods.installing')
-                  : mod.status === ModStatus.Installed
-                    ? t('mods.disable')
-                    : t('mods.enable')}
-              </Label>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  disabled={isInstalling}
-                  onClick={() => uninstall(mod, true)}
-                  size="icon"
-                  variant="outline"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('mods.removeMod')}</TooltipContent>
-            </Tooltip>
-          </div>
+                <Trash className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('mods.removeMod')}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </Card>
@@ -339,7 +307,6 @@ const SimpleSearchBar = ({
 const MyMods = () => {
   const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.localMods);
-  const { setModStatus, setInstalledVpks } = usePersistedStore();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -354,124 +321,51 @@ const MyMods = () => {
         title={t('navigation.myMods')}
       />
       <ErrorBoundary>
-        <InstallWithCollection>
-          {({ install }) => {
-            const installOptions: InstallWithCollectionOptions = {
-              onStart: (mod) => {
-                logger.info('Starting installation', { mod: mod.remoteId });
-                setModStatus(mod.remoteId, ModStatus.Installing);
-              },
-              onComplete: (mod, result) => {
-                logger.info('Installation complete', {
-                  mod: mod.remoteId,
-                  result: result.installed_vpks,
-                  hasFileTree: !!result.file_tree,
-                });
-                setModStatus(mod.remoteId, ModStatus.Installed);
-                setInstalledVpks(
-                  mod.remoteId,
-                  result.installed_vpks,
-                  result.file_tree
-                );
-                toast.success('Mod installed successfully');
-              },
-              onError: (mod, error) => {
-                logger.error('Installation error', {
-                  mod: mod.remoteId,
-                  error,
-                });
-                toast.error(error.message || 'Failed to install mod');
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <SimpleSearchBar query={query} setQuery={setQuery} />
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setViewMode(ViewMode.GRID)}
+                    size="icon"
+                    variant={viewMode === ViewMode.GRID ? 'default' : 'outline'}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('mods.gridView')}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setViewMode(ViewMode.LIST)}
+                    size="icon"
+                    variant={viewMode === ViewMode.LIST ? 'default' : 'outline'}
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('mods.listView')}</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
 
-                switch (error.kind) {
-                  case 'modAlreadyInstalled':
-                    setModStatus(mod.remoteId, ModStatus.Installed);
-                    break;
-                  default:
-                    setModStatus(mod.remoteId, ModStatus.Error);
-                }
-              },
-              onCancel: (mod) => {
-                logger.info('Installation canceled', { mod: mod.remoteId });
-                setModStatus(mod.remoteId, ModStatus.Downloaded);
-                toast.info('Installation canceled');
-              },
-              onFileTreeAnalyzed: (mod, fileTree) => {
-                logger.info('File tree analyzed', {
-                  mod: mod.remoteId,
-                  hasMultipleFiles: fileTree.has_multiple_files,
-                  totalFiles: fileTree.total_files,
-                });
-                if (fileTree.has_multiple_files) {
-                  toast.info(
-                    `${mod.name} contains ${fileTree.total_files} files. Select which ones to install.`
-                  );
-                }
-              },
-            };
-
-            return (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <SimpleSearchBar query={query} setQuery={setQuery} />
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => setViewMode(ViewMode.GRID)}
-                          size="icon"
-                          variant={
-                            viewMode === ViewMode.GRID ? 'default' : 'outline'
-                          }
-                        >
-                          <LayoutGrid className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('mods.gridView')}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => setViewMode(ViewMode.LIST)}
-                          size="icon"
-                          variant={
-                            viewMode === ViewMode.LIST ? 'default' : 'outline'
-                          }
-                        >
-                          <LayoutList className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('mods.listView')}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                {viewMode === ViewMode.GRID ? (
-                  <div className="grid grid-cols-4 gap-4">
-                    {results.map((mod) => (
-                      <GridModCard
-                        install={install}
-                        installOptions={installOptions}
-                        key={mod.remoteId}
-                        mod={mod}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {results.map((mod) => (
-                      <ListModCard
-                        install={install}
-                        installOptions={installOptions}
-                        key={mod.remoteId}
-                        mod={mod}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }}
-        </InstallWithCollection>
+          {viewMode === ViewMode.GRID ? (
+            <div className="grid grid-cols-4 gap-4">
+              {results.map((mod) => (
+                <GridModCard key={mod.remoteId} mod={mod} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {results.map((mod) => (
+                <ListModCard key={mod.remoteId} mod={mod} />
+              ))}
+            </div>
+          )}
+        </div>
       </ErrorBoundary>
     </div>
   );

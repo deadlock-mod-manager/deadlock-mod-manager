@@ -15,19 +15,17 @@ type StateTransitionError = {
  * NOTE: this is an example, it might not be necessary after all.
  */
 const VALID_TRANSITIONS: Record<ModStatus, ModStatus[]> = {
-  [ModStatus.Added]: [ModStatus.Downloading, ModStatus.Error],
   [ModStatus.Downloading]: [ModStatus.Downloaded, ModStatus.FailedToDownload],
   [ModStatus.Downloaded]: [ModStatus.Installing, ModStatus.Removing],
   [ModStatus.Installing]: [ModStatus.Installed, ModStatus.FailedToInstall],
-  [ModStatus.Installed]: [ModStatus.Removing],
+  [ModStatus.Installed]: [ModStatus.Removing, ModStatus.Downloaded],
   [ModStatus.Removing]: [ModStatus.Removed, ModStatus.FailedToRemove],
   [ModStatus.Removed]: [ModStatus.Error],
   [ModStatus.FailedToInstall]: [ModStatus.Downloaded, ModStatus.Error],
-  [ModStatus.FailedToDownload]: [ModStatus.Added, ModStatus.Error],
+  [ModStatus.FailedToDownload]: [ModStatus.Error],
   [ModStatus.FailedToRemove]: [
     ModStatus.Installed,
     ModStatus.Downloaded,
-    ModStatus.Added,
     ModStatus.Error,
   ],
   [ModStatus.Error]: [],

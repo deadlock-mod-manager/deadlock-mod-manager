@@ -287,13 +287,13 @@
     "error": "Error occurred"
   },
   "modButton": {
-    "add": "Add to my mods",
+    "add": "Download Mod",
     "added": "Download Mod",
     "downloading": "Downloading...",
-    "downloaded": "Install Mod",
+    "downloaded": "Downloaded",
     "failedToDownload": "Failed to download",
     "installing": "Installing...",
-    "installed": "Remove Mod",
+    "installed": "Mod Enabled",
     "failedToInstall": "Failed to install",
     "removing": "Removing...",
     "removed": "Removed",

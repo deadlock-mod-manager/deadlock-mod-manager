@@ -37,6 +37,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
     <Card
       className="cursor-pointer shadow"
       onClick={(e) => {
+        e.stopPropagation();
         const scrollContainer = (e.currentTarget as HTMLElement).closest(
           '.overflow-auto'
         );

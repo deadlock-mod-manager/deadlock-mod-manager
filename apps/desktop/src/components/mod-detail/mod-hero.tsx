@@ -53,9 +53,9 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
         {!shouldBlur && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         )}
-        <div className="absolute bottom-0 left-0 p-6">
+        <div className="absolute bottom-0 left-0 space-y-2 p-6">
           <h1 className="font-bold text-3xl text-white">{mod.name}</h1>
-          <p className="mt-2 text-gray-200">{mod.category}</p>
+          <p className="text-muted-foreground">{mod.category}</p>
         </div>
       </div>
     );

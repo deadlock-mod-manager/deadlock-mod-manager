@@ -42,7 +42,12 @@ export const FileSelectorDialog = ({
     return null;
   }
 
-  const handleFileToggle = (fileIndex: number, checked: boolean) => {
+  const handleFileToggle = (
+    fileIndex: number,
+    checked: boolean,
+    e?: React.MouseEvent
+  ) => {
+    e?.stopPropagation();
     setLocalFileTree((prev) => {
       if (!prev) {
         return null;
@@ -59,7 +64,8 @@ export const FileSelectorDialog = ({
     });
   };
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = (checked: boolean, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setLocalFileTree((prev) => {
       if (!prev) {
         return null;
@@ -78,7 +84,12 @@ export const FileSelectorDialog = ({
     });
   };
 
-  const handleArchiveToggle = (archiveName: string, checked: boolean) => {
+  const handleArchiveToggle = (
+    archiveName: string,
+    checked: boolean,
+    e?: React.MouseEvent
+  ) => {
+    e?.stopPropagation();
     setLocalFileTree((prev) => {
       if (!prev) {
         return null;
@@ -144,7 +155,10 @@ export const FileSelectorDialog = ({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={isOpen}>
-      <DialogContent className="max-h-[80vh] max-w-3xl">
+      <DialogContent
+        className="max-h-[80vh] max-w-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5" />
@@ -165,6 +179,7 @@ export const FileSelectorDialog = ({
                 someSelected ? 'data-[state=checked]:bg-yellow-500' : ''
               }
               onCheckedChange={(checked) => handleSelectAll(checked === true)}
+              onClick={(e) => e.stopPropagation()}
             />
             <span className="font-medium text-sm">
               Select All ({localFileTree.total_files} files)
@@ -188,6 +203,7 @@ export const FileSelectorDialog = ({
                         onCheckedChange={(checked) =>
                           handleArchiveToggle(archiveName, checked === true)
                         }
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <Archive className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium text-sm">{archiveName}</span>
@@ -204,6 +220,14 @@ export const FileSelectorDialog = ({
                           <div
                             className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50"
                             key={file.path}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFileToggle(
+                                globalIndex,
+                                !file.is_selected,
+                                e
+                              );
+                            }}
                           >
                             <div className="flex items-center gap-3">
                               <Checkbox
@@ -214,6 +238,7 @@ export const FileSelectorDialog = ({
                                     checked === true
                                   )
                                 }
+                                onClick={(e) => e.stopPropagation()}
                               />
                               <div className="flex items-center gap-2">
                                 <File className="h-4 w-4 text-muted-foreground" />
@@ -245,6 +270,10 @@ export const FileSelectorDialog = ({
                     <div
                       className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50"
                       key={file.path}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFileToggle(index, !file.is_selected, e);
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <Checkbox
@@ -252,6 +281,7 @@ export const FileSelectorDialog = ({
                           onCheckedChange={(checked) =>
                             handleFileToggle(index, checked === true)
                           }
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex items-center gap-2">
                           <File className="h-4 w-4 text-muted-foreground" />
@@ -285,12 +315,21 @@ export const FileSelectorDialog = ({
                 } selected (${formatSize(totalSelectedSize)})`}
           </div>
           <div className="space-x-2">
-            <Button onClick={onCancel} variant="outline">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancel();
+              }}
+              variant="outline"
+            >
               Cancel
             </Button>
             <Button
               disabled={selectedCount === 0}
-              onClick={() => onConfirm(localFileTree)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onConfirm(localFileTree);
+              }}
             >
               Install Selected
             </Button>

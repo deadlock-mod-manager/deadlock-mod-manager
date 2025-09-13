@@ -1,7 +1,10 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { useHover } from '@uidotdev/usehooks';
-import { useCallback, useState } from 'react';
+import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { GrInstallOption } from 'react-icons/gr';
+import { RiErrorWarningLine } from 'react-icons/ri';
 import { toast } from 'sonner';
 import { FileSelectorDialog } from '@/components/downloads/file-selector-dialog';
 import { MultiFileDownloadDialog } from '@/components/downloads/multi-file-download-dialog';
@@ -15,20 +18,68 @@ import {
 import { useDownload } from '@/hooks/use-download';
 import useInstallWithCollection from '@/hooks/use-install-with-collection';
 import { useModDownloads } from '@/hooks/use-mod-downloads';
-import { useModStatus } from '@/hooks/use-mod-status';
 import useUninstall from '@/hooks/use-uninstall';
 import logger from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
-import { ModStatusIcon } from './mod-status-icon';
 
 interface ModButtonProps {
-  remoteMod: ModDto | undefined;
+  remoteMod: Pick<ModDto, 'remoteId' | 'name' | 'downloadable'> | undefined;
   variant: 'iconOnly' | 'default';
 }
 
+export const ModStatusIcon = ({
+  status,
+  hovering,
+  className,
+}: {
+  status: ModStatus | undefined;
+  hovering?: boolean;
+  className?: string;
+}) => {
+  const loadingStatuses = [
+    ModStatus.Downloading,
+    ModStatus.Removing,
+    ModStatus.Installing,
+  ];
+  const Icon = useMemo(() => {
+    switch (status) {
+      case ModStatus.Downloading:
+      case ModStatus.Removing:
+      case ModStatus.Installing:
+        return Loader2;
+      case ModStatus.Downloaded:
+        return hovering ? GrInstallOption : DownloadIcon;
+      case ModStatus.Installed:
+        return hovering ? X : Check;
+      case ModStatus.FailedToDownload:
+      case ModStatus.FailedToInstall:
+      case ModStatus.FailedToRemove:
+        return XIcon;
+      case ModStatus.Removed:
+      case ModStatus.Error:
+        return RiErrorWarningLine;
+      default:
+        return PlusIcon;
+    }
+  }, [status, hovering]);
+
+  return (
+    <Icon
+      className={cn(
+        'h-4 w-4',
+        {
+          'animate-spin': status && loadingStatuses.includes(status),
+        },
+        className
+      )}
+    />
+  );
+};
+
 const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
-  const { availableFiles, isLoading: isLoadingFiles } = useModDownloads({
+  const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
     isDownloadable: remoteMod?.downloadable,
   });
@@ -52,9 +103,8 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
     currentMod,
   } = useInstallWithCollection();
   const { uninstall } = useUninstall();
-  const { setInstalledVpks, removeMod } = usePersistedStore();
-  const { setModStatus } = useModStatus();
-  const [ref] = useHover();
+  const { setInstalledVpks, removeMod, setModStatus } = usePersistedStore();
+  const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
 
   const action = useCallback(async () => {
@@ -67,7 +117,6 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
     try {
       switch (localMod?.status) {
         case undefined:
-        case ModStatus.Added:
           await download();
           break;
         case ModStatus.Downloaded:
@@ -147,9 +196,54 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
     [isActionInProgress, action]
   );
 
-  const text = localMod?.status
-    ? t(`modButton.${localMod?.status}`)
-    : t('modButton.add');
+  const text = useMemo(() => {
+    switch (localMod?.status) {
+      case ModStatus.Installed:
+        if (hovering) {
+          return 'Disable Mod ?';
+        }
+        return t('modButton.installed');
+      case ModStatus.Downloaded:
+        if (hovering) {
+          return 'Enable Mod ?';
+        }
+        return t('modButton.downloaded');
+      case undefined:
+        return t('modButton.add');
+      default:
+        return t(`modButton.${localMod?.status}`);
+    }
+  }, [localMod?.status, t, hovering]);
+
+  const tooltip = useMemo(() => {
+    switch (localMod?.status) {
+      case ModStatus.Installed:
+        return 'Mod is enabled, do you want to disable it? This will not delete the mod, just disable it ingame.';
+      case ModStatus.Downloaded:
+        return 'Mod is downloaded, do you want to enable it?';
+      case undefined:
+        return t('modButton.add');
+      default:
+        return t(`modButton.${localMod?.status}`);
+    }
+  }, [localMod?.status, t]);
+
+  const buttonVariant = useMemo(() => {
+    switch (localMod?.status) {
+      case ModStatus.Installed:
+        if (hovering) {
+          return 'destructive';
+        }
+        return 'link';
+      case ModStatus.Downloaded:
+        if (hovering) {
+          return 'default';
+        }
+        return 'outline';
+      default:
+        return variant === 'iconOnly' ? 'outline' : 'default';
+    }
+  }, [variant, localMod?.status, hovering]);
 
   return (
     <ErrorBoundary>
@@ -157,17 +251,20 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
         <TooltipTrigger asChild>
           <Button
             disabled={isActionInProgress || isAnalyzing}
-            icon={<ModStatusIcon status={localMod?.status} />}
+            icon={
+              <ModStatusIcon hovering={hovering} status={localMod?.status} />
+            }
             onClick={onClick}
             ref={ref}
+            size={variant === 'iconOnly' ? 'icon' : 'lg'}
             title={text}
-            variant="outline"
+            variant={buttonVariant}
           >
             {variant === 'iconOnly' ? null : text}
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>{text}</p>
+          <p>{tooltip}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -182,7 +279,7 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
 
       <MultiFileDownloadDialog
         files={availableFiles}
-        isDownloading={isLoadingFiles}
+        isDownloading={localMod?.status === ModStatus.Downloading}
         isOpen={isDialogOpen}
         modName={localMod?.name || 'Unknown Mod'}
         onClose={closeDialog}

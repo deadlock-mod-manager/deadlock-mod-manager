@@ -1,8 +1,9 @@
 import { open } from '@tauri-apps/plugin-shell';
-import { ArrowLeft } from 'lucide-react';
-import { useEffect } from 'react';
+import { ArrowLeft, Trash } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import ModButton from '@/components/mod-browsing/mod-button';
 import { InstalledFilesDisplay } from '@/components/mod-detail/installed-files-display';
 import { ModAudioPreview } from '@/components/mod-detail/mod-audio-preview';
 import { ModDescription } from '@/components/mod-detail/mod-description';
@@ -17,6 +18,7 @@ import { Card, CardFooter } from '@/components/ui/card';
 import { useMod } from '@/hooks/use-mod';
 import { useModDownloads } from '@/hooks/use-mod-downloads';
 import { useNSFWBlur } from '@/hooks/use-nsfw-blur';
+import useUninstall from '@/hooks/use-uninstall';
 import { usePersistedStore } from '@/lib/store';
 import { isModOutdated } from '@/lib/utils';
 import { type ModDownloadItem, ModStatus } from '@/types/mods';
@@ -25,20 +27,20 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  const { data, error } = useMod(params.id);
+  const { data: mod, error } = useMod(params.id);
 
   const { availableFiles: rawAvailableFiles } = useModDownloads({
     remoteId: params.id,
-    isDownloadable: data?.downloadable,
+    isDownloadable: mod?.downloadable,
     enabled: !!params.id && !params.id?.includes('local'),
   });
 
   const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
 
   const { localMods } = usePersistedStore();
-  const localMod = localMods.find((m) => m.remoteId === data?.remoteId);
+  const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
-  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(data);
+  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   useEffect(() => {
     if (error) {
@@ -49,19 +51,36 @@ const Mod = () => {
     }
   }, [error, navigate]);
 
-  if (!data) {
+  const isInstalled = localMod?.status === ModStatus.Installed;
+  const hasImages = mod?.images && mod.images.length > 0;
+  const hasHero = !!mod?.hero || !!mod?.isAudio;
+  const [deleting, setDeleting] = useState(false);
+  const { uninstall } = useUninstall();
+
+  const deleteMod = async () => {
+    if (!localMod) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await uninstall(localMod, true);
+    } catch (error) {
+      toast.error(`Failed to remove mod: ${error}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (!mod) {
     return null;
   }
-
-  const isInstalled = localMod?.status === ModStatus.Installed;
-  const hasImages = data.images && data.images.length > 0;
-  const hasHero = !!data.hero || !!data.isAudio;
 
   return (
     <ErrorBoundary>
       <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4">
         <div className="container mx-auto max-w-6xl space-y-6 py-6">
-          <div className="mb-4 flex items-center">
+          <div className="mb-4 flex items-center justify-between">
             <Button
               className="flex items-center gap-1"
               onClick={() => navigate('/mods')}
@@ -73,23 +92,23 @@ const Mod = () => {
             </Button>
           </div>
 
-          {isModOutdated(data) && (
+          {isModOutdated(mod) && (
             <div className="mb-4">
               <OutdatedModWarning variant="alert" />
             </div>
           )}
 
-          <Card className="overflow-hidden">
-            <ModHero mod={data} shouldBlur={shouldBlur} />
-            <ModInfo hasHero={hasHero} mod={data} />
+          <Card className="overflow-hidde space-y-4">
+            <ModHero mod={mod} shouldBlur={shouldBlur} />
+            <ModInfo hasHero={hasHero} mod={mod} />
 
-            <CardFooter className="z-20 flex flex-col items-start bg-card">
-              {data.remoteUrl && (
+            <CardFooter className="z-20 flex flex-row items-start justify-between bg-card">
+              {mod.remoteUrl && (
                 <Button
                   className="px-0"
                   onClick={async () => {
                     try {
-                      await open(data.remoteUrl);
+                      await open(mod.remoteUrl);
                     } catch (_error) {
                       toast.error('Failed to open forum post');
                     }
@@ -99,35 +118,45 @@ const Mod = () => {
                   View original forum post
                 </Button>
               )}
+
+              <div className="flex items-center gap-2">
+                <ModButton remoteMod={mod} variant="default" />
+                {!!localMod?.status && (
+                  <Button
+                    icon={<Trash className="h-4 w-4" />}
+                    isLoading={deleting}
+                    onClick={deleteMod}
+                    size="lg"
+                    variant="destructive"
+                  >
+                    Delete Mod
+                  </Button>
+                )}
+              </div>
             </CardFooter>
           </Card>
 
-          {data.description && (
-            <ModDescription description={data.description} />
-          )}
+          {mod.description && <ModDescription description={mod.description} />}
 
           {isInstalled && localMod?.installedFileTree && (
             <InstalledFilesDisplay
               fileTree={localMod.installedFileTree}
-              modName={data.name}
+              modName={mod.name}
             />
           )}
 
           <ModFiles
             files={availableFiles}
-            isDownloadable={!!data.downloadable}
+            isDownloadable={!!mod.downloadable}
           />
 
-          {data.audioUrl && (
-            <ModAudioPreview
-              audioUrl={data.audioUrl}
-              isAudio={!!data.isAudio}
-            />
+          {mod.audioUrl && (
+            <ModAudioPreview audioUrl={mod.audioUrl} isAudio={!!mod.isAudio} />
           )}
 
-          {!data.isAudio && hasImages && data.images && (
+          {!mod.isAudio && hasImages && mod.images && (
             <ModGallery
-              images={data.images}
+              images={mod.images}
               nsfwSettings={nsfwSettings}
               onNSFWToggle={(visible) => handleNSFWToggle(visible)}
               shouldBlur={shouldBlur}

@@ -33,7 +33,8 @@ export function MultiFileDownloadDialog({
 }: MultiFileDownloadDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
-  const handleFileToggle = (fileName: string) => {
+  const handleFileToggle = (fileName: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const newSelected = new Set(selectedFiles);
     if (newSelected.has(fileName)) {
       newSelected.delete(fileName);
@@ -43,15 +44,18 @@ export function MultiFileDownloadDialog({
     setSelectedFiles(newSelected);
   };
 
-  const handleSelectAll = () => {
+  const handleSelectAll = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setSelectedFiles(new Set(files.map((f) => f.name)));
   };
 
-  const handleSelectNone = () => {
+  const handleSelectNone = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setSelectedFiles(new Set());
   };
 
-  const handleDownload = () => {
+  const handleDownload = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const selected = files.filter((file) => selectedFiles.has(file.name));
     onDownload(selected);
   };
@@ -68,9 +72,18 @@ export function MultiFileDownloadDialog({
     return null; // Don't show dialog for single file
   }
 
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog onOpenChange={onClose} open={isOpen}>
-      <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col">
+    <Dialog onOpenChange={handleClose} open={isOpen}>
+      <DialogContent
+        className="flex max-h-[80vh] max-w-2xl flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -104,6 +117,12 @@ export function MultiFileDownloadDialog({
               <div
                 className="flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 key={file.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isDownloading) {
+                    handleFileToggle(file.name, e);
+                  }
+                }}
               >
                 <Checkbox
                   checked={selectedFiles.has(file.name)}
@@ -148,7 +167,10 @@ export function MultiFileDownloadDialog({
           <div className="flex w-full justify-end gap-2">
             <Button
               disabled={isDownloading}
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               variant="outline"
             >
               Cancel

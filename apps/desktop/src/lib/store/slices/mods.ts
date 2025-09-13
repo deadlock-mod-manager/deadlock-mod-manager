@@ -1,6 +1,8 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import type { StateCreator } from 'zustand';
 import { SortType } from '@/lib/constants';
+import logger from '@/lib/logger';
+import { ModStatusStateMachine } from '@/lib/state-machines/mod-status';
 import {
   type LocalMod,
   type ModFileTree,
@@ -22,9 +24,6 @@ export type ModsState = {
   addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
-  /**
-   * @deprecated Use the useModStatus hook instead.
-   */
   setModStatus: (remoteId: string, status: ModStatus) => void;
   setModPath: (remoteId: string, path: string) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
@@ -54,13 +53,32 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         localMods: [
           ...state.localMods,
-          { ...mod, status: ModStatus.Added, ...additional },
+          { ...mod, status: ModStatus.Downloading, ...additional },
         ],
       };
     }),
 
-  setModStatus: (remoteId, status) =>
-    set((state) => ({
+  setModStatus: (remoteId, status) => {
+    const mod = get().localMods.find((m) => m.remoteId === remoteId);
+    if (!mod) {
+      logger.error('Mod not found', { remoteId });
+      return;
+    }
+    const validateStatus = ModStatusStateMachine.validateTransition(
+      mod.status,
+      status
+    );
+
+    if (validateStatus.isErr()) {
+      logger.error('Invalid status transition', {
+        remoteId,
+        status,
+        error: validateStatus.error,
+      });
+      return;
+    }
+
+    return set((state) => ({
       localMods: state.localMods.map((mod) => ({
         ...mod,
         status: mod.remoteId === remoteId ? status : mod.status,
@@ -69,7 +87,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             ? new Date()
             : undefined,
       })),
-    })),
+    }));
+  },
 
   setModPath: (remoteId, path) =>
     set((state) => ({
