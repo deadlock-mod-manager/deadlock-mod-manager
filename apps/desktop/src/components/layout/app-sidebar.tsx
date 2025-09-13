@@ -16,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
@@ -123,56 +122,6 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
     : []),
 ];
 
-const DownloadProgress = () => {
-  const { t } = useTranslation();
-  const mods = usePersistedStore((state) => state.localMods);
-  const modProgress = usePersistedStore((state) => state.modProgress);
-
-  const downloadingMods = mods.filter(
-    (mod) => mod.status === ModStatus.Downloading
-  );
-  if (downloadingMods.length === 0) {
-    return null;
-  }
-
-  // Calculate the combined progress of all downloads
-  let totalProgress = 0;
-  let modsWithProgress = 0;
-
-  for (const mod of downloadingMods) {
-    const progress = modProgress[mod.remoteId];
-    if (
-      progress?.percentage &&
-      !Number.isNaN(progress.percentage) &&
-      Number.isFinite(progress.percentage)
-    ) {
-      totalProgress += progress.percentage;
-      modsWithProgress++;
-    }
-  }
-
-  const averageProgress =
-    modsWithProgress > 0 ? totalProgress / modsWithProgress : 0;
-  const displayPercentage =
-    Number.isNaN(averageProgress) || !Number.isFinite(averageProgress)
-      ? 0
-      : Math.round(averageProgress);
-
-  return (
-    <div className="px-3 py-2">
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span>
-          {t('downloads.downloading', { count: downloadingMods.length })}
-        </span>
-        <span>
-          {t('downloads.percentage', { percentage: displayPercentage })}
-        </span>
-      </div>
-      <Progress className="h-1" value={displayPercentage} />
-    </div>
-  );
-};
-
 type SidebarItemProps = {
   item: SidebarItem;
   location: ReturnType<typeof useLocation>;
@@ -267,7 +216,6 @@ export const AppSidebar = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <DownloadProgress />
               {items
                 .filter((item) => item.bottom)
                 .map((item) => (

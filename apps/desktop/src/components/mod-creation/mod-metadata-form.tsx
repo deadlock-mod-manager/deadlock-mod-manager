@@ -367,7 +367,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
           <CardTitle>{actualTitle}</CardTitle>
           <CardDescription>{actualDescription}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Form {...form}>
             <form
               onSubmit={(e) => {

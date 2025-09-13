@@ -1,4 +1,5 @@
-import { GameController, Play, Stop } from '@phosphor-icons/react';
+import { StopIcon } from '@phosphor-icons/react';
+import { PlayCircleIcon } from '@phosphor-icons/react/dist/ssr';
 import { invoke } from '@tauri-apps/api/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,8 +43,7 @@ export const Toolbar = () => {
             launch(true);
             setTimeout(() => setVanillaAnimating(false), 500);
           }}
-          size="lg"
-          variant="ghost"
+          variant="outline"
         >
           <div
             className={cn(
@@ -53,7 +53,7 @@ export const Toolbar = () => {
                 : 'w-0'
             )}
           />
-          <Play />
+          <PlayCircleIcon />
           <span className="relative z-10 font-medium text-md">
             {t('common.launchVanilla')}
           </span>
@@ -72,7 +72,6 @@ export const Toolbar = () => {
               setTimeout(() => setModdedAnimating(false), 500);
             }
           }}
-          size="lg"
         >
           <div
             className={cn(
@@ -83,7 +82,7 @@ export const Toolbar = () => {
             )}
           />
           <div className="relative z-10">
-            {isRunning ? <Stop /> : <GameController />}
+            {isRunning ? <StopIcon /> : <PlayCircleIcon />}
           </div>
           <span className="relative z-10 font-medium text-md">
             {isRunning ? t('common.stopGame') : t('common.launchModded')}

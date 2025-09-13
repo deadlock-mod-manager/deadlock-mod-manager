@@ -14,6 +14,9 @@
     "about": "About",
     "quit": "Quit"
   },
+  "myMods": {
+    "subtitle": "Mods you have downloaded or installed"
+  },
   "mods": {
     "searchPlaceholder": "Search mods",
     "noPreviewAvailable": "No preview available",
@@ -77,7 +80,7 @@
     "create": "Create",
     "gameDetected": "Game Detected",
     "gameInstalledAt": "Game installed at {{path}}",
-    "launchVanilla": "Launch Vanilla",
+    "launchVanilla": "Launch Without Mods",
     "launchModded": "Launch Modded",
     "stopGame": "Stop Game",
     "failedToFetchMods": "Failed to fetch mods. Try again later."

@@ -348,7 +348,11 @@ const MyMods = () => {
 
   return (
     <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4">
-      <PageTitle className="mb-8" title={t('navigation.myMods')} />
+      <PageTitle
+        className="mb-8"
+        subtitle={t('myMods.subtitle')}
+        title={t('navigation.myMods')}
+      />
       <ErrorBoundary>
         <InstallWithCollection>
           {({ install }) => {

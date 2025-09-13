@@ -123,14 +123,14 @@ const AddMods = () => {
 
   return (
     <div className="h-full w-full">
-      <div className="space-y-4 px-4">
+      <div className="space-y-8 px-4">
         <PageTitle
           subtitle={t('addMods.subtitle')}
           title={t('addMods.title')}
         />
 
-        <Card className="w-full border-0 shadow">
-          <CardHeader>
+        <Card className="w-full space-y-6 border-0 shadow">
+          <CardHeader className="p-0">
             <CardTitle className="flex items-center gap-2">
               <UploadSimple weight="duotone" />
               {t('addMods.cardTitle')}
@@ -138,8 +138,7 @@ const AddMods = () => {
             <CardDescription>{t('addMods.cardDescription')}</CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6 pb-8">
-            {/* Files */}
+          <CardContent className="space-y-6 p-0">
             <div className="space-y-2">
               <div
                 className={cn(
@@ -221,7 +220,6 @@ const AddMods = () => {
               </form>
             </Form>
 
-            {/* source summary */}
             <div className="rounded-md bg-muted p-3 text-xs">
               {form.getValues('sourceType') === 'archive' &&
               detected?.kind === 'archive' ? (
