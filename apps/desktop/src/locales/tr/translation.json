@@ -79,6 +79,8 @@
     "themeDescription": "Açık, koyu veya sistem temasını seçin",
     "flashbang": "Flashbang",
     "flashbangDescription": "Seçilen tema ne olursa olsun, 20:00 ile 8:00 arasında açık modu zorlar",
+    "audioVolume": "Ses Seviyesi",
+    "audioVolumeDescription": "Ses ön izleme ve oynatma için ses seviyesini ayarlayın",
     "launchOptions": "Başlatma seşenekleri",
     "launchOptionsDescription": "Oyun için başlatma seçeneklerini ayarlayın. Bunlar (Vanilla veya Modlu) oyun modundan bağımsız uygulanır.",
     "game": "Oyun",

@@ -11,7 +11,7 @@ export const ModStatusIcon = ({
   status,
   className,
 }: {
-  status: ModStatus;
+  status: ModStatus | undefined;
   className?: string;
 }) => {
   const { t } = useTranslation();
@@ -51,7 +51,7 @@ export const ModStatusIcon = ({
           className={cn(
             'h-4 w-4',
             {
-              'animate-spin': loadingStatuses.includes(status),
+              'animate-spin': status && loadingStatuses.includes(status),
             },
             className
           )}

@@ -84,6 +84,8 @@
     "themeDescription": "Choose between light, dark, or system theme",
     "flashbang": "Flashbang",
     "flashbangDescription": "Forces Light Mode between 8 PM and 8 AM, regardless of selected theme",
+    "audioVolume": "Audio Volume",
+    "audioVolumeDescription": "Adjust the volume for audio previews and playback",
     "launchOptions": "Launch Options",
     "launchOptionsDescription": "Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).",
     "game": "Game",

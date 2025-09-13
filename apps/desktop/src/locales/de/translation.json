@@ -78,6 +78,8 @@
     "themeDescription": "Wählen Sie zwischen hellem, dunklem oder System-Design",
     "flashbang": "Flashbang",
     "flashbangDescription": "Erzwingt Light Mode zwischen 20:00 und 8:00 Uhr, unabhängig vom gewählten Theme",
+    "audioVolume": "Audiolautstärke",
+    "audioVolumeDescription": "Lautstärke für Audio-Vorschau und Wiedergabe anpassen",
     "launchOptions": "Startoptionen",
     "launchOptionsDescription": "Passen Sie die Startoptionen für das Spiel an. Diese werden unabhängig vom ausgewählten Spielmodus (Vanilla oder Modded) angewendet.",
     "game": "Spiel",

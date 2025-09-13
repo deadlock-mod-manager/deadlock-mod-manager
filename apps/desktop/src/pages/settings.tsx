@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldIcon,
   TrashIcon,
+  WrenchIcon,
 } from 'lucide-react';
 import { Suspense, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +43,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import VolumeControl from '@/components/volume-control';
 import { getCustomSettings } from '@/lib/api';
 import { SortType } from '@/lib/constants';
 import logger from '@/lib/logger';
@@ -200,6 +202,13 @@ const CustomSettings = () => {
             </TabsTrigger>
             <TabsTrigger
               className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
+              value="tools"
+            >
+              <WrenchIcon className="h-5 w-5" />
+              {t('settings.tools')}
+            </TabsTrigger>
+            <TabsTrigger
+              className="h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground"
               value="privacy"
             >
               <ShieldIcon className="h-5 w-5" />
@@ -270,6 +279,7 @@ const CustomSettings = () => {
                   </div>
 
                   <FlashbangToggle />
+                  <VolumeControl />
                 </div>
               </Section>
 
@@ -318,7 +328,9 @@ const CustomSettings = () => {
                   </Select>
                 </div>
               </Section>
+            </TabsContent>
 
+            <TabsContent className="mt-0 space-y-2" value="tools">
               <Section
                 description={t('settings.toolsDescription')}
                 title={t('settings.tools')}

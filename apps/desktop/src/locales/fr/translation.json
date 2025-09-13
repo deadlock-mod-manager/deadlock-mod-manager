@@ -84,6 +84,8 @@
     "themeDescription": "Choisissez entre le thème clair, sombre ou système",
     "flashbang": "Flashbang",
     "flashbangDescription": "Force le mode clair entre 20h00 et 8h00, indépendamment du thème sélectionné",
+    "audioVolume": "Volume audio",
+    "audioVolumeDescription": "Ajustez le volume pour les aperçus audio et la lecture",
     "launchOptions": "Options de lancement",
     "launchOptionsDescription": "Personnalisez les options de lancement pour le jeu. Celles-ci sont appliquées indépendamment du mode de jeu sélectionné (Vanilla ou Modded).",
     "game": "Jeu",

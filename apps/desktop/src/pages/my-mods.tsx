@@ -1,17 +1,10 @@
 import { Trash } from '@phosphor-icons/react';
-import {
-  LayoutGrid,
-  LayoutList,
-  Loader2,
-  Music,
-  Pause,
-  Play,
-  Search,
-} from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { LayoutGrid, LayoutList, Loader2, Search } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import AudioPlayerPreview from '@/components/audio-player-preview';
 import ErrorBoundary from '@/components/error-boundary';
 import InstallWithCollection from '@/components/install-with-collection';
 import NSFWBlur from '@/components/nsfw-blur';
@@ -38,6 +31,7 @@ import type {
   InstallWithCollectionFunction,
   InstallWithCollectionOptions,
 } from '@/hooks/use-install-with-collection';
+import { useNSFWBlur } from '@/hooks/use-nsfw-blur';
 import { useSearch } from '@/hooks/use-search';
 import useUninstall from '@/hooks/use-uninstall';
 import { createLogger } from '@/lib/logger';
@@ -67,48 +61,10 @@ const GridModCard = ({
   const isDisabled = mod.status !== ModStatus.Installed;
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
-  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
-    usePersistedStore();
   const { uninstall } = useUninstall();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const shouldBlur = useMemo(() => {
-    if (!mod?.isNSFW) {
-      return false; // Not NSFW, no need to blur
-    }
-    // Check for per-item override first
-    const override = getPerItemNSFWOverride(mod.remoteId);
-    if (override !== undefined) {
-      return !override; // If override says show (true), don't blur (false)
-    }
-    // Use global setting if no per-item override
-    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
-  }, [mod, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
-
-  const handleNSFWToggle = (visible: boolean) => {
-    if (mod && nsfwSettings.rememberPerItemOverrides) {
-      setPerItemNSFWOverride(mod.remoteId, visible);
-    }
-  };
-
-  const toggleAudioPlayback = () => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-  };
+  // NSFW settings and visibility using custom hook
+  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   return (
     <Card className="shadow">
@@ -122,36 +78,11 @@ const GridModCard = ({
           }
         >
           {mod.isAudio ? (
-            // Audio-only mod display
-            <div className="relative flex h-48 w-full flex-col items-center justify-center overflow-hidden rounded-t-xl bg-gradient-to-br from-muted via-secondary to-accent">
-              <div className="relative z-10 flex flex-col items-center gap-2">
-                <Music className="h-8 w-8 text-primary" />
-                <Button
-                  className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAudioPlayback();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                  {isPlaying ? 'Pause' : 'Preview'}
-                </Button>
-              </div>
-              {mod.audioUrl && (
-                <audio
-                  onEnded={handleAudioEnded}
-                  preload="metadata"
-                  ref={audioRef}
-                  src={mod.audioUrl}
-                />
-              )}
-            </div>
+            <AudioPlayerPreview
+              audioUrl={mod.audioUrl || ''}
+              onPlayClick={(e) => e.stopPropagation()}
+              variant="default"
+            />
           ) : mod.images && mod.images.length > 0 ? (
             // Regular mod with images
             <NSFWBlur
@@ -262,48 +193,10 @@ const ListModCard = ({
   const isDisabled = mod.status !== ModStatus.Installed;
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
-  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
-    usePersistedStore();
   const { uninstall } = useUninstall();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const shouldBlur = useMemo(() => {
-    if (!mod?.isNSFW) {
-      return false; // Not NSFW, no need to blur
-    }
-    // Check for per-item override first
-    const override = getPerItemNSFWOverride(mod.remoteId);
-    if (override !== undefined) {
-      return !override; // If override says show (true), don't blur (false)
-    }
-    // Use global setting if no per-item override
-    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
-  }, [mod, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
-
-  const handleNSFWToggle = (visible: boolean) => {
-    if (mod && nsfwSettings.rememberPerItemOverrides) {
-      setPerItemNSFWOverride(mod.remoteId, visible);
-    }
-  };
-
-  const toggleAudioPlayback = () => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-  };
+  // NSFW settings and visibility using custom hook
+  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   return (
     <Card className="shadow">
@@ -316,38 +209,11 @@ const ListModCard = ({
           onClick={() => navigate(`/mods/${mod.remoteId}`)}
         >
           {mod.isAudio ? (
-            // Audio-only mod display - Clean design for list view
-            <div className="relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-l-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5">
-              <div className="relative z-10 flex items-center justify-center">
-                <Button
-                  className={`h-8 w-8 border-primary/40 p-0 text-primary shadow-sm transition-all duration-200 ${
-                    isPlaying
-                      ? 'scale-105 bg-primary/30 hover:bg-primary/40'
-                      : 'bg-primary/20 hover:scale-110 hover:bg-primary/30'
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAudioPlayback();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="ml-0.5 h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              {mod.audioUrl && (
-                <audio
-                  onEnded={handleAudioEnded}
-                  preload="metadata"
-                  ref={audioRef}
-                  src={mod.audioUrl}
-                />
-              )}
-            </div>
+            <AudioPlayerPreview
+              audioUrl={mod.audioUrl || ''}
+              onPlayClick={(e) => e.stopPropagation()}
+              variant="compact"
+            />
           ) : mod.images && mod.images.length > 0 ? (
             // Regular mod with images
             <NSFWBlur

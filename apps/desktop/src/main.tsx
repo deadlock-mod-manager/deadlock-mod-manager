@@ -5,6 +5,9 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import App from './app';
 import { queryClient } from './lib/client';
 import AddMods from './pages/add-mods';
+import Debug from './pages/debug';
+import Downloads from './pages/downloads';
+import Mod from './pages/mod';
 import GetMods from './pages/mods';
 import MyMods from './pages/my-mods';
 import CustomSettings from './pages/settings';
@@ -12,9 +15,6 @@ import Splash from './pages/splash';
 
 import './index.css';
 import './lib/i18n';
-import Debug from './pages/debug';
-import Downloads from './pages/downloads';
-import Mod from './pages/mod';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

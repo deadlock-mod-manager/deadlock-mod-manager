@@ -76,6 +76,8 @@
     "themeDescription": "Wybierz między jasnym, ciemnym lub motywem systemowym",
     "flashbang": "Flashbang",
     "flashbangDescription": "Wymusza tryb jasny między 20:00 a 8:00, niezależnie od wybranego motywu",
+    "audioVolume": "Głośność audio",
+    "audioVolumeDescription": "Dostosuj głośność dla podglądów audio i odtwarzania",
     "launchOptions": "Opcje Startu",
     "launchOptionsDescription": "Dostosuj opcje uruchamiania gry. Zostaną one zastosowane niezależnie od wybranego trybu gry (bez modów lub z modami).",
     "game": "Gra",

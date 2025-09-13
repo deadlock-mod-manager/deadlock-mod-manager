@@ -1,4 +1,5 @@
 import { ModStatusIcon } from '@/components/mod-status-icon';
+import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';
 
 const ModIcons = () => {
@@ -9,6 +10,15 @@ const ModIcons = () => {
   ));
 };
 
+const State = () => {
+  const { localMods } = usePersistedStore();
+  return (
+    <pre className="h-[250px] w-full overflow-auto">
+      {JSON.stringify(localMods, null, 2)}
+    </pre>
+  );
+};
+
 const Debug = () => {
   return (
     <div>
@@ -16,6 +26,8 @@ const Debug = () => {
       <div className="flex flex-wrap gap-2">
         <ModIcons />
       </div>
+      <h1>State: </h1>
+      <State />
     </div>
   );
 };

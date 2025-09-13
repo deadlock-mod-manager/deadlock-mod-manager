@@ -13,7 +13,7 @@ import {
   User,
   Volume2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery } from 'react-query';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -45,8 +45,10 @@ import type {
   InstallWithCollectionFunction,
   InstallWithCollectionOptions,
 } from '@/hooks/use-install-with-collection';
+import { useModDownloads } from '@/hooks/use-mod-downloads';
+import { useNSFWBlur } from '@/hooks/use-nsfw-blur';
 import useUninstall from '@/hooks/use-uninstall';
-import { getMod, getModDownloads } from '@/lib/api';
+import { getMod } from '@/lib/api';
 import { usePersistedStore } from '@/lib/store';
 import { cn, formatSize, isModOutdated } from '@/lib/utils';
 import { type ModDownloadItem, ModStatus } from '@/types/mods';
@@ -69,20 +71,14 @@ const Mod = () => {
   });
 
   // Fetch downloadable files separately
-  const { data: downloadData, isLoading: isLoadingFiles } = useQuery({
-    queryKey: ['mod-downloads', params.id],
-    queryFn: () => {
-      if (!params.id) {
-        throw new Error('Mod ID is required');
-      }
-      return getModDownloads(params.id);
-    },
-    enabled:
-      !!params.id && !!data?.downloadable && !params.id?.includes('local'),
-  });
+  const { isLoading: isLoadingFiles, availableFiles: rawAvailableFiles } =
+    useModDownloads({
+      remoteId: params.id,
+      isDownloadable: data?.downloadable,
+      enabled: !!params.id && !params.id?.includes('local'),
+    });
 
-  const availableFiles = (downloadData?.downloads ||
-    []) as unknown as ModDownloadItem[];
+  const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
 
   const {
     download,
@@ -93,34 +89,12 @@ const Mod = () => {
   } = useDownload(data, availableFiles);
 
   const { uninstall } = useUninstall();
-  const {
-    setModStatus,
-    setInstalledVpks,
-    getModProgress,
-    nsfwSettings,
-    setPerItemNSFWOverride,
-    getPerItemNSFWOverride,
-  } = usePersistedStore();
+  const { setModStatus, setInstalledVpks, getModProgress } =
+    usePersistedStore();
   const modProgress = localMod ? getModProgress(localMod.remoteId) : undefined;
 
-  const shouldBlur = useMemo(() => {
-    if (!data?.isNSFW) {
-      return false; // Not NSFW, no need to blur
-    }
-    // Check for per-item override first
-    const override = getPerItemNSFWOverride(data.remoteId);
-    if (override !== undefined) {
-      return !override; // If override says show (true), don't blur (false)
-    }
-    // Use global setting if no per-item override
-    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
-  }, [data, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
-
-  const handleNSFWToggle = (visible: boolean) => {
-    if (data && nsfwSettings.rememberPerItemOverrides) {
-      setPerItemNSFWOverride(data.remoteId, visible);
-    }
-  };
+  // NSFW settings and visibility using custom hook
+  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(data);
 
   useEffect(() => {
     if (error) {
@@ -475,7 +449,7 @@ const Mod = () => {
                 )}
 
                 {data.downloadable &&
-                  downloadData &&
+                  rawAvailableFiles &&
                   availableFiles.length > 0 && (
                     <Card>
                       <CardHeader>
