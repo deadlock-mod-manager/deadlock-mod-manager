@@ -6,7 +6,8 @@
     "downloads": "Downloads",
     "settings": "Istellige",
     "whatsNew": "Was isch neu",
-    "collapseMenu": "Menü iklappe"
+    "collapseMenu": "Menü iklappe",
+    "about": "Informatione"
   },
   "mods": {
     "searchPlaceholder": "Mods dursueche",
@@ -293,6 +294,20 @@
     "modNamePlaceholder": "Tolle Mod",
     "modPreview": "Mod-Vorschau",
     "authorPlaceholder": "Unbekannt"
+  },
+  "modButton": {
+    "add": "Zu mine Mods hinzufüge",
+    "added": "Mod abelade",
+    "downloading": "Am Abelade...",
+    "downloaded": "Mod instaliere",
+    "failedToDownload": "Abelade fehlgschlage",
+    "installing": "Am Instaliere...",
+    "installed": "Mod entferne",
+    "failedToInstall": "Installation fehlgschlage",
+    "removing": "Am Entferne...",
+    "removed": "Entfernt",
+    "failedToRemove": "Entfernig fehlgschlage",
+    "error": "Fehler ufträte"
   },
   "status": {
     "enabled": "Aktiviert",

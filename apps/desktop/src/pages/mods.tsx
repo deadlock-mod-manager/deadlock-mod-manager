@@ -4,11 +4,11 @@ import { Suspense, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
-import ErrorBoundary from '@/components/shared/error-boundary';
 import ModCard from '@/components/mod-browsing/mod-card';
-import PageTitle from '@/components/shared/page-title';
 import SearchBar from '@/components/mod-browsing/search-bar';
 import SearchBarSkeleton from '@/components/mod-browsing/search-bar-skeleton';
+import ErrorBoundary from '@/components/shared/error-boundary';
+import PageTitle from '@/components/shared/page-title';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { useSearch } from '@/hooks/use-search';
 import { getMods } from '@/lib/api';
@@ -19,63 +19,90 @@ import { isModOutdated } from '@/lib/utils';
 const GetModsData = () => {
   const { t } = useTranslation();
   const { data, error } = useQuery('mods', getMods, { suspense: true });
-  const { nsfwSettings, updateNSFWSettings, modsFilters, updateModsFilters } =
-    usePersistedStore();
-  const { hideOutdated, selectedCategories, selectedHeroes, showAudioOnly } =
-    modsFilters;
+  const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
+  const {
+    hideOutdated,
+    selectedCategories,
+    selectedHeroes,
+    showAudioOnly,
+    showNSFW,
+    filterMode,
+  } = modsFilters;
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
     keys: ['name', 'description', 'author'],
   });
 
-  // Initialize scroll position management
   const { setScrollElement, scrollY } = useScrollPosition('/mods');
 
-  // Apply all filters
   let filteredResults = results;
 
-  // Filter out outdated mods if hideOutdated is enabled
   if (hideOutdated) {
-    filteredResults = filteredResults.filter((mod) => !isModOutdated(mod));
+    filteredResults = filteredResults.filter((mod) => {
+      const isOutdated = isModOutdated(mod);
+      return filterMode === 'include' ? !isOutdated : isOutdated;
+    });
   }
 
   // Filter by categories
   if (selectedCategories.length > 0) {
     filteredResults = filteredResults.filter((mod) => {
+      let matchesCategory = false;
+
       // Check if mod category is in selected categories
       if (selectedCategories.includes(mod.category)) {
-        return true;
+        matchesCategory = true;
       }
 
       // If OTHER_MISC is selected, include mods with non-predefined categories
-      if (selectedCategories.includes(ModCategory.OTHER_MISC)) {
+      if (
+        !matchesCategory &&
+        selectedCategories.includes(ModCategory.OTHER_MISC)
+      ) {
         const predefinedCategories = Object.values(ModCategory);
-        return !predefinedCategories.includes(mod.category as ModCategory);
+        matchesCategory = !predefinedCategories.includes(
+          mod.category as ModCategory
+        );
       }
 
-      return false;
+      // Return based on filter mode
+      return filterMode === 'include' ? matchesCategory : !matchesCategory;
     });
   }
 
-  // Filter by heroes
   if (selectedHeroes.length > 0) {
     filteredResults = filteredResults.filter((mod) => {
+      let matchesHero = false;
+
       if (selectedHeroes.includes('None')) {
-        // Include mods without heroes and mods with selected heroes
-        return !mod.hero || selectedHeroes.includes(mod.hero);
+        matchesHero =
+          !mod.hero || (mod.hero !== null && selectedHeroes.includes(mod.hero));
+      } else {
+        matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
       }
-      return mod.hero && selectedHeroes.includes(mod.hero);
+
+      // Return based on filter mode
+      return filterMode === 'include' ? matchesHero : !matchesHero;
     });
   }
 
-  // Filter NSFW mods based on global privacy settings
   if (nsfwSettings.hideNSFW) {
     filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
   }
 
-  // Filter by audio mods only if enabled
+  if (showNSFW) {
+    filteredResults = filteredResults.filter((mod) => {
+      const isNSFW = mod.isNSFW;
+      return filterMode === 'include' ? isNSFW : !isNSFW;
+    });
+  }
+
   if (showAudioOnly) {
-    filteredResults = filteredResults.filter((mod) => mod.isAudio);
+    filteredResults = filteredResults.filter((mod) => {
+      const isAudio = mod.isAudio;
+      // Return based on filter mode
+      return filterMode === 'include' ? isAudio : !isAudio;
+    });
   }
 
   // Group mods into rows of 4 for virtualization
@@ -112,11 +139,13 @@ const GetModsData = () => {
   return (
     <div className="flex flex-col gap-4">
       <SearchBar
+        filterMode={filterMode}
         hideOutdated={hideOutdated}
         mods={data ?? []}
         onCategoriesChange={(selectedCategories) =>
           updateModsFilters({ selectedCategories })
         }
+        onFilterModeChange={(filterMode) => updateModsFilters({ filterMode })}
         onHeroesChange={(selectedHeroes) =>
           updateModsFilters({ selectedHeroes })
         }
@@ -126,14 +155,14 @@ const GetModsData = () => {
         onShowAudioOnlyChange={(showAudioOnly) =>
           updateModsFilters({ showAudioOnly })
         }
-        onShowNSFWChange={(show) => updateNSFWSettings({ hideNSFW: !show })}
+        onShowNSFWChange={(showNSFW) => updateModsFilters({ showNSFW })}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
         setQuery={setQuery}
         setSortType={setSortType}
         showAudioOnly={showAudioOnly}
-        showNSFW={!nsfwSettings.hideNSFW}
+        showNSFW={showNSFW}
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (

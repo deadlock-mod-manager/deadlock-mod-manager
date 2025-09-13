@@ -7,7 +7,8 @@
     "settings": "",
     "whatsNew": "",
     "needHelp": "",
-    "collapseMenu": ""
+    "collapseMenu": "",
+    "about": ""
   },
   "menu": {
     "about": "",
@@ -43,7 +44,15 @@
   "downloads": {
     "downloading": "",
     "downloading_plural": "",
-    "percentage": ""
+    "percentage": "",
+    "title": "",
+    "all": "",
+    "active": "",
+    "completed": "",
+    "openDownloadFolder": "",
+    "noDownloadsFound": "",
+    "noDownloadsMatchFilter": "",
+    "viewAllDownloads": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "",
@@ -132,6 +141,26 @@
     "validateConfiguration": "",
     "openInEditor": ""
   },
+  "privacy": {
+    "title": "",
+    "description": "",
+    "hideNSFWContent": "",
+    "hideNSFWDescription": "",
+    "showLikelyNSFW": "",
+    "showLikelyNSFWDescription": "",
+    "disableNSFWBlur": "",
+    "disableNSFWBlurDescription": "",
+    "blurStrength": "",
+    "blurStrengthDescription": "",
+    "rememberPerItemChoices": "",
+    "rememberPerItemChoicesDescription": "",
+    "telemetryTitle": "",
+    "posthogAnalytics": "",
+    "posthogAnalyticsDescription": ""
+  },
+  "help": {
+    "needHelp": ""
+  },
   "about": {
     "title": "",
     "description": "",
@@ -155,23 +184,6 @@
     "updateFailed": "",
     "tauriVersion": "",
     "copyright": ""
-  },
-  "privacy": {
-    "title": "",
-    "description": "",
-    "hideNSFWContent": "",
-    "hideNSFWDescription": "",
-    "showLikelyNSFW": "",
-    "showLikelyNSFWDescription": "",
-    "disableNSFWBlur": "",
-    "disableNSFWBlurDescription": "",
-    "blurStrength": "",
-    "blurStrengthDescription": "",
-    "rememberPerItemChoices": "",
-    "rememberPerItemChoicesDescription": ""
-  },
-  "help": {
-    "needHelp": ""
   },
   "filters": {
     "filters": "",
@@ -247,7 +259,7 @@
     "pleaseWait": ""
   },
   "modStatus": {
-    "added": "Added to my mods",
+    "added": "",
     "downloading": "",
     "downloaded": "",
     "failedToDownload": "",
@@ -258,5 +270,48 @@
     "removed": "",
     "failedToRemove": "",
     "error": ""
+  },
+  "modButton": {
+    "add": "",
+    "added": "",
+    "downloading": "",
+    "downloaded": "",
+    "failedToDownload": "",
+    "installing": "",
+    "installed": "",
+    "failedToInstall": "",
+    "removing": "",
+    "removed": "",
+    "failedToRemove": "",
+    "error": ""
+  },
+  "errors": {
+    "genericMessage": "",
+    "errorCode": "",
+    "tryAgain": "",
+    "goBack": ""
+  },
+  "table": {
+    "name": "",
+    "status": "",
+    "downloadedAt": "",
+    "actions": "",
+    "by": "",
+    "thumbnail": "",
+    "enable": "",
+    "disable": "",
+    "removeMod": ""
+  },
+  "modForm": {
+    "title": "",
+    "description": "",
+    "unknownAuthor": "",
+    "modNamePlaceholder": "",
+    "modPreview": "",
+    "authorPlaceholder": ""
+  },
+  "status": {
+    "enabled": "",
+    "disabled": ""
   }
 }

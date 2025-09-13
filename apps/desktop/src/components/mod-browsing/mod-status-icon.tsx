@@ -1,13 +1,7 @@
 import { CheckIcon, DownloadIcon, Loader2, Plus, XIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { MdOutlineFileDownloadDone } from 'react-icons/md';
 import { RiErrorWarningLine } from 'react-icons/ri';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ModStatus } from '@/types/mods';
 
@@ -18,7 +12,6 @@ export const ModStatusIcon = ({
   status: ModStatus | undefined;
   className?: string;
 }) => {
-  const { t } = useTranslation();
   const loadingStatuses = [
     ModStatus.Downloading,
     ModStatus.Removing,
@@ -49,21 +42,14 @@ export const ModStatusIcon = ({
   }, [status]);
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Icon
-          className={cn(
-            'h-4 w-4',
-            {
-              'animate-spin': status && loadingStatuses.includes(status),
-            },
-            className
-          )}
-        />
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{t(`modStatus.${status}`)}</p>
-      </TooltipContent>
-    </Tooltip>
+    <Icon
+      className={cn(
+        'h-4 w-4',
+        {
+          'animate-spin': status && loadingStatuses.includes(status),
+        },
+        className
+      )}
+    />
   );
 };

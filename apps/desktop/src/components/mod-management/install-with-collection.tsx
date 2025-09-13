@@ -1,7 +1,7 @@
 import type React from 'react';
+import { FileSelectorDialog } from '@/components/downloads/file-selector-dialog';
 import type { InstallWithCollectionFunction } from '@/hooks/use-install-with-collection';
 import useInstallWithCollection from '@/hooks/use-install-with-collection';
-import { FileSelectorDialog } from '@/components/downloads/file-selector-dialog';
 
 type InstallWithCollectionProps = {
   children: (params: {

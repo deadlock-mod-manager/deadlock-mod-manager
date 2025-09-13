@@ -6,7 +6,8 @@
     "downloads": "İndirilenler",
     "settings": "Ayarlar",
     "whatsNew": "Yenilikler",
-    "collapseMenu": "Menüyü daralt"
+    "collapseMenu": "Menüyü daralt",
+    "about": "Hakkında"
   },
   "mods": {
     "searchPlaceholder": "Mod ara",
@@ -293,6 +294,20 @@
     "modNamePlaceholder": "Harika Mod",
     "modPreview": "Mod önizlemesi",
     "authorPlaceholder": "Bilinmeyen"
+  },
+  "modButton": {
+    "add": "Modlarıma ekle",
+    "added": "Mod indir",
+    "downloading": "İndiriliyor...",
+    "downloaded": "Mod yükle",
+    "failedToDownload": "İndirme başarısız",
+    "installing": "Kuruluyor...",
+    "installed": "Modu kaldır",
+    "failedToInstall": "Kurulum başarısız",
+    "removing": "Kaldırılıyor...",
+    "removed": "Kaldırıldı",
+    "failedToRemove": "Kaldırma başarısız",
+    "error": "Hata oluştu"
   },
   "status": {
     "enabled": "Etkin",

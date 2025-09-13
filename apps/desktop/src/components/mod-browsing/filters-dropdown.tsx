@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import type { FilterMode } from '@/lib/store/slices/ui';
 import CategoryFilter from './category-filter';
 import HeroFilter from './hero-filter';
 
@@ -25,6 +26,8 @@ type FiltersDropdownProps = {
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
+  filterMode: FilterMode;
+  onFilterModeChange: (filterMode: FilterMode) => void;
 };
 
 const FiltersDropdown = ({
@@ -39,6 +42,8 @@ const FiltersDropdown = ({
   onHideOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
+  filterMode,
+  onFilterModeChange,
 }: FiltersDropdownProps) => {
   const { t } = useTranslation();
   const hasActiveFilters =
@@ -71,6 +76,26 @@ const FiltersDropdown = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="space-y-4 p-4">
+        <div className="space-y-2">
+          <Label className="font-medium text-sm">{t('filters.mode')}</Label>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => onFilterModeChange('include')}
+              size="sm"
+              variant={filterMode === 'include' ? 'default' : 'outline'}
+            >
+              {t('filters.include')}
+            </Button>
+            <Button
+              onClick={() => onFilterModeChange('exclude')}
+              size="sm"
+              variant={filterMode === 'exclude' ? 'default' : 'outline'}
+            >
+              {t('filters.exclude')}
+            </Button>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
         <CategoryFilter
           mods={mods}
           onCategoriesChange={onCategoriesChange}
@@ -86,7 +111,9 @@ const FiltersDropdown = ({
           <Label className="font-medium text-sm">{t('filters.content')}</Label>
           <div className="flex items-center justify-between">
             <Label className="font-normal text-sm" htmlFor="hideOutdatedSwitch">
-              {t('filters.hideOutdated')}
+              {filterMode === 'include'
+                ? t('filters.hideOutdated')
+                : t('filters.showOutdated')}
             </Label>
             <Switch
               checked={hideOutdated}
@@ -96,7 +123,9 @@ const FiltersDropdown = ({
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-normal text-sm" htmlFor="showNsfwSwitch">
-              {t('filters.showNSFWContent')}
+              {filterMode === 'include'
+                ? t('filters.showNSFWContent')
+                : t('filters.hideNSFWContent')}
             </Label>
             <Switch
               checked={showNSFW}
@@ -106,7 +135,9 @@ const FiltersDropdown = ({
           </div>
           <div className="flex items-center justify-between">
             <Label className="font-normal text-sm" htmlFor="audioOnlySwitch">
-              {t('filters.audioModsOnly')}
+              {filterMode === 'include'
+                ? t('filters.audioModsOnly')
+                : t('filters.excludeAudioMods')}
             </Label>
             <Switch
               checked={showAudioOnly}

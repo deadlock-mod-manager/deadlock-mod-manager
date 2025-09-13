@@ -7,7 +7,8 @@
     "settings": "Ustawienia",
     "whatsNew": "Co Nowego?",
     "needHelp": "Potrzebujesz Pomocy ?",
-    "collapseMenu": "Zwiń menu"
+    "collapseMenu": "Zwiń menu",
+    "about": "O Aplikacji"
   },
   "menu": {
     "about": "O Aplikacji",
@@ -286,6 +287,20 @@
     "modNamePlaceholder": "Niesamowity Mod",
     "modPreview": "Podgląd moda",
     "authorPlaceholder": "Nieznany"
+  },
+  "modButton": {
+    "add": "Dodaj do moich modów",
+    "added": "Pobierz mod",
+    "downloading": "Pobieranie...",
+    "downloaded": "Zainstaluj mod",
+    "failedToDownload": "Nie udało się pobrać",
+    "installing": "Instalowanie...",
+    "installed": "Usuń mod",
+    "failedToInstall": "Nie udało się zainstalować",
+    "removing": "Usuwanie...",
+    "removed": "Usunięty",
+    "failedToRemove": "Nie udało się usunąć",
+    "error": "Wystąpił błąd"
   },
   "status": {
     "enabled": "Włączony",

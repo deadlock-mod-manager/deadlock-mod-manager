@@ -1,5 +1,6 @@
 export const APP_NAME = 'Deadlock Mod Manager';
-export const GITHUB_REPO = 'https://github.com/Stormix/deadlock-modmanager';
+export const GITHUB_REPO =
+  'https://github.com/deadlock-mod-manager/deadlock-mod-manager';
 export const REDDIT_URL = 'https://www.reddit.com/r/DeadlockModManager/';
 export const X_URL = 'https://x.com/DLModManager';
 export const APP_DESCRIPTION =

@@ -1,5 +1,5 @@
 import type { ModDto } from '@deadlock-mods/utils';
-import { Search, X } from 'lucide-react';
+import { ArrowUpDown, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ModCategory, SortType } from '@/lib/constants';
+import type { FilterMode } from '@/lib/store/slices/ui';
 import FiltersDropdown from './filters-dropdown';
 
 type SearchBarProps = {
@@ -30,6 +31,8 @@ type SearchBarProps = {
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
+  filterMode: FilterMode;
+  onFilterModeChange: (filterMode: FilterMode) => void;
 };
 
 const SearchBar = ({
@@ -48,6 +51,8 @@ const SearchBar = ({
   onHideOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
+  filterMode,
+  onFilterModeChange,
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const getHeroDisplayName = (hero: string) => {
@@ -120,9 +125,11 @@ const SearchBar = ({
             )}
           </div>
           <FiltersDropdown
+            filterMode={filterMode}
             hideOutdated={hideOutdated}
             mods={mods}
             onCategoriesChange={onCategoriesChange}
+            onFilterModeChange={onFilterModeChange}
             onHeroesChange={onHeroesChange}
             onHideOutdatedChange={onHideOutdatedChange}
             onShowAudioOnlyChange={onShowAudioOnlyChange}
@@ -135,7 +142,8 @@ const SearchBar = ({
         </div>
         <div className="flex items-center gap-4">
           <Select onValueChange={setSortType} value={sortType}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger>
+              <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue placeholder={t('filters.sortBy')} />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +163,9 @@ const SearchBar = ({
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground text-sm">
-            {t('filters.activeFilters')}
+            {filterMode === 'include'
+              ? t('filters.includingFilters')
+              : t('filters.excludingFilters')}
           </span>
 
           {/* Category badges */}
@@ -197,7 +207,9 @@ const SearchBar = ({
           {/* Hide outdated filter badge */}
           {hideOutdated && (
             <Badge className="flex items-center gap-1" variant="secondary">
-              {t('filters.hideOutdated')}
+              {filterMode === 'include'
+                ? t('filters.hideOutdatedBadge')
+                : t('filters.showOutdatedBadge')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onHideOutdatedChange(false)}
@@ -211,7 +223,9 @@ const SearchBar = ({
           {/* NSFW filter badge */}
           {showNSFW && (
             <Badge className="flex items-center gap-1" variant="destructive">
-              {t('filters.showNSFW')}
+              {filterMode === 'include'
+                ? t('filters.showNSFW')
+                : t('filters.hideNSFW')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onShowNSFWChange(false)}
@@ -225,7 +239,9 @@ const SearchBar = ({
           {/* Audio only filter badge */}
           {showAudioOnly && (
             <Badge className="flex items-center gap-1" variant="secondary">
-              {t('filters.audioOnly')}
+              {filterMode === 'include'
+                ? t('filters.audioOnly')
+                : t('filters.hideAudio')}
               <button
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={() => onShowAudioOnlyChange(false)}

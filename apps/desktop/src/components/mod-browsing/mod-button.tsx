@@ -1,5 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { useHover } from '@uidotdev/usehooks';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { FileSelectorDialog } from '@/components/downloads/file-selector-dialog';
@@ -53,63 +54,98 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
   const { uninstall } = useUninstall();
   const { setInstalledVpks, removeMod } = usePersistedStore();
   const { setModStatus } = useModStatus();
-  const [ref, hovering] = useHover();
+  const [ref] = useHover();
+  const [isActionInProgress, setIsActionInProgress] = useState(false);
 
-  const action = () => {
-    switch (localMod?.status) {
-      case undefined:
-      case ModStatus.Added:
-        return download();
-      case ModStatus.Downloaded:
-        return install(localMod, {
-          onStart: (mod) => {
-            setModStatus(mod.remoteId, ModStatus.Installing);
-          },
-          onComplete: (mod, result) => {
-            setModStatus(mod.remoteId, ModStatus.Installed);
-            setInstalledVpks(
-              mod.remoteId,
-              result.installed_vpks,
-              result.file_tree
-            );
-            toast.success('Mod installed successfully');
-          },
-          onError: (mod, error) => {
-            setModStatus(mod.remoteId, ModStatus.Error);
-            toast.error(error.message || 'Failed to install mod');
-          },
-          onCancel: (mod) => {
-            setModStatus(mod.remoteId, ModStatus.Downloaded);
-            toast.info('Installation canceled');
-          },
-          onFileTreeAnalyzed: (mod, fileTree) => {
-            if (fileTree.has_multiple_files) {
-              toast.info(
-                `${mod.name} contains ${fileTree.total_files} files. Select which ones to install.`
-              );
-            }
-          },
-        });
-      case ModStatus.Installed:
-        return uninstall(localMod, false);
-      case ModStatus.FailedToDownload:
-        return;
-      case ModStatus.Error:
-        return removeMod(localMod.remoteId);
-      default:
-        return;
+  const action = useCallback(async () => {
+    if (isActionInProgress) {
+      return;
     }
-  };
 
-  const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setIsActionInProgress(true);
+
     try {
-      e.stopPropagation();
-      action();
-    } catch (error) {
-      logger.error('Failed to perform action', { error });
-      toast.error('Failed to perform action');
+      switch (localMod?.status) {
+        case undefined:
+        case ModStatus.Added:
+          await download();
+          break;
+        case ModStatus.Downloaded:
+          await install(localMod, {
+            onStart: (mod) => {
+              setModStatus(mod.remoteId, ModStatus.Installing);
+            },
+            onComplete: (mod, result) => {
+              setModStatus(mod.remoteId, ModStatus.Installed);
+              setInstalledVpks(
+                mod.remoteId,
+                result.installed_vpks,
+                result.file_tree
+              );
+              toast.success('Mod installed successfully');
+            },
+            onError: (mod, error) => {
+              setModStatus(mod.remoteId, ModStatus.Error);
+              toast.error(error.message || 'Failed to install mod');
+            },
+            onCancel: (mod) => {
+              setModStatus(mod.remoteId, ModStatus.Downloaded);
+              toast.info('Installation canceled');
+            },
+            onFileTreeAnalyzed: (mod, fileTree) => {
+              if (fileTree.has_multiple_files) {
+                toast.info(
+                  `${mod.name} contains ${fileTree.total_files} files. Select which ones to install.`
+                );
+              }
+            },
+          });
+          break;
+        case ModStatus.Installed:
+          await uninstall(localMod, false);
+          break;
+        case ModStatus.FailedToDownload:
+          break;
+        case ModStatus.Error:
+          removeMod(localMod.remoteId);
+          break;
+        default:
+          break;
+      }
+    } finally {
+      // Add a small delay to prevent rapid successive clicks
+      setTimeout(() => {
+        setIsActionInProgress(false);
+      }, 300);
     }
-  };
+  }, [
+    isActionInProgress,
+    localMod,
+    download,
+    install,
+    uninstall,
+    removeMod,
+    setModStatus,
+    setInstalledVpks,
+  ]);
+
+  const onClick = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (isActionInProgress) {
+        return;
+      }
+
+      try {
+        e.stopPropagation();
+        await action();
+      } catch (error) {
+        logger.error('Failed to perform action', { error });
+        toast.error('Failed to perform action');
+        setIsActionInProgress(false);
+      }
+    },
+    [isActionInProgress, action]
+  );
 
   const text = localMod?.status
     ? t(`modButton.${localMod?.status}`)
@@ -120,6 +156,7 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            disabled={isActionInProgress || isAnalyzing}
             icon={<ModStatusIcon status={localMod?.status} />}
             onClick={onClick}
             ref={ref}

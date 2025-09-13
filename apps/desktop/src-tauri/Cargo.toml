@@ -4,8 +4,8 @@ version = "0.7.0"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <contact@stormix.co>"]
 license = "GPL-3.0"
-repository = "https://github.com/stormix/deadlock-modmanager"
-homepage = "https://github.com/stormix/deadlock-modmanager"
+repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -18,10 +18,10 @@ name = "desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.4.1", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2.8.5", features = [] }
 tauri-plugin-shell = "2.3"
 tauri-plugin-http = "2.5"
 serde = { version = "1", features = ["derive"] }
@@ -32,25 +32,25 @@ tauri-plugin-store = "2.4"
 tauri-plugin-fs = "2.4"
 vdf-parser = "0.1.8"
 keyvalues-serde = "0.2"
-regex = "1.11.1"
-zip = "2.2.2"
-tempfile = "3.14.0"
-unrar = "0.5.7"
-thiserror = "2.0.9"
-sysinfo = { version = "0.33.0", features = ["windows"] }
+regex = "1.11.2"
+zip = "2.4.2"
+tempfile = "3.22.0"
+unrar = "0.5.8"
+thiserror = "2.0.16"
+sysinfo = { version = "0.33.1", features = ["windows"] }
 tauri-plugin-log = "2.7"
 log = "0.4"
 tauri-plugin-process = "2.3"
-sevenz-rust = "0.5"
-tauri-plugin-sentry = "0.3"
-steamlocate = "2.0.0"
+sevenz-rust = "0.6.1"
+tauri-plugin-sentry = "0.5.0"
+steamlocate = "2.0.1"
 tauri-plugin-deep-link = "2.4"
 sha2 = "0.10"
 tauri-plugin-posthog = "0.2.2"
 dotenvy = "0.15"
 
 [dev-dependencies]
-tempfile = "3.14.0"
+tempfile = "3.22.0"
 
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
@@ -62,5 +62,5 @@ strip = true      # Automatically strip symbols from the binary.
 debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-single-instance = { version = "2.2.2", features = ["deep-link"] }
+tauri-plugin-single-instance = { version = "2.3.4", features = ["deep-link"] }
 tauri-plugin-updater = "2.9"

@@ -7,7 +7,8 @@
     "settings": "إعدادات",
     "whatsNew": "التعديلات الجديدة",
     "needHelp": "تحتاج المساعدة؟",
-    "collapseMenu": "إغلاق القائمة"
+    "collapseMenu": "إغلاق القائمة",
+    "about": "عن التطبيق"
   },
   "menu": {
     "about": "عن التطبيق",
@@ -30,7 +31,15 @@
     "subtitle": "يتم تحديثه يومياً، مع إضافة تعديلات جديدة كل أسبوع.",
     "noModsFound": "لم يتم العثور على أي تعديلات",
     "noModsMatchFilters": "لم يتم العثور على أي تعديلات تتوافق مع معايير البحث والفلترة الحالية",
-    "noModsAvailable": "لم تتوفر أي تعديلات"
+    "noModsAvailable": "لم تتوفر أي تعديلات",
+    "deleteConfirmTitle": "هل أنت متأكد من أنك تريد حذف هذا التعديل؟ سيؤدي ذلك إلى إزالته من قائمة التعديلات وحذف جميع الملفات.",
+    "deleteConfirmBody": "لا يمكن التراجع عن هذا الإجراء.",
+    "deleteConfirmAction": "حذف",
+    "deleteConfirmCancel": "إلغاء",
+    "deleteSuccess": "تم حذف التعديل بنجاح",
+    "disableSuccess": "تم تعطيل التعديل بنجاح",
+    "deleteError": "فشل في حذف التعديل",
+    "disableError": "فشل في تعطيل التعديل"
   },
   "downloads": {
     "downloading": "جاري التنزيل {{count}} تعديل",
@@ -286,6 +295,20 @@
     "modNamePlaceholder": "تعديل رائع",
     "modPreview": "معاينة التعديل",
     "authorPlaceholder": "غير معروف"
+  },
+  "modButton": {
+    "add": "إضافة إلى التعديلات",
+    "added": "تحميل التعديل",
+    "downloading": "جاري التحميل...",
+    "downloaded": "تثبيت التعديل",
+    "failedToDownload": "فشل التحميل",
+    "installing": "جاري التثبيت...",
+    "installed": "إزالة التعديل",
+    "failedToInstall": "فشل التثبيت",
+    "removing": "جاري الإزالة...",
+    "removed": "تم الإزالة",
+    "failedToRemove": "فشل الإزالة",
+    "error": "حدث خطأ"
   },
   "status": {
     "enabled": "مفعل",

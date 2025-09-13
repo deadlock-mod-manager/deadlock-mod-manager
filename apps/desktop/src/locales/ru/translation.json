@@ -7,7 +7,8 @@
     "settings": "Настройки",
     "whatsNew": "Что нового",
     "needHelp": "Нужна помощь?",
-    "collapseMenu": "Свернуть"
+    "collapseMenu": "Свернуть",
+    "about": "О нас"
   },
   "menu": {
     "about": "О нас",
@@ -286,6 +287,20 @@
     "modNamePlaceholder": "Крутой Мод",
     "modPreview": "Превью мода",
     "authorPlaceholder": "Неизвестно"
+  },
+  "modButton": {
+    "add": "Добавить в мои моды",
+    "added": "Скачать мод",
+    "downloading": "Загрузка...",
+    "downloaded": "Установить мод",
+    "failedToDownload": "Ошибка загрузки",
+    "installing": "Установка...",
+    "installed": "Удалить мод",
+    "failedToInstall": "Ошибка установки",
+    "removing": "Удаление...",
+    "removed": "Удалено",
+    "failedToRemove": "Ошибка удаления",
+    "error": "Произошла ошибка"
   },
   "status": {
     "enabled": "Включено",

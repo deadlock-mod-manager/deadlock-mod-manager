@@ -7,7 +7,8 @@
     "settings": "Paramètres",
     "whatsNew": "Quoi de neuf",
     "needHelp": "Besoin d'aide ?",
-    "collapseMenu": "Réduire le menu"
+    "collapseMenu": "Réduire le menu",
+    "about": "À propos"
   },
   "menu": {
     "about": "À propos",
@@ -294,6 +295,20 @@
     "modNamePlaceholder": "Mod génial",
     "modPreview": "Aperçu du mod",
     "authorPlaceholder": "Inconnu"
+  },
+  "modButton": {
+    "add": "Ajouter à mes mods",
+    "added": "Télécharger le mod",
+    "downloading": "Téléchargement...",
+    "downloaded": "Installer le mod",
+    "failedToDownload": "Échec du téléchargement",
+    "installing": "Installation...",
+    "installed": "Supprimer le mod",
+    "failedToInstall": "Échec de l'installation",
+    "removing": "Suppression...",
+    "removed": "Supprimé",
+    "failedToRemove": "Échec de la suppression",
+    "error": "Erreur survenue"
   },
   "status": {
     "enabled": "Activé",

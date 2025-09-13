@@ -6,7 +6,8 @@
     "downloads": "Downloads",
     "settings": "Einstellungen",
     "whatsNew": "Was ist neu",
-    "collapseMenu": "Menü einklappen"
+    "collapseMenu": "Menü einklappen",
+    "about": "Über"
   },
   "mods": {
     "searchPlaceholder": "Mods durchsuchen",
@@ -288,6 +289,20 @@
     "modNamePlaceholder": "Tolle Mod",
     "modPreview": "Mod-Vorschau",
     "authorPlaceholder": "Unbekannt"
+  },
+  "modButton": {
+    "add": "Zu meinen Mods hinzufügen",
+    "added": "Mod herunterladen",
+    "downloading": "Herunterladen...",
+    "downloaded": "Mod installieren",
+    "failedToDownload": "Download fehlgeschlagen",
+    "installing": "Installiere...",
+    "installed": "Mod entfernen",
+    "failedToInstall": "Installation fehlgeschlagen",
+    "removing": "Entferne...",
+    "removed": "Entfernt",
+    "failedToRemove": "Entfernung fehlgeschlagen",
+    "error": "Fehler aufgetreten"
   },
   "status": {
     "enabled": "Aktiviert",
