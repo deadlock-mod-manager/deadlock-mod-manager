@@ -1,6 +1,6 @@
 import type { ModDto } from '@deadlock-mods/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
@@ -19,11 +19,10 @@ import { isModOutdated } from '@/lib/utils';
 const GetModsData = () => {
   const { t } = useTranslation();
   const { data, error } = useQuery('mods', getMods, { suspense: true });
-  const [hideOutdated, setHideOutdated] = useState(true);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
-  const [showAudioOnly, setShowAudioOnly] = useState(false);
-  const { nsfwSettings, updateNSFWSettings } = usePersistedStore();
+  const { nsfwSettings, updateNSFWSettings, modsFilters, updateModsFilters } =
+    usePersistedStore();
+  const { hideOutdated, selectedCategories, selectedHeroes, showAudioOnly } =
+    modsFilters;
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
     keys: ['name', 'description', 'author'],
@@ -115,10 +114,18 @@ const GetModsData = () => {
       <SearchBar
         hideOutdated={hideOutdated}
         mods={data ?? []}
-        onCategoriesChange={setSelectedCategories}
-        onHeroesChange={setSelectedHeroes}
-        onHideOutdatedChange={setHideOutdated}
-        onShowAudioOnlyChange={setShowAudioOnly}
+        onCategoriesChange={(selectedCategories) =>
+          updateModsFilters({ selectedCategories })
+        }
+        onHeroesChange={(selectedHeroes) =>
+          updateModsFilters({ selectedHeroes })
+        }
+        onHideOutdatedChange={(hideOutdated) =>
+          updateModsFilters({ hideOutdated })
+        }
+        onShowAudioOnlyChange={(showAudioOnly) =>
+          updateModsFilters({ showAudioOnly })
+        }
         onShowNSFWChange={(show) => updateNSFWSettings({ hideNSFW: !show })}
         query={query}
         selectedCategories={selectedCategories}

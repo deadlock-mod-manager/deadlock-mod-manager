@@ -1,5 +1,5 @@
 import Fuse, { type FuseOptionKey } from 'fuse.js';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import type { SortType } from '@/lib/constants';
 import { usePersistedStore } from '@/lib/store';
@@ -14,12 +14,8 @@ type UseSearchProps<T> = {
 export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
-  const defaultSort = usePersistedStore((state) => state.defaultSort);
-  const [sortType, setSortType] = useState<SortType>(defaultSort);
-
-  useEffect(() => {
-    setSortType(defaultSort);
-  }, [defaultSort]);
+  const { modsFilters, updateModsFilters } = usePersistedStore();
+  const sortType = modsFilters.currentSort;
 
   const fuse = useMemo(
     () =>
@@ -46,6 +42,10 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
     () => search(debouncedQuery),
     [search, debouncedQuery]
   );
+
+  const setSortType = (newSortType: SortType) => {
+    updateModsFilters({ currentSort: newSortType });
+  };
 
   return {
     search,
