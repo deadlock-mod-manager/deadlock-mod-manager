@@ -2,7 +2,7 @@ use crate::errors::Error;
 use log;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
-const DEADLOCK_PROCESS_NAME: &str = "project8.exe";
+const DEADLOCK_PROCESS_NAME: &str = "deadlock.exe";
 
 /// Manages game process lifecycle
 pub struct GameProcessManager {

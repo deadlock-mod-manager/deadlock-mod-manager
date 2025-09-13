@@ -189,7 +189,7 @@ export const AppSidebar = () => {
 
   return (
     <Sidebar
-      className="absolute top-10 left-0 z-10 flex h-[calc(100vh-40px)] w-[12rem] flex-col border-t"
+      className="absolute top-10 left-0 z-50 flex h-[calc(100vh-40px)] w-[12rem] flex-col border-t"
       collapsible="icon"
       variant="sidebar"
     >

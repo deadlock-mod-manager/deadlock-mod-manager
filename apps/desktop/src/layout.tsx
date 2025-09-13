@@ -1,4 +1,5 @@
 import { AppSidebar } from './components/layout/app-sidebar';
+import { BottomBar } from './components/layout/bottom-bar';
 import Menu from './components/layout/menu';
 import { Toolbar } from './components/layout/toolbar';
 import { WhatsNewDialog } from './components/layout/whats-new-dialog';
@@ -19,7 +20,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           <AppSidebar />
           <div className={cn('flex h-full w-full flex-col')}>
             <Toolbar />
-            <div className={cn('flex p-8')}>{children}</div>
+            <div className={cn('flex flex-1 px-8 pt-4')}>{children}</div>
+            <BottomBar />
           </div>
         </SidebarProvider>
       </main>

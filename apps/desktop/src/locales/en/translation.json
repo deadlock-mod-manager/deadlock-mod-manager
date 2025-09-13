@@ -83,7 +83,13 @@
     "launchVanilla": "Launch Without Mods",
     "launchModded": "Launch Modded",
     "stopGame": "Stop Game",
-    "failedToFetchMods": "Failed to fetch mods. Try again later."
+    "failedToFetchMods": "Failed to fetch mods. Try again later.",
+    "mods": "Mods",
+    "installed": "installed",
+    "downloading": "downloading",
+    "gameRunning": "Game Running",
+    "gameReady": "Game Ready",
+    "gameNotDetected": "Game Not Detected"
   },
   "settings": {
     "language": "Language",
