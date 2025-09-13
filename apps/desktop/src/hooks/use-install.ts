@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { useCallback } from 'react';
 import { type InstallableMod, type LocalMod, ModStatus } from '@/types/mods';
 import type { ErrorKind } from '@/types/tauri';
 
@@ -14,7 +15,7 @@ export type InstallFunction = (
 ) => Promise<InstallableMod | null>;
 
 const useInstall = () => {
-  const install: InstallFunction = async (mod, options) => {
+  const install: InstallFunction = useCallback(async (mod, options) => {
     try {
       options.onStart(mod);
 
@@ -52,7 +53,7 @@ const useInstall = () => {
       }
       return null;
     }
-  };
+  }, []);
 
   return { install };
 };

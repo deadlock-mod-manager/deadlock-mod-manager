@@ -107,6 +107,7 @@ export const useDeepLink = () => {
   const { install } = useInstall();
   const processingRef = useRef<Set<string>>(new Set());
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Store functions and navigate are stable, listener should only be set up once
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
@@ -287,13 +288,5 @@ export const useDeepLink = () => {
         unlisten();
       }
     };
-  }, [
-    navigate,
-    addMod,
-    setModStatus,
-    setModProgress,
-    setModPath,
-    setInstalledVpks,
-    install,
-  ]);
+  }, []);
 };
