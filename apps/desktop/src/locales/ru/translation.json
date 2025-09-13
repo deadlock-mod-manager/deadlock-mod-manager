@@ -35,7 +35,15 @@
   "downloads": {
     "downloading": "Загрузка {{count}} мода",
     "downloading_plural": "Загрузка {{count}} модов",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "Загрузки",
+    "all": "Все",
+    "active": "Активные",
+    "completed": "Завершенные",
+    "openDownloadFolder": "Открыть папку загрузок",
+    "noDownloadsFound": "Загрузки не найдены",
+    "noDownloadsMatchFilter": "Нет загрузок, соответствующих вашему текущему фильтру.",
+    "viewAllDownloads": "Показать все загрузки"
   },
   "notifications": {
     "modInstalledSuccessfully": "Мод успешно установлен",
@@ -160,7 +168,10 @@
     "blurStrength": "Сила размытия",
     "blurStrengthDescription": "Насколько сильно размыть содержимое NSFW при его отображении (в пикселях)",
     "rememberPerItemChoices": "Запомнить выбор каждого элемента",
-    "rememberPerItemChoicesDescription": "Запомнить, когда вы решите показывать / скрывать определенные NSFW "
+    "rememberPerItemChoicesDescription": "Запомнить, когда вы решите показывать / скрывать определенные NSFW ",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Нужна помощь?"
@@ -250,5 +261,34 @@
     "removed": "Удалено",
     "failedToRemove": "Ошибка удаления",
     "error": "Произошла ошибка"
+  },
+  "errors": {
+    "genericMessage": "Извините, но произошла ошибка при обработке вашего запроса.",
+    "errorCode": "Код ошибки:",
+    "tryAgain": "Попробовать снова",
+    "goBack": "Назад"
+  },
+  "table": {
+    "name": "Имя",
+    "status": "Статус",
+    "downloadedAt": "Загружено",
+    "actions": "Действия",
+    "by": "От",
+    "thumbnail": "Миниатюра",
+    "enable": "Включить",
+    "disable": "Отключить",
+    "removeMod": "Удалить мод"
+  },
+  "modForm": {
+    "title": "Метаданные мода",
+    "description": "Добавить дополнительные детали. Требуется только имя.",
+    "unknownAuthor": "Неизвестно",
+    "modNamePlaceholder": "Крутой Мод",
+    "modPreview": "Превью мода",
+    "authorPlaceholder": "Неизвестно"
+  },
+  "status": {
+    "enabled": "Включено",
+    "disabled": "Отключено"
   }
 }

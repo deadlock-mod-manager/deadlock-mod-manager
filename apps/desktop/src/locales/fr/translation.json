@@ -43,7 +43,15 @@
   "downloads": {
     "downloading": "Téléchargement de {{count}} mod",
     "downloading_plural": "Téléchargement de {{count}} mods",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "Téléchargements",
+    "all": "Tous",
+    "active": "Actif",
+    "completed": "Terminé",
+    "openDownloadFolder": "Ouvrir le dossier de téléchargement",
+    "noDownloadsFound": "Aucun téléchargement trouvé",
+    "noDownloadsMatchFilter": "Aucun téléchargement ne correspond à votre filtre actuel.",
+    "viewAllDownloads": "Voir tous les téléchargements"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installé avec succès",
@@ -144,7 +152,10 @@
     "blurStrength": "Force du flou",
     "blurStrengthDescription": "Combien flouter le contenu NSFW quand il est visible (pixels)",
     "rememberPerItemChoices": "Se souvenir des choix par élément",
-    "rememberPerItemChoicesDescription": "Se souvenir quand vous choisissez d'afficher/masquer des éléments NSFW spécifiques"
+    "rememberPerItemChoicesDescription": "Se souvenir quand vous choisissez d'afficher/masquer des éléments NSFW spécifiques",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Besoin d'aide ?"
@@ -258,5 +269,34 @@
     "removed": "Supprimé",
     "failedToRemove": "Échec de la suppression",
     "error": "Erreur survenue"
+  },
+  "errors": {
+    "genericMessage": "Nous sommes désolés, mais une erreur s'est produite lors du traitement de votre demande.",
+    "errorCode": "Code d'erreur:",
+    "tryAgain": "Réessayer",
+    "goBack": "Retour"
+  },
+  "table": {
+    "name": "Nom",
+    "status": "Statut",
+    "downloadedAt": "Téléchargé le",
+    "actions": "Actions",
+    "by": "Par",
+    "thumbnail": "Miniature",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "removeMod": "Supprimer le mod"
+  },
+  "modForm": {
+    "title": "Métadonnées du mod",
+    "description": "Ajouter des détails facultatifs. Seul le nom est requis.",
+    "unknownAuthor": "Inconnu",
+    "modNamePlaceholder": "Mod génial",
+    "modPreview": "Aperçu du mod",
+    "authorPlaceholder": "Inconnu"
+  },
+  "status": {
+    "enabled": "Activé",
+    "disabled": "Désactivé"
   }
 }

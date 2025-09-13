@@ -6,7 +6,12 @@ import { Switch } from './ui/switch';
 
 const PrivacySettings = () => {
   const { t } = useTranslation();
-  const { nsfwSettings, updateNSFWSettings } = usePersistedStore();
+  const {
+    nsfwSettings,
+    updateNSFWSettings,
+    telemetrySettings,
+    updateTelemetrySettings,
+  } = usePersistedStore();
 
   return (
     <div className="space-y-4">
@@ -98,6 +103,32 @@ const PrivacySettings = () => {
             updateNSFWSettings({ rememberPerItemOverrides: checked })
           }
         />
+      </div>
+
+      {/* Telemetry Settings */}
+      <div className="border-t pt-4">
+        <h3 className="mb-4 font-semibold text-lg">
+          {t('privacy.telemetryTitle')}
+        </h3>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">
+                {t('privacy.posthogAnalytics')}
+              </Label>
+              <div className="text-muted-foreground text-sm">
+                {t('privacy.posthogAnalyticsDescription')}
+              </div>
+            </div>
+            <Switch
+              checked={telemetrySettings.posthogEnabled}
+              onCheckedChange={(checked) =>
+                updateTelemetrySettings({ posthogEnabled: checked })
+              }
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

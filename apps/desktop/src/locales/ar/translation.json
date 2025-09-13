@@ -35,7 +35,15 @@
   "downloads": {
     "downloading": "جاري التنزيل {{count}} تعديل",
     "downloading_plural": "تعديلات {{count}} تنزيل",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "التحميلات",
+    "all": "الكل",
+    "active": "نشط",
+    "completed": "مكتمل",
+    "openDownloadFolder": "فتح مجلد التحميل",
+    "noDownloadsFound": "لم يتم العثور على تحميلات",
+    "noDownloadsMatchFilter": "لا توجد تحميلات تطابق المرشح الحالي الخاص بك.",
+    "viewAllDownloads": "عرض جميع التحميلات"
   },
   "notifications": {
     "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح",
@@ -160,7 +168,10 @@
     "blurStrength": "قوة الضبابية",
     "blurStrengthDescription": "مقدار طمس محتوى NSFW عند ظهوره (بالبكسل)",
     "rememberPerItemChoices": "تذكر خيارات العنصر الفردي",
-    "rememberPerItemChoicesDescription": "تذكر عندما تختار إظهار/إخفاء عناصر NSFW محددة"
+    "rememberPerItemChoicesDescription": "تذكر عندما تختار إظهار/إخفاء عناصر NSFW محددة",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "تحتاج المساعدة؟"
@@ -250,5 +261,34 @@
     "removed": "تم الإزالة",
     "failedToRemove": "فشل الإزالة",
     "error": "حدث خطأ"
+  },
+  "errors": {
+    "genericMessage": "نأسف، لكن حدث خطأ أثناء معالجة طلبك.",
+    "errorCode": "رمز الخطأ:",
+    "tryAgain": "حاول مرة أخرى",
+    "goBack": "العودة"
+  },
+  "table": {
+    "name": "الاسم",
+    "status": "الحالة",
+    "downloadedAt": "تم التحميل في",
+    "actions": "الإجراءات",
+    "by": "بواسطة",
+    "thumbnail": "صورة مصغرة",
+    "enable": "تفعيل",
+    "disable": "تعطيل",
+    "removeMod": "إزالة التعديل"
+  },
+  "modForm": {
+    "title": "بيانات التعديل الوصفية",
+    "description": "إضافة تفاصيل اختيارية. الاسم فقط مطلوب.",
+    "unknownAuthor": "غير معروف",
+    "modNamePlaceholder": "تعديل رائع",
+    "modPreview": "معاينة التعديل",
+    "authorPlaceholder": "غير معروف"
+  },
+  "status": {
+    "enabled": "مفعل",
+    "disabled": "معطل"
   }
 }

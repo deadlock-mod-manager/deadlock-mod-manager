@@ -3,16 +3,17 @@
   "extends": ["ultracite"],
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**/*"],
-    "experimentalScannerIgnores": [
-      "**/components/ui/**",
-      "apps/desktop/src/components/ui/**",
-      "apps/web/components/ui/**",
-      "**/tsconfig*.json",
-      "**/next.config.js",
-      "**/tailwind.config.js",
-      "**/vite.config.ts",
-      "**/postcss.config.js"
+    "includes": [
+      "**/*",
+      "!apps/www/src/routeTree.gen.ts",
+      "!**/components/ui",
+      "!apps/desktop/src/components/ui",
+      "!apps/web/components/ui",
+      "!**/tsconfig*.json",
+      "!**/next.config.js",
+      "!**/tailwind.config.js",
+      "!**/vite.config.ts",
+      "!**/postcss.config.js"
     ]
   },
   "javascript": {
@@ -81,7 +82,8 @@
       "nursery": {
         "noShadow": "off",
         "useConsistentTypeDefinitions": "off",
-        "useImageSize": "off"
+        "useImageSize": "off",
+        "useMaxParams": "off"
       },
       "style": {
         "noNonNullAssertion": "off",

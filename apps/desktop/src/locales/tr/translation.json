@@ -38,7 +38,15 @@
   "downloads": {
     "downloading": "{{count}} mod indiriliyor",
     "downloading_plural": "{{count}} mod indiriliyor",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "İndirilenler",
+    "all": "Tümü",
+    "active": "Aktif",
+    "completed": "Tamamlandı",
+    "openDownloadFolder": "İndirme klasörünü aç",
+    "noDownloadsFound": "İndirilen dosya bulunamadı",
+    "noDownloadsMatchFilter": "Mevcut filtrenizle eşleşen indirme yok.",
+    "viewAllDownloads": "Tüm indirmeleri görüntüle"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod başarıyla yüklendi",
@@ -139,7 +147,10 @@
     "blurStrength": "Bulanıklık gücü",
     "blurStrengthDescription": "NSFW içerikleri görünür olduğunda ne kadar bulanıklaştırılacağını belirleyin (piksel)",
     "rememberPerItemChoices": "Öğe bazlı seçimleri hatırla",
-    "rememberPerItemChoicesDescription": "Belirli NSFW içerikleri göster/gizle seçimlerinizi hatırla"
+    "rememberPerItemChoicesDescription": "Belirli NSFW içerikleri göster/gizle seçimlerinizi hatırla",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Yardım?"
@@ -257,5 +268,34 @@
     "removed": "Kaldırıldı",
     "failedToRemove": "Kaldırma başarısız",
     "error": "Hata oluştu"
+  },
+  "errors": {
+    "genericMessage": "Üzgünüz, isteğinizi işlerken bir hata oluştu.",
+    "errorCode": "Hata kodu:",
+    "tryAgain": "Tekrar deneyin",
+    "goBack": "Geri dön"
+  },
+  "table": {
+    "name": "İsim",
+    "status": "Durum",
+    "downloadedAt": "İndirilme tarihi",
+    "actions": "Eylemler",
+    "by": "Tarafından",
+    "thumbnail": "Küçük resim",
+    "enable": "Etkinleştir",
+    "disable": "Devre dışı bırak",
+    "removeMod": "Mod'u kaldır"
+  },
+  "modForm": {
+    "title": "Mod metadata",
+    "description": "Isteğe bağlı ayrıntılar ekleyin. Yalnızca ad gereklidir.",
+    "unknownAuthor": "Bilinmeyen",
+    "modNamePlaceholder": "Harika Mod",
+    "modPreview": "Mod önizlemesi",
+    "authorPlaceholder": "Bilinmeyen"
+  },
+  "status": {
+    "enabled": "Etkin",
+    "disabled": "Devre dışı"
   }
 }

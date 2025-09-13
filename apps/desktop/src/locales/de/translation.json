@@ -38,7 +38,15 @@
   "downloads": {
     "downloading": "Lade {{count}} Mod herunter",
     "downloading_plural": "Lade {{count}} Mods herunter",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "Downloads",
+    "all": "Alle",
+    "active": "Aktiv",
+    "completed": "Abgeschlossen",
+    "openDownloadFolder": "Download-Ordner öffnen",
+    "noDownloadsFound": "Keine Downloads gefunden",
+    "noDownloadsMatchFilter": "Es gibt keine Downloads, die Ihrem aktuellen Filter entsprechen.",
+    "viewAllDownloads": "Alle Downloads anzeigen"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod erfolgreich installiert",
@@ -138,7 +146,10 @@
     "blurStrength": "Unschärfe-Stärke",
     "blurStrengthDescription": "Wie stark NSFW-Inhalte unscharf gemacht werden sollen, wenn sie sichtbar sind (Pixel)",
     "rememberPerItemChoices": "Einzelne Auswahlmöglichkeiten merken",
-    "rememberPerItemChoicesDescription": "Merken, wenn Sie sich entscheiden, bestimmte NSFW-Inhalte anzuzeigen/auszublenden"
+    "rememberPerItemChoicesDescription": "Merken, wenn Sie sich entscheiden, bestimmte NSFW-Inhalte anzuzeigen/auszublenden",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Hilfe?"
@@ -252,5 +263,34 @@
     "removed": "Entfernt",
     "failedToRemove": "Entfernung fehlgeschlagen",
     "error": "Fehler aufgetreten"
+  },
+  "errors": {
+    "genericMessage": "Es tut uns leid, aber bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten.",
+    "errorCode": "Fehlercode:",
+    "tryAgain": "Erneut versuchen",
+    "goBack": "Zurück gehen"
+  },
+  "table": {
+    "name": "Name",
+    "status": "Status",
+    "downloadedAt": "Heruntergeladen am",
+    "actions": "Aktionen",
+    "by": "Von",
+    "thumbnail": "Vorschaubild",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "removeMod": "Mod entfernen"
+  },
+  "modForm": {
+    "title": "Mod-Metadaten",
+    "description": "Optional Details hinzufügen. Nur der Name ist erforderlich.",
+    "unknownAuthor": "Unbekannt",
+    "modNamePlaceholder": "Tolle Mod",
+    "modPreview": "Mod-Vorschau",
+    "authorPlaceholder": "Unbekannt"
+  },
+  "status": {
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert"
   }
 }

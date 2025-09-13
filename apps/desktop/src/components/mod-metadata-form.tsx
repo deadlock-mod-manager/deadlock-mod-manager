@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -121,14 +122,14 @@ type FormValues = z.infer<typeof schema>;
 
 const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
   function ModMetadataForm(
-    {
-      initial,
-      title = 'Mod metadata',
-      description = 'Add optional details. Only the name is required.',
-      hideCardChrome = false,
-    },
+    { initial, title, description, hideCardChrome = false },
     ref
   ) {
+    const { t } = useTranslation();
+
+    const actualTitle = title || t('modForm.title');
+    const actualDescription = description || t('modForm.description');
+
     const [preview, setPreview] = useState<string | undefined>(undefined);
     const [imgOk, setImgOk] = useState(true);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -138,7 +139,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
       resolver: zodResolver(schema),
       defaultValues: {
         name: initial?.name ?? '',
-        author: initial?.author ?? 'Unknown',
+        author: initial?.author ?? t('modForm.unknownAuthor'),
         description: initial?.description ?? '',
         link: initial?.link ?? '',
         imageFile: initial?.imageFile ?? undefined,
@@ -248,7 +249,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         <div className="md:col-span-4">
           <div className="aspect-video w-full overflow-hidden rounded-md border bg-muted">
             <img
-              alt="Mod preview"
+              alt={t('modForm.modPreview')}
               className="h-full w-full object-cover"
               onError={() => {
                 setImgOk(false);
@@ -283,7 +284,10 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               <FormItem>
                 <FormLabel>Name *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Awesome Mod" {...field} />
+                  <Input
+                    placeholder={t('modForm.modNamePlaceholder')}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -297,7 +301,10 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
                 <FormItem>
                   <FormLabel>Author</FormLabel>
                   <FormControl>
-                    <Input placeholder="Unknown" {...field} />
+                    <Input
+                      placeholder={t('modForm.authorPlaceholder')}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -357,8 +364,8 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     return (
       <Card className="w-full border-0 shadow">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle>{actualTitle}</CardTitle>
+          <CardDescription>{actualDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

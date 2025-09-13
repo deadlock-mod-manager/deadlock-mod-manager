@@ -1,6 +1,7 @@
 import { DownloadSimple, FolderOpen, Package } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DownloadCard from '@/components/download-card';
 import ErrorBoundary from '@/components/error-boundary';
 import PageTitle from '@/components/page-title';
@@ -32,6 +33,7 @@ const getDownloadTimestamp = (
 };
 
 const Downloads = () => {
+  const { t } = useTranslation();
   const downloads = usePersistedStore((state) => state.localMods);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
@@ -97,7 +99,7 @@ const Downloads = () => {
   return (
     <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto px-4">
       <div className="mb-6 flex items-center justify-between">
-        <PageTitle title="Downloads" />
+        <PageTitle title={t('downloads.title')} />
         <Tabs
           className="w-auto"
           defaultValue="all"
@@ -107,14 +109,16 @@ const Downloads = () => {
           value={filter}
         >
           <TabsList>
-            <TabsTrigger value="all">All ({downloads.length})</TabsTrigger>
+            <TabsTrigger value="all">
+              {t('downloads.all')} ({downloads.length})
+            </TabsTrigger>
             <TabsTrigger value="active">
               <DownloadSimple className="mr-1" />
-              Active ({activeCount})
+              {t('downloads.active')} ({activeCount})
             </TabsTrigger>
             <TabsTrigger value="completed">
               <Package className="mr-1" />
-              Completed ({completedCount})
+              {t('downloads.completed')} ({completedCount})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -125,7 +129,7 @@ const Downloads = () => {
           <div className="mb-4 flex flex-wrap gap-2">
             <Button onClick={handleOpenFolder} size="sm" variant="outline">
               <FolderOpen className="mr-1 h-4 w-4" />
-              Open Download Folder
+              {t('downloads.openDownloadFolder')}
             </Button>
           </div>
           <Separator className="mb-4" />
@@ -142,13 +146,13 @@ const Downloads = () => {
         ) : (
           <div className="flex h-[calc(100vh-300px)] flex-col items-center justify-center text-muted-foreground">
             <Package className="mb-4 h-16 w-16" />
-            <h3 className="mb-2 font-medium text-xl">No downloads found</h3>
-            <p className="mb-4">
-              There are no downloads matching your current filter.
-            </p>
+            <h3 className="mb-2 font-medium text-xl">
+              {t('downloads.noDownloadsFound')}
+            </h3>
+            <p className="mb-4">{t('downloads.noDownloadsMatchFilter')}</p>
             {filter !== 'all' && (
               <Button onClick={() => setFilter('all')} variant="outline">
-                View all downloads
+                {t('downloads.viewAllDownloads')}
               </Button>
             )}
           </div>

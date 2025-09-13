@@ -1,5 +1,6 @@
 import { Trash } from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { useTranslation } from 'react-i18next';
 import type {
   InstallWithCollectionFunction,
   InstallWithCollectionOptions,
@@ -16,7 +17,8 @@ export const createColumns = (
   install: InstallWithCollectionFunction,
   options: InstallWithCollectionOptions,
   remove: (mod: LocalMod) => void,
-  uninstall: (mod: LocalMod) => void
+  uninstall: (mod: LocalMod) => void,
+  t: ReturnType<typeof useTranslation>['t']
 ) => {
   return [
     {
@@ -26,7 +28,7 @@ export const createColumns = (
         const src = row.original.images[0];
         return (
           <img
-            alt="Thumbnail"
+            alt={t('table.thumbnail')}
             className="h-16 w-16 rounded-md object-cover"
             height="64"
             src={src}
@@ -39,7 +41,7 @@ export const createColumns = (
     {
       accessorKey: 'name',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Name" />
+        <DataTableColumnHeader column={column} title={t('table.name')} />
       ),
       cell: ({ row }) => (
         <div className="flex flex-col gap-2">
@@ -48,7 +50,7 @@ export const createColumns = (
           </div>
           <div className="text-muted-foreground text-sm">
             {' '}
-            By {row.original.author}
+            {t('table.by')} {row.original.author}
           </div>
         </div>
       ),
@@ -56,14 +58,17 @@ export const createColumns = (
     {
       accessorKey: 'status',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Status" />
+        <DataTableColumnHeader column={column} title={t('table.status')} />
       ),
       cell: ({ row }) => <Status status={row.original.status} />,
     },
     {
       accessorKey: 'downloadedAt',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Downloaded At" />
+        <DataTableColumnHeader
+          column={column}
+          title={t('table.downloadedAt')}
+        />
       ),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
@@ -92,8 +97,8 @@ export const createColumns = (
             />
             <Label className="text-xs" htmlFor="install-mod">
               {row.original.status === ModStatus.Installed
-                ? 'Disable'
-                : 'Enable'}
+                ? t('table.disable')
+                : t('table.enable')}
             </Label>
           </div>
           <div className="flex items-center gap-2">
@@ -107,7 +112,7 @@ export const createColumns = (
                   <Trash className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Remove mod</TooltipContent>
+              <TooltipContent>{t('table.removeMod')}</TooltipContent>
             </Tooltip>
           </div>
         </div>

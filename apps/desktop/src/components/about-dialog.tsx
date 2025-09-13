@@ -105,7 +105,7 @@ export const AboutDialog = () => {
           onClick={async () => {
             try {
               if (await checkForUpdates()) {
-                toast.info(t('about.downloadingUpdate'));
+                toast.loading(t('about.downloadingUpdate'));
                 await updateAndRelaunch();
               } else {
                 toast.info(t('about.latestVersion'));

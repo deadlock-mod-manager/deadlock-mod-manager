@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import InstallWithCollection from '@/components/install-with-collection';
 import { DataTable } from '@/components/ui/data-table';
@@ -10,6 +11,7 @@ import { createColumns } from './columns';
 const logger = createLogger('installation');
 
 export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
+  const { t } = useTranslation();
   const { setModStatus, setInstalledVpks } = usePersistedStore();
   const { uninstall } = useUninstall();
 
@@ -67,7 +69,8 @@ export const ModsTable = ({ mods }: { mods: LocalMod[] }) => {
             },
           },
           (mod) => uninstall(mod, true), // Remove
-          (mod) => uninstall(mod, false) // Uninstall
+          (mod) => uninstall(mod, false), // Uninstall
+          t
         );
 
         return <DataTable columns={columns} data={mods} />;

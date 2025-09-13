@@ -3,24 +3,27 @@ import {
   type FallbackProps,
   ErrorBoundary as ReactErrorBoundary,
 } from 'react-error-boundary';
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
 
 const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
+  const { t } = useTranslation();
+
   return (
     <Alert>
       <Warning className="h-6 w-6" />
       <AlertDescription className="flex flex-grow flex-row items-center justify-between gap-2">
         <div className="flex flex-col gap-2">
-          <p>
-            We're sorry, but an error occurred while processing your request.
-          </p>
-          <pre>Error code: {error.message}</pre>
+          <p>{t('errors.genericMessage')}</p>
+          <pre>
+            {t('errors.errorCode')} {error.message}
+          </pre>
         </div>
         <div className="flex flex-col items-center justify-center gap-2">
-          <Button onClick={resetErrorBoundary}>Try again</Button>
+          <Button onClick={resetErrorBoundary}>{t('errors.tryAgain')}</Button>
           <Button onClick={() => window.history.back()} variant="ghost">
-            Go back
+            {t('errors.goBack')}
           </Button>
         </div>
       </AlertDescription>

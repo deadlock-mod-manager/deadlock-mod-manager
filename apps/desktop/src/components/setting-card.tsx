@@ -1,6 +1,7 @@
 import { CustomSettingType } from '@deadlock-mods/utils';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { usePersistedStore } from '@/lib/store';
 import type { LocalSetting } from '@/types/settings';
@@ -96,6 +97,7 @@ export const SettingCardSkeleton = () => {
 };
 
 const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
+  const { t } = useTranslation();
   const addSetting = usePersistedStore((s) => s.addSetting);
   const removeSetting = usePersistedStore((s) => s.removeSetting);
 
@@ -203,7 +205,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
             onCheckedChange={onChange}
           />
           <Label htmlFor={`toggle-setting-${setting.id}`}>
-            {setting.enabled ? 'Enabled' : 'Disabled'}
+            {setting.enabled ? t('status.enabled') : t('status.disabled')}
           </Label>
         </div>
       </div>

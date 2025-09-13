@@ -6,9 +6,18 @@ import type { CreateSettingSchema } from '@/lib/validation/create-setting';
 import type { LocalSetting, SystemSetting } from '@/types/settings';
 import type { State } from '..';
 
+export type TelemetrySettings = {
+  posthogEnabled: boolean;
+};
+
+const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
+  posthogEnabled: true,
+};
+
 export type SettingsState = {
   settings: Record<LocalSetting['id'], LocalSetting>;
   nsfwSettings: NSFWSettings;
+  telemetrySettings: TelemetrySettings;
   perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
 
   addSetting: (setting: LocalSetting) => void;
@@ -25,6 +34,9 @@ export type SettingsState = {
   setPerItemNSFWOverride: (modId: string, isVisible: boolean) => void;
   removePerItemNSFWOverride: (modId: string) => void;
   getPerItemNSFWOverride: (modId: string) => boolean | undefined;
+
+  // Telemetry settings management
+  updateTelemetrySettings: (updates: Partial<TelemetrySettings>) => void;
 };
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
@@ -33,6 +45,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
 ) => ({
   settings: {},
   nsfwSettings: DEFAULT_NSFW_SETTINGS,
+  telemetrySettings: DEFAULT_TELEMETRY_SETTINGS,
   perItemNSFWOverrides: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -116,4 +129,10 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   getPerItemNSFWOverride: (modId: string) => {
     return get().perItemNSFWOverrides[modId];
   },
+
+  // Telemetry settings management
+  updateTelemetrySettings: (updates: Partial<TelemetrySettings>) =>
+    set((state) => ({
+      telemetrySettings: { ...state.telemetrySettings, ...updates },
+    })),
 });

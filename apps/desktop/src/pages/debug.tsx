@@ -1,4 +1,6 @@
+import { toast } from 'sonner';
 import { ModStatusIcon } from '@/components/mod-status-icon';
+import { Button } from '@/components/ui/button';
 import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';
 
@@ -28,6 +30,7 @@ const Debug = () => {
       </div>
       <h1>State: </h1>
       <State />
+      <Button onClick={() => toast('Hello, world!')}>Toast</Button>
     </div>
   );
 };

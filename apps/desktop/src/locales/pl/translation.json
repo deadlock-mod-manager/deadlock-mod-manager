@@ -35,7 +35,15 @@
   "downloads": {
     "downloading": "Pobieranie {{count}} moda",
     "downloading_plural": "Pobieranie {{count}} modów",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "Pobrane",
+    "all": "Wszystkie",
+    "active": "Aktywne",
+    "completed": "Ukończone",
+    "openDownloadFolder": "Otwórz folder pobierania",
+    "noDownloadsFound": "Nie znaleziono pobrań",
+    "noDownloadsMatchFilter": "Brak pobrań pasujących do bieżącego filtra.",
+    "viewAllDownloads": "Zobacz wszystkie pobrane"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod został zainstalowany",
@@ -160,7 +168,10 @@
     "blurStrength": "Siła rozmycia",
     "blurStrengthDescription": "Stopień rozmycia treści NSFW, gdy są widoczne (w pikselach)",
     "rememberPerItemChoices": "Zapamiętaj wybory dla poszczególnych elementów",
-    "rememberPerItemChoicesDescription": "Zapamiętuj, gdy wybierasz pokazanie/ukrycie konkretnych treści NSFW"
+    "rememberPerItemChoicesDescription": "Zapamiętuj, gdy wybierasz pokazanie/ukrycie konkretnych treści NSFW",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Potrzebujesz Pomocy?"
@@ -250,5 +261,34 @@
     "removed": "Usunięty",
     "failedToRemove": "Nie udało się usunąć",
     "error": "Wystąpił błąd"
+  },
+  "errors": {
+    "genericMessage": "Przepraszamy, ale wystąpił błąd podczas przetwarzania Twojego żądania.",
+    "errorCode": "Kod błędu:",
+    "tryAgain": "Spróbuj ponownie",
+    "goBack": "Wróć"
+  },
+  "table": {
+    "name": "Nazwa",
+    "status": "Status",
+    "downloadedAt": "Pobrano dnia",
+    "actions": "Akcje",
+    "by": "Przez",
+    "thumbnail": "Miniatura",
+    "enable": "Włącz",
+    "disable": "Wyłącz",
+    "removeMod": "Usuń moda"
+  },
+  "modForm": {
+    "title": "Metadane moda",
+    "description": "Dodaj opcjonalne szczegóły. Wymagana jest tylko nazwa.",
+    "unknownAuthor": "Nieznany",
+    "modNamePlaceholder": "Niesamowity Mod",
+    "modPreview": "Podgląd moda",
+    "authorPlaceholder": "Nieznany"
+  },
+  "status": {
+    "enabled": "Włączony",
+    "disabled": "Wyłączony"
   }
 }

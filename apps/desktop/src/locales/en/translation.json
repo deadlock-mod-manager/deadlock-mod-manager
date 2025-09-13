@@ -43,7 +43,15 @@
   "downloads": {
     "downloading": "Downloading {{count}} mod",
     "downloading_plural": "Downloading {{count}} mods",
-    "percentage": "{{percentage}}%"
+    "percentage": "{{percentage}}%",
+    "title": "Downloads",
+    "all": "All",
+    "active": "Active",
+    "completed": "Completed",
+    "openDownloadFolder": "Open Download Folder",
+    "noDownloadsFound": "No downloads found",
+    "noDownloadsMatchFilter": "There are no downloads matching your current filter.",
+    "viewAllDownloads": "View all downloads"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
@@ -144,7 +152,10 @@
     "blurStrength": "Blur Strength",
     "blurStrengthDescription": "How much to blur NSFW content when visible (pixels)",
     "rememberPerItemChoices": "Remember Per-Item Choices",
-    "rememberPerItemChoicesDescription": "Remember when you choose to show/hide specific NSFW items"
+    "rememberPerItemChoicesDescription": "Remember when you choose to show/hide specific NSFW items",
+    "telemetryTitle": "Usage Analytics",
+    "posthogAnalytics": "PostHog Analytics",
+    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Need Help?"
@@ -258,5 +269,34 @@
     "removed": "Removed",
     "failedToRemove": "Failed to remove",
     "error": "Error occurred"
+  },
+  "errors": {
+    "genericMessage": "We're sorry, but an error occurred while processing your request.",
+    "errorCode": "Error code:",
+    "tryAgain": "Try again",
+    "goBack": "Go back"
+  },
+  "table": {
+    "name": "Name",
+    "status": "Status",
+    "downloadedAt": "Downloaded At",
+    "actions": "Actions",
+    "by": "By",
+    "thumbnail": "Thumbnail",
+    "enable": "Enable",
+    "disable": "Disable",
+    "removeMod": "Remove mod"
+  },
+  "modForm": {
+    "title": "Mod metadata",
+    "description": "Add optional details. Only the name is required.",
+    "unknownAuthor": "Unknown",
+    "modNamePlaceholder": "Awesome Mod",
+    "modPreview": "Mod preview",
+    "authorPlaceholder": "Unknown"
+  },
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled"
   }
 }
