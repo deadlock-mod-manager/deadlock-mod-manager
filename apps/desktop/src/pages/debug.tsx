@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { ModStatusIcon } from '@/components/mod-status-icon';
+import { ModStatusIcon } from '@/components/mod-browsing/mod-status-icon';
 import { Button } from '@/components/ui/button';
 import { usePersistedStore } from '@/lib/store';
 import { ModStatus } from '@/types/mods';

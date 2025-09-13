@@ -7,7 +7,8 @@
     "settings": "Settings",
     "whatsNew": "What's New",
     "needHelp": "Need Help ?",
-    "collapseMenu": "Collapse menu"
+    "collapseMenu": "Collapse menu",
+    "about": "About"
   },
   "menu": {
     "about": "About",
@@ -264,6 +265,20 @@
     "failedToDownload": "Failed to download",
     "installing": "Installing...",
     "installed": "Installed",
+    "failedToInstall": "Failed to install",
+    "removing": "Removing...",
+    "removed": "Removed",
+    "failedToRemove": "Failed to remove",
+    "error": "Error occurred"
+  },
+  "modButton": {
+    "add": "Add to my mods",
+    "added": "Download Mod",
+    "downloading": "Downloading...",
+    "downloaded": "Install Mod",
+    "failedToDownload": "Failed to download",
+    "installing": "Installing...",
+    "installed": "Remove Mod",
     "failedToInstall": "Failed to install",
     "removing": "Removing...",
     "removed": "Removed",

@@ -20,18 +20,21 @@ import { Suspense, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 import { toast } from 'sonner';
-import AddSettingDialog from '@/components/add-setting';
-import ErrorBoundary from '@/components/error-boundary';
-import { FlashbangToggle } from '@/components/flashbang-toggle';
-import GameInfoManagement from '@/components/gameinfo-management';
-import { LanguageSettings } from '@/components/language-settings';
-import PageTitle from '@/components/page-title';
-import PrivacySettings from '@/components/privacy-settings';
 import { useConfirm } from '@/components/providers/alert-dialog';
-import Section, { SectionSkeleton } from '@/components/section';
-import SettingCard, { SettingCardSkeleton } from '@/components/setting-card';
-import SystemSettings from '@/components/system-settings';
-import ThemeSwitcher from '@/components/theme-switcher';
+import AddSettingDialog from '@/components/settings/add-setting';
+import { FlashbangToggle } from '@/components/settings/flashbang-toggle';
+import GameInfoManagement from '@/components/settings/gameinfo-management';
+import { LanguageSettings } from '@/components/settings/language-settings';
+import PrivacySettings from '@/components/settings/privacy-settings';
+import Section, { SectionSkeleton } from '@/components/settings/section';
+import SettingCard, {
+  SettingCardSkeleton,
+} from '@/components/settings/setting-card';
+import SystemSettings from '@/components/settings/system-settings';
+import ThemeSwitcher from '@/components/settings/theme-switcher';
+import VolumeControl from '@/components/settings/volume-control';
+import ErrorBoundary from '@/components/shared/error-boundary';
+import PageTitle from '@/components/shared/page-title';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -43,7 +46,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import VolumeControl from '@/components/volume-control';
 import { getCustomSettings } from '@/lib/api';
 import { SortType } from '@/lib/constants';
 import logger from '@/lib/logger';

@@ -4,15 +4,15 @@ import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import ModMetadataForm, {
-  type ModMetadata,
-  type ModMetadataFormHandle,
-} from '@/components/mod-metadata-form';
-import PageTitle from '@/components/page-title';
 import {
   ProgressIndicator,
   useProgress,
-} from '@/components/progress-indicator';
+} from '@/components/downloads/progress-indicator';
+import ModMetadataForm, {
+  type ModMetadata,
+  type ModMetadataFormHandle,
+} from '@/components/mod-creation/mod-metadata-form';
+import PageTitle from '@/components/shared/page-title';
 import { Button } from '@/components/ui/button';
 import {
   Card,

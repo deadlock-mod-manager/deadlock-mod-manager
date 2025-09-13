@@ -9,7 +9,7 @@
     "dev": "tsup src/* --watch"
   },
   "dependencies": {
-    "zod": "^4.1.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@deadlock-mods/database": "workspace:*",

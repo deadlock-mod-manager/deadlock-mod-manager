@@ -2,19 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font Face Declarations */
+@font-face {
+  font-family: "Forevs Demo";
+  src: url("./assets/fonts/primary/forevsdemo-medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Forevs Demo";
+  src: url("./assets/fonts/primary/forevsdemo-mediumitalic.otf")
+    format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Forevs Demo";
+  src: url("./assets/fonts/primary/forevsdemo-bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Forevs Demo";
+  src: url("./assets/fonts/primary/forevsdemo-bolditalic.otf")
+    format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    /* Dark Mode als Standard (Deadlock Theme) */
-    --background: 20, 9%, 6%; /* Deadlock dark brown */
-    --foreground: 38, 65%, 97%; /* Deadlock White */
+    --background: 20, 9%, 6%;
+    --foreground: 38, 65%, 97%;
     --card: 20, 9%, 6%;
     --card-foreground: 38, 65%, 97%;
     --popover: 20, 9%, 6%;
     --popover-foreground: 38, 65%, 97%;
-    --primary: 42, 60%, 84%; /* Deadlock Beige */
-    --primary-foreground: 20, 9%, 6%; /* Deadlock dark brown */
-    --secondary: 15, 10%, 16%; /* Deadlock Brown */
-    --secondary-foreground: 41.6 60% 63%; /* Darker Deadlock Beige */
+    --primary: 42, 60%, 84%;
+    --primary-foreground: 20, 9%, 6%;
+    --secondary: 15, 10%, 16%;
+    --secondary-foreground: 41.6 60% 63%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
@@ -31,28 +65,27 @@
     --chart-5: 340 75% 55%;
     --radius: 0.5rem;
 
-    --sidebar-background: 20, 9%, 6%; /* Deadlock dark brown */
-    --sidebar-foreground: 38, 65%, 97%; /* Deadlock White */
-    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-background: 20, 9%, 6%;
+    --sidebar-foreground: 38, 65%, 97%;
+    --sidebar-primary: 42, 60%, 84%;
     --sidebar-primary-foreground: 0 0% 9%;
-    --sidebar-accent: 42, 60%, 84%; /* Deadlock Beige */
-    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-accent: 42, 60%, 84%;
+    --sidebar-accent-foreground: 15, 10%, 16%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .light {
-    /* Light Mode Variablen */
-    --background: 0 0% 100%; /* Weiß */
-    --foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --background: 0 0% 100%;
+    --foreground: 15, 10%, 16%;
     --card: 0 0% 100%;
     --card-foreground: 15, 10%, 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 15, 10%, 16%;
-    --primary: 42, 60%, 84%; /* Deadlock Beige */
-    --primary-foreground: 15, 10%, 16%; /* Deadlock Brown */
-    --secondary: 0 0% 96.1%; /* Sehr helles Grau */
-    --secondary-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --primary: 42, 60%, 84%;
+    --primary-foreground: 15, 10%, 16%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 15, 10%, 16%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
@@ -68,28 +101,28 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    --sidebar-background: 0 0% 98%; /* Sehr helles Grau */
-    --sidebar-foreground: 15, 10%, 16%; /* Deadlock Brown */
-    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
-    --sidebar-primary-foreground: 15, 10%, 16%; /* Deadlock Brown */
-    --sidebar-accent: 0 0% 96.1%; /* Sehr helles Grau */
-    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --toast-background: 15, 10%, 13%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 15, 10%, 16%;
+    --sidebar-primary: 42, 60%, 84%;
+    --sidebar-primary-foreground: 15, 10%, 16%;
+    --sidebar-accent: 0 0% 96.1%;
+    --sidebar-accent-foreground: 15, 10%, 16%;
     --sidebar-border: 0 0% 89.8%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Dark Mode bleibt wie vorher (für explizite Dark Mode Klasse) */
-    --background: 20, 9%, 6%; /* Deadlock dark brown */
-    --foreground: 38, 65%, 97%; /* Deadlock White */
+    --background: 20, 9%, 6%;
+    --foreground: 38, 65%, 97%;
     --card: 20, 9%, 6%;
     --card-foreground: 38, 65%, 97%;
     --popover: 20, 9%, 6%;
     --popover-foreground: 38, 65%, 97%;
-    --primary: 42, 60%, 84%; /* Deadlock Beige */
-    --primary-foreground: 20, 9%, 6%; /* Deadlock dark brown */
-    --secondary: 15, 10%, 16%; /* Deadlock Brown */
-    --secondary-foreground: 41.6 60% 63%; /* Darker Deadlock Beige */
+    --primary: 42, 60%, 84%;
+    --primary-foreground: 20, 9%, 6%;
+    --secondary: 15, 10%, 16%;
+    --secondary-foreground: 41.6 60% 63%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
@@ -104,13 +137,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --toast-background: 15, 10%, 13%;
 
-    --sidebar-background: 20, 9%, 6%; /* Deadlock dark brown */
-    --sidebar-foreground: 38, 65%, 97%; /* Deadlock White */
-    --sidebar-primary: 42, 60%, 84%; /* Deadlock Beige */
+    --sidebar-background: 20, 9%, 6%;
+    --sidebar-foreground: 38, 65%, 97%;
+    --sidebar-primary: 42, 60%, 84%;
     --sidebar-primary-foreground: 0 0% 9%;
-    --sidebar-accent: 42, 60%, 84%; /* Deadlock Beige */
-    --sidebar-accent-foreground: 15, 10%, 16%; /* Deadlock Brown */
+    --sidebar-accent: 42, 60%, 84%;
+    --sidebar-accent-foreground: 15, 10%, 16%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
@@ -120,15 +154,14 @@
   * {
     @apply border-border min-h-0 min-w-0;
   }
+
   body {
     @apply bg-background text-foreground;
-    /* Smoothe Theme-Übergänge */
     transition:
       background-color 0.3s ease,
       color 0.3s ease;
   }
 
-  /* Smoothe Übergänge für alle Theme-abhängigen Eigenschaften */
   * {
     transition:
       background-color 0.3s ease,
@@ -137,13 +170,11 @@
       box-shadow 0.3s ease;
   }
 
-  /* Icon-Invertierung für Light Mode */
   .light img[src*=".svg"],
   .light svg {
     filter: invert(0.2);
   }
 
-  /* Spezielle Behandlung für Icons die bereits invertiert sind */
   .light img[src*="inverted"],
   .light svg.inverted {
     filter: invert(0.8);

@@ -1,7 +1,8 @@
 import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { downloadManager } from '@/lib/download/manager';
+import logger from '@/lib/logger';
 import { usePersistedStore } from '@/lib/store';
 import { type ModDownloadItem, ModStatus } from '@/types/mods';
 import { useModStatus } from './use-mod-status';
@@ -15,10 +16,7 @@ export const useDownload = (
     usePersistedStore();
   const { setModStatus } = useModStatus();
 
-  const localMod = useMemo(
-    () => localMods.find((m) => m.remoteId === mod?.remoteId),
-    [localMods, mod]
-  );
+  const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
   const downloadSelectedFiles = useCallback(
     async (selectedFiles: ModDownloadItem[]) => {
@@ -26,15 +24,20 @@ export const useDownload = (
         return;
       }
 
-      // Add the mod to the local store.
       addLocalMod(mod);
 
       return downloadManager.addToQueue({
         ...mod,
         downloads: selectedFiles,
-        onStart: () => setModStatus(mod.remoteId, ModStatus.Downloading),
-        onProgress: (progress) => setModProgress(mod.remoteId, progress),
+        onStart: () => {
+          logger.info('Starting download', { mod: mod.remoteId });
+          setModStatus(mod.remoteId, ModStatus.Downloading);
+        },
+        onProgress: (progress) => {
+          setModProgress(mod.remoteId, progress);
+        },
         onComplete: (path) => {
+          logger.info('Download complete', { mod: mod.remoteId, path });
           setModStatus(mod.remoteId, ModStatus.Downloaded);
           setModPath(mod.remoteId, path);
           setIsDialogOpen(false);

@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import AudioPlayerPreview from '@/components/audio-player-preview';
-import ErrorBoundary from '@/components/error-boundary';
-import InstallWithCollection from '@/components/install-with-collection';
-import NSFWBlur from '@/components/nsfw-blur';
-import { OutdatedModWarning } from '@/components/outdated-mod-warning';
-import PageTitle from '@/components/page-title';
+import AudioPlayerPreview from '@/components/mod-management/audio-player-preview';
+import ErrorBoundary from '@/components/shared/error-boundary';
+import InstallWithCollection from '@/components/mod-management/install-with-collection';
+import NSFWBlur from '@/components/mod-browsing/nsfw-blur';
+import { OutdatedModWarning } from '@/components/mod-management/outdated-mod-warning';
+import PageTitle from '@/components/shared/page-title';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

@@ -5,7 +5,7 @@ import { BaseDirectory, readDir } from '@tauri-apps/plugin-fs';
 import JSZip from 'jszip';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useProgress } from '@/components/progress-indicator';
+import { useProgress } from '@/components/downloads/progress-indicator';
 import type { ModCategory } from '@/lib/constants';
 import {
   FALLBACK_MOD_SVG,

@@ -47,6 +47,7 @@
       "@sentry/profiling-node",
       "@swc/core",
       "@tailwindcss/oxide",
+      "core-js",
       "esbuild",
       "lefthook",
       "sharp"

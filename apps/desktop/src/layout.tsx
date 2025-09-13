@@ -1,10 +1,10 @@
-import { AppSidebar } from './components/app-sidebar';
-import { Menu } from './components/menu';
-import { Toolbar } from './components/toolbar';
+import { AppSidebar } from './components/layout/app-sidebar';
+import Menu from './components/layout/menu';
+import { Toolbar } from './components/layout/toolbar';
+import { WhatsNewDialog } from './components/layout/whats-new-dialog';
 import { Dialog } from './components/ui/dialog';
 import { SidebarProvider } from './components/ui/sidebar';
 import { Toaster } from './components/ui/sonner';
-import { WhatsNewDialog } from './components/whats-new-dialog';
 import useWhatsNew from './hooks/use-whats-new';
 import { cn } from './lib/utils';
 

@@ -2,7 +2,7 @@ import { load } from '@tauri-apps/plugin-store';
 import usePromise from 'react-promise-suspense';
 import { QueryClientProvider } from 'react-query';
 import { Outlet } from 'react-router';
-import { ProgressProvider } from './components/progress-indicator';
+import { ProgressProvider } from './components/downloads/progress-indicator';
 import { AlertDialogProvider } from './components/providers/alert-dialog';
 import { AppProvider } from './components/providers/app';
 import { ThemeProvider } from './components/providers/theme';
