@@ -23,5 +23,27 @@ export const SUPPORTED_IMAGE_EXTENSIONS = [
 export const ACCEPTED_FILE_TYPES =
   '.vpk,.zip,.rar,.7z,application/zip,application/x-7z-compressed,application/x-rar-compressed';
 
-// Fallback SVG for mods without preview images
-export const FALLBACK_MOD_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1f2937" offset="0"/><stop stop-color="#111827" offset="1"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><g font-family="Inter, Arial, sans-serif" fill="#E5E7EB" text-anchor="middle"><text x="50%" y="48%" font-size="36" font-weight="700">MOD</text><text x="50%" y="62%" font-size="14" fill="#9CA3AF">No image provided</text></g></svg>`;
+export const generateFallbackModSVG = (): string => {
+  try {
+    const computedStyles = getComputedStyle(document.documentElement);
+    const backgroundColor = computedStyles
+      .getPropertyValue('--secondary')
+      .trim();
+    const foregroundColor = computedStyles
+      .getPropertyValue('--foreground')
+      .trim();
+
+    const bgColor = backgroundColor
+      ? `hsl(${backgroundColor})`
+      : 'hsl(15, 10%, 16%)';
+    const fgColor = foregroundColor
+      ? `hsl(${foregroundColor})`
+      : 'hsl(38, 65%, 97%)';
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${bgColor}" offset="0"/><stop stop-color="${bgColor}" offset="1"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><g font-family="Inter, Arial, sans-serif" fill="${fgColor}" text-anchor="middle"><text x="50%" y="48%" font-size="36" font-weight="700">MOD</text><text x="50%" y="62%" font-size="14" fill="${fgColor}" opacity="0.6">No image provided</text></g></svg>`;
+  } catch {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="hsl(15, 10%, 16%)" offset="0"/><stop stop-color="hsl(15, 10%, 16%)" offset="1"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><g font-family="Inter, Arial, sans-serif" fill="hsl(38, 65%, 97%)" text-anchor="middle"><text x="50%" y="48%" font-size="36" font-weight="700">MOD</text><text x="50%" y="62%" font-size="14" fill="hsl(38, 65%, 97%)" opacity="0.6">No image provided</text></g></svg>`;
+  }
+};
+
+export const FALLBACK_MOD_SVG = generateFallbackModSVG();

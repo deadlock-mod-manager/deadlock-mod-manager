@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useProgress } from '@/components/downloads/progress-indicator';
 import type { ModCategory } from '@/lib/constants';
 import {
-  FALLBACK_MOD_SVG,
+  generateFallbackModSVG,
   IMAGE_PATTERN,
   VPK_PATTERN,
 } from '@/lib/file-patterns';
@@ -110,8 +110,9 @@ export const useModProcessor = () => {
 
       imageDataUrl = await fileToDataUrl(metadata.imageFile);
     } else {
-      await writeFileText(await join(modDir, previewName), FALLBACK_MOD_SVG);
-      imageDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(FALLBACK_MOD_SVG)}`;
+      const fallbackSVG = generateFallbackModSVG();
+      await writeFileText(await join(modDir, previewName), fallbackSVG);
+      imageDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(fallbackSVG)}`;
     }
 
     return { previewName, imageDataUrl };

@@ -28,6 +28,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { generateFallbackModSVG } from '@/lib/file-patterns';
 
 export type ModMetadata = {
   name: string;
@@ -51,18 +52,11 @@ export type ModMetadataFormHandle = {
 };
 
 const DEFAULT_IMAGE = '/assets/mod-placeholder.png';
-const FALLBACK_SVG =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360">
-      <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1f2937" offset="0"/><stop stop-color="#111827" offset="1"/></linearGradient></defs>
-      <rect width="100%" height="100%" fill="url(#g)"/>
-      <g font-family="Inter, Arial, sans-serif" fill="#E5E7EB" text-anchor="middle">
-        <text x="50%" y="48%" font-size="36" font-weight="700">MOD</text>
-        <text x="50%" y="62%" font-size="14" fill="#9CA3AF">No image provided</text>
-      </g>
-    </svg>`
-  );
+
+const generateFallbackSVG = (): string => {
+  const rawSvg = generateFallbackModSVG();
+  return `data:image/svg+xml;utf8,${encodeURIComponent(rawSvg)}`;
+};
 
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
@@ -225,7 +219,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
             link: values.link?.trim() || undefined,
             imageFile:
               values.imageFile instanceof File ? values.imageFile : null,
-            imageSrc: preview && imgOk ? preview : FALLBACK_SVG,
+            imageSrc: preview && imgOk ? preview : generateFallbackSVG(),
           };
           return meta;
         },
@@ -253,7 +247,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               className="h-full w-full object-cover"
               onError={() => {
                 setImgOk(false);
-                setPreview(FALLBACK_SVG);
+                setPreview(generateFallbackSVG());
               }}
               src={preview}
             />

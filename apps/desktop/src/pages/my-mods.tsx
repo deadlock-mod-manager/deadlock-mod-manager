@@ -101,8 +101,8 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             </NSFWBlur>
           ) : (
             // Fallback for mods without images or audio
-            <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-muted">
-              <div className="text-center text-muted-foreground">
+            <div className="flex h-48 w-full items-center justify-center rounded-t-xl bg-secondary">
+              <div className="text-center text-foreground/60">
                 <div className="mx-auto mb-2 h-12 w-12" />
                 <p className="text-sm">No preview available</p>
               </div>
@@ -222,8 +222,8 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
             </NSFWBlur>
           ) : (
             // Fallback for mods without images or audio
-            <div className="flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-muted">
-              <div className="text-center text-muted-foreground">
+            <div className="flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-secondary">
+              <div className="text-center text-foreground/60">
                 <div className="mx-auto h-6 w-6" />
               </div>
             </div>

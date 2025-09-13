@@ -122,8 +122,8 @@ const AddMods = () => {
   };
 
   return (
-    <div className="h-full w-full">
-      <div className="space-y-8 px-4">
+    <div className="h-[calc(100vh-160px)] w-full px-4">
+      <div className="space-y-8">
         <PageTitle
           subtitle={t('addMods.subtitle')}
           title={t('addMods.title')}
@@ -157,7 +157,6 @@ const AddMods = () => {
                   onChange={onFileSelect}
                   ref={fileInputRef}
                   type="file"
-                  {...({ webkitdirectory: 'true' } as Record<string, unknown>)}
                 />
                 <div className="pointer-events-none text-center">
                   <UploadSimple className="mx-auto h-8 w-8" />
