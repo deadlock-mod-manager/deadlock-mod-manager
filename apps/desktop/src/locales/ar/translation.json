@@ -346,6 +346,12 @@
     "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
     "gotIt": "فهمت!",
     "versions": {
+      "0.8.1": {
+        "title": "Technical Improvements",
+        "features": [
+          "🔧 Updated to use HTTP plugin for all API calls for improved reliability"
+        ]
+      },
       "0.8.0": {
         "title": "ميزات رئيسية وتحديثات واجهة المستخدم + لغات جديدة",
         "features": [
