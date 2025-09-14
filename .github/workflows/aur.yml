@@ -3,7 +3,13 @@ name: Update AUR PKGBUILD for new release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish to AUR (e.g., v0.5.0)"
+        required: true
+        type: string
 
 jobs:
   aur-push:
@@ -15,7 +21,12 @@ jobs:
       - name: Update pkgver
         run: |
           cd deadlock-modmanager
-          VERSION=${GITHUB_REF##*/v}
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=${{ github.event.inputs.release_tag }}
+            VERSION=${VERSION#v}
+          else
+            VERSION=${GITHUB_REF##*/v}
+          fi
           sed -i "s/^_pkgver=.*/_pkgver=${VERSION}/" PKGBUILD
           sed -i -E "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
@@ -27,5 +38,5 @@ jobs:
           commit_username: GitHub Actions
           commit_email: github-actions@github.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: ${{ github.ref_name }}
+          commit_message: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.ref_name }}
           updpkgsums: true
