@@ -7,11 +7,9 @@ import { AlertDialogProvider } from './components/providers/alert-dialog';
 import { AppProvider } from './components/providers/app';
 import { ThemeProvider } from './components/providers/theme';
 import { TooltipProvider } from './components/ui/tooltip';
-import { fetchAboutData } from './hooks/use-about';
 import { useDeepLink } from './hooks/use-deep-link';
 import { useLanguageListener } from './hooks/use-language-listener';
 import { Layout } from './layout';
-import { getCustomSettings, getMods } from './lib/api';
 import { queryClient } from './lib/client';
 import { STORE_NAME } from './lib/constants';
 import logger from './lib/logger';
@@ -25,12 +23,6 @@ const App = () => {
   useLanguageListener();
 
   const hydrateStore = async () => {
-    // Prefetch data
-    await queryClient.prefetchQuery('about', fetchAboutData);
-    await queryClient.prefetchQuery('mods', getMods);
-    await queryClient.prefetchQuery('custom-settings', getCustomSettings);
-
-    // Hydrate store
     await load(STORE_NAME, { autoSave: true, defaults: {} });
     await usePersistedStore.persist.rehydrate();
 

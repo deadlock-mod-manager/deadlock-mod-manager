@@ -21,6 +21,7 @@ const GetModsData = () => {
   const { data, error } = useQuery('mods', getMods, {
     suspense: true,
     useErrorBoundary: false,
+    retry: 3,
   });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
   const {
