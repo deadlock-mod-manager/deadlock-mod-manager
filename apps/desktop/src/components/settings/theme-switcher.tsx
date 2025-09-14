@@ -1,4 +1,5 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/components/providers/theme';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function ThemeSwitcher() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
 
   const getThemeIcon = () => {
@@ -27,13 +29,13 @@ export function ThemeSwitcher() {
   const getThemeLabel = () => {
     switch (theme) {
       case 'light':
-        return 'Light';
+        return t('theme.light');
       case 'dark':
-        return 'Dark';
+        return t('theme.dark');
       case 'system':
-        return 'System';
+        return t('theme.system');
       default:
-        return 'Dark';
+        return t('theme.dark');
     }
   };
 

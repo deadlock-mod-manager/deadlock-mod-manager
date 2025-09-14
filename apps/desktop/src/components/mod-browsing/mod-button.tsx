@@ -131,20 +131,25 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
                 result.installed_vpks,
                 result.file_tree
               );
-              toast.success('Mod installed successfully');
+              toast.success(t('notifications.modInstalledSuccessfully'));
             },
             onError: (mod, error) => {
               setModStatus(mod.remoteId, ModStatus.Error);
-              toast.error(error.message || 'Failed to install mod');
+              toast.error(
+                error.message || t('notifications.failedToInstallMod')
+              );
             },
             onCancel: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Downloaded);
-              toast.info('Installation canceled');
+              toast.info(t('notifications.installationCanceled'));
             },
             onFileTreeAnalyzed: (mod, fileTree) => {
               if (fileTree.has_multiple_files) {
                 toast.info(
-                  `${mod.name} contains ${fileTree.total_files} files. Select which ones to install.`
+                  t('notifications.modContainsFiles', {
+                    modName: mod.name,
+                    fileCount: fileTree.total_files,
+                  })
                 );
               }
             },
@@ -176,6 +181,7 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
     removeMod,
     setModStatus,
     setInstalledVpks,
+    t,
   ]);
 
   const onClick = useCallback(
@@ -189,23 +195,23 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
         await action();
       } catch (error) {
         logger.error('Failed to perform action', { error });
-        toast.error('Failed to perform action');
+        toast.error(t('notifications.failedToPerformAction'));
         setIsActionInProgress(false);
       }
     },
-    [isActionInProgress, action]
+    [isActionInProgress, action, t]
   );
 
   const text = useMemo(() => {
     switch (localMod?.status) {
       case ModStatus.Installed:
         if (hovering) {
-          return 'Disable Mod ?';
+          return t('modButton.disableMod');
         }
         return t('modButton.installed');
       case ModStatus.Downloaded:
         if (hovering) {
-          return 'Enable Mod ?';
+          return t('modButton.enableMod');
         }
         return t('modButton.downloaded');
       case undefined:
@@ -218,9 +224,9 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
       case ModStatus.Installed:
-        return 'Mod is enabled, do you want to disable it? This will not delete the mod, just disable it ingame.';
+        return t('modButton.installedTooltip');
       case ModStatus.Downloaded:
-        return 'Mod is downloaded, do you want to enable it?';
+        return t('modButton.downloadedTooltip');
       case undefined:
         return t('modButton.add');
       default:
@@ -281,7 +287,7 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
         files={availableFiles}
         isDownloading={localMod?.status === ModStatus.Downloading}
         isOpen={isDialogOpen}
-        modName={localMod?.name || 'Unknown Mod'}
+        modName={localMod?.name || t('modForm.unknownMod')}
         onClose={closeDialog}
         onDownload={downloadSelectedFiles}
       />

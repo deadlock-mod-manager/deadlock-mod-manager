@@ -41,6 +41,9 @@
     "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"],
     "[rust]": {
       "editor.defaultFormatter": "rust-lang.rust-analyzer"
+    },
+    "[xml]": {
+      "editor.defaultFormatter": "redhat.vscode-xml"
     }
   }
 }

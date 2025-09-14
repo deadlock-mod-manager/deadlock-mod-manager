@@ -1,5 +1,64 @@
 # desktop
 
+## 0.8.0
+
+### Minor Changes
+
+- 45d2f75: Major desktop UI features and enhancements
+
+  - Add new bottom bar component for improved navigation
+  - Implement filter mode for enhanced mod browsing experience
+  - Add file drag-and-drop functionality for easier mod processing
+  - Enhanced file selection dialogs and mod management UI
+  - Integrate PostHog analytics for user behavior insights
+  - Add Reddit and X (Twitter) links to the application
+  - Implement audio volume control for mod management
+  - Add ability to upload custom mods with enhanced processing
+  - Persist filters and sort options through navigation for better UX
+  - Add scrollbar to file selector dialog
+  - Update ModStatus enum with better state management
+  - Improved dialog handling for multi-file downloads
+
+- 45d2f75: Comprehensive internationalization support
+
+  - Add multiple new language support with locale files
+  - Add confirmation messages for mod deletion and disabling across all languages
+  - Support for Arabic, German, French, Polish, Russian, Turkish, and Swiss German
+  - Enhanced localization infrastructure
+  - Improved language file organization in /apps/desktop/src/locales/
+  - Better language detection and switching capabilities
+
+- 45d2f75: Enhanced theme support and visual improvements
+
+  - Add comprehensive light mode support with system theme detection
+  - Switch default theme to dark mode with updated logo colors
+  - Recognize and respond to system default theme value
+  - Add flashbang prevention option in settings for accessibility
+  - Improved theme switching capabilities
+  - Better visual consistency across light and dark modes
+
+### Patch Changes
+
+- 45d2f75: Dependencies and maintenance updates
+
+  - Update dependencies in Cargo.lock and Cargo.toml for Rust components
+  - Update dependencies and scripts across multiple packages
+  - Improve code formatting and consistency across files
+  - General maintenance and dependency updates for better security and performance
+
+- 45d2f75: Desktop refactoring and performance optimizations
+
+  - Optimize useDeepLink and useInstall hooks for better performance
+  - Replace static fallback SVG with dynamic generation
+  - Remove unused DownloadProgress component and update related UI elements
+  - Split and reorganize all components for better maintainability
+  - Refactor mod buttons and related components
+  - Improve code structure and component organization
+  - Enhanced component separation and modularity
+  - Better state management and hook optimization
+
+- 41ee2fc: Light theme support
+
 ## 0.7.0
 
 ### Minor Changes

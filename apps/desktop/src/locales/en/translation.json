@@ -61,7 +61,8 @@
     "modInstalledSuccessfully": "Mod installed successfully",
     "failedToInstallMod": "Failed to install mod",
     "installationCanceled": "Installation canceled",
-    "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install."
+    "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
+    "failedToPerformAction": "Failed to perform action"
   },
   "common": {
     "loading": "Loading...",
@@ -304,7 +305,11 @@
     "removing": "Removing...",
     "removed": "Removed",
     "failedToRemove": "Failed to remove",
-    "error": "Error occurred"
+    "error": "Error occurred",
+    "disableMod": "Disable Mod?",
+    "enableMod": "Enable Mod?",
+    "installedTooltip": "Mod is enabled, do you want to disable it? This will not delete the mod, just disable it ingame.",
+    "downloadedTooltip": "Mod is downloaded, do you want to enable it?"
   },
   "errors": {
     "genericMessage": "We're sorry, but an error occurred while processing your request.",
@@ -327,6 +332,7 @@
     "title": "Mod metadata",
     "description": "Add optional details. Only the name is required.",
     "unknownAuthor": "Unknown",
+    "unknownMod": "Unknown Mod",
     "modNamePlaceholder": "Awesome Mod",
     "modPreview": "Mod preview",
     "authorPlaceholder": "Unknown"
@@ -334,5 +340,150 @@
   "status": {
     "enabled": "Enabled",
     "disabled": "Disabled"
+  },
+  "whatsNew": {
+    "title": "What's New",
+    "welcome": "Welcome to the latest version of {{appName}}!",
+    "fullReleaseNotes": "Full Release Notes",
+    "gotIt": "Got it!",
+    "versions": {
+      "0.8.0": {
+        "title": "Major Features & UI Updates + New Languages",
+        "features": [
+          "📤 Support for local mods is here!",
+          "🎵 Added volume slider for audio mod previews",
+          "🌍 Added 7 new languages: Arabic, German, French, Polish, Russian, Turkish, and Swiss German",
+          "🔽 Drag and drop mod files directly into the app",
+          "🌙 Light mode now follows your system theme automatically",
+          "✨ Filter settings now persist when navigating between pages, we also added \"Exclude\" filter mode",
+          "📱 Added bottom bar with status indicators for mods, downloads"
+        ]
+      },
+      "0.7.0": {
+        "title": "Major Features & UI Refresh",
+        "features": [
+          "📦 Multi-file download support - choose which files to install when mods have multiple archives",
+          "🔒 NSFW content filtering with user controls for safe browsing",
+          "⚙️ Advanced gameinfo.gi management for better mod compatibility",
+          "🎨 Brand new logo design and enhanced UI styling throughout the app",
+          "🚀 Improved launch button animations and enhanced settings layout",
+          "📍 Smart scroll position management - keep your scroll position while browsing mods",
+          "🔍 Enhanced search relevance and sorting capabilities for better mod discovery"
+        ]
+      },
+      "0.6.1": {
+        "title": "Deep Links & Improvements",
+        "features": ["🔗 Added support for 1-click install links on GameBanana"]
+      },
+      "0.6.0": {
+        "title": "Audio Mod Support & Launch Options",
+        "features": [
+          "🎵 Added support for audio mods - customize your Deadlock sounds",
+          "🚀 Improved launch options handling - no longer assumes \"+\" prefix requirement",
+          "🔧 Enhanced mod compatibility and installation process",
+          "⚡ Various performance optimizations and stability improvements"
+        ]
+      },
+      "0.5.1": {
+        "title": "Performance & Bug Fixes",
+        "features": [
+          "🚀 Added virtualization to mods page for significantly better performance",
+          "🔧 Fixed \"last updated\" sort option not reflecting actual mod timestamps",
+          "🏷️ Added category and hero filters for better mod discovery",
+          "❌ Added clear button to search input for quick search reset",
+          "🔍 Improved filtering and searching functionality on the mods page",
+          "🐳 Resolved Docker compatibility issues",
+          "🎨 Enhanced mod card layout and styling",
+          "📖 Updated UI to acknowledge GameBanana as data source",
+          "⚡ Various performance optimizations and stability improvements"
+        ]
+      },
+      "0.5.0": {
+        "title": "Stability & New Features",
+        "features": [
+          "🛡️ Fixed Windows crash issue with single-instance plugin",
+          "✨ Added this \"What's New\" dialog to showcase updates",
+          "⚠️ New outdated mod warning system for better mod management",
+          "🎮 Updated champion roster with latest Deadlock heroes",
+          "🔧 Fixed Custom Launch Options not respecting enabled/disabled status",
+          "🎨 Enhanced UI components and layout improvements",
+          "🔧 Various stability improvements and bug fixes"
+        ]
+      },
+      "0.4.0": {
+        "title": "Better Download Management & UI Refresh",
+        "features": [
+          "✨ Refreshed user interface with improved navigation",
+          "📥 Enhanced download management system",
+          "🐛 Fixed mod deletion issues (thanks @Skeptic-systems)",
+          "🔧 Better error handling and user feedback"
+        ]
+      },
+      "0.3.0": {
+        "title": "UI Refactor & Download Improvements",
+        "features": [
+          "🎨 Complete UI overhaul for better user experience",
+          "📦 Improved download management",
+          "⚡ Performance optimizations",
+          "🔄 Updated core dependencies"
+        ]
+      },
+      "0.2.0": {
+        "title": "Error Tracking & Permissions Fix",
+        "features": [
+          "📊 Added Sentry issue tracking for better bug reports",
+          "🔐 Fixed updater permissions issues",
+          "🛡️ Enhanced error reporting and diagnostics"
+        ]
+      }
+    }
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "ui": {
+    "gallery": "Gallery",
+    "files": "Files",
+    "description": "Description",
+    "author": "Author",
+    "link": "Link",
+    "name": "Name",
+    "command": "Command",
+    "custom": "Custom",
+    "screenshot": "Screenshot {{number}}",
+    "currentStatus": "Current Status",
+    "editCustomOption": "Edit custom option",
+    "toggleSidebar": "Toggle Sidebar",
+    "openFolder": "Open folder",
+    "copyToClipboard": "Copy to clipboard",
+    "filterMods": "Filter mods...",
+    "rowsPerPage": "Rows per page",
+    "noPreview": "No preview available",
+    "audio": "Audio",
+    "filesDescription": "Files that can be installed.",
+    "multipleVersionsAvailable": "Different versions of the mod are available.",
+    "placeholders": {
+      "websiteUrl": "https://example.com/mod",
+      "shortDescription": "Short description (optional)"
+    }
+  },
+  "accessibility": {
+    "close": "Close",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "more": "More",
+    "goToFirstPage": "Go to first page",
+    "goToPreviousPage": "Go to previous page",
+    "goToNextPage": "Go to next page",
+    "goToLastPage": "Go to last page",
+    "previous": "Previous",
+    "next": "Next",
+    "morePages": "More pages"
+  },
+  "debug": {
+    "title": "Debug",
+    "helloWorld": "Hello, world!"
   }
 }

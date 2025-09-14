@@ -1,5 +1,32 @@
 # api
 
+## 1.1.0
+
+### Minor Changes
+
+- 45d2f75: Major API improvements and refactoring
+
+  - Streamline mod synchronization process with better performance
+  - Introduce oRPC and OpenAPI for better type safety and documentation
+  - Add distributed locking for mod synchronization jobs
+  - Implement comprehensive caching system with configurable durations
+  - Add legacy route support for backward compatibility
+  - Enhanced CORS configuration with environment variable support
+  - Improved health check endpoint
+  - Add timestamps for mod downloads
+  - Fix GameBanana provider download count reference
+  - Fix tag parsing to handle non-array tags properly
+  - Update cache configuration for optimal performance (1-12 hour durations)
+
+### Patch Changes
+
+- 45d2f75: Dependencies and maintenance updates
+
+  - Update dependencies in Cargo.lock and Cargo.toml for Rust components
+  - Update dependencies and scripts across multiple packages
+  - Improve code formatting and consistency across files
+  - General maintenance and dependency updates for better security and performance
+
 ## 1.0.0
 
 ### Major Changes

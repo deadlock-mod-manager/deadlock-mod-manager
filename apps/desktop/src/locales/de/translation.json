@@ -6,8 +6,16 @@
     "downloads": "Downloads",
     "settings": "Einstellungen",
     "whatsNew": "Was ist neu",
+    "needHelp": "Hilfe?",
     "collapseMenu": "Menü einklappen",
     "about": "Über"
+  },
+  "menu": {
+    "about": "Über",
+    "quit": "Beenden"
+  },
+  "myMods": {
+    "subtitle": "Mods, die Sie heruntergeladen oder installiert haben"
   },
   "mods": {
     "searchPlaceholder": "Mods durchsuchen",
@@ -53,7 +61,8 @@
     "modInstalledSuccessfully": "Mod erfolgreich installiert",
     "failedToInstallMod": "Mod konnte nicht installiert werden",
     "installationCanceled": "Installation abgebrochen",
-    "modContainsFiles": "{{modName}} enthält {{fileCount}} Dateien. Wählen Sie aus, welche installiert werden sollen."
+    "modContainsFiles": "{{modName}} enthält {{fileCount}} Dateien. Wählen Sie aus, welche installiert werden sollen.",
+    "failedToPerformAction": "Aktion konnte nicht ausgeführt werden"
   },
   "common": {
     "loading": "Lädt...",
@@ -68,13 +77,20 @@
     "add": "Hinzufügen",
     "remove": "Entfernen",
     "yes": "Ja",
+    "no": "Nein",
     "create": "Erstellen",
     "gameDetected": "Spiel erkannt",
     "gameInstalledAt": "Spiel installiert unter {{path}}",
     "launchVanilla": "Vanilla starten",
     "launchModded": "Modded starten",
     "stopGame": "Spiel stoppen",
-    "failedToFetchMods": "Fehler beim Laden der Mods. Versuchen Sie es später erneut."
+    "failedToFetchMods": "Fehler beim Laden der Mods. Versuchen Sie es später erneut.",
+    "mods": "Mods",
+    "installed": "installiert",
+    "downloading": "herunterladen",
+    "gameRunning": "Spiel läuft",
+    "gameReady": "Spiel bereit",
+    "gameNotDetected": "Spiel nicht erkannt"
   },
   "settings": {
     "language": "Sprache",
@@ -148,9 +164,9 @@
     "blurStrengthDescription": "Wie stark NSFW-Inhalte unscharf gemacht werden sollen, wenn sie sichtbar sind (Pixel)",
     "rememberPerItemChoices": "Einzelne Auswahlmöglichkeiten merken",
     "rememberPerItemChoicesDescription": "Merken, wenn Sie sich entscheiden, bestimmte NSFW-Inhalte anzuzeigen/auszublenden",
-    "telemetryTitle": "Usage Analytics",
+    "telemetryTitle": "Nutzungsanalysen",
     "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "posthogAnalyticsDescription": "Helfen Sie bei der Verbesserung der Anwendung, indem Sie anonyme Nutzungsstatistiken und Feature-Analysen senden"
   },
   "help": {
     "needHelp": "Hilfe?"
@@ -181,25 +197,37 @@
   },
   "filters": {
     "filters": "Filter",
+    "mode": "Filtermodus",
+    "include": "Einschließen",
+    "exclude": "Ausschließen",
     "category": "Kategorie",
     "hero": "Held",
     "content": "Inhalt",
     "allCategories": "Alle Kategorien",
     "allHeroes": "Alle Helden",
     "hideOutdated": "Veraltete ausblenden",
+    "showOutdated": "Veraltete anzeigen",
     "showNSFWContent": "NSFW-Inhalte anzeigen",
+    "hideNSFWContent": "NSFW-Inhalte ausblenden",
     "audioModsOnly": "Nur Audio-Mods",
+    "excludeAudioMods": "Audio-Mods ausblenden",
     "searchCategories": "Kategorien suchen...",
     "searchHeroes": "Helden suchen...",
     "noCategoriesFound": "Keine Kategorien gefunden.",
     "noHeroesFound": "Keine Helden gefunden.",
     "selected": "ausgewählt",
     "activeFilters": "Aktive Filter:",
+    "includingFilters": "Einschließende Filter:",
+    "excludingFilters": "Ausschließende Filter:",
     "categoryLabel": "Kategorie:",
     "heroLabel": "Held:",
     "sortBy": "Sortieren nach",
     "showNSFW": "NSFW anzeigen",
+    "hideNSFW": "NSFW ausblenden",
     "audioOnly": "Nur Audio",
+    "hideAudio": "Audio ausblenden",
+    "hideOutdatedBadge": "Veraltete ausblenden",
+    "showOutdatedBadge": "Veraltete anzeigen",
     "clearAll": "Alle löschen"
   },
   "sorting": {
@@ -302,10 +330,159 @@
     "removing": "Entferne...",
     "removed": "Entfernt",
     "failedToRemove": "Entfernung fehlgeschlagen",
-    "error": "Fehler aufgetreten"
+    "error": "Fehler aufgetreten",
+    "disableMod": "Mod deaktivieren?",
+    "enableMod": "Mod aktivieren?",
+    "installedTooltip": "Mod ist aktiviert. Möchten Sie ihn deaktivieren? Dies löscht den Mod nicht, sondern deaktiviert ihn nur im Spiel.",
+    "downloadedTooltip": "Mod wurde heruntergeladen. Möchten Sie ihn aktivieren?"
   },
   "status": {
     "enabled": "Aktiviert",
     "disabled": "Deaktiviert"
+  },
+  "whatsNew": {
+    "title": "What's New",
+    "welcome": "Welcome to the latest version of {{appName}}!",
+    "fullReleaseNotes": "Full Release Notes",
+    "gotIt": "Got it!",
+    "versions": {
+      "0.8.0": {
+        "title": "Major Features & UI Updates + New Languages",
+        "features": [
+          "📤 Support for local mods is here!",
+          "🎵 Added volume slider for audio mod previews",
+          "🌍 Added 7 new languages: Arabic, German, French, Polish, Russian, Turkish, and Swiss German",
+          "🔽 Drag and drop mod files directly into the app",
+          "🌙 Light mode now follows your system theme automatically",
+          "✨ Filter settings now persist when navigating between pages, we also added \"Exclude\" filter mode",
+          "📱 Added bottom bar with status indicators for mods, downloads"
+        ]
+      },
+      "0.7.0": {
+        "title": "Major Features & UI Refresh",
+        "features": [
+          "📦 Multi-file download support - choose which files to install when mods have multiple archives",
+          "🔒 NSFW content filtering with user controls for safe browsing",
+          "⚙️ Advanced gameinfo.gi management for better mod compatibility",
+          "🎨 Brand new logo design and enhanced UI styling throughout the app",
+          "🚀 Improved launch button animations and enhanced settings layout",
+          "📍 Smart scroll position management - keep your scroll position while browsing mods",
+          "🔍 Enhanced search relevance and sorting capabilities for better mod discovery"
+        ]
+      },
+      "0.6.1": {
+        "title": "Deep Links & Improvements",
+        "features": ["🔗 Added support for 1-click install links on GameBanana"]
+      },
+      "0.6.0": {
+        "title": "Audio Mod Support & Launch Options",
+        "features": [
+          "🎵 Added support for audio mods - customize your Deadlock sounds",
+          "🚀 Improved launch options handling - no longer assumes \"+\" prefix requirement",
+          "🔧 Enhanced mod compatibility and installation process",
+          "⚡ Various performance optimizations and stability improvements"
+        ]
+      },
+      "0.5.1": {
+        "title": "Performance & Bug Fixes",
+        "features": [
+          "🚀 Added virtualization to mods page for significantly better performance",
+          "🔧 Fixed \"last updated\" sort option not reflecting actual mod timestamps",
+          "🏷️ Added category and hero filters for better mod discovery",
+          "❌ Added clear button to search input for quick search reset",
+          "🔍 Improved filtering and searching functionality on the mods page",
+          "🐳 Resolved Docker compatibility issues",
+          "🎨 Enhanced mod card layout and styling",
+          "📖 Updated UI to acknowledge GameBanana as data source",
+          "⚡ Various performance optimizations and stability improvements"
+        ]
+      },
+      "0.5.0": {
+        "title": "Stability & New Features",
+        "features": [
+          "🛡️ Fixed Windows crash issue with single-instance plugin",
+          "✨ Added this \"What's New\" dialog to showcase updates",
+          "⚠️ New outdated mod warning system for better mod management",
+          "🎮 Updated champion roster with latest Deadlock heroes",
+          "🔧 Fixed Custom Launch Options not respecting enabled/disabled status",
+          "🎨 Enhanced UI components and layout improvements",
+          "🔧 Various stability improvements and bug fixes"
+        ]
+      },
+      "0.4.0": {
+        "title": "Better Download Management & UI Refresh",
+        "features": [
+          "✨ Refreshed user interface with improved navigation",
+          "📥 Enhanced download management system",
+          "🐛 Fixed mod deletion issues (thanks @Skeptic-systems)",
+          "🔧 Better error handling and user feedback"
+        ]
+      },
+      "0.3.0": {
+        "title": "UI Refactor & Download Improvements",
+        "features": [
+          "🎨 Complete UI overhaul for better user experience",
+          "📦 Improved download management",
+          "⚡ Performance optimizations",
+          "🔄 Updated core dependencies"
+        ]
+      },
+      "0.2.0": {
+        "title": "Error Tracking & Permissions Fix",
+        "features": [
+          "📊 Added Sentry issue tracking for better bug reports",
+          "🔐 Fixed updater permissions issues",
+          "🛡️ Enhanced error reporting and diagnostics"
+        ]
+      }
+    }
+  },
+  "theme": {
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "ui": {
+    "gallery": "Galerie",
+    "files": "Dateien",
+    "description": "Beschreibung",
+    "author": "Autor",
+    "link": "Link",
+    "name": "Name",
+    "command": "Befehl",
+    "custom": "Benutzerdefiniert",
+    "screenshot": "Screenshot {{number}}",
+    "currentStatus": "Aktueller Status",
+    "editCustomOption": "Benutzerdefinierte Option bearbeiten",
+    "toggleSidebar": "Seitenleiste umschalten",
+    "openFolder": "Ordner öffnen",
+    "copyToClipboard": "In Zwischenablage kopieren",
+    "filterMods": "Mods filtern...",
+    "rowsPerPage": "Zeilen pro Seite",
+    "noPreview": "Keine Vorschau verfügbar",
+    "audio": "Audio",
+    "filesDescription": "Dateien, die installiert werden können.",
+    "multipleVersionsAvailable": "Verschiedene Versionen des Mods sind verfügbar.",
+    "placeholders": {
+      "websiteUrl": "https://example.com/mod",
+      "shortDescription": "Kurze Beschreibung (optional)"
+    }
+  },
+  "accessibility": {
+    "close": "Schließen",
+    "previousSlide": "Vorherige Folie",
+    "nextSlide": "Nächste Folie",
+    "more": "Mehr",
+    "goToFirstPage": "Zur ersten Seite gehen",
+    "goToPreviousPage": "Zur vorherigen Seite gehen",
+    "goToNextPage": "Zur nächsten Seite gehen",
+    "goToLastPage": "Zur letzten Seite gehen",
+    "previous": "Vorherige",
+    "next": "Nächste",
+    "morePages": "Weitere Seiten"
+  },
+  "debug": {
+    "title": "Debug",
+    "helloWorld": "Hallo, Welt!"
   }
 }
