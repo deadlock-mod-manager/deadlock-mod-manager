@@ -4,43 +4,47 @@ import type {
   ModDto,
 } from '@deadlock-mods/utils';
 import { invoke } from '@tauri-apps/api/core';
-import axios from 'axios';
+import { fetch } from '@tauri-apps/plugin-http';
 
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:9000',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:9000';
+
+const apiRequest = async <T>(endpoint: string): Promise<T> => {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
 
 export const getMods = async () => {
-  const response = await api.get<ModDto[]>('/api/v2/mods');
-  return response.data;
+  return await apiRequest<ModDto[]>('/api/v2/mods');
 }; // TODO: pagination
 
 export const getMod = async (remoteId: string) => {
-  const response = await api.get<ModDto>(`/api/v2/mods/${remoteId}`);
-  return response.data;
+  return await apiRequest<ModDto>(`/api/v2/mods/${remoteId}`);
 };
 
 export const getModDownload = async (remoteId: string) => {
-  const response = await api.get<ModDownloadDto[]>(
+  return await apiRequest<ModDownloadDto[]>(
     `/api/v2/mods/${remoteId}/download`
   );
-  return response.data;
 };
 
 export const getModDownloads = async (remoteId: string) => {
-  const response = await api.get<{
+  return await apiRequest<{
     downloads: ModDownloadDto;
     count: number;
   }>(`/api/v2/mods/${remoteId}/downloads`);
-  return response.data;
 };
 
 export const getCustomSettings = async () => {
-  const response = await api.get<CustomSettingDto[]>('/custom-settings');
-  return response.data;
+  return await apiRequest<CustomSettingDto[]>('/custom-settings');
 };
 
 export const isGameRunning = async () => {

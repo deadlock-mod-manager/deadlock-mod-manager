@@ -1,14 +1,11 @@
 {
-  "name": "@deadlock-mods/api",
-  "version": "1.1.0",
+  "name": "@deadlock-mods/lockdex",
+  "version": "0.1.0",
   "scripts": {
-    "build": "tsdown",
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
-    "test": "dotenv -e ../../.env -- bun run src/test.ts",
-    "desktop:dev": "pnpm dev",
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
   },
   "dependencies": {
@@ -16,28 +13,16 @@
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/utils": "workspace:*",
-    "@hono/sentry": "^1.2.2",
-    "@orpc/client": "^1.8.8",
-    "@orpc/openapi": "^1.8.8",
-    "@orpc/server": "^1.8.8",
-    "@orpc/zod": "^1.8.8",
     "@sentry/node": "^9.46.0",
     "@sentry/profiling-node": "^8.55.0",
-    "better-auth": "^1.3.9",
-    "croner": "^9.1.0",
     "dotenv-cli": "^7.4.4",
-    "drizzle-orm": "^0.42.0",
     "genversion": "^3.2.0",
-    "hono": "^4.9.6",
-    "tslog": "^4.9.3",
     "uuid": "^11.1.0",
     "zod": "^4.1.8"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "latest",
-    "@types/pg": "^8.15.5",
-    "@types/uuid": "^10.0.0",
-    "tsdown": "^0.14.2"
+    "@types/uuid": "^10.0.0"
   }
 }

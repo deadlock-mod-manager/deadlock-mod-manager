@@ -59,7 +59,6 @@
     "@tauri-apps/plugin-updater": "^2.9.0",
     "@tauri-apps/plugin-upload": "^2.3.1",
     "@uidotdev/usehooks": "^2.4.1",
-    "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "cmdk": "1.0.0",
     "date-fns": "^4.1.0",

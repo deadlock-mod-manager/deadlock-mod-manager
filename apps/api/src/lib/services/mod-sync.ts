@@ -1,9 +1,13 @@
 import { db } from '@deadlock-mods/database';
+import {
+  type AcquiredLock,
+  DistributedLockService,
+} from '@deadlock-mods/distributed-lock';
 import type { GameBanana } from '@deadlock-mods/utils';
 import * as Sentry from '@sentry/node';
+import { env } from '../env';
 import { logger as mainLogger } from '../logger';
 import { providerRegistry } from '../providers';
-import { type AcquiredLock, DistributedLockService } from './distributed-lock';
 
 const logger = mainLogger.child().withContext({
   service: 'mod-sync',
@@ -16,7 +20,9 @@ export class ModSyncService {
   private readonly MONITOR_SLUG = 'synchronize-mods-cron';
 
   constructor() {
-    this.lockService = new DistributedLockService(db);
+    this.lockService = new DistributedLockService(db, logger, {
+      defaultInstanceId: env.POD_NAME,
+    });
   }
 
   static getInstance(): ModSyncService {

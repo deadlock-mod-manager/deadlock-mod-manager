@@ -1,0 +1,24 @@
+{
+  "name": "@deadlock-mods/distributed-lock",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsup src/* --watch",
+    "build": "tsup src/*",
+    "check-types": "tsc --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@deadlock-mods/database": "workspace:*",
+    "@deadlock-mods/logging": "workspace:*",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/uuid": "^10.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "5.5.4"
+  }
+}
