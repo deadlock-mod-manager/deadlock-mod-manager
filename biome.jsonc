@@ -86,6 +86,7 @@
         "useMaxParams": "off"
       },
       "style": {
+        "useReadonlyClassProperties": "off",
         "noNonNullAssertion": "off",
         "noEnum": "off",
         "noNestedTernary": "off",
