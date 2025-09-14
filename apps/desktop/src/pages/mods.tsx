@@ -18,7 +18,10 @@ import { isModOutdated } from '@/lib/utils';
 
 const GetModsData = () => {
   const { t } = useTranslation();
-  const { data, error } = useQuery('mods', getMods, { suspense: true });
+  const { data, error } = useQuery('mods', getMods, {
+    suspense: true,
+    useErrorBoundary: false,
+  });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
   const {
     hideOutdated,
