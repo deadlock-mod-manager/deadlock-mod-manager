@@ -1,2 +1,4 @@
 # deps
 node_modules/
+
+tsconfig.tsbuildinfo
