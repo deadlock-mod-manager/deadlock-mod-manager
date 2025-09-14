@@ -1,5 +1,11 @@
 # desktop
 
+## 0.8.2
+
+### Patch Changes
+
+- Fixed prefetch failures on Linux (thanks to Thyron on discord)
+
 ## 0.8.1
 
 ### Patch Changes

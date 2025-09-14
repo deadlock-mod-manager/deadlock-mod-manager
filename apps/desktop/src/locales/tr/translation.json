@@ -324,6 +324,13 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.8.2": {
+        "title": "Bug Fixes & Improvements",
+        "features": [
+          "🐛 Fixed various bugs and improved stability",
+          "⚡ Performance improvements and optimizations"
+        ]
+      },
       "0.8.1": {
         "title": "Technical Improvements",
         "features": [
