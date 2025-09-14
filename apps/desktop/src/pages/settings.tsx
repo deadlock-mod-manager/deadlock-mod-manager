@@ -56,6 +56,7 @@ const CustomSettingsData = () => {
   const { t } = useTranslation();
   const { data, error } = useQuery('custom-settings', getCustomSettings, {
     suspense: true,
+    useErrorBoundary: false,
   });
   const { settings, toggleSetting } = usePersistedStore();
 

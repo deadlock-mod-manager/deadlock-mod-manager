@@ -42,6 +42,7 @@ export const useModDownloads = ({
     cacheTime: 10 * 60 * 1000,
     // Retry failed requests up to 2 times
     retry: 2,
+    useErrorBoundary: false,
   });
 
   return {
