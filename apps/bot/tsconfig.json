@@ -1,0 +1,12 @@
+{
+  "extends": "@deadlock-mods/typescript-config/base.json",
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.d.ts"]
+}

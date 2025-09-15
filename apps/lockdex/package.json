@@ -13,14 +13,14 @@
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/utils": "workspace:*",
-    "@sentry/node": "^9.46.0",
-    "@sentry/profiling-node": "^8.55.0",
+    "@sentry/node": "catalog:",
+    "@sentry/profiling-node": "catalog:",
     "bullmq": "^5.58.5",
     "dotenv-cli": "^7.4.4",
     "genversion": "^3.2.0",
     "ioredis": "^5.7.0",
     "uuid": "^11.1.0",
-    "zod": "^4.1.8"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",

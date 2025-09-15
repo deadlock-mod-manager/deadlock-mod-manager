@@ -30,3 +30,25 @@ services:
       SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
     depends_on:
       - postgres
+
+  bot:
+    build:
+      context: .
+      dockerfile: apps/bot/Dockerfile
+    container_name: deadlock_bot
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_ENABLED: ${BOT_ENABLED:-false}
+      STATUS_CHANNEL_ID: ${STATUS_CHANNEL_ID:-1322369714701205543}
+      STATUS_MESSAGE_ID: ${STATUS_MESSAGE_ID:-1417226755894284368}
+      STATUS_URL: ${STATUS_URL:-https://status.deadlockmods.app/}
+      STATUS_INTERVAL_MIN: ${STATUS_INTERVAL_MIN:-5}
+      STATUS_SELECTOR: ${STATUS_SELECTOR:-main}
+      STATUS_PIN: ${STATUS_PIN:-true}
+      STATUS_ENABLED: ${STATUS_ENABLED:-true}
+    depends_on:
+      - postgres
