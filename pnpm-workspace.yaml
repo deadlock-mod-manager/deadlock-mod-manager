@@ -2,3 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
   - "tools/*"
+
+catalog:
+  typescript: ^5.9.2
+  zod: ^4.1.8
+  "@sentry/node": ^9.46.0
+  "@sentry/profiling-node": ^8.55.0

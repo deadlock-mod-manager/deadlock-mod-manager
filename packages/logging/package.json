@@ -23,7 +23,7 @@
     "@loglayer/transport-pretty-terminal": "^3.1.3",
     "@loglayer/transport-tslog": "^2.1.2",
     "@loglayer/transport-winston": "^2.1.2",
-    "@sentry/node": "^9.46.0",
+    "@sentry/node": "catalog:",
     "lodash": "^4.17.21",
     "logfmt": "^1.4.0",
     "loglayer": "^6.7.0",

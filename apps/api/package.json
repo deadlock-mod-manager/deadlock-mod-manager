@@ -21,8 +21,8 @@
     "@orpc/openapi": "^1.8.8",
     "@orpc/server": "^1.8.8",
     "@orpc/zod": "^1.8.8",
-    "@sentry/node": "^9.46.0",
-    "@sentry/profiling-node": "^8.55.0",
+    "@sentry/node": "catalog:",
+    "@sentry/profiling-node": "catalog:",
     "better-auth": "^1.3.9",
     "croner": "^9.1.0",
     "dotenv-cli": "^7.4.4",
@@ -31,7 +31,7 @@
     "hono": "^4.9.6",
     "tslog": "^4.9.3",
     "uuid": "^11.1.0",
-    "zod": "^4.1.8"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
