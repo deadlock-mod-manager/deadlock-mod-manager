@@ -5,6 +5,10 @@ import type { CronJobData } from '@/types/jobs';
 import { CronProcessor } from './cron-processor';
 
 export class ModsSchedulerProcessor extends CronProcessor {
+  constructor() {
+    super(logger);
+  }
+
   async process(jobData: CronJobData) {
     try {
       logger.info(`Processing mods scheduler job: ${JSON.stringify(jobData)}`);

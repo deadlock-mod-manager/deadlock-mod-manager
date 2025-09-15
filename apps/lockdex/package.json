@@ -6,9 +6,12 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
-    "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
+    "version:generate": "genversion -f -p ./package.json --es6 src/version.ts",
+    "test": "dotenv -e ../../.env -- bun run src/scripts/test.ts"
   },
   "dependencies": {
+    "7zip-min": "^2.1.0",
+    "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
@@ -19,12 +22,16 @@
     "dotenv-cli": "^7.4.4",
     "genversion": "^3.2.0",
     "ioredis": "^5.7.0",
+    "node-unrar-js": "^2.0.2",
+    "unrar-js": "^0.2.3",
     "uuid": "^11.1.0",
+    "yauzl": "^3.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "latest",
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "@types/yauzl": "^2.10.3"
   }
 }
