@@ -11,7 +11,6 @@ import { formatLogComponents } from '../utils';
  * 2025-03-17T15:37:13+01:00 app-api (1.0.0) [error]: Test error app=app-api
  */
 export const devFormat: winston.Logform.Format = format.combine(
-  format.timestamp({ format: 'isoDateTime' }),
   format.colorize(),
   format.align(),
   format.printf(({ level, message, timestamp, error, ...meta }) => {

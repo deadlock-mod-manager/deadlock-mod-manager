@@ -1,16 +1,30 @@
 import type { Job } from 'bullmq';
+import { ModFileProcessingQueue } from '@/queues/mod-file-processing-queue';
 import { ModsQueue } from '@/queues/mods-queue';
-import type { ModsJobData } from '@/types/jobs';
+import type { ModFileProcessingJobData, ModsJobData } from '@/types/jobs';
 
 export class QueueService {
   private modsQueue: ModsQueue;
+  private modFileProcessingQueue: ModFileProcessingQueue;
 
   constructor() {
     this.modsQueue = new ModsQueue();
+    this.modFileProcessingQueue = new ModFileProcessingQueue();
   }
 
   async addModProcessingJob(data: ModsJobData, priority?: number) {
     return this.modsQueue.processMod(data, priority);
+  }
+
+  async addModFileProcessingJob(
+    data: ModFileProcessingJobData,
+    priority?: number
+  ) {
+    return this.modFileProcessingQueue.processMod(data, priority);
+  }
+
+  async addModFileProcessingJobs(data: ModFileProcessingJobData[]) {
+    return this.modFileProcessingQueue.processMods(data);
   }
 
   async getQueueStats() {
