@@ -195,6 +195,9 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.2.22(@types/react@19.0.2)
+      '@types/lodash':
+        specifier: ^4.17.20
+        version: 4.17.20
       '@types/pg':
         specifier: ^8.15.5
         version: 8.15.5

@@ -32,6 +32,7 @@
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "latest",
+    "@types/lodash": "^4.17.20",
     "@types/pg": "^8.15.5",
     "typescript": "catalog:"
   }
