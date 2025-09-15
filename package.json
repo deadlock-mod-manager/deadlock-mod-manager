@@ -14,7 +14,7 @@
     "docker:api:logs": "docker compose logs -f api",
     "docker": "docker compose up -d",
     "format": "npx ultracite@latest fix",
-    "lint": "npx ultracite@latest lint",
+    "lint": "npx ultracite@latest check",
     "check-types": "turbo run check-types",
     "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
