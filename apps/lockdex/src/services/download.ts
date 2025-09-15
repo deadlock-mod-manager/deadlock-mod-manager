@@ -239,7 +239,6 @@ export class DownloadService {
         reader.releaseLock();
       }
 
-      // Verify file was written correctly
       const fileStats = await stat(filePath);
       this.logger.info(`File written successfully: ${fileStats.size} bytes`);
 
@@ -292,7 +291,6 @@ export class DownloadService {
         return filename;
       }
 
-      // Fallback to generating a filename
       const timestamp = Date.now();
       return `download-${timestamp}.bin`;
     } catch {

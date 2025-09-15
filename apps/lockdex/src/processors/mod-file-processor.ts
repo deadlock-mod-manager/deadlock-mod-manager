@@ -1,10 +1,14 @@
-import { join } from 'node:path';
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+import { ValidationError } from '@deadlock-mods/common';
+import { modDownloadRepository, vpkRepository } from '@deadlock-mods/database';
 import { logger } from '@/lib/logger';
 import { ArchiveExtractorFactory } from '@/services/archive';
 import { DownloadService } from '@/services/download';
 import { SevenZipExtractor } from '@/services/extractors/7z-extractor';
 import { RarExtractor } from '@/services/extractors/rar-extractor';
 import { ZipExtractor } from '@/services/extractors/zip-extractor';
+import { VpkParser } from '@/services/vpk';
 import type { ModFileProcessingJobData } from '@/types/jobs';
 import { BaseProcessor } from './base';
 
@@ -25,8 +29,17 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
   async process(jobData: ModFileProcessingJobData) {
     try {
+      const modDownload = await modDownloadRepository.findById(
+        jobData.modDownloadId
+      );
+      if (!modDownload) {
+        return this.handleError(
+          new ValidationError(`ModDownload not found: ${jobData.modDownloadId}`)
+        );
+      }
+
       this.logger.info(
-        `Processing mod file: ${jobData.file} (${jobData.size} bytes)`
+        `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`
       );
 
       await using downloadResult = await this.downloadService.downloadFile(
@@ -50,6 +63,8 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       this.logger.info(`Extracted archive to: ${extractionResult.path}`);
 
       await this.listExtractedFiles(extractionResult.path);
+
+      await this.parseVpkFiles(extractionResult.path, modDownload);
 
       return this.handleSuccess(jobData);
     } catch (error) {
@@ -87,8 +102,6 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
    * Recursively list all files in a directory and log them
    */
   private async listExtractedFiles(dirPath: string): Promise<void> {
-    const { readdir, stat } = await import('node:fs/promises');
-
     const listFiles = async (
       currentPath: string,
       prefix = ''
@@ -117,5 +130,124 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
     this.logger.info('📋 Extracted files:');
     await listFiles(dirPath);
+  }
+
+  /**
+   * Find and parse all VPK files in the extracted directory
+   */
+  private async parseVpkFiles(
+    dirPath: string,
+    modDownload: { id: string; modId: string }
+  ): Promise<void> {
+    const vpkFiles = await this.findVpkFiles(dirPath);
+
+    if (vpkFiles.length === 0) {
+      this.logger.info('No VPK files found in extracted archive');
+      return;
+    }
+
+    this.logger.info(`Found ${vpkFiles.length} VPK file(s) to parse`);
+
+    for (const vpkPath of vpkFiles) {
+      await this.parseVpkFile(
+        vpkPath,
+        modDownload.modId,
+        modDownload.id,
+        dirPath
+      );
+    }
+  }
+
+  /**
+   * Recursively find all VPK files in a directory
+   */
+  private async findVpkFiles(dirPath: string): Promise<string[]> {
+    const vpkFiles: string[] = [];
+
+    const searchDirectory = async (currentPath: string): Promise<void> => {
+      try {
+        const entries = await readdir(currentPath);
+
+        for (const entry of entries) {
+          const fullPath = join(currentPath, entry);
+          const stats = await stat(fullPath);
+
+          if (stats.isDirectory()) {
+            await searchDirectory(fullPath);
+          } else if (entry.toLowerCase().endsWith('.vpk')) {
+            vpkFiles.push(fullPath);
+          }
+        }
+      } catch (error) {
+        this.logger
+          .withError(error)
+          .error(`Failed to search directory for VPK files: ${currentPath}`);
+      }
+    };
+
+    await searchDirectory(dirPath);
+    return vpkFiles;
+  }
+
+  /**
+   * Parse a single VPK file and store it in the database
+   */
+  private async parseVpkFile(
+    vpkPath: string,
+    modId: string,
+    modDownloadId: string,
+    extractionDir: string
+  ): Promise<void> {
+    try {
+      const vpkBuffer = await readFile(vpkPath);
+
+      this.logger.info(
+        `Parsing VPK file: ${vpkPath} (${vpkBuffer.length} bytes)`
+      );
+
+      const stats = await stat(vpkPath);
+
+      const parsed = await VpkParser.parse(vpkBuffer, {
+        includeFullFileHash: true,
+        filePath: vpkPath,
+        lastModified: stats.mtime,
+        includeMerkle: true,
+      });
+
+      this.logger.debug(
+        `VPK Info - Version: ${parsed.version}, Entries: ${parsed.entries.length}, ` +
+          `TreeLength: ${parsed.treeLength}, ManifestSHA256: ${parsed.manifestSha256}`
+      );
+
+      const sourcePath = relative(extractionDir, vpkPath);
+      const fp = parsed.fingerprint;
+      const vpkData = {
+        modId,
+        modDownloadId,
+        sourcePath,
+        sizeBytes: fp.fileSize,
+        fastHash: fp.fastHash,
+        sha256: fp.sha256,
+        contentSig: fp.contentSignature,
+        vpkVersion: fp.vpkVersion,
+        fileCount: fp.fileCount,
+        hasMultiparts: fp.hasMultiparts,
+        hasInlineData: fp.hasInlineData,
+        merkleRoot: fp.merkleRoot,
+        state: 'ok' as const,
+        fileMtime: fp.lastModified,
+      };
+
+      const storedVpk = await vpkRepository.upsertByModDownloadIdAndSourcePath(
+        modDownloadId,
+        sourcePath,
+        vpkData
+      );
+      this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
+    } catch (error) {
+      this.logger
+        .withError(error)
+        .error(`Failed to parse VPK file: ${vpkPath}`);
+    }
   }
 }
