@@ -38,6 +38,17 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         );
       }
 
+      // Check if this mod download has already been processed by looking for VPK entries
+      const existingVpks = await vpkRepository.findByModDownloadId(
+        jobData.modDownloadId
+      );
+      if (existingVpks.length > 0) {
+        this.logger.info(
+          `Skipping already processed mod file: ${jobData.file} for modDownloadId: ${jobData.modDownloadId} (found ${existingVpks.length} existing VPK entries)`
+        );
+        return this.handleSuccess(jobData);
+      }
+
       this.logger.info(
         `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`
       );
