@@ -1,0 +1,316 @@
+name: Release Services (API, Bot, Lockdex)
+env:
+  NODE_VERSION: "22.11.0"
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "services-*"
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      api_version: ${{ steps.get-versions.outputs.api_version }}
+      bot_version: ${{ steps.get-versions.outputs.bot_version }}
+      lockdex_version: ${{ steps.get-versions.outputs.lockdex_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+
+      - name: Get service versions
+        id: get-versions
+        run: |
+          API_VERSION=$(jq -r '.version' ./apps/api/package.json)
+          BOT_VERSION=$(jq -r '.version' ./apps/bot/package.json)
+          LOCKDEX_VERSION=$(jq -r '.version' ./apps/lockdex/package.json)
+
+          echo "API Version: $API_VERSION"
+          echo "Bot Version: $BOT_VERSION"
+          echo "Lockdex Version: $LOCKDEX_VERSION"
+
+          echo "api_version=$API_VERSION" >> $GITHUB_OUTPUT
+          echo "bot_version=$BOT_VERSION" >> $GITHUB_OUTPUT
+          echo "lockdex_version=$LOCKDEX_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create or get existing release
+        id: create-release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+
+            // First, try to get existing release by tag
+            try {
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag
+              });
+              
+              console.log(`Found existing release: ${release.id}`);
+              return release.id;
+            } catch (error) {
+              if (error.status === 404) {
+                // Release doesn't exist, create a new one
+                console.log(`Creating new release for tag: ${tag}`);
+                
+                const apiVersion = process.env.API_VERSION || 'unknown';
+                const botVersion = process.env.BOT_VERSION || 'unknown';
+                const lockdexVersion = process.env.LOCKDEX_VERSION || 'unknown';
+                
+                const releaseBody = `## Services Release
+                
+                This release includes the following services:
+                
+                ### 🚀 API Service
+                - **Version:** v${apiVersion}
+                - **Docker Image:** \`stormix/deadlock-mods-api:${apiVersion}\`
+                
+                ### 🤖 Discord Bot
+                - **Version:** v${botVersion}
+                - **Docker Image:** \`stormix/deadlock-mods-bot:${botVersion}\`
+                
+                ### 🔍 Lockdex Service
+                - **Version:** v${lockdexVersion}
+                - **Docker Image:** \`stormix/deadlock-mods-lockdex:${lockdexVersion}\`
+                
+                ---
+                *This release was generated automatically using GitHub Actions.*`;
+                
+                const { data } = await github.rest.repos.createRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag_name: tag,
+                  name: `Services Release ${tag}`,
+                  body: releaseBody,
+                  draft: true,
+                  prerelease: false
+                });
+                return data.id;
+              } else {
+                // Re-throw if it's a different error
+                throw error;
+              }
+            }
+        env:
+          API_VERSION: ${{ steps.get-versions.outputs.api_version }}
+          BOT_VERSION: ${{ steps.get-versions.outputs.bot_version }}
+          LOCKDEX_VERSION: ${{ steps.get-versions.outputs.lockdex_version }}
+
+  build-api:
+    needs: create-release
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+      - name: Install dependencies
+        working-directory: ./apps/api
+        run: pnpm install
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: stormix/deadlock-mods-api
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:${{ needs.create-release.outputs.api_version }}
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-bot:
+    needs: create-release
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+      - name: Install dependencies
+        working-directory: ./apps/bot
+        run: pnpm install
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: stormix/deadlock-mods-bot
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./apps/bot/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-bot:${{ needs.create-release.outputs.bot_version }}
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-bot:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-lockdex:
+    needs: create-release
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_KEY }}
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+      - name: Install dependencies
+        working-directory: ./apps/lockdex
+        run: pnpm install
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: stormix/deadlock-mods-lockdex
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./apps/lockdex/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-lockdex:${{ needs.create-release.outputs.lockdex_version }}
+            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-lockdex:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [create-release, build-api, build-bot, build-lockdex]
+
+    steps:
+      - name: Publish release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            try {
+              console.log(`Updating release ID: ${process.env.release_id}`);
+              
+              // First get the current release to check its state
+              const { data: currentRelease } = await github.rest.repos.getRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: process.env.release_id
+              });
+              
+              console.log(`Current release state - Draft: ${currentRelease.draft}, Tag: ${currentRelease.tag_name}`);
+              
+              // Update the release to publish it
+              const { data: updatedRelease } = await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: process.env.release_id,
+                draft: false,
+                prerelease: false
+              });
+              
+              console.log(`Successfully published release: ${updatedRelease.html_url}`);
+              return updatedRelease.id;
+            } catch (error) {
+              console.error(`Failed to publish release: ${error.message}`);
+              console.error(`Error details:`, error);
+              throw error;
+            }
+
+  cleanup-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [create-release, build-api, build-bot, build-lockdex]
+    if: failure()
+
+    steps:
+      - name: Delete release
+        uses: actions/github-script@v6
+        env:
+          release_id: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            github.rest.repos.deleteRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.release_id
+            })
+
