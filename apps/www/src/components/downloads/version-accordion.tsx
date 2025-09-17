@@ -62,10 +62,7 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
   const { platform, architecture } = download;
 
   if (platform === 'windows') {
-    if (download.filename.toLowerCase().includes('system')) {
-      return `Windows (${architecture}) (System)`;
-    }
-    return `Windows (${architecture}) (User)`;
+    return `Windows (${architecture})`;
   }
 
   if (platform === 'macos') {
@@ -106,59 +103,116 @@ const groupDownloadsByPlatform = (downloads: PlatformDownload[]) => {
 
 export const VersionAccordion = ({ releases }: VersionAccordionProps) => {
   return (
-    <div className="container mx-auto max-w-6xl py-12">
-      <div className="mb-8">
+    <div className="container mx-auto flex max-w-6xl flex-col gap-8 py-12">
+      <div className="">
         <h2 className="font-bold text-2xl">All Versions</h2>
       </div>
 
       <Accordion className="space-y-4" type="multiple">
-        {releases.slice(0, 5).map((release, index) => {
-          const platformGroups = groupDownloadsByPlatform(release.downloads);
+        {releases
+          .filter((release) => !release.prerelease)
+          .map((release, index) => {
+            const platformGroups = groupDownloadsByPlatform(release.downloads);
 
-          return (
-            <AccordionItem
-              className="rounded-lg border bg-card"
-              key={release.version}
-              value={release.version}
-            >
-              <AccordionTrigger className="px-4 py-4 hover:bg-muted/50 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-xl">{release.version}</span>
-                  {index === 0 && (
-                    <Badge className="text-xs" variant="secondary">
-                      LATEST VERSION
-                    </Badge>
-                  )}
-                  {release.prerelease && (
-                    <Badge className="text-xs" variant="outline">
-                      Pre-release
-                    </Badge>
-                  )}
-                </div>
-              </AccordionTrigger>
+            return (
+              <AccordionItem
+                className="rounded-lg border bg-card"
+                key={release.version}
+                value={release.version}
+              >
+                <AccordionTrigger className="px-4 py-4 hover:bg-muted/50 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-xl">{release.version}</span>
+                    {index === 0 && (
+                      <Badge className="text-xs" variant="secondary">
+                        LATEST VERSION
+                      </Badge>
+                    )}
+                    {release.prerelease && (
+                      <Badge className="text-xs" variant="outline">
+                        Pre-release
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionTrigger>
 
-              <AccordionContent className="px-4 pb-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <PlatformColumn
-                    downloads={platformGroups.macos}
-                    icon={<FaApple className="h-5 w-5" />}
-                    title="macOS"
-                  />
-                  <PlatformColumn
-                    downloads={platformGroups.windows}
-                    icon={<FaWindows className="h-5 w-5" />}
-                    title="Windows"
-                  />
-                  <PlatformColumn
-                    downloads={platformGroups.linux}
-                    icon={<FaLinux className="h-5 w-5" />}
-                    title="Linux"
-                  />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          );
-        })}
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <PlatformColumn
+                      downloads={platformGroups.macos}
+                      icon={<FaApple className="h-5 w-5" />}
+                      title="macOS"
+                    />
+                    <PlatformColumn
+                      downloads={platformGroups.windows}
+                      icon={<FaWindows className="h-5 w-5" />}
+                      title="Windows"
+                    />
+                    <PlatformColumn
+                      downloads={platformGroups.linux}
+                      icon={<FaLinux className="h-5 w-5" />}
+                      title="Linux"
+                    />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+      </Accordion>
+      <div className="">
+        <h2 className="font-bold text-2xl">Pre-release Versions</h2>
+      </div>
+      <Accordion className="space-y-4" type="multiple">
+        {releases
+          .filter((release) => release.prerelease)
+          .slice(0, 5)
+          .map((release, index) => {
+            const platformGroups = groupDownloadsByPlatform(release.downloads);
+
+            return (
+              <AccordionItem
+                className="rounded-lg border bg-card"
+                key={release.version}
+                value={release.version}
+              >
+                <AccordionTrigger className="px-4 py-4 hover:bg-muted/50 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-xl">{release.version}</span>
+                    {index === 0 && (
+                      <Badge className="text-xs" variant="secondary">
+                        LATEST VERSION
+                      </Badge>
+                    )}
+                    {release.prerelease && (
+                      <Badge className="text-xs" variant="outline">
+                        Pre-release
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionTrigger>
+
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <PlatformColumn
+                      downloads={platformGroups.macos}
+                      icon={<FaApple className="h-5 w-5" />}
+                      title="macOS"
+                    />
+                    <PlatformColumn
+                      downloads={platformGroups.windows}
+                      icon={<FaWindows className="h-5 w-5" />}
+                      title="Windows"
+                    />
+                    <PlatformColumn
+                      downloads={platformGroups.linux}
+                      icon={<FaLinux className="h-5 w-5" />}
+                      title="Linux"
+                    />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
       </Accordion>
     </div>
   );

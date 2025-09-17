@@ -10,7 +10,7 @@ export interface PlatformDownload {
 export interface Release {
   version: string;
   name: string;
-  releaseNotes: string;
+  releaseNotes?: string;
   publishedAt: string;
   downloads: PlatformDownload[];
   prerelease?: boolean;
