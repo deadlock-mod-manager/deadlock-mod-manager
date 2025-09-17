@@ -29,18 +29,90 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: 'Deadlock Mod Manager - Easy Mod Installation & Management',
+        title:
+          'Deadlock Mod Manager - Download, Install & Manage Deadlock Mods',
       },
       {
         name: 'description',
         content:
-          'The official mod manager for Deadlock. Download, install, and manage your Deadlock mods and skins with ease. Browse community-created content and customize your game experience.',
+          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
+      },
+      {
+        name: 'keywords',
+        content:
+          'deadlock mod manager, deadlock mods, valve deadlock, game mod manager, gamebanana mods, deadlock modding, tauri app, deadlock tools, valve games, mods installer, deadlock community',
+      },
+      {
+        name: 'author',
+        content: 'Stormix',
+      },
+      {
+        name: 'robots',
+        content: 'index, follow',
+      },
+      {
+        name: 'theme-color',
+        content: '#d4af37',
+      },
+      {
+        property: 'og:type',
+        content: 'website',
+      },
+      {
+        property: 'og:title',
+        content:
+          'Deadlock Mod Manager - Download, Install & Manage Deadlock Mods',
+      },
+      {
+        property: 'og:description',
+        content:
+          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
+      },
+      {
+        property: 'og:image',
+        content: '/og-image.png',
+      },
+      {
+        property: 'og:image:alt',
+        content:
+          'Deadlock Mod Manager - Interface showing mod browser and installation features',
+      },
+      {
+        property: 'og:site_name',
+        content: 'Deadlock Mod Manager',
+      },
+      {
+        property: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        property: 'twitter:title',
+        content:
+          'Deadlock Mod Manager - Download, Install & Manage Deadlock Mods',
+      },
+      {
+        property: 'twitter:description',
+        content:
+          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection.",
+      },
+      {
+        property: 'twitter:image',
+        content: '/og-image.png',
       },
     ],
     links: [
       {
         rel: 'icon',
         href: '/favicon.svg',
+      },
+      {
+        rel: 'canonical',
+        href: 'https://deadlock-mods.com/',
+      },
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/apple-touch-icon.png',
       },
     ],
   }),
