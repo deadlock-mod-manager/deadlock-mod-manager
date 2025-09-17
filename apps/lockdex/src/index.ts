@@ -20,9 +20,9 @@ const main = async () => {
 
   await cronService.defineJob({
     name: 'mods-scheduler',
-    pattern: CronPatterns.DAILY,
+    pattern: CronPatterns.EVERY_6_HOURS,
     processor: modsScheduler,
-    enabled: false,
+    enabled: true,
   });
 
   process.on('SIGTERM', async () => {
