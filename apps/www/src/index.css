@@ -20,13 +20,6 @@
   font-display: swap;
 }
 
-@theme {
-  --font-sans:
-    "Inter", "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-primary: "Forevs Demo", "Inter", ui-sans-serif, system-ui, sans-serif;
-}
-
 html {
   scroll-behavior: smooth;
 }
@@ -112,6 +105,10 @@ body {
 }
 
 @theme {
+  --font-primary: "Forevs Demo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: InterVariable, sans-serif;
+  --font-sans--font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
