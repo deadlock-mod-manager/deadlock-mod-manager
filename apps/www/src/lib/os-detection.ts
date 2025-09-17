@@ -1,4 +1,8 @@
-import type { DetectedOS, DetectedArchitecture, OSInfo } from '@/types/releases';
+import type {
+  DetectedArchitecture,
+  DetectedOS,
+  OSInfo,
+} from '@/types/releases';
 
 /**
  * Detects the user's operating system and architecture from the user agent

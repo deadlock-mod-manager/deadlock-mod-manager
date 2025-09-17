@@ -1,11 +1,17 @@
 import { Calendar } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { RecommendedDownload } from './recommended-download';
+import type { OSInfo, PlatformDownload, Release } from '@/types/releases';
 import { AllDownloads } from './all-downloads';
+import { RecommendedDownload } from './recommended-download';
 import { ReleaseNotes } from './release-notes';
-import type { Release, PlatformDownload, OSInfo } from '@/types/releases';
 
 interface ReleaseCardProps {
   release: Release;
@@ -13,7 +19,11 @@ interface ReleaseCardProps {
   recommendedDownload: PlatformDownload | null;
 }
 
-export const ReleaseCard = ({ release, userOS, recommendedDownload }: ReleaseCardProps) => (
+export const ReleaseCard = ({
+  release,
+  userOS,
+  recommendedDownload,
+}: ReleaseCardProps) => (
   <Card className="mb-8">
     <CardHeader>
       <div className="flex items-center justify-between">
@@ -35,7 +45,7 @@ export const ReleaseCard = ({ release, userOS, recommendedDownload }: ReleaseCar
     <CardContent>
       {/* Recommended Download */}
       {userOS && userOS.os !== 'unknown' && recommendedDownload && (
-        <RecommendedDownload userOS={userOS} download={recommendedDownload} />
+        <RecommendedDownload download={recommendedDownload} userOS={userOS} />
       )}
 
       <Separator className="my-6" />

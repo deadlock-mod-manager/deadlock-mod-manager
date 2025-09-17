@@ -3,8 +3,8 @@ import { env } from '@/lib/env';
 import { publicProcedure } from '../lib/orpc';
 import { GitHubReleasesService } from '../lib/services/github-releases';
 import { HealthService } from '../lib/services/health';
-import type { HealthResponse } from '../types/health';
 import type { ReleasesResponse } from '../types/github-releases';
+import type { HealthResponse } from '../types/health';
 import { version } from '../version';
 
 const HealthResponseSchema = z.object({
