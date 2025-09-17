@@ -5,19 +5,18 @@ import { Card, CardContent } from '@/components/ui/card';
 const steps = [
   {
     icon: LuDownload,
-    title: 'Download & Install',
-    description:
-      'Get the latest version of Deadlock Mod Manager for your platform',
+    title: 'Download & open',
+    description: 'Install the app for your platform and launch it.',
   },
   {
     icon: LuSearch,
     title: 'Browse Mods',
-    description: 'Explore our collection of community-created mods and skins',
+    description: 'Search and pick what you like, right inside the app.',
   },
   {
     icon: LuPlay,
-    title: 'Play & Enjoy',
-    description: 'Launch Deadlock and enjoy your customized gaming experience',
+    title: 'Play',
+    description: 'We handle the install. You jump back into the game.',
   },
 ];
 
@@ -29,7 +28,7 @@ export const GettingStartedSection = () => {
       </h2>
 
       <h2 className="mb-12 text-center font-bold text-3xl md:text-4xl">
-        Up and Running in Minutes
+        Up and running in minutes
       </h2>
 
       <div className="flex flex-col items-center justify-center gap-8 md:flex-row">

@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { env } from '@/lib/env';
 import { publicProcedure } from '../lib/orpc';
+import { GitHubReleasesService } from '../lib/services/github-releases';
 import { HealthService } from '../lib/services/health';
 import type { HealthResponse } from '../types/health';
+import type { ReleasesResponse } from '../types/github-releases';
 import { version } from '../version';
 
 const HealthResponseSchema = z.object({
@@ -19,6 +21,34 @@ const VersionResponseSchema = z.object({
 
 const StatusResponseSchema = z.object({
   status: z.enum(['operational', 'downtime', 'degraded']),
+});
+
+const PlatformDownloadSchema = z.object({
+  platform: z.enum(['windows', 'macos', 'linux']),
+  architecture: z.enum(['x64', 'arm64', 'universal']),
+  url: z.string(),
+  filename: z.string(),
+  size: z.number(),
+  downloadCount: z.number(),
+});
+
+const ReleasesResponseSchema = z.object({
+  latest: z.object({
+    version: z.string(),
+    name: z.string(),
+    releaseNotes: z.string(),
+    publishedAt: z.string(),
+    downloads: z.array(PlatformDownloadSchema),
+  }),
+  allVersions: z.array(
+    z.object({
+      version: z.string(),
+      name: z.string(),
+      publishedAt: z.string(),
+      prerelease: z.boolean(),
+      downloads: z.array(PlatformDownloadSchema),
+    })
+  ),
 });
 
 export const publicRouter = {
@@ -91,6 +121,20 @@ export const publicRouter = {
         return { status };
       } catch (_error) {
         return { status: 'downtime' as const };
+      }
+    }),
+
+  getReleases: publicProcedure
+    .route({ method: 'GET', path: '/releases' })
+    .output(ReleasesResponseSchema)
+    .handler(async (): Promise<ReleasesResponse> => {
+      try {
+        const service = GitHubReleasesService.getInstance();
+        return await service.fetchReleases();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        throw new Error(`Failed to fetch releases: ${errorMessage}`);
       }
     }),
 };

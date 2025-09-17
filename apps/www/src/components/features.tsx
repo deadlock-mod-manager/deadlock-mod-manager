@@ -18,39 +18,39 @@ type FeaturesProps = {
 const featureList: FeaturesProps[] = [
   {
     icon: LuDownload,
-    title: 'Easy Installation',
+    title: 'One-click install',
     description:
-      'Download and install mods with a single click. Our mod manager handles all the complexity, so you can focus on enjoying the game.',
+      'Grab a mod and we’ll put it where Deadlock expects it. No manual steps, no guesswork.',
   },
   {
     icon: LuSettings,
-    title: 'Mod Management',
+    title: 'Manage with confidence',
     description:
-      'Keep track of your installed mods, update them when new versions are available, and easily remove them when needed.',
+      'See everything in My Mods. Toggle on/off, update, or remove whenever you like.',
   },
   {
     icon: LuLayoutGrid,
-    title: 'Browse Mods',
+    title: 'Built-in browser',
     description:
-      "Discover and browse community-created mods and skins. Search, sort, and filter to find exactly what you're looking for.",
+      'Search and discover community mods without leaving the app. It’s all in one place.',
   },
   {
     icon: LuGlobe,
-    title: 'Cross-Platform',
+    title: 'Cross-platform',
     description:
-      'Available for Windows and Linux (coming soon). Built with modern technologies to ensure compatibility across different operating systems.',
+      'Works on Windows, macOS, and Linux. Small download, quick start, low overhead.',
   },
   {
     icon: RiOpenSourceFill,
-    title: 'Open Source',
+    title: 'Open source',
     description:
-      'Fully open-source and community-driven. Contribute, suggest features, or inspect the code - transparency is our priority.',
+      'Trust what you use. Read the code, file issues, or contribute features. Your call.',
   },
   {
     icon: LuRefreshCw,
-    title: 'Auto Updates',
+    title: 'Easy updates',
     description:
-      'Stay up to date with automatic updates. Get the latest features and security patches without manual intervention.',
+      'Out-of-date mods are clearly marked. Update them in one click.',
   },
 ];
 
@@ -62,7 +62,7 @@ export const FeaturesSection = () => {
       </h2>
 
       <h2 className="mb-8 text-center font-bold text-3xl md:text-4xl">
-        Enhance Your Deadlock Experience
+        Make Deadlock yours
       </h2>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

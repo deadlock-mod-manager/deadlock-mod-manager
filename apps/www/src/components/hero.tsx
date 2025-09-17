@@ -1,7 +1,7 @@
-import { DownloadIcon, GithubIcon } from 'lucide-react';
+import { PlatformDownloadButton } from '@/components/downloads/platform-download-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DOWNLOAD_URL, GITHUB_REPO } from '@/lib/constants';
+import { GITHUB_REPO } from '@/lib/constants';
 
 export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
   return (
@@ -33,29 +33,22 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
           </div>
 
           <p className="mx-auto max-w-screen-sm text-muted-foreground text-xl">
-            Download, install, and manage your Deadlock mods and skins with
-            ease. Browse community-created content and customize your game
-            experience.
+            Mods for Deadlock, minus the hassle. Find, install, and update mods
+            in a couple of clicks. No folders, no guesswork.
           </p>
 
-          <div className="space-y-4 md:space-x-4 md:space-y-0">
-            <Button asChild className="w-5/6 font-bold md:w-1/4" size={'lg'}>
-              <a href={DOWNLOAD_URL} rel="noopener noreferrer" target="_blank">
-                <DownloadIcon className="h-4 w-4" />
-                Download Now
-              </a>
-            </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            {/* OS-detected Download Button */}
+            <PlatformDownloadButton className="min-w-48" />
 
+            {/* All Downloads Button */}
             <Button
               asChild
-              className="w-5/6 font-bold md:w-1/4"
-              size={'lg'}
-              variant="ghost"
+              className="min-w-32 border-foreground/20 bg-background/50 font-semibold text-foreground backdrop-blur-sm"
+              size="lg"
+              variant="outline"
             >
-              <a href={GITHUB_REPO} rel="noopener noreferrer" target="_blank">
-                <GithubIcon className="h-4 w-4" />
-                View on GitHub
-              </a>
+              <a href="/download">All Downloads</a>
             </Button>
           </div>
         </div>
@@ -63,7 +56,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
         <div className="group relative mt-14">
           <div className="lg:-top-8 -translate-x-1/2 absolute top-2 left-1/2 mx-auto h-24 w-[90%] transform rounded-full bg-[#efe0be]/10 blur-3xl lg:h-80" />
           <img
-            alt="dashboard"
+            alt="Deadlock Mod Manager screenshot"
             className="rouded-lg relative mx-auto flex w-full items-center rounded-lg border border-secondary border-t-2 border-t-[#efe0be]/30 leading-none md:w-[1200px]"
             height={1200}
             src="/mods.png"

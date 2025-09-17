@@ -17,12 +17,12 @@ export const Footer = () => {
               <Logo className="h-10 w-10" /> {APP_NAME}
             </a>
             <p className="text-sm opacity-60">
-              Deadlock Mod Manager is a tool for installing and managing mods
-              for the Valve game "Deadlock".
+              A small, open-source app for installing and managing mods for the
+              Valve game Deadlock.
             </p>
             <p className="text-sm opacity-60">
-              Not affiliated with Valve. Deadlock, and the Deadlock logo are
-              registered trademarks of Valve Corporation.
+              Not affiliated with Valve. “Deadlock” and related marks are
+              trademarks of Valve Corporation.
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export const Footer = () => {
             >
               GameBanana
             </a>{' '}
-            for mod content and community
+            for mod content and community.
           </p>
           <p>
             {COPYRIGHT}. Created by{' '}

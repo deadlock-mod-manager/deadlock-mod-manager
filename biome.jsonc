@@ -72,6 +72,7 @@
       "performance": {
         "noNamespaceImport": "off",
         "noBarrelFile": "off",
+        "useTopLevelRegex": "off",
         "noImgElement": "off"
       },
       "suspicious": {
@@ -86,6 +87,7 @@
         "useMaxParams": "off"
       },
       "style": {
+        "useBlockStatements": "off",
         "useReadonlyClassProperties": "off",
         "noNonNullAssertion": "off",
         "noEnum": "off",

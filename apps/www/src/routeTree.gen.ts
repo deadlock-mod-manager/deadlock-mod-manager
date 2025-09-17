@@ -8,75 +8,75 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as DownloadRouteImport } from './routes/download';
-import { Route as IndexRouteImport } from './routes/index';
-import { Route as LoginRouteImport } from './routes/login';
-import { Route as PrivacyRouteImport } from './routes/privacy';
-import { Route as StatusRouteImport } from './routes/status';
-import { Route as TermsRouteImport } from './routes/terms';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DownloadRouteImport } from './routes/download'
+import { Route as IndexRouteImport } from './routes/index'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const StatusRoute = StatusRouteImport.update({
   id: '/status',
   path: '/status',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/download': typeof DownloadRoute;
-  '/login': typeof LoginRoute;
-  '/privacy': typeof PrivacyRoute;
-  '/status': typeof StatusRoute;
-  '/terms': typeof TermsRoute;
+  '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/download': typeof DownloadRoute;
-  '/login': typeof LoginRoute;
-  '/privacy': typeof PrivacyRoute;
-  '/status': typeof StatusRoute;
-  '/terms': typeof TermsRoute;
+  '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/download': typeof DownloadRoute;
-  '/login': typeof LoginRoute;
-  '/privacy': typeof PrivacyRoute;
-  '/status': typeof StatusRoute;
-  '/terms': typeof TermsRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/status': typeof StatusRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms';
-  fileRoutesByTo: FileRoutesByTo;
-  to: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms';
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms'
   id:
     | '__root__'
     | '/'
@@ -84,73 +84,73 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/status'
-    | '/terms';
-  fileRoutesById: FileRoutesById;
+    | '/terms'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  DownloadRoute: typeof DownloadRoute;
-  LoginRoute: typeof LoginRoute;
-  PrivacyRoute: typeof PrivacyRoute;
-  StatusRoute: typeof StatusRoute;
-  TermsRoute: typeof TermsRoute;
+  IndexRoute: typeof IndexRoute
+  DownloadRoute: typeof DownloadRoute
+  LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  StatusRoute: typeof StatusRoute
+  TermsRoute: typeof TermsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/terms': {
-      id: '/terms';
-      path: '/terms';
-      fullPath: '/terms';
-      preLoaderRoute: typeof TermsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/status': {
-      id: '/status';
-      path: '/status';
-      fullPath: '/status';
-      preLoaderRoute: typeof StatusRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
-      id: '/privacy';
-      path: '/privacy';
-      fullPath: '/privacy';
-      preLoaderRoute: typeof PrivacyRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
-      id: '/login';
-      path: '/login';
-      fullPath: '/login';
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/download': {
-      id: '/download';
-      path: '/download';
-      fullPath: '/download';
-      preLoaderRoute: typeof DownloadRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute,
-  DownloadRoute,
-  LoginRoute,
-  PrivacyRoute,
-  StatusRoute,
-  TermsRoute,
-};
+  IndexRoute: IndexRoute,
+  DownloadRoute: DownloadRoute,
+  LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  StatusRoute: StatusRoute,
+  TermsRoute: TermsRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

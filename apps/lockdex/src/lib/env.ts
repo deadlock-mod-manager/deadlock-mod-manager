@@ -10,7 +10,7 @@ export const envSchema = z.object({
       'https://640faf56b1e2ec9dd4ff293e3ee12307@o84215.ingest.us.sentry.io/4510018253946880'
     ),
   POD_NAME: z.string().optional(),
-  REDIS_URL: z.string().default('redis://localhost:6379'),
+  REDIS_URL: z.string().default('redis://localhost:54499'),
 });
 
 export const env = envSchema.parse(process.env);
