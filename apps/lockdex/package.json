@@ -7,7 +7,8 @@
     "start": "dotenv -e ../../.env -- bun run src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts",
-    "test": "dotenv -e ../../.env -- bun run src/scripts/test.ts"
+    "test": "dotenv -e ../../.env -- bun run src/scripts/test.ts",
+    "health-check": "bun run src/health-check.ts"
   },
   "dependencies": {
     "7zip-min": "^2.1.0",

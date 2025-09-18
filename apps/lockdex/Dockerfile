@@ -26,4 +26,7 @@ RUN pnpm install
 
 WORKDIR /usr/src/app/apps/lockdex
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD pnpm health-check || exit 1
+
 ENTRYPOINT [ "pnpm",  "start" ]
