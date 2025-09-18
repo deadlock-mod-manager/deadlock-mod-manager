@@ -1,4 +1,7 @@
-import { type ModDownloadVpk, vpkRepository } from '@deadlock-mods/database';
+import {
+  type ModDownloadVpkWithMod,
+  vpkRepository,
+} from '@deadlock-mods/database';
 import { type VpkParsed, VpkParser } from '@deadlock-mods/vpk-parser';
 
 type MatchType =
@@ -8,19 +11,19 @@ type MatchType =
   | 'merkleRoot';
 
 type ModMatchResult = {
-  vpkEntry: ModDownloadVpk;
+  vpkEntry: ModDownloadVpkWithMod;
   certainty: number;
   matchType: MatchType;
-  alternativeMatches?: ModDownloadVpk[];
+  alternativeMatches?: ModDownloadVpkWithMod[];
 };
 
 type VpkAnalysisResult = {
   vpk: VpkParsed;
-  matchedVpk?: ModDownloadVpk;
+  matchedVpk?: ModDownloadVpkWithMod;
   match?: {
     certainty: number;
     matchType: MatchType;
-    alternativeMatches?: ModDownloadVpk[];
+    alternativeMatches?: ModDownloadVpkWithMod[];
   };
 };
 
@@ -130,22 +133,19 @@ export class ModAnalyser {
       }
     }
 
-    // No matches found
     return null;
   }
 
   private calculateMatchScore(
-    vpkEntry: ModDownloadVpk,
+    vpkEntry: ModDownloadVpkWithMod,
     fingerprint: VpkParsed['fingerprint']
   ): number {
     let score = 0;
 
-    // VPK version match
     if (vpkEntry.vpkVersion === fingerprint.vpkVersion) {
       score += 30;
     }
 
-    // File count match (with tolerance)
     const fileCountDiff = Math.abs(vpkEntry.fileCount - fingerprint.fileCount);
     if (fileCountDiff === 0) {
       score += 40;
@@ -155,12 +155,10 @@ export class ModAnalyser {
       score += 15;
     }
 
-    // Multiparts match
     if (vpkEntry.hasMultiparts === fingerprint.hasMultiparts) {
       score += 15;
     }
 
-    // Inline data match
     if (vpkEntry.hasInlineData === fingerprint.hasInlineData) {
       score += 15;
     }

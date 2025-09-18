@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -16,6 +17,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
+  id: '/vpk-analyzer',
+  path: '/vpk-analyzer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/vpk-analyzer': typeof VpkAnalyzerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/vpk-analyzer': typeof VpkAnalyzerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +79,27 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/vpk-analyzer': typeof VpkAnalyzerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms'
+  fullPaths:
+    | '/'
+    | '/download'
+    | '/login'
+    | '/privacy'
+    | '/status'
+    | '/terms'
+    | '/vpk-analyzer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/download' | '/login' | '/privacy' | '/status' | '/terms'
+  to:
+    | '/'
+    | '/download'
+    | '/login'
+    | '/privacy'
+    | '/status'
+    | '/terms'
+    | '/vpk-analyzer'
   id:
     | '__root__'
     | '/'
@@ -85,6 +108,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/status'
     | '/terms'
+    | '/vpk-analyzer'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,10 +118,18 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
+  VpkAnalyzerRoute: typeof VpkAnalyzerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vpk-analyzer': {
+      id: '/vpk-analyzer'
+      path: '/vpk-analyzer'
+      fullPath: '/vpk-analyzer'
+      preLoaderRoute: typeof VpkAnalyzerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -150,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
+  VpkAnalyzerRoute: VpkAnalyzerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

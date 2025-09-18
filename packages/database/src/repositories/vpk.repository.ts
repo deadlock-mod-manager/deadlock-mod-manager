@@ -1,17 +1,21 @@
 import { and, eq } from 'drizzle-orm';
 import type { Database } from '../client';
-import type { ModDownloadVpk, NewModDownloadVpk } from '../schema/mods';
+import type {
+  ModDownloadVpk,
+  ModDownloadVpkWithMod,
+  NewModDownloadVpk,
+} from '../schema/mods';
 import { vpk } from '../schema/mods';
 
 export class VpkRepository {
   constructor(private readonly db: Database) {}
 
-  async findAll(): Promise<ModDownloadVpk[]> {
-    return await this.db.query.vpk.findMany({
+  async findAll(): Promise<ModDownloadVpkWithMod[]> {
+    return (await this.db.query.vpk.findMany({
       with: {
         mod: true,
       },
-    });
+    })) as ModDownloadVpkWithMod[];
   }
 
   async findById(id: string): Promise<ModDownloadVpk | null> {
@@ -43,33 +47,33 @@ export class VpkRepository {
     });
   }
 
-  async findBySha256(sha256: string): Promise<ModDownloadVpk | null> {
-    return (
-      (await this.db.query.vpk.findFirst({
-        where: eq(vpk.sha256, sha256),
-        with: {
-          mod: true,
-        },
-      })) ?? null
-    );
+  async findBySha256(sha256: string): Promise<ModDownloadVpkWithMod | null> {
+    return ((await this.db.query.vpk.findFirst({
+      where: eq(vpk.sha256, sha256),
+      with: {
+        mod: true,
+      },
+    })) ?? null) as ModDownloadVpkWithMod | null;
   }
 
-  async findByContentSignature(contentSig: string): Promise<ModDownloadVpk[]> {
-    return await this.db.query.vpk.findMany({
+  async findByContentSignature(
+    contentSig: string
+  ): Promise<ModDownloadVpkWithMod[]> {
+    return (await this.db.query.vpk.findMany({
       where: eq(vpk.contentSig, contentSig),
       with: {
         mod: true,
       },
-    });
+    })) as ModDownloadVpkWithMod[];
   }
 
-  async findByMerkleRoot(merkleRoot: string): Promise<ModDownloadVpk[]> {
-    return await this.db.query.vpk.findMany({
+  async findByMerkleRoot(merkleRoot: string): Promise<ModDownloadVpkWithMod[]> {
+    return (await this.db.query.vpk.findMany({
       where: eq(vpk.merkleRoot, merkleRoot),
       with: {
         mod: true,
       },
-    });
+    })) as ModDownloadVpkWithMod[];
   }
 
   async findByModDownloadIdAndSourcePath(
@@ -92,13 +96,13 @@ export class VpkRepository {
   async findByFastHashAndSize(
     fastHash: string,
     sizeBytes: number
-  ): Promise<ModDownloadVpk[]> {
-    return await this.db.query.vpk.findMany({
+  ): Promise<ModDownloadVpkWithMod[]> {
+    return (await this.db.query.vpk.findMany({
       where: and(eq(vpk.fastHash, fastHash), eq(vpk.sizeBytes, sizeBytes)),
       with: {
         mod: true,
       },
-    });
+    })) as ModDownloadVpkWithMod[];
   }
 
   async create(newVpk: NewModDownloadVpk): Promise<ModDownloadVpk> {

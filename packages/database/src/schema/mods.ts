@@ -141,3 +141,7 @@ export const vpkRelations = relations(vpk, ({ one }) => ({
 
 export type ModDownloadVpk = typeof vpk.$inferSelect;
 export type NewModDownloadVpk = typeof vpk.$inferInsert;
+
+export type ModDownloadVpkWithMod = ModDownloadVpk & {
+  mod: Mod;
+};

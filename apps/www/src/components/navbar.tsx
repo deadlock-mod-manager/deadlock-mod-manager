@@ -38,6 +38,10 @@ const routeList: RouteProps[] = [
     label: 'FAQ',
   },
   {
+    href: '/vpk-analyzer',
+    label: 'VPK Analyzer',
+  },
+  {
     href: '/status',
     label: 'Status',
   },

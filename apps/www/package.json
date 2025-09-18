@@ -33,6 +33,7 @@
     "radix-ui": "^1.4.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-dropzone": "^14.3.8",
     "react-icons": "^5.5.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
