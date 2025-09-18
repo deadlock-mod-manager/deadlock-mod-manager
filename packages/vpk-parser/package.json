@@ -10,6 +10,7 @@
     "dev": "tsup src/* --watch"
   },
   "dependencies": {
+    "@deadlock-mods/common": "workspace:*",
     "xxhash-wasm": "^1.0.2"
   },
   "devDependencies": {

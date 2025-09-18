@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { ValidationError } from '@deadlock-mods/common';
 import xxhash from 'xxhash-wasm';
 import type {
   MerkleData,
@@ -76,7 +77,7 @@ export class VpkParser {
 
     const signature = this.readUint32();
     if (signature !== VPK_SIGNATURE) {
-      throw new Error(
+      throw new ValidationError(
         `Not a VPK: 0x${signature.toString(16).padStart(8, '0')}`
       );
     }

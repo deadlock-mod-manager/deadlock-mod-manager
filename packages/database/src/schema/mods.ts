@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -84,9 +84,9 @@ export const vpk = pgTable(
       .references(() => mods.id, { onDelete: 'cascade' }),
 
     // where we sourced this VPK from (zip/tar/loose file referenced by mod_download.file/url)
-    modDownloadId: text('mod_download_id')
-      .notNull()
-      .references(() => modDownloads.id, { onDelete: 'cascade' }),
+    modDownloadId: text('mod_download_id').references(() => modDownloads.id, {
+      onDelete: 'set null',
+    }),
 
     // if the VPK was inside an archive, keep its internal path; else just the filename
     sourcePath: text('source_path').notNull(), // e.g. "weapons_pack_dir.vpk" or "mods/weapons_pack_dir.vpk"
@@ -127,6 +127,17 @@ export const vpk = pgTable(
     index('vpk_fast_size_idx').on(table.fastHash, table.sizeBytes),
   ]
 );
+
+export const vpkRelations = relations(vpk, ({ one }) => ({
+  mod: one(mods, {
+    fields: [vpk.modId],
+    references: [mods.id],
+  }),
+  modDownload: one(modDownloads, {
+    fields: [vpk.modDownloadId],
+    references: [modDownloads.id],
+  }),
+}));
 
 export type ModDownloadVpk = typeof vpk.$inferSelect;
 export type NewModDownloadVpk = typeof vpk.$inferInsert;

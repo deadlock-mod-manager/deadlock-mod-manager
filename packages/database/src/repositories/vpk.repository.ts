@@ -7,70 +7,98 @@ export class VpkRepository {
   constructor(private readonly db: Database) {}
 
   async findAll(): Promise<ModDownloadVpk[]> {
-    return await this.db.select().from(vpk);
+    return await this.db.query.vpk.findMany({
+      with: {
+        mod: true,
+      },
+    });
   }
 
   async findById(id: string): Promise<ModDownloadVpk | null> {
-    const result = await this.db
-      .select()
-      .from(vpk)
-      .where(eq(vpk.id, id))
-      .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return (
+      (await this.db.query.vpk.findFirst({
+        where: eq(vpk.id, id),
+        with: {
+          mod: true,
+        },
+      })) ?? null
+    );
   }
 
   async findByModDownloadId(modDownloadId: string): Promise<ModDownloadVpk[]> {
-    return await this.db
-      .select()
-      .from(vpk)
-      .where(eq(vpk.modDownloadId, modDownloadId));
+    return await this.db.query.vpk.findMany({
+      where: eq(vpk.modDownloadId, modDownloadId),
+      with: {
+        mod: true,
+      },
+    });
   }
 
   async findByModId(modId: string): Promise<ModDownloadVpk[]> {
-    return await this.db.select().from(vpk).where(eq(vpk.modId, modId));
+    return await this.db.query.vpk.findMany({
+      where: eq(vpk.modId, modId),
+      with: {
+        mod: true,
+      },
+    });
   }
 
   async findBySha256(sha256: string): Promise<ModDownloadVpk | null> {
-    const result = await this.db
-      .select()
-      .from(vpk)
-      .where(eq(vpk.sha256, sha256))
-      .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return (
+      (await this.db.query.vpk.findFirst({
+        where: eq(vpk.sha256, sha256),
+        with: {
+          mod: true,
+        },
+      })) ?? null
+    );
   }
 
   async findByContentSignature(contentSig: string): Promise<ModDownloadVpk[]> {
-    return await this.db
-      .select()
-      .from(vpk)
-      .where(eq(vpk.contentSig, contentSig));
+    return await this.db.query.vpk.findMany({
+      where: eq(vpk.contentSig, contentSig),
+      with: {
+        mod: true,
+      },
+    });
+  }
+
+  async findByMerkleRoot(merkleRoot: string): Promise<ModDownloadVpk[]> {
+    return await this.db.query.vpk.findMany({
+      where: eq(vpk.merkleRoot, merkleRoot),
+      with: {
+        mod: true,
+      },
+    });
   }
 
   async findByModDownloadIdAndSourcePath(
     modDownloadId: string,
     sourcePath: string
   ): Promise<ModDownloadVpk | null> {
-    const result = await this.db
-      .select()
-      .from(vpk)
-      .where(
-        and(
+    return (
+      (await this.db.query.vpk.findFirst({
+        where: and(
           eq(vpk.modDownloadId, modDownloadId),
           eq(vpk.sourcePath, sourcePath)
-        )
-      )
-      .limit(1);
-    return result.length > 0 ? result[0] : null;
+        ),
+        with: {
+          mod: true,
+        },
+      })) ?? null
+    );
   }
 
   async findByFastHashAndSize(
     fastHash: string,
     sizeBytes: number
   ): Promise<ModDownloadVpk[]> {
-    return await this.db
-      .select()
-      .from(vpk)
-      .where(and(eq(vpk.fastHash, fastHash), eq(vpk.sizeBytes, sizeBytes)));
+    return await this.db.query.vpk.findMany({
+      where: and(eq(vpk.fastHash, fastHash), eq(vpk.sizeBytes, sizeBytes)),
+      with: {
+        mod: true,
+      },
+    });
   }
 
   async create(newVpk: NewModDownloadVpk): Promise<ModDownloadVpk> {
@@ -157,37 +185,32 @@ export class VpkRepository {
   }
 
   async exists(id: string): Promise<boolean> {
-    const result = await this.db
-      .select({ id: vpk.id })
-      .from(vpk)
-      .where(eq(vpk.id, id))
-      .limit(1);
-    return result.length > 0;
+    const result = await this.db.query.vpk.findFirst({
+      where: eq(vpk.id, id),
+      columns: { id: true },
+    });
+    return result !== undefined;
   }
 
   async existsBySha256(sha256: string): Promise<boolean> {
-    const result = await this.db
-      .select({ id: vpk.id })
-      .from(vpk)
-      .where(eq(vpk.sha256, sha256))
-      .limit(1);
-    return result.length > 0;
+    const result = await this.db.query.vpk.findFirst({
+      where: eq(vpk.sha256, sha256),
+      columns: { id: true },
+    });
+    return result !== undefined;
   }
 
   async existsByModDownloadIdAndSourcePath(
     modDownloadId: string,
     sourcePath: string
   ): Promise<boolean> {
-    const result = await this.db
-      .select({ id: vpk.id })
-      .from(vpk)
-      .where(
-        and(
-          eq(vpk.modDownloadId, modDownloadId),
-          eq(vpk.sourcePath, sourcePath)
-        )
-      )
-      .limit(1);
-    return result.length > 0;
+    const result = await this.db.query.vpk.findFirst({
+      where: and(
+        eq(vpk.modDownloadId, modDownloadId),
+        eq(vpk.sourcePath, sourcePath)
+      ),
+      columns: { id: true },
+    });
+    return result !== undefined;
   }
 }
