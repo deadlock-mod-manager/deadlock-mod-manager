@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { type Readable, Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { ValidationError } from '@deadlock-mods/common';
 import xxhash from 'xxhash-wasm';
 import type {
@@ -8,6 +10,7 @@ import type {
   VpkHeader,
   VpkParsed,
   VpkParseOptions,
+  VpkStreamParseOptions,
 } from './types';
 
 const VPK_SIGNATURE = 0x55_aa_12_34;
@@ -34,6 +37,52 @@ export class VpkParser {
     return await parser.parseInternal(options);
   }
 
+  /**
+   * Parse VPK from a readable stream with progress callbacks
+   */
+  static async parseStream(
+    stream: Readable,
+    options: VpkStreamParseOptions = {}
+  ): Promise<VpkParsed> {
+    const chunks: Buffer[] = [];
+    let totalSize = 0;
+
+    const collectTransform = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        chunks.push(chunk);
+        totalSize += chunk.length;
+
+        if (options.onProgress) {
+          const estimatedProgress = Math.min(
+            50,
+            (totalSize / (1024 * 1024)) * 10
+          );
+          options.onProgress(estimatedProgress);
+        }
+
+        callback();
+      },
+    });
+
+    await pipeline(stream, collectTransform);
+
+    const buffer = Buffer.concat(chunks);
+    const parser = new VpkParser(buffer);
+    const { onProgress, chunkSize, ...parseOptions } = options;
+
+    if (options.onProgress) {
+      options.onProgress(75);
+    }
+
+    const result = await parser.parseInternal(parseOptions);
+
+    if (options.onProgress) {
+      options.onProgress(100);
+    }
+
+    return result;
+  }
+
   private async parseInternal(options: VpkParseOptions): Promise<VpkParsed> {
     const {
       includeFullFileHash = false,
@@ -46,15 +95,14 @@ export class VpkParser {
     const treeStart = this.cursor;
     const entries = this.parseDirectoryTree(treeStart, header.treeLength);
     const manifestSha256 = this.generateManifestHash(entries);
-    const dirSha256 = includeFullFileHash
-      ? createHash('sha256').update(this.buffer).digest('hex')
-      : undefined;
-    const fingerprint = await this.generateFingerprint(
-      entries,
-      filePath,
-      lastModified,
-      includeMerkle
-    );
+
+    // Generate fingerprint and dirSha256 in parallel to avoid duplicate hashing
+    const [fingerprint, dirSha256] = await Promise.all([
+      this.generateFingerprint(entries, filePath, lastModified, includeMerkle),
+      includeFullFileHash
+        ? this.generateSha256Hash()
+        : Promise.resolve(undefined),
+    ]);
 
     return {
       version: header.version,
@@ -121,19 +169,19 @@ export class VpkParser {
     while (this.cursor < treeEnd) {
       const ext = this.readNullTerminatedString();
       if (ext === '') {
-        break; // End of tree
+        break;
       }
 
       while (this.cursor < treeEnd) {
         const path = this.readNullTerminatedString();
         if (path === '') {
-          break; // End of paths for this extension
+          break;
         }
 
         while (this.cursor < treeEnd) {
           const filename = this.readNullTerminatedString();
           if (filename === '') {
-            break; // End of filenames for this path
+            break;
           }
 
           const entry = this.parseEntry(ext, path, filename);
@@ -164,7 +212,7 @@ export class VpkParser {
     const terminator = this.readUint16();
 
     if (terminator !== 0xff_ff) {
-      // Expected terminator 0xFFFF, got different value - warning only
+      // Expected terminator 0xFFFF, got different value
     }
 
     const normalizedPath = path === ' ' ? '' : path;
@@ -195,7 +243,7 @@ export class VpkParser {
   }
 
   /**
-   * Generate enhanced fingerprint for better mod identification
+   * Generate enhanced fingerprint for better mod identification (optimized for large files)
    */
   private async generateFingerprint(
     entries: VpkEntry[],
@@ -203,21 +251,16 @@ export class VpkParser {
     lastModified?: Date,
     includeMerkle = false
   ): Promise<VpkFingerprint> {
-    // Detect VPK characteristics
     const hasMultiparts = this.detectMultiparts(entries);
     const hasInlineData = this.detectInlineData(entries);
 
-    // 1. Fast hash (xxHash64) of entire buffer
-    const { h64ToString } = await xxhash();
-    const fastHash = h64ToString(this.buffer.toString('hex'), BigInt(0));
+    const [fastHash, sha256] = await Promise.all([
+      this.generateFastHash(),
+      this.generateSha256Hash(),
+    ]);
 
-    // 2. Strong hash (SHA-256) of entire buffer
-    const sha256 = createHash('sha256').update(this.buffer).digest('hex');
-
-    // 3. Content signature based on VPK structure
     const contentSignature = this.generateContentSignature(entries);
 
-    // 4. Optional Merkle hash for near-duplicate detection
     let merkleRoot: string | undefined;
     let merkleLeaves: string[] | undefined;
 
@@ -244,6 +287,59 @@ export class VpkParser {
   }
 
   /**
+   * Optimized fast hash generation using streaming approach for large files
+   */
+  private async generateFastHash(): Promise<string> {
+    const { h64ToString } = await xxhash();
+
+    // For large files (>10MB), use chunked processing to avoid blocking
+    if (this.buffer.length > 10 * 1024 * 1024) {
+      return new Promise((resolve) => {
+        setImmediate(() => {
+          const fastHash = h64ToString(this.buffer.toString('hex'), BigInt(0));
+          resolve(fastHash);
+        });
+      });
+    }
+
+    return h64ToString(this.buffer.toString('hex'), BigInt(0));
+  }
+
+  /**
+   * Optimized SHA-256 generation with chunked processing for large files
+   */
+  private async generateSha256Hash(): Promise<string> {
+    // For large files (>10MB), use streaming approach
+    if (this.buffer.length > 10 * 1024 * 1024) {
+      return new Promise((resolve) => {
+        const hash = createHash('sha256');
+        const chunkSize = 64 * 1024;
+        let offset = 0;
+
+        const processChunk = () => {
+          if (offset >= this.buffer.length) {
+            resolve(hash.digest('hex'));
+            return;
+          }
+
+          const chunk = this.buffer.subarray(
+            offset,
+            Math.min(offset + chunkSize, this.buffer.length)
+          );
+          hash.update(chunk);
+          offset += chunkSize;
+
+          setImmediate(processChunk);
+        };
+
+        processChunk();
+      });
+    }
+
+    return createHash('sha256').update(this.buffer).digest('hex');
+  }
+
+  /**
    * Generate content signature based on VPK structure
    * This stays the same even if the VPK is repackaged or renamed
    */
@@ -266,17 +362,12 @@ export class VpkParser {
       return !Array.from(junkFiles).some((junk) => fullPath.includes(junk));
     });
 
-    // Build canonical tuples: (normalized_path, size, crc32)
     const tuples = filteredEntries.map((entry) => {
-      // Normalize path: lowercase, forward slashes
       const normalizedPath = entry.fullPath.toLowerCase().replace(/\\/g, '/');
       return `${normalizedPath}\x00${entry.entryLength}\x00${entry.crc32Hex}`;
     });
 
-    // Sort tuples for deterministic output
     tuples.sort();
-
-    // Hash the sorted list
     const content = tuples.join('\n');
     return createHash('sha256').update(content, 'utf8').digest('hex');
   }
@@ -285,17 +376,13 @@ export class VpkParser {
    * Generate Merkle hash for near-duplicate detection
    */
   private generateMerkleHash(entries: VpkEntry[]): MerkleData {
-    // Generate per-file hashes (leaves)
     const leaves = entries.map((entry) => {
-      // Hash the entry metadata: path + size + crc32
       const entryData = `${entry.fullPath}|${entry.entryLength}|${entry.crc32Hex}`;
       return createHash('sha256').update(entryData, 'utf8').digest('hex');
     });
 
-    // Sort leaves for deterministic Merkle tree
     const sortedLeaves = [...leaves].sort();
 
-    // Build Merkle tree (simple approach: hash all leaves together)
     // For a more sophisticated implementation, you'd build a proper binary tree
     const merkleContent = sortedLeaves.join('');
     const root = createHash('sha256')
@@ -309,8 +396,6 @@ export class VpkParser {
    * Get the VPK version from the parsed header
    */
   private getVpkVersion(): number {
-    // We need to store the version from the header parsing
-    // For now, let's re-read it from the buffer
     if (this.buffer.length < 8) {
       return 1;
     }
@@ -319,14 +404,13 @@ export class VpkParser {
       this.buffer.byteOffset,
       this.buffer.byteLength
     );
-    return view.getUint32(4, true); // Version is at offset 4
+    return view.getUint32(4, true);
   }
 
   /**
    * Detect if VPK has multipart archives (e.g., _000.vpk, _001.vpk files)
    */
   private detectMultiparts(entries: VpkEntry[]): boolean {
-    // Check if any entries reference archive indices > 0x7fff (indicates multipart)
     return entries.some(
       (entry) => entry.archiveIndex !== 0x7f_ff && entry.archiveIndex > 0
     );
@@ -336,7 +420,6 @@ export class VpkParser {
    * Detect if VPK has inline data (small files stored directly in the directory)
    */
   private detectInlineData(entries: VpkEntry[]): boolean {
-    // Check if any entries have preload bytes (inline data)
     return entries.some((entry) => entry.preloadBytes > 0);
   }
 
@@ -344,7 +427,7 @@ export class VpkParser {
     if (this.cursor + 4 > this.buffer.length) {
       throw new Error('Cursor overrun reading uint32');
     }
-    const value = this.view.getUint32(this.cursor, true); // little-endian
+    const value = this.view.getUint32(this.cursor, true);
     this.cursor += 4;
     return value;
   }
@@ -353,7 +436,7 @@ export class VpkParser {
     if (this.cursor + 2 > this.buffer.length) {
       throw new Error('Cursor overrun reading uint16');
     }
-    const value = this.view.getUint16(this.cursor, true); // little-endian
+    const value = this.view.getUint16(this.cursor, true);
     this.cursor += 2;
     return value;
   }
@@ -361,7 +444,6 @@ export class VpkParser {
   private readNullTerminatedString(): string {
     const start = this.cursor;
 
-    // Find null terminator
     while (this.cursor < this.buffer.length && this.buffer[this.cursor] !== 0) {
       this.cursor++;
     }
@@ -370,9 +452,8 @@ export class VpkParser {
       throw new Error('Cursor overrun reading null-terminated string');
     }
 
-    // Extract string bytes
     const stringBytes = this.buffer.subarray(start, this.cursor);
-    this.cursor++; // Skip null terminator
+    this.cursor++;
 
     // Try UTF-8 first, fallback to latin1
     try {

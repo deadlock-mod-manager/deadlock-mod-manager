@@ -46,6 +46,11 @@ export type VpkParseOptions = {
   includeMerkle?: boolean;
 };
 
+export type VpkStreamParseOptions = VpkParseOptions & {
+  onProgress?: (progress: number) => void; // Progress callback (0-100)
+  chunkSize?: number; // Chunk size for streaming (default: 64KB)
+};
+
 export type VpkHeader = {
   version: number;
   treeLength: number;
