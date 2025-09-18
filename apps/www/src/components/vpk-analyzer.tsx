@@ -89,30 +89,35 @@ export function VpkAnalyzer() {
     setIsAnalyzing(false);
   };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const vpkFiles = acceptedFiles.filter((file) => file.name.endsWith('.vpk'));
-
-    if (vpkFiles.length === 0) {
-      toast.error('Please upload .vpk files only');
-      return;
-    }
-
-    if (vpkFiles.length !== acceptedFiles.length) {
-      toast.warning(
-        `${acceptedFiles.length - vpkFiles.length} non-VPK files were ignored`
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const vpkFiles = acceptedFiles.filter((file) =>
+        file.name.endsWith('.vpk')
       );
-    }
 
-    // Create initial file analysis states
-    const newFileAnalyses: FileAnalysisState[] = vpkFiles.map((file) => ({
-      file,
-      result: null,
-      status: 'pending' as const,
-    }));
+      if (vpkFiles.length === 0) {
+        toast.error('Please upload .vpk files only');
+        return;
+      }
 
-    setFileAnalyses(newFileAnalyses);
-    analyzeAllFiles(newFileAnalyses);
-  }, [analyzeAllFiles]);
+      if (vpkFiles.length !== acceptedFiles.length) {
+        toast.warning(
+          `${acceptedFiles.length - vpkFiles.length} non-VPK files were ignored`
+        );
+      }
+
+      // Create initial file analysis states
+      const newFileAnalyses: FileAnalysisState[] = vpkFiles.map((file) => ({
+        file,
+        result: null,
+        status: 'pending' as const,
+      }));
+
+      setFileAnalyses(newFileAnalyses);
+      analyzeAllFiles(newFileAnalyses);
+    },
+    [analyzeAllFiles]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -220,7 +225,7 @@ export function VpkAnalyzer() {
           </div>
         </CardContent>
       </Card>
-        {fileAnalyses.length > 0 && (
+      {fileAnalyses.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-xl">Analysis Results</h2>
@@ -228,31 +233,41 @@ export function VpkAnalyzer() {
               {completedAnalyses.length} / {totalFiles} completed
             </Badge>
           </div>
-          
+
           {fileAnalyses.map((fileAnalysis, index) => (
             <Card key={`${fileAnalysis.file.name}-${index}`}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">{fileAnalysis.file.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {fileAnalysis.file.name}
+                    </CardTitle>
                     <CardDescription>
                       {formatFileSize(fileAnalysis.file.size)}
                     </CardDescription>
                   </div>
-                  <Badge 
+                  <Badge
                     variant={
-                      fileAnalysis.status === 'completed' ? 'default' :
-                      fileAnalysis.status === 'analyzing' ? 'secondary' :
-                      fileAnalysis.status === 'error' ? 'destructive' : 'outline'
+                      fileAnalysis.status === 'completed'
+                        ? 'default'
+                        : fileAnalysis.status === 'analyzing'
+                          ? 'secondary'
+                          : fileAnalysis.status === 'error'
+                            ? 'destructive'
+                            : 'outline'
                     }
                   >
-                    {fileAnalysis.status === 'analyzing' ? 'Analyzing...' : 
-                     fileAnalysis.status === 'completed' ? 'Completed' :
-                     fileAnalysis.status === 'error' ? 'Error' : 'Pending'}
+                    {fileAnalysis.status === 'analyzing'
+                      ? 'Analyzing...'
+                      : fileAnalysis.status === 'completed'
+                        ? 'Completed'
+                        : fileAnalysis.status === 'error'
+                          ? 'Error'
+                          : 'Pending'}
                   </Badge>
                 </div>
               </CardHeader>
-              
+
               {fileAnalysis.status === 'error' && (
                 <CardContent>
                   <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
@@ -262,37 +277,73 @@ export function VpkAnalyzer() {
                   </div>
                 </CardContent>
               )}
-              
+
               {fileAnalysis.result && (
                 <CardContent className="space-y-6">
                   <div>
-                    <h3 className="mb-3 font-semibold text-lg">VPK Information</h3>
+                    <h3 className="mb-3 font-semibold text-lg">
+                      VPK Information
+                    </h3>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">Version:</span>
-                          <span className="text-sm">{fileAnalysis.result.vpk.version}</span>
+                          <span className="text-muted-foreground text-sm">
+                            Version:
+                          </span>
+                          <span className="text-sm">
+                            {fileAnalysis.result.vpk.version}
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">File Count:</span>
-                          <span className="text-sm">{fileAnalysis.result.vpk.fingerprint.fileCount}</span>
+                          <span className="text-muted-foreground text-sm">
+                            File Count:
+                          </span>
+                          <span className="text-sm">
+                            {fileAnalysis.result.vpk.fingerprint.fileCount}
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">File Size:</span>
-                          <span className="text-sm">{formatFileSize(fileAnalysis.result.vpk.fingerprint.fileSize)}</span>
+                          <span className="text-muted-foreground text-sm">
+                            File Size:
+                          </span>
+                          <span className="text-sm">
+                            {formatFileSize(
+                              fileAnalysis.result.vpk.fingerprint.fileSize
+                            )}
+                          </span>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">Has Multiparts:</span>
-                          <Badge variant={fileAnalysis.result.vpk.fingerprint.hasMultiparts ? 'default' : 'secondary'}>
-                            {fileAnalysis.result.vpk.fingerprint.hasMultiparts ? 'Yes' : 'No'}
+                          <span className="text-muted-foreground text-sm">
+                            Has Multiparts:
+                          </span>
+                          <Badge
+                            variant={
+                              fileAnalysis.result.vpk.fingerprint.hasMultiparts
+                                ? 'default'
+                                : 'secondary'
+                            }
+                          >
+                            {fileAnalysis.result.vpk.fingerprint.hasMultiparts
+                              ? 'Yes'
+                              : 'No'}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">Has Inline Data:</span>
-                          <Badge variant={fileAnalysis.result.vpk.fingerprint.hasInlineData ? 'default' : 'secondary'}>
-                            {fileAnalysis.result.vpk.fingerprint.hasInlineData ? 'Yes' : 'No'}
+                          <span className="text-muted-foreground text-sm">
+                            Has Inline Data:
+                          </span>
+                          <Badge
+                            variant={
+                              fileAnalysis.result.vpk.fingerprint.hasInlineData
+                                ? 'default'
+                                : 'secondary'
+                            }
+                          >
+                            {fileAnalysis.result.vpk.fingerprint.hasInlineData
+                              ? 'Yes'
+                              : 'No'}
                           </Badge>
                         </div>
                       </div>
@@ -300,9 +351,12 @@ export function VpkAnalyzer() {
                   </div>
 
                   {/* Mod Match Information */}
-                  {fileAnalysis.result.matchedVpk?.mod && fileAnalysis.result.match ? (
+                  {fileAnalysis.result.matchedVpk?.mod &&
+                  fileAnalysis.result.match ? (
                     <div>
-                      <h3 className="mb-3 font-semibold text-lg">Matched Mod</h3>
+                      <h3 className="mb-3 font-semibold text-lg">
+                        Matched Mod
+                      </h3>
                       <Card>
                         <CardContent className="pt-6">
                           <div className="space-y-4">
@@ -313,12 +367,17 @@ export function VpkAnalyzer() {
                                 </h4>
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline">
-                                    {fileAnalysis.result.matchedVpk.mod.category}
+                                    {
+                                      fileAnalysis.result.matchedVpk.mod
+                                        .category
+                                    }
                                   </Badge>
                                   <Badge variant="secondary">
-                                    by {fileAnalysis.result.matchedVpk.mod.author}
+                                    by{' '}
+                                    {fileAnalysis.result.matchedVpk.mod.author}
                                   </Badge>
-                                  {fileAnalysis.result.matchedVpk.mod.isAudio && (
+                                  {fileAnalysis.result.matchedVpk.mod
+                                    .isAudio && (
                                     <Badge variant="outline">Audio Mod</Badge>
                                   )}
                                 </div>
@@ -339,18 +398,25 @@ export function VpkAnalyzer() {
                             </div>
 
                             {fileAnalysis.result.matchedVpk.mod.images &&
-                              fileAnalysis.result.matchedVpk.mod.images.length > 0 && (
+                              fileAnalysis.result.matchedVpk.mod.images.length >
+                                0 && (
                                 <div className="relative aspect-video overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
                                   <img
                                     alt={`${fileAnalysis.result.matchedVpk.mod.name} preview`}
                                     className="h-full w-full object-cover"
                                     onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
+                                      const target =
+                                        e.target as HTMLImageElement;
                                       target.style.display = 'none';
-                                      const fallback = target.nextElementSibling as HTMLElement;
-                                      if (fallback) fallback.style.display = 'flex';
+                                      const fallback =
+                                        target.nextElementSibling as HTMLElement;
+                                      if (fallback)
+                                        fallback.style.display = 'flex';
                                     }}
-                                    src={fileAnalysis.result.matchedVpk.mod.images[0]}
+                                    src={
+                                      fileAnalysis.result.matchedVpk.mod
+                                        .images[0]
+                                    }
                                   />
                                   <div
                                     className="absolute inset-0 flex items-center justify-center"
@@ -358,9 +424,13 @@ export function VpkAnalyzer() {
                                   >
                                     <div className="text-center">
                                       <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                        <span className="text-lg text-muted-foreground">📷</span>
+                                        <span className="text-lg text-muted-foreground">
+                                          📷
+                                        </span>
                                       </div>
-                                      <p className="text-muted-foreground text-sm">Image failed to load</p>
+                                      <p className="text-muted-foreground text-sm">
+                                        Image failed to load
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
@@ -368,19 +438,30 @@ export function VpkAnalyzer() {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                               <div className="space-y-1">
-                                <span className="text-muted-foreground text-sm">Downloads</span>
+                                <span className="text-muted-foreground text-sm">
+                                  Downloads
+                                </span>
                                 <p className="font-medium">
                                   {fileAnalysis.result.matchedVpk.mod.downloadCount.toLocaleString()}
                                 </p>
                               </div>
                               <div className="space-y-1">
-                                <span className="text-muted-foreground text-sm">Likes</span>
-                                <p className="font-medium">{fileAnalysis.result.matchedVpk.mod.likes}</p>
+                                <span className="text-muted-foreground text-sm">
+                                  Likes
+                                </span>
+                                <p className="font-medium">
+                                  {fileAnalysis.result.matchedVpk.mod.likes}
+                                </p>
                               </div>
                               <div className="space-y-1">
-                                <span className="text-muted-foreground text-sm">Created</span>
+                                <span className="text-muted-foreground text-sm">
+                                  Created
+                                </span>
                                 <p className="font-medium text-sm">
-                                  {new Date(fileAnalysis.result.matchedVpk.mod.remoteAddedAt).toLocaleDateString()}
+                                  {new Date(
+                                    fileAnalysis.result.matchedVpk.mod
+                                      .remoteAddedAt
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -388,7 +469,9 @@ export function VpkAnalyzer() {
                             <div className="flex gap-2 pt-2">
                               <Button asChild>
                                 <a
-                                  href={fileAnalysis.result.matchedVpk.mod.remoteUrl}
+                                  href={
+                                    fileAnalysis.result.matchedVpk.mod.remoteUrl
+                                  }
                                   rel="noopener noreferrer"
                                   target="_blank"
                                 >
@@ -398,7 +481,10 @@ export function VpkAnalyzer() {
                               {fileAnalysis.result.matchedVpk.mod.audioUrl && (
                                 <Button asChild variant="outline">
                                   <a
-                                    href={fileAnalysis.result.matchedVpk.mod.audioUrl}
+                                    href={
+                                      fileAnalysis.result.matchedVpk.mod
+                                        .audioUrl
+                                    }
                                     rel="noopener noreferrer"
                                     target="_blank"
                                   >
@@ -413,11 +499,14 @@ export function VpkAnalyzer() {
                     </div>
                   ) : (
                     <div>
-                      <h3 className="mb-3 font-semibold text-lg">No Match Found</h3>
+                      <h3 className="mb-3 font-semibold text-lg">
+                        No Match Found
+                      </h3>
                       <Card>
                         <CardContent className="pt-6">
                           <p className="text-muted-foreground">
-                            This VPK file doesn't match any mods in our database. It might be:
+                            This VPK file doesn't match any mods in our
+                            database. It might be:
                           </p>
                           <ul className="mt-2 ml-4 list-disc space-y-1 text-muted-foreground text-sm">
                             <li>A custom mod not available on GameBanana</li>
@@ -430,25 +519,33 @@ export function VpkAnalyzer() {
                   )}
 
                   <div>
-                    <h3 className="mb-3 font-semibold text-lg">File Contents</h3>
+                    <h3 className="mb-3 font-semibold text-lg">
+                      File Contents
+                    </h3>
                     <Card>
                       <CardContent className="p-0">
                         <div className="max-h-64 overflow-y-auto">
                           <div className="space-y-1">
-                            {fileAnalysis.result.vpk.entries.slice(0, 20).map((entry) => (
-                              <div
-                                className="flex items-center gap-2 border-b px-4 py-2 text-sm last:border-b-0"
-                                key={`${entry.fullPath}-${entry.crc32Hex}`}
-                              >
-                                <span className="flex-1 font-mono text-xs">{entry.fullPath}</span>
-                                <span className="text-muted-foreground text-xs">
-                                  {formatFileSize(entry.entryLength)}
-                                </span>
-                              </div>
-                            ))}
+                            {fileAnalysis.result.vpk.entries
+                              .slice(0, 20)
+                              .map((entry) => (
+                                <div
+                                  className="flex items-center gap-2 border-b px-4 py-2 text-sm last:border-b-0"
+                                  key={`${entry.fullPath}-${entry.crc32Hex}`}
+                                >
+                                  <span className="flex-1 font-mono text-xs">
+                                    {entry.fullPath}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {formatFileSize(entry.entryLength)}
+                                  </span>
+                                </div>
+                              ))}
                             {fileAnalysis.result.vpk.entries.length > 20 && (
                               <div className="px-4 py-2 text-center text-muted-foreground text-sm">
-                                ... and {fileAnalysis.result.vpk.entries.length - 20} more files
+                                ... and{' '}
+                                {fileAnalysis.result.vpk.entries.length - 20}{' '}
+                                more files
                               </div>
                             )}
                           </div>
@@ -462,7 +559,6 @@ export function VpkAnalyzer() {
           ))}
         </div>
       )}
- 
     </div>
   );
 }

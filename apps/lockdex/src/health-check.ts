@@ -42,7 +42,6 @@ const healthCheck = async (): Promise<void> => {
   }
 };
 
-// Run health check if this script is executed directly
 if (import.meta.main) {
   healthCheck()
     .then(() => {

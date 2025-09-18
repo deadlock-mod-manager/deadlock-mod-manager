@@ -113,7 +113,6 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-// Legacy routes (unchanged for backward compatibility)
 app.route('/mods', modsRouter);
 app.route('/custom-settings', customSettingsRouter);
 
