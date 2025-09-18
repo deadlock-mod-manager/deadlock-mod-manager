@@ -41,8 +41,10 @@ const useUninstall = () => {
             vpks: mod.installedVpks ?? [],
           });
         } else {
-          await invoke('uninstall_mod', {
+          // Deactivate the mod (move back to disabled state with _ prefix)
+          await invoke('deactivate_mod', {
             modId: mod.remoteId,
+            modName: mod.name,
             vpks: mod.installedVpks ?? [],
           });
         }

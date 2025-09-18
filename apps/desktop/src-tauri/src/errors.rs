@@ -47,6 +47,10 @@ pub enum Error {
   ExternalModification(String),
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
+  #[error("JSON serialization/deserialization error: {0}")]
+  Json(#[from] serde_json::Error),
+  #[error("Invalid gameinfo.gi file")]
+  InvalidGameInfo,
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
 }
@@ -84,6 +88,8 @@ impl serde::Serialize for Error {
       Error::GameInfoValidationFailed(_) => "gameInfoValidationFailed",
       Error::ExternalModification(_) => "externalModification",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
+      Error::Json(_) => "json",
+      Error::InvalidGameInfo => "invalidGameInfo",
       Error::Tauri(_) => "tauri",
     };
 

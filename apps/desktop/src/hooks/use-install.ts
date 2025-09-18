@@ -27,6 +27,7 @@ const useInstall = () => {
         throw new Error('Mod is already installed!');
       }
 
+      // Install the mod as disabled (this will create the _ModName_pak01_dir.vpk files)
       const result = (await invoke('install_mod', {
         deadlockMod: {
           id: mod.remoteId,

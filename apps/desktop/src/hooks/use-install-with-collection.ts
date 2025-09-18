@@ -65,6 +65,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         file_tree: fileTree,
       };
 
+      // Install the mod as disabled (this will create the _ModName_pak01_dir.vpk files)
       const result = (await invoke('install_mod', {
         deadlockMod: {
           id: modData.remoteId,

@@ -1,4 +1,5 @@
 import type { ModDto } from '@deadlock-mods/utils';
+import { invoke } from '@tauri-apps/api/core';
 import { useHover } from '@uidotdev/usehooks';
 import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -120,40 +121,20 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
           await download();
           break;
         case ModStatus.Downloaded:
-          await install(localMod, {
-            onStart: (mod) => {
-              setModStatus(mod.remoteId, ModStatus.Installing);
-            },
-            onComplete: (mod, result) => {
-              setModStatus(mod.remoteId, ModStatus.Installed);
-              setInstalledVpks(
-                mod.remoteId,
-                result.installed_vpks,
-                result.file_tree
-              );
-              toast.success(t('notifications.modInstalledSuccessfully'));
-            },
-            onError: (mod, error) => {
-              setModStatus(mod.remoteId, ModStatus.Error);
-              toast.error(
-                error.message || t('notifications.failedToInstallMod')
-              );
-            },
-            onCancel: (mod) => {
-              setModStatus(mod.remoteId, ModStatus.Downloaded);
-              toast.info(t('notifications.installationCanceled'));
-            },
-            onFileTreeAnalyzed: (mod, fileTree) => {
-              if (fileTree.has_multiple_files) {
-                toast.info(
-                  t('notifications.modContainsFiles', {
-                    modName: mod.name,
-                    fileCount: fileTree.total_files,
-                  })
-                );
-              }
-            },
-          });
+          // Activate the mod (move from disabled to active state)
+          try {
+            setModStatus(localMod.remoteId, ModStatus.Installing);
+            await invoke('activate_mod', {
+              modId: localMod.remoteId,
+              modName: localMod.name,
+              vpks: localMod.installedVpks || [],
+            });
+            setModStatus(localMod.remoteId, ModStatus.Installed);
+            toast.success(t('notifications.modActivatedSuccessfully'));
+          } catch (error) {
+            setModStatus(localMod.remoteId, ModStatus.Downloaded);
+            toast.error(t('notifications.failedToActivateMod'));
+          }
           break;
         case ModStatus.Installed:
           await uninstall(localMod, false);

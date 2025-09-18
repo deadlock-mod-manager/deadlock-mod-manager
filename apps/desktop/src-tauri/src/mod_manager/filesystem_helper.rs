@@ -55,6 +55,26 @@ impl FileSystemHelper {
     Ok(())
   }
 
+  /// Move a file from source to destination
+  pub fn move_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+    if let Some(parent) = dest.parent() {
+      self.create_directories(parent)?;
+    }
+
+    log::debug!("Moving file from {:?} to {:?}", src, dest);
+    fs::rename(src, dest)?;
+    Ok(())
+  }
+
+  /// Remove a single directory (must be empty)
+  pub fn remove_directory(&self, path: &Path) -> Result<(), Error> {
+    if path.exists() {
+      log::info!("Removing directory: {:?}", path);
+      fs::remove_dir(path)?;
+    }
+    Ok(())
+  }
+
   /// Check if path exists
   pub fn path_exists(&self, path: &Path) -> bool {
     path.exists()

@@ -197,7 +197,12 @@ pub fn run() {
       commands::open_gameinfo_editor,
       commands::set_language,
       commands::extract_archive,
-      commands::remove_mod_folder
+      commands::remove_mod_folder,
+      // Addons System Commands
+      commands::activate_mod,
+      commands::deactivate_mod,
+      commands::get_installed_mods_from_addons,
+      commands::get_active_mods_from_addons
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -975,6 +975,7 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 name = "deadlock-mod-manager"
 version = "0.8.2"
 dependencies = [
+ "chrono",
  "dotenvy",
  "keyvalues-serde",
  "log",

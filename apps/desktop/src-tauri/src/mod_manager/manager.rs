@@ -1,5 +1,6 @@
 use crate::errors::Error;
 use crate::mod_manager::{
+  addons_manager::AddonsManager,
   archive_extractor::ArchiveExtractor,
   file_tree::{FileTreeAnalyzer, ModFileTree},
   filesystem_helper::FileSystemHelper,
@@ -21,6 +22,7 @@ pub struct ModManager {
   config_manager: GameConfigManager,
   archive_extractor: ArchiveExtractor,
   vpk_manager: VpkManager,
+  addons_manager: AddonsManager,
   file_tree_analyzer: FileTreeAnalyzer,
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
@@ -34,6 +36,7 @@ impl ModManager {
       config_manager: GameConfigManager::new(),
       archive_extractor: ArchiveExtractor::new(),
       vpk_manager: VpkManager::new(),
+      addons_manager: AddonsManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -127,7 +130,7 @@ impl ModManager {
     self.file_tree_analyzer.get_mod_file_tree(mod_path)
   }
 
-  // Mod Installation
+  // Mod Installation using addons system - extract directly to addons folder
   pub fn install_mod(&mut self, mut deadlock_mod: Mod) -> Result<Mod, Error> {
     log::info!("Starting installation of mod: {}", deadlock_mod.name);
 
@@ -145,137 +148,59 @@ impl ModManager {
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?;
 
-    let mod_files_path = deadlock_mod.path.join("files");
-
-    // Only clear the mod cache if it's empty or corrupted
-    if mod_files_path.exists() {
-      let files_in_cache = std::fs::read_dir(&mod_files_path)
-        .map(|mut dir| dir.next().is_some())
-        .unwrap_or(false);
-
-      if files_in_cache {
-        log::info!("Mod cache already exists with files, skipping extraction");
-      } else {
-        log::info!("Clearing empty mod cache at: {:?}", mod_files_path);
-        self
-          .filesystem
-          .remove_directory_recursive(&mod_files_path)?;
-      }
-    }
-
-    if !mod_files_path.exists() {
-      self.filesystem.create_directories(&mod_files_path)?;
-      log::info!("Created mod files directory at: {:?}", mod_files_path);
-    }
-
-    // Extract archives to temp locations first (only if cache is empty)
+    // Extract archives to temporary location first
     let mut temp_extracts = Vec::new();
-    let cache_has_files = mod_files_path.exists()
-      && std::fs::read_dir(&mod_files_path)
-        .map(|mut dir| dir.next().is_some())
-        .unwrap_or(false);
+    for entry in std::fs::read_dir(&deadlock_mod.path)? {
+      let entry = entry?;
+      let path = entry.path();
 
-    if !cache_has_files {
-      for entry in std::fs::read_dir(&deadlock_mod.path)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if !self.archive_extractor.is_supported_archive(&path) {
-          continue;
-        }
-
-        let temp_dir = tempfile::tempdir()?;
-        log::info!("Processing archive: {:?}", path);
-
-        self
-          .archive_extractor
-          .extract_archive(&path, temp_dir.path())?;
-
-        temp_extracts.push(temp_dir);
+      if !self.archive_extractor.is_supported_archive(&path) {
+        continue;
       }
-    } else {
-      log::info!("Using existing mod cache, skipping archive extraction");
+
+      let temp_dir = tempfile::tempdir()?;
+      log::info!("Processing archive: {:?}", path);
+
+      self
+        .archive_extractor
+        .extract_archive(&path, temp_dir.path())?;
+
+      temp_extracts.push(temp_dir);
     }
 
-    // Get VPK files for installation
-    let mut selected_vpks = Vec::new();
-
-    if cache_has_files {
-      // Use existing VPK files from cache
-      log::info!("Using existing VPK files from cache");
+    // Find all VPK files in extracted archives
+    let mut vpk_paths = Vec::new();
+    for temp_dir in &temp_extracts {
       let vpk_files = self
         .filesystem
-        .find_files_recursive(&mod_files_path, "vpk")?;
+        .find_files_recursive(temp_dir.path(), "vpk")?;
 
       for (vpk_path, _) in vpk_files {
-        if let Some(file_name) = vpk_path.file_name() {
-          selected_vpks.push(file_name.to_string_lossy().to_string());
-          log::info!("Found cached VPK file: {:?}", file_name);
-        }
-      }
-    } else {
-      // Extract and process archives
-      if let Some(file_tree) = &deadlock_mod.file_tree {
-        log::info!("Using selective installation based on file tree");
-
-        // Copy only selected files
-        for temp_dir in &temp_extracts {
-          let vpk_files = self
-            .filesystem
-            .find_files_recursive(temp_dir.path(), "vpk")?;
-
-          for (vpk_path, _) in vpk_files {
-            let relative_path = vpk_path
-              .strip_prefix(temp_dir.path())
-              .unwrap_or(&vpk_path)
-              .to_string_lossy()
-              .to_string();
-
-            // Check if this file is selected in the file tree
-            if file_tree
-              .files
-              .iter()
-              .any(|f| f.path == relative_path && f.is_selected)
-            {
-              // Copy this VPK file to cache
-              if let Some(file_name) = vpk_path.file_name() {
-                let dest_path = mod_files_path.join(file_name);
-                std::fs::copy(&vpk_path, &dest_path)?;
-                selected_vpks.push(file_name.to_string_lossy().to_string());
-                log::info!("Selected file for installation: {:?}", file_name);
-              }
-            }
-          }
-        }
-      } else {
-        // Fallback: copy all VPKs (for backward compatibility)
-        log::info!("No file tree found, installing all VPKs");
-        for temp_dir in &temp_extracts {
-          let mut vpks = self
-            .vpk_manager
-            .copy_vpks_from_directory(temp_dir.path(), &mod_files_path)?;
-          selected_vpks.append(&mut vpks);
-        }
+        vpk_paths.push(vpk_path.clone());
+        log::info!("Found VPK file: {:?}", vpk_path);
       }
     }
 
-    if selected_vpks.is_empty() {
-      log::error!("No VPK files selected or found in mod");
+    if vpk_paths.is_empty() {
+      log::error!("No VPK files found in mod archives");
       return Err(Error::ModInvalid(
-        "No VPK files selected for installation".into(),
+        "No VPK files found for installation".into(),
       ));
     }
 
-    // Install selected VPKs to game addons directory
-    let addons_path = game_path.join("game").join("citadel").join("addons");
+    // Install mod using addons system (initially disabled)
     log::info!(
-      "Installing {} selected VPKs to game addons: {:?}",
-      selected_vpks.len(),
-      addons_path
+      "Installing {} VPKs to addons folder (disabled): {:?}",
+      vpk_paths.len(),
+      self.addons_manager.get_addons_path(&game_path)
     );
-    let installed_vpks = self
-      .vpk_manager
-      .copy_vpks_from_directory(&mod_files_path, &addons_path)?;
+    
+    let installed_vpks = self.addons_manager.install_mod(
+      &deadlock_mod.id,
+      &deadlock_mod.name,
+      &vpk_paths,
+      &game_path,
+    )?;
 
     deadlock_mod.installed_vpks = installed_vpks;
 
@@ -307,7 +232,32 @@ impl ModManager {
     Ok(deadlock_mod)
   }
 
-  // Mod Uninstallation
+  // Mod Activation/Deactivation
+  pub fn activate_mod(&mut self, mod_id: &str, mod_name: &str, vpks: &[String]) -> Result<(), Error> {
+    log::info!("Activating mod: {}", mod_name);
+
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    self.addons_manager.activate_mod(mod_id, mod_name, vpks, &game_path)?;
+    Ok(())
+  }
+
+  pub fn deactivate_mod(&mut self, mod_id: &str, mod_name: &str, vpks: &[String]) -> Result<(), Error> {
+    log::info!("Deactivating mod: {}", mod_name);
+
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    self.addons_manager.deactivate_mod(mod_id, mod_name, vpks, &game_path)?;
+    Ok(())
+  }
+
+  // Mod Uninstallation using addons system
   pub fn uninstall_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
     log::info!("Uninstalling mod: {}", mod_id);
 
@@ -315,23 +265,29 @@ impl ModManager {
       .steam_manager
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?;
-    let addons_path = game_path.join("game").join("citadel").join("addons");
 
-    if !addons_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-
-    // Check if the mod is in memory
-    if let Some(local_mod) = self.mod_repository.get_mod(&mod_id) {
-      log::info!("Mod found in memory: {}", local_mod.name);
-      self
-        .vpk_manager
-        .remove_vpks(&local_mod.installed_vpks, &addons_path)?;
-      self.mod_repository.remove_mod(&mod_id);
+    // Get mod name from repository if available
+    let mod_name = if let Some(local_mod) = self.mod_repository.get_mod(&mod_id) {
+      local_mod.name.clone()
     } else {
-      // Just remove the vpk files from citadel/addons
-      self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
-    }
+      // Fallback: try to extract from VPK names
+      if let Some(first_vpk) = vpks.first() {
+        // Extract mod name from VPK name (e.g., "_ModName_pak01_dir.vpk" -> "ModName")
+        first_vpk
+          .strip_prefix("_")
+          .and_then(|s| s.split("_pak").next())
+          .unwrap_or("Unknown")
+          .to_string()
+      } else {
+        "Unknown".to_string()
+      }
+    };
+
+    // Remove mod using addons system
+    self.addons_manager.remove_mod(&mod_id, &mod_name, &vpks, &game_path)?;
+
+    // Remove from repository
+    self.mod_repository.remove_mod(&mod_id);
 
     Ok(())
   }
@@ -343,21 +299,29 @@ impl ModManager {
       .steam_manager
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?;
-    let addons_path = game_path.join("game").join("citadel").join("addons");
 
-    if !addons_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-
-    // Remove VPK files from game
-    if let Some(local_mod) = self.mod_repository.remove_mod(&mod_id) {
-      log::info!("Mod found in memory: {}", local_mod.name);
-      self
-        .vpk_manager
-        .remove_vpks(&local_mod.installed_vpks, &addons_path)?;
+    // Get mod name from repository if available
+    let mod_name = if let Some(local_mod) = self.mod_repository.get_mod(&mod_id) {
+      local_mod.name.clone()
     } else {
-      self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
-    }
+      // Fallback: try to extract from VPK names
+      if let Some(first_vpk) = vpks.first() {
+        // Extract mod name from VPK name (e.g., "_ModName_pak01_dir.vpk" -> "ModName")
+        first_vpk
+          .strip_prefix("_")
+          .and_then(|s| s.split("_pak").next())
+          .unwrap_or("Unknown")
+          .to_string()
+      } else {
+        "Unknown".to_string()
+      }
+    };
+
+    // Remove mod using addons system
+    self.addons_manager.remove_mod(&mod_id, &mod_name, &vpks, &game_path)?;
+
+    // Remove from repository
+    self.mod_repository.remove_mod(&mod_id);
 
     // Remove the mod's folder from user's local app data
     let mods_path = self.filesystem.get_mods_store_path()?;
@@ -483,6 +447,27 @@ impl ModManager {
       .remove_directory_recursive(&validated_path)?;
     log::info!("Successfully removed mod folder: {:?}", validated_path);
     Ok(())
+  }
+
+  // Addons System Methods
+  /// Get all installed mods from the addons system
+  pub fn get_installed_mods_from_addons(&self) -> Result<Vec<crate::mod_manager::addons_manager::ModCatalogEntry>, Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    self.addons_manager.get_installed_mods(&game_path)
+  }
+
+  /// Get active mods from the addons system
+  pub fn get_active_mods_from_addons(&self) -> Result<Vec<crate::mod_manager::addons_manager::ActiveMod>, Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    self.addons_manager.get_active_mods(&game_path)
   }
 }
 

@@ -216,8 +216,8 @@ export const useDeepLink = () => {
                         );
                       },
                       onComplete: (mod, result) => {
-                        setModStatus(mod.remoteId, ModStatus.Installed);
                         setInstalledVpks(mod.remoteId, result.installed_vpks);
+                        setModStatus(mod.remoteId, ModStatus.Installed);
                         toast.success(
                           `${mod.name} installed successfully via 1-click!`
                         );

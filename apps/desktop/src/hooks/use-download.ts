@@ -1,4 +1,5 @@
 import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
+import { invoke } from '@tauri-apps/api/core';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { downloadManager } from '@/lib/download/manager';
@@ -11,7 +12,7 @@ export const useDownload = (
   availableFiles: ModDownloadDto
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addLocalMod, localMods, setModPath, setModProgress, setModStatus } =
+  const { addLocalMod, localMods, setModPath, setModProgress, setModStatus, setInstalledVpks } =
     usePersistedStore();
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
@@ -33,12 +34,33 @@ export const useDownload = (
       onProgress: (progress) => {
         setModProgress(mod.remoteId, progress);
       },
-      onComplete: (path) => {
+      onComplete: async (path) => {
         logger.info('Download complete', { mod: mod.remoteId, path });
-        setModStatus(mod.remoteId, ModStatus.Downloaded);
         setModPath(mod.remoteId, path);
         setIsDialogOpen(false);
-        toast.success(`${mod.name} downloaded!`);
+        
+        // First set to Downloaded (required by state machine)
+        setModStatus(mod.remoteId, ModStatus.Downloaded);
+        
+        // Then automatically install as disabled after download
+        try {
+          setModStatus(mod.remoteId, ModStatus.Installing);
+          
+          const result = await invoke('install_mod', {
+            deadlockMod: {
+              id: mod.remoteId,
+              name: mod.name,
+              path: path,
+            },
+          });
+          
+          setModStatus(mod.remoteId, ModStatus.Downloaded);
+          setInstalledVpks(mod.remoteId, result.installed_vpks);
+          toast.success(`${mod.name} downloaded and installed as disabled!`);
+        } catch (error) {
+          setModStatus(mod.remoteId, ModStatus.Downloaded);
+          toast.error(`${mod.name} downloaded but failed to install. You can try installing manually.`);
+        }
       },
       onError: (error) => {
         toast.error(`Failed to download ${mod.name}: ${error.message}`);

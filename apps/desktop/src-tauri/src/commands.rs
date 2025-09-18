@@ -337,3 +337,32 @@ pub async fn remove_mod_folder(mod_path: String) -> Result<(), Error> {
   mod_manager.remove_mod_folder(&path)?;
   Ok(())
 }
+
+// Addons System Commands
+#[tauri::command]
+pub async fn activate_mod(mod_id: String, mod_name: String, vpks: Vec<String>) -> Result<(), Error> {
+  log::info!("Activating mod: {} ({})", mod_name, mod_id);
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.activate_mod(&mod_id, &mod_name, &vpks)
+}
+
+#[tauri::command]
+pub async fn deactivate_mod(mod_id: String, mod_name: String, vpks: Vec<String>) -> Result<(), Error> {
+  log::info!("Deactivating mod: {} ({})", mod_name, mod_id);
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.deactivate_mod(&mod_id, &mod_name, &vpks)
+}
+
+#[tauri::command]
+pub async fn get_installed_mods_from_addons() -> Result<Vec<crate::mod_manager::addons_manager::ModCatalogEntry>, Error> {
+  log::info!("Getting installed mods from addons system");
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.get_installed_mods_from_addons()
+}
+
+#[tauri::command]
+pub async fn get_active_mods_from_addons() -> Result<Vec<crate::mod_manager::addons_manager::ActiveMod>, Error> {
+  log::info!("Getting active mods from addons system");
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.get_active_mods_from_addons()
+}

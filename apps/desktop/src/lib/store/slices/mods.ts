@@ -135,7 +135,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => ({
       localMods: state.localMods.map((mod) => ({
         ...mod,
-        status: mod.remoteId === remoteId ? ModStatus.Installed : mod.status,
+        // Don't automatically change status - let other functions manage status
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,

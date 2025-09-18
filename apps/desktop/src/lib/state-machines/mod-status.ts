@@ -17,7 +17,7 @@ type StateTransitionError = {
 const VALID_TRANSITIONS: Record<ModStatus, ModStatus[]> = {
   [ModStatus.Downloading]: [ModStatus.Downloaded, ModStatus.FailedToDownload],
   [ModStatus.Downloaded]: [ModStatus.Installing, ModStatus.Removing],
-  [ModStatus.Installing]: [ModStatus.Installed, ModStatus.FailedToInstall],
+  [ModStatus.Installing]: [ModStatus.Installed, ModStatus.Downloaded, ModStatus.FailedToInstall],
   [ModStatus.Installed]: [ModStatus.Removing, ModStatus.Downloaded],
   [ModStatus.Removing]: [ModStatus.Removed, ModStatus.FailedToRemove],
   [ModStatus.Removed]: [ModStatus.Error],
