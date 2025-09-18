@@ -1,6 +1,7 @@
-import { readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import * as _7z from '7zip-min';
 import type {
   ArchiveEntry,
@@ -138,38 +139,41 @@ export class SevenZipExtractor extends ArchiveExtractor {
         await _7z.unpack(archivePath, tempDir.path);
 
         const extractedPath = this.getSafeFilePath(tempDir.path, filePath);
-        const fileBuffer = await readFile(extractedPath);
 
-        const stream = new Readable({
-          read() {
-            this.push(fileBuffer);
-            this.push(null);
-          },
-        });
+        const fileStream = createReadStream(extractedPath);
 
         let cleaned = false;
-        const originalDestroy = stream.destroy.bind(stream);
-        stream.destroy = (error) => {
+        const cleanup = async () => {
           if (!cleaned) {
             cleaned = true;
-            tempDir.cleanup().catch(() => {
+            await tempDir.cleanup().catch(() => {
               // Ignore cleanup errors
             });
           }
+        };
+
+        const originalDestroy = fileStream.destroy.bind(fileStream);
+        fileStream.destroy = (error) => {
+          cleanup().catch(() => {
+            // Ignore cleanup errors
+          });
           return originalDestroy(error);
         };
 
-        stream.on('end', () => {
-          if (!cleaned) {
-            cleaned = true;
-            tempDir.cleanup().catch(() => {
-              // Ignore cleanup errors
-            });
-          }
+        fileStream.on('end', () => {
+          cleanup().catch(() => {
+            // Ignore cleanup errors
+          });
+        });
+
+        fileStream.on('error', () => {
+          cleanup().catch(() => {
+            // Ignore cleanup errors
+          });
         });
 
         return {
-          stream,
+          stream: fileStream,
           entry,
         };
       } catch (error) {
@@ -224,10 +228,11 @@ export class SevenZipExtractor extends ArchiveExtractor {
 
             try {
               await stat(sourcePath);
-              const fileData = await readFile(sourcePath);
+
+              const readStream = createReadStream(sourcePath);
               const writeStream = await this.createSafeWriteStream(targetPath);
-              writeStream.write(fileData);
-              writeStream.end();
+
+              await pipeline(readStream, writeStream);
 
               result.extractedFiles.push(filePath);
               result.totalBytes += entry.size;

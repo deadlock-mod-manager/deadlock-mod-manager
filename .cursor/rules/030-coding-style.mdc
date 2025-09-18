@@ -9,18 +9,22 @@ alwaysApply: true
 ## Technology-Specific Guidelines
 
 ### TypeScript
+
 - Use TypeScript strictly - avoid `any` types
 - Use interfaces for object shapes that will be extended
 - Use type aliases for complex types and unions
 - Use the latest TypeScript features appropriately
+- **Avoid dynamic imports** - use static imports at the top of files for better performance and code clarity
 
 ### React Components
+
 - Use functional components with hooks
 - Use named exports for components
 - Keep components small and focused on a single responsibility
 - Use proper prop typing
 
 ### Backend (Bun + Hono)
+
 - Use middleware for cross-cutting concerns
 - Validate request data with Zod
 - Use proper error handling with structured responses
@@ -28,6 +32,7 @@ alwaysApply: true
 - Leverage Bun's performance optimizations
 
 ### Desktop Application (Tauri)
+
 - Follow Tauri framework conventions
 - Separate frontend React code from Rust backend
 - Use Tauri commands for system interactions
@@ -35,28 +40,51 @@ alwaysApply: true
 - Handle errors gracefully between frontend and backend
 
 ### Web Application (Next.js)
+
 - Use App Router for new features
 - Implement proper SEO optimization
 - Follow Next.js best practices for performance
 - Use server components where appropriate
 
 ## Comments and Documentation
+
 - Write self-documenting code, no need to add extra comments
-- Add comments for complex logic
+- **Avoid obvious comments** that just repeat what the code does
+- Add comments only for complex logic, business rules, or non-obvious decisions
 - Document public APIs and interfaces
+- Use meaningful variable and function names instead of explanatory comments
+
 ```typescript
-/**
- * Fetches user data and handles pagination
- * @param page - The page number to fetch
- * @param limit - Number of items per page
- * @returns Paginated user data
- */
-async function fetchUsers(page: number, limit: number): Promise<PaginatedResponse<User>> {
-  // ...
+// ✅ Good: Meaningful names, minimal comments
+async function fetchUsers(
+  page: number,
+  limit: number
+): Promise<PaginatedResponse<User>> {
+  const users = await userRepository.findPaginated(page, limit);
+  return transformToResponse(users);
+}
+
+// ❌ Bad: Obvious comments that repeat the code
+async function fetchUsers(page: number, limit: number) {
+  // Create write stream for direct streaming to file
+  const writeStream = createWriteStream(filePath);
+
+  // Convert Web ReadableStream to Node.js stream
+  const nodeStream = Readable.fromWeb(response.body);
+}
+
+// ✅ Good: Comment explains WHY, not WHAT
+async function processLargeFile(filePath: string) {
+  // Use streaming to avoid loading entire file into memory for files > 100MB
+  if (fileSize > 100 * 1024 * 1024) {
+    return processWithStreaming(filePath);
+  }
+  return processInMemory(filePath);
 }
 ```
 
 ## Styling
+
 - Use Tailwind CSS for styling
 - Follow component-based styling practices
 - Use utility classes for one-off styling needs
@@ -65,9 +93,11 @@ async function fetchUsers(page: number, limit: number): Promise<PaginatedRespons
 ## Git Commit Guidelines
 
 ### Commit Messages
+
 - Use conventional commits format
 - Include ticket number when applicable
 - Keep messages clear and concise
+
 ```bash
 # Format: <type>(<scope>): <description>
 feat(auth): add social login support
@@ -76,13 +106,48 @@ chore(deps): update dependencies
 ```
 
 ### Branch Names
+
 - Use feature/, bugfix/, hotfix/ prefixes
 - Include ticket number when applicable
 - Use kebab-case
+
 ```bash
 feature/KR-123-user-authentication
 bugfix/api-pagination
 hotfix/login-crash
+```
+
+## Import and Module Guidelines
+
+### Static Imports
+
+- **Always use static imports** at the top of files instead of dynamic imports
+- Import all dependencies at the file beginning for better bundling and performance
+- Use tree-shaking friendly named imports when possible
+
+```typescript
+// ✅ Good: Static imports at top of file
+import { readFile, stat } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { createReadStream } from "node:fs";
+
+// ❌ Bad: Dynamic imports
+const { pipeline } = await import("node:stream/promises");
+```
+
+### Memory-Efficient Patterns
+
+- **Use streaming APIs** instead of loading large files into memory
+- **Avoid buffer accumulation** for large data processing
+- **Implement proper cleanup** for temporary files and streams
+- **Set appropriate file size limits** based on available memory
+
+```typescript
+// ✅ Good: Streaming approach
+await pipeline(readStream, transformStream, writeStream);
+
+// ❌ Bad: Loading entire file into memory
+const fileData = await readFile(largePath);
 ```
 
 ## Core Philosophy
@@ -92,3 +157,4 @@ hotfix/login-crash
 - Maintain consistency with existing code style when modifying files
 - Keep code DRY (Don't Repeat Yourself)
 - Prefer verbose variable names and maintainability over concise code
+- **Optimize for memory efficiency** in data processing applications

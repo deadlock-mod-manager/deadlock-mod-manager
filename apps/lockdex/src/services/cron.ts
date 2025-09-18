@@ -49,7 +49,6 @@ export class CronService {
     // Store the job definition
     this.jobs.set(name, definition);
 
-    // Create a unique worker key based on processor and concurrency
     const jobConcurrency = concurrency ?? this.defaultConcurrency;
     const workerKey = `${processor.constructor.name}-${jobConcurrency}`;
 

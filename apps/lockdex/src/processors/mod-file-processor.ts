@@ -58,7 +58,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         {
           filename: jobData.file,
           timeout: 10 * 60 * 1000,
-          maxFileSize: 1024 * 1024 * 1024,
+          maxFileSize: 256 * 1024 * 1024,
           progressInterval: 5 * 1024 * 1024,
           retryAttempts: 3,
           retryDelay: 2000,

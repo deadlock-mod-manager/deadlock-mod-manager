@@ -1,6 +1,9 @@
+import { createWriteStream } from 'node:fs';
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
+import { Readable, Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import type { Logger } from '@deadlock-mods/logging';
 
 export interface DownloadOptions {
@@ -75,7 +78,7 @@ export class DownloadService {
   ): Promise<DownloadResult> {
     const {
       timeout = 5 * 60 * 1000,
-      maxFileSize = 500 * 1024 * 1024,
+      maxFileSize = 256 * 1024 * 1024,
       progressInterval = 1024 * 1024,
       filename = this.extractFilenameFromUrl(url),
       tempDir = await this.createTempDir(),
@@ -143,7 +146,7 @@ export class DownloadService {
   }
 
   /**
-   * Perform the actual download with progress tracking
+   * Perform the actual download with progress tracking using streaming
    */
   private async performDownload(
     url: string,
@@ -186,31 +189,22 @@ export class DownloadService {
       );
 
       await mkdir(join(filePath, '..'), { recursive: true });
+
       let downloadedBytes = 0;
       let lastProgressUpdate = 0;
       const startTime = Date.now();
 
-      const reader = response.body.getReader();
-      const chunks: Uint8Array[] = [];
-
-      try {
-        let done = false;
-        while (!done) {
-          const result = await reader.read();
-          done = result.done;
-          const value = result.value;
-
-          if (!value) {
-            continue;
-          }
-
-          downloadedBytes += value.length;
-          chunks.push(value);
+      const writeStream = createWriteStream(filePath);
+      const progressTransform = new Transform({
+        transform: (chunk: Buffer, _encoding, callback) => {
+          downloadedBytes += chunk.length;
 
           if (downloadedBytes > maxFileSize) {
-            throw new Error(
+            const error = new Error(
               `Downloaded size exceeds maximum allowed size (${maxFileSize} bytes)`
             );
+            callback(error);
+            return;
           }
 
           if (
@@ -220,24 +214,28 @@ export class DownloadService {
             this.logProgress(downloadedBytes, totalBytes, startTime);
             lastProgressUpdate = downloadedBytes;
           }
-        }
 
-        const totalLength = chunks.reduce(
-          (sum, chunk) => sum + chunk.length,
-          0
-        );
-        const combined = new Uint8Array(totalLength);
-        let offset = 0;
+          callback(null, chunk);
+        },
+      });
 
-        for (const chunk of chunks) {
-          combined.set(chunk, offset);
-          offset += chunk.length;
-        }
+      const reader = response.body.getReader();
+      const nodeReadableStream = new Readable({
+        async read() {
+          try {
+            const { done, value } = await reader.read();
+            if (done) {
+              this.push(null);
+            } else {
+              this.push(Buffer.from(value));
+            }
+          } catch (error) {
+            this.destroy(error as Error);
+          }
+        },
+      });
 
-        await Bun.write(filePath, combined);
-      } finally {
-        reader.releaseLock();
-      }
+      await pipeline(nodeReadableStream, progressTransform, writeStream);
 
       const fileStats = await stat(filePath);
       this.logger.info(`File written successfully: ${fileStats.size} bytes`);

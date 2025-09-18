@@ -16,7 +16,7 @@ const main = async () => {
   const modsScheduler = new ModsSchedulerProcessor();
 
   const modsWorker = new ModsWorker(modsProcessor, 1);
-  const modFileWorker = new ModFileWorker(modFileProcessor, 5);
+  const modFileWorker = new ModFileWorker(modFileProcessor, 2);
 
   await cronService.defineJob({
     name: 'mods-scheduler',
