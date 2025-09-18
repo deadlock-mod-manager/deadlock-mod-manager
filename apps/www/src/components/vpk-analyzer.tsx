@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -25,30 +25,33 @@ interface FileAnalysisState {
 export function VpkAnalyzer() {
   const [fileAnalyses, setFileAnalyses] = useState<FileAnalysisState[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Use a ref to store the current file analyses to avoid stale closure issues
+  const fileAnalysesRef = useRef<FileAnalysisState[]>([]);
+  fileAnalysesRef.current = fileAnalyses;
 
-  const analyzeFile = async (fileState: FileAnalysisState, index: number) => {
+  const updateFileState = useCallback((index: number, updates: Partial<FileAnalysisState>) => {
+    setFileAnalyses((prev) => {
+      const newState = [...prev];
+      if (newState[index]) {
+        newState[index] = { ...newState[index], ...updates };
+      }
+      return newState;
+    });
+  }, []);
+
+  const analyzeFile = useCallback(async (fileState: FileAnalysisState, index: number) => {
     try {
       // Update status to analyzing
-      setFileAnalyses((prev) =>
-        prev.map((item, i) =>
-          i === index ? { ...item, status: 'analyzing' as const } : item
-        )
-      );
+      updateFileState(index, { status: 'analyzing' as const });
 
       const result = await client.analyseVPK({ vpk: fileState.file });
 
       // Update with successful result
-      setFileAnalyses((prev) =>
-        prev.map((item, i) =>
-          i === index
-            ? {
-                ...item,
-                result: result as VpkAnalysisResult,
-                status: 'completed' as const,
-              }
-            : item
-        )
-      );
+      updateFileState(index, {
+        result: result as VpkAnalysisResult,
+        status: 'completed' as const,
+      });
 
       if (result.matchedVpk?.mod) {
         toast.success(
@@ -62,32 +65,28 @@ export function VpkAnalyzer() {
         error instanceof Error ? error.message : 'Unknown error';
 
       // Update with error
-      setFileAnalyses((prev) =>
-        prev.map((item, i) =>
-          i === index
-            ? {
-                ...item,
-                status: 'error' as const,
-                error: errorMessage,
-              }
-            : item
-        )
-      );
+      updateFileState(index, {
+        status: 'error' as const,
+        error: errorMessage,
+      });
 
       toast.error(`${fileState.file.name}: Analysis failed - ${errorMessage}`);
     }
-  };
+  }, [updateFileState]);
 
-  const analyzeAllFiles = async (files: FileAnalysisState[]) => {
+  const analyzeAllFiles = useCallback(async (files: FileAnalysisState[]) => {
     setIsAnalyzing(true);
 
-    // Process files sequentially to avoid overwhelming the server
-    for (let i = 0; i < files.length; i++) {
-      await analyzeFile(files[i], i);
-    }
+    try {
+      const analysisPromises = files.map((file, index) => 
+        analyzeFile(file, index)
+      );
 
-    setIsAnalyzing(false);
-  };
+      await Promise.allSettled(analysisPromises);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [analyzeFile]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
