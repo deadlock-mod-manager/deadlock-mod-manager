@@ -116,11 +116,28 @@ export class VpkRepository {
       return await this.update(existing.id, vpkData);
     }
 
-    return await this.create({
-      ...vpkData,
-      modDownloadId,
-      sourcePath,
-    });
+    const result = await this.db
+      .insert(vpk)
+      .values({
+        ...vpkData,
+        modDownloadId,
+        sourcePath,
+      })
+      .onConflictDoNothing({ target: vpk.sha256 })
+      .returning();
+
+    if (result.length > 0) {
+      return result[0];
+    }
+
+    const existingBySha256 = await this.findBySha256(vpkData.sha256);
+    if (!existingBySha256) {
+      throw new Error(
+        `VPK insertion failed but no existing VPK found for SHA256: ${vpkData.sha256}`
+      );
+    }
+
+    return existingBySha256;
   }
 
   async delete(id: string): Promise<void> {

@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createExtractorFromData, UnrarError } from 'node-unrar-js';
-
+import { logger } from '@/lib/logger';
 import type {
   ArchiveEntry,
   ExtractionOptions,
@@ -13,6 +13,19 @@ import type {
 import { ArchiveExtractor } from '../archive';
 
 export class RarExtractor extends ArchiveExtractor {
+  private static instance: RarExtractor | null = null;
+
+  private constructor() {
+    super(logger);
+  }
+
+  static getInstance(): RarExtractor {
+    if (!RarExtractor.instance) {
+      RarExtractor.instance = new RarExtractor();
+    }
+    return RarExtractor.instance;
+  }
+
   getSupportedExtensions(): string[] {
     return ['.rar'];
   }
@@ -339,3 +352,5 @@ export class RarExtractor extends ArchiveExtractor {
     }
   }
 }
+
+export const rarExtractor = RarExtractor.getInstance();

@@ -6,8 +6,17 @@ import type { ModFileProcessingJobData, ModsJobData } from '@/types/jobs';
 import { BaseProcessor } from './base';
 
 export class ModProcessor extends BaseProcessor<ModsJobData> {
-  constructor() {
+  private static instance: ModProcessor | null = null;
+
+  private constructor() {
     super(logger);
+  }
+
+  static getInstance(): ModProcessor {
+    if (!ModProcessor.instance) {
+      ModProcessor.instance = new ModProcessor();
+    }
+    return ModProcessor.instance;
   }
 
   async process(jobData: ModsJobData) {
@@ -18,7 +27,10 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
       }
       const downloads = await modDownloadRepository.findByModId(mod.id);
       if (!downloads || downloads.length === 0) {
-        return this.handleError(new ValidationError('No downloads found'));
+        this.logger.info(
+          `Skipping mod ${mod.id} (${mod.name}) - no downloads found`
+        );
+        return this.handleSuccess(jobData);
       }
 
       const payload = downloads.map(
@@ -42,3 +54,5 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
     }
   }
 }
+
+export const modProcessor = ModProcessor.getInstance();

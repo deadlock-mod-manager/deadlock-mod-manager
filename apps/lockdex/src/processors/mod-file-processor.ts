@@ -2,29 +2,32 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { ValidationError } from '@deadlock-mods/common';
 import { modDownloadRepository, vpkRepository } from '@deadlock-mods/database';
+import { VpkParser } from '@deadlock-mods/vpk-parser';
 import { logger } from '@/lib/logger';
-import { ArchiveExtractorFactory } from '@/services/archive';
-import { DownloadService } from '@/services/download';
-import { SevenZipExtractor } from '@/services/extractors/7z-extractor';
-import { RarExtractor } from '@/services/extractors/rar-extractor';
-import { ZipExtractor } from '@/services/extractors/zip-extractor';
-import { VpkParser } from '@/services/vpk';
+import { archiveExtractorFactory } from '@/services/archive';
+import { downloadService } from '@/services/download';
+import { sevenZipExtractor } from '@/services/extractors/7z-extractor';
+import { rarExtractor } from '@/services/extractors/rar-extractor';
+import { zipExtractor } from '@/services/extractors/zip-extractor';
 import type { ModFileProcessingJobData } from '@/types/jobs';
 import { BaseProcessor } from './base';
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
-  private extractorFactory: ArchiveExtractorFactory;
-  private downloadService: DownloadService;
+  private static instance: ModFileProcessor | null = null;
 
-  constructor() {
+  private constructor() {
     super(logger);
 
-    this.extractorFactory = new ArchiveExtractorFactory();
-    this.extractorFactory.registerExtractor(new ZipExtractor(this.logger));
-    this.extractorFactory.registerExtractor(new RarExtractor(this.logger));
-    this.extractorFactory.registerExtractor(new SevenZipExtractor(this.logger));
+    archiveExtractorFactory.registerExtractor(zipExtractor);
+    archiveExtractorFactory.registerExtractor(rarExtractor);
+    archiveExtractorFactory.registerExtractor(sevenZipExtractor);
+  }
 
-    this.downloadService = new DownloadService(this.logger);
+  static getInstance(): ModFileProcessor {
+    if (!ModFileProcessor.instance) {
+      ModFileProcessor.instance = new ModFileProcessor();
+    }
+    return ModFileProcessor.instance;
   }
 
   async process(jobData: ModFileProcessingJobData) {
@@ -53,7 +56,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`
       );
 
-      await using downloadResult = await this.downloadService.downloadFile(
+      await using downloadResult = await downloadService.downloadFile(
         jobData.url,
         {
           filename: jobData.file,
@@ -88,7 +91,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
    * Extract an archive file to a temporary directory
    */
   private async extractArchive(archivePath: string, filename: string) {
-    const extractor = this.extractorFactory.getExtractor(filename);
+    const extractor = archiveExtractorFactory.getExtractor(filename);
 
     if (!extractor) {
       throw new Error(`No extractor available for file: ${filename}`);
@@ -254,7 +257,19 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         sourcePath,
         vpkData
       );
-      this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
+
+      // Check if this VPK belongs to our mod download or if it's a duplicate from another source
+      if (
+        storedVpk.modDownloadId === modDownloadId &&
+        storedVpk.sourcePath === sourcePath
+      ) {
+        this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
+      } else {
+        this.logger.warn(
+          `VPK file ${vpkPath} has duplicate content (SHA256: ${vpkData.sha256}). ` +
+            `Using existing VPK record (ID: ${storedVpk.id}) from modDownloadId: ${storedVpk.modDownloadId}`
+        );
+      }
     } catch (error) {
       this.logger
         .withError(error)
@@ -262,3 +277,5 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     }
   }
 }
+
+export const modFileProcessor = ModFileProcessor.getInstance();

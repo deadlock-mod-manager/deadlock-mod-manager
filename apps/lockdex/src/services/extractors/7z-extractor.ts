@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import { basename } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import * as _7z from '7zip-min';
+import { logger } from '@/lib/logger';
 import type {
   ArchiveEntry,
   ExtractionOptions,
@@ -25,6 +26,19 @@ interface SevenZipListItem {
 }
 
 export class SevenZipExtractor extends ArchiveExtractor {
+  private static instance: SevenZipExtractor | null = null;
+
+  private constructor() {
+    super(logger);
+  }
+
+  static getInstance(): SevenZipExtractor {
+    if (!SevenZipExtractor.instance) {
+      SevenZipExtractor.instance = new SevenZipExtractor();
+    }
+    return SevenZipExtractor.instance;
+  }
+
   getSupportedExtensions(): string[] {
     return ['.7z', '.zip', '.tar', '.gz', '.bz2', '.xz'];
   }
@@ -281,3 +295,5 @@ export class SevenZipExtractor extends ArchiveExtractor {
     }
   }
 }
+
+export const sevenZipExtractor = SevenZipExtractor.getInstance();

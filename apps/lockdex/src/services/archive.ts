@@ -223,7 +223,17 @@ export abstract class ArchiveExtractor {
  * Factory class to get the appropriate extractor for a file
  */
 export class ArchiveExtractorFactory {
+  private static instance: ArchiveExtractorFactory | null = null;
   private extractors: ArchiveExtractor[] = [];
+
+  private constructor() {}
+
+  static getInstance(): ArchiveExtractorFactory {
+    if (!ArchiveExtractorFactory.instance) {
+      ArchiveExtractorFactory.instance = new ArchiveExtractorFactory();
+    }
+    return ArchiveExtractorFactory.instance;
+  }
 
   /**
    * Register an extractor
@@ -254,3 +264,5 @@ export class ArchiveExtractorFactory {
     );
   }
 }
+
+export const archiveExtractorFactory = ArchiveExtractorFactory.getInstance();

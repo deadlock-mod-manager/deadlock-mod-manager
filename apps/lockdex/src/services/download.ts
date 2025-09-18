@@ -5,6 +5,7 @@ import { basename, join } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { Logger } from '@deadlock-mods/logging';
+import { logger } from '@/lib/logger';
 
 export interface DownloadOptions {
   /**
@@ -61,12 +62,20 @@ export interface DownloadResult {
 }
 
 export class DownloadService {
+  private static instance: DownloadService | null = null;
   private logger: Logger;
 
-  constructor(logger: Logger) {
+  private constructor(logger: Logger) {
     this.logger = logger.child().withContext({
       service: 'DownloadService',
     });
+  }
+
+  static getInstance(logger: Logger): DownloadService {
+    if (!DownloadService.instance) {
+      DownloadService.instance = new DownloadService(logger);
+    }
+    return DownloadService.instance;
   }
 
   /**
@@ -381,3 +390,5 @@ export class DownloadService {
     return results;
   }
 }
+
+export const downloadService = DownloadService.getInstance(logger);

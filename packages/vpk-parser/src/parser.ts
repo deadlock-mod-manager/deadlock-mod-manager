@@ -1,48 +1,15 @@
 import { createHash } from 'node:crypto';
 import xxhash from 'xxhash-wasm';
+import type {
+  MerkleData,
+  VpkEntry,
+  VpkFingerprint,
+  VpkHeader,
+  VpkParsed,
+  VpkParseOptions,
+} from './types';
 
 const VPK_SIGNATURE = 0x55_aa_12_34;
-
-export type VpkEntry = {
-  fullPath: string;
-  path: string;
-  filename: string;
-  ext: string;
-  crc32Hex: string;
-  preloadBytes: number;
-  archiveIndex: number;
-  entryOffset: number;
-  entryLength: number;
-  terminator: number;
-};
-
-export type VpkFingerprint = {
-  filePath: string;
-  fileSize: number;
-  lastModified?: Date;
-  fastHash: string; // xxHash64
-  sha256: string;
-  contentSignature: string; // SHA-256 of sorted (path, size, crc32) tuples
-  vpkVersion: number;
-  fileCount: number;
-  hasMultiparts: boolean;
-  hasInlineData: boolean;
-  merkleRoot?: string;
-  merkleLeaves?: string[];
-};
-
-export type VpkParsed = {
-  version: number;
-  treeLength: number;
-  fileDataSectionSize?: number;
-  archiveMD5SectionSize?: number;
-  otherMD5SectionSize?: number;
-  signatureSectionSize?: number;
-  entries: VpkEntry[];
-  manifestSha256: string;
-  dirSha256?: string;
-  fingerprint: VpkFingerprint;
-};
 
 export class VpkParser {
   private buffer: Buffer;
@@ -60,23 +27,13 @@ export class VpkParser {
 
   static async parse(
     vpkBuffer: Buffer,
-    options: {
-      includeFullFileHash?: boolean;
-      filePath?: string;
-      lastModified?: Date;
-      includeMerkle?: boolean;
-    } = {}
+    options: VpkParseOptions = {}
   ): Promise<VpkParsed> {
     const parser = new VpkParser(vpkBuffer);
     return await parser.parseInternal(options);
   }
 
-  private async parseInternal(options: {
-    includeFullFileHash?: boolean;
-    filePath?: string;
-    lastModified?: Date;
-    includeMerkle?: boolean;
-  }): Promise<VpkParsed> {
+  private async parseInternal(options: VpkParseOptions): Promise<VpkParsed> {
     const {
       includeFullFileHash = false,
       filePath = '',
@@ -112,7 +69,7 @@ export class VpkParser {
     };
   }
 
-  private parseHeader() {
+  private parseHeader(): VpkHeader {
     if (this.buffer.length < 12) {
       throw new Error('Buffer too small for VPK header');
     }
@@ -326,10 +283,7 @@ export class VpkParser {
   /**
    * Generate Merkle hash for near-duplicate detection
    */
-  private generateMerkleHash(entries: VpkEntry[]): {
-    root: string;
-    leaves: string[];
-  } {
+  private generateMerkleHash(entries: VpkEntry[]): MerkleData {
     // Generate per-file hashes (leaves)
     const leaves = entries.map((entry) => {
       // Hash the entry metadata: path + size + crc32

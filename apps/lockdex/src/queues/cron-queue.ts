@@ -3,16 +3,20 @@ import { queueConfigs } from '@/config/queues';
 import type { CronJobData } from '@/types/jobs';
 import { BaseQueue } from './base';
 
-export interface CronJobOptions extends JobsOptions {
-  repeat?: {
-    pattern?: string;
-    every?: number;
-    immediately?: boolean;
-    limit?: number;
-    endDate?: Date;
-    tz?: string;
-    utc?: boolean;
-  };
+export interface JobSchedulerOptions {
+  pattern?: string;
+  every?: number;
+  immediately?: boolean;
+  limit?: number;
+  endDate?: Date;
+  tz?: string;
+  utc?: boolean;
+}
+
+export interface CronJobTemplate {
+  name?: string;
+  data?: CronJobData;
+  opts?: JobsOptions;
 }
 
 export class CronQueue extends BaseQueue<CronJobData> {
@@ -22,57 +26,51 @@ export class CronQueue extends BaseQueue<CronJobData> {
     });
   }
 
-  /**
-   * Schedule a recurring job using cron pattern
-   * @param jobName - Name of the job
-   * @param data - Job data
-   * @param cronPattern - Cron pattern (e.g., '0 star/5 star star star star' for every 5 minutes)
-   * @param options - Additional job options
-   */
   async scheduleRecurring(
-    jobName: string,
-    data: CronJobData,
+    schedulerId: string,
     cronPattern: string,
-    options?: Omit<CronJobOptions, 'repeat'>
+    template?: CronJobTemplate,
+    options?: Omit<JobSchedulerOptions, 'pattern'>
   ) {
-    const jobOptions: CronJobOptions = {
-      ...options,
-      repeat: {
-        pattern: cronPattern,
-        tz: data.timezone,
-        endDate: data.endDate,
-        limit: data.limit,
-      },
+    const schedulerOptions: JobSchedulerOptions = {
+      pattern: cronPattern,
+      tz: template?.data?.timezone || options?.tz,
+      endDate: template?.data?.endDate || options?.endDate,
+      limit: template?.data?.limit || options?.limit,
     };
 
-    return this.add(jobName, { ...data, cronPattern }, jobOptions);
+    return this.queue.upsertJobScheduler(
+      schedulerId,
+      schedulerOptions,
+      template
+    );
   }
 
   /**
-   * Schedule a job to run at a specific interval (in milliseconds)
-   * @param jobName - Name of the job
-   * @param data - Job data
+   * Schedule a job to run at a specific interval (in milliseconds) with Job Scheduler
+   * @param schedulerId - Unique identifier for the job scheduler
    * @param intervalMs - Interval in milliseconds
-   * @param options - Additional job options
+   * @param template - Job template with name, data, and options
+   * @param options - Additional scheduler options
    */
   async scheduleInterval(
-    jobName: string,
-    data: CronJobData,
+    schedulerId: string,
     intervalMs: number,
-    options?: Omit<CronJobOptions, 'repeat'>
+    template?: CronJobTemplate,
+    options?: Omit<JobSchedulerOptions, 'every'>
   ) {
-    const jobOptions: CronJobOptions = {
-      ...options,
-      repeat: {
-        every: intervalMs,
-        immediately: !options?.delay,
-        tz: data.timezone,
-        endDate: data.endDate,
-        limit: data.limit,
-      },
+    const schedulerOptions: JobSchedulerOptions = {
+      every: intervalMs,
+      tz: template?.data?.timezone || options?.tz,
+      endDate: template?.data?.endDate || options?.endDate,
+      limit: template?.data?.limit || options?.limit,
     };
 
-    return this.add(jobName, data, jobOptions);
+    return this.queue.upsertJobScheduler(
+      schedulerId,
+      schedulerOptions,
+      template
+    );
   }
 
   /**
@@ -95,57 +93,73 @@ export class CronQueue extends BaseQueue<CronJobData> {
   }
 
   /**
-   * Remove a repeating job
-   * @param jobName - Name of the job to remove
-   * @param repeatJobKey - Optional repeat job key for specific repeat job
+   * Remove a job scheduler
+   * @param schedulerId - Unique identifier of the job scheduler to remove
    */
-  async removeRepeatable(jobName: string, repeatJobKey?: string) {
-    const repeatableJobs = await this.queue.getRepeatableJobs();
-    const jobsToRemove = repeatableJobs.filter(
-      (job) =>
-        job.name === jobName && (!repeatJobKey || job.key === repeatJobKey)
+  async removeJobScheduler(schedulerId: string) {
+    const jobSchedulers = await this.queue.getJobSchedulers();
+    const schedulerToRemove = jobSchedulers.find(
+      (scheduler) => scheduler.id === schedulerId
     );
 
-    for (const job of jobsToRemove) {
-      await this.queue.removeRepeatableByKey(job.key);
+    if (schedulerToRemove) {
+      await this.queue.removeJobScheduler(schedulerId);
+      return true;
     }
 
-    return jobsToRemove.length;
+    return false;
   }
 
   /**
-   * Get all repeatable jobs
+   * Get all job schedulers
    */
-  async getRepeatableJobs() {
-    return this.queue.getRepeatableJobs();
+  async getJobSchedulers() {
+    return this.queue.getJobSchedulers();
   }
 
   /**
-   * Pause all repeatable jobs
+   * Pause all job schedulers
    */
-  async pauseRepeatable() {
-    const repeatableJobs = await this.getRepeatableJobs();
-    for (const job of repeatableJobs) {
-      await this.queue.removeRepeatableByKey(job.key);
+  async pauseJobSchedulers() {
+    const jobSchedulers = await this.getJobSchedulers();
+    const pausedSchedulers: Awaited<ReturnType<typeof this.getJobSchedulers>> =
+      [];
+
+    for (const scheduler of jobSchedulers) {
+      if (!scheduler.id) {
+        continue;
+      }
+
+      await this.queue.removeJobScheduler(scheduler.id);
+      pausedSchedulers.push(scheduler);
     }
-    return repeatableJobs;
+
+    return pausedSchedulers;
   }
 
   /**
-   * Resume repeatable jobs from a previous pause
-   * @param jobs - Array of repeatable jobs to resume
+   * Resume job schedulers from a previous pause
+   * @param schedulers - Array of job schedulers to resume
    */
-  async resumeRepeatable(
-    jobs: Awaited<ReturnType<typeof this.getRepeatableJobs>>
+  async resumeJobSchedulers(
+    schedulers: Awaited<ReturnType<typeof this.getJobSchedulers>>
   ) {
-    for (const job of jobs) {
-      // Re-add the job with the same repeat options
-      await this.queue.add(job.name, {} as CronJobData, {
-        repeat: {
-          pattern: job.pattern || undefined,
-          tz: job.tz || undefined,
+    for (const scheduler of schedulers) {
+      if (!scheduler.id) {
+        continue;
+      }
+
+      await this.queue.upsertJobScheduler(
+        scheduler.id,
+        {
+          pattern: scheduler.pattern || undefined,
+          every: scheduler.every || undefined,
+          tz: scheduler.tz || undefined,
+          endDate: scheduler.endDate || undefined,
+          limit: scheduler.limit || undefined,
         },
-      });
+        scheduler.template
+      );
     }
   }
 }

@@ -18,20 +18,26 @@ export interface CronJobDefinition {
 }
 
 export class CronService {
+  private static instance: CronService | null = null;
   private queue: CronQueue;
   private workers: Map<string, CronWorker> = new Map();
   private jobs: Map<string, CronJobDefinition> = new Map();
   private defaultConcurrency: number;
+  private pausedSchedulers: Awaited<ReturnType<CronQueue['getJobSchedulers']>> =
+    [];
 
-  constructor(concurrency = 1) {
+  private constructor(concurrency = 1) {
     this.queue = new CronQueue();
     this.defaultConcurrency = concurrency;
   }
 
-  /**
-   * Define and schedule a cron job
-   * @param definition - Cron job definition
-   */
+  static getInstance(concurrency = 1): CronService {
+    if (!CronService.instance) {
+      CronService.instance = new CronService(concurrency);
+    }
+    return CronService.instance;
+  }
+
   async defineJob(definition: CronJobDefinition): Promise<void> {
     const {
       name,
@@ -59,7 +65,7 @@ export class CronService {
 
     // Schedule the job if enabled
     if (enabled) {
-      await this.scheduleJob(name, pattern, {
+      await this.upsertJob(name, pattern, {
         timezone,
         endDate,
         limit,
@@ -80,19 +86,12 @@ export class CronService {
       .info(`Defined cron job: ${name} with pattern: ${pattern}`);
   }
 
-  /**
-   * Define multiple cron jobs at once
-   * @param definitions - Array of cron job definitions
-   */
   async defineJobs(definitions: CronJobDefinition[]): Promise<void> {
     const promises = definitions.map((def) => this.defineJob(def));
     await Promise.all(promises);
   }
 
-  /**
-   * Schedule a job with cron pattern
-   */
-  private async scheduleJob(
+  private async upsertJob(
     jobName: string,
     cronPattern: string,
     options: {
@@ -104,8 +103,6 @@ export class CronService {
     }
   ): Promise<void> {
     const cronJobData: CronJobData = {
-      id: `cron-${jobName}-${Date.now()}`,
-      timestamp: new Date(),
       cronPattern,
       timezone: options.timezone,
       endDate: options.endDate,
@@ -114,13 +111,18 @@ export class CronService {
       metadata: options.metadata,
     };
 
-    await this.queue.scheduleRecurring(jobName, cronJobData, cronPattern);
+    const template = {
+      name: jobName,
+      data: cronJobData,
+      opts: {
+        removeOnComplete: 50,
+        removeOnFail: 100,
+      },
+    };
+
+    await this.queue.scheduleRecurring(jobName, cronPattern, template);
   }
 
-  /**
-   * Enable a previously defined job
-   * @param jobName - Name of the job to enable
-   */
   async enableJob(jobName: string): Promise<void> {
     const definition = this.jobs.get(jobName);
     if (!definition) {
@@ -137,7 +139,7 @@ export class CronService {
     }
 
     definition.enabled = true;
-    await this.scheduleJob(jobName, definition.pattern, {
+    await this.upsertJob(jobName, definition.pattern, {
       timezone: definition.timezone,
       endDate: definition.endDate,
       limit: definition.limit,
@@ -148,10 +150,6 @@ export class CronService {
     logger.info(`Enabled cron job: ${jobName}`);
   }
 
-  /**
-   * Disable a job (removes it from the schedule)
-   * @param jobName - Name of the job to disable
-   */
   async disableJob(jobName: string): Promise<void> {
     const definition = this.jobs.get(jobName);
     if (!definition) {
@@ -159,59 +157,51 @@ export class CronService {
     }
 
     definition.enabled = false;
-    await this.queue.removeRepeatable(jobName);
+    await this.queue.removeJobScheduler(jobName);
 
     logger.info(`Disabled cron job: ${jobName}`);
   }
 
-  /**
-   * Remove a job definition completely
-   * @param jobName - Name of the job to remove
-   */
   async removeJob(jobName: string): Promise<void> {
-    await this.queue.removeRepeatable(jobName);
+    await this.queue.removeJobScheduler(jobName);
     this.jobs.delete(jobName);
 
     logger.info(`Removed cron job: ${jobName}`);
   }
 
-  /**
-   * Get all defined jobs
-   */
   getJobs(): Map<string, CronJobDefinition> {
     return new Map(this.jobs);
   }
 
-  /**
-   * Get a specific job definition
-   * @param jobName - Name of the job
-   */
   getJob(jobName: string): CronJobDefinition | undefined {
     return this.jobs.get(jobName);
   }
 
-  /**
-   * Check if a job is defined
-   * @param jobName - Name of the job
-   */
   hasJob(jobName: string): boolean {
     return this.jobs.has(jobName);
   }
 
-  /**
-   * Get all scheduled/repeatable jobs from the queue
-   */
   async getScheduledJobs() {
-    return this.queue.getRepeatableJobs();
+    const jobSchedulers = await this.queue.getJobSchedulers();
+    return jobSchedulers.map((scheduler) => {
+      const schedulerId = scheduler.id || scheduler.name;
+      const definition = this.jobs.get(schedulerId);
+      return {
+        id: schedulerId,
+        name: scheduler.name,
+        pattern: scheduler.pattern,
+        every: scheduler.every,
+        tz: scheduler.tz,
+        endDate: scheduler.endDate,
+        limit: scheduler.limit,
+        next: scheduler.next,
+        processor: definition?.processor?.constructor.name,
+        concurrency: definition?.concurrency,
+        enabled: definition?.enabled ?? true,
+      };
+    });
   }
 
-  /**
-   * Schedule a one-time job with a delay
-   * @param jobName - Name of the job
-   * @param delayMs - Delay in milliseconds
-   * @param jobData - Data for the job
-   * @param metadata - Optional metadata
-   */
   async scheduleOneTime(
     jobName: string,
     delayMs: number,
@@ -219,8 +209,6 @@ export class CronService {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     const cronJobData: CronJobData = {
-      id: `onetime-${jobName}-${Date.now()}`,
-      timestamp: new Date(),
       jobData,
       metadata: { ...metadata, jobType: jobName },
     };
@@ -229,13 +217,6 @@ export class CronService {
     logger.info(`Scheduled one-time job: ${jobName} with delay: ${delayMs}ms`);
   }
 
-  /**
-   * Schedule a job to run at intervals
-   * @param jobName - Name of the job
-   * @param intervalMs - Interval in milliseconds
-   * @param jobData - Data for the job
-   * @param options - Additional options
-   */
   async scheduleInterval(
     jobName: string,
     intervalMs: number,
@@ -245,11 +226,10 @@ export class CronService {
       endDate?: Date;
       limit?: number;
       metadata?: Record<string, unknown>;
+      immediately?: boolean;
     } = {}
   ): Promise<void> {
     const cronJobData: CronJobData = {
-      id: `interval-${jobName}-${Date.now()}`,
-      timestamp: new Date(),
       timezone: options.timezone,
       endDate: options.endDate,
       limit: options.limit,
@@ -257,40 +237,149 @@ export class CronService {
       metadata: { ...options.metadata, jobType: jobName },
     };
 
-    await this.queue.scheduleInterval(jobName, cronJobData, intervalMs);
-    logger.info(`Scheduled interval job: ${jobName} every ${intervalMs}ms`);
+    const template = {
+      name: jobName,
+      data: cronJobData,
+      opts: {
+        removeOnComplete: 50,
+        removeOnFail: 100,
+      },
+    };
+
+    await this.queue.scheduleInterval(jobName, intervalMs, template, {
+      immediately: options.immediately,
+    });
+
+    logger
+      .withMetadata({
+        intervalMs,
+        immediately: options.immediately,
+        timezone: options.timezone,
+        endDate: options.endDate?.toISOString(),
+        limit: options.limit,
+      })
+      .info(`Scheduled interval job: ${jobName} every ${intervalMs}ms`);
   }
 
-  /**
-   * Pause all cron jobs
-   */
   async pauseAll(): Promise<void> {
-    await this.queue.pause();
-    logger.info('Paused all cron jobs');
+    try {
+      // Pause the queue itself
+      await this.queue.pause();
+
+      // Store and pause all job schedulers
+      this.pausedSchedulers = await this.queue.pauseJobSchedulers();
+      logger.info(
+        `Paused all cron jobs and ${this.pausedSchedulers.length} job schedulers`
+      );
+    } catch (error) {
+      logger.withError(error).error('Failed to pause all cron jobs');
+      throw error;
+    }
   }
 
-  /**
-   * Resume all cron jobs
-   */
   async resumeAll(): Promise<void> {
-    await this.queue.resume();
-    logger.info('Resumed all cron jobs');
+    try {
+      // Resume the queue itself
+      await this.queue.resume();
+
+      // Resume all previously paused job schedulers
+      if (this.pausedSchedulers.length > 0) {
+        await this.queue.resumeJobSchedulers(this.pausedSchedulers);
+        logger.info(
+          `Resumed all cron jobs and ${this.pausedSchedulers.length} job schedulers`
+        );
+        this.pausedSchedulers = [];
+      } else {
+        logger.info('Resumed all cron jobs');
+      }
+    } catch (error) {
+      logger.withError(error).error('Failed to resume all cron jobs');
+      throw error;
+    }
   }
 
-  /**
-   * Get service statistics
-   */
-  getStats() {
+  async updateJob(
+    jobName: string,
+    updates: Partial<Omit<CronJobDefinition, 'name'>>
+  ): Promise<void> {
+    const currentDefinition = this.jobs.get(jobName);
+    if (!currentDefinition) {
+      throw new Error(`Job not found: ${jobName}`);
+    }
+
+    // Merge the updates with the current definition
+    const updatedDefinition = { ...currentDefinition, ...updates };
+    this.jobs.set(jobName, updatedDefinition);
+
+    // If the job is enabled, update the scheduler
+    if (updatedDefinition.enabled) {
+      await this.upsertJob(jobName, updatedDefinition.pattern, {
+        timezone: updatedDefinition.timezone,
+        endDate: updatedDefinition.endDate,
+        limit: updatedDefinition.limit,
+        jobData: updatedDefinition.jobData,
+        metadata: { ...updatedDefinition.metadata, jobType: jobName },
+      });
+    }
+
+    logger
+      .withMetadata({
+        updates,
+        enabled: updatedDefinition.enabled,
+      })
+      .info(`Updated cron job: ${jobName}`);
+  }
+
+  async isJobScheduled(jobName: string): Promise<boolean> {
+    const schedulers = await this.queue.getJobSchedulers();
+    return schedulers.some((scheduler) => scheduler.id === jobName);
+  }
+
+  async getJobSchedulerInfo(jobName: string) {
+    const schedulers = await this.queue.getJobSchedulers();
+    const scheduler = schedulers.find(
+      (s) => s.id === jobName || s.name === jobName
+    );
+
+    if (!scheduler) {
+      return null;
+    }
+
+    return {
+      id: scheduler.id || scheduler.name,
+      name: scheduler.name,
+      pattern: scheduler.pattern,
+      every: scheduler.every,
+      tz: scheduler.tz,
+      endDate: scheduler.endDate,
+      limit: scheduler.limit,
+      next: scheduler.next,
+      template: scheduler.template,
+    };
+  }
+
+  async bulkUpdateJobs(
+    updates: Map<string, Partial<Omit<CronJobDefinition, 'name'>>>
+  ): Promise<void> {
+    const updatePromises = Array.from(updates.entries()).map(
+      ([jobName, jobUpdates]) => this.updateJob(jobName, jobUpdates)
+    );
+
+    await Promise.all(updatePromises);
+    logger.info(`Bulk updated ${updates.size} cron jobs`);
+  }
+
+  async getStats() {
+    const scheduledJobs = await this.getScheduledJobs();
     return {
       definedJobs: this.jobs.size,
       enabledJobs: Array.from(this.jobs.values()).filter((job) => job.enabled)
         .length,
+      scheduledJobs: scheduledJobs.length,
+      workers: this.workers.size,
     };
   }
 
-  /**
-   * Shutdown the cron service
-   */
   async shutdown(): Promise<void> {
     const workerClosePromises = Array.from(this.workers.values()).map(
       (worker) => worker.close()
@@ -300,3 +389,5 @@ export class CronService {
     logger.info('Cron service shutdown complete');
   }
 }
+
+export const cronService = CronService.getInstance();

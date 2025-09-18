@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises';
 import { basename } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import * as yauzl from 'yauzl';
+import { logger } from '@/lib/logger';
 import type {
   ArchiveEntry,
   ExtractionOptions,
@@ -11,6 +12,19 @@ import type {
 import { ArchiveExtractor } from '../archive';
 
 export class ZipExtractor extends ArchiveExtractor {
+  private static instance: ZipExtractor | null = null;
+
+  private constructor() {
+    super(logger);
+  }
+
+  static getInstance(): ZipExtractor {
+    if (!ZipExtractor.instance) {
+      ZipExtractor.instance = new ZipExtractor();
+    }
+    return ZipExtractor.instance;
+  }
+
   getSupportedExtensions(): string[] {
     return ['.zip'];
   }
@@ -540,3 +554,5 @@ export class ZipExtractor extends ArchiveExtractor {
     }
   }
 }
+
+export const zipExtractor = ZipExtractor.getInstance();

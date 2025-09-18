@@ -5,8 +5,17 @@ import type { CronJobData } from '@/types/jobs';
 import { CronProcessor } from './cron-processor';
 
 export class ModsSchedulerProcessor extends CronProcessor {
-  constructor() {
+  private static instance: ModsSchedulerProcessor | null = null;
+
+  private constructor() {
     super(logger);
+  }
+
+  static getInstance(): ModsSchedulerProcessor {
+    if (!ModsSchedulerProcessor.instance) {
+      ModsSchedulerProcessor.instance = new ModsSchedulerProcessor();
+    }
+    return ModsSchedulerProcessor.instance;
   }
 
   async process(jobData: CronJobData) {
@@ -28,3 +37,5 @@ export class ModsSchedulerProcessor extends CronProcessor {
     }
   }
 }
+
+export const modsSchedulerProcessor = ModsSchedulerProcessor.getInstance();
