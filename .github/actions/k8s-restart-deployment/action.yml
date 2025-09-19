@@ -1,0 +1,58 @@
+name: 'Kubernetes Restart Deployment'
+description: 'Restart Kubernetes deployment after Docker image update'
+inputs:
+  service-name:
+    description: 'Name of the service (api, bot, lockdex)'
+    required: true
+  kubeconfig:
+    description: 'Base64 encoded kubeconfig file'
+    required: true
+  namespace:
+    description: 'Kubernetes namespace'
+    required: false
+    default: 'default'
+  deployment-name:
+    description: 'Custom deployment name (defaults to deadlock-mods-{service-name})'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ inputs.kubeconfig }}" | base64 -d > kubeconfig.yaml
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl config view --minify
+      shell: bash
+
+    - name: Restart deployment
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        DEPLOYMENT_NAME="${{ inputs.deployment-name }}"
+        if [ -z "$DEPLOYMENT_NAME" ]; then
+          DEPLOYMENT_NAME="deadlock-mods-${{ inputs.service-name }}"
+        fi
+        
+        echo "Restarting deployment: $DEPLOYMENT_NAME in namespace: ${{ inputs.namespace }}"
+        
+        # Check if deployment exists
+        if kubectl get deployment "$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}" >/dev/null 2>&1; then
+          kubectl rollout restart deployment/"$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}"
+          kubectl rollout status deployment/"$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}" --timeout=300s
+          echo "✅ Successfully restarted deployment: $DEPLOYMENT_NAME"
+        else
+          echo "⚠️  Deployment $DEPLOYMENT_NAME not found in namespace ${{ inputs.namespace }}"
+          echo "Available deployments:"
+          kubectl get deployments -n "${{ inputs.namespace }}"
+        fi
+      shell: bash
+
+    - name: Cleanup kubeconfig
+      if: always()
+      run: rm -f kubeconfig.yaml
+      shell: bash

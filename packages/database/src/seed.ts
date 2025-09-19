@@ -11,7 +11,8 @@ import { db, schema } from "./client";
         description: "Use new unit status system (new healthbar, etc.)",
       })
       .onConflictDoNothing();
-  } catch (_error) {
+  } catch (error) {
+    console.error(error);
     process.exit(1);
   }
 })();
