@@ -1,6 +1,6 @@
 name: Release Desktop App
 env:
-  NODE_VERSION: "22.11.0"
+  NODE_VERSION: "24.8.0"
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
           cache-dependency-path: pnpm-lock.yaml
       - uses: pnpm/action-setup@v4
 
@@ -93,7 +93,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
           cache-dependency-path: pnpm-lock.yaml
       - uses: pnpm/action-setup@v4
 
@@ -171,7 +171,6 @@ jobs:
               console.error(`Error details:`, error);
               throw error;
             }
-
 
   cleanup-release:
     permissions:

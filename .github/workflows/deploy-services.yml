@@ -1,6 +1,6 @@
 name: Deploy Services
 env:
-  NODE_VERSION: "22.11.0"
+  NODE_VERSION: "24.8.0"
 
 on:
   workflow_dispatch:
@@ -64,7 +64,7 @@ jobs:
           service-name: api
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -95,7 +95,7 @@ jobs:
           service-name: bot
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -126,7 +126,7 @@ jobs:
           service-name: lockdex
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: ".nvmrc"
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment

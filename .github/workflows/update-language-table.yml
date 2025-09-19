@@ -1,4 +1,6 @@
 name: Update Language Table
+env:
+  NODE_VERSION: "24.8.0"
 
 on:
   push:
@@ -22,16 +24,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
         with:
-          bun-version: latest
+          node-version-file: ".nvmrc"
+          cache-dependency-path: pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: bun install
+        run: pnpm install
 
       - name: Generate language table
-        run: bun scripts/generate-language-table.ts --update-readme
+        run: pnpm tsx scripts/generate-language-table.ts --update-readme
 
       - name: Check for changes
         id: check-changes

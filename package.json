@@ -30,7 +30,7 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=24.8.0"
   },
   "name": "@deadlock-mods/root",
   "dependencies": {
