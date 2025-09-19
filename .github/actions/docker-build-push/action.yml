@@ -34,7 +34,6 @@ runs:
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
-      shell: bash
 
     - name: Install dependencies
       working-directory: ./apps/${{ inputs.service-name }}
