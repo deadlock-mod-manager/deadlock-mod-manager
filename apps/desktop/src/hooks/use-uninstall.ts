@@ -9,7 +9,8 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const useUninstall = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const { removeMod, setModStatus } = usePersistedStore();
+  const { removeMod, setModStatus, setModEnabledInCurrentProfile } =
+    usePersistedStore();
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {
@@ -47,6 +48,9 @@ const useUninstall = () => {
           });
         }
         setModStatus(mod.remoteId, ModStatus.Downloaded);
+        if (!remove) {
+          setModEnabledInCurrentProfile(mod.remoteId, false);
+        }
       }
 
       if (remove) {

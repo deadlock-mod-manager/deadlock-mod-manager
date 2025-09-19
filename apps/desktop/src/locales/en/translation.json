@@ -90,7 +90,9 @@
     "downloading": "downloading",
     "gameRunning": "Game Running",
     "gameReady": "Game Ready",
-    "gameNotDetected": "Game Not Detected"
+    "gameNotDetected": "Game Not Detected",
+    "never": "Never",
+    "actions": "Actions"
   },
   "settings": {
     "language": "Language",
@@ -498,5 +500,46 @@
   "debug": {
     "title": "Debug",
     "helloWorld": "Hello, world!"
+  },
+  "profiles": {
+    "selectProfile": "Select Profile",
+    "manage": "Manage Profiles",
+    "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",
+    "createNew": "Create New Profile",
+    "create": "Create",
+    "creating": "Creating...",
+    "createDescription": "Create a new profile to organize your mods. Each profile can have different mods enabled.",
+    "editProfile": "Edit Profile",
+    "editDescription": "Edit the profile '{{profileName}}'",
+    "update": "Update",
+    "updating": "Updating...",
+    "name": "Name",
+    "namePlaceholder": "Enter profile name",
+    "nameRequired": "Profile name is required",
+    "nameAlreadyExists": "A profile with this name already exists",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description for this profile",
+    "enabledMods": "Enabled Mods",
+    "lastUsed": "Last Used",
+    "created": "Created",
+    "active": "Active",
+    "default": "Default",
+    "activate": "Activate",
+    "totalProfiles": "{{count}} profile",
+    "totalProfiles_plural": "{{count}} profiles",
+    "defaultProfileEditLimitation": "Only the description can be edited for the default profile",
+    "deleteConfirmTitle": "Delete Profile",
+    "deleteConfirmBody": "Are you sure you want to delete the profile '{{profileName}}'? This action cannot be undone.",
+    "deleteConfirmAction": "Delete Profile",
+    "switchSuccess": "Switched to profile '{{profileName}}'",
+    "switchDetails": "{{enabled}} enabled, {{disabled}} disabled",
+    "switchError": "Failed to switch profiles: {{errors}}",
+    "switchUnexpectedError": "An unexpected error occurred while switching profiles",
+    "createSuccess": "Profile '{{profileName}}' created successfully",
+    "createError": "Failed to create profile",
+    "updateSuccess": "Profile '{{profileName}}' updated successfully",
+    "updateError": "Failed to update profile",
+    "deleteSuccess": "Profile '{{profileName}}' deleted successfully",
+    "deleteError": "Failed to delete profile"
   }
 }

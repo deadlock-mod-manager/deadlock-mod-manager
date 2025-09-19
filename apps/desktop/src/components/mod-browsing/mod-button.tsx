@@ -103,7 +103,12 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     currentMod,
   } = useInstallWithCollection();
   const { uninstall } = useUninstall();
-  const { setInstalledVpks, removeMod, setModStatus } = usePersistedStore();
+  const {
+    setInstalledVpks,
+    removeMod,
+    setModStatus,
+    setModEnabledInCurrentProfile,
+  } = usePersistedStore();
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
 
@@ -131,6 +136,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
                 result.installed_vpks,
                 result.file_tree,
               );
+              // Mark mod as enabled in current profile
+              setModEnabledInCurrentProfile(mod.remoteId, true);
               toast.success(t("notifications.modInstalledSuccessfully"));
             },
             onError: (mod, error) => {
@@ -181,6 +188,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     removeMod,
     setModStatus,
     setInstalledVpks,
+    setModEnabledInCurrentProfile,
     t,
   ]);
 

@@ -33,7 +33,6 @@
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src-tauri"],
   "references": [
-    { "path": "./tsconfig.node.json" },
-    { "path": "../../packages/utils" }
+    { "path": "./tsconfig.node.json" }, 
   ]
 }

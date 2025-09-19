@@ -1,27 +1,33 @@
-import { toast } from "sonner";
+import { useState } from "react";
+import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
 import { Button } from "@/components/ui/button";
-import { useAnalytics } from "@/hooks/use-posthog";
+import { usePersistedStore } from "@/lib/store";
 
 const Profile = () => {
-  const { capture } = useAnalytics();
+  const [showProfileManager, setShowProfileManager] = useState(false);
+  const { getActiveProfile } = usePersistedStore();
+  const activeProfile = getActiveProfile();
 
   return (
-    <div className='flex flex-col items-start gap-1'>
-      <h3 className='font-bold text-sm'>Default</h3>
-      <Button
-        className='text-xs'
-        onClick={() => {
-          toast.info("This feature is not yet available. Stay tuned!");
-          capture("button_click", {
-            button: "change_profile",
-            section: "toolbar",
-          });
-        }}
-        size='text'
-        variant='text'>
-        Change profile
-      </Button>
-    </div>
+    <>
+      <div className='flex flex-col items-start gap-1'>
+        <h3 className='font-bold text-sm'>
+          {activeProfile?.name || "Default"}
+        </h3>
+        <Button
+          className='text-xs'
+          onClick={() => setShowProfileManager(true)}
+          size='text'
+          variant='text'>
+          Change profile
+        </Button>
+      </div>
+
+      <ProfileManagerDialog
+        open={showProfileManager}
+        onOpenChange={setShowProfileManager}
+      />
+    </>
   );
 };
 
