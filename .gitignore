@@ -32,6 +32,10 @@ yarn-error.log*
 # turbo
 .turbo
 
+# TypeScript build info
+*.tsbuildinfo
+**/.tsbuildinfo
+
 .env
 
 .tauri/updater.key

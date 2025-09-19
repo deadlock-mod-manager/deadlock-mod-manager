@@ -10,14 +10,23 @@
     "skipLibCheck": true,
     "types": ["vite/client"],
     "rootDirs": ["."],
+    
+    // Performance optimizations
+    "incremental": true,
+    "composite": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "disableSourceOfProjectReferenceRedirect": true,
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "references": [
-    {
-      "path": "../api"
-    }
+    { "path": "../api" },
+    { "path": "../../packages/utils" }
   ]
 }

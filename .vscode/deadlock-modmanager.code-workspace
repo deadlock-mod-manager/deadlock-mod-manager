@@ -38,6 +38,43 @@
       "source.fixAll.biome": "explicit",
       "source.organizeImports.biome": "explicit"
     },
+
+    // TypeScript performance optimizations
+    "typescript.disableAutomaticTypeAcquisition": true,
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.preferences.includePackageJsonAutoImports": "off",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "typescript.suggest.completeFunctionCalls": false,
+    "typescript.suggest.jsdoc.generateReturns": false,
+    "typescript.workspaceSymbols.scope": "currentProject",
+
+    // File exclusions for better performance
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/target": true,
+      "**/.turbo": true,
+      "**/.tsbuildinfo": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/target": true,
+      "**/.turbo": true,
+      "**/.tsbuildinfo": true,
+      "**/pnpm-lock.yaml": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true,
+      "**/build/**": true,
+      "**/target/**": true,
+      "**/.turbo/**": true,
+      "**/.tsbuildinfo": true
+    },
     "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"],
     "[rust]": {
       "editor.defaultFormatter": "rust-lang.rust-analyzer"

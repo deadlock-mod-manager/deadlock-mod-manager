@@ -16,6 +16,10 @@
     "emitDecoratorMetadata": true,
     "noPropertyAccessFromIndexSignature": false,
 
+    "incremental": true,
+    "disableSourceOfProjectReferenceRedirect": true,
+    "assumeChangesOnlyAffectDirectDependencies": true,
+
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
@@ -23,5 +27,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "exclude": ["node_modules", "dist", "build"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "target",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

@@ -4,11 +4,6 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {
-    "dev": "tsup src/* --watch",
-    "build": "tsup src/*",
-    "check-types": "tsc --noEmit --skipLibCheck"
-  },
   "dependencies": {
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
@@ -17,8 +12,6 @@
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
-    "@types/uuid": "^10.0.0",
-    "tsup": "^8.5.0",
-    "typescript": "catalog:"
+    "@types/uuid": "^10.0.0"
   }
 }

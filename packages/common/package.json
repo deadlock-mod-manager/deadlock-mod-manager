@@ -4,14 +4,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {
-    "check-types": "tsc --noEmit --skipLibCheck"
-  },
   "dependencies": {
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@deadlock-mods/typescript-config": "workspace:*",
-    "typescript": "catalog:"
+    "@deadlock-mods/typescript-config": "workspace:*"
   }
 }

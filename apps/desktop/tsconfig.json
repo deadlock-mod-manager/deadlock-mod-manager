@@ -13,6 +13,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    // Performance optimizations
+    "incremental": true,
+    "composite": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    "disableSourceOfProjectReferenceRedirect": true,
+    "assumeChangesOnlyAffectDirectDependencies": true,
+
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -23,6 +30,10 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src-tauri"],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "../../packages/utils" }
+  ]
 }
