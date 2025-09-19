@@ -2,8 +2,10 @@
   "extends": "@deadlock-mods/typescript-config/base.json",
   "compilerOptions": {
     "strict": true,
+    "noEmit": false,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "composite": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

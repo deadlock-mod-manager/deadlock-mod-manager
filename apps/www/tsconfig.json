@@ -27,6 +27,5 @@
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "references": [
     { "path": "../api" },
-    { "path": "../../packages/utils" }
   ]
 }

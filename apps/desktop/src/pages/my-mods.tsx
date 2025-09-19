@@ -42,7 +42,6 @@ enum ViewMode {
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
-  const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
@@ -140,7 +139,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              disabled={isInstalling || deleting}
               isLoading={deleting}
               onClick={deleteMod}
               size='icon'
