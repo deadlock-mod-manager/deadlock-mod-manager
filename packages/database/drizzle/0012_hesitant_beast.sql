@@ -1,0 +1,1 @@
+CREATE INDEX "profiles_content_hash_idx" ON "profile" USING btree ("content_hash");

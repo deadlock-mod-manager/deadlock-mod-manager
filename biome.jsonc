@@ -15,7 +15,8 @@
       "!**/target",
       "!**/node_modules",
       "!**/dist",
-      "!**/build"
+      "!**/build",
+      "!apps/desktop/src-tauri/gen"
     ]
   },
   "javascript": {

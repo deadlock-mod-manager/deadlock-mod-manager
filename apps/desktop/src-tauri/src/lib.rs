@@ -148,7 +148,8 @@ pub fn run() {
     .plugin(init(PostHogConfig {
       api_key: env::var("POSTHOG_KEY").unwrap_or_default(),
       ..Default::default()
-    }));
+    }))
+    .plugin(tauri_plugin_machine_uid::init());
 
   builder
     .setup(|app| {

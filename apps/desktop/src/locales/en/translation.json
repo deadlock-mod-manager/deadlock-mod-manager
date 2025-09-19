@@ -92,7 +92,8 @@
     "gameReady": "Game Ready",
     "gameNotDetected": "Game Not Detected",
     "never": "Never",
-    "actions": "Actions"
+    "actions": "Actions",
+    "copy": "Copy"
   },
   "settings": {
     "language": "Language",
@@ -502,6 +503,7 @@
     "helloWorld": "Hello, world!"
   },
   "profiles": {
+    "share": "Share Profile",
     "selectProfile": "Select Profile",
     "manage": "Manage Profiles",
     "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",
@@ -540,6 +542,14 @@
     "updateSuccess": "Profile '{{profileName}}' updated successfully",
     "updateError": "Failed to update profile",
     "deleteSuccess": "Profile '{{profileName}}' deleted successfully",
-    "deleteError": "Failed to delete profile"
+    "deleteError": "Failed to delete profile",
+    "shareSuccess": "Profile shared successfully!",
+    "shareError": "Failed to share profile",
+    "shareNoMods": "Cannot share profile: no mods are enabled",
+    "noHardwareIdOrVersion": "Cannot share profile: hardware ID or version information is missing",
+    "shareInstructions": "Share this Profile ID with your friends so they can import your mod profile:",
+    "profileId": "Profile ID",
+    "profileIdCopied": "Profile ID copied to clipboard!",
+    "profileIdCopyError": "Failed to copy Profile ID"
   }
 }

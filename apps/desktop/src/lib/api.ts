@@ -2,17 +2,20 @@ import type {
   CustomSettingDto,
   ModDownloadDto,
   ModDto,
+  SharedProfile,
 } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
-const apiRequest = async <T>(endpoint: string): Promise<T> => {
+const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method: body ? "POST" : "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    body: body ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {
@@ -74,4 +77,22 @@ export const getGameInfoStatus = async () => {
 
 export const openGameInfoEditor = async () => {
   return await invoke("open_gameinfo_editor");
+};
+
+export const shareProfile = async (
+  hardwareId: string,
+  name: string,
+  version: string,
+  profile: SharedProfile,
+) => {
+  return await apiRequest<{
+    id: string;
+    status: "success" | "error";
+    error?: string;
+  }>(`/api/v2/profiles`, {
+    hardwareId,
+    name,
+    version,
+    profile,
+  });
 };

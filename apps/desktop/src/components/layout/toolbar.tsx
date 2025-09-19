@@ -14,6 +14,7 @@ import { useLaunch } from "@/hooks/use-launch";
 import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { ProfileShareDialog } from "../profiles/profile-share-dialog";
 import Profile from "./profile";
 
 export const Toolbar = () => {
@@ -33,6 +34,7 @@ export const Toolbar = () => {
     <div className='flex w-full flex-row items-center justify-end gap-4 border-t border-b px-8 py-4'>
       <div className='flex flex-grow flex-row items-center justify-start gap-2 px-4'>
         <Profile />
+        <ProfileShareDialog />
       </div>
       {!isRunning && (
         <Button

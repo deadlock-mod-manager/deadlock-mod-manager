@@ -16,6 +16,12 @@ export const fetchAboutData = async () => {
   }
 };
 
-const useAbout = () => useQuery("about", fetchAboutData);
+const useAbout = () => {
+  const result = useQuery("about", fetchAboutData);
+  return {
+    ...result,
+    version: result.data?.version,
+  };
+};
 
 export default useAbout;

@@ -335,4 +335,9 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     const { profiles } = get();
     return Object.keys(profiles).length;
   },
+
+  activeProfile: () => {
+    const { activeProfileId, profiles } = get();
+    return profiles[activeProfileId];
+  },
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "profile" ADD COLUMN "content_hash" text NOT NULL;

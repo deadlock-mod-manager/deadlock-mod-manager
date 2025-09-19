@@ -108,7 +108,7 @@ importers:
         specifier: ^4.9.8
         version: 4.9.8
       ioredis:
-        specifier: ^5.7.0
+        specifier: ^5.4.1
         version: 5.7.0
       tslog:
         specifier: ^4.9.3
@@ -126,6 +126,9 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.2.22(@types/react@19.0.2)
+      '@types/ioredis':
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/pg':
         specifier: ^8.15.5
         version: 8.15.5
@@ -295,6 +298,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@skipperndt/plugin-machine-uid':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3411,6 +3417,9 @@ packages:
     resolution: {integrity: sha512-VwoDfvLXSCaRiD+xCIuyslU0HLxVggeE5BL06+GbsP2l1fGf5op8e0c3ZtKoi+vSg1q4ikjtAghC23ze2Q3H9g==}
     engines: {node: '>=20.0.0'}
 
+  '@skipperndt/plugin-machine-uid@0.1.2':
+    resolution: {integrity: sha512-6rO+hfdpukwexmiw5YcSl5GcuDO/YX2Bc5lsgZYdXc+EUUJKlzEHEGUwYD1hSXfZh4gRYdNtX6C7LTWSzgWcrg==}
+
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
@@ -3800,6 +3809,10 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/ioredis@5.0.0':
+    resolution: {integrity: sha512-zJbJ3FVE17CNl5KXzdeSPtdltc4tMT3TzC6fxQS0sQngkbFZ6h+0uTafsRqu+eSLIugf6Yb0Ea0SUuRr42Nk9g==}
+    deprecated: This is a stub types definition. ioredis provides its own type definitions, so you do not need this installed.
 
   '@types/lodash@4.17.20':
     resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
@@ -10212,6 +10225,10 @@ snapshots:
       '@peculiar/asn1-schema': 2.5.0
       '@peculiar/asn1-x509': 2.5.0
 
+  '@skipperndt/plugin-machine-uid@0.1.2':
+    dependencies:
+      '@tauri-apps/api': 2.8.0
+
   '@standard-schema/spec@1.0.0': {}
 
   '@standard-schema/utils@0.3.0': {}
@@ -10595,6 +10612,12 @@ snapshots:
   '@types/d3-timer@3.0.2': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/ioredis@5.0.0':
+    dependencies:
+      ioredis: 5.7.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@types/lodash@4.17.20': {}
 

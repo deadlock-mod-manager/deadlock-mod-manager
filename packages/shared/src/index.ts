@@ -5,3 +5,4 @@ export * from "./heroes";
 export * from "./nsfw-settings";
 export * from "./providers/index";
 export * from "./schemas/mod.schemas";
+export * from "./schemas/profile.schemas";

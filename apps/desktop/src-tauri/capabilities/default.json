@@ -33,6 +33,7 @@
     "upload:allow-download",
     "shell:allow-open",
     "deep-link:default",
+    "machine-uid:default",
     "posthog:default",
     {
       "identifier": "http:default",
