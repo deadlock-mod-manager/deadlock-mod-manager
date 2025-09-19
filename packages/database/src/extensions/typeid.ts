@@ -13,7 +13,12 @@ export const typeId = <TPrefix extends string>(name: string, prefix: TPrefix) =>
       return value.toString();
     },
     fromDriver(value: string): string {
-      return TypeID.fromString(value, prefix).toString();
+      try {
+        return TypeID.fromString(value, prefix).toString();
+      } catch (error) {
+        console.warn("Old typeid value found", value);
+        return value;
+      }
     },
   })(name);
 
