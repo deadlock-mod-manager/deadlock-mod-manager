@@ -120,43 +120,23 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.SSH_KEY }}
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: pnpm-lock.yaml
-      - uses: pnpm/action-setup@v4
-      - name: Install dependencies
-        working-directory: ./apps/api
-        run: pnpm install
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: stormix/deadlock-mods-api
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        uses: ./.github/actions/docker-build-push
         with:
-          context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          file: ./apps/api/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:${{ needs.create-release.outputs.api_version }}
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-api:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          service-name: api
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: api
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
   build-bot:
     needs: create-release
@@ -167,43 +147,23 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.SSH_KEY }}
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: pnpm-lock.yaml
-      - uses: pnpm/action-setup@v4
-      - name: Install dependencies
-        working-directory: ./apps/bot
-        run: pnpm install
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: stormix/deadlock-mods-bot
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        uses: ./.github/actions/docker-build-push
         with:
-          context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          file: ./apps/bot/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-bot:${{ needs.create-release.outputs.bot_version }}
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-bot:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          service-name: bot
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: bot
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
   build-lockdex:
     needs: create-release
@@ -214,43 +174,23 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.SSH_KEY }}
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: pnpm-lock.yaml
-      - uses: pnpm/action-setup@v4
-      - name: Install dependencies
-        working-directory: ./apps/lockdex
-        run: pnpm install
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: stormix/deadlock-mods-lockdex
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        uses: ./.github/actions/docker-build-push
         with:
-          context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          file: ./apps/lockdex/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-lockdex:${{ needs.create-release.outputs.lockdex_version }}
-            ${{ secrets.DOCKER_USERNAME }}/deadlock-mods-lockdex:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          service-name: lockdex
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: lockdex
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
   publish-release:
     permissions:
@@ -313,4 +253,3 @@ jobs:
               repo: context.repo.repo,
               release_id: process.env.release_id
             })
-

@@ -26,9 +26,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Check out the repo
-      uses: actions/checkout@v4
-
     - name: Setup Node.js environment
       uses: actions/setup-node@v3
       with:

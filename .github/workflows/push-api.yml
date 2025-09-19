@@ -21,6 +21,9 @@ jobs:
       attestations: write
       id-token: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Build and push Docker image
         id: docker-build
         uses: ./.github/actions/docker-build-push
