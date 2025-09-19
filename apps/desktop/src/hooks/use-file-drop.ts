@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   type DetectedSource,
   detectSource,
   readFromDataTransferItems,
-} from '@/lib/file-utils';
+} from "@/lib/file-utils";
 
 /**
  * Custom hook for handling file drag and drop functionality
  */
 export const useFileDrop = (
   onFilesDetected: (source: DetectedSource) => void,
-  onError: (message: string) => void
+  onError: (message: string) => void,
 ) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -20,14 +20,14 @@ export const useFileDrop = (
 
   useEffect(() => {
     // Prevent default drag behaviors on the entire window
-    window.addEventListener('dragenter', preventDefaults, { passive: false });
-    window.addEventListener('dragover', preventDefaults, { passive: false });
-    window.addEventListener('drop', preventDefaults, { passive: false });
+    window.addEventListener("dragenter", preventDefaults, { passive: false });
+    window.addEventListener("dragover", preventDefaults, { passive: false });
+    window.addEventListener("drop", preventDefaults, { passive: false });
 
     return () => {
-      window.removeEventListener('dragenter', preventDefaults);
-      window.removeEventListener('dragover', preventDefaults);
-      window.removeEventListener('drop', preventDefaults);
+      window.removeEventListener("dragenter", preventDefaults);
+      window.removeEventListener("dragover", preventDefaults);
+      window.removeEventListener("drop", preventDefaults);
     };
   }, [preventDefaults]);
 
@@ -46,7 +46,7 @@ export const useFileDrop = (
     event.preventDefault();
     event.stopPropagation();
     if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'copy';
+      event.dataTransfer.dropEffect = "copy";
     }
   }, []);
 
@@ -64,7 +64,7 @@ export const useFileDrop = (
         event.dataTransfer.items?.length
       ) {
         const fromItems = await readFromDataTransferItems(
-          event.dataTransfer.items
+          event.dataTransfer.items,
         );
         if (fromItems.length) {
           files = fromItems;
@@ -74,14 +74,14 @@ export const useFileDrop = (
       const detectedSource = detectSource(files);
       if (!detectedSource) {
         onError(
-          'Unsupported files. Please select VPK files or archives (ZIP, RAR, 7Z).'
+          "Unsupported files. Please select VPK files or archives (ZIP, RAR, 7Z).",
         );
         return;
       }
 
       onFilesDetected(detectedSource);
     },
-    [onFilesDetected, onError]
+    [onFilesDetected, onError],
   );
 
   const handleFileSelect = useCallback(
@@ -91,14 +91,14 @@ export const useFileDrop = (
 
       if (!detectedSource) {
         onError(
-          'Unsupported selection. Please select VPK files or archives (ZIP, RAR, 7Z).'
+          "Unsupported selection. Please select VPK files or archives (ZIP, RAR, 7Z).",
         );
         return;
       }
 
       onFilesDetected(detectedSource);
     },
-    [onFilesDetected, onError]
+    [onFilesDetected, onError],
   );
 
   return {

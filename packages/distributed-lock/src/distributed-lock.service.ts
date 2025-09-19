@@ -1,7 +1,7 @@
-import type { Database, JobLock } from '@deadlock-mods/database';
-import { eq, jobLocks, lt } from '@deadlock-mods/database';
-import type { Logger } from '@deadlock-mods/logging';
-import { v4 as uuidv4 } from 'uuid';
+import type { Database, JobLock } from "@deadlock-mods/database";
+import { eq, jobLocks, lt } from "@deadlock-mods/database";
+import type { Logger } from "@deadlock-mods/logging";
+import { v4 as uuidv4 } from "uuid";
 
 export interface LockOptions {
   /** Lock timeout in milliseconds (default: 5 minutes) */
@@ -34,12 +34,12 @@ export class DistributedLockService {
   constructor(
     db: Database,
     logger: Logger,
-    config: DistributedLockConfig = {}
+    config: DistributedLockConfig = {},
   ) {
     this.db = db;
     this.instanceId = config.defaultInstanceId || `pod-${uuidv4()}`;
     this.logger = logger.child().withContext({
-      service: 'distributed-lock',
+      service: "distributed-lock",
     });
   }
 
@@ -48,7 +48,7 @@ export class DistributedLockService {
    */
   async acquireLock(
     jobName: string,
-    options: LockOptions = {}
+    options: LockOptions = {},
   ): Promise<AcquiredLock | null> {
     const {
       timeout = 5 * 60 * 1000, // 5 minutes default
@@ -98,7 +98,7 @@ export class DistributedLockService {
       // Verify we actually got the lock (not an expired one from another instance)
       if (acquiredLock.lockedBy !== instanceId) {
         this.logger.warn(
-          `Lock for job ${jobName} is held by another instance: ${acquiredLock.lockedBy}`
+          `Lock for job ${jobName} is held by another instance: ${acquiredLock.lockedBy}`,
         );
         return null;
       }
@@ -201,7 +201,7 @@ export class DistributedLockService {
           .info(`Cleaned up ${result.length} expired locks`);
       }
     } catch (error) {
-      this.logger.withError(error).error('Error cleaning up expired locks');
+      this.logger.withError(error).error("Error cleaning up expired locks");
     }
   }
 
@@ -211,7 +211,7 @@ export class DistributedLockService {
   private startHeartbeat(
     lockId: string,
     jobName: string,
-    interval: number
+    interval: number,
   ): void {
     // Clear any existing timer for this lock
     this.stopHeartbeat(lockId);
@@ -313,6 +313,6 @@ export class DistributedLockService {
       clearInterval(timer);
     });
     this.heartbeatTimers.clear();
-    this.logger.info('Cleaned up all heartbeat timers');
+    this.logger.info("Cleaned up all heartbeat timers");
   }
 }

@@ -1,3 +1,3 @@
-import './game-banana';
+import "./game-banana";
 
-export { providerRegistry } from './registry';
+export { providerRegistry } from "./registry";

@@ -1,4 +1,4 @@
-import { DeadlockHeroes, DeadlockHeroesByAlias } from './constants';
+import { DeadlockHeroes, DeadlockHeroesByAlias } from "./constants";
 
 const knownRegexes = {
   [DeadlockHeroes.Abrams]: [/abrams/i, /brams/i],

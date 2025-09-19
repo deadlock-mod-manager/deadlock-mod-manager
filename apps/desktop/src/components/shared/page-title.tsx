@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 const PageTitle = ({
   title,
@@ -12,12 +12,12 @@ const PageTitle = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('flex flex-col justify-center', className)}>
-      <div className="flex items-center gap-4">
-        <h3 className="font-bold text-3xl">{title}</h3>
+    <div className={cn("flex flex-col justify-center", className)}>
+      <div className='flex items-center gap-4'>
+        <h3 className='font-bold text-3xl'>{title}</h3>
         {action ?? null}
       </div>
-      {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
+      {subtitle && <p className='text-muted-foreground'>{subtitle}</p>}
     </div>
   );
 };

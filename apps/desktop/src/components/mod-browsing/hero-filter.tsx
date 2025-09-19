@@ -1,7 +1,7 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { Check } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import type { ModDto } from "@deadlock-mods/utils";
+import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -9,14 +9,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type HeroFilterProps = {
   mods: ModDto[];
@@ -35,14 +35,14 @@ const HeroFilter = ({
     new Set(
       mods
         .map((mod) => mod.hero)
-        .filter((hero): hero is string => Boolean(hero))
-    )
+        .filter((hero): hero is string => Boolean(hero)),
+    ),
   ).sort();
 
   // Add "None" option for mods without specific heroes
   const hasNonHeroMods = mods.some((mod) => !mod.hero);
-  if (hasNonHeroMods && !availableHeroes.includes('None')) {
-    availableHeroes.unshift('None');
+  if (hasNonHeroMods && !availableHeroes.includes("None")) {
+    availableHeroes.unshift("None");
   }
 
   const handleHeroToggle = (hero: string) => {
@@ -53,51 +53,49 @@ const HeroFilter = ({
   };
 
   const getHeroDisplayName = (hero: string) => {
-    if (hero === 'None') {
-      return 'General/Other';
+    if (hero === "None") {
+      return "General/Other";
     }
     return hero;
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <Label className="font-medium text-sm">{t('filters.hero')}</Label>
+    <div className='flex min-w-0 flex-col gap-2'>
+      <Label className='font-medium text-sm'>{t("filters.hero")}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            className="w-[180px] justify-start"
-            size="sm"
-            variant="outline"
-          >
-            <span className="truncate">
+            className='w-[180px] justify-start'
+            size='sm'
+            variant='outline'>
+            <span className='truncate'>
               {selectedHeroes.length === 0
-                ? t('filters.allHeroes')
+                ? t("filters.allHeroes")
                 : selectedHeroes.length === 1
                   ? getHeroDisplayName(selectedHeroes[0])
-                  : `${selectedHeroes.length} ${t('filters.selected')}`}
+                  : `${selectedHeroes.length} ${t("filters.selected")}`}
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[240px] p-0">
+        <PopoverContent align='start' className='w-[240px] p-0'>
           <Command>
-            <CommandInput placeholder={t('filters.searchHeroes')} />
+            <CommandInput placeholder={t("filters.searchHeroes")} />
             <CommandList>
-              <CommandEmpty>{t('filters.noHeroesFound')}</CommandEmpty>
+              <CommandEmpty>{t("filters.noHeroesFound")}</CommandEmpty>
               <CommandGroup>
                 {availableHeroes.map((hero) => (
                   <CommandItem
                     key={hero}
-                    onSelect={() => handleHeroToggle(hero)}
-                  >
+                    onSelect={() => handleHeroToggle(hero)}>
                     <Check
                       className={cn(
-                        'mr-2 h-4 w-4 flex-shrink-0',
+                        "mr-2 h-4 w-4 flex-shrink-0",
                         selectedHeroes.includes(hero)
-                          ? 'opacity-100'
-                          : 'opacity-0'
+                          ? "opacity-100"
+                          : "opacity-0",
                       )}
                     />
-                    <span className="truncate">{getHeroDisplayName(hero)}</span>
+                    <span className='truncate'>{getHeroDisplayName(hero)}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>

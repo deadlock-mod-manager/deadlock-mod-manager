@@ -1,8 +1,8 @@
-import { modRepository } from '@deadlock-mods/database';
-import { logger } from '@/lib/logger';
-import { queueService } from '@/services/queue';
-import type { CronJobData } from '@/types/jobs';
-import { CronProcessor } from './cron-processor';
+import { modRepository } from "@deadlock-mods/database";
+import { logger } from "@/lib/logger";
+import { queueService } from "@/services/queue";
+import type { CronJobData } from "@/types/jobs";
+import { CronProcessor } from "./cron-processor";
 
 export class ModsSchedulerProcessor extends CronProcessor {
   private static instance: ModsSchedulerProcessor | null = null;
@@ -32,7 +32,7 @@ export class ModsSchedulerProcessor extends CronProcessor {
       }
       return this.handleSuccess(jobData);
     } catch (error) {
-      logger.withError(error).error('Error processing mods scheduler job');
+      logger.withError(error).error("Error processing mods scheduler job");
       return this.handleError(error as Error);
     }
   }

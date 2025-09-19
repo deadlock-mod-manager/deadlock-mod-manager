@@ -1,14 +1,14 @@
-import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { downloadManager } from '@/lib/download/manager';
-import logger from '@/lib/logger';
-import { usePersistedStore } from '@/lib/store';
-import { type ModDownloadItem, ModStatus } from '@/types/mods';
+import type { ModDownloadDto, ModDto } from "@deadlock-mods/utils";
+import { useState } from "react";
+import { toast } from "sonner";
+import { downloadManager } from "@/lib/download/manager";
+import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
+import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
 export const useDownload = (
-  mod: Pick<ModDto, 'remoteId' | 'name'> | undefined,
-  availableFiles: ModDownloadDto
+  mod: Pick<ModDto, "remoteId" | "name"> | undefined,
+  availableFiles: ModDownloadDto,
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { addLocalMod, localMods, setModPath, setModProgress, setModStatus } =
@@ -27,14 +27,14 @@ export const useDownload = (
       ...(mod as unknown as ModDto),
       downloads: selectedFiles,
       onStart: () => {
-        logger.info('Starting download', { mod: mod.remoteId });
+        logger.info("Starting download", { mod: mod.remoteId });
         setModStatus(mod.remoteId, ModStatus.Downloading);
       },
       onProgress: (progress) => {
         setModProgress(mod.remoteId, progress);
       },
       onComplete: (path) => {
-        logger.info('Download complete', { mod: mod.remoteId, path });
+        logger.info("Download complete", { mod: mod.remoteId, path });
         setModStatus(mod.remoteId, ModStatus.Downloaded);
         setModPath(mod.remoteId, path);
         setIsDialogOpen(false);
@@ -50,12 +50,12 @@ export const useDownload = (
 
   const initiateDownload = () => {
     if (!mod) {
-      toast.error('Failed to fetch mod download data. Try again later.');
+      toast.error("Failed to fetch mod download data. Try again later.");
       return;
     }
 
     if (!availableFiles || availableFiles.length === 0) {
-      toast.error('No downloadable files found for this mod.');
+      toast.error("No downloadable files found for this mod.");
       return;
     }
 

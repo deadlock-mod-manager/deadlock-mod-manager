@@ -1,17 +1,17 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { invoke } from '@tauri-apps/api/core';
-import { appLocalDataDir, join } from '@tauri-apps/api/path';
-import { BaseDirectory, readDir } from '@tauri-apps/plugin-fs';
-import JSZip from 'jszip';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useProgress } from '@/components/downloads/progress-indicator';
-import type { ModCategory } from '@/lib/constants';
+import type { ModDto } from "@deadlock-mods/utils";
+import { invoke } from "@tauri-apps/api/core";
+import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
+import JSZip from "jszip";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useProgress } from "@/components/downloads/progress-indicator";
+import type { ModCategory } from "@/lib/constants";
 import {
   generateFallbackModSVG,
   IMAGE_PATTERN,
   VPK_PATTERN,
-} from '@/lib/file-patterns';
+} from "@/lib/file-patterns";
 import {
   type DetectedSource,
   ensureDirectory,
@@ -19,9 +19,9 @@ import {
   fileToDataUrl,
   writeFileBytes,
   writeFileText,
-} from '@/lib/file-utils';
-import { usePersistedStore } from '@/lib/store';
-import { ModStatus } from '@/types/mods';
+} from "@/lib/file-utils";
+import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
 
 export interface ModMetadata {
   name: string;
@@ -42,70 +42,70 @@ export const useModProcessor = () => {
   const processArchive = async (
     file: File,
     filesDir: string,
-    modDir: string
+    modDir: string,
   ): Promise<void> => {
     const fileName = file.name.toLowerCase();
 
-    if (fileName.endsWith('.zip')) {
+    if (fileName.endsWith(".zip")) {
       const zip = await JSZip.loadAsync(await file.arrayBuffer());
       const vpkEntry = Object.values(zip.files).find(
-        (f) => !f.dir && VPK_PATTERN.test(f.name)
+        (f) => !f.dir && VPK_PATTERN.test(f.name),
       );
 
       if (vpkEntry) {
-        const buffer = await vpkEntry.async('uint8array');
-        const baseName = vpkEntry.name.split('/').pop() || 'mod.vpk';
+        const buffer = await vpkEntry.async("uint8array");
+        const baseName = vpkEntry.name.split("/").pop() || "mod.vpk";
         await writeFileBytes(await join(filesDir, baseName), buffer);
       } else {
         await writeFileBytes(
           await join(modDir, file.name),
-          await fileToBytes(file)
+          await fileToBytes(file),
         );
-        toast.error(t('addMods.noVpkFound'));
+        toast.error(t("addMods.noVpkFound"));
       }
-    } else if (fileName.endsWith('.rar') || fileName.endsWith('.7z')) {
-      const format = fileName.split('.').pop()?.toUpperCase();
+    } else if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
+      const format = fileName.split(".").pop()?.toUpperCase();
 
-      setProcessing(true, t('addMods.storingArchive', { format }));
+      setProcessing(true, t("addMods.storingArchive", { format }));
       await writeFileBytes(
         await join(modDir, file.name),
-        await fileToBytes(file)
+        await fileToBytes(file),
       );
 
       // Extract archive using backend
       try {
-        setProcessing(true, t('addMods.extractingArchive', { format }));
+        setProcessing(true, t("addMods.extractingArchive", { format }));
         const archivePath = await join(modDir, file.name);
-        await invoke('extract_archive', {
+        await invoke("extract_archive", {
           archivePath: await archivePath,
           targetPath: await filesDir,
         });
-        toast.success(t('addMods.archiveExtractedSuccess', { format }));
+        toast.success(t("addMods.archiveExtractedSuccess", { format }));
       } catch {
-        toast.error(t('addMods.failedToExtractArchive'));
+        toast.error(t("addMods.failedToExtractArchive"));
       }
     } else {
       await writeFileBytes(
         await join(modDir, file.name),
-        await fileToBytes(file)
+        await fileToBytes(file),
       );
     }
   };
 
   const processPreviewImage = async (
     metadata: ModMetadata,
-    modDir: string
+    modDir: string,
   ): Promise<{ previewName: string; imageDataUrl: string }> => {
-    let previewName = 'preview.svg';
+    let previewName = "preview.svg";
     let imageDataUrl: string;
 
     if (metadata.imageFile) {
       const extMatch = metadata.imageFile.name.match(IMAGE_PATTERN);
-      previewName = `preview${extMatch ? extMatch[0].toLowerCase() : '.png'}`;
+      previewName = `preview${extMatch ? extMatch[0].toLowerCase() : ".png"}`;
 
       await writeFileBytes(
         await join(modDir, previewName),
-        await fileToBytes(metadata.imageFile)
+        await fileToBytes(metadata.imageFile),
       );
 
       imageDataUrl = await fileToDataUrl(metadata.imageFile);
@@ -120,81 +120,81 @@ export const useModProcessor = () => {
 
   const validateFiles = async (
     filesDir: string,
-    detectedSource: DetectedSource
+    detectedSource: DetectedSource,
   ): Promise<boolean> => {
     const filesList = await readDir(filesDir, {
       baseDir: BaseDirectory.AppLocalData,
     });
     const hasVpk = filesList.some((entry) =>
-      VPK_PATTERN.test(entry.name || '')
+      VPK_PATTERN.test(entry.name || ""),
     );
 
     if (hasVpk) {
       return true;
     }
 
-    if (detectedSource.kind === 'archive') {
+    if (detectedSource.kind === "archive") {
       const fileName = detectedSource.file.name.toLowerCase();
-      if (fileName.endsWith('.rar') || fileName.endsWith('.7z')) {
-        toast.info(t('addMods.archiveWillBeProcessed'));
+      if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
+        toast.info(t("addMods.archiveWillBeProcessed"));
         return true;
       }
 
-      toast.warning(t('addMods.noVpkFoundStored'));
+      toast.warning(t("addMods.noVpkFoundStored"));
       return true;
     }
 
-    toast.error(t('addMods.noVpkFoundInContent'));
+    toast.error(t("addMods.noVpkFoundInContent"));
     return false;
   };
 
   const processMod = async (
     metadata: ModMetadata,
     category: ModCategory,
-    detectedSource: DetectedSource
+    detectedSource: DetectedSource,
   ): Promise<void> => {
-    setProcessing(true, t('addMods.validatingMetadata'));
+    setProcessing(true, t("addMods.validatingMetadata"));
 
     const modId = `local-${crypto.randomUUID()}`;
     const base = await appLocalDataDir();
-    const modsRoot = await join(base, 'mods');
+    const modsRoot = await join(base, "mods");
     const modDir = await join(modsRoot, modId);
-    const filesDir = await join(modDir, 'files');
+    const filesDir = await join(modDir, "files");
 
     // Create directories
-    setProcessing(true, t('addMods.creatingDirectories'));
+    setProcessing(true, t("addMods.creatingDirectories"));
     await ensureDirectory(modsRoot);
     await ensureDirectory(modDir);
     await ensureDirectory(filesDir);
 
     // Process preview image
-    setProcessing(true, t('addMods.processingPreview'));
+    setProcessing(true, t("addMods.processingPreview"));
     const { previewName, imageDataUrl } = await processPreviewImage(
       metadata,
-      modDir
+      modDir,
     );
 
     // Process files
-    setProcessing(true, t('addMods.processingFiles'));
+    setProcessing(true, t("addMods.processingFiles"));
     try {
-      if (detectedSource.kind === 'vpk') {
+      if (detectedSource.kind === "vpk") {
         await writeFileBytes(
           await join(filesDir, detectedSource.file.name),
-          await fileToBytes(detectedSource.file)
+          await fileToBytes(detectedSource.file),
         );
       } else {
         await processArchive(detectedSource.file, filesDir, modDir);
       }
     } catch {
-      toast.error(t('addMods.failedToProcessArchive'));
+      toast.error(t("addMods.failedToProcessArchive"));
       await writeFileBytes(
         await join(modDir, detectedSource.file.name),
-        await fileToBytes(detectedSource.file)
+        await fileToBytes(detectedSource.file),
       );
     }
 
     // Validate files
-    setProcessing(true, t('addMods.validatingFiles'));
+    setProcessing(true, t("addMods.validatingFiles"));
     const isValid = await validateFiles(filesDir, detectedSource);
     if (!isValid) {
       setProcessing(false);
@@ -202,12 +202,12 @@ export const useModProcessor = () => {
     }
 
     // Save metadata
-    setProcessing(true, t('addMods.savingMetadata'));
+    setProcessing(true, t("addMods.savingMetadata"));
     const modMetadata = {
       id: modId,
-      kind: 'local',
+      kind: "local",
       name: metadata.name,
-      author: metadata.author || 'Unknown',
+      author: metadata.author || "Unknown",
       link: metadata.link || null,
       description: metadata.description || null,
       category,
@@ -217,18 +217,18 @@ export const useModProcessor = () => {
     };
 
     await writeFileText(
-      await join(modDir, 'metadata.json'),
-      JSON.stringify(modMetadata, null, 2)
+      await join(modDir, "metadata.json"),
+      JSON.stringify(modMetadata, null, 2),
     );
 
     // Add to library
-    setProcessing(true, t('addMods.addingToLibrary'));
+    setProcessing(true, t("addMods.addingToLibrary"));
     const modDto: ModDto = {
       id: modId,
       remoteId: modId,
       name: modMetadata.name,
-      description: modMetadata.description ?? '',
-      remoteUrl: modMetadata.link ?? 'local://manual',
+      description: modMetadata.description ?? "",
+      remoteUrl: modMetadata.link ?? "local://manual",
       author: modMetadata.author,
       downloadable: false,
       remoteAddedAt: new Date(modMetadata.createdAt),
@@ -250,8 +250,8 @@ export const useModProcessor = () => {
     setModPath(modId, modDir);
     setModStatus(modId, ModStatus.Downloaded);
 
-    setProcessing(true, t('addMods.modAddedSuccess'));
-    toast.success(t('addMods.addedSuccess', { name: metadata.name }));
+    setProcessing(true, t("addMods.modAddedSuccess"));
+    toast.success(t("addMods.addedSuccess", { name: metadata.name }));
     setProcessing(false);
   };
 

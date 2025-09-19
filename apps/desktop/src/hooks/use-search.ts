@@ -1,10 +1,10 @@
-import Fuse, { type FuseOptionKey } from 'fuse.js';
-import { useCallback, useMemo, useState } from 'react';
-import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import type { SortType } from '@/lib/constants';
-import { usePersistedStore } from '@/lib/store';
-import { sortMods } from '@/lib/utils';
-import type { LocalMod } from '@/types/mods';
+import Fuse, { type FuseOptionKey } from "fuse.js";
+import { useCallback, useMemo, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { SortType } from "@/lib/constants";
+import { usePersistedStore } from "@/lib/store";
+import { sortMods } from "@/lib/utils";
+import type { LocalMod } from "@/types/mods";
 
 type UseSearchProps<T> = {
   data: T[];
@@ -12,7 +12,7 @@ type UseSearchProps<T> = {
 };
 
 export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300);
   const { modsFilters, updateModsFilters } = usePersistedStore();
   const sortType = modsFilters.currentSort;
@@ -24,7 +24,7 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
         shouldSort: true,
         useExtendedSearch: true,
       }),
-    [data, keys]
+    [data, keys],
   );
 
   const search = useCallback(
@@ -35,12 +35,12 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
       const results = fuse.search(q);
       return results.map((result) => result.item) as LocalMod[];
     },
-    [fuse, data, sortType]
+    [fuse, data, sortType],
   );
 
   const results = useMemo(
     () => search(debouncedQuery),
-    [search, debouncedQuery]
+    [search, debouncedQuery],
   );
 
   const setSortType = (newSortType: SortType) => {

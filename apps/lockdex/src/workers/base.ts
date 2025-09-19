@@ -1,8 +1,8 @@
-import type { Logger } from '@deadlock-mods/logging';
-import { type Job, Worker } from 'bullmq';
-import redis from '@/lib/redis';
-import type { BaseProcessor } from '@/processors/base';
-import type { BaseJobData } from '@/types/jobs';
+import type { Logger } from "@deadlock-mods/logging";
+import { type Job, Worker } from "bullmq";
+import redis from "@/lib/redis";
+import type { BaseProcessor } from "@/processors/base";
+import type { BaseJobData } from "@/types/jobs";
 
 export abstract class BaseWorker<T extends BaseJobData> {
   protected worker: Worker;
@@ -13,7 +13,7 @@ export abstract class BaseWorker<T extends BaseJobData> {
     queueName: string,
     logger: Logger,
     processor: BaseProcessor<T>,
-    concurrency = 1
+    concurrency = 1,
   ) {
     this.worker = new Worker(queueName, this.processJob.bind(this), {
       connection: redis,
@@ -35,7 +35,7 @@ export abstract class BaseWorker<T extends BaseJobData> {
       const result = await this.processor.process(job.data);
 
       if (!result.success) {
-        throw new Error(result.error || 'Processing failed');
+        throw new Error(result.error || "Processing failed");
       }
 
       return result.data;
@@ -46,16 +46,16 @@ export abstract class BaseWorker<T extends BaseJobData> {
   }
 
   private setupEventListeners() {
-    this.worker.on('completed', (job) => {
+    this.worker.on("completed", (job) => {
       this.logger.info(`Job ${job.id} completed successfully`);
     });
 
-    this.worker.on('failed', (job, err) => {
+    this.worker.on("failed", (job, err) => {
       this.logger.withError(err).error(`Job ${job?.id} failed:`, err.message);
     });
 
-    this.worker.on('error', (err) => {
-      this.logger.withError(err).error('Worker error');
+    this.worker.on("error", (err) => {
+      this.logger.withError(err).error("Worker error");
     });
   }
 

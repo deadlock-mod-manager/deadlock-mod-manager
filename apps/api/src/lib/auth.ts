@@ -1,11 +1,11 @@
-import { db, schema } from '@deadlock-mods/database';
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { env } from './env';
+import { db, schema } from "@deadlock-mods/database";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { env } from "./env";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: 'pg',
+    provider: "pg",
     schema,
   }),
   trustedOrigins: env.CORS_ORIGIN,
@@ -14,7 +14,7 @@ export const auth = betterAuth({
   },
   advanced: {
     defaultCookieAttributes: {
-      sameSite: 'none',
+      sameSite: "none",
       secure: true,
       httpOnly: true,
     },

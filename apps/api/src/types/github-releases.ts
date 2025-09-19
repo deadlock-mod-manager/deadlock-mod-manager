@@ -17,8 +17,8 @@ export interface GitHubAsset {
 }
 
 export interface PlatformDownload {
-  platform: 'windows' | 'macos' | 'linux';
-  architecture: 'x64' | 'arm64' | 'universal';
+  platform: "windows" | "macos" | "linux";
+  architecture: "x64" | "arm64" | "universal";
   url: string;
   filename: string;
   size: number;

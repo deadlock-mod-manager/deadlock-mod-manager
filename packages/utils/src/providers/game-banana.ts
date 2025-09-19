@@ -383,7 +383,7 @@ export type GameBananaIndexSubmission = BaseSubmission & {
 
 export type GameBananaSoundSubmission = Omit<
   GameBananaIndexSubmission,
-  '_aPreviewMedia'
+  "_aPreviewMedia"
 > & {
   _aPreviewMedia: {
     _aMetadata: {

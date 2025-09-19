@@ -1,8 +1,8 @@
-import type { StateCreator } from 'zustand';
-import { SortType } from '@/lib/constants';
-import type { State } from '..';
+import type { StateCreator } from "zustand";
+import { SortType } from "@/lib/constants";
+import type { State } from "..";
 
-export type FilterMode = 'include' | 'exclude';
+export type FilterMode = "include" | "exclude";
 
 export type ModsFilters = {
   hideOutdated: boolean;
@@ -35,7 +35,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   showAudioOnly: false,
   showNSFW: false,
   currentSort: SortType.LAST_UPDATED,
-  filterMode: 'include',
+  filterMode: "include",
 };
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({

@@ -1,4 +1,4 @@
-import type { CustomSettingDto } from '@deadlock-mods/utils';
+import type { CustomSettingDto } from "@deadlock-mods/utils";
 
 export interface LocalSetting extends CustomSettingDto {
   enabled: boolean;

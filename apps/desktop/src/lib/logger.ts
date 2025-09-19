@@ -1,6 +1,6 @@
-import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
-import type { ISettingsParam } from 'tslog';
-import { Logger as TsLogger } from 'tslog';
+import { debug, error, info, trace, warn } from "@tauri-apps/plugin-log";
+import type { ISettingsParam } from "tslog";
+import { Logger as TsLogger } from "tslog";
 
 type ILogObj = Record<string, unknown>;
 const defaultLogObject: ILogObj = {};
@@ -10,10 +10,10 @@ export class Logger extends TsLogger<ILogObj> {
     super(
       {
         ...settings,
-        prettyErrorLoggerNameDelimiter: ' > ',
+        prettyErrorLoggerNameDelimiter: " > ",
         hideLogPositionForProduction: true,
       },
-      defaultLogObject
+      defaultLogObject,
     );
   }
 }
@@ -24,19 +24,19 @@ logger.attachTransport((logObj) => {
   const data = JSON.stringify(logObj);
 
   switch (logObj._meta.logLevelName) {
-    case 'ERROR':
+    case "ERROR":
       error(data);
       break;
-    case 'INFO':
+    case "INFO":
       info(data);
       break;
-    case 'WARN':
+    case "WARN":
       warn(data);
       break;
-    case 'DEBUG':
+    case "DEBUG":
       debug(data);
       break;
-    case 'TRACE':
+    case "TRACE":
       trace(data);
       break;
     default:

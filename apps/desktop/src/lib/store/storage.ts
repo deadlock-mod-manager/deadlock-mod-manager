@@ -1,6 +1,6 @@
-import { getStore } from '@tauri-apps/plugin-store';
-import type { StateStorage } from 'zustand/middleware';
-import { STORE_NAME } from '../constants';
+import { getStore } from "@tauri-apps/plugin-store";
+import type { StateStorage } from "zustand/middleware";
+import { STORE_NAME } from "../constants";
 
 const storage: StateStorage = {
   getItem: async (key: string): Promise<string | null> => {

@@ -4,6 +4,6 @@ export interface DbHealth {
 }
 
 export interface HealthResponse {
-  status: 'ok' | 'degraded';
+  status: "ok" | "degraded";
   db: DbHealth;
 }

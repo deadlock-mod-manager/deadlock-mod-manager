@@ -1,4 +1,4 @@
-import type { Cron } from 'croner';
+import type { Cron } from "croner";
 
 const jobs: Cron[] = [];
 

@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/performance/noDelete: don't care lmao */
-import logfmt from 'logfmt';
-import type winston from 'winston';
-import { format } from 'winston';
-import { formatLogComponents } from '../utils';
+import logfmt from "logfmt";
+import type winston from "winston";
+import { format } from "winston";
+import { formatLogComponents } from "../utils";
 
 /**
  * Format for development environments with colorized output
@@ -18,14 +18,14 @@ export const devFormat: winston.Logform.Format = format.combine(
     const seenKeys = new Set<string>();
 
     // Extract app and version before processing splat to avoid duplicates
-    const app = meta?.app ?? '';
+    const app = meta?.app ?? "";
     if (app) {
-      seenKeys.add('app');
+      seenKeys.add("app");
     }
 
-    const version = meta?.version ? `(${meta?.version})` : '';
+    const version = meta?.version ? `(${meta?.version})` : "";
     if (meta?.version) {
-      seenKeys.add('version');
+      seenKeys.add("version");
     }
 
     // Remove app and version from meta to avoid duplicates
@@ -33,7 +33,7 @@ export const devFormat: winston.Logform.Format = format.combine(
 
     delete metadata.app;
     delete metadata.version;
-    delete metadata[Symbol.for('splat')];
+    delete metadata[Symbol.for("splat")];
 
     const { formattedMessage, formattedMetadata, formattedError } =
       formatLogComponents({
@@ -43,7 +43,7 @@ export const devFormat: winston.Logform.Format = format.combine(
         seenKeys,
       });
 
-    const splat = formatSplat(meta[Symbol.for('splat')], seenKeys);
+    const splat = formatSplat(meta[Symbol.for("splat")], seenKeys);
 
     return [
       timestamp,
@@ -54,8 +54,8 @@ export const devFormat: winston.Logform.Format = format.combine(
       splat,
       formattedMetadata,
       formattedError,
-    ].join(' ');
-  })
+    ].join(" ");
+  }),
 );
 
 /**
@@ -63,38 +63,38 @@ export const devFormat: winston.Logform.Format = format.combine(
  */
 export const formatSplat = (
   splat: unknown,
-  seenKeys: Set<string> = new Set()
+  seenKeys: Set<string> = new Set(),
 ): string => {
   if (!Array.isArray(splat)) {
-    return splat ? String(splat) : '';
+    return splat ? String(splat) : "";
   }
 
   const result = splat
     .map((item) => {
-      if (typeof item !== 'object' || item === null) {
+      if (typeof item !== "object" || item === null) {
         return String(item);
       }
 
       // For objects, check for duplicate keys
       const filteredObj = Object.entries(
-        item as Record<string, unknown>
+        item as Record<string, unknown>,
       ).reduce(
         (acc, [key, value]) => {
-          if (!seenKeys.has(key) && key !== 'error') {
+          if (!seenKeys.has(key) && key !== "error") {
             seenKeys.add(key);
             acc[key] = value;
           }
           return acc;
         },
-        {} as Record<string, unknown>
+        {} as Record<string, unknown>,
       );
 
       return Object.keys(filteredObj).length > 0
         ? logfmt.stringify(filteredObj)
-        : '';
+        : "";
     })
     .filter((str) => str.length > 0)
-    .join(' ');
+    .join(" ");
 
   return result;
 };

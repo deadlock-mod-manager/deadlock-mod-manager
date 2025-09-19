@@ -1,18 +1,18 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { Filter } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import type { ModDto } from "@deadlock-mods/utils";
+import { Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import type { FilterMode } from '@/lib/store/slices/ui';
-import CategoryFilter from './category-filter';
-import HeroFilter from './hero-filter';
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import type { FilterMode } from "@/lib/store/slices/ui";
+import CategoryFilter from "./category-filter";
+import HeroFilter from "./hero-filter";
 
 type FiltersDropdownProps = {
   mods: ModDto[];
@@ -63,35 +63,32 @@ const FiltersDropdown = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="relative"
-          variant={hasActiveFilters ? 'default' : 'outline'}
-        >
-          <Filter className="mr-2 h-4 w-4" />
-          {t('filters.filters')}
+          className='relative'
+          variant={hasActiveFilters ? "default" : "outline"}>
+          <Filter className='mr-2 h-4 w-4' />
+          {t("filters.filters")}
           {hasActiveFilters && (
-            <span className="ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs">
+            <span className='ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs'>
               {totalActiveFilters}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="space-y-4 p-4">
-        <div className="space-y-2">
-          <Label className="font-medium text-sm">{t('filters.mode')}</Label>
-          <div className="flex gap-2">
+      <DropdownMenuContent align='start' className='space-y-4 p-4'>
+        <div className='space-y-2'>
+          <Label className='font-medium text-sm'>{t("filters.mode")}</Label>
+          <div className='flex gap-2'>
             <Button
-              onClick={() => onFilterModeChange('include')}
-              size="sm"
-              variant={filterMode === 'include' ? 'default' : 'outline'}
-            >
-              {t('filters.include')}
+              onClick={() => onFilterModeChange("include")}
+              size='sm'
+              variant={filterMode === "include" ? "default" : "outline"}>
+              {t("filters.include")}
             </Button>
             <Button
-              onClick={() => onFilterModeChange('exclude')}
-              size="sm"
-              variant={filterMode === 'exclude' ? 'default' : 'outline'}
-            >
-              {t('filters.exclude')}
+              onClick={() => onFilterModeChange("exclude")}
+              size='sm'
+              variant={filterMode === "exclude" ? "default" : "outline"}>
+              {t("filters.exclude")}
             </Button>
           </div>
         </div>
@@ -107,41 +104,41 @@ const FiltersDropdown = ({
           selectedHeroes={selectedHeroes}
         />
         <DropdownMenuSeparator />
-        <div className="space-y-2">
-          <Label className="font-medium text-sm">{t('filters.content')}</Label>
-          <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm" htmlFor="hideOutdatedSwitch">
-              {filterMode === 'include'
-                ? t('filters.hideOutdated')
-                : t('filters.showOutdated')}
+        <div className='space-y-2'>
+          <Label className='font-medium text-sm'>{t("filters.content")}</Label>
+          <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
+              {filterMode === "include"
+                ? t("filters.hideOutdated")
+                : t("filters.showOutdated")}
             </Label>
             <Switch
               checked={hideOutdated}
-              id="hideOutdatedSwitch"
+              id='hideOutdatedSwitch'
               onCheckedChange={onHideOutdatedChange}
             />
           </div>
-          <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm" htmlFor="showNsfwSwitch">
-              {filterMode === 'include'
-                ? t('filters.showNSFWContent')
-                : t('filters.hideNSFWContent')}
+          <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='showNsfwSwitch'>
+              {filterMode === "include"
+                ? t("filters.showNSFWContent")
+                : t("filters.hideNSFWContent")}
             </Label>
             <Switch
               checked={showNSFW}
-              id="showNsfwSwitch"
+              id='showNsfwSwitch'
               onCheckedChange={onShowNSFWChange}
             />
           </div>
-          <div className="flex items-center justify-between">
-            <Label className="font-normal text-sm" htmlFor="audioOnlySwitch">
-              {filterMode === 'include'
-                ? t('filters.audioModsOnly')
-                : t('filters.excludeAudioMods')}
+          <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='audioOnlySwitch'>
+              {filterMode === "include"
+                ? t("filters.audioModsOnly")
+                : t("filters.excludeAudioMods")}
             </Label>
             <Switch
               checked={showAudioOnly}
-              id="audioOnlySwitch"
+              id='audioOnlySwitch'
               onCheckedChange={onShowAudioOnlyChange}
             />
           </div>

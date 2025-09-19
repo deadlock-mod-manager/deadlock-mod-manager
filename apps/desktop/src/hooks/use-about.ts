@@ -1,6 +1,6 @@
-import { app } from '@tauri-apps/api';
-import { useQuery } from 'react-query';
-import logger from '@/lib/logger';
+import { app } from "@tauri-apps/api";
+import { useQuery } from "react-query";
+import logger from "@/lib/logger";
 
 export const fetchAboutData = async () => {
   try {
@@ -11,11 +11,11 @@ export const fetchAboutData = async () => {
     ]);
     return { version, name, tauriVersion };
   } catch (error) {
-    logger.error('Failed to fetch app information:', error);
+    logger.error("Failed to fetch app information:", error);
     throw error;
   }
 };
 
-const useAbout = () => useQuery('about', fetchAboutData);
+const useAbout = () => useQuery("about", fetchAboutData);
 
 export default useAbout;

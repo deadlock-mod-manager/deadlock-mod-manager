@@ -1,23 +1,23 @@
-import { Globe } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Label } from '@/components/ui/label';
+import { Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 const languages = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'ar', name: 'العربية', flag: '🇲🇦' },
-  { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-  { code: 'gsw', name: 'Schweizerdeutsch', flag: '🇨🇭' },
-  { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "ar", name: "العربية", flag: "🇲🇦" },
+  { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "gsw", name: "Schweizerdeutsch", flag: "🇨🇭" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
 ];
 
 export const LanguageSettings = () => {
@@ -31,23 +31,22 @@ export const LanguageSettings = () => {
     languages.find((lang) => lang.code === i18n.language) || languages[0];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label className="text-base">{t('settings.language')}</Label>
-          <div className="text-muted-foreground text-sm">
-            {t('settings.languageDescription')}
+    <div className='space-y-4'>
+      <div className='flex items-center justify-between'>
+        <div className='space-y-0.5'>
+          <Label className='text-base'>{t("settings.language")}</Label>
+          <div className='text-muted-foreground text-sm'>
+            {t("settings.languageDescription")}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-muted-foreground" />
+        <div className='flex items-center gap-2'>
+          <Globe className='h-4 w-4 text-muted-foreground' />
           <Select
             onValueChange={handleLanguageChange}
-            value={currentLanguage.code}
-          >
-            <SelectTrigger className="w-48">
+            value={currentLanguage.code}>
+            <SelectTrigger className='w-48'>
               <SelectValue>
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <span>{currentLanguage.flag}</span>
                   <span>{currentLanguage.name}</span>
                 </div>
@@ -56,7 +55,7 @@ export const LanguageSettings = () => {
             <SelectContent>
               {languages.map((language) => (
                 <SelectItem key={language.code} value={language.code}>
-                  <div className="flex items-center gap-2">
+                  <div className='flex items-center gap-2'>
                     <span>{language.flag}</span>
                     <span>{language.name}</span>
                   </div>

@@ -1,7 +1,7 @@
-import type { Job } from 'bullmq';
-import { ModFileProcessingQueue } from '@/queues/mod-file-processing-queue';
-import { ModsQueue } from '@/queues/mods-queue';
-import type { ModFileProcessingJobData, ModsJobData } from '@/types/jobs';
+import type { Job } from "bullmq";
+import { ModFileProcessingQueue } from "@/queues/mod-file-processing-queue";
+import { ModsQueue } from "@/queues/mods-queue";
+import type { ModFileProcessingJobData, ModsJobData } from "@/types/jobs";
 
 export class QueueService {
   private modsQueue: ModsQueue;
@@ -18,7 +18,7 @@ export class QueueService {
 
   async addModFileProcessingJob(
     data: ModFileProcessingJobData,
-    priority?: number
+    priority?: number,
   ) {
     return this.modFileProcessingQueue.processMod(data, priority);
   }
@@ -42,16 +42,16 @@ export class QueueService {
     return jobs.reduce(
       (acc, job) => {
         const status = job.finishedOn
-          ? 'completed'
+          ? "completed"
           : job.failedReason
-            ? 'failed'
+            ? "failed"
             : job.processedOn
-              ? 'active'
-              : 'waiting';
+              ? "active"
+              : "waiting";
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
   }
 

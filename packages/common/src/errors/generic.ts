@@ -1,7 +1,7 @@
 export enum GenericErrorCode {
-  RUNTIME_ERROR = 'RUNTIME_ERROR',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  RUNTIME_ERROR = "RUNTIME_ERROR",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
 }
 
 export abstract class BaseError extends Error {
@@ -41,6 +41,6 @@ export class UnknownError extends GenericError {
   readonly code = GenericErrorCode.UNKNOWN_ERROR;
 
   constructor(originalError?: unknown) {
-    super('Unknown error', originalError);
+    super("Unknown error", originalError);
   }
 }

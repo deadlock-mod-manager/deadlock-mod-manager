@@ -1,8 +1,8 @@
-import { logger } from '@/lib/logger';
-import type { CronProcessor } from '@/processors/cron-processor';
-import { CronQueue } from '@/queues/cron-queue';
-import type { CronJobData } from '@/types/jobs';
-import { CronWorker } from '@/workers/cron-worker';
+import { logger } from "@/lib/logger";
+import type { CronProcessor } from "@/processors/cron-processor";
+import { CronQueue } from "@/queues/cron-queue";
+import type { CronJobData } from "@/types/jobs";
+import { CronWorker } from "@/workers/cron-worker";
 
 export interface CronJobDefinition {
   name: string;
@@ -23,7 +23,7 @@ export class CronService {
   private workers: Map<string, CronWorker> = new Map();
   private jobs: Map<string, CronJobDefinition> = new Map();
   private defaultConcurrency: number;
-  private pausedSchedulers: Awaited<ReturnType<CronQueue['getJobSchedulers']>> =
+  private pausedSchedulers: Awaited<ReturnType<CronQueue["getJobSchedulers"]>> =
     [];
 
   private constructor(concurrency = 1) {
@@ -100,7 +100,7 @@ export class CronService {
       limit?: number;
       jobData?: Record<string, unknown>;
       metadata?: Record<string, unknown>;
-    }
+    },
   ): Promise<void> {
     const cronJobData: CronJobData = {
       cronPattern,
@@ -206,7 +206,7 @@ export class CronService {
     jobName: string,
     delayMs: number,
     jobData: Record<string, unknown> = {},
-    metadata: Record<string, unknown> = {}
+    metadata: Record<string, unknown> = {},
   ): Promise<void> {
     const cronJobData: CronJobData = {
       jobData,
@@ -227,7 +227,7 @@ export class CronService {
       limit?: number;
       metadata?: Record<string, unknown>;
       immediately?: boolean;
-    } = {}
+    } = {},
   ): Promise<void> {
     const cronJobData: CronJobData = {
       timezone: options.timezone,
@@ -269,10 +269,10 @@ export class CronService {
       // Store and pause all job schedulers
       this.pausedSchedulers = await this.queue.pauseJobSchedulers();
       logger.info(
-        `Paused all cron jobs and ${this.pausedSchedulers.length} job schedulers`
+        `Paused all cron jobs and ${this.pausedSchedulers.length} job schedulers`,
       );
     } catch (error) {
-      logger.withError(error).error('Failed to pause all cron jobs');
+      logger.withError(error).error("Failed to pause all cron jobs");
       throw error;
     }
   }
@@ -286,21 +286,21 @@ export class CronService {
       if (this.pausedSchedulers.length > 0) {
         await this.queue.resumeJobSchedulers(this.pausedSchedulers);
         logger.info(
-          `Resumed all cron jobs and ${this.pausedSchedulers.length} job schedulers`
+          `Resumed all cron jobs and ${this.pausedSchedulers.length} job schedulers`,
         );
         this.pausedSchedulers = [];
       } else {
-        logger.info('Resumed all cron jobs');
+        logger.info("Resumed all cron jobs");
       }
     } catch (error) {
-      logger.withError(error).error('Failed to resume all cron jobs');
+      logger.withError(error).error("Failed to resume all cron jobs");
       throw error;
     }
   }
 
   async updateJob(
     jobName: string,
-    updates: Partial<Omit<CronJobDefinition, 'name'>>
+    updates: Partial<Omit<CronJobDefinition, "name">>,
   ): Promise<void> {
     const currentDefinition = this.jobs.get(jobName);
     if (!currentDefinition) {
@@ -338,7 +338,7 @@ export class CronService {
   async getJobSchedulerInfo(jobName: string) {
     const schedulers = await this.queue.getJobSchedulers();
     const scheduler = schedulers.find(
-      (s) => s.id === jobName || s.name === jobName
+      (s) => s.id === jobName || s.name === jobName,
     );
 
     if (!scheduler) {
@@ -359,10 +359,10 @@ export class CronService {
   }
 
   async bulkUpdateJobs(
-    updates: Map<string, Partial<Omit<CronJobDefinition, 'name'>>>
+    updates: Map<string, Partial<Omit<CronJobDefinition, "name">>>,
   ): Promise<void> {
     const updatePromises = Array.from(updates.entries()).map(
-      ([jobName, jobUpdates]) => this.updateJob(jobName, jobUpdates)
+      ([jobName, jobUpdates]) => this.updateJob(jobName, jobUpdates),
     );
 
     await Promise.all(updatePromises);
@@ -382,11 +382,11 @@ export class CronService {
 
   async shutdown(): Promise<void> {
     const workerClosePromises = Array.from(this.workers.values()).map(
-      (worker) => worker.close()
+      (worker) => worker.close(),
     );
     await Promise.all([...workerClosePromises, this.queue.close()]);
     this.workers.clear();
-    logger.info('Cron service shutdown complete');
+    logger.info("Cron service shutdown complete");
   }
 }
 

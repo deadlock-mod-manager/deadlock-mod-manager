@@ -13,8 +13,10 @@
     "docker:api:stop": "docker compose down",
     "docker:api:logs": "docker compose logs -f api",
     "docker": "docker compose up -d",
-    "format": "npx ultracite@latest fix",
-    "lint": "npx ultracite@latest check",
+    "format": "biome format .",
+    "lint": "biome check .",
+    "format:fix": "biome format . --write",
+    "lint:fix": "biome check . --write",
     "check-types": "turbo run check-types",
     "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
@@ -23,13 +25,10 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "dotenv-cli": "^7.4.4",
-    "husky": "^9.1.7",
     "lefthook": "^1.13.0",
-    "lint-staged": "^16.1.6",
     "tsx": "4.19.1",
     "turbo": "^2.5.6",
-    "typescript": "catalog:",
-    "ultracite": "5.2.16"
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=18"
@@ -56,10 +55,5 @@
       "better-sqlite3"
     ]
   },
-  "packageManager": "pnpm@10.15.1",
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "pnpm dlx ultracite fix"
-    ]
-  }
+  "packageManager": "pnpm@10.15.1"
 }

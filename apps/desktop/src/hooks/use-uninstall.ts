@@ -1,10 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useConfirm } from '@/components/providers/alert-dialog';
-import logger from '@/lib/logger';
-import { usePersistedStore } from '@/lib/store';
-import { type LocalMod, ModStatus } from '@/types/mods';
+import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useConfirm } from "@/components/providers/alert-dialog";
+import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
+import { type LocalMod, ModStatus } from "@/types/mods";
 
 const useUninstall = () => {
   const { t } = useTranslation();
@@ -18,10 +18,10 @@ const useUninstall = () => {
       // Only show confirmation dialog when removing (deleting) a mod
       if (remove) {
         shouldUninstall = !!(await confirm({
-          title: t('mods.deleteConfirmTitle'),
-          body: t('mods.deleteConfirmBody'),
-          actionButton: t('mods.deleteConfirmAction'),
-          cancelButton: t('mods.deleteConfirmCancel'),
+          title: t("mods.deleteConfirmTitle"),
+          body: t("mods.deleteConfirmBody"),
+          actionButton: t("mods.deleteConfirmAction"),
+          cancelButton: t("mods.deleteConfirmCancel"),
         }));
       }
       // No confirmation dialog for disabling mods
@@ -31,17 +31,17 @@ const useUninstall = () => {
       }
 
       if (mod.status === ModStatus.Installed) {
-        logger.info('Uninstalling mod', {
+        logger.info("Uninstalling mod", {
           modId: mod.remoteId,
           vpks: mod.installedVpks,
         });
         if (remove) {
-          await invoke('purge_mod', {
+          await invoke("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
           });
         } else {
-          await invoke('uninstall_mod', {
+          await invoke("uninstall_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
           });
@@ -53,22 +53,22 @@ const useUninstall = () => {
         // For non-installed mods, we need to delete the folder manually
         if (mod.status !== ModStatus.Installed && mod.path) {
           try {
-            await invoke('remove_mod_folder', { modPath: mod.path });
+            await invoke("remove_mod_folder", { modPath: mod.path });
           } catch (error) {
             logger.warn(
-              'Failed to remove mod folder, continuing with removal',
-              error
+              "Failed to remove mod folder, continuing with removal",
+              error,
             );
           }
         }
         await removeMod(mod.remoteId);
       }
       toast.success(
-        remove ? t('mods.deleteSuccess') : t('mods.disableSuccess')
+        remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
     } catch (error) {
       logger.error(error);
-      toast.error(remove ? t('mods.deleteError') : t('mods.disableError'));
+      toast.error(remove ? t("mods.deleteError") : t("mods.disableError"));
     }
   };
 

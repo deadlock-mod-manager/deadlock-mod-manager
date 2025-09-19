@@ -1,6 +1,6 @@
 export interface PlatformDownload {
-  platform: 'windows' | 'macos' | 'linux';
-  architecture: 'x64' | 'arm64' | 'universal';
+  platform: "windows" | "macos" | "linux";
+  architecture: "x64" | "arm64" | "universal";
   url: string;
   filename: string;
   size: number;
@@ -21,8 +21,8 @@ export interface ReleasesResponse {
   allVersions: Release[];
 }
 
-export type DetectedOS = 'windows' | 'macos' | 'linux' | 'unknown';
-export type DetectedArchitecture = 'x64' | 'arm64' | 'unknown';
+export type DetectedOS = "windows" | "macos" | "linux" | "unknown";
+export type DetectedArchitecture = "x64" | "arm64" | "unknown";
 
 export interface OSInfo {
   os: DetectedOS;

@@ -1,9 +1,9 @@
-import { relaunch } from '@tauri-apps/plugin-process';
-import { check, type Update } from '@tauri-apps/plugin-updater';
-import { useState } from 'react';
-import { createLogger } from '@/lib/logger';
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from "@tauri-apps/plugin-updater";
+import { useState } from "react";
+import { createLogger } from "@/lib/logger";
 
-const logger = createLogger('updater');
+const logger = createLogger("updater");
 
 const useUpdateManager = () => {
   const [update, setUpdate] = useState<Update | null>(null);
@@ -24,19 +24,19 @@ const useUpdateManager = () => {
     // alternatively we could also call update.download() and update.install() separately
     await update.downloadAndInstall((event) => {
       switch (event.event) {
-        case 'Started':
+        case "Started":
           setSize(event.data.contentLength ?? 0);
           logger.info(`started downloading ${event.data.contentLength} bytes`);
           break;
-        case 'Progress':
+        case "Progress":
           setDownloaded((prev) => prev + event.data.chunkLength);
           logger.info(`downloaded ${downloaded} from ${size}`);
           break;
-        case 'Finished':
-          logger.info('download finished');
+        case "Finished":
+          logger.info("download finished");
           break;
         default:
-          logger.info('Unknown update event:', event);
+          logger.info("Unknown update event:", event);
           break;
       }
     });

@@ -1,1 +1,1 @@
-export * as GameBanana from './game-banana';
+export * as GameBanana from "./game-banana";

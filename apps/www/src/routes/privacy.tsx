@@ -1,16 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/privacy')({
+export const Route = createFileRoute("/privacy")({
   component: PrivacyComponent,
   head: () => ({
     meta: [
       {
-        title: 'Privacy Policy | Deadlock Mod Manager',
+        title: "Privacy Policy | Deadlock Mod Manager",
       },
       {
-        name: 'description',
+        name: "description",
         content:
-          'Privacy Policy for Deadlock Mod Manager - Learn how we handle your data and protect your privacy.',
+          "Privacy Policy for Deadlock Mod Manager - Learn how we handle your data and protect your privacy.",
       },
     ],
   }),
@@ -18,10 +18,10 @@ export const Route = createFileRoute('/privacy')({
 
 function PrivacyComponent() {
   return (
-    <div className="container mx-auto max-w-3xl py-12">
-      <h1 className="mb-8 font-bold text-4xl">Privacy Policy</h1>
+    <div className='container mx-auto max-w-3xl py-12'>
+      <h1 className='mb-8 font-bold text-4xl'>Privacy Policy</h1>
 
-      <div className="prose prose-invert prose-h2:mt-8 prose-headings:mb-4 max-w-none prose-h2:font-semibold prose-h2:text-2xl">
+      <div className='prose prose-invert prose-h2:mt-8 prose-headings:mb-4 max-w-none prose-h2:font-semibold prose-h2:text-2xl'>
         <h2>1. Information Collection</h2>
         <p>
           Deadlock Mod Manager is a desktop application that runs locally on
@@ -62,13 +62,12 @@ function PrivacyComponent() {
         </ul>
         <p>
           No personally identifiable information is intentionally collected. All
-          data is processed in accordance with{' '}
+          data is processed in accordance with{" "}
           <a
-            className="text-primary hover:underline"
-            href="https://sentry.io/privacy/"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
+            className='text-primary hover:underline'
+            href='https://sentry.io/privacy/'
+            rel='noopener noreferrer'
+            target='_blank'>
             Sentry's Privacy Policy
           </a>
           .
@@ -89,13 +88,12 @@ function PrivacyComponent() {
 
         <h2>8. Contact</h2>
         <p>
-          For questions about this Privacy Policy, please create an issue on our{' '}
+          For questions about this Privacy Policy, please create an issue on our{" "}
           <a
-            className="text-primary hover:underline"
-            href="https://github.com/Stormix/deadlock-modmanager"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
+            className='text-primary hover:underline'
+            href='https://github.com/Stormix/deadlock-modmanager'
+            rel='noopener noreferrer'
+            target='_blank'>
             GitHub repository
           </a>
           .

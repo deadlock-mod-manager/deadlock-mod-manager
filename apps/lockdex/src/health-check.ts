@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-import IORedis from 'ioredis';
-import { env } from './lib/env';
-import { logger } from './lib/logger';
+import IORedis from "ioredis";
+import { env } from "./lib/env";
+import { logger } from "./lib/logger";
 
 const healthCheck = async (): Promise<void> => {
   let redis: IORedis | undefined;
@@ -15,25 +15,25 @@ const healthCheck = async (): Promise<void> => {
     });
 
     const pong = await redis.ping();
-    if (pong !== 'PONG') {
-      throw new Error('Redis ping failed');
+    if (pong !== "PONG") {
+      throw new Error("Redis ping failed");
     }
 
-    const testKey = 'lockdex:health:check';
+    const testKey = "lockdex:health:check";
     const testValue = Date.now().toString();
 
-    await redis.set(testKey, testValue, 'EX', 10);
+    await redis.set(testKey, testValue, "EX", 10);
     const retrievedValue = await redis.get(testKey);
 
     if (retrievedValue !== testValue) {
-      throw new Error('Redis read/write test failed');
+      throw new Error("Redis read/write test failed");
     }
 
     await redis.del(testKey);
 
-    logger.info('Health check passed');
+    logger.info("Health check passed");
   } catch (error) {
-    logger.withError(error as Error).error('Health check failed');
+    logger.withError(error as Error).error("Health check failed");
     throw error;
   } finally {
     if (redis) {

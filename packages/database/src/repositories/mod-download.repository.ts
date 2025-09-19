@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm';
-import type { Database } from '../client';
-import type { ModDownload, NewModDownload } from '../schema/mods';
-import { modDownloads } from '../schema/mods';
+import { eq } from "drizzle-orm";
+import type { Database } from "../client";
+import type { ModDownload, NewModDownload } from "../schema/mods";
+import { modDownloads } from "../schema/mods";
 
 export class ModDownloadRepository {
   constructor(private readonly db: Database) {}
@@ -45,7 +45,7 @@ export class ModDownloadRepository {
 
   async update(
     id: string,
-    modDownload: Partial<NewModDownload>
+    modDownload: Partial<NewModDownload>,
   ): Promise<ModDownload> {
     const result = await this.db
       .update(modDownloads)
@@ -57,7 +57,7 @@ export class ModDownloadRepository {
 
   async updateByModId(
     modId: string,
-    modDownload: Partial<NewModDownload>
+    modDownload: Partial<NewModDownload>,
   ): Promise<ModDownload[]> {
     const result = await this.db
       .update(modDownloads)
@@ -69,7 +69,7 @@ export class ModDownloadRepository {
 
   async upsertByModId(
     modId: string,
-    modDownload: NewModDownload
+    modDownload: NewModDownload,
   ): Promise<ModDownload> {
     const existing = await this.findByModId(modId);
 
@@ -82,7 +82,7 @@ export class ModDownloadRepository {
 
   async upsertMultipleByModId(
     modId: string,
-    modDownloads: NewModDownload[]
+    modDownloads: NewModDownload[],
   ): Promise<ModDownload[]> {
     // Delete existing downloads for this mod
     await this.deleteByModId(modId);
@@ -98,7 +98,7 @@ export class ModDownloadRepository {
   }
 
   async createMultiple(
-    newModDownloads: NewModDownload[]
+    newModDownloads: NewModDownload[],
   ): Promise<ModDownload[]> {
     if (newModDownloads.length === 0) {
       return [];

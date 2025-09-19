@@ -1,4 +1,4 @@
-import logfmt from 'logfmt';
+import logfmt from "logfmt";
 
 export interface LogComponents {
   message: unknown;
@@ -18,10 +18,10 @@ export interface LogMessageError {
 }
 
 export const formatError = (error: LogMessageError | undefined) =>
-  error?.stack ? `\n${error.stack}` : '';
+  error?.stack ? `\n${error.stack}` : "";
 
 export const isMessageObject = (value: unknown): value is LogMessage =>
-  value !== null && typeof value === 'object';
+  value !== null && typeof value === "object";
 
 export const formatLogComponents = ({
   message,
@@ -29,8 +29,8 @@ export const formatLogComponents = ({
   error: initialError,
   seenKeys = new Set<string>(),
 }: LogComponents & { seenKeys?: Set<string> }) => {
-  let formattedMessage = '';
-  let formattedMetadata = '';
+  let formattedMessage = "";
+  let formattedMetadata = "";
   let error = initialError as LogMessageError | undefined;
 
   if (isMessageObject(message)) {
@@ -47,11 +47,11 @@ export const formatLogComponents = ({
         }
         return acc;
       },
-      {} as Record<string, unknown>
+      {} as Record<string, unknown>,
     );
 
     formattedMetadata = logfmt.stringify(filteredMetadata);
-    formattedMessage = error?.message ?? 'An error occurred';
+    formattedMessage = error?.message ?? "An error occurred";
   } else {
     formattedMessage = String(message);
 
@@ -59,7 +59,7 @@ export const formatLogComponents = ({
     const filteredMeta = Object.entries(meta).reduce(
       (acc, [key, value]) => {
         // Skip special symbols
-        if (typeof key === 'symbol') {
+        if (typeof key === "symbol") {
           return acc;
         }
 
@@ -69,7 +69,7 @@ export const formatLogComponents = ({
         }
         return acc;
       },
-      {} as Record<string, unknown>
+      {} as Record<string, unknown>,
     );
 
     formattedMetadata = logfmt.stringify(filteredMeta);

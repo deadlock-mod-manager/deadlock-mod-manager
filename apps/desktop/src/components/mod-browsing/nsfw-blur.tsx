@@ -1,7 +1,7 @@
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type NSFWBlurProps = {
   children: React.ReactNode;
@@ -23,7 +23,7 @@ export const NSFWBlur = ({
   blurStrength = 16,
   showControls = true,
   onToggleVisibility,
-  className = '',
+  className = "",
   disableBlur = false,
 }: NSFWBlurProps) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -43,29 +43,27 @@ export const NSFWBlur = ({
     <div className={`relative ${className}`}>
       {/* Blurred content */}
       <div
-        className={isVisible ? '' : 'transition-all duration-200'}
+        className={isVisible ? "" : "transition-all duration-200"}
         style={{
-          filter: isVisible ? 'none' : `blur(${blurStrength}px)`,
-        }}
-      >
+          filter: isVisible ? "none" : `blur(${blurStrength}px)`,
+        }}>
         {children}
       </div>
 
       {/* NSFW badge and controls overlay */}
       {!isVisible && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-          <div className="flex flex-col items-center gap-2">
-            <Badge className="px-2 py-1" variant="destructive">
+        <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
+          <div className='flex flex-col items-center gap-2'>
+            <Badge className='px-2 py-1' variant='destructive'>
               NSFW
             </Badge>
             {showControls && (
               <Button
-                className="text-xs"
+                className='text-xs'
                 onClick={handleToggle}
-                size="sm"
-                variant="secondary"
-              >
-                <Eye className="mr-1 h-3 w-3" />
+                size='sm'
+                variant='secondary'>
+                <Eye className='mr-1 h-3 w-3' />
                 Show
               </Button>
             )}
@@ -75,14 +73,13 @@ export const NSFWBlur = ({
 
       {/* Hide button when visible */}
       {isVisible && showControls && (
-        <div className="absolute top-2 right-2">
+        <div className='absolute top-2 right-2'>
           <Button
-            className="text-xs"
+            className='text-xs'
             onClick={handleToggle}
-            size="sm"
-            variant="secondary"
-          >
-            <EyeOff className="mr-1 h-3 w-3" />
+            size='sm'
+            variant='secondary'>
+            <EyeOff className='mr-1 h-3 w-3' />
             Hide
           </Button>
         </div>

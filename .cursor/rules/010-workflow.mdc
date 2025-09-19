@@ -1,5 +1,5 @@
 ---
-description:
+description: Workflow guidelines and task management procedures
 globs:
 alwaysApply: true
 ---
@@ -37,8 +37,9 @@ The following rules are available in the `.cursor/rules` directory:
 - **010-workflow.mdc** - Workflow guidelines and task management procedures
 - **020-codebase-structure.mdc** - Project structure, commands, and development setup
 - **030-coding-style.mdc** - Coding standards and style guidelines for all technologies
-- **040-ultracite.mdc** - Code quality enforcement using Biome formatter and linter
+- **040-logging.mdc** - Logging guidelines for implementing structured logging
 - **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
+- **060-tailwind-v4.mdc** - Guidelines for using Tailwind CSS v4
 
 ### Special Rules
 

@@ -1,16 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/terms')({
+export const Route = createFileRoute("/terms")({
   component: TermsComponent,
   head: () => ({
     meta: [
       {
-        title: 'Terms of Service | Deadlock Mod Manager',
+        title: "Terms of Service | Deadlock Mod Manager",
       },
       {
-        name: 'description',
+        name: "description",
         content:
-          'Terms of Service for Deadlock Mod Manager - Understand your rights and responsibilities when using our software.',
+          "Terms of Service for Deadlock Mod Manager - Understand your rights and responsibilities when using our software.",
       },
     ],
   }),
@@ -18,10 +18,10 @@ export const Route = createFileRoute('/terms')({
 
 function TermsComponent() {
   return (
-    <div className="container mx-auto max-w-3xl py-12">
-      <h1 className="mb-8 font-bold text-4xl">Terms of Service</h1>
+    <div className='container mx-auto max-w-3xl py-12'>
+      <h1 className='mb-8 font-bold text-4xl'>Terms of Service</h1>
 
-      <div className="prose prose-invert max-w-none">
+      <div className='prose prose-invert max-w-none'>
         <h2>1. Acceptance of Terms</h2>
         <p>
           By downloading and using Deadlock Mod Manager, you agree to these
@@ -86,13 +86,12 @@ function TermsComponent() {
         <h2>9. Contact</h2>
         <p>
           For questions about these Terms of Service, please create an issue on
-          our{' '}
+          our{" "}
           <a
-            className="text-primary hover:underline"
-            href="https://github.com/Stormix/deadlock-modmanager"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
+            className='text-primary hover:underline'
+            href='https://github.com/Stormix/deadlock-modmanager'
+            rel='noopener noreferrer'
+            target='_blank'>
             GitHub repository
           </a>
           .

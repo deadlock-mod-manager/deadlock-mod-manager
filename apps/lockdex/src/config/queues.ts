@@ -1,12 +1,12 @@
-import type { QueueConfig } from '@/types/queue';
+import type { QueueConfig } from "@/types/queue";
 
 export const queueConfigs: Record<string, QueueConfig> = {
   mods: {
-    name: 'mods-queue',
+    name: "mods-queue",
     defaultJobOptions: {
       attempts: 3,
       backoff: {
-        type: 'exponential',
+        type: "exponential",
         delay: 2000,
       },
       removeOnComplete: 100,
@@ -14,21 +14,21 @@ export const queueConfigs: Record<string, QueueConfig> = {
     },
   },
   modFileProcessing: {
-    name: 'mod-file-processing-queue',
+    name: "mod-file-processing-queue",
     defaultJobOptions: {
       attempts: 3,
       backoff: {
-        type: 'exponential',
+        type: "exponential",
         delay: 2000,
       },
     },
   },
   cron: {
-    name: 'cron-queue',
+    name: "cron-queue",
     defaultJobOptions: {
       attempts: 2,
       backoff: {
-        type: 'exponential',
+        type: "exponential",
         delay: 5000,
       },
       removeOnComplete: 50,

@@ -1,7 +1,7 @@
-import { invoke } from '@tauri-apps/api/core';
-import { useCallback } from 'react';
-import { type InstallableMod, type LocalMod, ModStatus } from '@/types/mods';
-import type { ErrorKind } from '@/types/tauri';
+import { invoke } from "@tauri-apps/api/core";
+import { useCallback } from "react";
+import { type InstallableMod, type LocalMod, ModStatus } from "@/types/mods";
+import type { ErrorKind } from "@/types/tauri";
 
 export type InstallOptions = {
   onStart: (mod: LocalMod) => void;
@@ -11,7 +11,7 @@ export type InstallOptions = {
 
 export type InstallFunction = (
   mod: LocalMod,
-  options: InstallOptions
+  options: InstallOptions,
 ) => Promise<InstallableMod | null>;
 
 const useInstall = () => {
@@ -20,14 +20,14 @@ const useInstall = () => {
       options.onStart(mod);
 
       if (!mod.path) {
-        throw new Error('Mod is not downloaded! Might be corrupted.');
+        throw new Error("Mod is not downloaded! Might be corrupted.");
       }
 
       if (mod.status === ModStatus.Installed) {
-        throw new Error('Mod is already installed!');
+        throw new Error("Mod is already installed!");
       }
 
-      const result = (await invoke('install_mod', {
+      const result = (await invoke("install_mod", {
         deadlockMod: {
           id: mod.remoteId,
           name: mod.name,
@@ -41,13 +41,13 @@ const useInstall = () => {
     } catch (error: unknown) {
       if (error instanceof Error) {
         options.onError(mod, {
-          kind: 'unknown',
+          kind: "unknown",
           message: error.message,
         });
       } else if (
-        typeof error === 'object' &&
+        typeof error === "object" &&
         error !== null &&
-        'kind' in error
+        "kind" in error
       ) {
         options.onError(mod, error as ErrorKind);
       }

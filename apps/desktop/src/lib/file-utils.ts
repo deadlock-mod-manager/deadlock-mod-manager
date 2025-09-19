@@ -1,5 +1,5 @@
-import { BaseDirectory, exists, mkdir, writeFile } from '@tauri-apps/plugin-fs';
-import { ARCHIVE_PATTERN, VPK_PATTERN } from './file-patterns';
+import { BaseDirectory, exists, mkdir, writeFile } from "@tauri-apps/plugin-fs";
+import { ARCHIVE_PATTERN, VPK_PATTERN } from "./file-patterns";
 
 export interface FileSystemEntry {
   name: string;
@@ -22,8 +22,8 @@ export type FileWithPath = File & {
 };
 
 export type DetectedSource =
-  | { kind: 'archive'; file: File }
-  | { kind: 'vpk'; file: File };
+  | { kind: "archive"; file: File }
+  | { kind: "vpk"; file: File };
 
 /**
  * File utility functions
@@ -45,13 +45,13 @@ export const ensureDirectory = async (absolutePath: string): Promise<void> => {
 
 export const writeFileBytes = async (
   absolutePath: string,
-  data: Uint8Array
+  data: Uint8Array,
 ): Promise<void> =>
   writeFile(absolutePath, data, { baseDir: BaseDirectory.AppLocalData });
 
 export const writeFileText = async (
   absolutePath: string,
-  text: string
+  text: string,
 ): Promise<void> =>
   writeFile(absolutePath, new TextEncoder().encode(text), {
     baseDir: BaseDirectory.AppLocalData,
@@ -60,7 +60,7 @@ export const writeFileText = async (
 export const fileToDataUrl = (file: File): Promise<string> =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onerror = () => reject(new Error("Failed to read file"));
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(file);
   });
@@ -77,14 +77,14 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   const vpkFile = validFiles.find((file) => VPK_PATTERN.test(file.name));
 
   if (validFiles.length === 1 && vpkFile) {
-    return { kind: 'vpk', file: vpkFile };
+    return { kind: "vpk", file: vpkFile };
   }
 
   const archiveFile = validFiles.find((file) =>
-    ARCHIVE_PATTERN.test(file.name)
+    ARCHIVE_PATTERN.test(file.name),
   );
   if (validFiles.length === 1 && archiveFile) {
-    return { kind: 'archive', file: archiveFile };
+    return { kind: "archive", file: archiveFile };
   }
 
   return null;
@@ -94,13 +94,13 @@ export const detectSource = (files: File[]): DetectedSource | null => {
  * Recursively reads files from DataTransfer items
  */
 export const readFromDataTransferItems = async (
-  items: DataTransferItemList
+  items: DataTransferItemList,
 ): Promise<File[]> => {
   const promises: Promise<File[]>[] = [];
 
   const processEntry = async (
     entry: FileSystemEntry,
-    basePath = ''
+    basePath = "",
   ): Promise<File[]> => {
     if (!entry) {
       return [];
@@ -129,8 +129,8 @@ export const readFromDataTransferItems = async (
             } else {
               const nestedFiles = await Promise.all(
                 allEntries.map((e) =>
-                  processEntry(e, `${basePath + entry.name}/`)
-                )
+                  processEntry(e, `${basePath + entry.name}/`),
+                ),
               );
               resolve(nestedFiles.flat());
             }
@@ -150,7 +150,7 @@ export const readFromDataTransferItems = async (
 
     if (entry) {
       promises.push(processEntry(entry));
-    } else if (item.kind === 'file') {
+    } else if (item.kind === "file") {
       const file = item.getAsFile();
       if (file) {
         promises.push(Promise.resolve([file]));

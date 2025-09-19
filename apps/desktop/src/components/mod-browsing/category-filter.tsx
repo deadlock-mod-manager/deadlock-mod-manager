@@ -1,7 +1,7 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { Check } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import type { ModDto } from "@deadlock-mods/utils";
+import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -9,15 +9,15 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { MOD_CATEGORY_ORDER, ModCategory } from '@/lib/constants';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 type CategoryFilterProps = {
   mods: ModDto[];
@@ -33,18 +33,18 @@ const CategoryFilter = ({
   const { t } = useTranslation();
   // Get categories that actually have mods available
   const modsWithCategories = new Set(
-    mods.map((mod) => mod.category).filter(Boolean)
+    mods.map((mod) => mod.category).filter(Boolean),
   );
 
   // Use predefined category order, but only show categories that have mods
   const availableCategories = MOD_CATEGORY_ORDER.filter((category) =>
-    modsWithCategories.has(category)
+    modsWithCategories.has(category),
   );
 
   // Check if there are any mods with non-predefined categories
   const predefinedCategories = Object.values(ModCategory);
   const hasOtherMods = Array.from(modsWithCategories).some(
-    (category) => !predefinedCategories.includes(category as ModCategory)
+    (category) => !predefinedCategories.includes(category as ModCategory),
   );
 
   // If there are mods with non-predefined categories, add OTHER_MISC to available categories
@@ -61,44 +61,42 @@ const CategoryFilter = ({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <Label className="font-medium text-sm">{t('filters.category')}</Label>
+    <div className='flex min-w-0 flex-col gap-2'>
+      <Label className='font-medium text-sm'>{t("filters.category")}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            className="w-[180px] justify-start"
-            size="sm"
-            variant="outline"
-          >
-            <span className="truncate">
+            className='w-[180px] justify-start'
+            size='sm'
+            variant='outline'>
+            <span className='truncate'>
               {selectedCategories.length === 0
-                ? t('filters.allCategories')
+                ? t("filters.allCategories")
                 : selectedCategories.length === 1
                   ? selectedCategories[0]
-                  : `${selectedCategories.length} ${t('filters.selected')}`}
+                  : `${selectedCategories.length} ${t("filters.selected")}`}
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-[240px] p-0">
+        <PopoverContent align='start' className='w-[240px] p-0'>
           <Command>
-            <CommandInput placeholder={t('filters.searchCategories')} />
+            <CommandInput placeholder={t("filters.searchCategories")} />
             <CommandList>
-              <CommandEmpty>{t('filters.noCategoriesFound')}</CommandEmpty>
+              <CommandEmpty>{t("filters.noCategoriesFound")}</CommandEmpty>
               <CommandGroup>
                 {allCategories.map((category) => (
                   <CommandItem
                     key={category}
-                    onSelect={() => handleCategoryToggle(category)}
-                  >
+                    onSelect={() => handleCategoryToggle(category)}>
                     <Check
                       className={cn(
-                        'mr-2 h-4 w-4 flex-shrink-0',
+                        "mr-2 h-4 w-4 flex-shrink-0",
                         selectedCategories.includes(category)
-                          ? 'opacity-100'
-                          : 'opacity-0'
+                          ? "opacity-100"
+                          : "opacity-0",
                       )}
                     />
-                    <span className="truncate">{category}</span>
+                    <span className='truncate'>{category}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>

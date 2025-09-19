@@ -1,18 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useEffect } from 'react';
-import { STATUS_URL } from '@/lib/constants';
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { STATUS_URL } from "@/lib/constants";
 
-export const Route = createFileRoute('/status')({
+export const Route = createFileRoute("/status")({
   component: StatusComponent,
   head: () => ({
     meta: [
       {
-        title: 'Status | Deadlock Mod Manager',
+        title: "Status | Deadlock Mod Manager",
       },
       {
-        name: 'description',
+        name: "description",
         content:
-          'Check the status of Deadlock Mod Manager services and infrastructure.',
+          "Check the status of Deadlock Mod Manager services and infrastructure.",
       },
     ],
   }),
@@ -24,11 +24,11 @@ function StatusComponent() {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-3xl py-12 text-center">
-      <h1 className="mb-4 font-bold text-2xl">Redirecting to status page...</h1>
-      <p className="text-muted-foreground">
-        If you're not redirected automatically,{' '}
-        <a className="text-primary hover:underline" href={STATUS_URL}>
+    <div className='container mx-auto max-w-3xl py-12 text-center'>
+      <h1 className='mb-4 font-bold text-2xl'>Redirecting to status page...</h1>
+      <p className='text-muted-foreground'>
+        If you're not redirected automatically,{" "}
+        <a className='text-primary hover:underline' href={STATUS_URL}>
           click here
         </a>
         .

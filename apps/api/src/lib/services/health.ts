@@ -1,6 +1,6 @@
-import { db, sql } from '@deadlock-mods/database';
-import type { DbHealth, HealthResponse } from '../../types/health';
-import { logger } from '../logger';
+import { db, sql } from "@deadlock-mods/database";
+import type { DbHealth, HealthResponse } from "../../types/health";
+import { logger } from "../logger";
 
 export class HealthService {
   private static singleton: HealthService;
@@ -18,7 +18,7 @@ export class HealthService {
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
-      logger.withError(error as Error).error('DB health check failed');
+      logger.withError(error as Error).error("DB health check failed");
       return { alive: false, error: (error as Error).message };
     }
   }
@@ -29,7 +29,7 @@ export class HealthService {
     const healthy = dbHealth.alive;
 
     return {
-      status: healthy ? 'ok' : 'degraded',
+      status: healthy ? "ok" : "degraded",
       db: dbHealth,
     };
   }

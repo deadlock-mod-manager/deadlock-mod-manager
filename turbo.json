@@ -20,8 +20,8 @@
       "cache": false,
       "persistent": true
     },
-    "//#format": {},
-    "//#lint": {
+    "//#lint": {},
+    "//#format": {
       "cache": false
     }
   },

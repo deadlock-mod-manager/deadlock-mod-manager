@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { orpc } from '@/utils/orpc';
-import { DownloadsHero } from './downloads-hero';
-import { ErrorState } from './error-state';
-import { LoadingState } from './loading-state';
-import { VersionAccordion } from './version-accordion';
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/utils/orpc";
+import { DownloadsHero } from "./downloads-hero";
+import { ErrorState } from "./error-state";
+import { LoadingState } from "./loading-state";
+import { VersionAccordion } from "./version-accordion";
 
 export const DownloadsContainer = () => {
   const {

@@ -1,5 +1,5 @@
-import { useQuery } from 'react-query';
-import { getMod } from '@/lib/api';
+import { useQuery } from "react-query";
+import { getMod } from "@/lib/api";
 
 interface UseModOptions {
   enabled?: boolean;
@@ -8,19 +8,19 @@ interface UseModOptions {
 
 export const useMod = (
   modId: string | undefined,
-  options: UseModOptions = {}
+  options: UseModOptions = {},
 ) => {
   const { enabled = true, retry = 1 } = options;
 
   const query = useQuery({
-    queryKey: ['mod', modId],
+    queryKey: ["mod", modId],
     queryFn: () => {
       if (!modId) {
-        throw new Error('Mod ID is required');
+        throw new Error("Mod ID is required");
       }
       return getMod(modId);
     },
-    enabled: !!modId && !modId?.includes('local') && enabled,
+    enabled: !!modId && !modId?.includes("local") && enabled,
     suspense: false,
     retry,
     useErrorBoundary: false,

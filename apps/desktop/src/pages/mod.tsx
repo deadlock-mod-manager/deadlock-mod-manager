@@ -1,30 +1,30 @@
-import { Warning } from '@phosphor-icons/react';
-import { open } from '@tauri-apps/plugin-shell';
-import { ArrowLeft, Trash } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router';
-import { toast } from 'sonner';
-import ModButton from '@/components/mod-browsing/mod-button';
-import { InstalledFilesDisplay } from '@/components/mod-detail/installed-files-display';
-import { ModAudioPreview } from '@/components/mod-detail/mod-audio-preview';
-import { ModDescription } from '@/components/mod-detail/mod-description';
-import { ModFiles } from '@/components/mod-detail/mod-files';
-import { ModGallery } from '@/components/mod-detail/mod-gallery';
-import { ModHero } from '@/components/mod-detail/mod-hero';
-import { ModInfo } from '@/components/mod-detail/mod-info';
-import { OutdatedModWarning } from '@/components/mod-management/outdated-mod-warning';
-import ErrorBoundary from '@/components/shared/error-boundary';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardFooter } from '@/components/ui/card';
-import { useMod } from '@/hooks/use-mod';
-import { useModDownloads } from '@/hooks/use-mod-downloads';
-import { useNSFWBlur } from '@/hooks/use-nsfw-blur';
-import useUninstall from '@/hooks/use-uninstall';
-import { usePersistedStore } from '@/lib/store';
-import { isModOutdated } from '@/lib/utils';
-import { type ModDownloadItem, ModStatus } from '@/types/mods';
+import { Warning } from "@phosphor-icons/react";
+import { open } from "@tauri-apps/plugin-shell";
+import { ArrowLeft, Trash } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import ModButton from "@/components/mod-browsing/mod-button";
+import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
+import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
+import { ModDescription } from "@/components/mod-detail/mod-description";
+import { ModFiles } from "@/components/mod-detail/mod-files";
+import { ModGallery } from "@/components/mod-detail/mod-gallery";
+import { ModHero } from "@/components/mod-detail/mod-hero";
+import { ModInfo } from "@/components/mod-detail/mod-info";
+import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import ErrorBoundary from "@/components/shared/error-boundary";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter } from "@/components/ui/card";
+import { useMod } from "@/hooks/use-mod";
+import { useModDownloads } from "@/hooks/use-mod-downloads";
+import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import useUninstall from "@/hooks/use-uninstall";
+import { usePersistedStore } from "@/lib/store";
+import { isModOutdated } from "@/lib/utils";
+import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
 const Mod = () => {
   const params = useParams();
@@ -36,7 +36,7 @@ const Mod = () => {
   const { availableFiles: rawAvailableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
-    enabled: !!params.id && !params.id?.includes('local'),
+    enabled: !!params.id && !params.id?.includes("local"),
   });
 
   const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
@@ -70,35 +70,34 @@ const Mod = () => {
   if (error && !isLoading) {
     return (
       <ErrorBoundary>
-        <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4">
-          <div className="container mx-auto max-w-6xl space-y-6 py-6">
-            <div className="mb-4 flex items-center justify-between">
+        <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
+          <div className='container mx-auto max-w-6xl space-y-6 py-6'>
+            <div className='mb-4 flex items-center justify-between'>
               <Button
-                className="flex items-center gap-1"
-                onClick={() => navigate('/mods')}
-                size="sm"
-                variant="ghost"
-              >
-                <ArrowLeft className="h-4 w-4" />
+                className='flex items-center gap-1'
+                onClick={() => navigate("/mods")}
+                size='sm'
+                variant='ghost'>
+                <ArrowLeft className='h-4 w-4' />
                 Back to Mods
               </Button>
             </div>
 
             <Alert>
-              <Warning className="h-6 w-6" />
-              <AlertDescription className="flex flex-grow flex-row items-center justify-between gap-2">
-                <div className="flex flex-col gap-2">
-                  <p>{t('errors.genericMessage')}</p>
-                  <pre className="text-sm">
-                    {t('errors.errorCode')}{' '}
-                    {(error as Error)?.message ?? 'Unknown error occurred'}
+              <Warning className='h-6 w-6' />
+              <AlertDescription className='flex flex-grow flex-row items-center justify-between gap-2'>
+                <div className='flex flex-col gap-2'>
+                  <p>{t("errors.genericMessage")}</p>
+                  <pre className='text-sm'>
+                    {t("errors.errorCode")}{" "}
+                    {(error as Error)?.message ?? "Unknown error occurred"}
                   </pre>
                 </div>
-                <div className="flex flex-col items-center justify-center gap-2">
+                <div className='flex flex-col items-center justify-center gap-2'>
                   <Button onClick={() => window.location.reload()}>
-                    {t('errors.tryAgain')}
+                    {t("errors.tryAgain")}
                   </Button>
-                  <Button onClick={() => navigate('/mods')} variant="ghost">
+                  <Button onClick={() => navigate("/mods")} variant='ghost'>
                     Go Back Home
                   </Button>
                 </div>
@@ -116,57 +115,54 @@ const Mod = () => {
 
   return (
     <ErrorBoundary>
-      <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4">
-        <div className="container mx-auto max-w-6xl space-y-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
+      <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
+        <div className='container mx-auto max-w-6xl space-y-6 py-6'>
+          <div className='mb-4 flex items-center justify-between'>
             <Button
-              className="flex items-center gap-1"
-              onClick={() => navigate('/mods')}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="h-4 w-4" />
+              className='flex items-center gap-1'
+              onClick={() => navigate("/mods")}
+              size='sm'
+              variant='ghost'>
+              <ArrowLeft className='h-4 w-4' />
               Back to Mods
             </Button>
           </div>
 
           {isModOutdated(mod) && (
-            <div className="mb-4">
-              <OutdatedModWarning variant="alert" />
+            <div className='mb-4'>
+              <OutdatedModWarning variant='alert' />
             </div>
           )}
 
-          <Card className="overflow-hidde space-y-4">
+          <Card className='overflow-hidde space-y-4'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
 
-            <CardFooter className="z-20 flex flex-row items-start justify-between bg-card">
+            <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
               {mod.remoteUrl && (
                 <Button
-                  className="px-0"
+                  className='px-0'
                   onClick={async () => {
                     try {
                       await open(mod.remoteUrl);
                     } catch (_error) {
-                      toast.error('Failed to open forum post');
+                      toast.error("Failed to open forum post");
                     }
                   }}
-                  variant="link"
-                >
+                  variant='link'>
                   View original forum post
                 </Button>
               )}
 
-              <div className="flex items-center gap-2">
-                <ModButton remoteMod={mod} variant="default" />
+              <div className='flex items-center gap-2'>
+                <ModButton remoteMod={mod} variant='default' />
                 {!!localMod?.status && (
                   <Button
-                    icon={<Trash className="h-4 w-4" />}
+                    icon={<Trash className='h-4 w-4' />}
                     isLoading={deleting}
                     onClick={deleteMod}
-                    size="lg"
-                    variant="destructive"
-                  >
+                    size='lg'
+                    variant='destructive'>
                     Delete Mod
                   </Button>
                 )}

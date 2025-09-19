@@ -1,5 +1,5 @@
-import type { StateCreator } from 'zustand';
-import type { State } from '..';
+import type { StateCreator } from "zustand";
+import type { State } from "..";
 
 export type ScrollState = {
   scrollPositions: Record<string, number>;
@@ -10,7 +10,7 @@ export type ScrollState = {
 
 export const createScrollSlice: StateCreator<State, [], [], ScrollState> = (
   set,
-  get
+  get,
 ) => ({
   scrollPositions: {},
 

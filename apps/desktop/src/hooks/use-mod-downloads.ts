@@ -1,5 +1,5 @@
-import { useQuery } from 'react-query';
-import { getModDownloads } from '@/lib/api';
+import { useQuery } from "react-query";
+import { getModDownloads } from "@/lib/api";
 
 interface UseModDownloadsOptions {
   /**
@@ -28,10 +28,10 @@ export const useModDownloads = ({
   enabled = true,
 }: UseModDownloadsOptions) => {
   const query = useQuery({
-    queryKey: ['mod-downloads', remoteId],
+    queryKey: ["mod-downloads", remoteId],
     queryFn: () => {
       if (!remoteId) {
-        throw new Error('Mod remote ID is required');
+        throw new Error("Mod remote ID is required");
       }
       return getModDownloads(remoteId);
     },

@@ -1,7 +1,7 @@
-import { AttachmentBuilder, type TextChannel } from 'discord.js';
-import puppeteer from 'puppeteer';
-import { env } from './env';
-import { logger } from './logger';
+import { AttachmentBuilder, type TextChannel } from "discord.js";
+import puppeteer from "puppeteer";
+import { env } from "./env";
+import { logger } from "./logger";
 
 const ACCEPT_AGREE_REGEX = /accept|agree/i;
 
@@ -15,7 +15,7 @@ export class StatusMonitor {
   async captureStatus(): Promise<Buffer> {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     try {
@@ -26,7 +26,7 @@ export class StatusMonitor {
         deviceScaleFactor: 2,
       });
       await page.goto(env.STATUS_URL, {
-        waitUntil: 'networkidle2',
+        waitUntil: "networkidle2",
         timeout: 120_000,
       });
 
@@ -34,10 +34,10 @@ export class StatusMonitor {
       try {
         await page.evaluate(() => {
           const buttons = Array.from(
-            document.querySelectorAll('button, [role="button"]')
+            document.querySelectorAll('button, [role="button"]'),
           );
           const cookieBtn = buttons.find((b) =>
-            ACCEPT_AGREE_REGEX.test(b.textContent || '')
+            ACCEPT_AGREE_REGEX.test(b.textContent || ""),
           );
           (cookieBtn as HTMLElement)?.click();
         });
@@ -49,15 +49,15 @@ export class StatusMonitor {
       // Find the main content block; fall back to full page
       const el =
         (await page.$(env.STATUS_SELECTOR)) ||
-        (await page.$('main')) ||
-        (await page.$('body'));
+        (await page.$("main")) ||
+        (await page.$("body"));
       let buffer: Buffer;
 
       if (el) {
-        buffer = Buffer.from(await el.screenshot({ type: 'png' }));
+        buffer = Buffer.from(await el.screenshot({ type: "png" }));
       } else {
         buffer = Buffer.from(
-          await page.screenshot({ fullPage: true, type: 'png' })
+          await page.screenshot({ fullPage: true, type: "png" }),
         );
       }
 
@@ -66,7 +66,7 @@ export class StatusMonitor {
       try {
         await browser.close();
       } catch (error) {
-        logger.withError(error).warn('Failed to close browser');
+        logger.withError(error).warn("Failed to close browser");
       }
     }
   }
@@ -75,19 +75,19 @@ export class StatusMonitor {
     try {
       const png = await this.captureStatus();
       const content = `**Deadlock Mod Manager — Live Status** • <${env.STATUS_URL}>\nLast update: <t:${Math.floor(Date.now() / 1000)}:R>`;
-      const file = new AttachmentBuilder(png, { name: 'status.png' });
+      const file = new AttachmentBuilder(png, { name: "status.png" });
 
       if (this.targetMessageId) {
         try {
           const msg = await channel.messages.fetch(this.targetMessageId);
           await msg.edit({ content, files: [file] });
-          logger.info('Updated status message');
+          logger.info("Updated status message");
           return;
         } catch (e) {
           logger
             .withError(e)
             .warn(
-              'Failed to fetch/edit message by MESSAGE_ID, sending a new one...'
+              "Failed to fetch/edit message by MESSAGE_ID, sending a new one...",
             );
         }
       }
@@ -102,11 +102,11 @@ export class StatusMonitor {
         } catch (e) {
           logger
             .withError(e)
-            .warn('Pin failed (need Manage Messages permission)');
+            .warn("Pin failed (need Manage Messages permission)");
         }
       }
     } catch (error) {
-      logger.withError(error).error('Failed to update status message');
+      logger.withError(error).error("Failed to update status message");
       throw error;
     }
   }

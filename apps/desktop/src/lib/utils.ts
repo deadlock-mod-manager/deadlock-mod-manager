@@ -1,13 +1,13 @@
-import { CustomSettingType } from '@deadlock-mods/utils';
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import type { LocalMod } from '@/types/mods';
-import type { LocalSetting } from '@/types/settings';
-import { SortType } from './constants';
+import { CustomSettingType } from "@deadlock-mods/utils";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import type { LocalMod } from "@/types/mods";
+import type { LocalSetting } from "@/types/settings";
+import { SortType } from "./constants";
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 export const formatSize = (size: number) => {
-  const units = ['B', 'KB', 'MB', 'GB'];
+  const units = ["B", "KB", "MB", "GB"];
   let formattedSize = size;
   let unitIndex = 0;
   while (formattedSize >= 1024 && unitIndex < units.length - 1) {
@@ -25,16 +25,16 @@ export const getAdditionalArgs = (settings: LocalSetting[]) => {
   const additionalArgs: string[] = [];
 
   for (const setting of settings.filter(
-    (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled
+    (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled,
   )) {
-    additionalArgs.push(`${setting.key} ${setting.value || ''}`.trim());
+    additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
   }
 
-  return additionalArgs.join(' ');
+  return additionalArgs.join(" ");
 };
 export const compareDates = (
   a: Date | number | undefined,
-  b: Date | number | undefined
+  b: Date | number | undefined,
 ) => {
   if (!a) {
     return -1;
@@ -63,7 +63,7 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
 };
 
 export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
-  const cutoffDate = new Date('2025-08-19');
+  const cutoffDate = new Date("2025-08-19");
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
   return modUpdatedDate < cutoffDate;
 };

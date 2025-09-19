@@ -1,8 +1,8 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { ArrowUpDown, Search, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import type { ModDto } from "@deadlock-mods/utils";
+import { ArrowUpDown, Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,10 +10,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ModCategory, SortType } from '@/lib/constants';
-import type { FilterMode } from '@/lib/store/slices/ui';
-import FiltersDropdown from './filters-dropdown';
+} from "@/components/ui/select";
+import { ModCategory, SortType } from "@/lib/constants";
+import type { FilterMode } from "@/lib/store/slices/ui";
+import FiltersDropdown from "./filters-dropdown";
 
 type SearchBarProps = {
   query: string;
@@ -56,8 +56,8 @@ const SearchBar = ({
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const getHeroDisplayName = (hero: string) => {
-    if (hero === 'None') {
-      return 'General/Other';
+    if (hero === "None") {
+      return "General/Other";
     }
     return hero;
   };
@@ -65,11 +65,11 @@ const SearchBar = ({
   const getCategoryDisplayName = (category: string) => {
     switch (category) {
       case ModCategory.GAMEPLAY_MODIFICATIONS:
-        return 'Gameplay';
+        return "Gameplay";
       case ModCategory.MODEL_REPLACEMENT:
-        return 'Models';
+        return "Models";
       case ModCategory.OTHER_MISC:
-        return 'Other';
+        return "Other";
       default:
         return category;
     }
@@ -77,7 +77,7 @@ const SearchBar = ({
 
   const removeCategory = (categoryToRemove: string) => {
     onCategoriesChange(
-      selectedCategories.filter((cat) => cat !== categoryToRemove)
+      selectedCategories.filter((cat) => cat !== categoryToRemove),
     );
   };
 
@@ -101,26 +101,25 @@ const SearchBar = ({
     hideOutdated;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
+    <div className='flex flex-col gap-3'>
+      <div className='flex items-center justify-between gap-4'>
+        <div className='flex items-center gap-3'>
+          <div className='relative'>
+            <Search className='absolute top-2.5 left-2 h-4 w-4 text-muted-foreground' />
             <Input
-              className="w-80 pr-8 pl-8"
-              id="search"
+              className='w-80 pr-8 pl-8'
+              id='search'
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('mods.searchPlaceholder')}
+              placeholder={t("mods.searchPlaceholder")}
               value={query}
             />
             {query && (
               <button
-                aria-label="Clear search"
-                className="absolute top-2.5 right-2 h-4 w-4 text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => setQuery('')}
-                type="button"
-              >
-                <X className="h-4 w-4" />
+                aria-label='Clear search'
+                className='absolute top-2.5 right-2 h-4 w-4 text-muted-foreground transition-colors hover:text-foreground'
+                onClick={() => setQuery("")}
+                type='button'>
+                <X className='h-4 w-4' />
               </button>
             )}
           </div>
@@ -140,17 +139,17 @@ const SearchBar = ({
             showNSFW={showNSFW}
           />
         </div>
-        <div className="flex items-center gap-4">
+        <div className='flex items-center gap-4'>
           <Select onValueChange={setSortType} value={sortType}>
             <SelectTrigger>
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              <SelectValue placeholder={t('filters.sortBy')} />
+              <ArrowUpDown className='mr-2 h-4 w-4' />
+              <SelectValue placeholder={t("filters.sortBy")} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {Object.values(SortType).map((type) => (
-                  <SelectItem className="capitalize" key={type} value={type}>
-                    {t(`sorting.${type.replace(/\s+/g, '').toLowerCase()}`)}
+                  <SelectItem className='capitalize' key={type} value={type}>
+                    {t(`sorting.${type.replace(/\s+/g, "").toLowerCase()}`)}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -161,27 +160,25 @@ const SearchBar = ({
 
       {/* Active Filters */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-sm">
-            {filterMode === 'include'
-              ? t('filters.includingFilters')
-              : t('filters.excludingFilters')}
+        <div className='flex flex-wrap items-center gap-2'>
+          <span className='text-muted-foreground text-sm'>
+            {filterMode === "include"
+              ? t("filters.includingFilters")
+              : t("filters.excludingFilters")}
           </span>
 
           {/* Category badges */}
           {selectedCategories.map((category) => (
             <Badge
-              className="flex items-center gap-1"
+              className='flex items-center gap-1'
               key={`category-${category}`}
-              variant="secondary"
-            >
-              {t('filters.categoryLabel')} {getCategoryDisplayName(category)}
+              variant='secondary'>
+              {t("filters.categoryLabel")} {getCategoryDisplayName(category)}
               <button
-                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeCategory(category)}
-                type="button"
-              >
-                <X className="h-3 w-3" />
+                type='button'>
+                <X className='h-3 w-3' />
               </button>
             </Badge>
           ))}
@@ -189,76 +186,70 @@ const SearchBar = ({
           {/* Hero badges */}
           {selectedHeroes.map((hero) => (
             <Badge
-              className="flex items-center gap-1"
+              className='flex items-center gap-1'
               key={`hero-${hero}`}
-              variant="secondary"
-            >
-              {t('filters.heroLabel')} {getHeroDisplayName(hero)}
+              variant='secondary'>
+              {t("filters.heroLabel")} {getHeroDisplayName(hero)}
               <button
-                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeHero(hero)}
-                type="button"
-              >
-                <X className="h-3 w-3" />
+                type='button'>
+                <X className='h-3 w-3' />
               </button>
             </Badge>
           ))}
 
           {/* Hide outdated filter badge */}
           {hideOutdated && (
-            <Badge className="flex items-center gap-1" variant="secondary">
-              {filterMode === 'include'
-                ? t('filters.hideOutdatedBadge')
-                : t('filters.showOutdatedBadge')}
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {filterMode === "include"
+                ? t("filters.hideOutdatedBadge")
+                : t("filters.showOutdatedBadge")}
               <button
-                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onHideOutdatedChange(false)}
-                type="button"
-              >
-                <X className="h-3 w-3" />
+                type='button'>
+                <X className='h-3 w-3' />
               </button>
             </Badge>
           )}
 
           {/* NSFW filter badge */}
           {showNSFW && (
-            <Badge className="flex items-center gap-1" variant="destructive">
-              {filterMode === 'include'
-                ? t('filters.showNSFW')
-                : t('filters.hideNSFW')}
+            <Badge className='flex items-center gap-1' variant='destructive'>
+              {filterMode === "include"
+                ? t("filters.showNSFW")
+                : t("filters.hideNSFW")}
               <button
-                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onShowNSFWChange(false)}
-                type="button"
-              >
-                <X className="h-3 w-3" />
+                type='button'>
+                <X className='h-3 w-3' />
               </button>
             </Badge>
           )}
 
           {/* Audio only filter badge */}
           {showAudioOnly && (
-            <Badge className="flex items-center gap-1" variant="secondary">
-              {filterMode === 'include'
-                ? t('filters.audioOnly')
-                : t('filters.hideAudio')}
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {filterMode === "include"
+                ? t("filters.audioOnly")
+                : t("filters.hideAudio")}
               <button
-                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onShowAudioOnlyChange(false)}
-                type="button"
-              >
-                <X className="h-3 w-3" />
+                type='button'>
+                <X className='h-3 w-3' />
               </button>
             </Badge>
           )}
 
           {/* Clear all button */}
           <button
-            className="text-muted-foreground text-xs underline hover:text-foreground"
+            className='text-muted-foreground text-xs underline hover:text-foreground'
             onClick={clearAllFilters}
-            type="button"
-          >
-            {t('filters.clearAll')}
+            type='button'>
+            {t("filters.clearAll")}
           </button>
         </div>
       )}

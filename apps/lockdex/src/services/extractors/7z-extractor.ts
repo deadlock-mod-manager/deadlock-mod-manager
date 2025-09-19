@@ -1,16 +1,16 @@
-import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
-import { basename } from 'node:path';
-import { pipeline } from 'node:stream/promises';
-import * as _7z from '7zip-min';
-import { logger } from '@/lib/logger';
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import { basename } from "node:path";
+import { pipeline } from "node:stream/promises";
+import * as _7z from "7zip-min";
+import { logger } from "@/lib/logger";
 import type {
   ArchiveEntry,
   ExtractionOptions,
   ExtractionResult,
   StreamExtractionResult,
-} from '@/types/archive';
-import { ArchiveExtractor } from '../archive';
+} from "@/types/archive";
+import { ArchiveExtractor } from "../archive";
 
 interface SevenZipListItem {
   name: string;
@@ -40,7 +40,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
   }
 
   getSupportedExtensions(): string[] {
-    return ['.7z', '.zip', '.tar', '.gz', '.bz2', '.xz'];
+    return [".7z", ".zip", ".tar", ".gz", ".bz2", ".xz"];
   }
 
   async listEntries(archivePath: string): Promise<ArchiveEntry[]> {
@@ -50,7 +50,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
       const entries: ArchiveEntry[] = files.map((file) => ({
         path: file.name,
         size: Number.parseInt(file.size, 10) || 0,
-        isDirectory: file.attr?.includes('D') || file.name.endsWith('/'),
+        isDirectory: file.attr?.includes("D") || file.name.endsWith("/"),
         modifiedAt:
           file.date && file.time
             ? new Date(`${file.date} ${file.time}`)
@@ -64,18 +64,18 @@ export class SevenZipExtractor extends ArchiveExtractor {
       }));
 
       this.logger.info(
-        `Listed ${entries.length} entries from ${basename(archivePath)}`
+        `Listed ${entries.length} entries from ${basename(archivePath)}`,
       );
       return entries;
     } catch (error) {
-      this.logger.withError(error).error('Failed to list 7z entries');
+      this.logger.withError(error).error("Failed to list 7z entries");
       throw error;
     }
   }
 
   async extractAll(
     archivePath: string,
-    options: ExtractionOptions
+    options: ExtractionOptions,
   ): Promise<ExtractionResult> {
     const result: ExtractionResult = {
       extractedFiles: [],
@@ -104,7 +104,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
 
           const targetPath = this.getSafeFilePath(
             options.targetDir,
-            options.preservePaths ? entry.path : basename(entry.path)
+            options.preservePaths ? entry.path : basename(entry.path),
           );
 
           try {
@@ -125,19 +125,19 @@ export class SevenZipExtractor extends ArchiveExtractor {
       }
 
       this.logger.info(
-        `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`
+        `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`,
       );
 
       return result;
     } catch (error) {
-      this.logger.withError(error).error('Failed to extract 7z archive');
+      this.logger.withError(error).error("Failed to extract 7z archive");
       throw error;
     }
   }
 
   async extractFileStream(
     archivePath: string,
-    filePath: string
+    filePath: string,
   ): Promise<StreamExtractionResult> {
     try {
       const entries = await this.listEntries(archivePath);
@@ -147,7 +147,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
         throw new Error(`File ${filePath} not found in archive`);
       }
 
-      const tempDir = await this.createTempDir('7z-stream-');
+      const tempDir = await this.createTempDir("7z-stream-");
 
       try {
         await _7z.unpack(archivePath, tempDir.path);
@@ -174,13 +174,13 @@ export class SevenZipExtractor extends ArchiveExtractor {
           return originalDestroy(error);
         };
 
-        fileStream.on('end', () => {
+        fileStream.on("end", () => {
           cleanup().catch(() => {
             // Ignore cleanup errors
           });
         });
 
-        fileStream.on('error', () => {
+        fileStream.on("error", () => {
           cleanup().catch(() => {
             // Ignore cleanup errors
           });
@@ -205,7 +205,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
   async extractFiles(
     archivePath: string,
     filePaths: string[],
-    targetDir: string
+    targetDir: string,
   ): Promise<ExtractionResult> {
     const result: ExtractionResult = {
       extractedFiles: [],
@@ -218,7 +218,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
       const entries = await this.listEntries(archivePath);
       await this.ensureDirectory(targetDir);
 
-      const tempDir = await this.createTempDir('7z-partial-');
+      const tempDir = await this.createTempDir("7z-partial-");
 
       try {
         await _7z.unpack(archivePath, tempDir.path);
@@ -229,7 +229,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
             if (!entry) {
               result.errors.push({
                 file: filePath,
-                error: 'File not found in archive',
+                error: "File not found in archive",
               });
               continue;
             }
@@ -237,7 +237,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
             const sourcePath = this.getSafeFilePath(tempDir.path, filePath);
             const targetPath = this.getSafeFilePath(
               targetDir,
-              basename(filePath)
+              basename(filePath),
             );
 
             try {
@@ -278,7 +278,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
     } catch (error) {
       this.logger
         .withError(error)
-        .error('Failed to extract specific files from 7z');
+        .error("Failed to extract specific files from 7z");
       throw error;
     }
   }

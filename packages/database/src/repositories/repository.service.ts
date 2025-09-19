@@ -1,8 +1,8 @@
-import type { Database } from '../client';
-import { CustomSettingsRepository } from './custom-settings.repository';
-import { ModRepository } from './mod.repository';
-import { ModDownloadRepository } from './mod-download.repository';
-import { VpkRepository } from './vpk.repository';
+import type { Database } from "../client";
+import { CustomSettingsRepository } from "./custom-settings.repository";
+import { ModRepository } from "./mod.repository";
+import { ModDownloadRepository } from "./mod-download.repository";
+import { VpkRepository } from "./vpk.repository";
 
 export class RepositoryService {
   readonly mods: ModRepository;

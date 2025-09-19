@@ -1,5 +1,5 @@
-import type { Logger } from '@deadlock-mods/logging';
-import type { ProcessorResult } from '@/types/processors';
+import type { Logger } from "@deadlock-mods/logging";
+import type { ProcessorResult } from "@/types/processors";
 
 export abstract class BaseProcessor<T> {
   protected logger: Logger;

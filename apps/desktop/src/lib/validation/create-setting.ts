@@ -1,5 +1,5 @@
-import { CustomSettingType } from '@deadlock-mods/utils';
-import { z } from 'zod';
+import { CustomSettingType } from "@deadlock-mods/utils";
+import { z } from "zod";
 
 export const createSettingSchema = z.object({
   key: z.string(),

@@ -1,23 +1,23 @@
-import { db } from '@deadlock-mods/database';
+import { db } from "@deadlock-mods/database";
 import {
   type AcquiredLock,
   DistributedLockService,
-} from '@deadlock-mods/distributed-lock';
-import type { GameBanana } from '@deadlock-mods/utils';
-import * as Sentry from '@sentry/node';
-import { env } from '../env';
-import { logger as mainLogger } from '../logger';
-import { providerRegistry } from '../providers';
+} from "@deadlock-mods/distributed-lock";
+import type { GameBanana } from "@deadlock-mods/utils";
+import * as Sentry from "@sentry/node";
+import { env } from "../env";
+import { logger as mainLogger } from "../logger";
+import { providerRegistry } from "../providers";
 
 const logger = mainLogger.child().withContext({
-  service: 'mod-sync',
+  service: "mod-sync",
 });
 
 export class ModSyncService {
   private static instance: ModSyncService;
   private readonly lockService: DistributedLockService;
-  private readonly JOB_NAME = 'synchronize-mods';
-  private readonly MONITOR_SLUG = 'synchronize-mods-cron';
+  private readonly JOB_NAME = "synchronize-mods";
+  private readonly MONITOR_SLUG = "synchronize-mods-cron";
 
   constructor() {
     this.lockService = new DistributedLockService(db, logger, {
@@ -37,7 +37,7 @@ export class ModSyncService {
       skipLock?: boolean;
       checkInId?: string;
       monitorSlug?: string;
-    } = {}
+    } = {},
   ): Promise<{ success: boolean; message: string }> {
     const {
       skipLock = false,
@@ -50,7 +50,7 @@ export class ModSyncService {
     try {
       // Try to acquire the lock for this job unless skipped
       if (!skipLock) {
-        logger.info('Attempting to acquire lock for mod synchronization');
+        logger.info("Attempting to acquire lock for mod synchronization");
         lock = await this.lockService.acquireLock(this.JOB_NAME, {
           timeout: 10 * 60 * 1000, // 10 minutes
           heartbeatInterval: 30 * 1000, // 30 seconds heartbeat
@@ -58,7 +58,7 @@ export class ModSyncService {
 
         if (!lock) {
           const message =
-            'Could not acquire lock, another synchronization is already running';
+            "Could not acquire lock, another synchronization is already running";
           logger.info(message);
           return { success: false, message };
         }
@@ -69,33 +69,33 @@ export class ModSyncService {
           lockAcquired: !!lock,
           instanceId: lock?.instanceId,
         })
-        .info('Starting mod synchronization');
+        .info("Starting mod synchronization");
 
       const provider =
         providerRegistry.getProvider<GameBanana.GameBananaSubmission>(
-          'gamebanana'
+          "gamebanana",
         );
       await provider.synchronize();
 
-      logger.info('Mod synchronization completed successfully');
+      logger.info("Mod synchronization completed successfully");
 
       // Report success to Sentry if checkInId is provided
       if (checkInId) {
         Sentry.captureCheckIn({
           checkInId,
           monitorSlug,
-          status: 'ok',
+          status: "ok",
         });
       }
 
       return {
         success: true,
-        message: 'Mod synchronization completed successfully',
+        message: "Mod synchronization completed successfully",
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      logger.withError(error).error('Error during mod synchronization');
+        error instanceof Error ? error.message : "Unknown error occurred";
+      logger.withError(error).error("Error during mod synchronization");
 
       Sentry.captureException(error);
 
@@ -104,7 +104,7 @@ export class ModSyncService {
         Sentry.captureCheckIn({
           checkInId,
           monitorSlug,
-          status: 'error',
+          status: "error",
         });
       }
 
@@ -117,9 +117,9 @@ export class ModSyncService {
       if (lock) {
         try {
           await lock.release();
-          logger.info('Lock released successfully');
+          logger.info("Lock released successfully");
         } catch (releaseError) {
-          logger.withError(releaseError).error('Error releasing lock');
+          logger.withError(releaseError).error("Error releasing lock");
           // Don't re-throw this error, the main job is done
         }
       }

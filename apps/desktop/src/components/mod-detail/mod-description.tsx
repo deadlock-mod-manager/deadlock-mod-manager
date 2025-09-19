@@ -1,5 +1,5 @@
-import { Markup } from 'interweave';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Markup } from "interweave";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ModDescriptionProps {
   description: string;
@@ -16,9 +16,9 @@ export const ModDescription = ({ description }: ModDescriptionProps) => {
         <CardTitle>Description</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="prose prose-sm dark:prose-invert max-w-none">
+        <div className='prose prose-sm dark:prose-invert max-w-none'>
           <Markup
-            className="whitespace-pre-line text-sm leading-relaxed"
+            className='whitespace-pre-line text-sm leading-relaxed'
             content={description}
           />
         </div>

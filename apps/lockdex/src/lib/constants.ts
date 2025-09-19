@@ -1,5 +1,5 @@
-import { version } from '../version';
-import { env } from './env';
+import { version } from "../version";
+import { env } from "./env";
 
 export const SENTRY_OPTIONS = {
   dsn: env.SENTRY_DSN,

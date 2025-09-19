@@ -1,8 +1,8 @@
-import { Volume1, Volume2, VolumeX } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { usePersistedStore } from '@/lib/store';
+import { Volume1, Volume2, VolumeX } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { usePersistedStore } from "@/lib/store";
 
 const VolumeControl = () => {
   const { t } = useTranslation();
@@ -15,27 +15,27 @@ const VolumeControl = () => {
 
   const getVolumeIcon = () => {
     if (audioVolume === 0) {
-      return <VolumeX className="h-4 w-4" />;
+      return <VolumeX className='h-4 w-4' />;
     }
     if (audioVolume < 50) {
-      return <Volume1 className="h-4 w-4" />;
+      return <Volume1 className='h-4 w-4' />;
     }
-    return <Volume2 className="h-4 w-4" />;
+    return <Volume2 className='h-4 w-4' />;
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="space-y-1">
-        <Label className="font-bold text-sm">{t('settings.audioVolume')}</Label>
-        <p className="text-muted-foreground text-sm">
-          {t('settings.audioVolumeDescription')}
+    <div className='flex items-center justify-between'>
+      <div className='space-y-1'>
+        <Label className='font-bold text-sm'>{t("settings.audioVolume")}</Label>
+        <p className='text-muted-foreground text-sm'>
+          {t("settings.audioVolumeDescription")}
         </p>
       </div>
-      <div className="flex min-w-48 items-center space-x-4">
+      <div className='flex min-w-48 items-center space-x-4'>
         {getVolumeIcon()}
-        <div className="flex-1">
+        <div className='flex-1'>
           <Slider
-            className="w-full"
+            className='w-full'
             max={100}
             min={0}
             onValueChange={handleVolumeChange}
@@ -43,7 +43,7 @@ const VolumeControl = () => {
             value={[audioVolume]}
           />
         </div>
-        <span className="min-w-[2.5rem] text-right font-medium text-sm">
+        <span className='min-w-[2.5rem] text-right font-medium text-sm'>
           {audioVolume}%
         </span>
       </div>

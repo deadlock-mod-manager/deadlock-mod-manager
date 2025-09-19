@@ -1,5 +1,5 @@
-import { Volume2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Volume2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ModAudioPreviewProps {
   audioUrl: string;
@@ -21,17 +21,17 @@ export const ModAudioPreview = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Volume2 className="h-5 w-5" />
+        <CardTitle className='flex items-center gap-2'>
+          <Volume2 className='h-5 w-5' />
           Audio Preview
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center space-y-6 p-8">
+        <div className='flex flex-col items-center space-y-6 p-8'>
           <audio
-            className="w-full"
+            className='w-full'
             controls
-            preload="metadata"
+            preload='metadata'
             src={audioUrl}
           />
         </div>

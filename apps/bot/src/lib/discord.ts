@@ -1,7 +1,7 @@
-import { REST } from '@discordjs/rest';
-import { SapphireClient } from '@sapphire/framework';
-import { GatewayIntentBits } from 'discord.js';
-import { env } from './env';
+import { REST } from "@discordjs/rest";
+import { SapphireClient } from "@sapphire/framework";
+import { GatewayIntentBits } from "discord.js";
+import { env } from "./env";
 
 const client = new SapphireClient({
   intents: [
@@ -14,4 +14,4 @@ const client = new SapphireClient({
 
 export default client;
 
-export const rest = new REST({ version: '10' }).setToken(env.BOT_TOKEN);
+export const rest = new REST({ version: "10" }).setToken(env.BOT_TOKEN);

@@ -1,7 +1,7 @@
-import type { JobsOptions } from 'bullmq';
-import { queueConfigs } from '@/config/queues';
-import type { CronJobData } from '@/types/jobs';
-import { BaseQueue } from './base';
+import type { JobsOptions } from "bullmq";
+import { queueConfigs } from "@/config/queues";
+import type { CronJobData } from "@/types/jobs";
+import { BaseQueue } from "./base";
 
 export interface JobSchedulerOptions {
   pattern?: string;
@@ -30,7 +30,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
     schedulerId: string,
     cronPattern: string,
     template?: CronJobTemplate,
-    options?: Omit<JobSchedulerOptions, 'pattern'>
+    options?: Omit<JobSchedulerOptions, "pattern">,
   ) {
     const schedulerOptions: JobSchedulerOptions = {
       pattern: cronPattern,
@@ -42,7 +42,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
     return this.queue.upsertJobScheduler(
       schedulerId,
       schedulerOptions,
-      template
+      template,
     );
   }
 
@@ -57,7 +57,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
     schedulerId: string,
     intervalMs: number,
     template?: CronJobTemplate,
-    options?: Omit<JobSchedulerOptions, 'every'>
+    options?: Omit<JobSchedulerOptions, "every">,
   ) {
     const schedulerOptions: JobSchedulerOptions = {
       every: intervalMs,
@@ -69,7 +69,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
     return this.queue.upsertJobScheduler(
       schedulerId,
       schedulerOptions,
-      template
+      template,
     );
   }
 
@@ -84,7 +84,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
     jobName: string,
     data: CronJobData,
     delayMs: number,
-    options?: JobsOptions
+    options?: JobsOptions,
   ) {
     return this.add(jobName, data, {
       ...options,
@@ -99,7 +99,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
   async removeJobScheduler(schedulerId: string) {
     const jobSchedulers = await this.queue.getJobSchedulers();
     const schedulerToRemove = jobSchedulers.find(
-      (scheduler) => scheduler.id === schedulerId
+      (scheduler) => scheduler.id === schedulerId,
     );
 
     if (schedulerToRemove) {
@@ -142,7 +142,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
    * @param schedulers - Array of job schedulers to resume
    */
   async resumeJobSchedulers(
-    schedulers: Awaited<ReturnType<typeof this.getJobSchedulers>>
+    schedulers: Awaited<ReturnType<typeof this.getJobSchedulers>>,
   ) {
     for (const scheduler of schedulers) {
       if (!scheduler.id) {
@@ -158,7 +158,7 @@ export class CronQueue extends BaseQueue<CronJobData> {
           endDate: scheduler.endDate || undefined,
           limit: scheduler.limit || undefined,
         },
-        scheduler.template
+        scheduler.template,
       );
     }
   }

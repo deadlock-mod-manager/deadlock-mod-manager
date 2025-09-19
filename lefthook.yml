@@ -1,6 +1,16 @@
 pre-commit:
   jobs:
-    - run: pnpm dlx ultracite fix
+    - run: pnpm format:fix
+      glob:
+        - "*.js"
+        - "*.jsx"
+        - "*.ts"
+        - "*.tsx"
+        - "*.json"
+        - "*.jsonc"
+        - "*.css"
+      stage_fixed: true
+    - run: pnpm lint:fix
       glob:
         - "*.js"
         - "*.jsx"

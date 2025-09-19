@@ -3,4 +3,4 @@ export {
   type DistributedLockConfig,
   DistributedLockService,
   type LockOptions,
-} from './distributed-lock.service';
+} from "./distributed-lock.service";

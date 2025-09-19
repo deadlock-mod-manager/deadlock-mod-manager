@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = 'dark' | 'light' | 'system';
+type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: 'dark',
+  theme: "dark",
   setTheme: () => null,
   flashbangEnabled: false,
   setFlashbangEnabled: () => null,
@@ -26,20 +26,20 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
-  storageKey = 'deadlock-theme',
+  defaultTheme = "dark",
+  storageKey = "deadlock-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (typeof window !== "undefined" && window.localStorage) {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     }
     return defaultTheme;
   });
 
   const [flashbangEnabled, setFlashbangEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem('deadlock-flashbang') === 'true';
+    if (typeof window !== "undefined" && window.localStorage) {
+      return localStorage.getItem("deadlock-flashbang") === "true";
     }
     return false;
   });
@@ -47,23 +47,23 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove('light', 'dark');
+    root.classList.remove("light", "dark");
 
     if (flashbangEnabled) {
       const now = new Date();
       const currentHour = now.getHours();
 
       if (currentHour >= 20 || currentHour < 8) {
-        root.classList.add('light');
+        root.classList.add("light");
         return;
       }
     }
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
-        ? 'dark'
-        : 'light';
+        ? "dark"
+        : "light";
 
       root.classList.add(systemTheme);
       return;
@@ -84,17 +84,17 @@ export function ThemeProvider({
 
       // Zwischen 20:00 und 8:00 Uhr Light Mode erzwingen
       if (currentHour >= 20 || currentHour < 8) {
-        root.classList.remove('dark');
-        root.classList.add('light');
+        root.classList.remove("dark");
+        root.classList.add("light");
       } else {
         // Außerhalb der Flashbang-Zeit normale Theme-Logik anwenden
-        root.classList.remove('light', 'dark');
+        root.classList.remove("light", "dark");
 
-        if (theme === 'system') {
-          const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+        if (theme === "system") {
+          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
             .matches
-            ? 'dark'
-            : 'light';
+            ? "dark"
+            : "light";
           root.classList.add(systemTheme);
         } else {
           root.classList.add(theme);
@@ -112,15 +112,15 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      if (typeof window !== 'undefined' && window.localStorage) {
+      if (typeof window !== "undefined" && window.localStorage) {
         localStorage.setItem(storageKey, theme);
       }
       setTheme(theme);
     },
     flashbangEnabled,
     setFlashbangEnabled: (enabled: boolean) => {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem('deadlock-flashbang', enabled.toString());
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem("deadlock-flashbang", enabled.toString());
       }
       setFlashbangEnabled(enabled);
     },
@@ -137,7 +137,7 @@ export const useTheme = () => {
   const context = useContext(ThemeProviderContext);
 
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
 
   return context;

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,23 +6,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { authClient } from '@/lib/auth-client';
-import { Button } from './ui/button';
-import { Skeleton } from './ui/skeleton';
+} from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 
 export default function UserMenu() {
   const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24" />;
+    return <Skeleton className='h-9 w-24' />;
   }
 
   if (!session) {
     return (
-      <Button asChild variant="outline">
-        <Link to="/login">Sign In</Link>
+      <Button asChild variant='outline'>
+        <Link to='/login'>Sign In</Link>
       </Button>
     );
   }
@@ -30,28 +30,27 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">{session.user.name}</Button>
+        <Button variant='outline'>{session.user.name}</Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-card">
+      <DropdownMenuContent className='bg-card'>
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Button
-            className="w-full"
+            className='w-full'
             onClick={() => {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
                     navigate({
-                      to: '/',
+                      to: "/",
                     });
                   },
                 },
               });
             }}
-            variant="destructive"
-          >
+            variant='destructive'>
             Sign Out
           </Button>
         </DropdownMenuItem>

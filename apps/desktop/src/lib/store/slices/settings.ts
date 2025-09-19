@@ -1,10 +1,10 @@
-import type { CustomSettingDto, NSFWSettings } from '@deadlock-mods/utils';
-import { DEFAULT_NSFW_SETTINGS } from '@deadlock-mods/utils';
-import { v4 as uuidv4 } from 'uuid';
-import type { StateCreator } from 'zustand';
-import type { CreateSettingSchema } from '@/lib/validation/create-setting';
-import type { LocalSetting, SystemSetting } from '@/types/settings';
-import type { State } from '..';
+import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/utils";
+import { DEFAULT_NSFW_SETTINGS } from "@deadlock-mods/utils";
+import { v4 as uuidv4 } from "uuid";
+import type { StateCreator } from "zustand";
+import type { CreateSettingSchema } from "@/lib/validation/create-setting";
+import type { LocalSetting, SystemSetting } from "@/types/settings";
+import type { State } from "..";
 
 export type TelemetrySettings = {
   posthogEnabled: boolean;
@@ -15,7 +15,7 @@ const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
 };
 
 export type SettingsState = {
-  settings: Record<LocalSetting['id'], LocalSetting>;
+  settings: Record<LocalSetting["id"], LocalSetting>;
   nsfwSettings: NSFWSettings;
   telemetrySettings: TelemetrySettings;
   perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
@@ -26,7 +26,7 @@ export type SettingsState = {
   toggleSetting: (
     id: string,
     setting: LocalSetting | SystemSetting | CustomSettingDto,
-    newValue?: boolean
+    newValue?: boolean,
   ) => void;
 
   // NSFW settings management
@@ -41,7 +41,7 @@ export type SettingsState = {
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   set,
-  get
+  get,
 ) => ({
   settings: {},
   nsfwSettings: DEFAULT_NSFW_SETTINGS,
@@ -54,7 +54,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   removeSetting: (id: string) =>
     set((state) => ({
       settings: Object.fromEntries(
-        Object.entries(state.settings).filter(([k]) => k !== id)
+        Object.entries(state.settings).filter(([k]) => k !== id),
       ),
     })),
   createSetting: (setting: CreateSettingSchema) => {
@@ -75,7 +75,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   toggleSetting: (
     id: string,
     setting: LocalSetting | SystemSetting | CustomSettingDto,
-    newValue?: boolean
+    newValue?: boolean,
   ) =>
     set((state) => {
       const existingSetting = state.settings[id];

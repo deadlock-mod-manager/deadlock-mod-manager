@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { usePersistedStore } from '@/lib/store';
+import { useEffect, useRef, useState } from "react";
+import { usePersistedStore } from "@/lib/store";
 
 interface UseAudioOptions {
   /**

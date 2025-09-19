@@ -1,29 +1,29 @@
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { NOOP } from '@/lib/constants';
-import { usePersistedStore } from '@/lib/store';
-import type { SystemSetting } from '@/types/settings';
-import SettingCard from './setting-card';
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { NOOP } from "@/lib/constants";
+import { usePersistedStore } from "@/lib/store";
+import type { SystemSetting } from "@/types/settings";
+import SettingCard from "./setting-card";
 
 const getSystemSettings = (t: (key: string) => string): SystemSetting[] =>
   [
     {
-      id: 'auto-reapply-mods',
-      description: t('settings.autoReapplyMods'),
+      id: "auto-reapply-mods",
+      description: t("settings.autoReapplyMods"),
       enabled: false,
       onChange: NOOP,
     },
     {
-      id: 'launch-vanilla-no-args',
-      description: t('settings.launchVanillaNoArgs'),
+      id: "launch-vanilla-no-args",
+      description: t("settings.launchVanillaNoArgs"),
       enabled: false,
       onChange: NOOP,
     },
   ].map((setting) => ({
     ...setting,
-    key: '',
-    value: '',
-    type: 'boolean',
+    key: "",
+    value: "",
+    type: "boolean",
     createdAt: new Date(),
     updatedAt: new Date(),
   }));
@@ -34,7 +34,7 @@ const SystemSettings = () => {
 
   const settingStatusById = useMemo(() => {
     return Object.fromEntries(
-      Object.entries(settings).map(([id, setting]) => [id, setting.enabled])
+      Object.entries(settings).map(([id, setting]) => [id, setting.enabled]),
     );
   }, [settings]);
 

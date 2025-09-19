@@ -1,7 +1,7 @@
-import type { Result } from 'neverthrow';
-import { err, ok } from 'neverthrow';
-import { ModStatus } from '../../types/mods';
-import logger from '../logger';
+import type { Result } from "neverthrow";
+import { err, ok } from "neverthrow";
+import { ModStatus } from "../../types/mods";
+import logger from "../logger";
 
 type StateTransitionError = {
   message: string;
@@ -44,11 +44,11 @@ export class ModStatusStateMachine {
    */
   static validateTransition(
     currentStatus: ModStatus,
-    targetStatus: ModStatus
+    targetStatus: ModStatus,
   ): Result<true, StateTransitionError> {
     // If status is not changing, it's always valid
     if (currentStatus === targetStatus) {
-      logger.debug('Status is not changing', { currentStatus, targetStatus });
+      logger.debug("Status is not changing", { currentStatus, targetStatus });
       return ok(true);
     }
 
@@ -56,7 +56,7 @@ export class ModStatusStateMachine {
     const allowedTransitions = VALID_TRANSITIONS[currentStatus];
 
     if (!allowedTransitions.includes(targetStatus)) {
-      logger.debug('Transition is not allowed', {
+      logger.debug("Transition is not allowed", {
         currentStatus,
         targetStatus,
       });
@@ -67,7 +67,7 @@ export class ModStatusStateMachine {
       });
     }
 
-    logger.debug('Transition is allowed', { currentStatus, targetStatus });
+    logger.debug("Transition is allowed", { currentStatus, targetStatus });
     return ok(true);
   }
 

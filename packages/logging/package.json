@@ -7,8 +7,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "npx ultracite lint",
-    "format": "npx ultracite fix",
     "check-types": "tsc --noEmit --skipLibCheck"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
-import { logger } from '@/lib/logger';
-import type { CronJobData } from '@/types/jobs';
-import { BaseProcessor } from './base';
+import { logger } from "@/lib/logger";
+import type { CronJobData } from "@/types/jobs";
+import { BaseProcessor } from "./base";
 
 export class CronProcessor extends BaseProcessor<CronJobData> {
   async process(jobData: CronJobData) {

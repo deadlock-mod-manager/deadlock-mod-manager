@@ -2,16 +2,16 @@ import type {
   GitHubRelease,
   PlatformDownload,
   ReleasesResponse,
-} from '../../types/github-releases';
-import { logger as mainLogger } from '../logger';
+} from "../../types/github-releases";
+import { logger as mainLogger } from "../logger";
 
 const logger = mainLogger.child().withContext({
-  service: 'github-releases',
+  service: "github-releases",
 });
 
-const GITHUB_API_BASE = 'https://api.github.com';
-const REPO_OWNER = 'deadlock-mod-manager';
-const REPO_NAME = 'deadlock-mod-manager';
+const GITHUB_API_BASE = "https://api.github.com";
+const REPO_OWNER = "deadlock-mod-manager";
+const REPO_NAME = "deadlock-mod-manager";
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 interface CacheEntry {
@@ -38,46 +38,46 @@ export class GitHubReleasesService {
   }
 
   private parsePlatformFromFilename(filename: string): {
-    platform: 'windows' | 'macos' | 'linux';
-    architecture: 'x64' | 'arm64' | 'universal';
+    platform: "windows" | "macos" | "linux";
+    architecture: "x64" | "arm64" | "universal";
   } | null {
     const name = filename.toLowerCase();
 
     // Windows patterns
     if (
-      name.includes('.exe') ||
-      name.includes('windows') ||
-      name.includes('win32') ||
-      name.includes('win64')
+      name.includes(".exe") ||
+      name.includes("windows") ||
+      name.includes("win32") ||
+      name.includes("win64")
     ) {
-      const arch = name.includes('arm64') ? 'arm64' : 'x64';
-      return { platform: 'windows', architecture: arch };
+      const arch = name.includes("arm64") ? "arm64" : "x64";
+      return { platform: "windows", architecture: arch };
     }
 
     // macOS patterns
     if (
-      name.includes('.dmg') ||
-      name.includes('macos') ||
-      name.includes('darwin')
+      name.includes(".dmg") ||
+      name.includes("macos") ||
+      name.includes("darwin")
     ) {
-      const arch = name.includes('arm64')
-        ? 'arm64'
-        : name.includes('x64') || name.includes('x86_64')
-          ? 'x64'
-          : 'universal';
-      return { platform: 'macos', architecture: arch };
+      const arch = name.includes("arm64")
+        ? "arm64"
+        : name.includes("x64") || name.includes("x86_64")
+          ? "x64"
+          : "universal";
+      return { platform: "macos", architecture: arch };
     }
 
     // Linux patterns
     if (
-      name.includes('.appimage') ||
-      name.includes('.deb') ||
-      name.includes('.rpm') ||
-      name.includes('linux')
+      name.includes(".appimage") ||
+      name.includes(".deb") ||
+      name.includes(".rpm") ||
+      name.includes("linux")
     ) {
       const arch =
-        name.includes('arm64') || name.includes('aarch64') ? 'arm64' : 'x64';
-      return { platform: 'linux', architecture: arch };
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return { platform: "linux", architecture: arch };
     }
 
     return null;
@@ -108,7 +108,7 @@ export class GitHubReleasesService {
     }
 
     return {
-      version: release.tag_name.replace(/^v/, ''), // Remove 'v' prefix if present
+      version: release.tag_name.replace(/^v/, ""), // Remove 'v' prefix if present
       name: release.name,
       releaseNotes: release.body,
       publishedAt: release.published_at,
@@ -119,33 +119,33 @@ export class GitHubReleasesService {
 
   async fetchReleases(): Promise<ReleasesResponse> {
     if (this.isCacheValid() && this.cache) {
-      logger.debug('Returning cached GitHub releases data');
+      logger.debug("Returning cached GitHub releases data");
       return this.cache.data;
     }
 
     try {
-      logger.info('Fetching releases from GitHub API');
+      logger.info("Fetching releases from GitHub API");
 
       const response = await fetch(
         `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/releases`,
         {
           headers: {
-            Accept: 'application/vnd.github.v3+json',
-            'User-Agent': 'deadlock-modmanager-api',
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": "deadlock-modmanager-api",
           },
-        }
+        },
       );
 
       if (!response.ok) {
         throw new Error(
-          `GitHub API responded with status ${response.status}: ${response.statusText}`
+          `GitHub API responded with status ${response.status}: ${response.statusText}`,
         );
       }
 
       const releases: GitHubRelease[] = await response.json();
 
       if (!releases || releases.length === 0) {
-        throw new Error('No releases found');
+        throw new Error("No releases found");
       }
 
       // Filter out drafts and sort by published date
@@ -154,16 +154,16 @@ export class GitHubReleasesService {
         .sort(
           (a, b) =>
             new Date(b.published_at).getTime() -
-            new Date(a.published_at).getTime()
+            new Date(a.published_at).getTime(),
         );
 
       if (publishedReleases.length === 0) {
-        throw new Error('No published releases found');
+        throw new Error("No published releases found");
       }
 
       // Find the latest stable release (non-prerelease)
       const latestStable = publishedReleases.find(
-        (release) => !release.prerelease
+        (release) => !release.prerelease,
       );
       const latest = latestStable || publishedReleases[0]; // Fallback to the latest release if no stable found
 
@@ -190,17 +190,17 @@ export class GitHubReleasesService {
       };
 
       logger.info(
-        `Successfully fetched ${releases.length} releases from GitHub`
+        `Successfully fetched ${releases.length} releases from GitHub`,
       );
       return result;
     } catch (error) {
       logger.error(
-        `Failed to fetch releases from GitHub: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch releases from GitHub: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
 
       // Return cached data if available, even if expired
       if (this.cache) {
-        logger.warn('Returning expired cached data due to API failure');
+        logger.warn("Returning expired cached data due to API failure");
         return this.cache.data;
       }
 
@@ -211,6 +211,6 @@ export class GitHubReleasesService {
   // Method to clear cache (useful for testing or forced refresh)
   clearCache(): void {
     this.cache = null;
-    logger.debug('GitHub releases cache cleared');
+    logger.debug("GitHub releases cache cleared");
   }
 }

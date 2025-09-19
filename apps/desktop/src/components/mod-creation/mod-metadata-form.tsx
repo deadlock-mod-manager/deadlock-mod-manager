@@ -1,4 +1,4 @@
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import React, {
   useCallback,
   useEffect,
@@ -6,19 +6,19 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+} from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -26,9 +26,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { generateFallbackModSVG } from '@/lib/file-patterns';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { generateFallbackModSVG } from "@/lib/file-patterns";
 
 export type ModMetadata = {
   name: string;
@@ -51,7 +51,7 @@ export type ModMetadataFormHandle = {
   reset: () => void;
 };
 
-const DEFAULT_IMAGE = '/assets/mod-placeholder.png';
+const DEFAULT_IMAGE = "/assets/mod-placeholder.png";
 
 const generateFallbackSVG = (): string => {
   const rawSvg = generateFallbackModSVG();
@@ -63,52 +63,52 @@ const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
 const IMAGE_MIME_TYPE_REGEX = /^image\//;
 
 const schema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  name: z.string().min(2, "Name is required"),
   author: z
     .string()
-    .max(128, 'Too long')
+    .max(128, "Too long")
     .optional()
-    .or(z.literal('').optional()),
+    .or(z.literal("").optional()),
   description: z
     .string()
-    .max(4000, 'Too long')
+    .max(4000, "Too long")
     .optional()
-    .or(z.literal('').optional()),
+    .or(z.literal("").optional()),
   link: z
     .string()
-    .url('Invalid URL')
+    .url("Invalid URL")
     .refine((url) => {
       try {
         const parsed = new URL(url);
-        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
       } catch {
         return false;
       }
-    }, 'Only HTTP and HTTPS URLs are allowed')
+    }, "Only HTTP and HTTPS URLs are allowed")
     .optional()
-    .or(z.literal('').optional()),
+    .or(z.literal("").optional()),
   imageFile: z
     .instanceof(File)
     .refine((file) => {
       // Validate file type
       const allowedTypes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/webp',
-        'image/gif',
-        'image/svg+xml',
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/svg+xml",
       ];
       return (
         allowedTypes.includes(file.type) ||
         IMAGE_FILE_EXTENSION_REGEX.test(file.name)
       );
-    }, 'File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)')
+    }, "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)")
     .refine((file) => {
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       return file.size <= maxSize;
-    }, 'File size must be less than 10MB')
+    }, "File size must be less than 10MB")
     .optional(),
 });
 
@@ -117,12 +117,12 @@ type FormValues = z.infer<typeof schema>;
 const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
   function ModMetadataForm(
     { initial, title, description, hideCardChrome = false },
-    ref
+    ref,
   ) {
     const { t } = useTranslation();
 
-    const actualTitle = title || t('modForm.title');
-    const actualDescription = description || t('modForm.description');
+    const actualTitle = title || t("modForm.title");
+    const actualDescription = description || t("modForm.description");
 
     const [preview, setPreview] = useState<string | undefined>(undefined);
     const [imgOk, setImgOk] = useState(true);
@@ -132,10 +132,10 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
       // @ts-expect-error - Type compatibility issue with Zod resolver
       resolver: zodResolver(schema),
       defaultValues: {
-        name: initial?.name ?? '',
-        author: initial?.author ?? t('modForm.unknownAuthor'),
-        description: initial?.description ?? '',
-        link: initial?.link ?? '',
+        name: initial?.name ?? "",
+        author: initial?.author ?? t("modForm.unknownAuthor"),
+        description: initial?.description ?? "",
+        link: initial?.link ?? "",
         imageFile: initial?.imageFile ?? undefined,
       },
     });
@@ -143,8 +143,8 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     const resolvedDefault = useMemo(() => DEFAULT_IMAGE, []);
     useEffect(() => {
       const sub = form.watch((_, { name }) => {
-        if (name === 'imageFile') {
-          const f = form.getValues('imageFile') as File | null | undefined;
+        if (name === "imageFile") {
+          const f = form.getValues("imageFile") as File | null | undefined;
           if (f instanceof File) {
             const url = URL.createObjectURL(f);
             setPreview(url);
@@ -160,7 +160,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
           }
         }
       });
-      const initF = form.getValues('imageFile') as File | null | undefined;
+      const initF = form.getValues("imageFile") as File | null | undefined;
       if (initF instanceof File) {
         const url = URL.createObjectURL(initF);
         setPreview(url);
@@ -178,7 +178,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) {
-        form.setValue('imageFile', undefined);
+        form.setValue("imageFile", undefined);
         setPreview(resolvedDefault);
         setImgOk(true);
         return;
@@ -187,19 +187,19 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         IMAGE_MIME_TYPE_REGEX.test(file.type) ||
         IMAGE_FILE_EXTENSION_REGEX.test(file.name);
       if (!ok) {
-        toast.error('Unsupported image type');
-        e.currentTarget.value = '';
+        toast.error("Unsupported image type");
+        e.currentTarget.value = "";
         return;
       }
-      form.setValue('imageFile', file, { shouldValidate: true });
+      form.setValue("imageFile", file, { shouldValidate: true });
     };
 
     const clearImage = useCallback(() => {
-      form.setValue('imageFile', undefined, { shouldValidate: true });
+      form.setValue("imageFile", undefined, { shouldValidate: true });
       setPreview(resolvedDefault);
       setImgOk(true);
       if (fileRef.current) {
-        fileRef.current.value = '';
+        fileRef.current.value = "";
       }
     }, [form, resolvedDefault]);
 
@@ -225,26 +225,26 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         },
         reset: () => {
           form.reset({
-            name: initial?.name ?? '',
-            author: initial?.author ?? 'Unknown',
-            description: initial?.description ?? '',
-            link: initial?.link ?? '',
+            name: initial?.name ?? "",
+            author: initial?.author ?? "Unknown",
+            description: initial?.description ?? "",
+            link: initial?.link ?? "",
             imageFile: undefined,
           });
           clearImage();
         },
       }),
-      [form, preview, imgOk, initial, clearImage]
+      [form, preview, imgOk, initial, clearImage],
     );
 
     const Body = (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+      <div className='grid grid-cols-1 gap-6 md:grid-cols-12'>
         {}
-        <div className="md:col-span-4">
-          <div className="aspect-video w-full overflow-hidden rounded-md border bg-muted">
+        <div className='md:col-span-4'>
+          <div className='aspect-video w-full overflow-hidden rounded-md border bg-muted'>
             <img
-              alt={t('modForm.modPreview')}
-              className="h-full w-full object-cover"
+              alt={t("modForm.modPreview")}
+              className='h-full w-full object-cover'
               onError={() => {
                 setImgOk(false);
                 setPreview(generateFallbackSVG());
@@ -252,34 +252,34 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               src={preview}
             />
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className='mt-3 flex items-center gap-2'>
             <input
-              accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.svg"
-              className="hidden"
+              accept='image/*,.png,.jpg,.jpeg,.webp,.gif,.svg'
+              className='hidden'
               onChange={handleImageChange}
               ref={fileRef}
-              type="file"
+              type='file'
             />
-            <Button onClick={() => fileRef.current?.click()} type="button">
+            <Button onClick={() => fileRef.current?.click()} type='button'>
               Choose image
             </Button>
-            <Button onClick={clearImage} type="button" variant="secondary">
+            <Button onClick={clearImage} type='button' variant='secondary'>
               Use default
             </Button>
           </div>
         </div>
 
         {}
-        <div className="space-y-4 md:col-span-8">
+        <div className='space-y-4 md:col-span-8'>
           <FormField
             control={form.control}
-            name="name"
+            name='name'
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Name *</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t('modForm.modNamePlaceholder')}
+                    placeholder={t("modForm.modNamePlaceholder")}
                     {...field}
                   />
                 </FormControl>
@@ -287,16 +287,16 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               </FormItem>
             )}
           />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
             <FormField
               control={form.control}
-              name="author"
+              name='author'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Author</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t('modForm.authorPlaceholder')}
+                      placeholder={t("modForm.authorPlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -306,12 +306,12 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
             />
             <FormField
               control={form.control}
-              name="link"
+              name='link'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Link</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/mod" {...field} />
+                    <Input placeholder='https://example.com/mod' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -321,14 +321,14 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
 
           <FormField
             control={form.control}
-            name="description"
+            name='description'
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <textarea
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="Short description (optional)"
+                    className='w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring'
+                    placeholder='Short description (optional)'
                     rows={6}
                     {...field}
                   />
@@ -347,8 +347,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
           <form
             onSubmit={(e) => {
               e.preventDefault();
-            }}
-          >
+            }}>
             {Body}
           </form>
         </Form>
@@ -356,25 +355,24 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     }
 
     return (
-      <Card className="w-full border-0 shadow">
+      <Card className='w-full border-0 shadow'>
         <CardHeader>
           <CardTitle>{actualTitle}</CardTitle>
           <CardDescription>{actualDescription}</CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className='p-0'>
           <Form {...form}>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-              }}
-            >
+              }}>
               {Body}
             </form>
           </Form>
         </CardContent>
       </Card>
     );
-  }
+  },
 );
 
 export default Inner;

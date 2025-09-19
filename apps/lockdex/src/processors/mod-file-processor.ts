@@ -1,16 +1,16 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
-import { join, relative } from 'node:path';
-import { ValidationError } from '@deadlock-mods/common';
-import { modDownloadRepository, vpkRepository } from '@deadlock-mods/database';
-import { VpkParser } from '@deadlock-mods/vpk-parser';
-import { logger } from '@/lib/logger';
-import { archiveExtractorFactory } from '@/services/archive';
-import { downloadService } from '@/services/download';
-import { sevenZipExtractor } from '@/services/extractors/7z-extractor';
-import { rarExtractor } from '@/services/extractors/rar-extractor';
-import { zipExtractor } from '@/services/extractors/zip-extractor';
-import type { ModFileProcessingJobData } from '@/types/jobs';
-import { BaseProcessor } from './base';
+import { readdir, readFile, stat } from "node:fs/promises";
+import { join, relative } from "node:path";
+import { ValidationError } from "@deadlock-mods/common";
+import { modDownloadRepository, vpkRepository } from "@deadlock-mods/database";
+import { VpkParser } from "@deadlock-mods/vpk-parser";
+import { logger } from "@/lib/logger";
+import { archiveExtractorFactory } from "@/services/archive";
+import { downloadService } from "@/services/download";
+import { sevenZipExtractor } from "@/services/extractors/7z-extractor";
+import { rarExtractor } from "@/services/extractors/rar-extractor";
+import { zipExtractor } from "@/services/extractors/zip-extractor";
+import type { ModFileProcessingJobData } from "@/types/jobs";
+import { BaseProcessor } from "./base";
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
@@ -33,27 +33,29 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   async process(jobData: ModFileProcessingJobData) {
     try {
       const modDownload = await modDownloadRepository.findById(
-        jobData.modDownloadId
+        jobData.modDownloadId,
       );
       if (!modDownload) {
         return this.handleError(
-          new ValidationError(`ModDownload not found: ${jobData.modDownloadId}`)
+          new ValidationError(
+            `ModDownload not found: ${jobData.modDownloadId}`,
+          ),
         );
       }
 
       // Check if this mod download has already been processed by looking for VPK entries
       const existingVpks = await vpkRepository.findByModDownloadId(
-        jobData.modDownloadId
+        jobData.modDownloadId,
       );
       if (existingVpks.length > 0) {
         this.logger.info(
-          `Skipping already processed mod file: ${jobData.file} for modDownloadId: ${jobData.modDownloadId} (found ${existingVpks.length} existing VPK entries)`
+          `Skipping already processed mod file: ${jobData.file} for modDownloadId: ${jobData.modDownloadId} (found ${existingVpks.length} existing VPK entries)`,
         );
         return this.handleSuccess(jobData);
       }
 
       this.logger.info(
-        `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`
+        `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`,
       );
 
       await using downloadResult = await downloadService.downloadFile(
@@ -65,14 +67,14 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
           progressInterval: 5 * 1024 * 1024,
           retryAttempts: 3,
           retryDelay: 2000,
-        }
+        },
       );
 
       this.logger.info(`Downloaded file to: ${downloadResult.filePath}`);
 
       await using extractionResult = await this.extractArchive(
         downloadResult.filePath,
-        jobData.file
+        jobData.file,
       );
       this.logger.info(`Extracted archive to: ${extractionResult.path}`);
 
@@ -82,7 +84,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
       return this.handleSuccess(jobData);
     } catch (error) {
-      this.logger.withError(error).error('Error processing mod file');
+      this.logger.withError(error).error("Error processing mod file");
       return this.handleError(error as Error);
     }
   }
@@ -102,7 +104,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     const result = await extractor.extractToTempDir(archivePath);
 
     this.logger.info(
-      `Extracted ${result.extractedFiles.length} files, ${result.errors.length} errors`
+      `Extracted ${result.extractedFiles.length} files, ${result.errors.length} errors`,
     );
 
     if (result.errors.length > 0) {
@@ -118,7 +120,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private async listExtractedFiles(dirPath: string): Promise<void> {
     const listFiles = async (
       currentPath: string,
-      prefix = ''
+      prefix = "",
     ): Promise<void> => {
       try {
         const entries = await readdir(currentPath);
@@ -142,7 +144,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       }
     };
 
-    this.logger.info('📋 Extracted files:');
+    this.logger.info("📋 Extracted files:");
     await listFiles(dirPath);
   }
 
@@ -151,12 +153,12 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
    */
   private async parseVpkFiles(
     dirPath: string,
-    modDownload: { id: string; modId: string }
+    modDownload: { id: string; modId: string },
   ): Promise<void> {
     const vpkFiles = await this.findVpkFiles(dirPath);
 
     if (vpkFiles.length === 0) {
-      this.logger.info('No VPK files found in extracted archive');
+      this.logger.info("No VPK files found in extracted archive");
       return;
     }
 
@@ -167,7 +169,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         vpkPath,
         modDownload.modId,
         modDownload.id,
-        dirPath
+        dirPath,
       );
     }
   }
@@ -188,7 +190,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
           if (stats.isDirectory()) {
             await searchDirectory(fullPath);
-          } else if (entry.toLowerCase().endsWith('.vpk')) {
+          } else if (entry.toLowerCase().endsWith(".vpk")) {
             vpkFiles.push(fullPath);
           }
         }
@@ -210,13 +212,13 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     vpkPath: string,
     modId: string,
     modDownloadId: string,
-    extractionDir: string
+    extractionDir: string,
   ): Promise<void> {
     try {
       const vpkBuffer = await readFile(vpkPath);
 
       this.logger.info(
-        `Parsing VPK file: ${vpkPath} (${vpkBuffer.length} bytes)`
+        `Parsing VPK file: ${vpkPath} (${vpkBuffer.length} bytes)`,
       );
 
       const stats = await stat(vpkPath);
@@ -230,7 +232,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
       this.logger.debug(
         `VPK Info - Version: ${parsed.version}, Entries: ${parsed.entries.length}, ` +
-          `TreeLength: ${parsed.treeLength}, ManifestSHA256: ${parsed.manifestSha256}`
+          `TreeLength: ${parsed.treeLength}, ManifestSHA256: ${parsed.manifestSha256}`,
       );
 
       const sourcePath = relative(extractionDir, vpkPath);
@@ -248,14 +250,14 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         hasMultiparts: fp.hasMultiparts,
         hasInlineData: fp.hasInlineData,
         merkleRoot: fp.merkleRoot,
-        state: 'ok' as const,
+        state: "ok" as const,
         fileMtime: fp.lastModified,
       };
 
       const storedVpk = await vpkRepository.upsertByModDownloadIdAndSourcePath(
         modDownloadId,
         sourcePath,
-        vpkData
+        vpkData,
       );
 
       // Check if this VPK belongs to our mod download or if it's a duplicate from another source
@@ -267,7 +269,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       } else {
         this.logger.warn(
           `VPK file ${vpkPath} has duplicate content (SHA256: ${vpkData.sha256}). ` +
-            `Using existing VPK record (ID: ${storedVpk.id}) from modDownloadId: ${storedVpk.modDownloadId}`
+            `Using existing VPK record (ID: ${storedVpk.id}) from modDownloadId: ${storedVpk.modDownloadId}`,
         );
       }
     } catch (error) {

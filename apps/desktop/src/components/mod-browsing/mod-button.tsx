@@ -1,32 +1,32 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { useHover } from '@uidotdev/usehooks';
-import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { GrInstallOption } from 'react-icons/gr';
-import { RiErrorWarningLine } from 'react-icons/ri';
-import { toast } from 'sonner';
-import { FileSelectorDialog } from '@/components/downloads/file-selector-dialog';
-import { MultiFileDownloadDialog } from '@/components/downloads/multi-file-download-dialog';
-import ErrorBoundary from '@/components/shared/error-boundary';
-import { Button } from '@/components/ui/button';
+import type { ModDto } from "@deadlock-mods/utils";
+import { useHover } from "@uidotdev/usehooks";
+import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { GrInstallOption } from "react-icons/gr";
+import { RiErrorWarningLine } from "react-icons/ri";
+import { toast } from "sonner";
+import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
+import ErrorBoundary from "@/components/shared/error-boundary";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useDownload } from '@/hooks/use-download';
-import useInstallWithCollection from '@/hooks/use-install-with-collection';
-import { useModDownloads } from '@/hooks/use-mod-downloads';
-import useUninstall from '@/hooks/use-uninstall';
-import logger from '@/lib/logger';
-import { usePersistedStore } from '@/lib/store';
-import { cn } from '@/lib/utils';
-import { ModStatus } from '@/types/mods';
+} from "@/components/ui/tooltip";
+import { useDownload } from "@/hooks/use-download";
+import useInstallWithCollection from "@/hooks/use-install-with-collection";
+import { useModDownloads } from "@/hooks/use-mod-downloads";
+import useUninstall from "@/hooks/use-uninstall";
+import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { ModStatus } from "@/types/mods";
 
 interface ModButtonProps {
-  remoteMod: Pick<ModDto, 'remoteId' | 'name' | 'downloadable'> | undefined;
-  variant: 'iconOnly' | 'default';
+  remoteMod: Pick<ModDto, "remoteId" | "name" | "downloadable"> | undefined;
+  variant: "iconOnly" | "default";
 }
 
 export const ModStatusIcon = ({
@@ -68,17 +68,17 @@ export const ModStatusIcon = ({
   return (
     <Icon
       className={cn(
-        'h-4 w-4',
+        "h-4 w-4",
         {
-          'animate-spin': status && loadingStatuses.includes(status),
+          "animate-spin": status && loadingStatuses.includes(status),
         },
-        className
+        className,
       )}
     />
   );
 };
 
-const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
+const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
     isDownloadable: remoteMod?.downloadable,
@@ -129,27 +129,27 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
               setInstalledVpks(
                 mod.remoteId,
                 result.installed_vpks,
-                result.file_tree
+                result.file_tree,
               );
-              toast.success(t('notifications.modInstalledSuccessfully'));
+              toast.success(t("notifications.modInstalledSuccessfully"));
             },
             onError: (mod, error) => {
               setModStatus(mod.remoteId, ModStatus.Error);
               toast.error(
-                error.message || t('notifications.failedToInstallMod')
+                error.message || t("notifications.failedToInstallMod"),
               );
             },
             onCancel: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Downloaded);
-              toast.info(t('notifications.installationCanceled'));
+              toast.info(t("notifications.installationCanceled"));
             },
             onFileTreeAnalyzed: (mod, fileTree) => {
               if (fileTree.has_multiple_files) {
                 toast.info(
-                  t('notifications.modContainsFiles', {
+                  t("notifications.modContainsFiles", {
                     modName: mod.name,
                     fileCount: fileTree.total_files,
-                  })
+                  }),
                 );
               }
             },
@@ -194,28 +194,28 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
         e.stopPropagation();
         await action();
       } catch (error) {
-        logger.error('Failed to perform action', { error });
-        toast.error(t('notifications.failedToPerformAction'));
+        logger.error("Failed to perform action", { error });
+        toast.error(t("notifications.failedToPerformAction"));
         setIsActionInProgress(false);
       }
     },
-    [isActionInProgress, action, t]
+    [isActionInProgress, action, t],
   );
 
   const text = useMemo(() => {
     switch (localMod?.status) {
       case ModStatus.Installed:
         if (hovering) {
-          return t('modButton.disableMod');
+          return t("modButton.disableMod");
         }
-        return t('modButton.installed');
+        return t("modButton.installed");
       case ModStatus.Downloaded:
         if (hovering) {
-          return t('modButton.enableMod');
+          return t("modButton.enableMod");
         }
-        return t('modButton.downloaded');
+        return t("modButton.downloaded");
       case undefined:
-        return t('modButton.add');
+        return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
@@ -224,11 +224,11 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
       case ModStatus.Installed:
-        return t('modButton.installedTooltip');
+        return t("modButton.installedTooltip");
       case ModStatus.Downloaded:
-        return t('modButton.downloadedTooltip');
+        return t("modButton.downloadedTooltip");
       case undefined:
-        return t('modButton.add');
+        return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
@@ -238,16 +238,16 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
     switch (localMod?.status) {
       case ModStatus.Installed:
         if (hovering) {
-          return 'destructive';
+          return "destructive";
         }
-        return 'link';
+        return "link";
       case ModStatus.Downloaded:
         if (hovering) {
-          return 'default';
+          return "default";
         }
-        return 'outline';
+        return "outline";
       default:
-        return variant === 'iconOnly' ? 'outline' : 'default';
+        return variant === "iconOnly" ? "outline" : "default";
     }
   }, [variant, localMod?.status, hovering]);
 
@@ -262,11 +262,10 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
             }
             onClick={onClick}
             ref={ref}
-            size={variant === 'iconOnly' ? 'icon' : 'lg'}
+            size={variant === "iconOnly" ? "icon" : "lg"}
             title={text}
-            variant={buttonVariant}
-          >
-            {variant === 'iconOnly' ? null : text}
+            variant={buttonVariant}>
+            {variant === "iconOnly" ? null : text}
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -287,7 +286,7 @@ const ModButton = ({ remoteMod, variant = 'default' }: ModButtonProps) => {
         files={availableFiles}
         isDownloading={localMod?.status === ModStatus.Downloading}
         isOpen={isDialogOpen}
-        modName={localMod?.name || t('modForm.unknownMod')}
+        modName={localMod?.name || t("modForm.unknownMod")}
         onClose={closeDialog}
         onDownload={downloadSelectedFiles}
       />

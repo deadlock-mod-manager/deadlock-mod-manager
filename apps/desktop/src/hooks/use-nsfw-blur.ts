@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { usePersistedStore } from '@/lib/store';
+import { useMemo } from "react";
+import { usePersistedStore } from "@/lib/store";
 
 interface NSFWItem {
   remoteId: string;

@@ -1,24 +1,24 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Suspense, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from 'react-query';
-import { toast } from 'sonner';
-import ModCard from '@/components/mod-browsing/mod-card';
-import SearchBar from '@/components/mod-browsing/search-bar';
-import SearchBarSkeleton from '@/components/mod-browsing/search-bar-skeleton';
-import ErrorBoundary from '@/components/shared/error-boundary';
-import PageTitle from '@/components/shared/page-title';
-import { useScrollPosition } from '@/hooks/use-scroll-position';
-import { useSearch } from '@/hooks/use-search';
-import { getMods } from '@/lib/api';
-import { ModCategory } from '@/lib/constants';
-import { usePersistedStore } from '@/lib/store';
-import { isModOutdated } from '@/lib/utils';
+import type { ModDto } from "@deadlock-mods/utils";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Suspense, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { useQuery } from "react-query";
+import { toast } from "sonner";
+import ModCard from "@/components/mod-browsing/mod-card";
+import SearchBar from "@/components/mod-browsing/search-bar";
+import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
+import ErrorBoundary from "@/components/shared/error-boundary";
+import PageTitle from "@/components/shared/page-title";
+import { useScrollPosition } from "@/hooks/use-scroll-position";
+import { useSearch } from "@/hooks/use-search";
+import { getMods } from "@/lib/api";
+import { ModCategory } from "@/lib/constants";
+import { usePersistedStore } from "@/lib/store";
+import { isModOutdated } from "@/lib/utils";
 
 const GetModsData = () => {
   const { t } = useTranslation();
-  const { data, error } = useQuery('mods', getMods, {
+  const { data, error } = useQuery("mods", getMods, {
     suspense: true,
     useErrorBoundary: false,
     retry: 3,
@@ -34,17 +34,17 @@ const GetModsData = () => {
   } = modsFilters;
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
-    keys: ['name', 'description', 'author'],
+    keys: ["name", "description", "author"],
   });
 
-  const { setScrollElement, scrollY } = useScrollPosition('/mods');
+  const { setScrollElement, scrollY } = useScrollPosition("/mods");
 
   let filteredResults = results;
 
   if (hideOutdated) {
     filteredResults = filteredResults.filter((mod) => {
       const isOutdated = isModOutdated(mod);
-      return filterMode === 'include' ? !isOutdated : isOutdated;
+      return filterMode === "include" ? !isOutdated : isOutdated;
     });
   }
 
@@ -65,12 +65,12 @@ const GetModsData = () => {
       ) {
         const predefinedCategories = Object.values(ModCategory);
         matchesCategory = !predefinedCategories.includes(
-          mod.category as ModCategory
+          mod.category as ModCategory,
         );
       }
 
       // Return based on filter mode
-      return filterMode === 'include' ? matchesCategory : !matchesCategory;
+      return filterMode === "include" ? matchesCategory : !matchesCategory;
     });
   }
 
@@ -78,7 +78,7 @@ const GetModsData = () => {
     filteredResults = filteredResults.filter((mod) => {
       let matchesHero = false;
 
-      if (selectedHeroes.includes('None')) {
+      if (selectedHeroes.includes("None")) {
         matchesHero =
           !mod.hero || (mod.hero !== null && selectedHeroes.includes(mod.hero));
       } else {
@@ -86,7 +86,7 @@ const GetModsData = () => {
       }
 
       // Return based on filter mode
-      return filterMode === 'include' ? matchesHero : !matchesHero;
+      return filterMode === "include" ? matchesHero : !matchesHero;
     });
   }
 
@@ -97,7 +97,7 @@ const GetModsData = () => {
   if (showNSFW) {
     filteredResults = filteredResults.filter((mod) => {
       const isNSFW = mod.isNSFW;
-      return filterMode === 'include' ? isNSFW : !isNSFW;
+      return filterMode === "include" ? isNSFW : !isNSFW;
     });
   }
 
@@ -105,7 +105,7 @@ const GetModsData = () => {
     filteredResults = filteredResults.filter((mod) => {
       const isAudio = mod.isAudio;
       // Return based on filter mode
-      return filterMode === 'include' ? isAudio : !isAudio;
+      return filterMode === "include" ? isAudio : !isAudio;
     });
   }
 
@@ -136,12 +136,12 @@ const GetModsData = () => {
 
   useEffect(() => {
     if (error) {
-      toast.error((error as Error)?.message ?? t('common.failedToFetchMods'));
+      toast.error((error as Error)?.message ?? t("common.failedToFetchMods"));
     }
   }, [error, t]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className='flex flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
         hideOutdated={hideOutdated}
@@ -170,68 +170,65 @@ const GetModsData = () => {
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-2 text-muted-foreground">
+        <div className='flex flex-col items-center justify-center py-12 text-center'>
+          <div className='mb-2 text-muted-foreground'>
             <svg
-              className="mx-auto mb-4 h-12 w-12"
-              fill="none"
-              stroke="currentColor"
+              className='mx-auto mb-4 h-12 w-12'
+              fill='none'
+              stroke='currentColor'
               strokeWidth={1.5}
-              viewBox="0 0 24 24"
-            >
+              viewBox='0 0 24 24'>
               <path
-                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                d='m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z'
+                strokeLinecap='round'
+                strokeLinejoin='round'
               />
             </svg>
           </div>
-          <h3 className="mb-1 font-medium text-lg">{t('mods.noModsFound')}</h3>
-          <p className="text-muted-foreground text-sm">
+          <h3 className='mb-1 font-medium text-lg'>{t("mods.noModsFound")}</h3>
+          <p className='text-muted-foreground text-sm'>
             {query.trim() ||
             selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
             !nsfwSettings.hideNSFW ||
             hideOutdated ||
             showAudioOnly
-              ? t('mods.noModsMatchFilters')
-              : t('mods.noModsAvailable')}
+              ? t("mods.noModsMatchFilters")
+              : t("mods.noModsAvailable")}
           </p>
           {(selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
             !nsfwSettings.hideNSFW ||
             hideOutdated ||
             showAudioOnly) && (
-            <p className="mt-2 text-muted-foreground text-xs">
+            <p className='mt-2 text-muted-foreground text-xs'>
               Try clearing some filters to see more results
             </p>
           )}
         </div>
       ) : (
         <div
-          className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto"
+          className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto'
           ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
         >
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
+              width: "100%",
+              position: "relative",
+            }}>
             {rowVirtualizer.getVirtualItems().map((virtualRow) => (
               <div
                 key={virtualRow.key}
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 0,
                   left: 0,
-                  width: '100%',
+                  width: "100%",
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <div className="grid grid-cols-4 gap-4 px-1">
+                }}>
+                <div className='grid grid-cols-4 gap-4 px-1'>
                   {modRows[virtualRow.index]?.map((mod) => (
                     <ModCard key={mod.id} mod={mod} />
                   ))}
@@ -249,24 +246,23 @@ const GetMods = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="h-[calc(100vh-160px)] w-full px-4">
+    <div className='h-[calc(100vh-160px)] w-full px-4'>
       <PageTitle
-        className="mb-4"
-        subtitle={t('mods.subtitle')}
-        title={t('navigation.getMods')}
+        className='mb-4'
+        subtitle={t("mods.subtitle")}
+        title={t("navigation.getMods")}
       />
       <Suspense
         fallback={
-          <div className="flex flex-col gap-4">
+          <div className='flex flex-col gap-4'>
             <SearchBarSkeleton />
-            <div className="grid grid-cols-4 gap-4">
+            <div className='grid grid-cols-4 gap-4'>
               {Array.from({ length: 25 }, () => (
                 <ModCard key={crypto.randomUUID()} mod={undefined} />
               ))}
             </div>
           </div>
-        }
-      >
+        }>
         <ErrorBoundary>
           <GetModsData />
         </ErrorBoundary>

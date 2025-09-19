@@ -1,4 +1,4 @@
-import { modDownloadRepository, modRepository } from '@deadlock-mods/database';
+import { modDownloadRepository, modRepository } from "@deadlock-mods/database";
 import {
   ModDownloadsResponseSchema,
   ModIdParamSchema,
@@ -6,13 +6,13 @@ import {
   ModsListResponseSchema,
   toModDownloadDto,
   toModDto,
-} from '@deadlock-mods/utils';
-import { ORPCError } from '@orpc/server';
-import { publicProcedure } from '../../lib/orpc';
+} from "@deadlock-mods/utils";
+import { ORPCError } from "@orpc/server";
+import { publicProcedure } from "../../lib/orpc";
 
 export const v1Router = {
   listModsV1: publicProcedure
-    .route({ method: 'GET', path: '/v1/mods' })
+    .route({ method: "GET", path: "/v1/mods" })
     .output(ModsListResponseSchema)
     .handler(async () => {
       const allMods = await modRepository.findAll();
@@ -20,30 +20,30 @@ export const v1Router = {
     }),
 
   getModV1: publicProcedure
-    .route({ method: 'GET', path: '/v1/mods/{id}' })
+    .route({ method: "GET", path: "/v1/mods/{id}" })
     .input(ModIdParamSchema)
     .output(ModSchema)
     .handler(async ({ input }) => {
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
-        throw new ORPCError('NOT_FOUND');
+        throw new ORPCError("NOT_FOUND");
       }
       return toModDto(mod);
     }),
 
   getModDownloadV1: publicProcedure
-    .route({ method: 'GET', path: '/v1/mods/{id}/download' })
+    .route({ method: "GET", path: "/v1/mods/{id}/download" })
     .input(ModIdParamSchema)
     .output(ModDownloadsResponseSchema)
     .handler(async ({ input }) => {
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
-        throw new ORPCError('NOT_FOUND');
+        throw new ORPCError("NOT_FOUND");
       }
 
       const downloads = await modDownloadRepository.findByModId(mod.id);
       if (downloads.length === 0) {
-        throw new ORPCError('NOT_FOUND');
+        throw new ORPCError("NOT_FOUND");
       }
 
       // V1: Return only the first download (primary/largest file)

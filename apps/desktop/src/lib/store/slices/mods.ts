@@ -1,15 +1,15 @@
-import type { ModDto } from '@deadlock-mods/utils';
-import type { StateCreator } from 'zustand';
-import { SortType } from '@/lib/constants';
-import logger from '@/lib/logger';
-import { ModStatusStateMachine } from '@/lib/state-machines/mod-status';
+import type { ModDto } from "@deadlock-mods/utils";
+import type { StateCreator } from "zustand";
+import { SortType } from "@/lib/constants";
+import logger from "@/lib/logger";
+import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
 import {
   type LocalMod,
   type ModFileTree,
   ModStatus,
   type Progress,
-} from '@/types/mods';
-import type { State } from '..';
+} from "@/types/mods";
+import type { State } from "..";
 
 export type ModProgress = {
   percentage: number;
@@ -31,14 +31,14 @@ export type ModsState = {
   setInstalledVpks: (
     remoteId: string,
     vpks: string[],
-    fileTree?: ModFileTree
+    fileTree?: ModFileTree,
   ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
 };
 
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   set,
-  get
+  get,
 ) => ({
   localMods: [],
   modProgress: {},
@@ -61,16 +61,16 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   setModStatus: (remoteId, status) => {
     const mod = get().localMods.find((m) => m.remoteId === remoteId);
     if (!mod) {
-      logger.error('Mod not found', { remoteId });
+      logger.error("Mod not found", { remoteId });
       return;
     }
     const validateStatus = ModStatusStateMachine.validateTransition(
       mod.status,
-      status
+      status,
     );
 
     if (validateStatus.isErr()) {
-      logger.error('Invalid status transition', {
+      logger.error("Invalid status transition", {
         remoteId,
         status,
         error: validateStatus.error,
@@ -130,7 +130,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   setInstalledVpks: (
     remoteId: string,
     vpks: string[],
-    fileTree?: ModFileTree
+    fileTree?: ModFileTree,
   ) =>
     set((state) => ({
       localMods: state.localMods.map((mod) => ({

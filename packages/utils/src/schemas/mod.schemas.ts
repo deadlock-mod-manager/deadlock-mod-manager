@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // These schemas match the DTO output types exactly
 

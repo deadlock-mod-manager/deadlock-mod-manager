@@ -1,18 +1,18 @@
-import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { sql } from "drizzle-orm";
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const customSettings = pgTable('custom_setting', {
-  id: text('id')
+export const customSettings = pgTable("custom_setting", {
+  id: text("id")
     .primaryKey()
     .default(sql`concat('custom_setting_', gen_random_uuid())`),
-  key: text('key').notNull(),
-  value: text('value').notNull(),
-  type: text('type').notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_at', { mode: 'date' })
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  type: text("type").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { mode: "date" })
     .notNull()
     .$defaultFn(() => new Date()),
-  updatedAt: timestamp('updated_at', { mode: 'date' })
+  updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
     .$defaultFn(() => new Date()),
 });

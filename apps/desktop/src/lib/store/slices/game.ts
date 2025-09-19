@@ -1,5 +1,5 @@
-import type { StateCreator } from 'zustand';
-import type { State } from '..';
+import type { StateCreator } from "zustand";
+import type { State } from "..";
 
 export type GameState = {
   gamePath: string;
@@ -7,8 +7,8 @@ export type GameState = {
 };
 
 export const createGameSlice: StateCreator<State, [], [], GameState> = (
-  set
+  set,
 ) => ({
-  gamePath: '',
+  gamePath: "",
   setGamePath: (path: string) => set({ gamePath: path }),
 });

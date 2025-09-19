@@ -9,14 +9,14 @@ import {
   Package,
   Sparkle,
   UploadSimple,
-} from '@phosphor-icons/react';
-import { open } from '@tauri-apps/plugin-shell';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
+} from "@phosphor-icons/react";
+import { open } from "@tauri-apps/plugin-shell";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -26,12 +26,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import useWhatsNew from '@/hooks/use-whats-new';
-import { usePersistedStore } from '@/lib/store';
-import { ModStatus } from '@/types/mods';
-import { AboutDialog } from './about-dialog';
-import { SidebarCollapse } from './sidebar-collapse';
+} from "@/components/ui/sidebar";
+import useWhatsNew from "@/hooks/use-whats-new";
+import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
+import { AboutDialog } from "./about-dialog";
+import { SidebarCollapse } from "./sidebar-collapse";
 
 type SidebarItem = {
   id: string;
@@ -52,59 +52,58 @@ type SidebarItem = {
 
 const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
   {
-    id: 'my-mods',
+    id: "my-mods",
     title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
-      <div className="flex items-center gap-2">
-        {t('navigation.myMods')}{' '}
+      <div className='flex items-center gap-2'>
+        {t("navigation.myMods")}{" "}
         {count !== undefined && (
           <Badge
-            className="px-1 py-0.1 text-xs"
-            variant={isActive ? 'inverted' : 'default'}
-          >
+            className='px-1 py-0.1 text-xs'
+            variant={isActive ? "inverted" : "default"}>
             {count}
           </Badge>
         )}
       </div>
     ),
-    url: '/',
+    url: "/",
     icon: Package,
   },
   {
-    id: 'get-mods',
-    title: () => <span>{t('navigation.getMods')}</span>,
-    url: '/mods',
+    id: "get-mods",
+    title: () => <span>{t("navigation.getMods")}</span>,
+    url: "/mods",
     icon: MagnifyingGlass,
   },
   {
-    id: 'add-mods',
-    title: () => <span>{t('navigation.addMods')}</span>,
-    url: '/add-mods',
+    id: "add-mods",
+    title: () => <span>{t("navigation.addMods")}</span>,
+    url: "/add-mods",
     icon: UploadSimple,
   },
   {
-    id: 'downloads',
+    id: "downloads",
     title: ({ downloads }: { downloads?: number }) => (
       <span>
-        {t('navigation.downloads')}{' '}
+        {t("navigation.downloads")}{" "}
         {downloads !== undefined && downloads > 0 && (
-          <Badge className="px-1 py-0.1 text-xs">{downloads}</Badge>
+          <Badge className='px-1 py-0.1 text-xs'>{downloads}</Badge>
         )}
       </span>
     ),
-    url: '/downloads',
+    url: "/downloads",
     icon: Download,
   },
   {
-    id: 'settings',
-    title: () => <span>{t('navigation.settings')}</span>,
-    url: '/settings',
+    id: "settings",
+    title: () => <span>{t("navigation.settings")}</span>,
+    url: "/settings",
     icon: Gear,
     bottom: true,
   },
   {
-    id: 'about',
-    title: () => <span>{t('navigation.about')}</span>,
-    url: '/about',
+    id: "about",
+    title: () => <span>{t("navigation.about")}</span>,
+    url: "/about",
     icon: InfoIcon,
     dialog: AboutDialog,
     bottom: true,
@@ -112,9 +111,9 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
   ...(import.meta.env.DEV
     ? [
         {
-          id: 'debug',
+          id: "debug",
           title: () => <span>Debug</span>,
-          url: '/debug',
+          url: "/debug",
           icon: BugBeetleIcon,
           bottom: true,
         },
@@ -137,18 +136,17 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
       <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
         <DialogTrigger asChild>
           <SidebarMenuButton
-            className="cursor-pointer"
-            isActive={location.pathname === item.url}
-          >
-            <item.icon weight="duotone" />
+            className='cursor-pointer'
+            isActive={location.pathname === item.url}>
+            <item.icon weight='duotone' />
             {item.title({
               isActive: location.pathname === item.url,
-              count: item.id === 'my-mods' ? mods.length : undefined,
+              count: item.id === "my-mods" ? mods.length : undefined,
               downloads:
-                item.id === 'downloads'
+                item.id === "downloads"
                   ? mods.filter(
                       (mod: { status: ModStatus }) =>
-                        mod.status === ModStatus.Downloading
+                        mod.status === ModStatus.Downloading,
                     ).length
                   : undefined,
             })}
@@ -162,15 +160,15 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
   return (
     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
       <Link to={item.url}>
-        <item.icon weight="duotone" />
+        <item.icon weight='duotone' />
         {item.title({
           isActive: location.pathname === item.url,
-          count: item.id === 'my-mods' ? mods.length : undefined,
+          count: item.id === "my-mods" ? mods.length : undefined,
           downloads:
-            item.id === 'downloads'
+            item.id === "downloads"
               ? mods.filter(
                   (mod: { status: ModStatus }) =>
-                    mod.status === ModStatus.Downloading
+                    mod.status === ModStatus.Downloading,
                 ).length
               : undefined,
         })}
@@ -189,11 +187,10 @@ export const AppSidebar = () => {
 
   return (
     <Sidebar
-      className="absolute top-10 left-0 z-50 flex h-[calc(100vh-40px)] w-[12rem] flex-col border-t"
-      collapsible="icon"
-      variant="sidebar"
-    >
-      <SidebarContent className="flex-grow">
+      className='absolute top-10 left-0 z-50 flex h-[calc(100vh-40px)] w-[12rem] flex-col border-t'
+      collapsible='icon'
+      variant='sidebar'>
+      <SidebarContent className='flex-grow'>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -230,20 +227,18 @@ export const AppSidebar = () => {
               <Separator />
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className="cursor-pointer"
-                  onClick={() => forceShow()}
-                >
-                  <Sparkle weight="duotone" />
-                  <span>{t('navigation.whatsNew')}</span>
+                  className='cursor-pointer'
+                  onClick={() => forceShow()}>
+                  <Sparkle weight='duotone' />
+                  <span>{t("navigation.whatsNew")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className="cursor-pointer"
-                  onClick={() => open('https://discord.gg/KSB2kzQWWE')}
-                >
-                  <DiscordLogo weight="duotone" />
-                  <span>{t('help.needHelp')}</span>
+                  className='cursor-pointer'
+                  onClick={() => open("https://discord.gg/KSB2kzQWWE")}>
+                  <DiscordLogo weight='duotone' />
+                  <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarCollapse />

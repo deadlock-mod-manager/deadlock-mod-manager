@@ -1,19 +1,19 @@
-import type winston from 'winston';
-import { format } from 'winston';
+import type winston from "winston";
+import { format } from "winston";
 
 const formatMeta = (meta: Record<string | symbol, unknown | unknown[]>) => {
   // Filter out numeric keys and known Winston symbols
   const cleanMeta = Object.entries(meta).reduce(
     (acc, [key, value]) => {
-      if (!Number.isNaN(Number(key)) && typeof key !== 'symbol') {
+      if (!Number.isNaN(Number(key)) && typeof key !== "symbol") {
         acc[key] = value;
       }
       return acc;
     },
-    {} as Record<string, unknown>
+    {} as Record<string, unknown>,
   );
 
-  const splat = meta[Symbol.for('splat')];
+  const splat = meta[Symbol.for("splat")];
 
   if (splat && Array.isArray(splat)) {
     return cleanMeta;
@@ -30,7 +30,7 @@ const customFormat = format.printf((info) => {
     .map(([, value]) => value);
 
   const fullMessage = stringParts
-    ? [message, ' ', ...stringParts].join('')
+    ? [message, " ", ...stringParts].join("")
     : message;
 
   return JSON.stringify({
@@ -42,7 +42,7 @@ const customFormat = format.printf((info) => {
 });
 
 export const prodFormat: winston.Logform.Format = format.combine(
-  format.timestamp({ format: 'isoDateTime' }),
+  format.timestamp({ format: "isoDateTime" }),
   format.splat(),
-  customFormat
+  customFormat,
 );

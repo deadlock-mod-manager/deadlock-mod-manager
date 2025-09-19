@@ -1,13 +1,13 @@
-import { Monitor, Moon, Sun } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/components/providers/theme';
-import { Button } from '@/components/ui/button';
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "@/components/providers/theme";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 export function ThemeSwitcher() {
   const { t } = useTranslation();
@@ -15,27 +15,27 @@ export function ThemeSwitcher() {
 
   const getThemeIcon = () => {
     switch (theme) {
-      case 'light':
-        return <Sun className="h-4 w-4" />;
-      case 'dark':
-        return <Moon className="h-4 w-4" />;
-      case 'system':
-        return <Monitor className="h-4 w-4" />;
+      case "light":
+        return <Sun className='h-4 w-4' />;
+      case "dark":
+        return <Moon className='h-4 w-4' />;
+      case "system":
+        return <Monitor className='h-4 w-4' />;
       default:
-        return <Moon className="h-4 w-4" />;
+        return <Moon className='h-4 w-4' />;
     }
   };
 
   const getThemeLabel = () => {
     switch (theme) {
-      case 'light':
-        return t('theme.light');
-      case 'dark':
-        return t('theme.dark');
-      case 'system':
-        return t('theme.system');
+      case "light":
+        return t("theme.light");
+      case "dark":
+        return t("theme.dark");
+      case "system":
+        return t("theme.system");
       default:
-        return t('theme.dark');
+        return t("theme.dark");
     }
   };
 
@@ -43,25 +43,24 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="w-32 justify-start gap-2"
-          size="sm"
-          variant="outline"
-        >
+          className='w-32 justify-start gap-2'
+          size='sm'
+          variant='outline'>
           {getThemeIcon()}
-          <span className="hidden sm:inline">{getThemeLabel()}</span>
+          <span className='hidden sm:inline'>{getThemeLabel()}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
-          <Sun className="mr-2 h-4 w-4" />
+      <DropdownMenuContent align='end'>
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          <Sun className='mr-2 h-4 w-4' />
           <span>Light</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
-          <Moon className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <Moon className='mr-2 h-4 w-4' />
           <span>Dark</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
-          <Monitor className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Monitor className='mr-2 h-4 w-4' />
           <span>System</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

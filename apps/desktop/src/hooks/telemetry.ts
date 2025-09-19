@@ -5,5 +5,5 @@ export type {
   PostHogProperties,
   PostHogUserProperties,
   UseAnalyticsReturn as UsePostHogReturn,
-} from './use-posthog';
-export { useAnalytics as usePostHog } from './use-posthog';
+} from "./use-posthog";
+export { useAnalytics as usePostHog } from "./use-posthog";

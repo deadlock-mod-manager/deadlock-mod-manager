@@ -1,15 +1,15 @@
-import { createWriteStream } from 'node:fs';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import type { Logger } from '@deadlock-mods/logging';
+import { createWriteStream } from "node:fs";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import type { Logger } from "@deadlock-mods/logging";
 import type {
   ArchiveEntry,
   ExtractionOptions,
   ExtractionResult,
   StreamExtractionResult,
   TempDirResult,
-} from '@/types/archive';
+} from "@/types/archive";
 
 const PATH_NORMALIZATION_REGEX = /\\/g;
 const UNSAFE_PATH_REGEX = /\.\.+/g;
@@ -47,7 +47,7 @@ export abstract class ArchiveExtractor {
    */
   abstract extractAll(
     archivePath: string,
-    options: ExtractionOptions
+    options: ExtractionOptions,
   ): Promise<ExtractionResult>;
 
   /**
@@ -55,7 +55,7 @@ export abstract class ArchiveExtractor {
    */
   abstract extractFileStream(
     archivePath: string,
-    filePath: string
+    filePath: string,
   ): Promise<StreamExtractionResult>;
 
   /**
@@ -64,7 +64,7 @@ export abstract class ArchiveExtractor {
   abstract extractFiles(
     archivePath: string,
     filePaths: string[],
-    targetDir: string
+    targetDir: string,
   ): Promise<ExtractionResult>;
 
   /**
@@ -97,8 +97,8 @@ export abstract class ArchiveExtractor {
    * Helper method to get file extension
    */
   protected getFileExtension(filePath: string): string {
-    const lastDot = filePath.lastIndexOf('.');
-    return lastDot === -1 ? '' : filePath.slice(lastDot).toLowerCase();
+    const lastDot = filePath.lastIndexOf(".");
+    return lastDot === -1 ? "" : filePath.slice(lastDot).toLowerCase();
   }
 
   /**
@@ -106,7 +106,7 @@ export abstract class ArchiveExtractor {
    */
   protected filterEntries(
     entries: ArchiveEntry[],
-    options: ExtractionOptions
+    options: ExtractionOptions,
   ): ArchiveEntry[] {
     return entries.filter((entry) => {
       // Skip directories if not preserving paths
@@ -138,7 +138,7 @@ export abstract class ArchiveExtractor {
     try {
       await mkdir(dirPath, { recursive: true });
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
         throw error;
       }
     }
@@ -148,10 +148,10 @@ export abstract class ArchiveExtractor {
    * Helper method to get safe file path (prevents directory traversal)
    */
   protected getSafeFilePath(basePath: string, filePath: string): string {
-    const normalizedPath = filePath.replace(PATH_NORMALIZATION_REGEX, '/');
+    const normalizedPath = filePath.replace(PATH_NORMALIZATION_REGEX, "/");
     const safePath = normalizedPath
-      .replace(LEADING_SLASH_REGEX, '')
-      .replace(UNSAFE_PATH_REGEX, '');
+      .replace(LEADING_SLASH_REGEX, "")
+      .replace(UNSAFE_PATH_REGEX, "");
     return join(basePath, safePath);
   }
 
@@ -159,14 +159,14 @@ export abstract class ArchiveExtractor {
    * Helper method to create write stream with directory creation
    */
   protected async createSafeWriteStream(
-    filePath: string
+    filePath: string,
   ): Promise<NodeJS.WritableStream> {
     await this.ensureDirectory(dirname(filePath));
     return createWriteStream(filePath);
   }
 
   protected async createTempDir(
-    prefix = 'archive-extract-'
+    prefix = "archive-extract-",
   ): Promise<TempDirResult> {
     const tempDirPath = await mkdtemp(join(tmpdir(), prefix));
 
@@ -192,7 +192,7 @@ export abstract class ArchiveExtractor {
 
   async extractToTempDir(
     archivePath: string,
-    options?: Partial<ExtractionOptions>
+    options?: Partial<ExtractionOptions>,
   ): Promise<ExtractionResult & TempDirResult> {
     const tempDir = await this.createTempDir();
 
@@ -258,9 +258,9 @@ export class ArchiveExtractorFactory {
     return Array.from(
       new Set(
         this.extractors.flatMap((extractor) =>
-          extractor.getSupportedExtensions()
-        )
-      )
+          extractor.getSupportedExtensions(),
+        ),
+      ),
     );
   }
 }

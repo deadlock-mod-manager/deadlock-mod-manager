@@ -1,14 +1,14 @@
-import { z } from 'zod';
-import { env } from '@/lib/env';
-import { publicProcedure } from '../lib/orpc';
-import { GitHubReleasesService } from '../lib/services/github-releases';
-import { HealthService } from '../lib/services/health';
-import type { ReleasesResponse } from '../types/github-releases';
-import type { HealthResponse } from '../types/health';
-import { version } from '../version';
+import { z } from "zod";
+import { env } from "@/lib/env";
+import { publicProcedure } from "../lib/orpc";
+import { GitHubReleasesService } from "../lib/services/github-releases";
+import { HealthService } from "../lib/services/health";
+import type { ReleasesResponse } from "../types/github-releases";
+import type { HealthResponse } from "../types/health";
+import { version } from "../version";
 
 const HealthResponseSchema = z.object({
-  status: z.enum(['ok', 'degraded']),
+  status: z.enum(["ok", "degraded"]),
   db: z.object({
     alive: z.boolean(),
     error: z.string().optional(),
@@ -20,12 +20,12 @@ const VersionResponseSchema = z.object({
 });
 
 const StatusResponseSchema = z.object({
-  status: z.enum(['operational', 'downtime', 'degraded']),
+  status: z.enum(["operational", "downtime", "degraded"]),
 });
 
 const PlatformDownloadSchema = z.object({
-  platform: z.enum(['windows', 'macos', 'linux']),
-  architecture: z.enum(['x64', 'arm64', 'universal']),
+  platform: z.enum(["windows", "macos", "linux"]),
+  architecture: z.enum(["x64", "arm64", "universal"]),
   url: z.string(),
   filename: z.string(),
   size: z.number(),
@@ -47,13 +47,13 @@ const ReleasesResponseSchema = z.object({
       publishedAt: z.string(),
       prerelease: z.boolean(),
       downloads: z.array(PlatformDownloadSchema),
-    })
+    }),
   ),
 });
 
 export const publicRouter = {
   healthCheck: publicProcedure
-    .route({ method: 'GET', path: '/health' })
+    .route({ method: "GET", path: "/health" })
     .output(HealthResponseSchema)
     .handler(async (): Promise<HealthResponse> => {
       const service = HealthService.getInstance();
@@ -61,19 +61,19 @@ export const publicRouter = {
     }),
 
   getVersion: publicProcedure
-    .route({ method: 'GET', path: '/version' })
+    .route({ method: "GET", path: "/version" })
     .output(VersionResponseSchema)
     .handler(async () => {
       try {
         const response = await fetch(
-          'https://github.com/Stormix/deadlock-modmanager/releases/latest/download/latest.json',
+          "https://github.com/Stormix/deadlock-modmanager/releases/latest/download/latest.json",
           {
-            headers: { Accept: 'application/json' },
-          }
+            headers: { Accept: "application/json" },
+          },
         );
 
         if (!response.ok) {
-          return { version: 'unknown' };
+          return { version: "unknown" };
         }
 
         const data = await response.json();
@@ -85,17 +85,17 @@ export const publicRouter = {
     }),
 
   getStatus: publicProcedure
-    .route({ method: 'GET', path: '/status' })
+    .route({ method: "GET", path: "/status" })
     .output(StatusResponseSchema)
     .handler(async () => {
       try {
         const response = await fetch(
-          'https://betteruptime.com/api/v2/status-pages/184676',
+          "https://betteruptime.com/api/v2/status-pages/184676",
           {
             headers: {
               Authorization: `Bearer ${env.BETTERSTACK_API_KEY}`,
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -106,26 +106,26 @@ export const publicRouter = {
         const betterStackStatus = data.data.attributes.aggregate_state;
 
         // Map betterstack status to our status format
-        let status: 'operational' | 'downtime' | 'degraded';
+        let status: "operational" | "downtime" | "degraded";
         switch (betterStackStatus.toLowerCase()) {
-          case 'operational':
-            status = 'operational';
+          case "operational":
+            status = "operational";
             break;
-          case 'degraded':
-            status = 'degraded';
+          case "degraded":
+            status = "degraded";
             break;
           default:
-            status = 'downtime';
+            status = "downtime";
         }
 
         return { status };
       } catch (_error) {
-        return { status: 'downtime' as const };
+        return { status: "downtime" as const };
       }
     }),
 
   getReleases: publicProcedure
-    .route({ method: 'GET', path: '/releases' })
+    .route({ method: "GET", path: "/releases" })
     .output(ReleasesResponseSchema)
     .handler(async (): Promise<ReleasesResponse> => {
       try {
@@ -133,7 +133,7 @@ export const publicRouter = {
         return await service.fetchReleases();
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error occurred';
+          error instanceof Error ? error.message : "Unknown error occurred";
         throw new Error(`Failed to fetch releases: ${errorMessage}`);
       }
     }),

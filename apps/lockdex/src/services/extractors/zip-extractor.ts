@@ -1,15 +1,15 @@
-import { stat } from 'node:fs/promises';
-import { basename } from 'node:path';
-import { pipeline } from 'node:stream/promises';
-import * as yauzl from 'yauzl';
-import { logger } from '@/lib/logger';
+import { stat } from "node:fs/promises";
+import { basename } from "node:path";
+import { pipeline } from "node:stream/promises";
+import * as yauzl from "yauzl";
+import { logger } from "@/lib/logger";
 import type {
   ArchiveEntry,
   ExtractionOptions,
   ExtractionResult,
   StreamExtractionResult,
-} from '@/types/archive';
-import { ArchiveExtractor } from '../archive';
+} from "@/types/archive";
+import { ArchiveExtractor } from "../archive";
 
 export class ZipExtractor extends ArchiveExtractor {
   private static instance: ZipExtractor | null = null;
@@ -26,7 +26,7 @@ export class ZipExtractor extends ArchiveExtractor {
   }
 
   getSupportedExtensions(): string[] {
-    return ['.zip'];
+    return [".zip"];
   }
 
   async listEntries(archivePath: string): Promise<ArchiveEntry[]> {
@@ -41,14 +41,14 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error('Failed to open ZIP file'));
+            reject(new Error("Failed to open ZIP file"));
             return;
           }
 
           zipfile.readEntry();
 
-          zipfile.on('entry', (entry: yauzl.Entry) => {
-            const isDirectory = entry.fileName.endsWith('/');
+          zipfile.on("entry", (entry: yauzl.Entry) => {
+            const isDirectory = entry.fileName.endsWith("/");
 
             entries.push({
               path: entry.fileName,
@@ -64,27 +64,27 @@ export class ZipExtractor extends ArchiveExtractor {
             zipfile.readEntry();
           });
 
-          zipfile.on('end', () => {
+          zipfile.on("end", () => {
             this.logger.info(
-              `Listed ${entries.length} entries from ${basename(archivePath)}`
+              `Listed ${entries.length} entries from ${basename(archivePath)}`,
             );
             resolve(entries);
           });
 
-          zipfile.on('error', (error) => {
+          zipfile.on("error", (error) => {
             reject(error);
           });
         });
       });
     } catch (error) {
-      this.logger.withError(error).error('Failed to list ZIP entries');
+      this.logger.withError(error).error("Failed to list ZIP entries");
       throw error;
     }
   }
 
   async extractAll(
     archivePath: string,
-    options: ExtractionOptions
+    options: ExtractionOptions,
   ): Promise<ExtractionResult> {
     const result: ExtractionResult = {
       extractedFiles: [],
@@ -111,7 +111,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error('Failed to open ZIP file'));
+            reject(new Error("Failed to open ZIP file"));
             return;
           }
 
@@ -120,7 +120,7 @@ export class ZipExtractor extends ArchiveExtractor {
 
           zipfile.readEntry();
 
-          zipfile.on('entry', async (entry: yauzl.Entry) => {
+          zipfile.on("entry", async (entry: yauzl.Entry) => {
             try {
               const archiveEntry = entryMap.get(entry.fileName);
 
@@ -129,11 +129,11 @@ export class ZipExtractor extends ArchiveExtractor {
                 return;
               }
 
-              if (entry.fileName.endsWith('/')) {
+              if (entry.fileName.endsWith("/")) {
                 if (options.preservePaths) {
                   const dirPath = this.getSafeFilePath(
                     options.targetDir,
-                    entry.fileName
+                    entry.fileName,
                   );
                   await this.ensureDirectory(dirPath);
                 }
@@ -145,7 +145,7 @@ export class ZipExtractor extends ArchiveExtractor {
                 options.targetDir,
                 options.preservePaths
                   ? entry.fileName
-                  : basename(entry.fileName)
+                  : basename(entry.fileName),
               );
 
               if (!options.overwrite) {
@@ -173,7 +173,7 @@ export class ZipExtractor extends ArchiveExtractor {
                   if (!readStream) {
                     result.errors.push({
                       file: entry.fileName,
-                      error: 'Failed to open read stream',
+                      error: "Failed to open read stream",
                     });
                     zipfile.readEntry();
                     return;
@@ -187,7 +187,7 @@ export class ZipExtractor extends ArchiveExtractor {
                   result.totalBytes += entry.uncompressedSize;
 
                   this.logger.debug(
-                    `Extracted ${entry.fileName} to ${targetPath}`
+                    `Extracted ${entry.fileName} to ${targetPath}`,
                   );
                 } catch (error) {
                   const errorMsg =
@@ -203,7 +203,7 @@ export class ZipExtractor extends ArchiveExtractor {
                     filteredEntries.filter((e) => !e.isDirectory).length
                   ) {
                     this.logger.info(
-                      `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`
+                      `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`,
                     );
                     resolve(result);
                   } else {
@@ -222,27 +222,27 @@ export class ZipExtractor extends ArchiveExtractor {
             }
           });
 
-          zipfile.on('end', () => {
+          zipfile.on("end", () => {
             this.logger.info(
-              `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`
+              `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`,
             );
             resolve(result);
           });
 
-          zipfile.on('error', (error) => {
+          zipfile.on("error", (error) => {
             reject(error);
           });
         });
       });
     } catch (error) {
-      this.logger.withError(error).error('Failed to extract ZIP archive');
+      this.logger.withError(error).error("Failed to extract ZIP archive");
       throw error;
     }
   }
 
   async extractFileStream(
     archivePath: string,
-    filePath: string
+    filePath: string,
   ): Promise<StreamExtractionResult> {
     try {
       const entries = await this.listEntries(archivePath);
@@ -260,15 +260,15 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error('Failed to open ZIP file'));
+            reject(new Error("Failed to open ZIP file"));
             return;
           }
 
           zipfile.readEntry();
 
-          zipfile.on('entry', (zipEntry: yauzl.Entry) => {
+          zipfile.on("entry", (zipEntry: yauzl.Entry) => {
             if (zipEntry.fileName === filePath) {
-              if (zipEntry.fileName.endsWith('/')) {
+              if (zipEntry.fileName.endsWith("/")) {
                 reject(new Error(`${filePath} is a directory, not a file`));
                 return;
               }
@@ -281,7 +281,7 @@ export class ZipExtractor extends ArchiveExtractor {
 
                 if (!readStream) {
                   reject(
-                    new Error(`Failed to open read stream for ${filePath}`)
+                    new Error(`Failed to open read stream for ${filePath}`),
                   );
                   return;
                 }
@@ -296,15 +296,15 @@ export class ZipExtractor extends ArchiveExtractor {
             }
           });
 
-          zipfile.on('end', () => {
+          zipfile.on("end", () => {
             reject(
               new Error(
-                `File ${filePath} not found in archive during stream extraction`
-              )
+                `File ${filePath} not found in archive during stream extraction`,
+              ),
             );
           });
 
-          zipfile.on('error', (error) => {
+          zipfile.on("error", (error) => {
             reject(error);
           });
         });
@@ -320,7 +320,7 @@ export class ZipExtractor extends ArchiveExtractor {
   async extractFiles(
     archivePath: string,
     filePaths: string[],
-    targetDir: string
+    targetDir: string,
   ): Promise<ExtractionResult> {
     const result: ExtractionResult = {
       extractedFiles: [],
@@ -340,7 +340,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error('Failed to open ZIP file'));
+            reject(new Error("Failed to open ZIP file"));
             return;
           }
 
@@ -349,21 +349,21 @@ export class ZipExtractor extends ArchiveExtractor {
 
           zipfile.readEntry();
 
-          zipfile.on('entry', async (entry: yauzl.Entry) => {
+          zipfile.on("entry", async (entry: yauzl.Entry) => {
             try {
               if (!targetFiles.has(entry.fileName)) {
                 zipfile.readEntry();
                 return;
               }
 
-              if (entry.fileName.endsWith('/')) {
+              if (entry.fileName.endsWith("/")) {
                 zipfile.readEntry();
                 return;
               }
 
               const targetPath = this.getSafeFilePath(
                 targetDir,
-                basename(entry.fileName)
+                basename(entry.fileName),
               );
 
               zipfile.openReadStream(entry, async (err, readStream) => {
@@ -379,7 +379,7 @@ export class ZipExtractor extends ArchiveExtractor {
                       targetFiles.size,
                       result,
                       resolve,
-                      zipfile
+                      zipfile,
                     );
                     return;
                   }
@@ -387,7 +387,7 @@ export class ZipExtractor extends ArchiveExtractor {
                   if (!readStream) {
                     result.errors.push({
                       file: entry.fileName,
-                      error: 'Failed to open read stream',
+                      error: "Failed to open read stream",
                     });
                     processedCount++;
                     this.checkCompletion(
@@ -395,7 +395,7 @@ export class ZipExtractor extends ArchiveExtractor {
                       targetFiles.size,
                       result,
                       resolve,
-                      zipfile
+                      zipfile,
                     );
                     return;
                   }
@@ -408,7 +408,7 @@ export class ZipExtractor extends ArchiveExtractor {
                   result.totalBytes += entry.uncompressedSize;
 
                   this.logger.debug(
-                    `Extracted ${entry.fileName} to ${targetPath}`
+                    `Extracted ${entry.fileName} to ${targetPath}`,
                   );
                 } catch (error) {
                   const errorMsg =
@@ -424,7 +424,7 @@ export class ZipExtractor extends ArchiveExtractor {
                     targetFiles.size,
                     result,
                     resolve,
-                    zipfile
+                    zipfile,
                   );
                 }
               });
@@ -441,12 +441,12 @@ export class ZipExtractor extends ArchiveExtractor {
                 targetFiles.size,
                 result,
                 resolve,
-                zipfile
+                zipfile,
               );
             }
           });
 
-          zipfile.on('end', () => {
+          zipfile.on("end", () => {
             // Add errors for files that weren't found
             for (const filePath of filePaths) {
               const isExtracted = result.extractedFiles.includes(filePath);
@@ -458,13 +458,13 @@ export class ZipExtractor extends ArchiveExtractor {
 
               result.errors.push({
                 file: filePath,
-                error: 'File not found in archive',
+                error: "File not found in archive",
               });
             }
             resolve(result);
           });
 
-          zipfile.on('error', (error) => {
+          zipfile.on("error", (error) => {
             reject(error);
           });
         });
@@ -472,7 +472,7 @@ export class ZipExtractor extends ArchiveExtractor {
     } catch (error) {
       this.logger
         .withError(error)
-        .error('Failed to extract specific files from ZIP');
+        .error("Failed to extract specific files from ZIP");
       throw error;
     }
   }
@@ -482,7 +482,7 @@ export class ZipExtractor extends ArchiveExtractor {
     totalFiles: number,
     result: ExtractionResult,
     resolve: (value: ExtractionResult) => void,
-    zipfile: yauzl.ZipFile
+    zipfile: yauzl.ZipFile,
   ): void {
     if (processedCount >= totalFiles) {
       zipfile.close();
@@ -509,7 +509,7 @@ export class ZipExtractor extends ArchiveExtractor {
 
             if (!zipfile) {
               this.logger.warn(
-                `Failed to open ZIP file for validation: ${archivePath}`
+                `Failed to open ZIP file for validation: ${archivePath}`,
               );
               resolve(false);
               return;
@@ -518,7 +518,7 @@ export class ZipExtractor extends ArchiveExtractor {
             let isValid = true;
             zipfile.readEntry();
 
-            zipfile.on('entry', (entry: yauzl.Entry) => {
+            zipfile.on("entry", (entry: yauzl.Entry) => {
               // Basic validation - check if entry has valid properties
               if (
                 !entry.fileName ||
@@ -533,17 +533,17 @@ export class ZipExtractor extends ArchiveExtractor {
               zipfile.readEntry();
             });
 
-            zipfile.on('end', () => {
+            zipfile.on("end", () => {
               resolve(isValid);
             });
 
-            zipfile.on('error', (error) => {
+            zipfile.on("error", (error) => {
               this.logger
                 .withError(error)
                 .warn(`ZIP validation error for ${archivePath}`);
               resolve(false);
             });
-          }
+          },
         );
       });
     } catch (error) {

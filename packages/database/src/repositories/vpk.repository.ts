@@ -1,11 +1,11 @@
-import { and, eq } from 'drizzle-orm';
-import type { Database } from '../client';
+import { and, eq } from "drizzle-orm";
+import type { Database } from "../client";
 import type {
   ModDownloadVpk,
   ModDownloadVpkWithMod,
   NewModDownloadVpk,
-} from '../schema/mods';
-import { vpk } from '../schema/mods';
+} from "../schema/mods";
+import { vpk } from "../schema/mods";
 
 export class VpkRepository {
   constructor(private readonly db: Database) {}
@@ -57,7 +57,7 @@ export class VpkRepository {
   }
 
   async findByContentSignature(
-    contentSig: string
+    contentSig: string,
   ): Promise<ModDownloadVpkWithMod[]> {
     return (await this.db.query.vpk.findMany({
       where: eq(vpk.contentSig, contentSig),
@@ -78,13 +78,13 @@ export class VpkRepository {
 
   async findByModDownloadIdAndSourcePath(
     modDownloadId: string,
-    sourcePath: string
+    sourcePath: string,
   ): Promise<ModDownloadVpk | null> {
     return (
       (await this.db.query.vpk.findFirst({
         where: and(
           eq(vpk.modDownloadId, modDownloadId),
-          eq(vpk.sourcePath, sourcePath)
+          eq(vpk.sourcePath, sourcePath),
         ),
         with: {
           mod: true,
@@ -95,7 +95,7 @@ export class VpkRepository {
 
   async findByFastHashAndSize(
     fastHash: string,
-    sizeBytes: number
+    sizeBytes: number,
   ): Promise<ModDownloadVpkWithMod[]> {
     return (await this.db.query.vpk.findMany({
       where: and(eq(vpk.fastHash, fastHash), eq(vpk.sizeBytes, sizeBytes)),
@@ -111,7 +111,7 @@ export class VpkRepository {
   }
 
   async createMultiple(
-    newVpks: NewModDownloadVpk[]
+    newVpks: NewModDownloadVpk[],
   ): Promise<ModDownloadVpk[]> {
     if (newVpks.length === 0) {
       return [];
@@ -124,7 +124,7 @@ export class VpkRepository {
 
   async update(
     id: string,
-    vpkData: Partial<NewModDownloadVpk>
+    vpkData: Partial<NewModDownloadVpk>,
   ): Promise<ModDownloadVpk> {
     const result = await this.db
       .update(vpk)
@@ -137,11 +137,11 @@ export class VpkRepository {
   async upsertByModDownloadIdAndSourcePath(
     modDownloadId: string,
     sourcePath: string,
-    vpkData: NewModDownloadVpk
+    vpkData: NewModDownloadVpk,
   ): Promise<ModDownloadVpk> {
     const existing = await this.findByModDownloadIdAndSourcePath(
       modDownloadId,
-      sourcePath
+      sourcePath,
     );
 
     if (existing) {
@@ -165,7 +165,7 @@ export class VpkRepository {
     const existingBySha256 = await this.findBySha256(vpkData.sha256);
     if (!existingBySha256) {
       throw new Error(
-        `VPK insertion failed but no existing VPK found for SHA256: ${vpkData.sha256}`
+        `VPK insertion failed but no existing VPK found for SHA256: ${vpkData.sha256}`,
       );
     }
 
@@ -206,12 +206,12 @@ export class VpkRepository {
 
   async existsByModDownloadIdAndSourcePath(
     modDownloadId: string,
-    sourcePath: string
+    sourcePath: string,
   ): Promise<boolean> {
     const result = await this.db.query.vpk.findFirst({
       where: and(
         eq(vpk.modDownloadId, modDownloadId),
-        eq(vpk.sourcePath, sourcePath)
+        eq(vpk.sourcePath, sourcePath),
       ),
       columns: { id: true },
     });

@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import { createGameSlice, type GameState } from './slices/game';
-import { createModsSlice, type ModsState } from './slices/mods';
-import { createScrollSlice, type ScrollState } from './slices/scroll';
-import { createSettingsSlice, type SettingsState } from './slices/settings';
-import { createUISlice, type UIState } from './slices/ui';
-import storage from './storage';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { createGameSlice, type GameState } from "./slices/game";
+import { createModsSlice, type ModsState } from "./slices/mods";
+import { createScrollSlice, type ScrollState } from "./slices/scroll";
+import { createSettingsSlice, type SettingsState } from "./slices/settings";
+import { createUISlice, type UIState } from "./slices/ui";
+import storage from "./storage";
 
 export type State = ModsState &
   GameState &
@@ -23,7 +23,7 @@ export const usePersistedStore = create<State>()(
       ...createScrollSlice(...a),
     }),
     {
-      name: 'local-config',
+      name: "local-config",
       version: 1,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
@@ -41,6 +41,6 @@ export const usePersistedStore = create<State>()(
         } = state;
         return rest;
       },
-    }
-  )
+    },
+  ),
 );

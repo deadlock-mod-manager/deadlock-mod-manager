@@ -1,5 +1,5 @@
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import type * as React from 'react';
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import type * as React from "react";
 
 export function ThemeProvider({
   children,
@@ -8,4 +8,4 @@ export function ThemeProvider({
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
-export { useTheme } from 'next-themes';
+export { useTheme } from "next-themes";

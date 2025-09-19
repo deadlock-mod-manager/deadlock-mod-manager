@@ -1,14 +1,14 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { openTelemetryPlugin } from '@loglayer/plugin-opentelemetry';
-import type { NodeClient as SentryNodeClient } from '@sentry/node';
-import type { ILogLayer, LogLayerConfig } from 'loglayer';
-import { LogLayer, MockLogLayer } from 'loglayer';
-import { serializeError } from 'serialize-error';
-import { SentryTransport } from './transports/sentry';
+import { AsyncLocalStorage } from "node:async_hooks";
+import { openTelemetryPlugin } from "@loglayer/plugin-opentelemetry";
+import type { NodeClient as SentryNodeClient } from "@sentry/node";
+import type { ILogLayer, LogLayerConfig } from "loglayer";
+import { LogLayer, MockLogLayer } from "loglayer";
+import { serializeError } from "serialize-error";
+import { SentryTransport } from "./transports/sentry";
 import {
   createWinstonTransport,
   type WinstonTransportOptions,
-} from './transports/winston';
+} from "./transports/winston";
 
 export type MessageDataType = string | number | boolean | null | undefined;
 export const createMockLogger = () => new MockLogLayer();
@@ -24,7 +24,7 @@ export type LoggerOptions<C extends Record<string, unknown>> =
 
 const createLogger = <C extends Record<string, unknown>>(
   options?: LoggerOptions<C>,
-  context?: LoggerContext<C>
+  context?: LoggerContext<C>,
 ) => {
   const { transport } = createWinstonTransport(options?.transportOptions);
 
@@ -40,18 +40,18 @@ const createLogger = <C extends Record<string, unknown>>(
   });
 
   const openTelemetryPlugins =
-    process.env?.NODE_ENV !== 'development'
+    process.env?.NODE_ENV !== "development"
       ? [
           openTelemetryPlugin({
-            traceFieldName: 'traceId',
-            spanIdFieldName: 'spanId',
-            traceFlagsFieldName: 'traceFlags',
+            traceFieldName: "traceId",
+            spanIdFieldName: "spanId",
+            traceFlagsFieldName: "traceFlags",
           }),
         ]
       : [];
 
   return new LogLayer({
-    enabled: process.env?.NODE_ENV !== 'test',
+    enabled: process.env?.NODE_ENV !== "test",
     consoleDebug: false,
 
     // Transport configuration
@@ -63,7 +63,7 @@ const createLogger = <C extends Record<string, unknown>>(
     ],
 
     // Error handling
-    errorFieldName: 'error', // Field name for errors
+    errorFieldName: "error", // Field name for errors
     copyMsgOnOnlyError: false, // Copy error.message to log message when using errorOnly()
     errorFieldInMetadata: false, // Include error in metadata instead of root level
     errorSerializer: serializeError, // Function to transform Error objects

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router';
-import { usePersistedStore } from '@/lib/store';
+import { useCallback, useEffect, useRef } from "react";
+import { useLocation } from "react-router";
+import { usePersistedStore } from "@/lib/store";
 
 export const useScrollPosition = (key?: string) => {
   const location = useLocation();
@@ -55,7 +55,7 @@ export const useScrollPosition = (key?: string) => {
       }
       scrollElementRef.current = element;
     },
-    [saveScrollPosition]
+    [saveScrollPosition],
   );
 
   // Save scroll position before navigation
@@ -72,16 +72,16 @@ export const useScrollPosition = (key?: string) => {
       saveScrollPosition();
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     // Save scroll position when component unmounts or route changes
     return () => {
       // Mark as navigating to prevent cleanup overwrites
       isNavigatingRef.current = true;
       saveScrollPosition();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [saveScrollPosition]);
 
@@ -110,10 +110,10 @@ export const useScrollPosition = (key?: string) => {
       }
     };
 
-    element.addEventListener('scroll', handleScroll, { passive: true });
+    element.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      element.removeEventListener('scroll', handleScroll);
+      element.removeEventListener("scroll", handleScroll);
       clearTimeout(timeoutId);
     };
   }, [saveScrollPosition, scrollKey, setScrollPosition]);

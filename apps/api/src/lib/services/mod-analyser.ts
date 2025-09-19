@@ -1,14 +1,14 @@
 import {
   type ModDownloadVpkWithMod,
   vpkRepository,
-} from '@deadlock-mods/database';
-import { type VpkParsed, VpkParser } from '@deadlock-mods/vpk-parser';
+} from "@deadlock-mods/database";
+import { type VpkParsed, VpkParser } from "@deadlock-mods/vpk-parser";
 
 type MatchType =
-  | 'sha256'
-  | 'contentSignature'
-  | 'fastHashAndSize'
-  | 'merkleRoot';
+  | "sha256"
+  | "contentSignature"
+  | "fastHashAndSize"
+  | "merkleRoot";
 
 type ModMatchResult = {
   vpkEntry: ModDownloadVpkWithMod;
@@ -46,12 +46,12 @@ export class ModAnalyser {
       return {
         vpkEntry: sha256Match,
         certainty: 100,
-        matchType: 'sha256',
+        matchType: "sha256",
       };
     }
 
     const contentSigMatches = await vpkRepository.findByContentSignature(
-      fingerprint.contentSignature
+      fingerprint.contentSignature,
     );
     if (contentSigMatches.length > 0) {
       // If multiple matches, prefer the one with the closest file count
@@ -64,9 +64,9 @@ export class ModAnalyser {
       return {
         vpkEntry: bestContentMatch,
         certainty: 90,
-        matchType: 'contentSignature',
+        matchType: "contentSignature",
         alternativeMatches: contentSigMatches.filter(
-          (m) => m.id !== bestContentMatch.id
+          (m) => m.id !== bestContentMatch.id,
         ),
       };
     }
@@ -74,7 +74,7 @@ export class ModAnalyser {
     // 3. Fast hash + size match (70% certainty - quick duplicate detection)
     const fastHashMatches = await vpkRepository.findByFastHashAndSize(
       fingerprint.fastHash,
-      fingerprint.fileSize
+      fingerprint.fileSize,
     );
     if (fastHashMatches.length > 0) {
       // If multiple matches, prefer the one with matching VPK version and file count
@@ -87,9 +87,9 @@ export class ModAnalyser {
       return {
         vpkEntry: bestFastMatch,
         certainty: 70,
-        matchType: 'fastHashAndSize',
+        matchType: "fastHashAndSize",
         alternativeMatches: fastHashMatches.filter(
-          (m) => m.id !== bestFastMatch.id
+          (m) => m.id !== bestFastMatch.id,
         ),
       };
     }
@@ -98,14 +98,14 @@ export class ModAnalyser {
     // Only if merkle data is available
     if (fingerprint.merkleRoot) {
       const merkleMatches = await vpkRepository.findByMerkleRoot(
-        fingerprint.merkleRoot
+        fingerprint.merkleRoot,
       );
       if (merkleMatches.length > 0) {
         // Filter out exact matches we might have already found
         const uniqueMerkleMatches = merkleMatches.filter(
           (match) =>
             match.sha256 !== fingerprint.sha256 &&
-            match.contentSig !== fingerprint.contentSignature
+            match.contentSig !== fingerprint.contentSignature,
         );
 
         if (uniqueMerkleMatches.length > 0) {
@@ -115,18 +115,18 @@ export class ModAnalyser {
               const bestScore = this.calculateMatchScore(best, fingerprint);
               const currentScore = this.calculateMatchScore(
                 current,
-                fingerprint
+                fingerprint,
               );
               return currentScore > bestScore ? current : best;
-            }
+            },
           );
 
           return {
             vpkEntry: bestMerkleMatch,
             certainty: 40,
-            matchType: 'merkleRoot',
+            matchType: "merkleRoot",
             alternativeMatches: uniqueMerkleMatches.filter(
-              (m) => m.id !== bestMerkleMatch.id
+              (m) => m.id !== bestMerkleMatch.id,
             ),
           };
         }
@@ -138,7 +138,7 @@ export class ModAnalyser {
 
   private calculateMatchScore(
     vpkEntry: ModDownloadVpkWithMod,
-    fingerprint: VpkParsed['fingerprint']
+    fingerprint: VpkParsed["fingerprint"],
   ): number {
     let score = 0;
 

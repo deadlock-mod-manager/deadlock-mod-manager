@@ -1,9 +1,9 @@
-import { ValidationError } from '@deadlock-mods/common';
-import { modDownloadRepository, modRepository } from '@deadlock-mods/database';
-import { logger } from '@/lib/logger';
-import { queueService } from '@/services/queue';
-import type { ModFileProcessingJobData, ModsJobData } from '@/types/jobs';
-import { BaseProcessor } from './base';
+import { ValidationError } from "@deadlock-mods/common";
+import { modDownloadRepository, modRepository } from "@deadlock-mods/database";
+import { logger } from "@/lib/logger";
+import { queueService } from "@/services/queue";
+import type { ModFileProcessingJobData, ModsJobData } from "@/types/jobs";
+import { BaseProcessor } from "./base";
 
 export class ModProcessor extends BaseProcessor<ModsJobData> {
   private static instance: ModProcessor | null = null;
@@ -23,12 +23,12 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
     try {
       const mod = await modRepository.findById(jobData.modId);
       if (!mod) {
-        return this.handleError(new ValidationError('Mod not found'));
+        return this.handleError(new ValidationError("Mod not found"));
       }
       const downloads = await modDownloadRepository.findByModId(mod.id);
       if (!downloads || downloads.length === 0) {
         this.logger.info(
-          `Skipping mod ${mod.id} (${mod.name}) - no downloads found`
+          `Skipping mod ${mod.id} (${mod.name}) - no downloads found`,
         );
         return this.handleSuccess(jobData);
       }
@@ -41,7 +41,7 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
             url: download.url,
             file: download.file,
             size: download.size,
-          }) satisfies ModFileProcessingJobData
+          }) satisfies ModFileProcessingJobData,
       );
 
       await queueService.addModFileProcessingJobs(payload);
@@ -49,7 +49,7 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
 
       return this.handleSuccess(jobData);
     } catch (error) {
-      this.logger.withError(error).error('Error processing mod');
+      this.logger.withError(error).error("Error processing mod");
       return this.handleError(error as Error);
     }
   }

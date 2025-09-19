@@ -1,25 +1,25 @@
-import { useEffect } from 'react';
-import useAbout from '@/hooks/use-about';
-import logger from '@/lib/logger';
-import { usePersistedStore } from '@/lib/store';
+import { useEffect } from "react";
+import useAbout from "@/hooks/use-about";
+import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 
-const LAST_SEEN_VERSION_KEY = 'lastSeenVersion';
+const LAST_SEEN_VERSION_KEY = "lastSeenVersion";
 
 const useWhatsNew = () => {
   const { data } = useAbout();
 
   const showWhatsNew = usePersistedStore((state) => state.showWhatsNew);
   const forceShowWhatsNew = usePersistedStore(
-    (state) => state.forceShowWhatsNew
+    (state) => state.forceShowWhatsNew,
   );
   const setShowWhatsNew = usePersistedStore((state) => state.setShowWhatsNew);
   const storeMarkVersionAsSeen = usePersistedStore(
-    (state) => state.markVersionAsSeen
+    (state) => state.markVersionAsSeen,
   );
 
   useEffect(() => {
     if (!data?.version) {
-      logger.warn('No version data found');
+      logger.warn("No version data found");
       return;
     }
 

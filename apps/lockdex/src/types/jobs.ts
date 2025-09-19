@@ -3,10 +3,10 @@ export interface BaseJobData {
 }
 
 export enum JobStatus {
-  Pending = 'pending',
-  Processing = 'processing',
-  Completed = 'completed',
-  Failed = 'failed',
+  Pending = "pending",
+  Processing = "processing",
+  Completed = "completed",
+  Failed = "failed",
 }
 
 export interface ModsJobData extends BaseJobData {

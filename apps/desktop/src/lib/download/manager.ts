@@ -1,12 +1,12 @@
-import { appLocalDataDir, join } from '@tauri-apps/api/path';
-import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
-import { download } from '@tauri-apps/plugin-upload';
-import { toast } from 'sonner';
-import type { DownloadableMod, ModDownloadItem } from '@/types/mods';
-import { getModDownload } from '../api';
-import { createLogger } from '../logger';
+import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import { BaseDirectory, exists, mkdir } from "@tauri-apps/plugin-fs";
+import { download } from "@tauri-apps/plugin-upload";
+import { toast } from "sonner";
+import type { DownloadableMod, ModDownloadItem } from "@/types/mods";
+import { getModDownload } from "../api";
+import { createLogger } from "../logger";
 
-const logger = createLogger('download-manager');
+const logger = createLogger("download-manager");
 
 const createIfNotExists = async (path: string) => {
   logger.debug(`Creating directory if not exists: ${path}`);
@@ -46,7 +46,7 @@ class DownloadManager {
     if (this.progressUpdateTimers[mod.remoteId]) {
       if (this.progressUpdateTimers[mod.remoteId].timerId) {
         clearTimeout(
-          this.progressUpdateTimers[mod.remoteId].timerId as unknown as number
+          this.progressUpdateTimers[mod.remoteId].timerId as unknown as number,
         );
       }
       delete this.progressUpdateTimers[mod.remoteId];
@@ -54,8 +54,8 @@ class DownloadManager {
   }
 
   async init() {
-    await createIfNotExists('mods');
-    logger.info('Download manager initialized');
+    await createIfNotExists("mods");
+    logger.info("Download manager initialized");
   }
 
   // Throttled progress update to prevent storage spam
@@ -67,7 +67,7 @@ class DownloadManager {
       total: number;
       transferSpeed: number;
     },
-    index = 0
+    index = 0,
   ) {
     const now = Date.now();
     const modId = mod.remoteId;
@@ -99,7 +99,7 @@ class DownloadManager {
 
       // Handle completion
       if (isComplete) {
-        logger.info('Download complete', { mod: modId, index });
+        logger.info("Download complete", { mod: modId, index });
       }
     }
     // If there's no pending timer and we're not at the throttle interval yet
@@ -117,12 +117,12 @@ class DownloadManager {
 
   private async downloadFiles(mod: DownloadableMod, modDir: string) {
     if (!mod.downloads || mod.downloads.length === 0) {
-      throw new Error('No downloads available for this mod');
+      throw new Error("No downloads available for this mod");
     }
 
     await Promise.allSettled(
       mod.downloads.map(async (file, index) => {
-        logger.info('Downloading file', {
+        logger.info("Downloading file", {
           mod: mod.remoteId,
           file: file.name,
           size: file.size,
@@ -137,7 +137,7 @@ class DownloadManager {
             delete this.progressUpdateTimers[`${mod.remoteId}-${index}`];
           }
         });
-      })
+      }),
     );
 
     mod.onComplete(modDir);
@@ -154,21 +154,21 @@ class DownloadManager {
 
     try {
       mod.onStart();
-      logger.info('Starting download', { mod: mod.remoteId });
+      logger.info("Starting download", { mod: mod.remoteId });
 
       const modsDir = await appLocalDataDir();
-      const modDir = await join(modsDir, 'mods', mod.remoteId);
+      const modDir = await join(modsDir, "mods", mod.remoteId);
 
       await createIfNotExists(modDir);
 
       if (!mod.downloads) {
-        logger.info('Getting mod download links', { mod: mod.remoteId });
+        logger.info("Getting mod download links", { mod: mod.remoteId });
         const downloads = await getModDownload(mod.remoteId);
         mod.downloads = downloads as unknown as ModDownloadItem[]; // Type assertion since the API returns compatible structure
       }
 
       if (!mod.downloads || mod.downloads.length === 0) {
-        throw new Error('No downloads available for this mod');
+        throw new Error("No downloads available for this mod");
       }
 
       logger.info(`Mod has ${mod.downloads.length} downloadable files`, {
@@ -179,7 +179,7 @@ class DownloadManager {
       await this.downloadFiles(mod, modDir);
     } catch (error) {
       logger.error(error);
-      toast.error('Failed to download mod');
+      toast.error("Failed to download mod");
       mod.onError(error as Error);
       // Clean up timer entry on error
       if (this.progressUpdateTimers[mod.remoteId]) {

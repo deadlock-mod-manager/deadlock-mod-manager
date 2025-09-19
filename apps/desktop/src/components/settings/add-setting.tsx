@@ -1,14 +1,14 @@
 import {
   CustomSettingType,
   customSettingTypeHuman,
-} from '@deadlock-mods/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle } from '@phosphor-icons/react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+} from "@deadlock-mods/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PlusCircle } from "@phosphor-icons/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -26,8 +26,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -35,12 +35,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { usePersistedStore } from '@/lib/store';
+} from "@/components/ui/select";
+import { usePersistedStore } from "@/lib/store";
 import {
   type CreateSettingSchema,
   createSettingSchema,
-} from '@/lib/validation/create-setting';
+} from "@/lib/validation/create-setting";
 
 const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
   const { t } = useTranslation();
@@ -49,16 +49,16 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
   const form = useForm<CreateSettingSchema>({
     resolver: zodResolver(createSettingSchema),
     defaultValues: {
-      key: '',
-      value: '',
+      key: "",
+      value: "",
       type: CustomSettingType.LAUNCH_OPTION,
-      description: '',
+      description: "",
     },
   });
 
   const onSubmit = (values: CreateSettingSchema) => {
     createSetting(values);
-    toast.success(t('settings.settingCreated'));
+    toast.success(t("settings.settingCreated"));
     setOpen(false);
   };
 
@@ -67,29 +67,29 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
       <DialogTrigger asChild onClick={() => setOpen(true)}>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
-          <DialogTitle>{t('settings.createCustomSetting')}</DialogTitle>
+          <DialogTitle>{t("settings.createCustomSetting")}</DialogTitle>
           <DialogDescription>
-            {t('settings.createCustomSettingDescription')}
+            {t("settings.createCustomSettingDescription")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
-              name="key"
+              name='key'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('settings.key')}</FormLabel>
+                  <FormLabel>{t("settings.key")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t('settings.keyPlaceholder')}
+                      placeholder={t("settings.keyPlaceholder")}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    {t('settings.keyDescription')}
+                    {t("settings.keyDescription")}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -97,13 +97,13 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
             />
             <FormField
               control={form.control}
-              name="value"
+              name='value'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('settings.value')}</FormLabel>
+                  <FormLabel>{t("settings.value")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={t('settings.valuePlaceholder')}
+                      placeholder={t("settings.valuePlaceholder")}
                       {...field}
                     />
                   </FormControl>
@@ -113,17 +113,16 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
             />
             <FormField
               control={form.control}
-              name="type"
+              name='type'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('settings.settingType')}</FormLabel>
+                  <FormLabel>{t("settings.settingType")}</FormLabel>
                   <Select
                     defaultValue={field.value}
-                    onValueChange={field.onChange}
-                  >
+                    onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('settings.selectType')} />
+                        <SelectValue placeholder={t("settings.selectType")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -142,21 +141,21 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
             />
             <FormField
               control={form.control}
-              name="description"
+              name='description'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('settings.description')}</FormLabel>
+                  <FormLabel>{t("settings.description")}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('settings.description')} {...field} />
+                    <Input placeholder={t("settings.description")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="submit">
+              <Button type='submit'>
                 <PlusCircle />
-                {t('settings.addSetting')}
+                {t("settings.addSetting")}
               </Button>
             </DialogFooter>
           </form>

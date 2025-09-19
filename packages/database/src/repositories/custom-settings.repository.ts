@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
-import type { Database } from '../client';
+import { eq } from "drizzle-orm";
+import type { Database } from "../client";
 import type {
   CustomSetting,
   NewCustomSetting,
-} from '../schema/custom-settings';
-import { customSettings } from '../schema/custom-settings';
+} from "../schema/custom-settings";
+import { customSettings } from "../schema/custom-settings";
 
 export class CustomSettingsRepository {
   constructor(private readonly db: Database) {}
@@ -41,7 +41,7 @@ export class CustomSettingsRepository {
 
   async update(
     id: string,
-    setting: Partial<NewCustomSetting>
+    setting: Partial<NewCustomSetting>,
   ): Promise<CustomSetting> {
     const result = await this.db
       .update(customSettings)
@@ -53,7 +53,7 @@ export class CustomSettingsRepository {
 
   async updateByKey(
     key: string,
-    setting: Partial<NewCustomSetting>
+    setting: Partial<NewCustomSetting>,
   ): Promise<CustomSetting> {
     const result = await this.db
       .update(customSettings)

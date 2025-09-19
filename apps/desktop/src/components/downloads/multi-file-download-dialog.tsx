@@ -1,8 +1,8 @@
-import { format } from 'date-fns';
-import { Download, HardDrive } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { format } from "date-fns";
+import { Download, HardDrive } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { formatSize } from '@/lib/utils';
-import type { ModDownloadItem } from '@/types/mods';
+} from "@/components/ui/dialog";
+import { formatSize } from "@/lib/utils";
+import type { ModDownloadItem } from "@/types/mods";
 
 interface MultiFileDownloadDialogProps {
   isOpen: boolean;
@@ -61,11 +61,11 @@ export function MultiFileDownloadDialog({
   };
 
   const selectedFilesArray = files.filter((file) =>
-    selectedFiles.has(file.name)
+    selectedFiles.has(file.name),
   );
   const totalSize = selectedFilesArray.reduce(
     (sum, file) => sum + file.size,
-    0
+    0,
   );
 
   if (files.length <= 1) {
@@ -81,12 +81,11 @@ export function MultiFileDownloadDialog({
   return (
     <Dialog onOpenChange={handleClose} open={isOpen}>
       <DialogContent
-        className="flex max-h-[80vh] max-w-2xl flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+        className='flex max-h-[80vh] max-w-2xl flex-col'
+        onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
+          <DialogTitle className='flex items-center gap-2'>
+            <Download className='h-5 w-5' />
             Select Files to Download
           </DialogTitle>
           <DialogDescription>
@@ -95,62 +94,60 @@ export function MultiFileDownloadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between py-2">
-          <div className="flex gap-2">
-            <Button onClick={handleSelectAll} size="sm" variant="outline">
+        <div className='flex items-center justify-between py-2'>
+          <div className='flex gap-2'>
+            <Button onClick={handleSelectAll} size='sm' variant='outline'>
               Select All
             </Button>
-            <Button onClick={handleSelectNone} size="sm" variant="outline">
+            <Button onClick={handleSelectNone} size='sm' variant='outline'>
               Select None
             </Button>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <HardDrive className="h-4 w-4" />
+          <div className='flex items-center gap-2 text-muted-foreground text-sm'>
+            <HardDrive className='h-4 w-4' />
             Total: {formatSize(totalSize)}
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+        <div className='min-h-0 flex-1 space-y-3 overflow-y-auto'>
           {files
             .sort((a, b) => b.size - a.size) // Sort by size, largest first
             .map((file) => (
               <div
-                className="flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                className='flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50'
                 key={file.name}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!isDownloading) {
                     handleFileToggle(file.name, e);
                   }
-                }}
-              >
+                }}>
                 <Checkbox
                   checked={selectedFiles.has(file.name)}
                   disabled={isDownloading}
                   id={file.name}
                   onCheckedChange={() => handleFileToggle(file.name)}
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                <div className='min-w-0 flex-1'>
+                  <div className='flex items-center gap-2'>
                     <span
-                      className="truncate font-medium text-foreground"
-                      title={file.name}
-                    >
+                      className='truncate font-medium text-foreground'
+                      title={file.name}>
                       {file.name}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between">
-                      <div className="text-muted-foreground text-sm">
-                        <span className="font-medium">
+                  <div className='flex flex-col gap-1'>
+                    <div className='flex items-center justify-between'>
+                      <div className='text-muted-foreground text-sm'>
+                        <span className='font-medium'>
                           {formatSize(file.size)}
                         </span>
                       </div>
                       {(file.updatedAt || file.createdAt) && (
-                        <div className="text-muted-foreground text-xs">
+                        <div className='text-muted-foreground text-xs'>
                           {file.updatedAt
-                            ? `Updated at ${format(file.updatedAt, 'dd-MM-yyyy HH:mm')}`
-                            : `Created ${format(file.createdAt!, 'dd-MM-yyyy HH:mm')}`}
+                            ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
+                            : `Created ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
                         </div>
                       )}
                     </div>
@@ -160,34 +157,32 @@ export function MultiFileDownloadDialog({
             ))}
         </div>
 
-        <DialogFooter className="flex-col space-y-2">
-          <div className="text-muted-foreground text-sm">
+        <DialogFooter className='flex-col space-y-2'>
+          <div className='text-muted-foreground text-sm'>
             {selectedFiles.size} of {files.length} files selected
           </div>
-          <div className="flex w-full justify-end gap-2">
+          <div className='flex w-full justify-end gap-2'>
             <Button
               disabled={isDownloading}
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
-              variant="outline"
-            >
+              variant='outline'>
               Cancel
             </Button>
             <Button
-              className="min-w-24"
+              className='min-w-24'
               disabled={selectedFiles.size === 0 || isDownloading}
-              onClick={handleDownload}
-            >
+              onClick={handleDownload}>
               {isDownloading ? (
                 <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  <div className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white' />
                   Downloading...
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className='mr-2 h-4 w-4' />
                   Download Selected
                 </>
               )}

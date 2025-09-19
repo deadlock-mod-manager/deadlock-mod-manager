@@ -1,11 +1,11 @@
-import { type BaseJobOptions, type JobsOptions, Queue } from 'bullmq';
-import redis from '@/lib/redis';
-import type { BaseJobData } from '../types/jobs';
+import { type BaseJobOptions, type JobsOptions, Queue } from "bullmq";
+import redis from "@/lib/redis";
+import type { BaseJobData } from "../types/jobs";
 
 export abstract class BaseQueue<T extends BaseJobData> {
   protected queue: Queue<T>;
 
-  constructor(name: string, options?: Omit<BaseJobOptions, 'connection'>) {
+  constructor(name: string, options?: Omit<BaseJobOptions, "connection">) {
     this.queue = new Queue<T>(name, {
       connection: redis,
       ...options,
@@ -27,7 +27,7 @@ export abstract class BaseQueue<T extends BaseJobData> {
   }
 
   async getJobs(
-    types: string[] = ['waiting', 'active', 'completed', 'failed']
+    types: string[] = ["waiting", "active", "completed", "failed"],
   ) {
     // @ts-expect-error - BullMQ type compatibility issue with string array
     return this.queue.getJobs(types);

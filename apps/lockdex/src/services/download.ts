@@ -1,11 +1,11 @@
-import { createWriteStream } from 'node:fs';
-import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
-import { Readable, Transform } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
-import type { Logger } from '@deadlock-mods/logging';
-import { logger } from '@/lib/logger';
+import { createWriteStream } from "node:fs";
+import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
+import { Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import type { Logger } from "@deadlock-mods/logging";
+import { logger } from "@/lib/logger";
 
 export interface DownloadOptions {
   /**
@@ -67,7 +67,7 @@ export class DownloadService {
 
   private constructor(logger: Logger) {
     this.logger = logger.child().withContext({
-      service: 'DownloadService',
+      service: "DownloadService",
     });
   }
 
@@ -83,7 +83,7 @@ export class DownloadService {
    */
   async downloadFile(
     url: string,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<DownloadResult> {
     const {
       timeout = 5 * 60 * 1000,
@@ -133,7 +133,7 @@ export class DownloadService {
       } catch (error) {
         lastAttempt = error as Error;
         this.logger.warn(
-          `Download attempt ${attempt} failed: ${lastAttempt.message}`
+          `Download attempt ${attempt} failed: ${lastAttempt.message}`,
         );
 
         try {
@@ -150,7 +150,7 @@ export class DownloadService {
 
     await this.cleanup(tempDir);
     throw new Error(
-      `Download failed after ${retryAttempts} attempts. Last error: ${lastAttempt?.message}`
+      `Download failed after ${retryAttempts} attempts. Last error: ${lastAttempt?.message}`,
     );
   }
 
@@ -164,7 +164,7 @@ export class DownloadService {
       timeout: number;
       maxFileSize: number;
       progressInterval: number;
-    }
+    },
   ): Promise<{ size: number }> {
     const { timeout, maxFileSize, progressInterval } = options;
 
@@ -180,24 +180,24 @@ export class DownloadService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const contentLength = response.headers.get('content-length');
+      const contentLength = response.headers.get("content-length");
       const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0;
 
       if (totalBytes > maxFileSize) {
         throw new Error(
-          `File size (${totalBytes} bytes) exceeds maximum allowed size (${maxFileSize} bytes)`
+          `File size (${totalBytes} bytes) exceeds maximum allowed size (${maxFileSize} bytes)`,
         );
       }
 
       if (!response.body) {
-        throw new Error('Response body is null');
+        throw new Error("Response body is null");
       }
 
       this.logger.info(
-        `Content length: ${totalBytes > 0 ? `${(totalBytes / 1024 / 1024).toFixed(2)} MB` : 'unknown'}`
+        `Content length: ${totalBytes > 0 ? `${(totalBytes / 1024 / 1024).toFixed(2)} MB` : "unknown"}`,
       );
 
-      await mkdir(join(filePath, '..'), { recursive: true });
+      await mkdir(join(filePath, ".."), { recursive: true });
 
       let downloadedBytes = 0;
       let lastProgressUpdate = 0;
@@ -210,7 +210,7 @@ export class DownloadService {
 
           if (downloadedBytes > maxFileSize) {
             const error = new Error(
-              `Downloaded size exceeds maximum allowed size (${maxFileSize} bytes)`
+              `Downloaded size exceeds maximum allowed size (${maxFileSize} bytes)`,
             );
             callback(error);
             return;
@@ -261,7 +261,7 @@ export class DownloadService {
   private logProgress(
     downloadedBytes: number,
     totalBytes: number,
-    startTime: number
+    startTime: number,
   ): void {
     const elapsed = (Date.now() - startTime) / 1000; // seconds
     const speed = downloadedBytes / elapsed; // bytes per second
@@ -275,12 +275,12 @@ export class DownloadService {
         `Progress: ${percentage.toFixed(1)}% ` +
           `(${(downloadedBytes / 1024 / 1024).toFixed(2)}/${(totalBytes / 1024 / 1024).toFixed(2)} MB) ` +
           `Speed: ${speedMBps} MB/s ` +
-          `ETA: ${remaining > 0 ? Math.ceil(remaining) : 0}s`
+          `ETA: ${remaining > 0 ? Math.ceil(remaining) : 0}s`,
       );
     } else {
       this.logger.info(
         `Downloaded: ${(downloadedBytes / 1024 / 1024).toFixed(2)} MB ` +
-          `Speed: ${speedMBps} MB/s`
+          `Speed: ${speedMBps} MB/s`,
       );
     }
   }
@@ -294,7 +294,7 @@ export class DownloadService {
       const pathname = urlObj.pathname;
       const filename = basename(pathname);
 
-      if (filename?.includes('.')) {
+      if (filename?.includes(".")) {
         return filename;
       }
 
@@ -311,7 +311,7 @@ export class DownloadService {
    * Create a temporary directory for downloads
    */
   private async createTempDir(): Promise<string> {
-    const tempDirPath = await mkdtemp(join(tmpdir(), 'mod-download-'));
+    const tempDirPath = await mkdtemp(join(tmpdir(), "mod-download-"));
     this.logger.debug(`Created temporary directory: ${tempDirPath}`);
     return tempDirPath;
   }
@@ -342,10 +342,10 @@ export class DownloadService {
    */
   async downloadFiles(
     downloads: Array<{ url: string; options?: DownloadOptions }>,
-    concurrency = 3
+    concurrency = 3,
   ): Promise<DownloadResult[]> {
     this.logger.info(
-      `Starting batch download of ${downloads.length} files (concurrency: ${concurrency})`
+      `Starting batch download of ${downloads.length} files (concurrency: ${concurrency})`,
     );
 
     const results: DownloadResult[] = [];
@@ -368,22 +368,22 @@ export class DownloadService {
         const batchResults = await Promise.allSettled(batchPromises);
 
         for (const result of batchResults) {
-          if (result.status === 'fulfilled') {
+          if (result.status === "fulfilled") {
             results.push(result.value);
           }
         }
       } catch (error) {
-        this.logger.withError(error).error('Batch download failed');
+        this.logger.withError(error).error("Batch download failed");
       }
     }
 
     this.logger.info(
-      `Batch download completed: ${results.length} successful, ${errors.length} failed`
+      `Batch download completed: ${results.length} successful, ${errors.length} failed`,
     );
 
     if (errors.length > 0) {
       this.logger.error(
-        `Download errors: ${errors.map((e) => e.message).join(', ')}`
+        `Download errors: ${errors.map((e) => e.message).join(", ")}`,
       );
     }
 

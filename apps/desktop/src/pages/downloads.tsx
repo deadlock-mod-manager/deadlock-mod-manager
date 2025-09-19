@@ -1,19 +1,19 @@
-import { DownloadSimple, FolderOpen, Package } from '@phosphor-icons/react';
-import { invoke } from '@tauri-apps/api/core';
-import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import DownloadCard from '@/components/downloads/download-card';
-import ErrorBoundary from '@/components/shared/error-boundary';
-import PageTitle from '@/components/shared/page-title';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePersistedStore } from '@/lib/store';
-import { ModStatus } from '@/types/mods';
+import { DownloadSimple, FolderOpen, Package } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import DownloadCard from "@/components/downloads/download-card";
+import ErrorBoundary from "@/components/shared/error-boundary";
+import PageTitle from "@/components/shared/page-title";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
 
 // Helper function to safely get a timestamp from downloadedAt which could be a Date, string, or undefined
 const getDownloadTimestamp = (
-  downloadedAt: Date | string | undefined
+  downloadedAt: Date | string | undefined,
 ): number => {
   if (!downloadedAt) {
     return 0;
@@ -25,7 +25,7 @@ const getDownloadTimestamp = (
   }
 
   // If it's an ISO string
-  if (typeof downloadedAt === 'string') {
+  if (typeof downloadedAt === "string") {
     return new Date(downloadedAt).getTime();
   }
 
@@ -35,13 +35,13 @@ const getDownloadTimestamp = (
 const Downloads = () => {
   const { t } = useTranslation();
   const downloads = usePersistedStore((state) => state.localMods);
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
   const filteredDownloads = useMemo(() => {
-    if (filter === 'all') {
+    if (filter === "all") {
       return downloads;
     }
-    if (filter === 'active') {
+    if (filter === "active") {
       return downloads.filter((d) => d.status === ModStatus.Downloading);
     }
     return downloads.filter((d) => d.status !== ModStatus.Downloading);
@@ -74,51 +74,50 @@ const Downloads = () => {
 
   const activeCount = useMemo(
     () => downloads.filter((d) => d.status === ModStatus.Downloading).length,
-    [downloads]
+    [downloads],
   );
 
   const completedCount = useMemo(
     () => downloads.filter((d) => d.status !== ModStatus.Downloading).length,
-    [downloads]
+    [downloads],
   );
 
   const downloadFolder = useMemo(() => {
     // Get the path of the first completed download
     const completed = downloads.find(
-      (d) => d.status !== ModStatus.Downloading && d.path
+      (d) => d.status !== ModStatus.Downloading && d.path,
     );
-    return completed?.path?.split('\\').slice(0, -1).join('\\') || null;
+    return completed?.path?.split("\\").slice(0, -1).join("\\") || null;
   }, [downloads]);
 
   const handleOpenFolder = () => {
     if (downloadFolder) {
-      invoke('show_in_folder', { path: downloadFolder });
+      invoke("show_in_folder", { path: downloadFolder });
     }
   };
 
   return (
-    <div className="scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto px-4">
-      <div className="mb-6 flex items-center justify-between">
-        <PageTitle title={t('downloads.title')} />
+    <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto px-4'>
+      <div className='mb-6 flex items-center justify-between'>
+        <PageTitle title={t("downloads.title")} />
         <Tabs
-          className="w-auto"
-          defaultValue="all"
+          className='w-auto'
+          defaultValue='all'
           onValueChange={(value) =>
-            setFilter(value as 'all' | 'active' | 'completed')
+            setFilter(value as "all" | "active" | "completed")
           }
-          value={filter}
-        >
+          value={filter}>
           <TabsList>
-            <TabsTrigger value="all">
-              {t('downloads.all')} ({downloads.length})
+            <TabsTrigger value='all'>
+              {t("downloads.all")} ({downloads.length})
             </TabsTrigger>
-            <TabsTrigger value="active">
-              <DownloadSimple className="mr-1" />
-              {t('downloads.active')} ({activeCount})
+            <TabsTrigger value='active'>
+              <DownloadSimple className='mr-1' />
+              {t("downloads.active")} ({activeCount})
             </TabsTrigger>
-            <TabsTrigger value="completed">
-              <Package className="mr-1" />
-              {t('downloads.completed')} ({completedCount})
+            <TabsTrigger value='completed'>
+              <Package className='mr-1' />
+              {t("downloads.completed")} ({completedCount})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -126,33 +125,33 @@ const Downloads = () => {
 
       {downloads.length > 0 && downloadFolder && (
         <>
-          <div className="mb-4 flex flex-wrap gap-2">
-            <Button onClick={handleOpenFolder} size="sm" variant="outline">
-              <FolderOpen className="mr-1 h-4 w-4" />
-              {t('downloads.openDownloadFolder')}
+          <div className='mb-4 flex flex-wrap gap-2'>
+            <Button onClick={handleOpenFolder} size='sm' variant='outline'>
+              <FolderOpen className='mr-1 h-4 w-4' />
+              {t("downloads.openDownloadFolder")}
             </Button>
           </div>
-          <Separator className="mb-4" />
+          <Separator className='mb-4' />
         </>
       )}
 
       <ErrorBoundary>
         {sortedDownloads.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
+          <div className='grid grid-cols-1 gap-4'>
             {sortedDownloads.map((download) => (
               <DownloadCard download={download} key={download.id} />
             ))}
           </div>
         ) : (
-          <div className="flex h-[calc(100vh-300px)] flex-col items-center justify-center text-muted-foreground">
-            <Package className="mb-4 h-16 w-16" />
-            <h3 className="mb-2 font-medium text-xl">
-              {t('downloads.noDownloadsFound')}
+          <div className='flex h-[calc(100vh-300px)] flex-col items-center justify-center text-muted-foreground'>
+            <Package className='mb-4 h-16 w-16' />
+            <h3 className='mb-2 font-medium text-xl'>
+              {t("downloads.noDownloadsFound")}
             </h3>
-            <p className="mb-4">{t('downloads.noDownloadsMatchFilter')}</p>
-            {filter !== 'all' && (
-              <Button onClick={() => setFilter('all')} variant="outline">
-                {t('downloads.viewAllDownloads')}
+            <p className='mb-4'>{t("downloads.noDownloadsMatchFilter")}</p>
+            {filter !== "all" && (
+              <Button onClick={() => setFilter("all")} variant='outline'>
+                {t("downloads.viewAllDownloads")}
               </Button>
             )}
           </div>

@@ -1,5 +1,5 @@
-import type { Context as HonoContext } from 'hono';
-import { auth } from './auth';
+import type { Context as HonoContext } from "hono";
+import { auth } from "./auth";
 
 export type CreateContextOptions = {
   context: HonoContext;

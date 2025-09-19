@@ -1,4 +1,4 @@
-import type { ModDownloadDto, ModDto } from '@deadlock-mods/utils';
+import type { ModDownloadDto, ModDto } from "@deadlock-mods/utils";
 
 // Individual download item type extracted from ModDownloadDto array
 export type ModDownloadItem = ModDownloadDto[number];
@@ -11,16 +11,16 @@ export type Progress = {
 };
 
 export enum ModStatus {
-  Downloading = 'downloading',
-  Downloaded = 'downloaded',
-  FailedToDownload = 'failedToDownload',
-  Installing = 'installing',
-  Installed = 'installed',
-  FailedToInstall = 'failedToInstall',
-  Removing = 'removing',
-  Removed = 'removed',
-  FailedToRemove = 'failedToRemove',
-  Error = 'error',
+  Downloading = "downloading",
+  Downloaded = "downloaded",
+  FailedToDownload = "failedToDownload",
+  Installing = "installing",
+  Installed = "installed",
+  FailedToInstall = "failedToInstall",
+  Removing = "removing",
+  Removed = "removed",
+  FailedToRemove = "failedToRemove",
+  Error = "error",
 }
 
 export interface LocalMod extends ModDto {
@@ -32,7 +32,7 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
 }
 
-export interface DownloadableMod extends Omit<LocalMod, 'status'> {
+export interface DownloadableMod extends Omit<LocalMod, "status"> {
   onStart: () => void;
   onProgress: (progress: Progress) => void;
   onComplete: (path: string) => void;
