@@ -51,7 +51,7 @@ export abstract class BaseWorker<T extends BaseJobData> {
     });
 
     this.worker.on("failed", (job, err) => {
-      this.logger.withError(err).error(`Job ${job?.id} failed:`, err.message);
+      this.logger.withError(err).error(`Job ${job?.id} failed: ${err.message}`);
     });
 
     this.worker.on("error", (err) => {
