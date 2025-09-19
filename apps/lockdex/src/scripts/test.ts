@@ -1,6 +1,8 @@
-import { modRepository } from "@deadlock-mods/database";
+import { db, ModRepository } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { queueService } from "@/services/queue";
+
+const modRepository = new ModRepository(db);
 
 const main = async () => {
   logger.info("Test script - Queuing mod jobs for first 10 mods");

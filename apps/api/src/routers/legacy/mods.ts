@@ -1,8 +1,14 @@
-import { modDownloadRepository, modRepository } from "@deadlock-mods/database";
+import {
+  db,
+  ModDownloadRepository,
+  ModRepository,
+} from "@deadlock-mods/database";
 import { toModDownloadDto, toModDto } from "@deadlock-mods/utils";
 import { Hono } from "hono";
 
 const modsRouter = new Hono();
+const modRepository = new ModRepository(db);
+const modDownloadRepository = new ModDownloadRepository(db);
 
 modsRouter.get("/", async (c) => {
   const allMods = await modRepository.findAll();

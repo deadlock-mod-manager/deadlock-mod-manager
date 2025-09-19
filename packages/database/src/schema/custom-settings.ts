@@ -1,20 +1,16 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text } from "drizzle-orm/pg-core";
+import { generateId, typeId } from "../extensions/typeid";
+import { timestamps } from "./shared/timestamps";
 
 export const customSettings = pgTable("custom_setting", {
-  id: text("id")
+  id: typeId("id", "custom_setting")
     .primaryKey()
-    .default(sql`concat('custom_setting_', gen_random_uuid())`),
+    .$defaultFn(() => generateId("custom_setting").toString()),
   key: text("key").notNull(),
   value: text("value").notNull(),
   type: text("type").notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at", { mode: "date" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: timestamp("updated_at", { mode: "date" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  ...timestamps,
 });
 
 export type CustomSetting = typeof customSettings.$inferSelect;

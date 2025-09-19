@@ -1,24 +1,20 @@
 import { and, eq } from "drizzle-orm";
 import type { Database } from "../client";
-import type {
-  ModDownloadVpk,
-  ModDownloadVpkWithMod,
-  NewModDownloadVpk,
-} from "../schema/mods";
-import { vpk } from "../schema/mods";
+import type { CachedVPK, CachedVPKWithMod, NewCachedVPK } from "../schema/vpk";
+import { vpk } from "../schema/vpk";
 
 export class VpkRepository {
   constructor(private readonly db: Database) {}
 
-  async findAll(): Promise<ModDownloadVpkWithMod[]> {
+  async findAll(): Promise<CachedVPKWithMod[]> {
     return (await this.db.query.vpk.findMany({
       with: {
         mod: true,
       },
-    })) as ModDownloadVpkWithMod[];
+    })) as CachedVPKWithMod[];
   }
 
-  async findById(id: string): Promise<ModDownloadVpk | null> {
+  async findById(id: string): Promise<CachedVPK | null> {
     return (
       (await this.db.query.vpk.findFirst({
         where: eq(vpk.id, id),
@@ -29,7 +25,7 @@ export class VpkRepository {
     );
   }
 
-  async findByModDownloadId(modDownloadId: string): Promise<ModDownloadVpk[]> {
+  async findByModDownloadId(modDownloadId: string): Promise<CachedVPK[]> {
     return await this.db.query.vpk.findMany({
       where: eq(vpk.modDownloadId, modDownloadId),
       with: {
@@ -38,7 +34,7 @@ export class VpkRepository {
     });
   }
 
-  async findByModId(modId: string): Promise<ModDownloadVpk[]> {
+  async findByModId(modId: string): Promise<CachedVPK[]> {
     return await this.db.query.vpk.findMany({
       where: eq(vpk.modId, modId),
       with: {
@@ -47,39 +43,39 @@ export class VpkRepository {
     });
   }
 
-  async findBySha256(sha256: string): Promise<ModDownloadVpkWithMod | null> {
+  async findBySha256(sha256: string): Promise<CachedVPKWithMod | null> {
     return ((await this.db.query.vpk.findFirst({
       where: eq(vpk.sha256, sha256),
       with: {
         mod: true,
       },
-    })) ?? null) as ModDownloadVpkWithMod | null;
+    })) ?? null) as CachedVPKWithMod | null;
   }
 
   async findByContentSignature(
     contentSig: string,
-  ): Promise<ModDownloadVpkWithMod[]> {
+  ): Promise<CachedVPKWithMod[]> {
     return (await this.db.query.vpk.findMany({
       where: eq(vpk.contentSig, contentSig),
       with: {
         mod: true,
       },
-    })) as ModDownloadVpkWithMod[];
+    })) as CachedVPKWithMod[];
   }
 
-  async findByMerkleRoot(merkleRoot: string): Promise<ModDownloadVpkWithMod[]> {
+  async findByMerkleRoot(merkleRoot: string): Promise<CachedVPKWithMod[]> {
     return (await this.db.query.vpk.findMany({
       where: eq(vpk.merkleRoot, merkleRoot),
       with: {
         mod: true,
       },
-    })) as ModDownloadVpkWithMod[];
+    })) as CachedVPKWithMod[];
   }
 
   async findByModDownloadIdAndSourcePath(
     modDownloadId: string,
     sourcePath: string,
-  ): Promise<ModDownloadVpk | null> {
+  ): Promise<CachedVPK | null> {
     return (
       (await this.db.query.vpk.findFirst({
         where: and(
@@ -96,23 +92,21 @@ export class VpkRepository {
   async findByFastHashAndSize(
     fastHash: string,
     sizeBytes: number,
-  ): Promise<ModDownloadVpkWithMod[]> {
+  ): Promise<CachedVPKWithMod[]> {
     return (await this.db.query.vpk.findMany({
       where: and(eq(vpk.fastHash, fastHash), eq(vpk.sizeBytes, sizeBytes)),
       with: {
         mod: true,
       },
-    })) as ModDownloadVpkWithMod[];
+    })) as CachedVPKWithMod[];
   }
 
-  async create(newVpk: NewModDownloadVpk): Promise<ModDownloadVpk> {
+  async create(newVpk: NewCachedVPK): Promise<CachedVPK> {
     const result = await this.db.insert(vpk).values(newVpk).returning();
     return result[0];
   }
 
-  async createMultiple(
-    newVpks: NewModDownloadVpk[],
-  ): Promise<ModDownloadVpk[]> {
+  async createMultiple(newVpks: NewCachedVPK[]): Promise<CachedVPK[]> {
     if (newVpks.length === 0) {
       return [];
     }
@@ -122,10 +116,7 @@ export class VpkRepository {
     return result;
   }
 
-  async update(
-    id: string,
-    vpkData: Partial<NewModDownloadVpk>,
-  ): Promise<ModDownloadVpk> {
+  async update(id: string, vpkData: Partial<NewCachedVPK>): Promise<CachedVPK> {
     const result = await this.db
       .update(vpk)
       .set(vpkData)
@@ -137,8 +128,8 @@ export class VpkRepository {
   async upsertByModDownloadIdAndSourcePath(
     modDownloadId: string,
     sourcePath: string,
-    vpkData: NewModDownloadVpk,
-  ): Promise<ModDownloadVpk> {
+    vpkData: NewCachedVPK,
+  ): Promise<CachedVPK> {
     const existing = await this.findByModDownloadIdAndSourcePath(
       modDownloadId,
       sourcePath,

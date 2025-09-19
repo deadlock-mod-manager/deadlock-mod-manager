@@ -1,7 +1,11 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { ValidationError } from "@deadlock-mods/common";
-import { modDownloadRepository, vpkRepository } from "@deadlock-mods/database";
+import {
+  db,
+  ModDownloadRepository,
+  VpkRepository,
+} from "@deadlock-mods/database";
 import { VpkParser } from "@deadlock-mods/vpk-parser";
 import { logger } from "@/lib/logger";
 import { archiveExtractorFactory } from "@/services/archive";
@@ -14,6 +18,8 @@ import { BaseProcessor } from "./base";
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
+  protected modDownloadRepository: ModDownloadRepository;
+  protected vpkRepository: VpkRepository;
 
   private constructor() {
     super(logger);
@@ -21,6 +27,9 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     archiveExtractorFactory.registerExtractor(zipExtractor);
     archiveExtractorFactory.registerExtractor(rarExtractor);
     archiveExtractorFactory.registerExtractor(sevenZipExtractor);
+
+    this.modDownloadRepository = new ModDownloadRepository(db);
+    this.vpkRepository = new VpkRepository(db);
   }
 
   static getInstance(): ModFileProcessor {
@@ -32,7 +41,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
   async process(jobData: ModFileProcessingJobData) {
     try {
-      const modDownload = await modDownloadRepository.findById(
+      const modDownload = await this.modDownloadRepository.findById(
         jobData.modDownloadId,
       );
       if (!modDownload) {
@@ -44,7 +53,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       }
 
       // Check if this mod download has already been processed by looking for VPK entries
-      const existingVpks = await vpkRepository.findByModDownloadId(
+      const existingVpks = await this.vpkRepository.findByModDownloadId(
         jobData.modDownloadId,
       );
       if (existingVpks.length > 0) {
@@ -254,11 +263,12 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         fileMtime: fp.lastModified,
       };
 
-      const storedVpk = await vpkRepository.upsertByModDownloadIdAndSourcePath(
-        modDownloadId,
-        sourcePath,
-        vpkData,
-      );
+      const storedVpk =
+        await this.vpkRepository.upsertByModDownloadIdAndSourcePath(
+          modDownloadId,
+          sourcePath,
+          vpkData,
+        );
 
       // Check if this VPK belongs to our mod download or if it's a duplicate from another source
       if (

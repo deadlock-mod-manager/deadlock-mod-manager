@@ -1,11 +1,15 @@
 import {
+  db,
   type Mod,
-  modDownloadRepository,
-  modRepository,
+  ModDownloadRepository,
+  ModRepository,
   type NewMod,
 } from "@deadlock-mods/database";
 import { type GameBanana, guessHero } from "@deadlock-mods/utils";
 import { Provider, providerRegistry } from "./registry";
+
+const modRepository = new ModRepository(db);
+const modDownloadRepository = new ModDownloadRepository(db);
 
 export const DEADLOCK_GAME_ID = 20_948; // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
 export const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";

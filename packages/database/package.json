@@ -14,7 +14,8 @@
   "dependencies": {
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.42.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "typeid-js": "^1.2.0"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",

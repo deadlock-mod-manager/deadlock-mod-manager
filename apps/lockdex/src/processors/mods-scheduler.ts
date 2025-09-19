@@ -1,8 +1,10 @@
-import { modRepository } from "@deadlock-mods/database";
+import { db, ModRepository } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { queueService } from "@/services/queue";
 import type { CronJobData } from "@/types/jobs";
 import { CronProcessor } from "./cron-processor";
+
+const modRepository = new ModRepository(db);
 
 export class ModsSchedulerProcessor extends CronProcessor {
   private static instance: ModsSchedulerProcessor | null = null;

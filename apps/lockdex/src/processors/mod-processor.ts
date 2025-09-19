@@ -1,10 +1,16 @@
 import { ValidationError } from "@deadlock-mods/common";
-import { modDownloadRepository, modRepository } from "@deadlock-mods/database";
+import {
+  db,
+  ModDownloadRepository,
+  ModRepository,
+} from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { queueService } from "@/services/queue";
 import type { ModFileProcessingJobData, ModsJobData } from "@/types/jobs";
 import { BaseProcessor } from "./base";
 
+const modRepository = new ModRepository(db);
+const modDownloadRepository = new ModDownloadRepository(db);
 export class ModProcessor extends BaseProcessor<ModsJobData> {
   private static instance: ModProcessor | null = null;
 

@@ -1,6 +1,7 @@
 import {
-  type ModDownloadVpkWithMod,
-  vpkRepository,
+  type CachedVPKWithMod,
+  db,
+  VpkRepository,
 } from "@deadlock-mods/database";
 import { type VpkParsed, VpkParser } from "@deadlock-mods/vpk-parser";
 
@@ -11,25 +12,28 @@ type MatchType =
   | "merkleRoot";
 
 type ModMatchResult = {
-  vpkEntry: ModDownloadVpkWithMod;
+  vpkEntry: CachedVPKWithMod;
   certainty: number;
   matchType: MatchType;
-  alternativeMatches?: ModDownloadVpkWithMod[];
+  alternativeMatches?: CachedVPKWithMod[];
 };
 
 type VpkAnalysisResult = {
   vpk: VpkParsed;
-  matchedVpk?: ModDownloadVpkWithMod;
+  matchedVpk?: CachedVPKWithMod;
   match?: {
     certainty: number;
     matchType: MatchType;
-    alternativeMatches?: ModDownloadVpkWithMod[];
+    alternativeMatches?: CachedVPKWithMod[];
   };
 };
 
 export class ModAnalyser {
   private static _instance: ModAnalyser | null = null;
-  private constructor() {}
+  protected vpkRepository: VpkRepository;
+  private constructor() {
+    this.vpkRepository = new VpkRepository(db);
+  }
 
   static get instance(): ModAnalyser {
     if (!ModAnalyser._instance) {
@@ -41,7 +45,9 @@ export class ModAnalyser {
   async getModInfo(parsedVpk: VpkParsed): Promise<ModMatchResult | null> {
     const fingerprint = parsedVpk.fingerprint;
 
-    const sha256Match = await vpkRepository.findBySha256(fingerprint.sha256);
+    const sha256Match = await this.vpkRepository.findBySha256(
+      fingerprint.sha256,
+    );
     if (sha256Match) {
       return {
         vpkEntry: sha256Match,
@@ -50,7 +56,7 @@ export class ModAnalyser {
       };
     }
 
-    const contentSigMatches = await vpkRepository.findByContentSignature(
+    const contentSigMatches = await this.vpkRepository.findByContentSignature(
       fingerprint.contentSignature,
     );
     if (contentSigMatches.length > 0) {
@@ -72,7 +78,7 @@ export class ModAnalyser {
     }
 
     // 3. Fast hash + size match (70% certainty - quick duplicate detection)
-    const fastHashMatches = await vpkRepository.findByFastHashAndSize(
+    const fastHashMatches = await this.vpkRepository.findByFastHashAndSize(
       fingerprint.fastHash,
       fingerprint.fileSize,
     );
@@ -97,7 +103,7 @@ export class ModAnalyser {
     // 4. Merkle root match (40% certainty - partial content similarity)
     // Only if merkle data is available
     if (fingerprint.merkleRoot) {
-      const merkleMatches = await vpkRepository.findByMerkleRoot(
+      const merkleMatches = await this.vpkRepository.findByMerkleRoot(
         fingerprint.merkleRoot,
       );
       if (merkleMatches.length > 0) {
@@ -137,7 +143,7 @@ export class ModAnalyser {
   }
 
   private calculateMatchScore(
-    vpkEntry: ModDownloadVpkWithMod,
+    vpkEntry: CachedVPKWithMod,
     fingerprint: VpkParsed["fingerprint"],
   ): number {
     let score = 0;

@@ -1,10 +1,11 @@
-import { sql } from "drizzle-orm";
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { generateId, typeId } from "../extensions/typeid";
+import { timestamps } from "./shared/timestamps";
 
 export const jobLocks = pgTable("job_lock", {
-  id: text("id")
+  id: typeId("id", "job_lock")
     .primaryKey()
-    .default(sql`concat('job_lock_', gen_random_uuid())`),
+    .$defaultFn(() => generateId("job_lock").toString()),
   jobName: text("job_name").notNull().unique(),
   lockedBy: text("locked_by").notNull(), // pod/instance identifier
   lockedAt: timestamp("locked_at", { mode: "date" })
@@ -14,6 +15,7 @@ export const jobLocks = pgTable("job_lock", {
   heartbeatAt: timestamp("heartbeat_at", { mode: "date" })
     .notNull()
     .$defaultFn(() => new Date()),
+  ...timestamps,
 });
 
 export type JobLock = typeof jobLocks.$inferSelect;

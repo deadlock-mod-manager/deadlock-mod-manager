@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// These schemas match the DTO output types exactly
-
 // ModDto schema (matches the raw Mod type from database)
 export const ModDtoSchema = z.object({
   id: z.string(),
@@ -11,8 +9,6 @@ export const ModDtoSchema = z.object({
   remoteUrl: z.string(),
   category: z.string(),
   likes: z.number().int(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
   author: z.string(),
   downloadable: z.boolean(),
   remoteAddedAt: z.date(),
@@ -24,6 +20,8 @@ export const ModDtoSchema = z.object({
   audioUrl: z.string().nullable(),
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),
+  createdAt: z.date().nullable(),
+  updatedAt: z.date().nullable(),
 });
 
 // ModDownloadDto schema (matches the transformed output from toModDownloadDto)
@@ -31,8 +29,8 @@ export const ModDownloadDtoSchema = z.object({
   url: z.string(),
   size: z.number().int(),
   name: z.string(), // This comes from the 'file' field in the database
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.date().nullable(),
+  updatedAt: z.date().nullable(),
 });
 
 // CustomSettingDto schema (matches the raw CustomSetting type from database)

@@ -64,6 +64,13 @@
       "when": 1758229707764,
       "tag": "0008_flaky_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1758287723203,
+      "tag": "0009_wandering_red_wolf",
+      "breakpoints": true
     }
   ]
 }

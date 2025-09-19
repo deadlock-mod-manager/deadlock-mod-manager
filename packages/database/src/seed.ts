@@ -1,9 +1,9 @@
-import { customSettings, db } from "./client";
+import { db, schema } from "./client";
 
 (async () => {
   try {
     await db
-      .insert(customSettings)
+      .insert(schema.customSettings)
       .values({
         key: "+citadel_unit_status_use_new",
         value: "true",

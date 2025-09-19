@@ -1,4 +1,8 @@
-import { modDownloadRepository, modRepository } from "@deadlock-mods/database";
+import {
+  db,
+  ModDownloadRepository,
+  ModRepository,
+} from "@deadlock-mods/database";
 import {
   ModDownloadsResponseSchema,
   ModDownloadsV2ResponseSchema,
@@ -12,6 +16,9 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../lib/services/mod-sync";
+
+const modRepository = new ModRepository(db);
+const modDownloadRepository = new ModDownloadRepository(db);
 
 export const modsRouter = {
   listModsV2: publicProcedure
