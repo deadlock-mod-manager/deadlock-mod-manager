@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { format } from "date-fns";
 import { Calendar, Download, Hash, InfoIcon, Tag, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

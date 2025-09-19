@@ -1,4 +1,4 @@
-# @deadlock-mods/utils
+# @deadlock-mods/shared
 
 ## 1.4.0
 

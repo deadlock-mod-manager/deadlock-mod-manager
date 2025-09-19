@@ -86,7 +86,7 @@
 
 - Updated dependencies [7f379a5]
   - @deadlock-mods/logging@0.1.0
-  - @deadlock-mods/utils@1.4.0
+  - @deadlock-mods/shared@1.4.0
   - @deadlock-mods/database@1.3.1
 
 ## 0.6.0
@@ -99,7 +99,7 @@
 
 - Updated dependencies [ba5faa1]
   - @deadlock-mods/database@1.3.0
-  - @deadlock-mods/utils@1.3.0
+  - @deadlock-mods/shared@1.3.0
 
 ## 0.5.1
 
@@ -137,7 +137,7 @@
 
 - Updated dependencies
   - @deadlock-mods/database@1.1.0
-  - @deadlock-mods/utils@1.1.0
+  - @deadlock-mods/shared@1.1.0
 
 ## 0.3.0
 

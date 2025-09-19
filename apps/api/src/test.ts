@@ -1,4 +1,4 @@
-import type { GameBanana } from "@deadlock-mods/utils";
+import type { GameBanana } from "@deadlock-mods/shared";
 import { logger } from "./lib/logger";
 import { providerRegistry } from "./lib/providers";
 

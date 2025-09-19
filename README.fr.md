@@ -208,7 +208,7 @@ Ce monorepo inclut les paquets/applications suivants :
 ### Paquets
 
 - `@deadlock-mods/database` : Wrapper [Drizzle ORM](https://orm.drizzle.team/) pour gérer et accéder à la base de données
-- `@deadlock-mods/utils` : Utilitaires partagés et définitions de types
+- `@deadlock-mods/shared` : Utilitaires partagés et définitions de types
 
 - `@deadlock-mods/typescript-config` : Configurations TypeScript
 
@@ -276,16 +276,16 @@ Nous travaillons activement pour rendre Deadlock Mod Manager accessible aux util
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language | Native Name | Status | Contributors |
-|----------|-------------|--------|-------------|
-| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇩🇪 **German** | Deutsch | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/) |
-| 🇫🇷 **French** | Français | 🚧 In Progress | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/) |
-| 🇸🇦 **Arabic** | العربية | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 In Progress | [_manio](https://discordapp.com/users/_manio/) |
-| 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| Language                 | Native Name     | Status         | Contributors                                                                                                       |
+| ------------------------ | --------------- | -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 🇺🇸 **English** (Default) | English         | ✅ Complete    | -                                                                                                                  |
+| 🇩🇪 **German**            | Deutsch         | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/)                                                               |
+| 🇫🇷 **French**            | Français        | 🚧 In Progress | [stormix](https://github.com/stormix)                                                                              |
+| 🇷🇺 **Russian**           | Русский         | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/)                                                         |
+| 🇸🇦 **Arabic**            | العربية         | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/)                                                     |
+| 🇵🇱 **Polish**            | Polski          | 🚧 In Progress | [\_manio](https://discordapp.com/users/_manio/)                                                                    |
+| 🇨🇭 **Swiss German**      | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇷 **Turkish**           | Türkçe          | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 
 <!-- LANGUAGE_TABLE_END -->
 

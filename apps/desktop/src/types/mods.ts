@@ -1,4 +1,4 @@
-import type { ModDownloadDto, ModDto } from "@deadlock-mods/utils";
+import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
 
 // Individual download item type extracted from ModDownloadDto array
 export type ModDownloadItem = ModDownloadDto[number];

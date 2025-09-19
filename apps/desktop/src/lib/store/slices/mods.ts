@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";

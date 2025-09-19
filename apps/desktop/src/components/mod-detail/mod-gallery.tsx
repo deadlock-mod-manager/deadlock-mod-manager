@@ -1,4 +1,4 @@
-import type { NSFWSettings } from "@deadlock-mods/utils";
+import type { NSFWSettings } from "@deadlock-mods/shared";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

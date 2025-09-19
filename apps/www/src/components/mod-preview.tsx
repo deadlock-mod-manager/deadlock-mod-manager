@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { Link } from "@tanstack/react-router";
 import { Interweave } from "interweave";
 import { LuDownload, LuEye, LuHeart } from "react-icons/lu";

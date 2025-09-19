@@ -1,4 +1,4 @@
-import type { ModDownloadDto, ModDto } from "@deadlock-mods/utils";
+import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
 import { useState } from "react";
 import { toast } from "sonner";
 import { downloadManager } from "@/lib/download/manager";

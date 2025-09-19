@@ -59,9 +59,9 @@ importers:
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
-      '@deadlock-mods/utils':
+      '@deadlock-mods/shared':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/shared
       '@deadlock-mods/vpk-parser':
         specifier: workspace:*
         version: link:../../packages/vpk-parser
@@ -202,9 +202,9 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@deadlock-mods/utils':
+      '@deadlock-mods/shared':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/shared
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.62.0(react@18.3.1))
@@ -497,9 +497,9 @@ importers:
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
-      '@deadlock-mods/utils':
+      '@deadlock-mods/shared':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/shared
       '@deadlock-mods/vpk-parser':
         specifier: workspace:*
         version: link:../../packages/vpk-parser
@@ -555,9 +555,9 @@ importers:
 
   apps/www:
     dependencies:
-      '@deadlock-mods/utils':
+      '@deadlock-mods/shared':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../packages/shared
       '@hookform/resolvers':
         specifier: ^5.2.1
         version: 5.2.1(react-hook-form@7.62.0(react@19.1.1))
@@ -792,7 +792,7 @@ importers:
         specifier: ^1.2.6
         version: 1.2.6
 
-  packages/utils:
+  packages/shared:
     dependencies:
       zod:
         specifier: 'catalog:'
@@ -13357,7 +13357,7 @@ snapshots:
   vite-node@2.1.9(@types/node@24.5.2)(lightningcss@1.30.1):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.1
+      debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 1.1.2
       vite: 5.4.20(@types/node@24.5.2)(lightningcss@1.30.1)
@@ -13418,7 +13418,7 @@ snapshots:
       '@vitest/spy': 2.1.9
       '@vitest/utils': 2.1.9
       chai: 5.3.3
-      debug: 4.4.1
+      debug: 4.4.3
       expect-type: 1.2.2
       magic-string: 0.30.18
       pathe: 1.1.2

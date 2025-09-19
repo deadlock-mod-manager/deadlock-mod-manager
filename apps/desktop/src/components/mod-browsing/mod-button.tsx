@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { useHover } from "@uidotdev/usehooks";
 import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";

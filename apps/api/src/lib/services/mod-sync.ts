@@ -3,7 +3,7 @@ import {
   type AcquiredLock,
   DistributedLockService,
 } from "@deadlock-mods/distributed-lock";
-import type { GameBanana } from "@deadlock-mods/utils";
+import type { GameBanana } from "@deadlock-mods/shared";
 import * as Sentry from "@sentry/node";
 import { env } from "../env";
 import { logger as mainLogger } from "../logger";

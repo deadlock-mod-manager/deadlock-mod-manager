@@ -1,5 +1,5 @@
-import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/utils";
-import { DEFAULT_NSFW_SETTINGS } from "@deadlock-mods/utils";
+import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/shared";
+import { DEFAULT_NSFW_SETTINGS } from "@deadlock-mods/shared";
 import { v4 as uuidv4 } from "uuid";
 import type { StateCreator } from "zustand";
 import type { CreateSettingSchema } from "@/lib/validation/create-setting";

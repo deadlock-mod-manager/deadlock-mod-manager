@@ -16,7 +16,7 @@
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
-    "@deadlock-mods/utils": "workspace:*",
+    "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",
     "@sentry/node": "catalog:",
     "@sentry/profiling-node": "catalog:",

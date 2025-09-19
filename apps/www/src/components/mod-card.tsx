@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { LuDownload, LuHeart, LuSettings } from "react-icons/lu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

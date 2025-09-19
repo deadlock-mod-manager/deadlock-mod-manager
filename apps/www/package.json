@@ -10,7 +10,7 @@
     "start": "vite"
   },
   "dependencies": {
-    "@deadlock-mods/utils": "workspace:*",
+    "@deadlock-mods/shared": "workspace:*",
     "@hookform/resolvers": "^5.2.1",
     "@orpc/client": "^1.8.8",
     "@orpc/tanstack-query": "^1.8.8",

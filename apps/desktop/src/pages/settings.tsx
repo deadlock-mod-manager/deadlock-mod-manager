@@ -2,7 +2,7 @@ import {
   type CustomSettingDto,
   CustomSettingType,
   customSettingTypeHuman,
-} from "@deadlock-mods/utils";
+} from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import {

@@ -1,5 +1,5 @@
 import { CustomSettingsRepository, db } from "@deadlock-mods/database";
-import { toCustomSettingDto } from "@deadlock-mods/utils";
+import { toCustomSettingDto } from "@deadlock-mods/shared";
 import { Hono } from "hono";
 
 const customSettingsRouter = new Hono();

@@ -130,7 +130,7 @@
 
 - 4e5202f: Fix search results relevance
 - Updated dependencies [7f379a5]
-  - @deadlock-mods/utils@1.4.0
+  - @deadlock-mods/shared@1.4.0
 
 ## 0.6.1
 
@@ -148,7 +148,7 @@
 
 - 2cc1984: Removed the assumption that every launch option has a "+" prefix
 - Updated dependencies [ba5faa1]
-  - @deadlock-mods/utils@1.3.0
+  - @deadlock-mods/shared@1.3.0
 
 ## 0.5.1
 
@@ -202,7 +202,7 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @deadlock-mods/utils@1.1.0
+  - @deadlock-mods/shared@1.1.0
 
 ## 0.2.0
 

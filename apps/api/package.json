@@ -16,7 +16,7 @@
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",
-    "@deadlock-mods/utils": "workspace:*",
+    "@deadlock-mods/shared": "workspace:*",
     "@hono/sentry": "^1.2.2",
     "@mjackson/lazy-file": "^3.4.0",
     "@orpc/client": "^1.8.8",

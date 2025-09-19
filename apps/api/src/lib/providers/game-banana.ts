@@ -5,7 +5,7 @@ import {
   ModRepository,
   type NewMod,
 } from "@deadlock-mods/database";
-import { type GameBanana, guessHero } from "@deadlock-mods/utils";
+import { type GameBanana, guessHero } from "@deadlock-mods/shared";
 import { Provider, providerRegistry } from "./registry";
 
 const modRepository = new ModRepository(db);

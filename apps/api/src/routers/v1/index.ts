@@ -10,7 +10,7 @@ import {
   ModsListResponseSchema,
   toModDownloadDto,
   toModDto,
-} from "@deadlock-mods/utils";
+} from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { publicProcedure } from "../../lib/orpc";
 

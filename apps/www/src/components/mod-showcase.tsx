@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { ModCard } from "@/components/mod-card";

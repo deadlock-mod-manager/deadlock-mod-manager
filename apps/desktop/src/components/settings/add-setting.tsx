@@ -1,7 +1,7 @@
 import {
   CustomSettingType,
   customSettingTypeHuman,
-} from "@deadlock-mods/utils";
+} from "@deadlock-mods/shared";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusCircle } from "@phosphor-icons/react";
 import { useState } from "react";

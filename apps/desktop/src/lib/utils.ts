@@ -1,4 +1,4 @@
-import { CustomSettingType } from "@deadlock-mods/utils";
+import { CustomSettingType } from "@deadlock-mods/shared";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { LocalMod } from "@/types/mods";

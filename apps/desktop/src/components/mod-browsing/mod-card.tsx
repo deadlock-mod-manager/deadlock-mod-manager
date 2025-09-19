@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { format } from "date-fns";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "lucide-react";
 import { useNavigate } from "react-router";

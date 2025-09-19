@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { Music } from "lucide-react";
 import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";

@@ -1,4 +1,4 @@
-import { CustomSettingType } from "@deadlock-mods/utils";
+import { CustomSettingType } from "@deadlock-mods/shared";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

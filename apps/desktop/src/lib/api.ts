@@ -2,7 +2,7 @@ import type {
   CustomSettingDto,
   ModDownloadDto,
   ModDto,
-} from "@deadlock-mods/utils";
+} from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
 

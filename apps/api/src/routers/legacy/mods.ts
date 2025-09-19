@@ -3,7 +3,7 @@ import {
   ModDownloadRepository,
   ModRepository,
 } from "@deadlock-mods/database";
-import { toModDownloadDto, toModDto } from "@deadlock-mods/utils";
+import { toModDownloadDto, toModDto } from "@deadlock-mods/shared";
 import { Hono } from "hono";
 
 const modsRouter = new Hono();

@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/utils";
+import type { ModDto } from "@deadlock-mods/shared";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Suspense, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
