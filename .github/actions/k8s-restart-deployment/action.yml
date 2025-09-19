@@ -1,27 +1,27 @@
-name: 'Kubernetes Restart Deployment'
-description: 'Restart Kubernetes deployment after Docker image update'
+name: "Kubernetes Restart Deployment"
+description: "Restart Kubernetes deployment after Docker image update"
 inputs:
   service-name:
-    description: 'Name of the service (api, bot, lockdex)'
+    description: "Name of the service (api, bot, lockdex)"
     required: true
   kubeconfig:
-    description: 'Base64 encoded kubeconfig file'
+    description: "Base64 encoded kubeconfig file"
     required: true
   namespace:
-    description: 'Kubernetes namespace'
+    description: "Kubernetes namespace"
     required: false
-    default: 'default'
+    default: "default"
   deployment-name:
-    description: 'Custom deployment name (defaults to deadlock-mods-{service-name})'
-    required: false
+    description: "Kubernetes deployment name"
+    required: true
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Set up kubectl
       uses: azure/setup-kubectl@v3
       with:
-        version: 'latest'
+        version: "latest"
 
     - name: Configure kubectl
       run: |
@@ -34,12 +34,9 @@ runs:
       run: |
         export KUBECONFIG=kubeconfig.yaml
         DEPLOYMENT_NAME="${{ inputs.deployment-name }}"
-        if [ -z "$DEPLOYMENT_NAME" ]; then
-          DEPLOYMENT_NAME="deadlock-mods-${{ inputs.service-name }}"
-        fi
-        
+
         echo "Restarting deployment: $DEPLOYMENT_NAME in namespace: ${{ inputs.namespace }}"
-        
+
         # Check if deployment exists
         if kubectl get deployment "$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}" >/dev/null 2>&1; then
           kubectl rollout restart deployment/"$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}"
