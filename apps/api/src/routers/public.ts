@@ -13,6 +13,11 @@ const HealthResponseSchema = z.object({
     alive: z.boolean(),
     error: z.string().optional(),
   }),
+  redis: z.object({
+    alive: z.boolean(),
+    error: z.string().optional(),
+    configured: z.boolean(),
+  }),
 });
 
 const VersionResponseSchema = z.object({
@@ -76,7 +81,7 @@ export const publicRouter = {
           return { version: "unknown" };
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as { version: string };
         return { version: data.version };
       } catch {
         // Fallback to hardcoded version if GitHub fetch fails
@@ -102,7 +107,9 @@ export const publicRouter = {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as {
+          data: { attributes: { aggregate_state: string } };
+        };
         const betterStackStatus = data.data.attributes.aggregate_state;
 
         // Map betterstack status to our status format

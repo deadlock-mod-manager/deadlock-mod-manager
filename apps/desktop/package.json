@@ -81,7 +81,7 @@
     "react-promise-suspense": "^0.3.4",
     "react-query": "^3.39.3",
     "react-resizable-panels": "^2.1.9",
-    "react-router": "^7.8.2",
+    "react-router": "^7.9.1",
     "recharts": "^2.15.4",
     "sonner": "^1.7.4",
     "tailwindcss-animate": "^1.0.7",
@@ -96,7 +96,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.4",
-    "@types/node": "^20.19.13",
+    "@types/node": "^20.19.17",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",

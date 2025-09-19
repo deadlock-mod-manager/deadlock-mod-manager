@@ -1,6 +1,7 @@
 import { db, sql } from "@deadlock-mods/database";
-import type { DbHealth, HealthResponse } from "../../types/health";
+import type { DbHealth, HealthResponse, RedisHealth } from "../../types/health";
 import { logger } from "../logger";
+import { getRedisClient } from "../redis";
 
 export class HealthService {
   private static singleton: HealthService;
@@ -14,7 +15,6 @@ export class HealthService {
 
   async checkDb(): Promise<DbHealth> {
     try {
-      // A lightweight no-op query to validate connectivity
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
@@ -23,14 +23,54 @@ export class HealthService {
     }
   }
 
-  async check(): Promise<HealthResponse> {
-    const [dbHealth] = await Promise.all([this.checkDb()]);
+  async checkRedis(): Promise<RedisHealth> {
+    const redis = getRedisClient();
 
-    const healthy = dbHealth.alive;
+    if (!redis) {
+      return { alive: true, configured: false };
+    }
+
+    try {
+      const pong = await redis.ping();
+      if (pong !== "PONG") {
+        throw new Error("Redis ping failed");
+      }
+
+      const testKey = "api:health:check";
+      const testValue = Date.now().toString();
+
+      await redis.set(testKey, testValue, "EX", 10);
+      const retrievedValue = await redis.get(testKey);
+
+      if (retrievedValue !== testValue) {
+        throw new Error("Redis read/write test failed");
+      }
+
+      await redis.del(testKey);
+
+      return { alive: true, configured: true };
+    } catch (error) {
+      logger.withError(error as Error).error("Redis health check failed");
+      return {
+        alive: false,
+        configured: true,
+        error: (error as Error).message,
+      };
+    }
+  }
+
+  async check(): Promise<HealthResponse> {
+    const [dbHealth, redisHealth] = await Promise.all([
+      this.checkDb(),
+      this.checkRedis(),
+    ]);
+
+    const healthy = dbHealth.alive && redisHealth.alive;
 
     return {
       status: healthy ? "ok" : "degraded",
       db: dbHealth,
+      redis: redisHealth,
     };
   }
 }

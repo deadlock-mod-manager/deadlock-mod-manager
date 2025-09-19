@@ -40,6 +40,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **040-logging.mdc** - Logging guidelines for implementing structured logging
 - **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
 - **060-tailwind-v4.mdc** - Guidelines for using Tailwind CSS v4
+- **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
 
 ### Special Rules
 

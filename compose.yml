@@ -1,6 +1,8 @@
 volumes:
   database:
     driver: local
+  redis_data:
+    driver: local
 
 services:
   postgres:
@@ -16,6 +18,16 @@ services:
     volumes:
       - database:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    container_name: deadlock_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
   api:
     build:
       context: .
@@ -27,9 +39,11 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      REDIS_URL: redis://redis:6379
       SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
     depends_on:
       - postgres
+      - redis
 
   bot:
     build:

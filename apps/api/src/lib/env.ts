@@ -3,6 +3,7 @@ import { z } from "zod";
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("production"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
+  REDIS_URL: z.string().optional(),
   SENTRY_DSN: z
     .string()
     .url()

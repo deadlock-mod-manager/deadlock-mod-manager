@@ -16,8 +16,8 @@ catalogs:
       specifier: ^5.9.2
       version: 5.9.2
     zod:
-      specifier: ^4.1.8
-      version: 4.1.8
+      specifier: ^4.1.9
+      version: 4.1.9
 
 overrides:
   '@types/react': 19.0.2
@@ -67,22 +67,22 @@ importers:
         version: link:../../packages/vpk-parser
       '@hono/sentry':
         specifier: ^1.2.2
-        version: 1.2.2(hono@4.9.6)
+        version: 1.2.2(hono@4.9.8)
       '@mjackson/lazy-file':
         specifier: ^3.4.0
         version: 3.4.0
       '@orpc/client':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)
       '@orpc/openapi':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
       '@orpc/server':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
       '@orpc/zod':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)(@orpc/contract@1.8.8(@opentelemetry/api@1.9.0))(@orpc/server@1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.1.8)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)(@orpc/contract@1.8.9(@opentelemetry/api@1.9.0))(@orpc/server@1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.1.9)
       '@sentry/node':
         specifier: 'catalog:'
         version: 9.46.0
@@ -90,8 +90,8 @@ importers:
         specifier: 'catalog:'
         version: 8.55.0
       better-auth:
-        specifier: ^1.3.9
-        version: 1.3.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^1.3.12
+        version: 1.3.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       croner:
         specifier: ^9.1.0
         version: 9.1.0
@@ -105,8 +105,11 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0
       hono:
-        specifier: ^4.9.6
-        version: 4.9.6
+        specifier: ^4.9.8
+        version: 4.9.8
+      ioredis:
+        specifier: ^5.7.0
+        version: 5.7.0
       tslog:
         specifier: ^4.9.3
         version: 4.9.3
@@ -115,7 +118,7 @@ importers:
         version: 11.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -139,7 +142,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/logging
       '@discordjs/rest':
-        specifier: ^2.5.0
+        specifier: ^2.6.0
         version: 2.6.0
       '@sapphire/discord.js-utilities':
         specifier: ^7.3.3
@@ -154,16 +157,16 @@ importers:
         specifier: 'catalog:'
         version: 8.55.0
       cache-manager:
-        specifier: ^7.0.0
+        specifier: ^7.2.0
         version: 7.2.0
       cacheable:
-        specifier: ^1.10.0
+        specifier: ^1.10.4
         version: 1.10.4
       discord-api-types:
-        specifier: ^0.38.11
-        version: 0.38.25
+        specifier: ^0.38.26
+        version: 0.38.26
       discord.js:
-        specifier: ^14.19.3
+        specifier: ^14.22.1
         version: 14.22.1
       genversion:
         specifier: ^3.2.0
@@ -178,11 +181,11 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       puppeteer:
-        specifier: ^24.21.0
-        version: 24.21.0(typescript@5.9.2)
+        specifier: ^24.22.0
+        version: 24.22.0(typescript@5.9.2)
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -401,8 +404,8 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router:
-        specifier: ^7.8.2
-        version: 7.8.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^7.9.1
+        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       recharts:
         specifier: ^2.15.4
         version: 2.15.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -432,7 +435,7 @@ importers:
         version: 1.1.2(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
       zustand:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.0.2)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
@@ -441,8 +444,8 @@ importers:
         specifier: ^2.8.4
         version: 2.8.4
       '@types/node':
-        specifier: ^20.19.13
-        version: 20.19.13
+        specifier: ^20.19.17
+        version: 20.19.17
       '@types/react':
         specifier: 19.0.2
         version: 19.0.2
@@ -451,7 +454,7 @@ importers:
         version: 19.0.2(@types/react@19.0.2)
       '@vitejs/plugin-react':
         specifier: ^4.7.0
-        version: 4.7.0(vite@5.4.20(@types/node@20.19.13)(lightningcss@1.30.1))
+        version: 4.7.0(vite@5.4.20(@types/node@20.19.17)(lightningcss@1.30.1))
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.21(postcss@8.5.6)
@@ -475,10 +478,10 @@ importers:
         version: 5.9.2
       unplugin-fonts:
         specifier: ^1.4.0
-        version: 1.4.0(vite@5.4.20(@types/node@20.19.13)(lightningcss@1.30.1))
+        version: 1.4.0(vite@5.4.20(@types/node@20.19.17)(lightningcss@1.30.1))
       vite:
         specifier: ^5.4.20
-        version: 5.4.20(@types/node@20.19.13)(lightningcss@1.30.1)
+        version: 5.4.20(@types/node@20.19.17)(lightningcss@1.30.1)
 
   apps/lockdex:
     dependencies:
@@ -510,8 +513,8 @@ importers:
         specifier: 'catalog:'
         version: 8.55.0
       bullmq:
-        specifier: ^5.58.5
-        version: 5.58.5
+        specifier: ^5.58.7
+        version: 5.58.7
       dotenv-cli:
         specifier: ^7.4.4
         version: 7.4.4
@@ -538,7 +541,7 @@ importers:
         version: 3.2.0
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -559,14 +562,14 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       '@hookform/resolvers':
-        specifier: ^5.2.1
-        version: 5.2.1(react-hook-form@7.62.0(react@19.1.1))
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.62.0(react@19.1.1))
       '@orpc/client':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)
       '@orpc/tanstack-query':
-        specifier: ^1.8.8
-        version: 1.8.8(@opentelemetry/api@1.9.0)(@orpc/client@1.8.8(@opentelemetry/api@1.9.0))(@tanstack/query-core@5.87.4)
+        specifier: ^1.8.9
+        version: 1.8.9(@opentelemetry/api@1.9.0)(@orpc/client@1.8.9(@opentelemetry/api@1.9.0))(@tanstack/query-core@5.89.0)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -590,19 +593,19 @@ importers:
         version: 1.2.3(@types/react@19.0.2)(react@19.1.1)
       '@tailwindcss/vite':
         specifier: ^4.1.13
-        version: 4.1.13(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 4.1.13(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
       '@tanstack/react-form':
-        specifier: ^1.19.5
-        version: 1.19.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^1.23.0
+        version: 1.23.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-query':
-        specifier: ^5.87.4
-        version: 5.87.4(react@19.1.1)
+        specifier: ^5.89.0
+        version: 5.89.0(react@19.1.1)
       '@tanstack/react-router':
-        specifier: ^1.131.40
-        version: 1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^1.131.48
+        version: 1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       better-auth:
-        specifier: ^1.3.9
-        version: 1.3.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^1.3.12
+        version: 1.3.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -647,20 +650,20 @@ importers:
         version: 1.3.8
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@tanstack/react-query-devtools':
-        specifier: ^5.87.4
-        version: 5.87.4(@tanstack/react-query@5.87.4(react@19.1.1))(react@19.1.1)
+        specifier: ^5.89.0
+        version: 5.89.0(@tanstack/react-query@5.89.0(react@19.1.1))(react@19.1.1)
       '@tanstack/react-router-devtools':
-        specifier: ^1.131.40
-        version: 1.131.40(@tanstack/react-router@1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.40)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tiny-invariant@1.3.3)
+        specifier: ^1.131.48
+        version: 1.131.48(@tanstack/react-router@1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.48)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tiny-invariant@1.3.3)
       '@tanstack/router-plugin':
-        specifier: ^1.131.40
-        version: 1.131.40(@tanstack/react-router@1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^1.131.48
+        version: 1.131.48(@tanstack/react-router@1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
       '@types/node':
-        specifier: ^22.18.1
-        version: 22.18.1
+        specifier: ^22.18.6
+        version: 22.18.6
       '@types/react':
         specifier: 19.0.2
         version: 19.0.2
@@ -669,7 +672,7 @@ importers:
         version: 19.0.2(@types/react@19.0.2)
       '@vitejs/plugin-react':
         specifier: ^4.7.0
-        version: 4.7.0(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 4.7.0(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -681,13 +684,13 @@ importers:
         version: 5.9.2
       vite:
         specifier: ^6.3.6
-        version: 6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+        version: 6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/common:
     dependencies:
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -712,8 +715,8 @@ importers:
         specifier: workspace:*
         version: link:../../tools/typescript
       '@types/node':
-        specifier: ^20.19.13
-        version: 20.19.13
+        specifier: ^20.19.17
+        version: 20.19.17
       '@types/pg':
         specifier: ^8.15.5
         version: 8.15.5
@@ -734,7 +737,7 @@ importers:
         version: 11.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -796,7 +799,7 @@ importers:
     dependencies:
       zod:
         specifier: 'catalog:'
-        version: 4.1.8
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/database':
         specifier: workspace:*
@@ -814,7 +817,7 @@ importers:
         specifier: workspace:*
         version: link:../common
       xxhash-wasm:
-        specifier: ^1.0.2
+        specifier: ^1.1.0
         version: 1.1.0
     devDependencies:
       '@deadlock-mods/typescript-config':
@@ -994,8 +997,8 @@ packages:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
 
-  '@better-auth/utils@0.2.6':
-    resolution: {integrity: sha512-3y/vaL5Ox33dBwgJ6ub3OPkVqr6B5xL2kgxNHG8eHZuryLyG/4JSPGqjbdRSgjuy9kALUZYDFl+ORIAxlWMSuA==}
+  '@better-auth/utils@0.3.0':
+    resolution: {integrity: sha512-W+Adw6ZA6mgvnSnhOki270rwJ42t4XzSK6YWGF//BbVXL6SwCLWfyzBc1lN2m/4RM28KubdBKQ4X5VMoLRNPQw==}
 
   '@better-fetch/fetch@1.1.18':
     resolution: {integrity: sha512-rEFOE1MYIsBmoMJtQbl32PGHHXuG2hDxvEd7rUHE0vCBoFQVSDqaVs9hkZEtHCxRoY+CljXKFCOuJ8uxqw1LcA==}
@@ -1617,8 +1620,8 @@ packages:
     peerDependencies:
       react-hook-form: ^7.0.0
 
-  '@hookform/resolvers@5.2.1':
-    resolution: {integrity: sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ==}
+  '@hookform/resolvers@5.2.2':
+    resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
     peerDependencies:
       react-hook-form: ^7.55.0
 
@@ -2120,26 +2123,26 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
 
-  '@orpc/client@1.8.8':
-    resolution: {integrity: sha512-uLntyfPdUSYoN7OuNQdSg2h3M5g3btNZwkDY3vc4DRi//1oiTNF0Tr3L7HnjwZc/zA2RzuBQAX3xYOSWMtGVXg==}
+  '@orpc/client@1.8.9':
+    resolution: {integrity: sha512-Sn/kRmiWYnMvpSv6lQ6XCRxVfBxmO2z9y0m92TxVgkk37VAegf9Qs4+OnP7ELsy7Nn9qn+Nyo5fJNWeQmyFsWg==}
 
-  '@orpc/contract@1.8.8':
-    resolution: {integrity: sha512-xFbVhEQj4dZYnyZLIuy8LXENVKUGUy30rFYC5bSb73X4pl5Wb0Z9b5fIZKAOvt8TIurwretAO63KSBQ5jdaBmQ==}
+  '@orpc/contract@1.8.9':
+    resolution: {integrity: sha512-DRYU3fOvUYO5CBdKG/CynMif36JTAej0rNgVLYHr2hXuaWkt8xqdZPl4GdMjP8ybsI204MawmERx9YwbhLcZ5A==}
 
-  '@orpc/interop@1.8.8':
-    resolution: {integrity: sha512-WrhvSv+laiePNYakl0+L+mv+iGDgyVf27Ig6wn6xFvF7oc2rc3lmnq5pvFV4xvkzMzmm0auXZcGPymIdjYv6tQ==}
+  '@orpc/interop@1.8.9':
+    resolution: {integrity: sha512-S5fk+G9cVzRCfsvrs36woOjjgXGNFB9/TCEQsF6ZEDt0XGIodT8DS7UUWT7NzJsKvq61cR4NAAxvsejWZnaSlg==}
 
-  '@orpc/json-schema@1.8.8':
-    resolution: {integrity: sha512-PTJ3aPCvGUagApbbsEX7nfwF/JdMoPayUyxl1Nn0dZA9jU7EyFs9TudieCrbdNcejrdOu8LTSmpYHY6EpVtAVA==}
+  '@orpc/json-schema@1.8.9':
+    resolution: {integrity: sha512-o8bUl/YaIlY5ztRNHqKLIAPIKxAARd5njrTUsPicWiwMza7eBDE875tk8+EckiLLcQSkF7aEsULPS82tdknNYg==}
 
-  '@orpc/openapi-client@1.8.8':
-    resolution: {integrity: sha512-kB7SZHP/voAziizrIw9oXcV+UcRNRkHCIM9f+EtCgW8ff180di9zM9fxf/WLuqkRnpS6wFhAGy28Ubk/d7A2AA==}
+  '@orpc/openapi-client@1.8.9':
+    resolution: {integrity: sha512-lV4+CH7nU9KBMx01npXLgnWcdNFlhrGEbKTet05ATlXXKlKtQ9J96Ll7GKYuI8ArXIa6Pydh/WBdBpllth+dWg==}
 
-  '@orpc/openapi@1.8.8':
-    resolution: {integrity: sha512-Z+fhzkj76tDeAC3IQWGu4/lQUlO9xNFLON2A10U88Lfik13o3+ZlAN83fqiHQmEAEPVnWV+i/2LTPZKanRoXCQ==}
+  '@orpc/openapi@1.8.9':
+    resolution: {integrity: sha512-uSFCeyR+d+T8XIF5IzGYdvVpNKd1jDhfUFiXwFRu+7wLj8UG7esStsTqqOTK+sDFC+gs56goQdBPQbn5vmNlCw==}
 
-  '@orpc/server@1.8.8':
-    resolution: {integrity: sha512-5PuHXRAInzT1ewz/P3rmplTuNyrw2DEUlx0OuffuT4MCPR6Yq2MRaqCxr5v09yn6SiDdbqQTyApJfPmKMbVwUQ==}
+  '@orpc/server@1.8.9':
+    resolution: {integrity: sha512-VkTdiU5ED2Csj3NYcHg26T+naU0A9qv18/XidPwAlncmLuUNOG2B7LFBFVlRCTBxHzGkA3tUfZHBcH/r408sUQ==}
     peerDependencies:
       crossws: '>=0.3.4'
       ws: '>=8.18.1'
@@ -2149,40 +2152,40 @@ packages:
       ws:
         optional: true
 
-  '@orpc/shared@1.8.8':
-    resolution: {integrity: sha512-LjCKRFirzEqOMMeEOHoD3MWOM/ZEv4jHv6a3/YmHO5TTE4E9NkLFQXK3bdGyC5m6Di8fMgfWQgKBOhCjzflLaw==}
+  '@orpc/shared@1.8.9':
+    resolution: {integrity: sha512-tQgE8FBrlIztzb/QuQFgFM87bA0xnoM87aXD8A51/glS5P29Vw5Y56XsAiIstvZ3euVxuFTVjCEREQnXkfzTYw==}
     peerDependencies:
       '@opentelemetry/api': '>=1.9.0'
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
 
-  '@orpc/standard-server-aws-lambda@1.8.8':
-    resolution: {integrity: sha512-ZaYNP99XzyxK/dEvI3W8qRA1dYurz+aEyR+HF+p6d6TqZ59HAwBBnXkA6zlh1bYdjg8k9PZ7PXCXttz3vf65JA==}
+  '@orpc/standard-server-aws-lambda@1.8.9':
+    resolution: {integrity: sha512-JeGp55LnEn+CcfaBZSKqKxDY86EsT9yYeeav/Tm0vTIP0/4ygqj8e9Ogq0LnapB65n4FyWkdH/j/Z73vCtBYqg==}
 
-  '@orpc/standard-server-fetch@1.8.8':
-    resolution: {integrity: sha512-rRgA+EwRvCD33/ojXXjbilJq6WUL6gIoDT70QceqLq1mQt8u/mwzZENccOxmOCoRq4oplflSvSnaIydKMl/9xg==}
+  '@orpc/standard-server-fetch@1.8.9':
+    resolution: {integrity: sha512-Z8Jk/F2jhqWcFOtd8YnCU81FWrI6ToXUivUkXgJ4ebMvD1yd53BdpdOLkQYpS0p6xwkAGT9Ox12wfUZ0P0VIQg==}
 
-  '@orpc/standard-server-node@1.8.8':
-    resolution: {integrity: sha512-6jXk4z5A1m9w7tHR0IoS+OmXEG8ddeuQfIWv8iIMeZ1oIBfT7M1Rs0R5n7PpuLpYKS+NhYuKIMIDi+CysWLmDw==}
+  '@orpc/standard-server-node@1.8.9':
+    resolution: {integrity: sha512-ITnuI75OUKGmNAIaDMRdw8nDSzXi1bDzdDENK0e4bEWIM2+mtmnpnpzt3tHUBW6e4yVQtiF/BjFAnQ9caLXxWA==}
 
-  '@orpc/standard-server-peer@1.8.8':
-    resolution: {integrity: sha512-xlGI727AWn4OB/n4j5CWpluguUAR+UnD79ygZX6h81HjkM2man9Prj4vtSZxPOzwCr10eTtgMKlphFcfLZN//A==}
+  '@orpc/standard-server-peer@1.8.9':
+    resolution: {integrity: sha512-ELM2+wYxJ3++UGsQY2jnnXFpJHEvZcTICLiHr7gkLSAZH6W674KqaiWjd4Zkx9n2o2wUAJJ3RP3kvssAVKoD2A==}
 
-  '@orpc/standard-server@1.8.8':
-    resolution: {integrity: sha512-dnfCOatufI8nWRVkyA1QzKgYWN2CfRbTf84T40W01JqjzlkvxKZkyX02njZ3QaH58IeKyGWHpbepk+VM7lAQ0Q==}
+  '@orpc/standard-server@1.8.9':
+    resolution: {integrity: sha512-NuF8j9KzCYUCZF5UKS2QN/HIfg98OR+3bIxqXhHk361Wa10xAaJOVKYEgjnU/ZGCnhPGPWPhFvhbujGcKC4OWw==}
 
-  '@orpc/tanstack-query@1.8.8':
-    resolution: {integrity: sha512-3o4lpX5cItzpCSxqSHM1EXzI4nMYgmCLKWhK8oU8oya4t29UKeFwZWLXAUXe7MWWHTtgaFchx5puhFLUvs/3Mg==}
+  '@orpc/tanstack-query@1.8.9':
+    resolution: {integrity: sha512-aH78ohwiKRR1AbVAOct+wgg2Mj+ZShYWCwYy4IXl9NXHVu2WyhVjcrJRdJiqkqW/OA440keAELnkjTgyAlvTdw==}
     peerDependencies:
-      '@orpc/client': 1.8.8
+      '@orpc/client': 1.8.9
       '@tanstack/query-core': '>=5.80.2'
 
-  '@orpc/zod@1.8.8':
-    resolution: {integrity: sha512-jdHQ45t5gTc6fP/Jk7mS+jA6YXYo0jfqrRkOLqR/xWdMTSGhcbA6KgEQBYPQyNoYlqolVCfTW65YLLvpmbftig==}
+  '@orpc/zod@1.8.9':
+    resolution: {integrity: sha512-/bklzR8XCopngCA70HWSEkGDZn66wwhSnj8H9CfqdYiD/ACP5I+1QZtwxpw5iG8miDUAREIohxZLQKScuL+xjw==}
     peerDependencies:
-      '@orpc/contract': 1.8.8
-      '@orpc/server': 1.8.8
+      '@orpc/contract': 1.8.9
+      '@orpc/server': 1.8.9
       zod: '>=3.25.0'
 
   '@oxc-project/types@0.89.0':
@@ -3504,21 +3507,25 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
-  '@tanstack/form-core@1.19.5':
-    resolution: {integrity: sha512-MhHk/f3fOVhm2kHAEOg+yJklSY84C3qSwwYwAUzAQw6i5ZQquBdB2aYzg89FFXNkhmLcEl9hJCqRZVw4NHzDMQ==}
+  '@tanstack/devtools-event-client@0.2.5':
+    resolution: {integrity: sha512-iVdqw879KETXyyPHc3gQR5Ld0GjlPLk7bKenBUhzr3+z1FiQZvsbfgYfRRokTSPcgwANAV7aA2Uv05nx5xWT8A==}
+    engines: {node: '>=18'}
+
+  '@tanstack/form-core@1.23.0':
+    resolution: {integrity: sha512-aBJnO5iA1TtMK/SSpAvd/y6cVsBgbu5Br2FftvW6r7TkHCcZ/lB2DMx3G2dk6SG7sW0g8s6F7iaMjrvqBGooDw==}
 
   '@tanstack/history@1.131.2':
     resolution: {integrity: sha512-cs1WKawpXIe+vSTeiZUuSBy8JFjEuDgdMKZFRLKwQysKo8y2q6Q1HvS74Yw+m5IhOW1nTZooa6rlgdfXcgFAaw==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.87.4':
-    resolution: {integrity: sha512-uNsg6zMxraEPDVO2Bn+F3/ctHi+Zsk+MMpcN8h6P7ozqD088F6mFY5TfGM7zuyIrL7HKpDyu6QHfLWiDxh3cuw==}
+  '@tanstack/query-core@5.89.0':
+    resolution: {integrity: sha512-joFV1MuPhSLsKfTzwjmPDrp8ENfZ9N23ymFu07nLfn3JCkSHy0CFgsyhHTJOmWaumC/WiNIKM0EJyduCF/Ih/Q==}
 
   '@tanstack/query-devtools@5.87.3':
     resolution: {integrity: sha512-LkzxzSr2HS1ALHTgDmJH5eGAVsSQiuwz//VhFW5OqNk0OQ+Fsqba0Tsf+NzWRtXYvpgUqwQr4b2zdFZwxHcGvg==}
 
-  '@tanstack/react-form@1.19.5':
-    resolution: {integrity: sha512-DHSdom28KcIT+tYmqFnokAMBnbdDJL9BEufyjqalLGDkc256/7mvU6UyM9flCyaeHC+kqGY8ZB+DUv3ivKawdQ==}
+  '@tanstack/react-form@1.23.0':
+    resolution: {integrity: sha512-wZ/cBjqj5dgWG79TQOsilbs8WzdouJj3iXw1DAZvQ4nejobsTGl0huU7SZZ0mnFtdNHbre1bFSdWyw+GqFcIhQ==}
     peerDependencies:
       '@tanstack/react-start': ^1.130.10
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -3526,27 +3533,27 @@ packages:
       '@tanstack/react-start':
         optional: true
 
-  '@tanstack/react-query-devtools@5.87.4':
-    resolution: {integrity: sha512-JYcnVJBBW1DCPyNGM0S2CyrLpe6KFiL2gpYd/k9tAp62Du7+Y27zkzd+dKFyxpFadYaTxsx4kUA7YvnkMLVUoQ==}
+  '@tanstack/react-query-devtools@5.89.0':
+    resolution: {integrity: sha512-Syc4UjZeIJCkXCRGyQcWwlnv89JNb98MMg/DAkFCV3rwOcknj98+nG3Nm6xLXM6ne9sK6RZeDJMPLKZUh6NUGA==}
     peerDependencies:
-      '@tanstack/react-query': ^5.87.4
+      '@tanstack/react-query': ^5.89.0
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.87.4':
-    resolution: {integrity: sha512-T5GT/1ZaNsUXf5I3RhcYuT17I4CPlbZgyLxc/ZGv7ciS6esytlbjb3DgUFO6c8JWYMDpdjSWInyGZUErgzqhcA==}
+  '@tanstack/react-query@5.89.0':
+    resolution: {integrity: sha512-SXbtWSTSRXyBOe80mszPxpEbaN4XPRUp/i0EfQK1uyj3KCk/c8FuPJNIRwzOVe/OU3rzxrYtiNabsAmk1l714A==}
     peerDependencies:
       react: ^18 || ^19
 
-  '@tanstack/react-router-devtools@1.131.40':
-    resolution: {integrity: sha512-f5R0YWG04m4xHwPnDO/wNhE62JZDDuBlU/VWyrnuE827Y8bgNGR8C4GJaJnW6g7tjFoR6y8b+R3Gb1q6SnxJ2g==}
+  '@tanstack/react-router-devtools@1.131.48':
+    resolution: {integrity: sha512-b0D2Zvab60+uotkl25bhU2NXOdCMMWRennY5YDeV6TS1ZRG5m17DZAzIspw9SCi51eC+H/j8inVcxIrQYaB5AQ==}
     engines: {node: '>=12'}
     peerDependencies:
-      '@tanstack/react-router': ^1.131.40
+      '@tanstack/react-router': ^1.131.48
       react: '>=18.0.0 || >=19.0.0'
       react-dom: '>=18.0.0 || >=19.0.0'
 
-  '@tanstack/react-router@1.131.40':
-    resolution: {integrity: sha512-K46P6Oyym6IYnR4kTcZu+Z/kk1sAVaK+HsAV2hbE/rawhYvxO1oolPeOIraRRBif/WFqNElqdMf3++vBh16zyg==}
+  '@tanstack/react-router@1.131.48':
+    resolution: {integrity: sha512-iT9k/+J4vkoXyI1lBu0StSCLXgfOIMf/IDPh+pZ5HhMPab/wx0PDgIFFgEq9qM1CCykDnKqqeDY0QZWBUS4V1A==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=18.0.0 || >=19.0.0'
@@ -3571,31 +3578,31 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@tanstack/router-core@1.131.40':
-    resolution: {integrity: sha512-X7NyrNh24NSGV1tD/fGF5LzuANyPfnPqzY955gHqz2B/m+fW08zbVDoicJzLe/M8x5PjfYGh5nGO6cQUEGjaYA==}
+  '@tanstack/router-core@1.131.48':
+    resolution: {integrity: sha512-Zw024eJECTLn57bR8oncR4YUTvQ8P41pDnVEXevWPuR6wdKRsIUmhfJowzgf4ppF9Lgl5DUWEhOcj4Awr4tTOQ==}
     engines: {node: '>=12'}
 
-  '@tanstack/router-devtools-core@1.131.40':
-    resolution: {integrity: sha512-ckUXEq9/teaIyTzk/lA45gcRWuXD4QLHsZ0QuAL7VO0hL2QGKkjOUnPmPYhfSYrgDnelAfMOpa1SZvZSL3tbnQ==}
+  '@tanstack/router-devtools-core@1.131.48':
+    resolution: {integrity: sha512-QHX8ta3PEBoU7674N9jF7k/HlnOHZ/SHerT4zb9c9McZM4ZydPGyBt9wjMxONgSrceYvhFgNBRhrkMp2X4+iiw==}
     engines: {node: '>=12'}
     peerDependencies:
-      '@tanstack/router-core': ^1.131.40
+      '@tanstack/router-core': ^1.131.48
       csstype: ^3.0.10
       tiny-invariant: ^1.3.3
     peerDependenciesMeta:
       csstype:
         optional: true
 
-  '@tanstack/router-generator@1.131.40':
-    resolution: {integrity: sha512-SOa4DytGFJXH7SsxmetzWs0N2Ke/kMQznWRC3O93HnAjBtiULrvRvIFB6wsL2jVEZbVauGyy/PB5Tvr2JEvj0w==}
+  '@tanstack/router-generator@1.131.48':
+    resolution: {integrity: sha512-spLqLJ1pD6y8wTxdKSRUS7fMINbuqsTEk1Ot0wxdrD1lKwJT8F7yKovSfl+h2WcifFN84B1gc5F3ZRmcp7fTeA==}
     engines: {node: '>=12'}
 
-  '@tanstack/router-plugin@1.131.40':
-    resolution: {integrity: sha512-WVioEqOcjfuwgINEPHCSE1a40aT29cz/Cpdkn0AoUX+SLDV4E+Pr37Dk10c8HLPXfgnCIQtkjFxBqkA/JKgfmw==}
+  '@tanstack/router-plugin@1.131.48':
+    resolution: {integrity: sha512-5Bt7M3rP6bYNIwFYhLj5AjPdfBqWmrjIliq06rV1iCQ8GJvXPVSuZHwT+jDzxEsyRzHUjk5kuK3ytimXmexpSQ==}
     engines: {node: '>=12'}
     peerDependencies:
       '@rsbuild/core': '>=1.0.2'
-      '@tanstack/react-router': ^1.131.40
+      '@tanstack/react-router': ^1.131.48
       vite: '>=5.0.0 || >=6.0.0'
       vite-plugin-solid: ^2.11.2
       webpack: '>=5.92.0'
@@ -3806,11 +3813,14 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@20.19.13':
-    resolution: {integrity: sha512-yCAeZl7a0DxgNVteXFHt9+uyFbqXGy/ShC4BlcHkoE0AfGXYv/BUiplV72DjMYXHDBXFjhvr6DD1NiRVfB4j8g==}
+  '@types/node@20.19.17':
+    resolution: {integrity: sha512-gfehUI8N1z92kygssiuWvLiwcbOB3IRktR6hTDgJlXMYh5OvkPSRmgfoBUmfZt+vhwJtX7v1Yw4KvvAf7c5QKQ==}
 
   '@types/node@22.18.1':
     resolution: {integrity: sha512-rzSDyhn4cYznVG+PCzGe1lwuMYJrcBS1fc3JqSa2PvtABwWo+dZ1ij5OVok3tqfpEBCBoaR4d7upFJk73HRJDw==}
+
+  '@types/node@22.18.6':
+    resolution: {integrity: sha512-r8uszLPpeIWbNKtvWRt/DbVi5zbqZyj1PTmhRMqBMvDnaz1QpmSKujUtJLrqGZeoM8v72MfYggDceY4K1itzWQ==}
 
   '@types/node@24.5.2':
     resolution: {integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==}
@@ -4050,22 +4060,37 @@ packages:
     resolution: {integrity: sha512-4Bcg1P8xhUuqcii/S0Z9wiHIrQVPMermM1any+MX5GeGD7faD3/msQUDGLol9wOcz4/jbg/WJnGqoJF6LiBdtg==}
     engines: {node: '>=10.0.0'}
 
-  better-auth@1.3.9:
-    resolution: {integrity: sha512-Ty6BHzuShlqSs7I4RMlBRQ3duOWNB7WWriIu2FJVGjQAOtTVvamzFCR4/j5ROFLoNkpvNTRF7BJozsrMICL1gw==}
+  better-auth@1.3.12:
+    resolution: {integrity: sha512-FckxiAexCkkk2F0EOPmhXjWhYYE8eYg2x68lOIirSgyQ0TWc4JDvA5y8Vax5Jc7iyXk5MjJBY3DfwTPDZ87Lbg==}
     peerDependencies:
       '@lynx-js/react': '*'
+      '@sveltejs/kit': ^2.0.0
+      next: ^14.0.0 || ^15.0.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
+      solid-js: ^1.0.0
+      svelte: ^4.0.0 || ^5.0.0
+      vue: ^3.0.0
     peerDependenciesMeta:
       '@lynx-js/react':
+        optional: true
+      '@sveltejs/kit':
+        optional: true
+      next:
         optional: true
       react:
         optional: true
       react-dom:
         optional: true
+      solid-js:
+        optional: true
+      svelte:
+        optional: true
+      vue:
+        optional: true
 
-  better-call@1.0.18:
-    resolution: {integrity: sha512-Ojyck3P3fs/egBmCW50tvfbCJorNV5KphfPOKrkCxPfOr8Brth1ruDtAJuhHVHEUiWrXv+vpEgWQk7m7FzhbbQ==}
+  better-call@1.0.19:
+    resolution: {integrity: sha512-sI3GcA1SCVa3H+CDHl8W8qzhlrckwXOTKhqq3OOPXjgn5aTOMIqGY34zLY/pHA6tRRMjTUC3lz5Mi7EbDA24Kw==}
 
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
@@ -4121,8 +4146,8 @@ packages:
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
-  bullmq@5.58.5:
-    resolution: {integrity: sha512-0A6Qjxdn8j7aOcxfRZY798vO/aMuwvoZwfE6a9EOXHb1pzpBVAogsc/OfRWeUf+5wMBoYB5nthstnJo/zrQOeQ==}
+  bullmq@5.58.7:
+    resolution: {integrity: sha512-rqsKV/ip76wU90q7Cxpr1vS/6PYIVbhuzqr3wgILgjS6XbsnJtWyYrK23jqWHs9+m6/NXM4+62hyf8CSBpufAw==}
 
   bun-types@1.2.22:
     resolution: {integrity: sha512-hwaAu8tct/Zn6Zft4U9BsZcXkYomzpHJX28ofvx7k0Zz2HNz54n1n+tDgxoWFGB4PcFvJXJQloPhaV2eP3Q6EA==}
@@ -4424,8 +4449,8 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  discord-api-types@0.38.25:
-    resolution: {integrity: sha512-3edaLHuCdzzfTL1OCpl98G3mrlf+45FpxY+8f+5dRLnZD8R6QzIhapoCefqz6mhaygD+iqTVLtD4u6j57PRiFw==}
+  discord-api-types@0.38.26:
+    resolution: {integrity: sha512-xpmPviHjIJ6dFu1eNwNDIGQ3N6qmPUUYFVAx/YZ64h7ZgPkTcKjnciD8bZe8Vbeji7yS5uYljyciunpq0J5NSw==}
 
   discord.js@14.22.1:
     resolution: {integrity: sha512-3k+Kisd/v570Jr68A1kNs7qVhNehDwDJAPe4DZ2Syt+/zobf9zEcuYFvsfIaAOgCa0BiHMfOOKQY4eYINl0z7w==}
@@ -4856,8 +4881,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hono@4.9.6:
-    resolution: {integrity: sha512-doVjXhSFvYZ7y0dNokjwwSahcrAfdz+/BCLvAMa/vHLzjj8+CFyV5xteThGUsKdkaasgN+gF2mUxao+SGLpUeA==}
+  hono@4.9.8:
+    resolution: {integrity: sha512-JW8Bb4RFWD9iOKxg5PbUarBYGM99IcxFl2FPBo2gSJO11jjUDqlP1Bmfyqt8Z/dGhIQ63PMA9LdcLefXyIasyg==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -5353,9 +5378,9 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanostores@0.11.4:
-    resolution: {integrity: sha512-k1oiVNN4hDK8NcNERSZLQiMfRzEGtfnvZvdBvey3SQbgn8Dcrk0h1I6vpxApjb10PFUflZrgJ2WEZyJQ+5v7YQ==}
-    engines: {node: ^18.0.0 || >=20.0.0}
+  nanostores@1.0.1:
+    resolution: {integrity: sha512-kNZ9xnoJYKg/AfxjrVL4SS0fKX++4awQReGqWnwTRHxeHGZ1FJFVgTqr/eMrNQdp0Tz7M7tG/TDaX8QfHDwVCw==}
+    engines: {node: ^20.0.0 || >=22.0.0}
 
   napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}
@@ -5678,12 +5703,12 @@ packages:
   pump@3.0.3:
     resolution: {integrity: sha512-todwxLMY7/heScKmntwQG8CXVkWUOdYxIvY2s0VWAAMh/nd8SoYiRaKjlr7+iCs984f2P8zvrfWcDDYVb73NfA==}
 
-  puppeteer-core@24.21.0:
-    resolution: {integrity: sha512-WR4FehOs4XJ8OSp7MkGyVB4mfMs9Q6t8Y48TxiTCRxc8G2lJ5OKYPJvgU80dtKl+aIqIbdcNTgIooY49S5SsmA==}
+  puppeteer-core@24.22.0:
+    resolution: {integrity: sha512-oUeWlIg0pMz8YM5pu0uqakM+cCyYyXkHBxx9di9OUELu9X9+AYrNGGRLK9tNME3WfN3JGGqQIH3b4/E9LGek/w==}
     engines: {node: '>=18'}
 
-  puppeteer@24.21.0:
-    resolution: {integrity: sha512-JNY9JluUXepKzqKoPHsNVsrkpRRTare8geNP2L8YMkFHOKIvWSki/yUL9l2VJpani49epEHLpVg+zDcbTYibWA==}
+  puppeteer@24.22.0:
+    resolution: {integrity: sha512-QabGIvu7F0hAMiKGHZCIRHMb6UoH0QAJA2OaqxEU2tL5noXPrxUcotg2l3ttOA4p1PFnVIGkr6PXRAWlM2evVQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -5830,8 +5855,8 @@ packages:
       react: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
 
-  react-router@7.8.2:
-    resolution: {integrity: sha512-7M2fR1JbIZ/jFWqelpvSZx+7vd7UlBTfdZqf6OSdF9g6+sfdqJDAWcak6ervbHph200ePlu+7G8LdoiC3ReyAQ==}
+  react-router@7.9.1:
+    resolution: {integrity: sha512-pfAByjcTpX55mqSDGwGnY9vDCpxqBLASg0BMNAuMmpSGESo/TaOUG6BllhAtAkCGx8Rnohik/XtaqiYUJtgW2g==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -6484,8 +6509,8 @@ packages:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
 
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
     hasBin: true
 
   vaul@1.1.2:
@@ -6703,8 +6728,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.1.8:
-    resolution: {integrity: sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ==}
+  zod@4.1.9:
+    resolution: {integrity: sha512-HI32jTq0AUAC125z30E8bQNz0RQ+9Uc+4J7V97gLYjZVKRjeydPgGt6dvQzFrav7MYOUGFqqOGiHpA/fdbd0cQ==}
 
   zustand@5.0.8:
     resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
@@ -6760,7 +6785,7 @@ snapshots:
       '@babel/traverse': 7.28.3
       '@babel/types': 7.28.2
       convert-source-map: 2.0.0
-      debug: 4.4.1
+      debug: 4.4.3
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -6930,7 +6955,7 @@ snapshots:
       '@babel/parser': 7.28.3
       '@babel/template': 7.27.2
       '@babel/types': 7.28.2
-      debug: 4.4.1
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -6939,9 +6964,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@better-auth/utils@0.2.6':
-    dependencies:
-      uncrypto: 0.1.3
+  '@better-auth/utils@0.3.0': {}
 
   '@better-fetch/fetch@1.1.18': {}
 
@@ -7137,7 +7160,7 @@ snapshots:
       '@discordjs/formatters': 0.6.1
       '@discordjs/util': 1.1.1
       '@sapphire/shapeshift': 4.0.0
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
       fast-deep-equal: 3.1.3
       ts-mixer: 6.0.4
       tslib: 2.8.1
@@ -7148,7 +7171,7 @@ snapshots:
 
   '@discordjs/formatters@0.6.1':
     dependencies:
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
 
   '@discordjs/rest@2.6.0':
     dependencies:
@@ -7157,7 +7180,7 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@sapphire/snowflake': 3.5.5
       '@vladfrangu/async_event_emitter': 2.4.6
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
       magic-bytes.js: 1.12.1
       tslib: 2.8.1
       undici: 6.21.3
@@ -7172,7 +7195,7 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@types/ws': 8.18.1
       '@vladfrangu/async_event_emitter': 2.4.6
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
       tslib: 2.8.1
       ws: 8.18.3
     transitivePeerDependencies:
@@ -7445,16 +7468,16 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/sentry@1.2.2(hono@4.9.6)':
+  '@hono/sentry@1.2.2(hono@4.9.8)':
     dependencies:
-      hono: 4.9.6
+      hono: 4.9.8
       toucan-js: 4.1.1
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.62.0(react@18.3.1))':
     dependencies:
       react-hook-form: 7.62.0(react@18.3.1)
 
-  '@hookform/resolvers@5.2.1(react-hook-form@7.62.0(react@19.1.1))':
+  '@hookform/resolvers@5.2.2(react-hook-form@7.62.0(react@19.1.1))':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.62.0(react@19.1.1)
@@ -8086,141 +8109,141 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.0)
 
-  '@orpc/client@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/client@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-peer': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-fetch': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-peer': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/contract@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/contract@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
       '@standard-schema/spec': 1.0.0
       openapi-types: 12.1.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/interop@1.8.8': {}
+  '@orpc/interop@1.8.9': {}
 
-  '@orpc/json-schema@1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/json-schema@1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)':
     dependencies:
-      '@orpc/contract': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/interop': 1.8.8
-      '@orpc/openapi': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/server': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/interop': 1.8.9
+      '@orpc/openapi': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/server': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - crossws
       - ws
 
-  '@orpc/openapi-client@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/openapi-client@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/openapi@1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/openapi@1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)':
     dependencies:
-      '@orpc/client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/interop': 1.8.8
-      '@orpc/openapi-client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/server': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/interop': 1.8.9
+      '@orpc/openapi-client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/server': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
       rou3: 0.7.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - crossws
       - ws
 
-  '@orpc/server@1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)':
+  '@orpc/server@1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)':
     dependencies:
-      '@orpc/client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/contract': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/interop': 1.8.8
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-aws-lambda': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-node': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-peer': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/interop': 1.8.9
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-aws-lambda': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-fetch': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-node': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-peer': 1.8.9(@opentelemetry/api@1.9.0)
       cookie: 1.0.2
     optionalDependencies:
       ws: 8.18.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/shared@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/shared@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
       radash: 12.1.1
       type-fest: 4.41.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
 
-  '@orpc/standard-server-aws-lambda@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-aws-lambda@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-node': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-fetch': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-node': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-fetch@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-fetch@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-node@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-node@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server-fetch': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server-fetch': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server-peer@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server-peer@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/standard-server': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/standard-server': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/standard-server@1.8.8(@opentelemetry/api@1.9.0)':
+  '@orpc/standard-server@1.8.9(@opentelemetry/api@1.9.0)':
     dependencies:
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/tanstack-query@1.8.8(@opentelemetry/api@1.9.0)(@orpc/client@1.8.8(@opentelemetry/api@1.9.0))(@tanstack/query-core@5.87.4)':
+  '@orpc/tanstack-query@1.8.9(@opentelemetry/api@1.9.0)(@orpc/client@1.8.9(@opentelemetry/api@1.9.0))(@tanstack/query-core@5.89.0)':
     dependencies:
-      '@orpc/client': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
-      '@tanstack/query-core': 5.87.4
+      '@orpc/client': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
+      '@tanstack/query-core': 5.89.0
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/zod@1.8.8(@opentelemetry/api@1.9.0)(@orpc/contract@1.8.8(@opentelemetry/api@1.9.0))(@orpc/server@1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.1.8)':
+  '@orpc/zod@1.8.9(@opentelemetry/api@1.9.0)(@orpc/contract@1.8.9(@opentelemetry/api@1.9.0))(@orpc/server@1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3))(ws@8.18.3)(zod@4.1.9)':
     dependencies:
-      '@orpc/contract': 1.8.8(@opentelemetry/api@1.9.0)
-      '@orpc/json-schema': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/openapi': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/server': 1.8.8(@opentelemetry/api@1.9.0)(ws@8.18.3)
-      '@orpc/shared': 1.8.8(@opentelemetry/api@1.9.0)
+      '@orpc/contract': 1.8.9(@opentelemetry/api@1.9.0)
+      '@orpc/json-schema': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/openapi': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/server': 1.8.9(@opentelemetry/api@1.9.0)(ws@8.18.3)
+      '@orpc/shared': 1.8.9(@opentelemetry/api@1.9.0)
       escape-string-regexp: 5.0.0
       wildcard-match: 5.1.4
-      zod: 4.1.8
+      zod: 4.1.9
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - crossws
@@ -9989,7 +10012,7 @@ snapshots:
 
   '@sapphire/discord-utilities@3.5.0':
     dependencies:
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
 
   '@sapphire/discord.js-utilities@7.3.3':
     dependencies:
@@ -10257,26 +10280,30 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.1.13
       '@tailwindcss/oxide-win32-x64-msvc': 4.1.13
 
-  '@tailwindcss/vite@4.1.13(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@tailwindcss/vite@4.1.13(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       '@tailwindcss/node': 4.1.13
       '@tailwindcss/oxide': 4.1.13
       tailwindcss: 4.1.13
-      vite: 6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
 
-  '@tanstack/form-core@1.19.5':
+  '@tanstack/devtools-event-client@0.2.5': {}
+
+  '@tanstack/form-core@1.23.0':
     dependencies:
+      '@tanstack/devtools-event-client': 0.2.5
       '@tanstack/store': 0.7.5
+      uuid: 13.0.0
 
   '@tanstack/history@1.131.2': {}
 
-  '@tanstack/query-core@5.87.4': {}
+  '@tanstack/query-core@5.89.0': {}
 
   '@tanstack/query-devtools@5.87.3': {}
 
-  '@tanstack/react-form@1.19.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@tanstack/react-form@1.23.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
-      '@tanstack/form-core': 1.19.5
+      '@tanstack/form-core': 1.23.0
       '@tanstack/react-store': 0.7.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       decode-formdata: 0.9.0
       devalue: 5.3.2
@@ -10284,21 +10311,21 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@tanstack/react-query-devtools@5.87.4(@tanstack/react-query@5.87.4(react@19.1.1))(react@19.1.1)':
+  '@tanstack/react-query-devtools@5.89.0(@tanstack/react-query@5.89.0(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@tanstack/query-devtools': 5.87.3
-      '@tanstack/react-query': 5.87.4(react@19.1.1)
+      '@tanstack/react-query': 5.89.0(react@19.1.1)
       react: 19.1.1
 
-  '@tanstack/react-query@5.87.4(react@19.1.1)':
+  '@tanstack/react-query@5.89.0(react@19.1.1)':
     dependencies:
-      '@tanstack/query-core': 5.87.4
+      '@tanstack/query-core': 5.89.0
       react: 19.1.1
 
-  '@tanstack/react-router-devtools@1.131.40(@tanstack/react-router@1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.40)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tiny-invariant@1.3.3)':
+  '@tanstack/react-router-devtools@1.131.48(@tanstack/react-router@1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.48)(csstype@3.1.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(tiny-invariant@1.3.3)':
     dependencies:
-      '@tanstack/react-router': 1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/router-devtools-core': 1.131.40(@tanstack/router-core@1.131.40)(csstype@3.1.3)(tiny-invariant@1.3.3)
+      '@tanstack/react-router': 1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@tanstack/router-devtools-core': 1.131.48(@tanstack/router-core@1.131.48)(csstype@3.1.3)(tiny-invariant@1.3.3)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
     transitivePeerDependencies:
@@ -10306,11 +10333,11 @@ snapshots:
       - csstype
       - tiny-invariant
 
-  '@tanstack/react-router@1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@tanstack/react-router@1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@tanstack/history': 1.131.2
       '@tanstack/react-store': 0.7.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/router-core': 1.131.40
+      '@tanstack/router-core': 1.131.48
       isbot: 5.1.30
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
@@ -10336,7 +10363,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/router-core@1.131.40':
+  '@tanstack/router-core@1.131.48':
     dependencies:
       '@tanstack/history': 1.131.2
       '@tanstack/store': 0.7.5
@@ -10346,9 +10373,9 @@ snapshots:
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
-  '@tanstack/router-devtools-core@1.131.40(@tanstack/router-core@1.131.40)(csstype@3.1.3)(tiny-invariant@1.3.3)':
+  '@tanstack/router-devtools-core@1.131.48(@tanstack/router-core@1.131.48)(csstype@3.1.3)(tiny-invariant@1.3.3)':
     dependencies:
-      '@tanstack/router-core': 1.131.40
+      '@tanstack/router-core': 1.131.48
       clsx: 2.1.1
       goober: 2.1.16(csstype@3.1.3)
       solid-js: 1.9.9
@@ -10356,9 +10383,9 @@ snapshots:
     optionalDependencies:
       csstype: 3.1.3
 
-  '@tanstack/router-generator@1.131.40':
+  '@tanstack/router-generator@1.131.48':
     dependencies:
-      '@tanstack/router-core': 1.131.40
+      '@tanstack/router-core': 1.131.48
       '@tanstack/router-utils': 1.131.2
       '@tanstack/virtual-file-routes': 1.131.2
       prettier: 3.6.2
@@ -10369,7 +10396,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tanstack/router-plugin@1.131.40(@tanstack/react-router@1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@tanstack/router-plugin@1.131.48(@tanstack/react-router@1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.3
       '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.3)
@@ -10377,8 +10404,8 @@ snapshots:
       '@babel/template': 7.27.2
       '@babel/traverse': 7.28.3
       '@babel/types': 7.28.2
-      '@tanstack/router-core': 1.131.40
-      '@tanstack/router-generator': 1.131.40
+      '@tanstack/router-core': 1.131.48
+      '@tanstack/router-generator': 1.131.48
       '@tanstack/router-utils': 1.131.2
       '@tanstack/virtual-file-routes': 1.131.2
       babel-dead-code-elimination: 1.0.10
@@ -10386,8 +10413,8 @@ snapshots:
       unplugin: 2.3.5
       zod: 3.25.76
     optionalDependencies:
-      '@tanstack/react-router': 1.131.40(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      vite: 6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      '@tanstack/react-router': 1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      vite: 6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -10573,7 +10600,7 @@ snapshots:
 
   '@types/logfmt@1.2.6':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 24.5.2
 
   '@types/mysql@2.15.26':
     dependencies:
@@ -10581,11 +10608,15 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@20.19.13':
+  '@types/node@20.19.17':
     dependencies:
       undici-types: 6.21.0
 
   '@types/node@22.18.1':
+    dependencies:
+      undici-types: 6.21.0
+
+  '@types/node@22.18.6':
     dependencies:
       undici-types: 6.21.0
 
@@ -10629,18 +10660,18 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 24.5.2
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 24.5.2
 
   '@uidotdev/usehooks@2.4.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@vitejs/plugin-react@4.7.0(vite@5.4.20(@types/node@20.19.13)(lightningcss@1.30.1))':
+  '@vitejs/plugin-react@4.7.0(vite@5.4.20(@types/node@20.19.17)(lightningcss@1.30.1))':
     dependencies:
       '@babel/core': 7.28.3
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.3)
@@ -10648,11 +10679,11 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 5.4.20(@types/node@20.19.13)(lightningcss@1.30.1)
+      vite: 5.4.20(@types/node@20.19.17)(lightningcss@1.30.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-react@4.7.0(vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@vitejs/plugin-react@4.7.0(vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.3
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.3)
@@ -10660,7 +10691,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -10841,26 +10872,28 @@ snapshots:
 
   basic-ftp@5.0.5: {}
 
-  better-auth@1.3.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+  better-auth@1.3.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
     dependencies:
-      '@better-auth/utils': 0.2.6
+      '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.18
       '@noble/ciphers': 2.0.0
       '@noble/hashes': 2.0.0
       '@simplewebauthn/browser': 13.1.2
       '@simplewebauthn/server': 13.1.2
-      better-call: 1.0.18
+      better-call: 1.0.19
       defu: 6.1.4
       jose: 6.1.0
       kysely: 0.28.5
-      nanostores: 0.11.4
-      zod: 4.1.8
+      nanostores: 1.0.1
+      zod: 4.1.9
     optionalDependencies:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
+      solid-js: 1.9.9
 
-  better-call@1.0.18:
+  better-call@1.0.19:
     dependencies:
+      '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.18
       rou3: 0.5.1
       set-cookie-parser: 2.7.1
@@ -10936,7 +10969,7 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  bullmq@5.58.5:
+  bullmq@5.58.7:
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.7.0
@@ -10944,13 +10977,13 @@ snapshots:
       node-abort-controller: 3.1.1
       semver: 7.7.2
       tslib: 2.8.1
-      uuid: 9.0.1
+      uuid: 11.1.0
     transitivePeerDependencies:
       - supports-color
 
   bun-types@1.2.22(@types/react@19.0.2):
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 24.5.2
       '@types/react': 19.0.2
 
   cac@6.7.14: {}
@@ -11203,7 +11236,7 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  discord-api-types@0.38.25: {}
+  discord-api-types@0.38.26: {}
 
   discord.js@14.22.1:
     dependencies:
@@ -11214,7 +11247,7 @@ snapshots:
       '@discordjs/util': 1.1.1
       '@discordjs/ws': 1.2.3
       '@sapphire/snowflake': 3.5.3
-      discord-api-types: 0.38.25
+      discord-api-types: 0.38.26
       fast-deep-equal: 3.1.3
       lodash.snakecase: 4.1.1
       magic-bytes.js: 1.12.1
@@ -11316,7 +11349,7 @@ snapshots:
 
   esbuild-register@3.6.0(esbuild@0.25.9):
     dependencies:
-      debug: 4.4.1
+      debug: 4.4.3
       esbuild: 0.25.9
     transitivePeerDependencies:
       - supports-color
@@ -11613,7 +11646,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.9.6: {}
+  hono@4.9.8: {}
 
   hookable@5.5.3: {}
 
@@ -11701,7 +11734,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.3.1
       cluster-key-slot: 1.1.2
-      debug: 4.4.1
+      debug: 4.4.3
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
@@ -12056,7 +12089,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanostores@0.11.4: {}
+  nanostores@1.0.1: {}
 
   napi-build-utils@2.0.0: {}
 
@@ -12350,7 +12383,7 @@ snapshots:
       end-of-stream: 1.4.5
       once: 1.4.0
 
-  puppeteer-core@24.21.0:
+  puppeteer-core@24.22.0:
     dependencies:
       '@puppeteer/browsers': 2.10.10
       chromium-bidi: 8.0.0(devtools-protocol@0.0.1495869)
@@ -12366,13 +12399,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  puppeteer@24.21.0(typescript@5.9.2):
+  puppeteer@24.22.0(typescript@5.9.2):
     dependencies:
       '@puppeteer/browsers': 2.10.10
       chromium-bidi: 8.0.0(devtools-protocol@0.0.1495869)
       cosmiconfig: 9.0.0(typescript@5.9.2)
       devtools-protocol: 0.0.1495869
-      puppeteer-core: 24.21.0
+      puppeteer-core: 24.22.0
       typed-query-selector: 2.12.0
     transitivePeerDependencies:
       - bare-buffer
@@ -12586,7 +12619,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-router@7.8.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       cookie: 1.0.2
       react: 18.3.1
@@ -12742,7 +12775,7 @@ snapshots:
       '@babel/types': 7.28.2
       ast-kit: 2.1.2
       birpc: 2.5.0
-      debug: 4.4.1
+      debug: 4.4.3
       dts-resolver: 2.1.2
       get-tsconfig: 4.10.1
       rolldown: 1.0.0-beta.38
@@ -13260,11 +13293,11 @@ snapshots:
       '@babel/runtime': 7.28.3
       detect-node: 2.1.0
 
-  unplugin-fonts@1.4.0(vite@5.4.20(@types/node@20.19.13)(lightningcss@1.30.1)):
+  unplugin-fonts@1.4.0(vite@5.4.20(@types/node@20.19.17)(lightningcss@1.30.1)):
     dependencies:
       fast-glob: 3.3.3
       unplugin: 2.3.5
-      vite: 5.4.20(@types/node@20.19.13)(lightningcss@1.30.1)
+      vite: 5.4.20(@types/node@20.19.17)(lightningcss@1.30.1)
 
   unplugin@2.3.5:
     dependencies:
@@ -13326,7 +13359,7 @@ snapshots:
 
   uuid@11.1.0: {}
 
-  uuid@9.0.1: {}
+  uuid@13.0.0: {}
 
   vaul@1.1.2(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -13372,13 +13405,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite@5.4.20(@types/node@20.19.13)(lightningcss@1.30.1):
+  vite@5.4.20(@types/node@20.19.17)(lightningcss@1.30.1):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.6
       rollup: 4.50.0
     optionalDependencies:
-      '@types/node': 20.19.13
+      '@types/node': 20.19.17
       fsevents: 2.3.3
       lightningcss: 1.30.1
 
@@ -13392,7 +13425,7 @@ snapshots:
       fsevents: 2.3.3
       lightningcss: 1.30.1
 
-  vite@6.3.6(@types/node@22.18.1)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1):
+  vite@6.3.6(@types/node@22.18.6)(jiti@2.5.1)(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.9
       fdir: 6.5.0(picomatch@4.0.3)
@@ -13401,7 +13434,7 @@ snapshots:
       rollup: 4.50.0
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.18.6
       fsevents: 2.3.3
       jiti: 2.5.1
       lightningcss: 1.30.1
@@ -13544,7 +13577,7 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zod@4.1.8: {}
+  zod@4.1.9: {}
 
   zustand@5.0.8(@types/react@19.0.2)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1)):
     optionalDependencies:

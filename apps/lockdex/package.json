@@ -11,7 +11,6 @@
     "health-check": "bun run src/health-check.ts"
   },
   "dependencies": {
-    "7zip-min": "^2.1.0",
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/distributed-lock": "workspace:*",
@@ -20,7 +19,8 @@
     "@deadlock-mods/vpk-parser": "workspace:*",
     "@sentry/node": "catalog:",
     "@sentry/profiling-node": "catalog:",
-    "bullmq": "^5.58.5",
+    "7zip-min": "^2.1.0",
+    "bullmq": "^5.58.7",
     "dotenv-cli": "^7.4.4",
     "genversion": "^3.2.0",
     "ioredis": "^5.7.0",

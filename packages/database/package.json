@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
-    "@types/node": "^20.19.13",
+    "@types/node": "^20.19.17",
     "@types/pg": "^8.15.5",
     "drizzle-kit": "^0.31.4"
   }
