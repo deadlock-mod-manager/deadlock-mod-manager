@@ -30,14 +30,13 @@ tauri-plugin-os = "2.3"
 tauri-plugin-upload = "2.3"
 tauri-plugin-store = "2.4"
 tauri-plugin-fs = "2.4"
-vdf-parser = "0.1.8"
 keyvalues-serde = "0.2"
 regex = "1.11.2"
-zip = "2.4.2"
+zip = "5.1.1"
 tempfile = "3.22.0"
 unrar = "0.5.8"
 thiserror = "2.0.16"
-sysinfo = { version = "0.33.1", features = ["windows"] }
+sysinfo = { version = "0.37.0", features = ["windows"] }
 tauri-plugin-log = "2.7"
 log = "0.4"
 tauri-plugin-process = "2.3"
@@ -46,9 +45,11 @@ tauri-plugin-sentry = "0.5.0"
 steamlocate = "2.0.1"
 tauri-plugin-deep-link = "2.4"
 sha2 = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-posthog = "0.2.2"
 dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.2"
+vpk-parser = { path = "../../../packages/vpk-parser" }
 
 [dev-dependencies]
 tempfile = "3.22.0"

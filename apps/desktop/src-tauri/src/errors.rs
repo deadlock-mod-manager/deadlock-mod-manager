@@ -37,14 +37,6 @@ pub enum Error {
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
   InvalidInput(String),
-  #[error("Backup operation failed: {0}")]
-  BackupFailed(String),
-  #[error("Backup integrity check failed: {0}")]
-  BackupIntegrityFailed(String),
-  #[error("gameinfo.gi validation failed: {0}")]
-  GameInfoValidationFailed(String),
-  #[error("External file modification detected: {0}")]
-  ExternalModification(String),
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
   #[error("Tauri error: {0}")]
@@ -79,10 +71,6 @@ impl serde::Serialize for Error {
       Error::FailedToOpenFolder(_) => "failedToOpenFolder",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
-      Error::BackupFailed(_) => "backupFailed",
-      Error::BackupIntegrityFailed(_) => "backupIntegrityFailed",
-      Error::GameInfoValidationFailed(_) => "gameInfoValidationFailed",
-      Error::ExternalModification(_) => "externalModification",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
       Error::Tauri(_) => "tauri",
     };

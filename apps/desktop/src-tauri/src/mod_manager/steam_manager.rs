@@ -114,19 +114,6 @@ impl SteamManager {
 
     Ok(())
   }
-
-  /// Force refresh of Steam and game paths (useful for troubleshooting)
-  pub fn refresh(&mut self) -> Result<(), Error> {
-    self.steam_dir = None;
-    self.game_path = None;
-    self.find_game()?;
-    Ok(())
-  }
-
-  /// Check if Steam and game are properly detected
-  pub fn is_ready(&self) -> bool {
-    self.steam_dir.is_some() && self.game_path.is_some()
-  }
 }
 
 impl Default for SteamManager {

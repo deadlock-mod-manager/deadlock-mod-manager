@@ -173,7 +173,7 @@ export class ModAnalyser {
   }
 
   async analyseVPK(file: Buffer): Promise<VpkAnalysisResult> {
-    const parsed = await VpkParser.parse(file, {
+    const parsed = VpkParser.parse(file, {
       includeFullFileHash: true,
       includeMerkle: true,
     });

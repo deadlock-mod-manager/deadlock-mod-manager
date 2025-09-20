@@ -137,7 +137,11 @@ export function VpkAnalyzer() {
     multiple: true,
   });
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number | undefined) => {
+    if (bytes === undefined || bytes === null || Number.isNaN(bytes)) {
+      return "Unknown size";
+    }
+
     const units = ["B", "KB", "MB", "GB"];
     let size = bytes;
     let unitIndex = 0;
@@ -306,7 +310,8 @@ export function VpkAnalyzer() {
                             File Count:
                           </span>
                           <span className='text-sm'>
-                            {fileAnalysis.result.vpk.fingerprint.fileCount}
+                            {fileAnalysis.result.vpk.fingerprint?.fileCount ??
+                              "Unknown"}
                           </span>
                         </div>
                         <div className='flex justify-between'>
@@ -315,7 +320,7 @@ export function VpkAnalyzer() {
                           </span>
                           <span className='text-sm'>
                             {formatFileSize(
-                              fileAnalysis.result.vpk.fingerprint.fileSize,
+                              fileAnalysis.result.vpk.fingerprint?.fileSize,
                             )}
                           </span>
                         </div>
@@ -327,11 +332,11 @@ export function VpkAnalyzer() {
                           </span>
                           <Badge
                             variant={
-                              fileAnalysis.result.vpk.fingerprint.hasMultiparts
+                              fileAnalysis.result.vpk.fingerprint?.hasMultiparts
                                 ? "default"
                                 : "secondary"
                             }>
-                            {fileAnalysis.result.vpk.fingerprint.hasMultiparts
+                            {fileAnalysis.result.vpk.fingerprint?.hasMultiparts
                               ? "Yes"
                               : "No"}
                           </Badge>
@@ -342,11 +347,11 @@ export function VpkAnalyzer() {
                           </span>
                           <Badge
                             variant={
-                              fileAnalysis.result.vpk.fingerprint.hasInlineData
+                              fileAnalysis.result.vpk.fingerprint?.hasInlineData
                                 ? "default"
                                 : "secondary"
                             }>
-                            {fileAnalysis.result.vpk.fingerprint.hasInlineData
+                            {fileAnalysis.result.vpk.fingerprint?.hasInlineData
                               ? "Yes"
                               : "No"}
                           </Badge>
@@ -445,7 +450,8 @@ export function VpkAnalyzer() {
                                   Downloads
                                 </span>
                                 <p className='font-medium'>
-                                  {fileAnalysis.result.matchedVpk.mod.downloadCount.toLocaleString()}
+                                  {fileAnalysis.result.matchedVpk.mod.downloadCount?.toLocaleString() ??
+                                    "Unknown"}
                                 </p>
                               </div>
                               <div className='space-y-1'>
@@ -453,7 +459,8 @@ export function VpkAnalyzer() {
                                   Likes
                                 </span>
                                 <p className='font-medium'>
-                                  {fileAnalysis.result.matchedVpk.mod.likes}
+                                  {fileAnalysis.result.matchedVpk.mod.likes ??
+                                    "Unknown"}
                                 </p>
                               </div>
                               <div className='space-y-1'>

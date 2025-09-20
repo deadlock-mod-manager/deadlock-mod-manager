@@ -8,7 +8,11 @@ import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
-import { MODS_CACHE_CONFIG, SENTRY_OPTIONS } from "./lib/constants";
+import {
+  MODS_CACHE_CONFIG,
+  SENTRY_OPTIONS,
+  VPK_CONSTANTS,
+} from "./lib/constants";
 import { startJobs } from "./lib/jobs";
 import { logger } from "./lib/logger";
 import { version } from "./version";
@@ -156,6 +160,7 @@ startJobs();
 Bun.serve({
   port: 9000,
   fetch: app.fetch,
+  maxRequestBodySize: VPK_CONSTANTS.MAX_FILE_SIZE_BYTES,
 });
 
 logger.info("Server started on port 9000");

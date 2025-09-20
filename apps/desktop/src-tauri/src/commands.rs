@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use tauri::{AppHandle, Emitter, Manager};
+use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
 
@@ -336,4 +337,53 @@ pub async fn remove_mod_folder(mod_path: String) -> Result<(), Error> {
   // ModManager now handles path validation and canonicalization
   mod_manager.remove_mod_folder(&path)?;
   Ok(())
+}
+
+#[tauri::command]
+pub fn parse_vpk_file(
+  file_path: String,
+  include_full_file_hash: Option<bool>,
+  include_merkle: Option<bool>,
+) -> Result<VpkParsed, Error> {
+  log::info!("Parsing VPK file: {}", file_path);
+
+  let path = PathBuf::from(&file_path);
+
+  // Read the VPK file
+  let vpk_data = std::fs::read(&path).map_err(|e| {
+    log::error!("Failed to read VPK file {}: {}", file_path, e);
+    e
+  })?;
+
+  // Get file metadata
+  let metadata = std::fs::metadata(&path).map_err(|e| {
+    log::error!("Failed to get metadata for {}: {}", file_path, e);
+    e
+  })?;
+
+  let last_modified = metadata
+    .modified()
+    .ok()
+    .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+    .map(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0))
+    .flatten();
+
+  let options = VpkParseOptions {
+    include_full_file_hash: include_full_file_hash.unwrap_or(false),
+    file_path: file_path.clone(),
+    last_modified,
+    include_merkle: include_merkle.unwrap_or(false),
+  };
+
+  let parsed = VpkParser::parse(vpk_data, options)
+    .map_err(|e| Error::InvalidInput(format!("Failed to parse VPK file {}: {}", file_path, e)))?;
+
+  log::info!(
+    "Successfully parsed VPK: {} entries, version {}, manifest hash: {}",
+    parsed.entries.len(),
+    parsed.version,
+    parsed.manifest_sha256
+  );
+
+  Ok(parsed)
 }

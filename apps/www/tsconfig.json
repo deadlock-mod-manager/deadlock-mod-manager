@@ -15,7 +15,7 @@
     "incremental": true,
     "composite": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo",
-    "disableSourceOfProjectReferenceRedirect": true,
+    "disableSourceOfProjectReferenceRedirect": false,
     "assumeChangesOnlyAffectDirectDependencies": true,
     
     "baseUrl": ".",

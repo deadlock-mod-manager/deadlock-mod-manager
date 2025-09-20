@@ -3,6 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "composite": true,

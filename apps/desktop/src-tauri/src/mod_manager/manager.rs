@@ -59,10 +59,6 @@ impl ModManager {
   }
 
   // Game Process Management
-  pub fn check_if_game_running(&mut self) -> Result<(), Error> {
-    self.process_manager.ensure_game_not_running()
-  }
-
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
     self.process_manager.is_game_running()
   }

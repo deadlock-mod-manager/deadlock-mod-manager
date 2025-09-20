@@ -55,11 +55,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Check if path exists
-  pub fn path_exists(&self, path: &Path) -> bool {
-    path.exists()
-  }
-
   /// Get the mods storage directory
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
     let local_appdata = std::env::var("LOCALAPPDATA").map_err(|_| Error::GamePathNotSet)?;

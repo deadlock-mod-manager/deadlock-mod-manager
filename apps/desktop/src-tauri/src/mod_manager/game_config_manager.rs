@@ -536,7 +536,7 @@ impl GameConfigManager {
     }
 
     // Read and validate current file
-    let mut gameinfo_content = fs::read_to_string(gameinfo_path)?;
+    let gameinfo_content = fs::read_to_string(gameinfo_path)?;
     let validation = self.validate_gameinfo_syntax(gameinfo_path)?;
 
     if !validation.is_valid {
@@ -554,7 +554,7 @@ impl GameConfigManager {
     }
 
     // Find what section to replace based on whether markers exist
-    let (section_start, section_end, section_content) =
+    let (section_start, section_end, _section_content) =
       if gameinfo_content.contains(MOD_MANAGER_MARKER_START) {
         // If markers exist, replace the entire marked section
         let marker_start = gameinfo_content
@@ -671,47 +671,17 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Restore the original gameinfo.gi from backup (legacy method)
-  pub fn restore_original_config(&mut self, game_path: &Path) -> Result<(), Error> {
-    log::info!("Using legacy restore method - consider using restore_gameinfo_backup instead");
-    self.restore_gameinfo_backup(game_path)
-  }
-
   /// Check if the game has been set up for mods
   pub fn is_game_setup(&self) -> bool {
     self.game_setup
   }
 
-  /// Force mark game as setup (useful when loading state)
-  pub fn mark_game_as_setup(&mut self) {
-    self.game_setup = true;
-  }
-
-  /// Check if a backup of the original gameinfo.gi exists
-  pub fn has_config_backup(&self, game_path: &Path) -> bool {
-    let backup_path = game_path
-      .join("game")
-      .join("citadel")
-      .join("gameinfo.gi.bak");
-    backup_path.exists()
-  }
-
   /// Get the paths for game configuration files
-  pub fn get_config_paths(&self, game_path: &Path) -> GameConfigPaths {
-    let base_path = game_path.join("game").join("citadel");
-
-    GameConfigPaths {
-      gameinfo: base_path.join("gameinfo.gi"),
-      gameinfo_backup: base_path.join("gameinfo.gi.bak"),
-      addons_dir: base_path.join("addons"),
-    }
-  }
-
   /// Validate that all required game files exist for mod installation
   pub fn validate_game_files(&self, game_path: &Path) -> Result<(), Error> {
-    let config_paths = self.get_config_paths(game_path);
+    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
-    if !config_paths.gameinfo.exists() {
+    if !gameinfo_path.exists() {
       return Err(Error::GameConfigParse(
         "gameinfo.gi not found. Make sure Deadlock is properly installed.".to_string(),
       ));
@@ -726,14 +696,6 @@ impl GameConfigManager {
 
     Ok(())
   }
-}
-
-/// Paths for important game configuration files
-#[derive(Debug, Clone)]
-pub struct GameConfigPaths {
-  pub gameinfo: PathBuf,
-  pub gameinfo_backup: PathBuf,
-  pub addons_dir: PathBuf,
 }
 
 impl Default for GameConfigManager {

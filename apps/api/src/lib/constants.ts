@@ -17,3 +17,10 @@ export const MODS_CACHE_CONFIG = {
   vary: "Accept-Encoding",
   // Default behavior: only caches 200 responses
 };
+
+// VPK file processing constants
+export const VPK_CONSTANTS = {
+  // Maximum file size: 500MB (matches server body limit)
+  MAX_FILE_SIZE_BYTES: 500 * 1024 * 1024,
+  MAX_FILE_SIZE_MB: 500,
+} as const;

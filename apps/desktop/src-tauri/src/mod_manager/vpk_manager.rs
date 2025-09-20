@@ -97,30 +97,6 @@ impl VpkManager {
     Ok(())
   }
 
-  /// Install VPK files from a list of paths to the addons directory
-  pub fn install_vpks(
-    &self,
-    vpk_paths: &[std::path::PathBuf],
-    addons_path: &Path,
-  ) -> Result<Vec<String>, Error> {
-    self.filesystem.create_directories(addons_path)?;
-
-    let mut installed_vpks = Vec::new();
-    let mut current_number = self.find_highest_vpk_number(addons_path)?;
-
-    for vpk_path in vpk_paths {
-      current_number += 1;
-      let new_name = format!("pak{:02}_dir.vpk", current_number);
-      let new_path = addons_path.join(&new_name);
-
-      self.filesystem.copy_file(vpk_path, &new_path)?;
-      installed_vpks.push(new_name.clone());
-
-      log::info!("Installed VPK: {} as {}", vpk_path.display(), new_name);
-    }
-
-    Ok(installed_vpks)
-  }
 
   /// Remove VPK files from the addons directory
   pub fn remove_vpks(&self, vpk_names: &[String], addons_path: &Path) -> Result<(), Error> {
@@ -160,24 +136,6 @@ impl VpkManager {
     Ok(())
   }
 
-  /// Get all VPK files in the addons directory
-  pub fn get_installed_vpks(&self, addons_path: &Path) -> Result<Vec<String>, Error> {
-    let vpk_files = self
-      .filesystem
-      .get_files_with_extension(addons_path, "vpk")?;
-
-    Ok(
-      vpk_files
-        .into_iter()
-        .filter_map(|path| {
-          path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .map(|s| s.to_string())
-        })
-        .collect(),
-    )
-  }
 }
 
 impl Default for VpkManager {
