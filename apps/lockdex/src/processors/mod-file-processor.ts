@@ -260,7 +260,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         hasInlineData: fp.hasInlineData,
         merkleRoot: fp.merkleRoot,
         state: "ok" as const,
-        fileMtime: fp.lastModified,
+        fileMtime: fp.lastModified ? new Date(fp.lastModified) : null,
       };
 
       const storedVpk =

@@ -1,4 +1,5 @@
 import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
+import type { VpkParsed } from "@deadlock-mods/vpk-parser";
 
 // Individual download item type extracted from ModDownloadDto array
 export type ModDownloadItem = ModDownloadDto[number];
@@ -63,4 +64,55 @@ export interface ModFileTree {
 
 export interface LocalModWithFiles extends LocalMod {
   file_tree?: ModFileTree;
+}
+
+// Types for local addon analysis
+export interface LocalAddonInfo {
+  filePath: string;
+  fileName: string;
+  vpkParsed: VpkParsed;
+  remoteId?: string; // Will be populated by API call
+  matchInfo?: {
+    certainty: number;
+    matchType: "sha256" | "contentSignature" | "fastHashAndSize" | "merkleRoot";
+    modName?: string;
+    modAuthor?: string;
+    alternativeMatches?: Array<{
+      id: string;
+      modName: string;
+      modAuthor: string;
+    }>;
+  };
+}
+
+export interface AnalyzeAddonsResult {
+  addons: LocalAddonInfo[];
+  totalCount: number;
+  errors: string[];
+}
+
+// Progress reporting for addon analysis
+export interface AddonAnalysisProgress {
+  step: "scanning" | "parsing" | "analyzing_hashes" | "complete";
+  stepDescription: string;
+  filesFound?: number;
+  currentFile?: number;
+  currentFileName?: string;
+  totalProgress: number; // 0-100
+}
+
+// Type for mod identification API response (stub for now)
+export interface ModIdentificationRequest {
+  vpkHash: string;
+  contentSignature: string;
+  merkleRoot?: string;
+  fileCount: number;
+  fileName: string;
+}
+
+export interface ModIdentificationResponse {
+  remoteId?: string;
+  confidence?: number;
+  modName?: string;
+  modAuthor?: string;
 }

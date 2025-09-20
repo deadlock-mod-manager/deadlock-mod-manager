@@ -15,7 +15,11 @@
     "quit": "Quit"
   },
   "myMods": {
-    "subtitle": "Mods you have downloaded or installed"
+    "subtitle": "Mods you have downloaded or installed",
+    "noModsTitle": "No mods installed",
+    "noModsDescription": "You haven't installed any mods yet. Get started by browsing available mods or analyzing your local addons folder.",
+    "visitModsPage": "Visit Mods Page",
+    "analyzeLocalAddons": "Analyze Local Addons"
   },
   "mods": {
     "searchPlaceholder": "Search mods",
@@ -42,7 +46,10 @@
     "deleteSuccess": "Mod deleted successfully",
     "disableSuccess": "Mod disabled successfully",
     "deleteError": "Failed to delete mod",
-    "disableError": "Failed to disable mod"
+    "disableError": "Failed to disable mod",
+    "customModDisableTitle": "Disable Custom Mod?",
+    "customModDisableBody": "This is a custom mod that was manually added to your library. If you disable it, you won't be able to re-enable it automatically since it's not from our database. You would need to manually reinstall the original file or re-add it through the addon analysis feature.",
+    "customModDisableAction": "Disable Anyway"
   },
   "downloads": {
     "downloading": "Downloading {{count}} mod",
@@ -318,6 +325,68 @@
     "installedTooltip": "Mod is enabled, do you want to disable it? This will not delete the mod, just disable it ingame.",
     "downloadedTooltip": "Mod is downloaded, do you want to enable it?"
   },
+  "addons": {
+    "analyzeLocal": "Analyze Local Addons",
+    "analyzeLocalTooltip": "Scan your Deadlock game directory to find and identify existing addon files that may not be managed by this mod manager",
+    "analyzing": "Analyzing...",
+    "analysisResults": "Local Addon Analysis",
+    "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
+    "analysisSuccess": "Analysis complete! Found {{count}} addon(s)",
+    "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}}",
+    "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added",
+    "analysisWarning": "Analysis complete! Found {{count}} addon(s) with {{errors}} error(s)",
+    "analysisError": "Failed to analyze local addons",
+    "foundAddons": "Found Addons",
+    "noAddonsFound": "No addons found in your game directory",
+    "errors": "Errors",
+    "errorsCount": "{{count}} error(s)",
+    "fileCount": "Files",
+    "fileSize": "Size",
+    "contentHash": "Content Hash",
+    "identifyMod": "Identify Mod",
+    "identifying": "Identifying...",
+    "identificationResult": "Identification Result",
+    "vpkContents": "VPK Contents",
+    "files": "files",
+    "noEntriesFound": "No entries found in VPK file",
+    "show": "Show details",
+    "hide": "Hide details",
+    "identificationSuccess": "Successfully identified: {{name}}",
+    "identificationFailed": "Could not identify this mod",
+    "identificationError": "Failed to identify mod",
+    "modName": "Mod Name",
+    "modAuthor": "Author",
+    "remoteId": "Remote ID",
+    "confidence": "Confidence",
+    "modNotFound": "Mod not found in database",
+    "tabs": {
+      "all": "All",
+      "identified": "Identified",
+      "unknown": "Unknown",
+      "errors": "Errors"
+    },
+    "stats": {
+      "identified": "Identified",
+      "unknown": "Unknown",
+      "errors": "Errors"
+    },
+    "emptyStates": {
+      "noIdentified": "No mods were identified",
+      "noIdentifiedDesc": "These addons might be custom or not in our database",
+      "allIdentified": "All addons were identified!"
+    },
+    "progress": {
+      "scanning": "Scanning addons directory...",
+      "parsing": "Parsing VPK files...",
+      "analyzing_hashes": "Identifying mods...",
+      "complete": "Analysis complete!"
+    },
+    "progressDetails": {
+      "filesFound": "Found {{count}} files",
+      "currentFile": "Processing {{current}} of {{total}}",
+      "currentFileName": "Processing: {{fileName}}"
+    }
+  },
   "errors": {
     "genericMessage": "We're sorry, but an error occurred while processing your request.",
     "errorCode": "Error code:",
@@ -504,7 +573,10 @@
   },
   "debug": {
     "title": "Debug",
-    "helloWorld": "Hello, world!"
+    "description": "Debug tools and utilities for development and troubleshooting.",
+    "clearModsState": "Clear Mods State",
+    "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "modsStateCleared": "Mods state cleared successfully"
   },
   "profiles": {
     "share": "Share Profile",

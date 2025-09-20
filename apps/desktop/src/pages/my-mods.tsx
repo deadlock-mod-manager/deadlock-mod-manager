@@ -8,6 +8,8 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { AnalyzeAddonsButton } from "@/components/my-mods/analyze-addons-button";
+import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +110,13 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         </div>
         <div className='absolute top-2 right-2 flex flex-col gap-1'>
           {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
+          {mod.remoteUrl?.startsWith("local://") && (
+            <Badge
+              variant='outline'
+              className='bg-background/80 backdrop-blur-sm'>
+              Custom
+            </Badge>
+          )}
           {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
         </div>
         {mod.status === ModStatus.Installing && (
@@ -225,6 +234,13 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 Audio
               </Badge>
             )}
+            {mod.remoteUrl?.startsWith("local://") && (
+              <Badge
+                variant='outline'
+                className='text-xs bg-background/80 backdrop-blur-sm'>
+                Custom
+              </Badge>
+            )}
             {isModOutdated(mod) && (
               <OutdatedModWarning className='text-xs' variant='indicator' />
             )}
@@ -310,53 +326,58 @@ const MyMods = () => {
         title={t("navigation.myMods")}
       />
       <ErrorBoundary>
-        <div className='flex flex-col gap-4'>
-          <div className='flex items-center justify-between'>
-            <SimpleSearchBar query={query} setQuery={setQuery} />
-            <div className='flex items-center gap-2'>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setViewMode(ViewMode.GRID)}
-                    size='icon'
-                    variant={
-                      viewMode === ViewMode.GRID ? "default" : "outline"
-                    }>
-                    <LayoutGrid className='h-4 w-4' />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("mods.gridView")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setViewMode(ViewMode.LIST)}
-                    size='icon'
-                    variant={
-                      viewMode === ViewMode.LIST ? "default" : "outline"
-                    }>
-                    <LayoutList className='h-4 w-4' />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("mods.listView")}</TooltipContent>
-              </Tooltip>
+        {mods.length === 0 ? (
+          <MyModsEmptyState />
+        ) : (
+          <div className='flex flex-col gap-4'>
+            <div className='flex items-center justify-between'>
+              <SimpleSearchBar query={query} setQuery={setQuery} />
+              <div className='flex items-center gap-2'>
+                <AnalyzeAddonsButton />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setViewMode(ViewMode.GRID)}
+                      size='icon'
+                      variant={
+                        viewMode === ViewMode.GRID ? "default" : "outline"
+                      }>
+                      <LayoutGrid className='h-4 w-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("mods.gridView")}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setViewMode(ViewMode.LIST)}
+                      size='icon'
+                      variant={
+                        viewMode === ViewMode.LIST ? "default" : "outline"
+                      }>
+                      <LayoutList className='h-4 w-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("mods.listView")}</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          </div>
 
-          {viewMode === ViewMode.GRID ? (
-            <div className='grid grid-cols-4 gap-4'>
-              {results.map((mod) => (
-                <GridModCard key={mod.remoteId} mod={mod} />
-              ))}
-            </div>
-          ) : (
-            <div className='flex flex-col gap-3'>
-              {results.map((mod) => (
-                <ListModCard key={mod.remoteId} mod={mod} />
-              ))}
-            </div>
-          )}
-        </div>
+            {viewMode === ViewMode.GRID ? (
+              <div className='grid grid-cols-4 gap-4'>
+                {results.map((mod) => (
+                  <GridModCard key={mod.remoteId} mod={mod} />
+                ))}
+              </div>
+            ) : (
+              <div className='flex flex-col gap-3'>
+                {results.map((mod) => (
+                  <ListModCard key={mod.remoteId} mod={mod} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </ErrorBoundary>
     </div>
   );

@@ -88,6 +88,9 @@ export const usePersistedStore = create<State>()(
           forceShowWhatsNew: _forceShowWhatsNew,
           markVersionAsSeen: _markVersionAsSeen,
           setShowWhatsNew: _setShowWhatsNew,
+          // Exclude analysis dialog state (ephemeral)
+          analysisResult: _analysisResult,
+          analysisDialogOpen: _analysisDialogOpen,
           ...rest
         } = state;
         return rest;

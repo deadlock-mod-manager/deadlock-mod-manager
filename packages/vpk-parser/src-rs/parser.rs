@@ -44,6 +44,13 @@ impl VpkParser {
             None
         };
 
+        // Only include entries if requested
+        let final_entries = if options.include_entries {
+            entries
+        } else {
+            Vec::new()
+        };
+
         Ok(VpkParsed {
             version: header.version,
             tree_length: header.tree_length,
@@ -51,7 +58,7 @@ impl VpkParser {
             archive_md5_section_size: header.archive_md5_section_size,
             other_md5_section_size: header.other_md5_section_size,
             signature_section_size: header.signature_section_size,
-            entries,
+            entries: final_entries,
             manifest_sha256,
             dir_sha256,
             fingerprint,

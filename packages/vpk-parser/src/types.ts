@@ -10,4 +10,5 @@ export interface VpkParseOptionsInput {
   includeMerkle?: boolean;
   filePath?: string;
   lastModified?: Date;
+  includeEntries?: boolean;
 }

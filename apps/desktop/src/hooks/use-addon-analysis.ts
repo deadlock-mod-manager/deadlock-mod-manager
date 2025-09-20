@@ -1,0 +1,180 @@
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useMutation } from "react-query";
+import { toast } from "sonner";
+import { analyzeLocalAddons, getMod } from "@/lib/api";
+import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
+import type { AddonAnalysisProgress } from "@/types/mods";
+
+export const useAddonAnalysis = () => {
+  const { t } = useTranslation();
+  const [progress, setProgress] = useState<AddonAnalysisProgress | null>(null);
+  const [showProgressToast, setShowProgressToast] = useState(false);
+  const analysisResult = usePersistedStore((state) => state.analysisResult);
+  const dialogOpen = usePersistedStore((state) => state.analysisDialogOpen);
+  const setAnalysisResult = usePersistedStore(
+    (state) => state.setAnalysisResult,
+  );
+  const setDialogOpen = usePersistedStore(
+    (state) => state.setAnalysisDialogOpen,
+  );
+  const clearAnalysisDialog = usePersistedStore(
+    (state) => state.clearAnalysisDialog,
+  );
+
+  const addIdentifiedLocalMod = usePersistedStore(
+    (state) => state.addIdentifiedLocalMod,
+  );
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    const setupListener = async () => {
+      unlisten = await listen<AddonAnalysisProgress>(
+        "addon-analysis-progress",
+        (event) => {
+          const progressData = event.payload;
+          setProgress(progressData);
+          setShowProgressToast(true);
+
+          if (progressData.step === "complete") {
+            // Hide progress toast after a longer delay when complete
+            setTimeout(() => {
+              setShowProgressToast(false);
+              setProgress(null);
+            }, 3000); // 3 seconds to let user see completion
+          }
+        },
+      );
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, []);
+
+  const { mutate: analyzeAddons, isLoading } = useMutation(analyzeLocalAddons, {
+    onSuccess: async (data) => {
+      setAnalysisResult(data);
+
+      // Check if there are any addons that need user attention
+      const unknownAddons = data.addons.filter(
+        (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
+      );
+      const errorAddons = data.addons.filter(
+        (addon) => !addon.vpkParsed || !addon.vpkParsed.fingerprint,
+      );
+
+      // Only show dialog if there are unidentified or error addons
+      const shouldShowDialog =
+        unknownAddons.length > 0 || errorAddons.length > 0;
+
+      setDialogOpen(shouldShowDialog);
+
+      // Process identified addons and add them to the store
+      let identifiedCount = 0;
+      console.log("Processing analysis results:", {
+        totalAddons: data.addons.length,
+        addonsWithRemoteId: data.addons.filter((a) => a.remoteId).length,
+        addonsWithMatchInfo: data.addons.filter((a) => a.matchInfo).length,
+      });
+
+      for (const addon of data.addons) {
+        if (addon.remoteId && addon.matchInfo) {
+          try {
+            // Fetch full mod details from API using the mod's remote ID
+            const modDetails = await getMod(addon.remoteId);
+
+            // Add to store as an identified local mod
+            addIdentifiedLocalMod(modDetails, addon.filePath);
+            identifiedCount++;
+          } catch (error) {
+            logger.error(
+              `Failed to fetch mod details for ${addon.remoteId}:`,
+              error,
+            );
+          }
+        }
+      }
+
+      if (data.errors.length > 0) {
+        toast.warning(
+          t("addons.analysisWarning", {
+            count: data.totalCount,
+            errors: data.errors.length,
+          }),
+        );
+      } else {
+        // Show different messages based on what happened
+        if (identifiedCount > 0 && shouldShowDialog) {
+          // Some identified, some need attention
+          toast.success(
+            t("addons.analysisSuccessWithIdentified", {
+              count: data.totalCount,
+              identified: identifiedCount,
+            }),
+          );
+        } else if (identifiedCount > 0 && !shouldShowDialog) {
+          // All identified successfully
+          toast.success(
+            t("addons.analysisSuccessAllIdentified", {
+              count: data.totalCount,
+              identified: identifiedCount,
+            }),
+          );
+        } else {
+          // No identification, but no errors
+          toast.success(
+            t("addons.analysisSuccess", { count: data.totalCount }),
+          );
+        }
+      }
+    },
+    onError: (error) => {
+      logger.error("Failed to analyze addons:", error);
+      toast.error(t("addons.analysisError"));
+      setShowProgressToast(false);
+      setProgress(null);
+    },
+  });
+
+  const startAnalysis = () => {
+    setShowProgressToast(true);
+    setProgress(null);
+    // Clear previous results when starting new analysis
+    clearAnalysisDialog();
+    analyzeAddons();
+  };
+
+  const dismissProgressToast = () => {
+    setShowProgressToast(false);
+    setProgress(null);
+  };
+
+  // Create a safe setDialogOpen that clears analysis when closing
+  const safeSetDialogOpen = (open: boolean) => {
+    if (!open) {
+      // Clear both dialog and analysis result when dialog is explicitly closed
+      clearAnalysisDialog();
+    } else {
+      setDialogOpen(open);
+    }
+  };
+
+  return {
+    progress,
+    showProgressToast,
+    analysisResult,
+    dialogOpen,
+    setDialogOpen: safeSetDialogOpen,
+    isLoading,
+    startAnalysis,
+    dismissProgressToast,
+  };
+};

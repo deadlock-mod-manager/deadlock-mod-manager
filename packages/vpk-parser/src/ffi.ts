@@ -114,6 +114,7 @@ export function parseVpk(
     includeMerkle: options.includeMerkle || false,
     filePath: options.filePath || "",
     lastModified: options.lastModified?.toISOString() || null,
+    includeEntries: options.includeEntries !== false, // Default to true for backward compatibility
   });
 
   const optionsBuffer = Buffer.from(`${optionsJson}\0`, "utf8");

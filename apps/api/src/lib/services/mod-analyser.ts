@@ -28,6 +28,15 @@ type VpkAnalysisResult = {
   };
 };
 
+type HashAnalysisResult = {
+  matchedVpk: CachedVPKWithMod;
+  match: {
+    certainty: number;
+    matchType: MatchType;
+    alternativeMatches?: CachedVPKWithMod[];
+  };
+};
+
 export class ModAnalyser {
   private static _instance: ModAnalyser | null = null;
   protected vpkRepository: VpkRepository;
@@ -193,5 +202,177 @@ export class ModAnalyser {
     }
 
     return { vpk: parsed };
+  }
+
+  async analyseHashes(hashes: {
+    sha256?: string;
+    contentSignature: string;
+    fastHash?: string;
+    fileSize?: number;
+    merkleRoot?: string;
+  }): Promise<HashAnalysisResult[]> {
+    const results: HashAnalysisResult[] = [];
+
+    // 1. SHA256 match (100% certainty - exact match)
+    if (hashes.sha256) {
+      const sha256Match = await this.vpkRepository.findBySha256(hashes.sha256);
+      if (sha256Match) {
+        results.push({
+          matchedVpk: sha256Match,
+          match: {
+            certainty: 100,
+            matchType: "sha256",
+          },
+        });
+        // For SHA256 matches, we can return early as it's definitive
+        return results;
+      }
+    }
+
+    // 2. Content signature match (90% certainty - content-based match)
+    const contentSigMatches = await this.vpkRepository.findByContentSignature(
+      hashes.contentSignature,
+    );
+    if (contentSigMatches.length > 0) {
+      // If multiple matches, prefer the one with the closest file count (if available)
+      let bestContentMatch = contentSigMatches[0];
+      let alternativeMatches = contentSigMatches.slice(1);
+
+      if (hashes.fileSize !== undefined) {
+        bestContentMatch = contentSigMatches.reduce((best, current) => {
+          const bestDiff = Math.abs(best.fileCount - (hashes.fileSize || 0));
+          const currentDiff = Math.abs(
+            current.fileCount - (hashes.fileSize || 0),
+          );
+          return currentDiff < bestDiff ? current : best;
+        });
+        alternativeMatches = contentSigMatches.filter(
+          (m) => m.id !== bestContentMatch.id,
+        );
+      }
+
+      results.push({
+        matchedVpk: bestContentMatch,
+        match: {
+          certainty: 90,
+          matchType: "contentSignature",
+          alternativeMatches:
+            alternativeMatches.length > 0 ? alternativeMatches : undefined,
+        },
+      });
+    }
+
+    // 3. Fast hash + size match (70% certainty - quick duplicate detection)
+    if (hashes.fastHash && hashes.fileSize !== undefined) {
+      const fastHashMatches = await this.vpkRepository.findByFastHashAndSize(
+        hashes.fastHash,
+        hashes.fileSize,
+      );
+      if (fastHashMatches.length > 0) {
+        // Filter out matches we already found
+        const uniqueFastMatches = fastHashMatches.filter(
+          (match) =>
+            !results.some((result) => result.matchedVpk.id === match.id),
+        );
+
+        if (uniqueFastMatches.length > 0) {
+          // If multiple matches, use scoring system (simplified since we don't have full fingerprint)
+          const bestFastMatch = uniqueFastMatches.reduce((best, current) => {
+            const bestScore = this.calculateHashMatchScore(best, hashes);
+            const currentScore = this.calculateHashMatchScore(current, hashes);
+            return currentScore > bestScore ? current : best;
+          });
+
+          results.push({
+            matchedVpk: bestFastMatch,
+            match: {
+              certainty: 70,
+              matchType: "fastHashAndSize",
+              alternativeMatches:
+                uniqueFastMatches.filter((m) => m.id !== bestFastMatch.id)
+                  .length > 0
+                  ? uniqueFastMatches.filter((m) => m.id !== bestFastMatch.id)
+                  : undefined,
+            },
+          });
+        }
+      }
+    }
+
+    // 4. Merkle root match (40% certainty - partial content similarity)
+    if (hashes.merkleRoot) {
+      const merkleMatches = await this.vpkRepository.findByMerkleRoot(
+        hashes.merkleRoot,
+      );
+      if (merkleMatches.length > 0) {
+        // Filter out matches we already found and exact matches
+        const uniqueMerkleMatches = merkleMatches.filter(
+          (match) =>
+            match.sha256 !== hashes.sha256 &&
+            match.contentSig !== hashes.contentSignature &&
+            !results.some((result) => result.matchedVpk.id === match.id),
+        );
+
+        if (uniqueMerkleMatches.length > 0) {
+          const bestMerkleMatch = uniqueMerkleMatches.reduce(
+            (best, current) => {
+              const bestScore = this.calculateHashMatchScore(best, hashes);
+              const currentScore = this.calculateHashMatchScore(
+                current,
+                hashes,
+              );
+              return currentScore > bestScore ? current : best;
+            },
+          );
+
+          results.push({
+            matchedVpk: bestMerkleMatch,
+            match: {
+              certainty: 40,
+              matchType: "merkleRoot",
+              alternativeMatches:
+                uniqueMerkleMatches.filter((m) => m.id !== bestMerkleMatch.id)
+                  .length > 0
+                  ? uniqueMerkleMatches.filter(
+                      (m) => m.id !== bestMerkleMatch.id,
+                    )
+                  : undefined,
+            },
+          });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  private calculateHashMatchScore(
+    vpkEntry: CachedVPKWithMod,
+    hashes: {
+      sha256?: string;
+      contentSignature: string;
+      fastHash?: string;
+      fileSize?: number;
+      merkleRoot?: string;
+    },
+  ): number {
+    let score = 0;
+
+    // File size comparison (if available)
+    if (hashes.fileSize !== undefined) {
+      const fileCountDiff = Math.abs(vpkEntry.fileCount - hashes.fileSize);
+      if (fileCountDiff === 0) {
+        score += 40;
+      } else if (fileCountDiff <= 5) {
+        score += 30;
+      } else if (fileCountDiff <= 20) {
+        score += 15;
+      }
+    }
+
+    // We can't compare VPK version, multiparts, or inline data from hashes alone
+    // So this scoring is simplified compared to the full fingerprint version
+
+    return score;
   }
 }

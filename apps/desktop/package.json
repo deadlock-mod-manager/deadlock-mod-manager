@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@deadlock-mods/shared": "workspace:*",
+    "@deadlock-mods/vpk-parser": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-accordion": "^1.2.12",

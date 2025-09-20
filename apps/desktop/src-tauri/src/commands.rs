@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::{Mod, ModFileTree, ModManager};
+use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult, Mod, ModFileTree, ModManager};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -373,6 +373,7 @@ pub fn parse_vpk_file(
     file_path: file_path.clone(),
     last_modified,
     include_merkle: include_merkle.unwrap_or(false),
+    include_entries: true, // Include entries for manual VPK parsing
   };
 
   let parsed = VpkParser::parse(vpk_data, options)
@@ -386,4 +387,20 @@ pub fn parse_vpk_file(
   );
 
   Ok(parsed)
+}
+
+#[tauri::command]
+pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddonsResult, Error> {
+  // Get the game path first, then release the lock
+  let game_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    match mod_manager.get_steam_manager().get_game_path() {
+      Some(path) => path.clone(),
+      None => return Err(Error::GamePathNotSet),
+    }
+  }; // Lock is released here
+
+  let analyzer = AddonAnalyzer::new();
+  let result = analyzer.analyze_local_addons(game_path, Some(app_handle)).await?;
+  Ok(result)
 }

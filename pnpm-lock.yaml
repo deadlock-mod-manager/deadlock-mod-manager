@@ -211,6 +211,9 @@ importers:
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@deadlock-mods/vpk-parser':
+        specifier: workspace:*
+        version: link:../../packages/vpk-parser
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.62.0(react@18.3.1))

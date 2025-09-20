@@ -15,9 +15,26 @@ const useUninstall = () => {
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {
       let shouldUninstall = true;
+      const isCustomMod = mod.remoteUrl?.startsWith("local://");
 
+      // Show special warning for custom mods when disabling
+      if (!remove && isCustomMod) {
+        shouldUninstall = !!(await confirm({
+          title: t("mods.customModDisableTitle", {
+            defaultValue: "Disable Custom Mod?",
+          }),
+          body: t("mods.customModDisableBody", {
+            defaultValue:
+              "This is a custom mod that was manually added to your library. If you disable it, you won't be able to re-enable it automatically since it's not from our database. You would need to manually reinstall the original file or re-add it through the addon analysis feature.",
+          }),
+          actionButton: t("mods.customModDisableAction", {
+            defaultValue: "Disable Anyway",
+          }),
+          cancelButton: t("mods.deleteConfirmCancel"),
+        }));
+      }
       // Only show confirmation dialog when removing (deleting) a mod
-      if (remove) {
+      else if (remove) {
         shouldUninstall = !!(await confirm({
           title: t("mods.deleteConfirmTitle"),
           body: t("mods.deleteConfirmBody"),
@@ -25,7 +42,7 @@ const useUninstall = () => {
           cancelButton: t("mods.deleteConfirmCancel"),
         }));
       }
-      // No confirmation dialog for disabling mods
+      // No confirmation dialog for disabling regular mods
 
       if (!shouldUninstall) {
         return;

@@ -99,6 +99,7 @@ pub extern "C" fn vpk_get_hashes(
         include_merkle: true,
         file_path: path,
         last_modified: None,
+        include_entries: true,
     };
 
     match VpkParser::parse(buffer_vec, options) {
@@ -125,6 +126,7 @@ pub extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_c
         include_merkle: false,
         file_path: String::new(),
         last_modified: None,
+        include_entries: true,
     };
 
     match VpkParser::parse(buffer_vec, options) {

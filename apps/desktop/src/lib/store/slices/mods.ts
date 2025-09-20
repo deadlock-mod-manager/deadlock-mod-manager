@@ -4,6 +4,7 @@ import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
 import {
+  type AnalyzeAddonsResult,
   type LocalMod,
   type ModFileTree,
   ModStatus,
@@ -20,8 +21,13 @@ export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
   defaultSort: SortType;
+  // Analysis dialog state
+  analysisResult: AnalyzeAddonsResult | null;
+  analysisDialogOpen: boolean;
+
   setDefaultSort: (sortType: SortType) => void;
   addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
+  addIdentifiedLocalMod: (mod: ModDto, filePath: string) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
   setModStatus: (remoteId: string, status: ModStatus) => void;
@@ -34,6 +40,10 @@ export type ModsState = {
     fileTree?: ModFileTree,
   ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
+  // Analysis dialog actions
+  setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
+  setAnalysisDialogOpen: (open: boolean) => void;
+  clearAnalysisDialog: () => void;
 };
 
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
@@ -42,6 +52,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 ) => ({
   localMods: [],
   modProgress: {},
+  // Analysis dialog initial state
+  analysisResult: null,
+  analysisDialogOpen: false,
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
@@ -55,6 +68,37 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ...state.localMods,
           { ...mod, status: ModStatus.Downloading, ...additional },
         ],
+      };
+    }),
+
+  addIdentifiedLocalMod: (mod, filePath) =>
+    set((state) => {
+      console.log("Adding identified local mod:", {
+        modId: mod.id,
+        remoteId: mod.remoteId,
+        name: mod.name,
+        filePath,
+        existingModCount: state.localMods.length,
+      });
+
+      // Check if mod already exists (by remoteId)
+      if (state.localMods.some((m) => m.remoteId === mod.remoteId)) {
+        console.log("Mod already exists in store, skipping:", mod.remoteId);
+        return state;
+      }
+
+      const newMod = {
+        ...mod,
+        status: ModStatus.Installed, // Already installed locally
+        path: filePath,
+        downloadedAt: new Date(),
+        installedVpks: [filePath], // The VPK file path
+      };
+
+      console.log("Adding new mod to store:", newMod);
+
+      return {
+        localMods: [...state.localMods, newMod],
       };
     }),
 
@@ -141,4 +185,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
       })),
     })),
+
+  // Analysis dialog actions
+  setAnalysisResult: (result) => set({ analysisResult: result }),
+  setAnalysisDialogOpen: (open) => set({ analysisDialogOpen: open }),
+  clearAnalysisDialog: () =>
+    set({ analysisResult: null, analysisDialogOpen: false }),
 });

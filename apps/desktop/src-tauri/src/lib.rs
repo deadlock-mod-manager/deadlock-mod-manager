@@ -199,7 +199,8 @@ pub fn run() {
       commands::set_language,
       commands::extract_archive,
       commands::remove_mod_folder,
-      commands::parse_vpk_file
+      commands::parse_vpk_file,
+      commands::analyze_local_addons
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

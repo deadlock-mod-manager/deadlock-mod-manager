@@ -50,6 +50,8 @@ tauri-plugin-posthog = "0.2.2"
 dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.2"
 vpk-parser = { path = "../../../packages/vpk-parser" }
+tokio = { version = "1.47.1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
 
 [dev-dependencies]
 tempfile = "3.22.0"

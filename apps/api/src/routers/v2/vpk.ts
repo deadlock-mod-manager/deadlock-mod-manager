@@ -6,6 +6,37 @@ import { ModAnalyser } from "@/lib/services/mod-analyser";
 import { publicProcedure } from "../../lib/orpc";
 
 export const vpkRouter = {
+  analyseHashes: publicProcedure
+    .route({ method: "POST", path: "/v2/vpk-analyse-hashes" })
+    .input(
+      z
+        .object({
+          sha256: z.string().optional(),
+          contentSignature: z.string(),
+          fastHash: z.string().optional(),
+          fileSize: z.number().optional(),
+          merkleRoot: z.string().optional(),
+        })
+        .refine(
+          (data) => {
+            return Object.values(data).some((value) => value !== undefined);
+          },
+          {
+            message: "At least one hash must be provided",
+          },
+        ),
+    )
+    .handler(async ({ input }) => {
+      const hashes = {
+        sha256: input.sha256,
+        contentSignature: input.contentSignature,
+        fastHash: input.fastHash,
+        fileSize: input.fileSize,
+        merkleRoot: input.merkleRoot,
+      };
+      const results = await ModAnalyser.instance.analyseHashes(hashes);
+      return results;
+    }),
   analyseVPK: publicProcedure
     .route({ method: "POST", path: "/v2/vpk-analyse" })
     .input(

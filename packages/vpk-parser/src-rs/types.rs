@@ -60,6 +60,7 @@ pub struct VpkParseOptions {
     pub file_path: String,
     pub last_modified: Option<DateTime<Utc>>,
     pub include_merkle: bool,
+    pub include_entries: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

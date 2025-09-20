@@ -255,5 +255,88 @@ export const useModProcessor = () => {
     setProcessing(false);
   };
 
-  return { processMod };
+  const processLocalAddon = async (
+    metadata: ModMetadata,
+    category: ModCategory,
+    existingPath: string,
+  ): Promise<void> => {
+    setProcessing(true, t("addMods.validatingMetadata"));
+
+    const modId = `local-${crypto.randomUUID()}`;
+    const base = await appLocalDataDir();
+    const modsRoot = await join(base, "mods");
+    const modDir = await join(modsRoot, modId);
+
+    // Create directories
+    setProcessing(true, t("addMods.creatingDirectories"));
+    await ensureDirectory(modsRoot);
+    await ensureDirectory(modDir);
+
+    // Process preview image
+    setProcessing(true, t("addMods.processingPreview"));
+    const { previewName, imageDataUrl } = await processPreviewImage(
+      metadata,
+      modDir,
+    );
+
+    // Save metadata
+    setProcessing(true, t("addMods.savingMetadata"));
+    const modMetadata = {
+      id: modId,
+      kind: "local",
+      name: metadata.name,
+      author: metadata.author || "Unknown",
+      link: metadata.link || null,
+      description: metadata.description || null,
+      category,
+      createdAt: new Date().toISOString(),
+      preview: previewName,
+      _schema: 1,
+    };
+
+    await writeFileText(
+      await join(modDir, "metadata.json"),
+      JSON.stringify(modMetadata, null, 2),
+    );
+
+    // Add to library
+    setProcessing(true, t("addMods.addingToLibrary"));
+    const modDto: ModDto = {
+      id: modId,
+      remoteId: modId,
+      name: modMetadata.name,
+      description: modMetadata.description ?? "",
+      remoteUrl: modMetadata.link ?? "local://manual",
+      author: modMetadata.author,
+      downloadable: false,
+      remoteAddedAt: new Date(modMetadata.createdAt),
+      remoteUpdatedAt: new Date(modMetadata.createdAt),
+      tags: [],
+      images: [imageDataUrl],
+      hero: null,
+      isAudio: false,
+      audioUrl: null,
+      isNSFW: false,
+      createdAt: new Date(modMetadata.createdAt),
+      updatedAt: new Date(modMetadata.createdAt),
+      downloadCount: 0,
+      likes: 0,
+      category,
+    };
+
+    // Set status to Installed since this addon is already in the game directory
+    addMod(modDto, {
+      path: existingPath, // Use the existing VPK path
+      status: ModStatus.Installed, // Already installed
+      installedVpks: [existingPath], // Reference to the existing VPK
+    });
+    setModPath(modId, existingPath);
+    setModStatus(modId, ModStatus.Installed);
+
+    setProcessing(true, t("addMods.modAddedSuccess"));
+    toast.success(t("addMods.addedSuccess", { name: metadata.name }));
+    setProcessing(false);
+  };
+
+  return { processMod, processLocalAddon };
 };

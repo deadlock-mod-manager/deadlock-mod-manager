@@ -14,6 +14,13 @@
     "about": "",
     "quit": ""
   },
+  "myMods": {
+    "subtitle": "",
+    "noModsTitle": "",
+    "noModsDescription": "",
+    "visitModsPage": "",
+    "analyzeLocalAddons": ""
+  },
   "mods": {
     "searchPlaceholder": "",
     "noPreviewAvailable": "",
@@ -379,5 +386,47 @@
     "createNewProfile": "",
     "overrideExisting": "",
     "overrideSuccess": ""
+  },
+  "addons": {
+    "analyzeLocal": "",
+    "analyzeLocalTooltip": "",
+    "analyzing": "",
+    "analysisResults": "",
+    "analysisResultsDescription": "",
+    "analysisSuccess": "",
+    "analysisSuccessWithIdentified": "",
+    "analysisSuccessAllIdentified": "",
+    "analysisWarning": "",
+    "analysisError": "",
+    "foundAddons": "",
+    "noAddonsFound": "",
+    "errors": "",
+    "errorsCount": "",
+    "fileCount": "",
+    "fileSize": "",
+    "contentHash": "",
+    "identifyMod": "",
+    "identifying": "",
+    "identificationResult": "",
+    "vpkContents": "",
+    "files": "",
+    "noEntriesFound": "",
+    "show": "",
+    "hide": "",
+    "identificationSuccess": "",
+    "identificationFailed": "",
+    "identificationError": "",
+    "modName": "",
+    "modAuthor": "",
+    "remoteId": "",
+    "confidence": "",
+    "modNotFound": ""
+  },
+  "debug": {
+    "title": "",
+    "description": "",
+    "clearModsState": "",
+    "confirmClearModsState": "",
+    "modsStateCleared": ""
   }
 }
