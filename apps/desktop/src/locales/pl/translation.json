@@ -31,7 +31,18 @@
     "subtitle": "Aktualizowane codziennie, z nowymi modami dodawanymi co tydzień.",
     "noModsFound": "Nie znaleziono żadnych modów",
     "noModsMatchFilters": "Brak modów pasujących do bieżącego wyszukiwania i filtrów",
-    "noModsAvailable": "Brak Dostępnych modów"
+    "noModsAvailable": "Brak Dostępnych modów",
+    "deleteConfirmTitle": "Czy na pewno chcesz usunąć ten mod? Spowoduje to usunięcie go z listy modów i usunięcie wszystkich plików.",
+    "deleteConfirmBody": "Tej operacji nie można cofnąć.",
+    "deleteConfirmAction": "Usuń",
+    "deleteConfirmCancel": "Anuluj",
+    "deleteSuccess": "Mod został pomyślnie usunięty",
+    "disableSuccess": "Mod został pomyślnie wyłączony",
+    "deleteError": "Nie udało się usunąć moda",
+    "disableError": "Nie udało się wyłączyć moda",
+    "customModDisableTitle": "Wyłączyć Niestandardowy Mod?",
+    "customModDisableBody": "To jest niestandardowy mod, który został ręcznie dodany do twojej biblioteki. Jeśli go wyłączysz, nie będziesz mógł go automatycznie ponownie włączyć, ponieważ nie pochodzi z naszej bazy danych. Będziesz musiał ręcznie ponownie zainstalować oryginalny plik lub dodać go ponownie przez funkcję analizy dodatków.",
+    "customModDisableAction": "Wyłącz Mimo To"
   },
   "downloads": {
     "downloading": "Pobieranie {{count}} moda",
@@ -73,7 +84,20 @@
     "launchVanilla": "Uruchom bez modów",
     "launchModded": "Uruchom z modami",
     "stopGame": "Zatrzymaj Grę",
-    "failedToFetchMods": "Nie udało się pobrać modów. Spróbuj ponownie później."
+    "failedToFetchMods": "Nie udało się pobrać modów. Spróbuj ponownie później.",
+    "mods": "Mody",
+    "installed": "zainstalowane",
+    "downloading": "pobieranie",
+    "gameRunning": "Gra działa",
+    "gameReady": "Gra gotowa",
+    "gameNotDetected": "Nie wykryto gry",
+    "never": "Nigdy",
+    "actions": "Akcje",
+    "copy": "Kopiuj",
+    "apiHealthy": "API online",
+    "apiDegraded": "Problemy z API",
+    "apiOffline": "API offline",
+    "apiUnknown": "Status API nieznany"
   },
   "settings": {
     "language": "Język",

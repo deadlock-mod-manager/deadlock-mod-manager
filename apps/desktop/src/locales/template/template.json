@@ -46,7 +46,10 @@
     "deleteSuccess": "",
     "disableSuccess": "",
     "deleteError": "",
-    "disableError": ""
+    "disableError": "",
+    "customModDisableTitle": "",
+    "customModDisableBody": "",
+    "customModDisableAction": ""
   },
   "downloads": {
     "downloading": "",
@@ -65,7 +68,8 @@
     "modInstalledSuccessfully": "",
     "failedToInstallMod": "",
     "installationCanceled": "",
-    "modContainsFiles": ""
+    "modContainsFiles": "",
+    "failedToPerformAction": ""
   },
   "common": {
     "loading": "",
@@ -87,7 +91,20 @@
     "launchVanilla": "",
     "launchModded": "",
     "stopGame": "",
-    "failedToFetchMods": ""
+    "failedToFetchMods": "",
+    "mods": "",
+    "installed": "",
+    "downloading": "",
+    "gameRunning": "",
+    "gameReady": "",
+    "gameNotDetected": "",
+    "never": "",
+    "actions": "",
+    "copy": "",
+    "apiHealthy": "",
+    "apiDegraded": "",
+    "apiOffline": "",
+    "apiUnknown": ""
   },
   "settings": {
     "language": "",
@@ -194,25 +211,37 @@
   },
   "filters": {
     "filters": "",
+    "mode": "",
+    "include": "",
+    "exclude": "",
     "category": "",
     "hero": "",
     "content": "",
     "allCategories": "",
     "allHeroes": "",
     "hideOutdated": "",
+    "showOutdated": "",
     "showNSFWContent": "",
+    "hideNSFWContent": "",
     "audioModsOnly": "",
+    "excludeAudioMods": "",
     "searchCategories": "",
     "searchHeroes": "",
     "noCategoriesFound": "",
     "noHeroesFound": "",
     "selected": "",
     "activeFilters": "",
+    "includingFilters": "",
+    "excludingFilters": "",
     "categoryLabel": "",
     "heroLabel": "",
     "sortBy": "",
     "showNSFW": "",
+    "hideNSFW": "",
     "audioOnly": "",
+    "hideAudio": "",
+    "hideOutdatedBadge": "",
+    "showOutdatedBadge": "",
     "clearAll": ""
   },
   "sorting": {
@@ -290,7 +319,73 @@
     "removing": "",
     "removed": "",
     "failedToRemove": "",
-    "error": ""
+    "error": "",
+    "disableMod": "",
+    "enableMod": "",
+    "installedTooltip": "",
+    "downloadedTooltip": ""
+  },
+  "addons": {
+    "analyzeLocal": "",
+    "analyzeLocalTooltip": "",
+    "analyzing": "",
+    "analysisResults": "",
+    "analysisResultsDescription": "",
+    "analysisSuccess": "",
+    "analysisSuccessWithIdentified": "",
+    "analysisSuccessAllIdentified": "",
+    "analysisWarning": "",
+    "analysisError": "",
+    "foundAddons": "",
+    "noAddonsFound": "",
+    "errors": "",
+    "errorsCount": "",
+    "fileCount": "",
+    "fileSize": "",
+    "contentHash": "",
+    "identifyMod": "",
+    "identifying": "",
+    "identificationResult": "",
+    "vpkContents": "",
+    "files": "",
+    "noEntriesFound": "",
+    "show": "",
+    "hide": "",
+    "identificationSuccess": "",
+    "identificationFailed": "",
+    "identificationError": "",
+    "modName": "",
+    "modAuthor": "",
+    "remoteId": "",
+    "confidence": "",
+    "modNotFound": "",
+    "tabs": {
+      "all": "",
+      "identified": "",
+      "unknown": "",
+      "errors": ""
+    },
+    "stats": {
+      "identified": "",
+      "unknown": "",
+      "errors": ""
+    },
+    "emptyStates": {
+      "noIdentified": "",
+      "noIdentifiedDesc": "",
+      "allIdentified": ""
+    },
+    "progress": {
+      "scanning": "",
+      "parsing": "",
+      "analyzing_hashes": "",
+      "complete": ""
+    },
+    "progressDetails": {
+      "filesFound": "",
+      "currentFile": "",
+      "currentFileName": ""
+    }
   },
   "errors": {
     "genericMessage": "",
@@ -313,6 +408,7 @@
     "title": "",
     "description": "",
     "unknownAuthor": "",
+    "unknownMod": "",
     "modNamePlaceholder": "",
     "modPreview": "",
     "authorPlaceholder": ""
@@ -320,6 +416,109 @@
   "status": {
     "enabled": "",
     "disabled": ""
+  },
+  "whatsNew": {
+    "title": "",
+    "welcome": "",
+    "fullReleaseNotes": "",
+    "gotIt": "",
+    "versions": {
+      "0.8.2": {
+        "title": "",
+        "features": ["", ""]
+      },
+      "0.8.1": {
+        "title": "",
+        "features": [""]
+      },
+      "0.8.0": {
+        "title": "",
+        "features": ["", "", "", "", "", "", ""]
+      },
+      "0.7.0": {
+        "title": "",
+        "features": ["", "", "", "", "", "", ""]
+      },
+      "0.6.1": {
+        "title": "",
+        "features": [""]
+      },
+      "0.6.0": {
+        "title": "",
+        "features": ["", "", "", ""]
+      },
+      "0.5.1": {
+        "title": "",
+        "features": ["", "", "", "", "", "", "", "", ""]
+      },
+      "0.5.0": {
+        "title": "",
+        "features": ["", "", "", "", "", "", ""]
+      },
+      "0.4.0": {
+        "title": "",
+        "features": ["", "", "", ""]
+      },
+      "0.3.0": {
+        "title": "",
+        "features": ["", "", "", ""]
+      },
+      "0.2.0": {
+        "title": "",
+        "features": ["", "", ""]
+      }
+    }
+  },
+  "theme": {
+    "light": "",
+    "dark": "",
+    "system": ""
+  },
+  "ui": {
+    "gallery": "",
+    "files": "",
+    "description": "",
+    "author": "",
+    "link": "",
+    "name": "",
+    "command": "",
+    "custom": "",
+    "screenshot": "",
+    "currentStatus": "",
+    "editCustomOption": "",
+    "toggleSidebar": "",
+    "openFolder": "",
+    "copyToClipboard": "",
+    "filterMods": "",
+    "rowsPerPage": "",
+    "noPreview": "",
+    "audio": "",
+    "filesDescription": "",
+    "multipleVersionsAvailable": "",
+    "placeholders": {
+      "websiteUrl": "",
+      "shortDescription": ""
+    }
+  },
+  "accessibility": {
+    "close": "",
+    "previousSlide": "",
+    "nextSlide": "",
+    "more": "",
+    "goToFirstPage": "",
+    "goToPreviousPage": "",
+    "goToNextPage": "",
+    "goToLastPage": "",
+    "previous": "",
+    "next": "",
+    "morePages": ""
+  },
+  "debug": {
+    "title": "",
+    "description": "",
+    "clearModsState": "",
+    "confirmClearModsState": "",
+    "modsStateCleared": ""
   },
   "profiles": {
     "share": "",
@@ -386,47 +585,5 @@
     "createNewProfile": "",
     "overrideExisting": "",
     "overrideSuccess": ""
-  },
-  "addons": {
-    "analyzeLocal": "",
-    "analyzeLocalTooltip": "",
-    "analyzing": "",
-    "analysisResults": "",
-    "analysisResultsDescription": "",
-    "analysisSuccess": "",
-    "analysisSuccessWithIdentified": "",
-    "analysisSuccessAllIdentified": "",
-    "analysisWarning": "",
-    "analysisError": "",
-    "foundAddons": "",
-    "noAddonsFound": "",
-    "errors": "",
-    "errorsCount": "",
-    "fileCount": "",
-    "fileSize": "",
-    "contentHash": "",
-    "identifyMod": "",
-    "identifying": "",
-    "identificationResult": "",
-    "vpkContents": "",
-    "files": "",
-    "noEntriesFound": "",
-    "show": "",
-    "hide": "",
-    "identificationSuccess": "",
-    "identificationFailed": "",
-    "identificationError": "",
-    "modName": "",
-    "modAuthor": "",
-    "remoteId": "",
-    "confidence": "",
-    "modNotFound": ""
-  },
-  "debug": {
-    "title": "",
-    "description": "",
-    "clearModsState": "",
-    "confirmClearModsState": "",
-    "modsStateCleared": ""
   }
 }

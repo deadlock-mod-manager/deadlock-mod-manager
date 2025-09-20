@@ -6,8 +6,16 @@
     "downloads": "İndirilenler",
     "settings": "Ayarlar",
     "whatsNew": "Yenilikler",
+    "needHelp": "Yardıma İhtiyacınız Var mı?",
     "collapseMenu": "Menüyü daralt",
     "about": "Hakkında"
+  },
+  "myMods": {
+    "subtitle": "İndirdiğiniz veya kurduğunuz modlar",
+    "noModsTitle": "Kurulu mod yok",
+    "noModsDescription": "Henüz hiç mod kurmadınız. Mevcut modlara göz atarak veya yerel eklentiler klasörünüzü analiz ederek başlayın.",
+    "visitModsPage": "Modlar Sayfasını Ziyaret Et",
+    "analyzeLocalAddons": "Yerel Eklentileri Analiz Et"
   },
   "mods": {
     "searchPlaceholder": "Mod ara",
@@ -34,7 +42,10 @@
     "deleteSuccess": "Mod başarıyla silindi",
     "disableSuccess": "Mod başarıyla devre dışı bırakıldı",
     "deleteError": "Mod silinirken hata oluştu",
-    "disableError": "Mod devre dışı bırakılırken hata oluştu"
+    "disableError": "Mod devre dışı bırakılırken hata oluştu",
+    "customModDisableTitle": "Özel Modu Devre Dışı Bırak?",
+    "customModDisableBody": "Bu, kütüphanenize manuel olarak eklenen özel bir moddur. Devre dışı bırakırsanız, veritabanımızda olmadığı için otomatik olarak yeniden etkinleştiremezsiniz. Orijinal dosyayı manuel olarak yeniden yüklemeniz veya eklenti analizi özelliği aracılığıyla yeniden eklemeniz gerekir.",
+    "customModDisableAction": "Yine de Devre Dışı Bırak"
   },
   "downloads": {
     "downloading": "{{count}} mod indiriliyor",
@@ -76,7 +87,20 @@
     "launchVanilla": "Vanilla başlat",
     "launchModded": "Modded başlat",
     "stopGame": "Oyunu durdur",
-    "failedToFetchMods": "Modlar yüklenemedi. Daha sonra tekrar deneyin."
+    "failedToFetchMods": "Modlar yüklenemedi. Daha sonra tekrar deneyin.",
+    "mods": "Modlar",
+    "installed": "kurulu",
+    "downloading": "indiriliyor",
+    "gameRunning": "Oyun Çalışıyor",
+    "gameReady": "Oyun Hazır",
+    "gameNotDetected": "Oyun Algılanmadı",
+    "never": "Asla",
+    "actions": "Eylemler",
+    "copy": "Kopyala",
+    "apiHealthy": "API Çevrimiçi",
+    "apiDegraded": "API Sorunları",
+    "apiOffline": "API Çevrimdışı",
+    "apiUnknown": "API Durumu Bilinmiyor"
   },
   "settings": {
     "language": "Dil",
@@ -187,25 +211,37 @@
   },
   "filters": {
     "filters": "Filtreler",
+    "mode": "Filtre Modu",
+    "include": "Dahil Et",
+    "exclude": "Hariç Tut",
     "category": "Kategori",
     "hero": "Kahraman",
     "content": "İçerik",
     "allCategories": "Tüm kategoriler",
     "allHeroes": "Tüm kahramanlar",
     "hideOutdated": "Eskileri gizle",
+    "showOutdated": "Eskileri göster",
     "showNSFWContent": "NSFW içerikleri göster",
+    "hideNSFWContent": "NSFW içerikleri gizle",
     "audioModsOnly": "Sadece ses modları",
+    "excludeAudioMods": "Ses modlarını gizle",
     "searchCategories": "Kategorilerde ara...",
     "searchHeroes": "Kahramanlarda ara...",
     "noCategoriesFound": "Kategori bulunamadı.",
     "noHeroesFound": "Kahraman bulunamadı.",
     "selected": "seçili",
     "activeFilters": "Aktif filtreler:",
+    "includingFilters": "Dahil Eden Filtreler:",
+    "excludingFilters": "Hariç Tutan Filtreler:",
     "categoryLabel": "Kategori:",
     "heroLabel": "Kahraman:",
     "sortBy": "Sırala",
     "showNSFW": "NSFW göster",
+    "hideNSFW": "NSFW gizle",
     "audioOnly": "Sadece ses",
+    "hideAudio": "Ses gizle",
+    "hideOutdatedBadge": "Eskileri gizle",
+    "showOutdatedBadge": "Eskileri göster",
     "clearAll": "Hepsini temizle"
   },
   "sorting": {
@@ -271,6 +307,68 @@
     "failedToRemove": "Kaldırma başarısız",
     "error": "Hata oluştu"
   },
+  "addons": {
+    "analyzeLocal": "Yerel Eklentileri Analiz Et",
+    "analyzeLocalTooltip": "Bu mod yöneticisi tarafından yönetilmeyen mevcut eklenti dosyalarını bulmak ve tanımlamak için Deadlock oyun dizininizi tarayın",
+    "analyzing": "Analiz ediliyor...",
+    "analysisResults": "Yerel Eklenti Analizi",
+    "analysisResultsDescription": "Oyun dizininizde {{count}} eklenti bulundu",
+    "analysisSuccess": "Analiz tamamlandı! {{count}} eklenti bulundu",
+    "analysisSuccessWithIdentified": "Analiz tamamlandı! {{count}} eklenti bulundu, {{identified}} tanımlandı",
+    "analysisSuccessAllIdentified": "Analiz tamamlandı! Tüm {{identified}} eklenti otomatik olarak tanımlandı ve eklendi",
+    "analysisWarning": "Analiz tamamlandı! {{count}} eklenti bulundu, {{errors}} hata ile",
+    "analysisError": "Yerel eklentiler analiz edilemedi",
+    "foundAddons": "Bulunan Eklentiler",
+    "noAddonsFound": "Oyun dizininizde eklenti bulunamadı",
+    "errors": "Hatalar",
+    "errorsCount": "{{count}} hata",
+    "fileCount": "Dosyalar",
+    "fileSize": "Boyut",
+    "contentHash": "İçerik Hash'i",
+    "identifyMod": "Modu Tanımla",
+    "identifying": "Tanımlanıyor...",
+    "identificationResult": "Tanımlama Sonucu",
+    "vpkContents": "VPK İçeriği",
+    "files": "dosyalar",
+    "noEntriesFound": "VPK dosyasında giriş bulunamadı",
+    "show": "Detayları göster",
+    "hide": "Detayları gizle",
+    "identificationSuccess": "Başarıyla tanımlandı: {{name}}",
+    "identificationFailed": "Bu mod tanımlanamadı",
+    "identificationError": "Mod tanımlanamadı",
+    "modName": "Mod Adı",
+    "modAuthor": "Yazar",
+    "remoteId": "Uzak ID",
+    "confidence": "Güven",
+    "modNotFound": "Mod veritabanında bulunamadı",
+    "tabs": {
+      "all": "Tümü",
+      "identified": "Tanımlanan",
+      "unknown": "Bilinmeyen",
+      "errors": "Hatalar"
+    },
+    "stats": {
+      "identified": "Tanımlanan",
+      "unknown": "Bilinmeyen",
+      "errors": "Hatalar"
+    },
+    "emptyStates": {
+      "noIdentified": "Hiçbir mod tanımlanamadı",
+      "noIdentifiedDesc": "Bu eklentiler özel olabilir veya veritabanımızda bulunmayabilir",
+      "allIdentified": "Tüm eklentiler tanımlandı!"
+    },
+    "progress": {
+      "scanning": "Eklentiler dizini taranıyor...",
+      "parsing": "VPK dosyaları ayrıştırılıyor...",
+      "analyzing_hashes": "Modlar tanımlanıyor...",
+      "complete": "Analiz tamamlandı!"
+    },
+    "progressDetails": {
+      "filesFound": "{{count}} dosya bulundu",
+      "currentFile": "{{current}}/{{total}} işleniyor",
+      "currentFileName": "İşleniyor: {{fileName}}"
+    }
+  },
   "errors": {
     "genericMessage": "Üzgünüz, isteğinizi işlerken bir hata oluştu.",
     "errorCode": "Hata kodu:",
@@ -292,6 +390,7 @@
     "title": "Mod metadata",
     "description": "Isteğe bağlı ayrıntılar ekleyin. Yalnızca ad gereklidir.",
     "unknownAuthor": "Bilinmeyen",
+    "unknownMod": "Bilinmeyen Mod",
     "modNamePlaceholder": "Harika Mod",
     "modPreview": "Mod önizlemesi",
     "authorPlaceholder": "Bilinmeyen"
@@ -474,9 +573,13 @@
   },
   "debug": {
     "title": "Debug",
-    "helloWorld": "Hello, world!"
+    "description": "Geliştirme ve sorun giderme için debug araçları ve yardımcı programları.",
+    "clearModsState": "Modlar Durumunu Temizle",
+    "confirmClearModsState": "Modlar durumunu temizlemek istediğinizden emin misiniz? Bu, tüm modları uygulamadan kaldıracak ancak oyun klasörünüzden SİLMEYECEKTİR. Modları geri yüklemek için mod klasörünüzü yeniden tarayabilirsiniz.",
+    "modsStateCleared": "Modlar durumu başarıyla temizlendi"
   },
   "profiles": {
+    "share": "Profil Paylaş",
     "selectProfile": "Profil seç",
     "manage": "Profilleri yönet",
     "manageDescription": "Farklı mod profilleri oluşturun, düzenleyin ve aralarında geçiş yapın. Her profil hangi modları etkinleştirdiğinizi hatırlar.",

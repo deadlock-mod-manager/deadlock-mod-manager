@@ -95,7 +95,7 @@ export const Toolbar = () => {
                 hidden: gamePath,
                 "text-destructive": !gamePath,
               })}>
-              {t("common.gameDetected")}
+              {t("common.gameNotDetected")}
             </div>
           </TooltipTrigger>
           {gamePath && (

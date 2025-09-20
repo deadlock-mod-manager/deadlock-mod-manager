@@ -76,7 +76,20 @@
     "launchVanilla": "Vanilla starte",
     "launchModded": "Modded starte",
     "stopGame": "Spiel stoppe",
-    "failedToFetchMods": "Fehler bim Lade vo de Mods. Versuche Si es später nomal."
+    "failedToFetchMods": "Fehler bim Lade vo de Mods. Versuche Si es später nomal.",
+    "mods": "Mods",
+    "installed": "installiert",
+    "downloading": "am lade",
+    "gameRunning": "Spiel lauft",
+    "gameReady": "Spiel bereit",
+    "gameNotDetected": "Spiel nöd erkännt",
+    "never": "Nie",
+    "actions": "Aktione",
+    "copy": "Kopiere",
+    "apiHealthy": "API Online",
+    "apiDegraded": "API Problem",
+    "apiOffline": "API Offline",
+    "apiUnknown": "API Status unbekannt"
   },
   "settings": {
     "language": "Sprache",
