@@ -18,7 +18,10 @@ export class VpkParser {
    * @param options - Parsing options
    * @returns Parsed VPK data
    */
-  static parseFile(filePath: string, options: VpkParseOptionsInput = {}): VpkParsed {
+  static parseFile(
+    filePath: string,
+    options: VpkParseOptionsInput = {},
+  ): VpkParsed {
     return parseVpkFile(filePath, options);
   }
 }
