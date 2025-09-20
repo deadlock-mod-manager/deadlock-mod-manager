@@ -18,7 +18,6 @@ export const useApiStatus = () => {
     refetchInterval: 30000, // Check every 30 seconds
     retry: 2,
     retryDelay: 5000,
-    staleTime: 25000, // Consider data stale after 25 seconds
   });
 
   const getApiStatus = (): ApiStatus => {

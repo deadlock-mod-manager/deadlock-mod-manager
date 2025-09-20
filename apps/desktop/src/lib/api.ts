@@ -100,24 +100,12 @@ export const shareProfile = async (
 export const getProfile = async (profileId: string) => {
   return await apiRequest<SharedProfile>(`/api/v2/profiles/${profileId}`);
 };
-
 export const getApiHealth = async () => {
-  const response = await fetch("https://api.deadlockmods.app/", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  return response.json() as Promise<{
+  return await apiRequest<{
     status: string;
     db: { alive: boolean };
     redis: { alive: boolean; configured: boolean };
     version: string;
     spec: string;
-  }>;
+  }>("/");
 };
