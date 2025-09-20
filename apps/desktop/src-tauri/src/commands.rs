@@ -10,12 +10,44 @@ use tauri::{AppHandle, Emitter, Manager};
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
+static API_URL: LazyLock<Mutex<String>> =
+  LazyLock::new(|| Mutex::new("http://localhost:9000".to_string()));
+
+#[tauri::command]
+pub async fn set_api_url(api_url: String) -> Result<(), Error> {
+  log::info!("Setting API URL to: {}", api_url);
+
+  if !api_url.starts_with("http://") && !api_url.starts_with("https://") {
+    return Err(Error::InvalidInput(
+      "API URL must start with http:// or https://".to_string(),
+    ));
+  }
+
+  if let Ok(mut url) = API_URL.lock() {
+    *url = api_url;
+  } else {
+    return Err(Error::InvalidInput(
+      "Failed to acquire API URL lock".to_string(),
+    ));
+  }
+
+  Ok(())
+}
+
+pub fn get_api_url() -> String {
+  match API_URL.lock() {
+    Ok(url) => url.clone(),
+    Err(_) => {
+      log::warn!("Failed to acquire API URL lock, using default");
+      "http://localhost:9000".to_string()
+    }
+  }
+}
 
 #[tauri::command]
 pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
   log::info!("Setting language to: {}", language);
 
-  // Validate language code
   let supported_languages = ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru"];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(
@@ -24,7 +56,6 @@ pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(),
     )));
   }
 
-  // Emit event to frontend to change language
   if let Some(window) = app_handle.get_webview_window("main") {
     window.emit("set-language", &language)?;
   }
@@ -401,6 +432,8 @@ pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddons
   }; // Lock is released here
 
   let analyzer = AddonAnalyzer::new();
-  let result = analyzer.analyze_local_addons(game_path, Some(app_handle)).await?;
+  let result = analyzer
+    .analyze_local_addons(game_path, Some(app_handle))
+    .await?;
   Ok(result)
 }

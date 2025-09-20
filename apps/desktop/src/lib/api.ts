@@ -14,6 +14,14 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
+export const initializeApiUrl = async (): Promise<void> => {
+  try {
+    await invoke("set_api_url", { apiUrl: BASE_URL });
+  } catch (error) {
+    console.error("Failed to set API URL in Rust backend:", error);
+  }
+};
+
 const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: body ? "POST" : "GET",

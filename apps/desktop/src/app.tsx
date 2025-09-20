@@ -10,23 +10,22 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { Layout } from "./layout";
+import { initializeApiUrl } from "./lib/api";
 import { queryClient } from "./lib/client";
 import { STORE_NAME } from "./lib/constants";
 import logger from "./lib/logger";
 import { usePersistedStore } from "./lib/store";
 
 const App = () => {
-  // Initialize deep link listener
   useDeepLink();
-
-  // Initialize language listener
   useLanguageListener();
 
   const hydrateStore = async () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });
     await usePersistedStore.persist.rehydrate();
+    await initializeApiUrl();
 
-    logger.debug("Store rehydrated");
+    logger.debug("Store rehydrated and API URL initialized");
   };
 
   usePromise(hydrateStore, []);

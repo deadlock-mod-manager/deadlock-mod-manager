@@ -1,7 +1,6 @@
 use crate::errors::Error;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
 use tokio::task;
@@ -143,7 +142,7 @@ impl AddonAnalyzer {
     &self,
     vpk_parsed: &VpkParsed,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
-    let api_url = env::var("VITE_API_URL").unwrap_or_else(|_| "http://localhost:9000".to_string());
+    let api_url = crate::commands::get_api_url();
     let endpoint = format!("{}/api/v2/vpk-analyse-hashes", api_url);
 
     let request = HashAnalysisRequest {

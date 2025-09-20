@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
+    "cross-env": "^10.0.0",
     "dotenv-cli": "^7.4.4",
     "lefthook": "^1.13.1",
     "turbo": "^2.5.6",
