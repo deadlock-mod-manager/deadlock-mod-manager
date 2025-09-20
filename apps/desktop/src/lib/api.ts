@@ -96,3 +96,7 @@ export const shareProfile = async (
     profile,
   });
 };
+
+export const getProfile = async (profileId: string) => {
+  return await apiRequest<SharedProfile>(`/api/v2/profiles/${profileId}`);
+};

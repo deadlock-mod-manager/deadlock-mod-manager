@@ -1,5 +1,6 @@
 import { db, ProfileRepository } from "@deadlock-mods/database";
-import { profileSchema } from "@deadlock-mods/shared";
+import { profileSchema, toProfileDto } from "@deadlock-mods/shared";
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { generateHash } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
@@ -7,6 +8,17 @@ import { publicProcedure } from "../../lib/orpc";
 const profileRepository = new ProfileRepository(db);
 
 export const profilesRouter = {
+  getProfile: publicProcedure
+    .route({ method: "GET", path: "/v2/profiles/{id}" })
+    .input(z.object({ id: z.string() }))
+    .output(profileSchema)
+    .handler(async ({ input }) => {
+      const profile = await profileRepository.findById(input.id);
+      if (!profile) {
+        throw new ORPCError("NOT_FOUND");
+      }
+      return toProfileDto(profile);
+    }),
   shareProfile: publicProcedure
     .route({ method: "POST", path: "/v2/profiles" })
     .input(

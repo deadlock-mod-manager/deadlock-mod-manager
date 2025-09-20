@@ -550,6 +550,22 @@
     "shareInstructions": "Share this Profile ID with your friends so they can import your mod profile:",
     "profileId": "Profile ID",
     "profileIdCopied": "Profile ID copied to clipboard!",
-    "profileIdCopyError": "Failed to copy Profile ID"
+    "profileIdCopyError": "Failed to copy Profile ID",
+    "import": "Import Profile",
+    "importing": "Importing...",
+    "importDescription": "Enter a Profile ID to import a shared profile from another user.",
+    "importPreview": "Import Profile Preview",
+    "importPreviewDescription": "Review the profile contents before importing. Choose how to save this profile.",
+    "profileIdPlaceholder": "Enter Profile ID (e.g., abc123def456)",
+    "profileIdRequired": "Profile ID is required",
+    "importSuccess": "Profile imported successfully!",
+    "importError": "Failed to import profile. Please check the Profile ID and try again.",
+    "includedMods": "Included Mods",
+    "noModsIncluded": "No mods are included in this profile",
+    "modNotFound": "Mod not found or unavailable",
+    "importOptionsDescription": "Choose how to save this imported profile:",
+    "createNewProfile": "Create New Profile",
+    "overrideExisting": "Override Active Profile",
+    "overrideSuccess": "Active profile updated successfully!"
   }
 }

@@ -25,6 +25,7 @@ import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
 import { ProfileEditDialog } from "./profile-edit-dialog";
+import { ProfileImportDialog } from "./profile-import-dialog";
 
 interface ProfileManagerDialogProps {
   open: boolean;
@@ -154,8 +155,8 @@ export const ProfileManagerDialog = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-          <div className='flex justify-between items-center py-4 gap-4'>
-            <DialogHeader>
+          <div className='flex items-center py-4 gap-4'>
+            <DialogHeader className='flex-1'>
               <DialogTitle className='flex items-center space-x-2'>
                 <Users className='w-5 h-5' />
                 <span>{t("profiles.manage")}</span>
@@ -170,6 +171,7 @@ export const ProfileManagerDialog = ({
                 icon={<Plus className='w-4 h-4' />}>
                 {t("profiles.createNew")}
               </Button>
+              <ProfileImportDialog />
             </div>
           </div>
 
