@@ -93,7 +93,11 @@
     "gameNotDetected": "Game Not Detected",
     "never": "Never",
     "actions": "Actions",
-    "copy": "Copy"
+    "copy": "Copy",
+    "apiHealthy": "API Online",
+    "apiDegraded": "API Issues",
+    "apiOffline": "API Offline",
+    "apiUnknown": "API Status Unknown"
   },
   "settings": {
     "language": "Language",

@@ -51,7 +51,8 @@
       "lefthook",
       "msgpackr-extract",
       "puppeteer",
-      "sharp"
+      "sharp",
+      "bun"
     ],
     "ignoredBuiltDependencies": [
       "better-sqlite3"

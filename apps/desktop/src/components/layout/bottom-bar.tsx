@@ -3,6 +3,10 @@ import {
   CloudArrowDown,
   DownloadSimple,
   Package,
+  WifiHigh,
+  WifiMedium,
+  WifiSlash,
+  WifiX,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
@@ -10,6 +14,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useApiStatus } from "@/hooks/use-api-status";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
@@ -21,6 +26,7 @@ export const BottomBar = () => {
   const localMods = usePersistedStore((state) => state.localMods);
   const { gamePath } = usePersistedStore();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
+  const { status: apiStatus } = useApiStatus();
 
   const { data: isRunning } = useQuery({
     queryKey: ["is-game-running"],
@@ -74,24 +80,51 @@ export const BottomBar = () => {
       </div>
 
       <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-1'>
+          {apiStatus === "healthy" && (
+            <WifiHigh className='h-3 w-3 text-green-500' />
+          )}
+          {apiStatus === "degraded" && (
+            <WifiMedium className='h-3 w-3 text-yellow-500' />
+          )}
+          {apiStatus === "offline" && (
+            <WifiX className='h-3 w-3 text-red-500' />
+          )}
+          {apiStatus === "unknown" && (
+            <WifiSlash className='h-3 w-3 text-muted-foreground' />
+          )}
+          <span className='text-xs'>
+            {apiStatus === "healthy" && t("common.apiHealthy")}
+            {apiStatus === "degraded" && t("common.apiDegraded")}
+            {apiStatus === "offline" && t("common.apiOffline")}
+            {apiStatus === "unknown" && t("common.apiUnknown")}
+          </span>
+        </div>
+
         {gamePath && (
-          <div className='flex items-center gap-1'>
-            <div
-              className={cn("h-2 w-2 rounded-full", {
-                "bg-green-500": isRunning,
-                "bg-muted-foreground": !isRunning,
-              })}
-            />
-            <span className='text-xs'>
-              {isRunning ? t("common.gameRunning") : t("common.gameReady")}
-            </span>
-          </div>
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <div className='flex items-center gap-1'>
+              <div
+                className={cn("h-2 w-2 rounded-full", {
+                  "bg-green-500": isRunning,
+                  "bg-muted-foreground": !isRunning,
+                })}
+              />
+              <span className='text-xs'>
+                {isRunning ? t("common.gameRunning") : t("common.gameReady")}
+              </span>
+            </div>
+          </>
         )}
 
         {!gamePath && (
-          <Badge className='h-5 px-2 py-0 text-xs' variant='destructive'>
-            {t("common.gameNotDetected")}
-          </Badge>
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <Badge className='h-5 px-2 py-0 text-xs' variant='destructive'>
+              {t("common.gameNotDetected")}
+            </Badge>
+          </>
         )}
         <Button
           className='h-5 gap-1 px-2 text-xs'
