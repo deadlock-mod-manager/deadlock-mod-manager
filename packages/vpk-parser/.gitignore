@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target
+
+# TypeScript build artifacts
+/dist
+
+# Test artifacts
+/coverage
+
+# Debug files
+debug.ts
+simple-test.ts
+test.ts
+
+# OS files
+.DS_Store
+Thumbs.db
