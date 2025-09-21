@@ -195,6 +195,45 @@ pub async fn show_in_folder(path: String) -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  let mod_folder = mods_path.join(&mod_id);
+
+  if mod_folder.exists() {
+    crate::utils::show_in_folder(&mod_folder.to_string_lossy().to_string())
+  } else {
+    Err(Error::ModFileNotFound)
+  }
+}
+
+#[tauri::command]
+pub async fn show_mod_in_game(vpk_files: Vec<String>) -> Result<(), Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+
+  if !addons_path.exists() {
+    return Err(Error::GamePathNotSet);
+  }
+
+  // Show the first VPK file if available, otherwise show the addons folder
+  if let Some(first_vpk) = vpk_files.first() {
+    let vpk_path = addons_path.join(first_vpk);
+    if vpk_path.exists() {
+      crate::utils::show_file_in_folder(&vpk_path.to_string_lossy().to_string())
+    } else {
+      crate::utils::show_in_folder(&addons_path.to_string_lossy().to_string())
+    }
+  } else {
+    crate::utils::show_in_folder(&addons_path.to_string_lossy().to_string())
+  }
+}
+
+#[tauri::command]
 pub async fn clear_mods() -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.clear_mods()

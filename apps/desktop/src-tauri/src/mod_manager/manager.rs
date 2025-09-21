@@ -422,6 +422,11 @@ impl ModManager {
     &mut self.config_manager
   }
 
+  /// Get the mods store path
+  pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
+    self.filesystem.get_mods_store_path()
+  }
+
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory
   fn validate_path_within_mods_root(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     // Get the mods root directory and canonicalize it

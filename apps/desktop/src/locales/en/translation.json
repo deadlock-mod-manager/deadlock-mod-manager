@@ -578,6 +578,20 @@
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "modsStateCleared": "Mods state cleared successfully"
   },
+  "contextMenu": {
+    "shareUrl": "Share",
+    "openInGame": "Open Location in Game",
+    "openModStore": "Open Location in Mod Store",
+    "urlCopied": "URL copied to clipboard!",
+    "failedToCopyUrl": "Failed to copy URL to clipboard",
+    "noUrlAvailable": "No URL available for this mod",
+    "openedGameFolder": "Opened game folder",
+    "openedModInGame": "Opened mod files in game folder",
+    "failedToOpenGameFolder": "Failed to open game folder",
+    "openedModStore": "Opened mod store folder",
+    "openedModInStore": "Opened mod files in store",
+    "failedToOpenModStore": "Failed to open mod store folder"
+  },
   "profiles": {
     "share": "Share Profile",
     "selectProfile": "Select Profile",

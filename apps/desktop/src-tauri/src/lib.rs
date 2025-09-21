@@ -182,6 +182,8 @@ pub fn run() {
       commands::stop_game,
       commands::start_game,
       commands::show_in_folder,
+      commands::show_mod_in_store,
+      commands::show_mod_in_game,
       commands::clear_mods,
       commands::open_mods_folder,
       commands::open_game_folder,
