@@ -5,7 +5,7 @@ import { usePersistedStore } from "@/lib/store";
 
 const LAST_SEEN_VERSION_KEY = "lastSeenVersion";
 
-const useWhatsNew = () => {
+export const useWhatsNew = () => {
   const { data } = useAbout();
 
   const showWhatsNew = usePersistedStore((state) => state.showWhatsNew);
@@ -52,5 +52,3 @@ const useWhatsNew = () => {
     currentVersion: data?.version,
   };
 };
-
-export default useWhatsNew;

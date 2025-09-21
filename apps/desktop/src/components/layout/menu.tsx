@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import useAbout from "@/hooks/use-about";
 import Logo from "./logo";
 
-const Menu = () => {
+export const Menu = () => {
   const { data } = useAbout();
   const version = data?.version;
 
@@ -24,5 +24,3 @@ const Menu = () => {
     </WindowTitlebar>
   );
 };
-
-export default Menu;

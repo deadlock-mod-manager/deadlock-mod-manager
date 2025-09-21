@@ -1,7 +1,7 @@
 import { Warning } from "@phosphor-icons/react";
 import { open } from "@tauri-apps/plugin-shell";
 import { ArrowLeft, Trash } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { useMod } from "@/hooks/use-mod";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { usePersistedStore } from "@/lib/store";
 import { isModOutdated } from "@/lib/utils";
@@ -30,8 +31,20 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);
+
+  const handleBackClick = useCallback(() => {
+    navigate("/mods");
+  }, [navigate]);
+
+  useScrollBackButton({
+    threshold: 100,
+    enabled: true,
+    scrollContainerRef,
+    onBackClick: handleBackClick,
+  });
 
   const { availableFiles: rawAvailableFiles } = useModDownloads({
     remoteId: params.id,
@@ -115,7 +128,9 @@ const Mod = () => {
 
   return (
     <ErrorBoundary>
-      <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
+      <div
+        ref={scrollContainerRef}
+        className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
         <div className='container mx-auto max-w-6xl space-y-6 py-6'>
           <div className='mb-4 flex items-center justify-between'>
             <Button
@@ -127,7 +142,6 @@ const Mod = () => {
               Back to Mods
             </Button>
           </div>
-
           {isModOutdated(mod) && (
             <div className='mb-4'>
               <OutdatedModWarning variant='alert' />

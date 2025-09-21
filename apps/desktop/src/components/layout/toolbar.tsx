@@ -1,6 +1,7 @@
 import { StopIcon } from "@phosphor-icons/react";
 import { PlayCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { invoke } from "@tauri-apps/api/core";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
@@ -10,11 +11,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
 import { useLaunch } from "@/hooks/use-launch";
 import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ProfileShareDialog } from "../profiles/profile-share-dialog";
+import { Separator } from "../ui/separator";
 import Profile from "./profile";
 
 export const Toolbar = () => {
@@ -23,6 +26,7 @@ export const Toolbar = () => {
   const { launch } = useLaunch();
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
+  const { showBackButton, onBackClick } = useScrollBackButtonContext();
 
   const { data: isRunning, refetch } = useQuery({
     queryKey: ["is-game-running"],
@@ -33,6 +37,21 @@ export const Toolbar = () => {
   return (
     <div className='flex w-full flex-row items-center justify-end gap-4 border-t border-b px-8 py-4'>
       <div className='flex flex-grow flex-row items-center justify-start gap-2 px-4'>
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out flex items-center gap-2",
+            showBackButton ? "w-fit opacity-100 mr-2" : "w-0 opacity-0",
+          )}>
+          <Button
+            className='flex items-center gap-2 whitespace-nowrap'
+            onClick={onBackClick}
+            size='sm'
+            variant='ghost'>
+            <ArrowLeft className='h-4 w-4' />
+            {t("common.back", "Back")}
+          </Button>
+          <Separator orientation='vertical' className='h-8' />
+        </div>
         <Profile />
         <ProfileShareDialog />
       </div>
