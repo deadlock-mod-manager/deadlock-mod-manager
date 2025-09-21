@@ -2,6 +2,7 @@ import { db, ProfileRepository } from "@deadlock-mods/database";
 import { profileSchema, toProfileDto } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 import { generateHash } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
 
@@ -40,10 +41,26 @@ export const profilesRouter = {
       try {
         const contentHash = generateHash(JSON.stringify(input));
 
+        logger
+          .withMetadata({
+            hardwareId: input.hardwareId,
+            profileName: input.name,
+            version: input.version,
+            contentHash,
+            modCount: input.profile.payload.mods.length,
+          })
+          .info("Processing profile share request");
+
         const existingProfile =
           await profileRepository.findByContentHash(contentHash);
 
         if (existingProfile) {
+          logger
+            .withMetadata({
+              profileId: existingProfile.id,
+              contentHash,
+            })
+            .info("Returning existing profile with matching content hash");
           return { id: existingProfile.id, status: "success" };
         }
 
@@ -54,6 +71,15 @@ export const profilesRouter = {
           contentHash,
           profile: input.profile,
         });
+
+        logger
+          .withMetadata({
+            profileId: profile.id,
+            contentHash,
+            modCount: input.profile.payload.mods.length,
+          })
+          .info("Created new profile successfully");
+
         return { id: profile.id, status: "success" };
       } catch (error) {
         return {

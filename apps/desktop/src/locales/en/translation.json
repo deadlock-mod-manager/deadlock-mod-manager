@@ -332,8 +332,8 @@
     "analysisResults": "Local Addon Analysis",
     "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
     "analysisSuccess": "Analysis complete! Found {{count}} addon(s)",
-    "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}}",
-    "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added",
+    "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}} and added to current profile",
+    "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added to current profile",
     "analysisWarning": "Analysis complete! Found {{count}} addon(s) with {{errors}} error(s)",
     "analysisError": "Failed to analyze local addons",
     "foundAddons": "Found Addons",
@@ -642,6 +642,10 @@
     "importOptionsDescription": "Choose how to save this imported profile:",
     "createNewProfile": "Create New Profile",
     "overrideExisting": "Override Active Profile",
-    "overrideSuccess": "Active profile updated successfully!"
+    "overrideSuccess": "Active profile updated successfully!",
+    "creatingProfile": "Creating new profile...",
+    "updatingProfile": "Updating current profile...",
+    "processingMods": "Processing mods...",
+    "modsProcessed": "Mods processed"
   }
 }

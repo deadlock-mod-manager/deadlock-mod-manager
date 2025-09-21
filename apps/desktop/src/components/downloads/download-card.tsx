@@ -23,7 +23,10 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const percentage = modProgress?.percentage ?? 0;
   const speed = modProgress?.speed ?? 0;
   const totalSize = useMemo(() => {
-    return download.downloads?.reduce((acc, curr) => acc + curr.size, 0) ?? 0;
+    if (!download.downloads || download.downloads.length === 0) {
+      return 0;
+    }
+    return download.downloads.reduce((acc, curr) => acc + (curr.size || 0), 0);
   }, [download.downloads]);
 
   return (

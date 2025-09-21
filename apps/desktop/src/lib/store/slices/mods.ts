@@ -6,6 +6,7 @@ import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
 import {
   type AnalyzeAddonsResult,
   type LocalMod,
+  type ModDownloadItem,
   type ModFileTree,
   ModStatus,
   type Progress,
@@ -39,6 +40,7 @@ export type ModsState = {
     vpks: string[],
     fileTree?: ModFileTree,
   ) => void;
+  setSelectedDownload: (remoteId: string, download: ModDownloadItem) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   // Analysis dialog actions
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
@@ -73,7 +75,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   addIdentifiedLocalMod: (mod, filePath) =>
     set((state) => {
-      console.log("Adding identified local mod:", {
+      logger.info("Adding identified local mod", {
         modId: mod.id,
         remoteId: mod.remoteId,
         name: mod.name,
@@ -83,7 +85,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
       // Check if mod already exists (by remoteId)
       if (state.localMods.some((m) => m.remoteId === mod.remoteId)) {
-        console.log("Mod already exists in store, skipping:", mod.remoteId);
+        logger.info("Mod already exists in store, skipping", {
+          remoteId: mod.remoteId,
+        });
         return state;
       }
 
@@ -95,8 +99,42 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: [filePath], // The VPK file path
       };
 
-      console.log("Adding new mod to store:", newMod);
+      logger.info("Adding new mod to store and enabling in current profile", {
+        modId: newMod.id,
+        remoteId: newMod.remoteId,
+        name: newMod.name,
+      });
 
+      // Get current profile and add mod to it
+      const { activeProfileId, profiles } = state;
+      const currentProfile = profiles[activeProfileId];
+
+      if (currentProfile) {
+        const profileEntry = {
+          remoteId: mod.remoteId,
+          enabled: true,
+          lastModified: new Date(),
+        };
+
+        // Update the current profile to include this mod as enabled
+        const updatedProfile = {
+          ...currentProfile,
+          enabledMods: {
+            ...currentProfile.enabledMods,
+            [mod.remoteId]: profileEntry,
+          },
+        };
+
+        return {
+          localMods: [...state.localMods, newMod],
+          profiles: {
+            ...state.profiles,
+            [activeProfileId]: updatedProfile,
+          },
+        };
+      }
+
+      // Fallback if no current profile (shouldn't happen)
       return {
         localMods: [...state.localMods, newMod],
       };
@@ -183,6 +221,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+      })),
+    })),
+
+  setSelectedDownload: (remoteId: string, download: ModDownloadItem) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        selectedDownload:
+          mod.remoteId === remoteId ? download : mod.selectedDownload,
       })),
     })),
 

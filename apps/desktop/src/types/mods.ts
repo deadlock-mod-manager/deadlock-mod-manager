@@ -29,6 +29,7 @@ export interface LocalMod extends ModDto {
   downloadedAt?: Date;
   path?: string;
   downloads?: ModDownloadItem[];
+  selectedDownload?: ModDownloadItem;
   installedVpks?: string[];
   installedFileTree?: ModFileTree;
 }

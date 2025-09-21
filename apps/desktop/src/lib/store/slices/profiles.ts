@@ -171,9 +171,19 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
 
     try {
       // Step 1: Disable all currently enabled mods by removing their VPK files
+      logger.info("Step 1: Disabling all currently installed mods", {
+        installedModsCount: localMods.filter(
+          (m) => m.status === ModStatus.Installed,
+        ).length,
+      });
+
       for (const mod of localMods) {
         if (mod.status === ModStatus.Installed && mod.installedVpks) {
           try {
+            logger.info("Disabling mod", {
+              modId: mod.remoteId,
+              vpks: mod.installedVpks,
+            });
             await invoke("uninstall_mod", {
               modId: mod.remoteId,
               vpks: mod.installedVpks,
@@ -193,14 +203,23 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       }
 
       // Step 2: Enable mods that should be active in the target profile by installing their VPK files
-      for (const [remoteId, profileEntry] of Object.entries(
-        targetProfile.enabledMods,
-      )) {
+      const modsToEnable = Object.entries(targetProfile.enabledMods).filter(
+        ([, entry]) => entry.enabled,
+      );
+
+      logger.info("Step 2: Enabling mods for target profile", {
+        targetProfileId: profileId,
+        modsToEnableCount: modsToEnable.length,
+        modsToEnable: modsToEnable.map(([remoteId]) => remoteId),
+      });
+
+      for (const [remoteId, profileEntry] of modsToEnable) {
         if (profileEntry.enabled) {
           const localMod = localMods.find((m) => m.remoteId === remoteId);
           if (
             localMod &&
-            localMod.status === ModStatus.Downloaded &&
+            (localMod.status === ModStatus.Downloaded ||
+              localMod.status === ModStatus.Installed) &&
             localMod.path
           ) {
             try {
@@ -231,6 +250,19 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
                 `Failed to enable mod ${localMod.remoteId}: ${error}`,
               );
             }
+          } else if (localMod && !localMod.path) {
+            logger.warn("Mod found but has no path, skipping", {
+              modId: localMod.remoteId,
+              status: localMod.status,
+            });
+            result.errors.push(
+              `Mod ${localMod.remoteId} has no installation path`,
+            );
+          } else if (!localMod) {
+            logger.warn("Mod not found locally, skipping", {
+              remoteId,
+            });
+            result.errors.push(`Mod ${remoteId} not found locally`);
           }
         }
       }

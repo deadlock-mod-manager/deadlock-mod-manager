@@ -18,20 +18,57 @@ import { useHardwareId } from "@/hooks/use-hardware-id";
 import { shareProfile } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import type { ModFileTree } from "@/types/mods";
 
 export const ProfileShareDialog = () => {
   const { hardwareId } = useHardwareId();
   const { version } = useAbout();
   const { t } = useTranslation();
-  const { getActiveProfile } = usePersistedStore();
+  const { getActiveProfile, localMods } = usePersistedStore();
   const [profileId, setProfileId] = useState<string | null>(null);
 
   const activeProfile = getActiveProfile();
   const enabledMods = Object.values(activeProfile?.enabledMods ?? {})
     .filter((mod) => mod.enabled)
-    .map((mod) => ({
-      remoteId: mod.remoteId,
-    }));
+    .map((mod) => {
+      // Find the local mod to get installation details
+      const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
+
+      const baseModData: {
+        remoteId: string;
+        fileTree?: ModFileTree;
+        selectedDownload?: {
+          remoteId: string;
+          file: string;
+          url: string;
+          size: number;
+        };
+      } = {
+        remoteId: mod.remoteId,
+      };
+
+      // Add file tree information if available (for any mod that has file tree data)
+      if (localMod?.installedFileTree) {
+        baseModData.fileTree = localMod.installedFileTree;
+      }
+
+      // Add selected download information if available
+      if (localMod?.downloads && localMod.downloads.length > 0) {
+        // Use the tracked selected download if available, otherwise fall back to first download
+        const selectedDownload =
+          localMod.selectedDownload || localMod.downloads[0];
+        if (selectedDownload) {
+          baseModData.selectedDownload = {
+            remoteId: mod.remoteId, // Using mod remoteId as download identifier
+            file: selectedDownload.name,
+            url: selectedDownload.url,
+            size: selectedDownload.size,
+          };
+        }
+      }
+
+      return baseModData;
+    });
 
   const mutationKey = [
     "shareProfile",
@@ -74,6 +111,15 @@ export const ProfileShareDialog = () => {
   );
 
   const onSubmit = () => {
+    logger.info("Creating profile with enhanced mod data", {
+      enabledModsCount: enabledMods.length,
+      enabledMods: enabledMods.map((mod) => ({
+        remoteId: mod.remoteId,
+        hasFileTree: !!mod.fileTree,
+        hasSelectedDownload: !!mod.selectedDownload,
+      })),
+    });
+
     const validatedProfile = profileSchema.safeParse({
       version: "1",
       payload: {
@@ -84,10 +130,17 @@ export const ProfileShareDialog = () => {
     if (!validatedProfile.success) {
       logger.error("Invalid profile", {
         profile: validatedProfile.error,
+        enabledMods,
       });
       toast.error(t("profiles.shareError"));
       return;
     }
+
+    logger.info("Profile validation successful", {
+      validatedProfile: validatedProfile.data,
+      originalEnabledMods: enabledMods,
+      validatedMods: validatedProfile.data.payload.mods,
+    });
 
     if (!validatedProfile || !hardwareId || !version) {
       logger.error("Hardware ID or version is missing");
@@ -107,7 +160,10 @@ export const ProfileShareDialog = () => {
       profile: validatedProfile.data,
     };
 
-    logger.info("Sharing profile", { payload: JSON.stringify(payload) });
+    logger.info("Sharing profile", {
+      payload: JSON.stringify(payload, null, 2),
+      profileMods: validatedProfile.data.payload.mods,
+    });
 
     return mutate(payload);
   };

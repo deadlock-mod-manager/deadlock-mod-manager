@@ -64,7 +64,7 @@ export function MultiFileDownloadDialog({
     selectedFiles.has(file.name),
   );
   const totalSize = selectedFilesArray.reduce(
-    (sum, file) => sum + file.size,
+    (sum, file) => sum + (file.size || 0),
     0,
   );
 
