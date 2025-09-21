@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/lockdex",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",

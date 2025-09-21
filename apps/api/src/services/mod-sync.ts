@@ -16,7 +16,7 @@ const logger = mainLogger.child().withContext({
 export class ModSyncService {
   private static instance: ModSyncService;
   private readonly lockService: DistributedLockService;
-  private readonly JOB_NAME = "synchronize-mods";
+  private readonly JOB_NAME = "synchronize-mods"; // TODO: we'll refactor this to the processor
   private readonly MONITOR_SLUG = "synchronize-mods-cron";
 
   constructor() {

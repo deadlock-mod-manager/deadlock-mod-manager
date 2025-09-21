@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/vpk-parser",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "High-performance VPK (Valve Package Format) parser for Deadlock mod files using native Rust implementation via Bun FFI",
   "exports": {
     ".": "./src/index.ts"

@@ -12,7 +12,7 @@ const logger = mainLogger.child().withContext({
 export class GamebananaRssProcessor extends BaseProcessor<CronJobData> {
   private static instance: GamebananaRssProcessor | null = null;
   static readonly monitorSlug = MonitorSlug.GAMEBANANA_RSS;
-  static readonly cronPattern = CronPatterns.EVERY_30_MINUTES;
+  static readonly cronPattern = CronPatterns.EVERY_5_MINUTES;
 
   private constructor() {
     super(logger);

@@ -23,6 +23,9 @@
     "//#lint": {},
     "//#format": {
       "cache": false
+    },
+    "version:generate": {
+      "cache": false
     }
   },
   "globalEnv": ["BETTERSTACK_API_KEY", "DATABASE_URL"]

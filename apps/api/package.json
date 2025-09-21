@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/api",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc --noEmit --skipLibCheck",
@@ -35,6 +35,7 @@
     "hono": "^4.9.8",
     "ioredis": "^5.4.1",
     "neverthrow": "^8.2.0",
+    "rss-parser": "^3.13.0",
     "tslog": "^4.9.3",
     "uuid": "^11.1.0",
     "zod": "catalog:"

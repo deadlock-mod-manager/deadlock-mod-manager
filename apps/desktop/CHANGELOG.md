@@ -1,5 +1,12 @@
 # desktop
 
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies [5e75639]
+  - @deadlock-mods/vpk-parser@1.0.0
+
 ## 0.8.2
 
 ### Patch Changes

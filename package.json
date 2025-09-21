@@ -20,7 +20,8 @@
     "check-types": "turbo run check-types",
     "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
-    "upgrade-dependencies": "pnpm dlx taze -r"
+    "upgrade-dependencies": "pnpm dlx taze -r",
+    "version:generate": "turbo run version:generate"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",

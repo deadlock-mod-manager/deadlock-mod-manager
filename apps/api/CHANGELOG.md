@@ -1,5 +1,16 @@
 # api
 
+## 2.0.0
+
+### Major Changes
+
+- Refactored the API and bumped to match current API version v2
+
+### Patch Changes
+
+- Updated dependencies [5e75639]
+  - @deadlock-mods/vpk-parser@1.0.0
+
 ## 1.1.0
 
 ### Minor Changes
