@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 export const envSchema = z.object({
+  TZ: z.string().default("Europe/Berlin"),
+  PORT: z.coerce.number().min(1).max(65535).default(9000),
   NODE_ENV: z.enum(["development", "production"]).default("production"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
-  REDIS_URL: z.string().optional(),
   SENTRY_DSN: z
     .string()
     .url()
@@ -18,6 +19,7 @@ export const envSchema = z.object({
     "http://localhost:1420", // Tauri dev server
     "http://localhost:3001", // Local web server
   ]),
+  REDIS_URL: z.string(),
   BETTER_AUTH_SECRET: z.string().optional(),
   BETTER_AUTH_URL: z.string().optional(),
   BETTERSTACK_API_KEY: z.string().optional(),

@@ -1,31 +1,17 @@
 import { ORPCError } from "@orpc/server";
-import { z } from "zod";
 import { VPK_CONSTANTS } from "@/lib/constants";
 import { logger } from "@/lib/logger";
-import { ModAnalyser } from "@/lib/services/mod-analyser";
+import { ModAnalyser } from "@/services/mod-analyser";
 import { publicProcedure } from "../../lib/orpc";
+import {
+  AnalyseHashesInputSchema,
+  AnalyseVPKInputSchema,
+} from "../../validation/vpk";
 
 export const vpkRouter = {
   analyseHashes: publicProcedure
     .route({ method: "POST", path: "/v2/vpk-analyse-hashes" })
-    .input(
-      z
-        .object({
-          sha256: z.string().optional(),
-          contentSignature: z.string(),
-          fastHash: z.string().optional(),
-          fileSize: z.number().optional(),
-          merkleRoot: z.string().optional(),
-        })
-        .refine(
-          (data) => {
-            return Object.values(data).some((value) => value !== undefined);
-          },
-          {
-            message: "At least one hash must be provided",
-          },
-        ),
-    )
+    .input(AnalyseHashesInputSchema)
     .handler(async ({ input }) => {
       const hashes = {
         sha256: input.sha256,
@@ -39,11 +25,7 @@ export const vpkRouter = {
     }),
   analyseVPK: publicProcedure
     .route({ method: "POST", path: "/v2/vpk-analyse" })
-    .input(
-      z.object({
-        vpk: z.file(),
-      }),
-    )
+    .input(AnalyseVPKInputSchema)
     .handler(async ({ input }) => {
       const fileSizeBytes = input.vpk.size;
       const fileSizeMB = (fileSizeBytes / (1024 * 1024)).toFixed(1);

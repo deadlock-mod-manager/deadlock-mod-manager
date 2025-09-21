@@ -1,17 +1,21 @@
 import { db, ProfileRepository } from "@deadlock-mods/database";
 import { profileSchema, toProfileDto } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
-import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { generateHash } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
+import {
+  GetProfileInputSchema,
+  ShareProfileInputSchema,
+  ShareProfileOutputSchema,
+} from "../../validation/profiles";
 
 const profileRepository = new ProfileRepository(db);
 
 export const profilesRouter = {
   getProfile: publicProcedure
     .route({ method: "GET", path: "/v2/profiles/{id}" })
-    .input(z.object({ id: z.string() }))
+    .input(GetProfileInputSchema)
     .output(profileSchema)
     .handler(async ({ input }) => {
       const profile = await profileRepository.findById(input.id);
@@ -22,21 +26,8 @@ export const profilesRouter = {
     }),
   shareProfile: publicProcedure
     .route({ method: "POST", path: "/v2/profiles" })
-    .input(
-      z.object({
-        hardwareId: z.string(),
-        name: z.string(),
-        version: z.string(),
-        profile: profileSchema,
-      }),
-    )
-    .output(
-      z.object({
-        id: z.string().nullable(),
-        status: z.enum(["success", "error"]),
-        error: z.string().optional(),
-      }),
-    )
+    .input(ShareProfileInputSchema)
+    .output(ShareProfileOutputSchema)
     .handler(async ({ input }) => {
       try {
         const contentHash = generateHash(JSON.stringify(input));

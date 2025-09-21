@@ -1,60 +1,16 @@
-import { z } from "zod";
 import { env } from "@/lib/env";
-import { publicProcedure } from "../lib/orpc";
-import { GitHubReleasesService } from "../lib/services/github-releases";
-import { HealthService } from "../lib/services/health";
-import type { ReleasesResponse } from "../types/github-releases";
-import type { HealthResponse } from "../types/health";
-import { version } from "../version";
-
-const HealthResponseSchema = z.object({
-  status: z.enum(["ok", "degraded"]),
-  db: z.object({
-    alive: z.boolean(),
-    error: z.string().optional(),
-  }),
-  redis: z.object({
-    alive: z.boolean(),
-    error: z.string().optional(),
-    configured: z.boolean(),
-  }),
-});
-
-const VersionResponseSchema = z.object({
-  version: z.string(),
-});
-
-const StatusResponseSchema = z.object({
-  status: z.enum(["operational", "downtime", "degraded"]),
-});
-
-const PlatformDownloadSchema = z.object({
-  platform: z.enum(["windows", "macos", "linux"]),
-  architecture: z.enum(["x64", "arm64", "universal"]),
-  url: z.string(),
-  filename: z.string(),
-  size: z.number(),
-  downloadCount: z.number(),
-});
-
-const ReleasesResponseSchema = z.object({
-  latest: z.object({
-    version: z.string(),
-    name: z.string(),
-    releaseNotes: z.string(),
-    publishedAt: z.string(),
-    downloads: z.array(PlatformDownloadSchema),
-  }),
-  allVersions: z.array(
-    z.object({
-      version: z.string(),
-      name: z.string(),
-      publishedAt: z.string(),
-      prerelease: z.boolean(),
-      downloads: z.array(PlatformDownloadSchema),
-    }),
-  ),
-});
+import { publicProcedure } from "../../lib/orpc";
+import { GitHubReleasesService } from "../../services/github-releases";
+import { HealthService } from "../../services/health";
+import type { ReleasesResponse } from "../../types/github-releases";
+import type { HealthResponse } from "../../types/health";
+import {
+  HealthResponseSchema,
+  ReleasesResponseSchema,
+  StatusResponseSchema,
+  VersionResponseSchema,
+} from "../../validation/www";
+import { version } from "../../version";
 
 export const publicRouter = {
   healthCheck: publicProcedure
@@ -62,7 +18,7 @@ export const publicRouter = {
     .output(HealthResponseSchema)
     .handler(async (): Promise<HealthResponse> => {
       const service = HealthService.getInstance();
-      return await service.check();
+      return service.check();
     }),
 
   getVersion: publicProcedure

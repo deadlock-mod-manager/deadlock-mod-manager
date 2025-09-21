@@ -1,3 +1,6 @@
+import type z from "zod";
+import type { HealthResponseSchema } from "@/validation/www";
+
 export interface DbHealth {
   alive: boolean;
   error?: string;
@@ -9,8 +12,4 @@ export interface RedisHealth {
   configured: boolean;
 }
 
-export interface HealthResponse {
-  status: "ok" | "degraded";
-  db: DbHealth;
-  redis: RedisHealth;
-}
+export type HealthResponse = z.infer<typeof HealthResponseSchema>;

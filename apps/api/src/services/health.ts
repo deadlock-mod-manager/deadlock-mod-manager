@@ -1,7 +1,8 @@
 import { db, sql } from "@deadlock-mods/database";
-import type { DbHealth, HealthResponse, RedisHealth } from "../../types/health";
-import { logger } from "../logger";
-import { getRedisClient } from "../redis";
+import { version } from "@/version";
+import { logger } from "../lib/logger";
+import { redis } from "../lib/redis";
+import type { DbHealth, HealthResponse, RedisHealth } from "../types/health";
 
 export class HealthService {
   private static singleton: HealthService;
@@ -24,12 +25,6 @@ export class HealthService {
   }
 
   async checkRedis(): Promise<RedisHealth> {
-    const redis = getRedisClient();
-
-    if (!redis) {
-      return { alive: true, configured: false };
-    }
-
     try {
       const pong = await redis.ping();
       if (pong !== "PONG") {
@@ -71,6 +66,8 @@ export class HealthService {
       status: healthy ? "ok" : "degraded",
       db: dbHealth,
       redis: redisHealth,
+      version,
+      spec: "/docs/openapi.json",
     };
   }
 }

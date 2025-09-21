@@ -9,6 +9,11 @@ export const SENTRY_OPTIONS = {
 };
 export const MONITOR_SLUG = "mods-synchronization";
 
+export enum MonitorSlug {
+  MODS_SYNCHRONIZATION = "mods-synchronization",
+  GAMEBANANA_RSS = "gamebanana-rss",
+}
+
 // Cache configuration for mod endpoints - 1 hour cache with stale-while-revalidate (aligned with hourly sync)
 export const MODS_CACHE_CONFIG = {
   cacheName: "deadlock-mods-api",
@@ -24,3 +29,5 @@ export const VPK_CONSTANTS = {
   MAX_FILE_SIZE_BYTES: 500 * 1024 * 1024,
   MAX_FILE_SIZE_MB: 500,
 } as const;
+
+export const SERVER_TIMEZONE = env.TZ;

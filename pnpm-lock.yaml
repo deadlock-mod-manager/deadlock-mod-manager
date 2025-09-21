@@ -53,6 +53,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@deadlock-mods/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@deadlock-mods/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -62,6 +65,9 @@ importers:
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@deadlock-mods/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -113,6 +119,9 @@ importers:
       ioredis:
         specifier: ^5.4.1
         version: 5.7.0
+      neverthrow:
+        specifier: ^8.2.0
+        version: 8.2.0
       tslog:
         specifier: ^4.9.3
         version: 4.9.3

@@ -8,28 +8,24 @@ import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import { apiHandler } from "./handlers/api";
+import { rpcHandler } from "./handlers/rpc";
+import { auth } from "./lib/auth";
 import {
   MODS_CACHE_CONFIG,
   SENTRY_OPTIONS,
   VPK_CONSTANTS,
 } from "./lib/constants";
-import { startJobs } from "./lib/jobs";
-import { logger } from "./lib/logger";
-import { version } from "./version";
-import "./lib/jobs/synchronize-mods";
-import { OpenAPIGenerator } from "@orpc/openapi";
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { onError } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { auth } from "./lib/auth";
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
-import { HealthService } from "./lib/services/health";
-import { appRouter } from "./routers";
+import { logger } from "./lib/logger";
+import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
+import { ModsSyncProcessor } from "./processors/mods-sync";
 import customSettingsRouter from "./routers/legacy/custom-settings";
+import docsRouter from "./routers/legacy/docs";
+import healthRouter from "./routers/legacy/health";
 import modsRouter from "./routers/legacy/mods";
+import { cronService } from "./services/cron";
 
 const app = new Hono();
 
@@ -45,9 +41,6 @@ app.use(
   sentry({
     ...SENTRY_OPTIONS,
   }),
-);
-
-app.use(
   etag(),
   loggerMiddleware((message: string, ...rest: string[]) => {
     logger.info(message, ...rest);
@@ -56,111 +49,82 @@ app.use(
   trimTrailingSlash(),
 );
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app
+  .on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw))
+  .use("/rpc/*", async (c, next) => {
+    const context = await createContext({ context: c });
 
-export const apiHandler = new OpenAPIHandler(appRouter, {
-  plugins: [
-    new OpenAPIReferencePlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
-    }),
-  ],
-  interceptors: [
-    onError((error) => {
-      logger.withError(error).error("Error handling API request");
-    }),
-  ],
-});
+    const rpcResult = await rpcHandler.handle(c.req.raw, {
+      prefix: "/rpc",
+      context,
+    });
 
-export const rpcHandler = new RPCHandler(appRouter, {
-  interceptors: [
-    onError((error) => {
-      logger.withError(error).error("Error handling RPC request");
-    }),
-  ],
-});
-
-app.use("/rpc/*", async (c, next) => {
-  const context = await createContext({ context: c });
-
-  const rpcResult = await rpcHandler.handle(c.req.raw, {
-    prefix: "/rpc",
-    context,
-  });
-
-  if (rpcResult.matched) {
-    return c.newResponse(rpcResult.response.body, rpcResult.response);
-  }
-
-  await next();
-});
-
-app.use("/api/*", async (c, next) => {
-  const context = await createContext({ context: c });
-
-  const apiResult = await apiHandler.handle(c.req.raw, {
-    prefix: "/api",
-    context,
-  });
-
-  if (apiResult.matched) {
-    const response = c.newResponse(apiResult.response.body, apiResult.response);
-
-    // Add cache headers for mod endpoints only
-    if (c.req.path.includes("/mods")) {
-      response.headers.set("Cache-Control", MODS_CACHE_CONFIG.cacheControl);
-      response.headers.set("Vary", MODS_CACHE_CONFIG.vary);
+    if (rpcResult.matched) {
+      return c.newResponse(rpcResult.response.body, rpcResult.response);
     }
 
-    return response;
-  }
+    await next();
+  })
+  .use("/api/*", async (c, next) => {
+    const context = await createContext({ context: c });
 
-  await next();
-});
+    const apiResult = await apiHandler.handle(c.req.raw, {
+      prefix: "/api",
+      context,
+    });
 
-app.route("/mods", modsRouter);
-app.route("/custom-settings", customSettingsRouter);
+    if (apiResult.matched) {
+      const response = c.newResponse(
+        apiResult.response.body,
+        apiResult.response,
+      );
 
-app.get("/", async (c) => {
-  const service = HealthService.getInstance();
-  const result = await service.check();
-  return c.json(
-    { ...result, version, spec: "/api/openapi.json" },
-    result.status === "ok" ? 200 : 503,
-  );
-});
+      if (c.req.path.includes("/mods")) {
+        response.headers.set("Cache-Control", MODS_CACHE_CONFIG.cacheControl);
+        response.headers.set("Vary", MODS_CACHE_CONFIG.vary);
+      }
 
-app.get("/api/openapi.json", async (c) => {
-  const generator = new OpenAPIGenerator({
-    schemaConverters: [new ZodToJsonSchemaConverter()],
+      return response;
+    }
+
+    await next();
+  })
+  .route("/mods", modsRouter)
+  .route("/custom-settings", customSettingsRouter)
+  .route("/", healthRouter)
+  .route("/docs", docsRouter);
+
+const main = async () => {
+  await cronService.defineJob({
+    name: ModsSyncProcessor.name,
+    pattern: ModsSyncProcessor.cronPattern,
+    processor: ModsSyncProcessor.getInstance(),
+    enabled: true,
   });
 
-  const spec = await generator.generate(appRouter, {
-    info: {
-      title: "Deadlock Mods API",
-      version,
-      description: "API powering the Deadlock Mod Manager",
-    },
-    servers: [
-      {
-        url: "https://api.deadlock-mods.com",
-        description: "Production server",
-      },
-      {
-        url: "http://localhost:9000",
-        description: "Development server",
-      },
-    ],
+  await cronService.defineJob({
+    name: GamebananaRssProcessor.name,
+    pattern: GamebananaRssProcessor.cronPattern,
+    processor: GamebananaRssProcessor.getInstance(),
+    enabled: true,
   });
 
-  return c.json(spec);
-});
+  process.on("SIGTERM", async () => {
+    await Promise.all([cronService.shutdown()]);
+  });
 
-startJobs();
+  logger.info(`Server started on port ${env.PORT}`);
 
-Bun.serve({
-  port: 9000,
-  fetch: app.fetch,
-  maxRequestBodySize: VPK_CONSTANTS.MAX_FILE_SIZE_BYTES,
-});
+  Bun.serve({
+    port: 9000,
+    fetch: app.fetch,
+    maxRequestBodySize: VPK_CONSTANTS.MAX_FILE_SIZE_BYTES,
+  });
+};
 
-logger.info("Server started on port 9000");
+if (import.meta.main) {
+  main().catch((error) => {
+    logger.withError(error).error("Error starting the application");
+    process.exit(1);
+  });
+}

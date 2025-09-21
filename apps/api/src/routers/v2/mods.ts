@@ -13,9 +13,9 @@ import {
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
-import { z } from "zod";
 import { publicProcedure } from "../../lib/orpc";
-import { ModSyncService } from "../../lib/services/mod-sync";
+import { ModSyncService } from "../../services/mod-sync";
+import { ForceSyncOutputSchema } from "../../validation/mods";
 
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
@@ -86,12 +86,7 @@ export const modsRouter = {
 
   forceSyncV2: publicProcedure
     .route({ method: "POST", path: "/v2/sync" })
-    .output(
-      z.object({
-        success: z.boolean(),
-        message: z.string(),
-      }),
-    )
+    .output(ForceSyncOutputSchema)
     .handler(async () => {
       try {
         const syncService = ModSyncService.getInstance();

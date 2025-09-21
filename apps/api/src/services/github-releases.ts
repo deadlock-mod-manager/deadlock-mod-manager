@@ -1,9 +1,9 @@
+import { logger as mainLogger } from "../lib/logger";
 import type {
   GitHubRelease,
   PlatformDownload,
   ReleasesResponse,
-} from "../../types/github-releases";
-import { logger as mainLogger } from "../logger";
+} from "../types/github-releases";
 
 const logger = mainLogger.child().withContext({
   service: "github-releases",

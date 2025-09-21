@@ -1,6 +1,6 @@
 import type { GameBanana } from "@deadlock-mods/shared";
 import { logger } from "./lib/logger";
-import { providerRegistry } from "./lib/providers";
+import { providerRegistry } from "./providers";
 
 async function main() {
   logger.info(`Synchronizing mods at ${new Date().toISOString()}`);

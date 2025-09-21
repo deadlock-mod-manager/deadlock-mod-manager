@@ -1,5 +1,5 @@
 import type { Mod } from "@deadlock-mods/database";
-import { logger } from "../logger";
+import { logger } from "../lib/logger";
 
 export abstract class Provider<T> {
   // Do we even need the T  ?
