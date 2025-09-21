@@ -1,7 +1,6 @@
 import type { JobsOptions } from "bullmq";
-import { queueConfigs } from "@/config/queues";
-import type { CronJobData } from "@/types/jobs";
-import { BaseQueue } from "./base";
+import { BaseQueue } from "../base/queue";
+import type { CronJobData } from "../types/jobs";
 
 export interface JobSchedulerOptions {
   pattern?: string;
@@ -20,12 +19,6 @@ export interface CronJobTemplate {
 }
 
 export class CronQueue extends BaseQueue<CronJobData> {
-  constructor() {
-    super(queueConfigs.cron.name, {
-      ...queueConfigs.cron.defaultJobOptions,
-    });
-  }
-
   async scheduleRecurring(
     schedulerId: string,
     cronPattern: string,

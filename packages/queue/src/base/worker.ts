@@ -1,16 +1,17 @@
 import type { Logger } from "@deadlock-mods/logging";
 import { type Job, Worker } from "bullmq";
-import redis from "@/lib/redis";
-import type { BaseProcessor } from "@/processors/base";
-import type { BaseJobData } from "@/types/jobs";
+import type { Redis } from "ioredis";
+import type { BaseJobData } from "../types/jobs";
+import type { BaseProcessor } from "./processor";
 
-export abstract class BaseWorker<T extends BaseJobData> {
+export class BaseWorker<T extends BaseJobData> {
   protected worker: Worker;
   protected logger: Logger;
   protected processor: BaseProcessor<T>;
 
   constructor(
     queueName: string,
+    redis: Redis,
     logger: Logger,
     processor: BaseProcessor<T>,
     concurrency = 1,

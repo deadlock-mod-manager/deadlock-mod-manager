@@ -1,16 +1,29 @@
-import { CronPatterns } from "./lib/cron";
+import { BaseWorker } from "@deadlock-mods/queue";
+import { CronPatterns } from "@deadlock-mods/queue/cron";
+import { queueConfigs } from "./config/queues";
 import { logger } from "./lib/logger";
+import redis from "./lib/redis";
 import { modFileProcessor } from "./processors/mod-file-processor";
 import { modProcessor } from "./processors/mod-processor";
 import { modsSchedulerProcessor } from "./processors/mods-scheduler";
 import { cronService } from "./services/cron";
-import { queueService } from "./services/queue";
-import { ModFileWorker } from "./workers/mod-file-worker";
-import { ModsWorker } from "./workers/mods-worker";
+import { modFileProcessingQueue, modsQueue } from "./services/queue";
 
 const main = async () => {
-  const modsWorker = new ModsWorker(modProcessor, 1);
-  const modFileWorker = new ModFileWorker(modFileProcessor, 2);
+  const modsWorker = new BaseWorker(
+    queueConfigs.mods.name,
+    redis,
+    logger,
+    modProcessor,
+    1,
+  );
+  const modFileWorker = new BaseWorker(
+    queueConfigs.modFileProcessing.name,
+    redis,
+    logger,
+    modFileProcessor,
+    2,
+  );
 
   await cronService.defineJob({
     name: "mods-scheduler",
@@ -23,7 +36,8 @@ const main = async () => {
     await Promise.all([
       modsWorker.close(),
       modFileWorker.close(),
-      queueService.shutdown(),
+      modsQueue.close(),
+      modFileProcessingQueue.close(),
       cronService.shutdown(),
     ]);
   });

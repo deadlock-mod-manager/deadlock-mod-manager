@@ -1,11 +1,15 @@
 import { type BaseJobOptions, type JobsOptions, Queue } from "bullmq";
-import redis from "@/lib/redis";
+import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
 
-export abstract class BaseQueue<T extends BaseJobData> {
+export class BaseQueue<T extends BaseJobData = BaseJobData> {
   protected queue: Queue<T>;
 
-  constructor(name: string, options?: Omit<BaseJobOptions, "connection">) {
+  constructor(
+    name: string,
+    redis: Redis,
+    options?: Omit<BaseJobOptions, "connection">,
+  ) {
     this.queue = new Queue<T>(name, {
       connection: redis,
       ...options,

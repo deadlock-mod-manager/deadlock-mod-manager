@@ -4,10 +4,10 @@ import {
   ModDownloadRepository,
   ModRepository,
 } from "@deadlock-mods/database";
+import { BaseProcessor } from "@deadlock-mods/queue";
 import { logger } from "@/lib/logger";
-import { queueService } from "@/services/queue";
+import { modFileProcessingQueue } from "@/services/queue";
 import type { ModFileProcessingJobData, ModsJobData } from "@/types/jobs";
-import { BaseProcessor } from "./base";
 
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
@@ -50,7 +50,7 @@ export class ModProcessor extends BaseProcessor<ModsJobData> {
           }) satisfies ModFileProcessingJobData,
       );
 
-      await queueService.addModFileProcessingJobs(payload);
+      await modFileProcessingQueue.processModFiles(payload);
       this.logger.info(`Added ${payload.length} mod file processing jobs`);
 
       return this.handleSuccess(jobData);

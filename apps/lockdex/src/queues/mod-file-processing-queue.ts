@@ -1,22 +1,23 @@
+import { BaseQueue } from "@deadlock-mods/queue";
 import { queueConfigs } from "@/config/queues";
-import type { ModFileProcessingJobData, ModsJobData } from "@/types/jobs";
-import { BaseQueue } from "./base";
+import redis from "@/lib/redis";
+import type { ModFileProcessingJobData } from "@/types/jobs";
 
-export class ModFileProcessingQueue extends BaseQueue<ModsJobData> {
+export class ModFileProcessingQueue extends BaseQueue<ModFileProcessingJobData> {
   constructor() {
-    super(queueConfigs.modFileProcessing.name, {
+    super(queueConfigs.modFileProcessing.name, redis, {
       ...queueConfigs.modFileProcessing.defaultJobOptions,
     });
   }
 
-  async processMod(data: ModFileProcessingJobData, priority = 0) {
+  async processModFile(data: ModFileProcessingJobData, priority = 0) {
     return this.add("process-mod-file", data, {
       priority,
       delay: (data.metadata?.delay as number) ?? 0,
     });
   }
 
-  async processMods(mods: ModFileProcessingJobData[]) {
+  async processModFiles(mods: ModFileProcessingJobData[]) {
     const jobs = mods.map((mod) => ({
       name: "process-mod-file",
       data: mod,

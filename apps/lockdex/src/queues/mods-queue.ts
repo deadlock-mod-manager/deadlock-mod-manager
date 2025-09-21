@@ -1,10 +1,11 @@
+import { BaseQueue } from "@deadlock-mods/queue";
 import { queueConfigs } from "@/config/queues";
+import redis from "@/lib/redis";
 import type { ModsJobData } from "@/types/jobs";
-import { BaseQueue } from "./base";
 
 export class ModsQueue extends BaseQueue<ModsJobData> {
   constructor() {
-    super(queueConfigs.mods.name, {
+    super(queueConfigs.mods.name, redis, {
       ...queueConfigs.mods.defaultJobOptions,
     });
   }

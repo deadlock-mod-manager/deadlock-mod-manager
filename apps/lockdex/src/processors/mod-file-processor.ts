@@ -6,6 +6,7 @@ import {
   ModDownloadRepository,
   VpkRepository,
 } from "@deadlock-mods/database";
+import { BaseProcessor } from "@deadlock-mods/queue";
 import { VpkParser } from "@deadlock-mods/vpk-parser";
 import { logger } from "@/lib/logger";
 import { archiveExtractorFactory } from "@/services/archive";
@@ -14,7 +15,6 @@ import { sevenZipExtractor } from "@/services/extractors/7z-extractor";
 import { rarExtractor } from "@/services/extractors/rar-extractor";
 import { zipExtractor } from "@/services/extractors/zip-extractor";
 import type { ModFileProcessingJobData } from "@/types/jobs";
-import { BaseProcessor } from "./base";
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;

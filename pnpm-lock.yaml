@@ -512,6 +512,9 @@ importers:
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@deadlock-mods/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -806,6 +809,22 @@ importers:
       '@types/logfmt':
         specifier: ^1.2.6
         version: 1.2.6
+
+  packages/queue:
+    dependencies:
+      '@deadlock-mods/logging':
+        specifier: workspace:*
+        version: link:../logging
+      bullmq:
+        specifier: ^5.28.2
+        version: 5.58.7
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.7.0
+    devDependencies:
+      '@deadlock-mods/typescript-config':
+        specifier: workspace:*
+        version: link:../../tools/typescript
 
   packages/shared:
     dependencies:

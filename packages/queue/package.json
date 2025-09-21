@@ -1,0 +1,19 @@
+{
+  "name": "@deadlock-mods/queue",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Queue management primitives built on BullMQ with cron scheduling support",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cron": "./src/cron/index.ts"
+  },
+  "dependencies": {
+    "@deadlock-mods/logging": "workspace:*",
+    "bullmq": "^5.28.2",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*"
+  }
+}

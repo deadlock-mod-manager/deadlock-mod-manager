@@ -1,6 +1,6 @@
 import { db, ModRepository } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
-import { queueService } from "@/services/queue";
+import { modsQueue } from "@/services/queue";
 
 const modRepository = new ModRepository(db);
 
@@ -17,7 +17,7 @@ const main = async () => {
 
     // Queue mod processing jobs for each of the first 10 mods
     for (const mod of mods) {
-      await queueService.addModProcessingJob({
+      await modsQueue.processMod({
         modId: mod.id,
       });
       logger.info(

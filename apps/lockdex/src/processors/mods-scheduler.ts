@@ -1,12 +1,12 @@
 import { db, ModRepository } from "@deadlock-mods/database";
+import { BaseProcessor } from "@deadlock-mods/queue";
 import { logger } from "@/lib/logger";
-import { queueService } from "@/services/queue";
+import { modsQueue } from "@/services/queue";
 import type { CronJobData } from "@/types/jobs";
-import { CronProcessor } from "./cron-processor";
 
 const modRepository = new ModRepository(db);
 
-export class ModsSchedulerProcessor extends CronProcessor {
+export class ModsSchedulerProcessor extends BaseProcessor<CronJobData> {
   private static instance: ModsSchedulerProcessor | null = null;
 
   private constructor() {
@@ -27,7 +27,7 @@ export class ModsSchedulerProcessor extends CronProcessor {
       logger.info(`Found ${mods.length} mods, scheduling them for processing`);
 
       for (const mod of mods) {
-        await queueService.addModProcessingJob({
+        await modsQueue.processMod({
           modId: mod.id,
         });
         logger.info(`Scheduled mod ${mod.id} for processing`);
