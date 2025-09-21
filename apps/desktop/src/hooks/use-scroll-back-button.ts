@@ -21,6 +21,12 @@ export const useScrollBackButton = ({
   const { setShowBackButton, setOnBackClick } = useScrollBackButtonContext();
 
   useEffect(() => {
+    if (onBackClick) {
+      setOnBackClick(() => onBackClick);
+    }
+  }, [onBackClick, setOnBackClick]);
+
+  useEffect(() => {
     if (!enabled) {
       setShowBackButton(false);
       return;
@@ -40,24 +46,17 @@ export const useScrollBackButton = ({
 
     const scrollElement = scrollContainerRef?.current || window;
 
-    if (!scrollElement) {
-      return;
+    if (scrollElement) {
+      scrollElement.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll();
     }
-
-    scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-
-    handleScroll();
 
     return () => {
-      scrollElement.removeEventListener("scroll", handleScroll);
+      if (scrollElement) {
+        scrollElement.removeEventListener("scroll", handleScroll);
+      }
     };
-  }, [threshold, enabled, scrollContainerRef, setShowBackButton]);
-
-  useEffect(() => {
-    if (onBackClick) {
-      setOnBackClick(() => onBackClick);
-    }
-  }, [onBackClick, setOnBackClick]);
+  });
 
   useEffect(() => {
     return () => {

@@ -27,7 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import useWhatsNew from "@/hooks/use-whats-new";
+import { useWhatsNew } from "@/hooks/use-whats-new";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 import { AboutDialog } from "./about-dialog";
