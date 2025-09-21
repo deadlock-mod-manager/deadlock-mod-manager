@@ -44,6 +44,9 @@ jobs:
               - 'packages/**'
 
   deploy-api:
+    environment:
+      name: production
+      url: https://api.deadlockmods.app
     name: Deploy API
     runs-on: ubuntu-latest
     needs: changes
@@ -75,6 +78,8 @@ jobs:
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
   deploy-bot:
+    environment:
+      name: production
     name: Deploy Bot
     runs-on: ubuntu-latest
     needs: changes
@@ -106,6 +111,8 @@ jobs:
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
   deploy-lockdex:
+    environment:
+      name: production
     name: Deploy Lockdex
     runs-on: ubuntu-latest
     needs: changes
