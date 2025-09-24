@@ -236,7 +236,7 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => open("https://discord.gg/KSB2kzQWWE")}>
+                  onClick={() => open("https://discord.gg/WbFNt8CCr8")}>
                   <DiscordLogo weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>

@@ -1,4 +1,4 @@
-export const DISCORD_URL = "https://discord.gg/KSB2kzQWWE";
+export const DISCORD_URL = "https://discord.gg/WbFNt8CCr8";
 export const GITHUB_REPO = "https://github.com/Stormix/deadlock-modmanager";
 export const DOWNLOAD_URL = `${GITHUB_REPO}/releases/latest`;
 export const REDDIT_URL = "https://www.reddit.com/r/DeadlockModManager/";

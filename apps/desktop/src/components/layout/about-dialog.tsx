@@ -86,7 +86,7 @@ export const AboutDialog = () => {
           />
           <DiscordLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open("https://discord.gg/KSB2kzQWWE")}
+            onClick={() => open("https://discord.gg/WbFNt8CCr8")}
           />
           <RedditLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
