@@ -83,6 +83,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "Deadlock Mod Manager",
       },
       {
+        property: "og:url",
+        content: "https://deadlockmods.app/",
+      },
+      {
         property: "twitter:card",
         content: "summary_large_image",
       },
@@ -108,12 +112,17 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         rel: "canonical",
-        href: "https://deadlock-mods.com/",
+        href: "https://deadlockmods.app/",
       },
       {
         rel: "apple-touch-icon",
         sizes: "180x180",
         href: "/apple-touch-icon.png",
+      },
+      {
+        rel: "sitemap",
+        type: "application/xml",
+        href: "/sitemap.xml",
       },
     ],
   }),

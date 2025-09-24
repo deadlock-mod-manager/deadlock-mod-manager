@@ -1,12 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DownloadsContainer } from "@/components/downloads/downloads-container";
-import { usePageTracking } from "@/hooks/use-page-tracking";
-
-const DownloadComponent = () => {
-  usePageTracking("download");
-  return <DownloadsContainer />;
-};
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/download")({
-  component: DownloadComponent,
+  component: DownloadLayout,
 });
+
+function DownloadLayout() {
+  return <Outlet />;
+}

@@ -15,7 +15,11 @@ import { Route as StatusRouteImport } from './routes/status'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DownloadIndexRouteImport } from './routes/download/index'
+import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
+import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
   id: '/vpk-analyzer',
@@ -47,73 +51,116 @@ const DownloadRoute = DownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DownloadIndexRoute = DownloadIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DownloadRoute,
+} as any)
+const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
+  id: '/windows',
+  path: '/windows',
+  getParentRoute: () => DownloadRoute,
+} as any)
+const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
+  id: '/linux',
+  path: '/linux',
+  getParentRoute: () => DownloadRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
+  '/$': typeof SplatRoute
+  '/download': typeof DownloadRouteWithChildren
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/windows': typeof DownloadWindowsRoute
+  '/download/': typeof DownloadIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
+  '/$': typeof SplatRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/windows': typeof DownloadWindowsRoute
+  '/download': typeof DownloadIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/download': typeof DownloadRoute
+  '/$': typeof SplatRoute
+  '/download': typeof DownloadRouteWithChildren
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/download/linux': typeof DownloadLinuxRoute
+  '/download/windows': typeof DownloadWindowsRoute
+  '/download/': typeof DownloadIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/download'
     | '/login'
     | '/privacy'
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/download/linux'
+    | '/download/windows'
+    | '/download/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/download'
+    | '/$'
     | '/login'
     | '/privacy'
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/download/linux'
+    | '/download/windows'
+    | '/download'
   id:
     | '__root__'
     | '/'
+    | '/$'
     | '/download'
     | '/login'
     | '/privacy'
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/download/linux'
+    | '/download/windows'
+    | '/download/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DownloadRoute: typeof DownloadRoute
+  SplatRoute: typeof SplatRoute
+  DownloadRoute: typeof DownloadRouteWithChildren
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   StatusRoute: typeof StatusRoute
@@ -165,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -172,12 +226,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/download/': {
+      id: '/download/'
+      path: '/'
+      fullPath: '/download/'
+      preLoaderRoute: typeof DownloadIndexRouteImport
+      parentRoute: typeof DownloadRoute
+    }
+    '/download/windows': {
+      id: '/download/windows'
+      path: '/windows'
+      fullPath: '/download/windows'
+      preLoaderRoute: typeof DownloadWindowsRouteImport
+      parentRoute: typeof DownloadRoute
+    }
+    '/download/linux': {
+      id: '/download/linux'
+      path: '/linux'
+      fullPath: '/download/linux'
+      preLoaderRoute: typeof DownloadLinuxRouteImport
+      parentRoute: typeof DownloadRoute
+    }
   }
 }
 
+interface DownloadRouteChildren {
+  DownloadLinuxRoute: typeof DownloadLinuxRoute
+  DownloadWindowsRoute: typeof DownloadWindowsRoute
+  DownloadIndexRoute: typeof DownloadIndexRoute
+}
+
+const DownloadRouteChildren: DownloadRouteChildren = {
+  DownloadLinuxRoute: DownloadLinuxRoute,
+  DownloadWindowsRoute: DownloadWindowsRoute,
+  DownloadIndexRoute: DownloadIndexRoute,
+}
+
+const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
+  DownloadRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DownloadRoute: DownloadRoute,
+  SplatRoute: SplatRoute,
+  DownloadRoute: DownloadRouteWithChildren,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   StatusRoute: StatusRoute,

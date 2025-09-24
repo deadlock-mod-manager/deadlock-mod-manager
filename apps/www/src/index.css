@@ -156,3 +156,16 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for 404 page */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+}
