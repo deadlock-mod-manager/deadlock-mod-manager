@@ -44,13 +44,13 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     properties?: PostHogProperties,
   ): Promise<void> => {
     if (!telemetrySettings.posthogEnabled) {
-      logger.info("PostHog capture skipped because telemetry is disabled");
+      logger.debug("PostHog capture skipped because telemetry is disabled");
       return;
     }
 
     try {
       await PostHog.capture(event, properties);
-      logger.info("PostHog capture successful");
+      logger.debug("PostHog capture successful");
     } catch (error) {
       logger.warn("PostHog capture failed:", error);
     }
@@ -61,7 +61,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     properties?: PostHogUserProperties,
   ): Promise<void> => {
     if (!telemetrySettings.posthogEnabled) {
-      logger.info("PostHog identify skipped because telemetry is disabled");
+      logger.debug("PostHog identify skipped because telemetry is disabled");
       return;
     }
 

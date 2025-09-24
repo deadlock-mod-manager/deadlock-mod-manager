@@ -67,7 +67,7 @@ jobs:
           service-name: api
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version-file: ".nvmrc"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -100,7 +100,7 @@ jobs:
           service-name: bot
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version-file: ".nvmrc"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -133,7 +133,7 @@ jobs:
           service-name: lockdex
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version-file: ".nvmrc"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment

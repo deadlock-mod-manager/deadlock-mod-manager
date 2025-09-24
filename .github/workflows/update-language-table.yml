@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version-file: ".nvmrc"
+          node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
       - uses: pnpm/action-setup@v4
 
