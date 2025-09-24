@@ -1,0 +1,11 @@
+[build.environment]
+NODE_VERSION = "24.5.0"
+
+[build]
+publish = "apps/www/dist"
+command = "pnpm install && pnpm --filter @deadlock-mods/www build"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
