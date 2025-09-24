@@ -39,6 +39,7 @@ export interface ProfilesState {
   getProfile: (profileId: ProfileId) => ModProfile | undefined;
   getAllProfiles: () => ModProfile[];
   getProfilesCount: () => number;
+  getEnabledModsCount: (profileId?: ProfileId) => number;
 }
 
 const createDefaultProfile = (): ModProfile => ({
@@ -160,7 +161,6 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       };
     }
 
-    logger.info("Switching to profile", { profileId });
     set({ isSwitching: true });
 
     const result: ProfileSwitchResult = {
@@ -366,6 +366,19 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   getProfilesCount: () => {
     const { profiles } = get();
     return Object.keys(profiles).length;
+  },
+
+  getEnabledModsCount: (profileId?: ProfileId) => {
+    const { profiles, activeProfileId } = get();
+    const targetProfileId = profileId ?? activeProfileId;
+    const profile = profiles[targetProfileId];
+
+    if (!profile) {
+      return 0;
+    }
+
+    return Object.values(profile.enabledMods).filter((mod) => mod.enabled)
+      .length;
   },
 
   activeProfile: () => {

@@ -417,7 +417,7 @@ Contributors are recognized in:
 
 1. **Documentation**: Check existing docs and guides first
 2. **GitHub Issues**: Search existing issues for similar problems
-3. **Discord Community**: Ask in our [Discord server](https://discord.gg/KSB2kzQWWE)
+3. **Discord Community**: Ask in our [Discord server](https://discord.gg/WbFNt8CCr8)
 4. **GitHub Discussions**: For broader discussions and ideas
 
 ### Common Issues
@@ -461,5 +461,5 @@ For questions about contributing, feel free to reach out to the maintainers or a
 
 **Community:**
 
-- [Discord Server](https://discord.gg/KSB2kzQWWE)
+- [Discord Server](https://discord.gg/WbFNt8CCr8)
 - [GitHub Discussions](https://github.com/stormix/deadlock-modmanager/discussions)

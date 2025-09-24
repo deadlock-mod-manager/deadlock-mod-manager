@@ -42,10 +42,15 @@ export type ModsState = {
   ) => void;
   setSelectedDownload: (remoteId: string, download: ModDownloadItem) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
-  // Analysis dialog actions
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
+  setModOrder: (remoteId: string, order: number) => void;
+  reorderMods: (orderedRemoteIds: string[]) => void;
+  updateModVpksAfterReorder: (vpkMappings: Array<[string, string[]]>) => void;
+  getOrderedMods: () => LocalMod[];
+  getNextInstallOrder: () => number;
+  migrateLegacyMods: () => void;
 };
 
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
@@ -54,7 +59,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 ) => ({
   localMods: [],
   modProgress: {},
-  // Analysis dialog initial state
   analysisResult: null,
   analysisDialogOpen: false,
 
@@ -65,10 +69,22 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       if (state.localMods.some((m) => m.id === mod.id)) {
         return state;
       }
+
+      const maxOrder =
+        state.localMods.length > 0
+          ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
+          : -1;
+      const installOrder = additional?.installOrder ?? maxOrder + 1;
+
       return {
         localMods: [
           ...state.localMods,
-          { ...mod, status: ModStatus.Downloading, ...additional },
+          {
+            ...mod,
+            status: ModStatus.Downloading,
+            installOrder,
+            ...additional,
+          },
         ],
       };
     }),
@@ -83,7 +99,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         existingModCount: state.localMods.length,
       });
 
-      // Check if mod already exists (by remoteId)
       if (state.localMods.some((m) => m.remoteId === mod.remoteId)) {
         logger.info("Mod already exists in store, skipping", {
           remoteId: mod.remoteId,
@@ -91,12 +106,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         return state;
       }
 
+      const maxOrder =
+        state.localMods.length > 0
+          ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
+          : -1;
+
       const newMod = {
         ...mod,
-        status: ModStatus.Installed, // Already installed locally
+        status: ModStatus.Installed,
         path: filePath,
         downloadedAt: new Date(),
-        installedVpks: [filePath], // The VPK file path
+        installedVpks: [filePath],
+        installOrder: maxOrder + 1,
       };
 
       logger.info("Adding new mod to store and enabling in current profile", {
@@ -105,7 +126,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         name: newMod.name,
       });
 
-      // Get current profile and add mod to it
       const { activeProfileId, profiles } = state;
       const currentProfile = profiles[activeProfileId];
 
@@ -116,7 +136,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           lastModified: new Date(),
         };
 
-        // Update the current profile to include this mod as enabled
         const updatedProfile = {
           ...currentProfile,
           enabledMods: {
@@ -134,7 +153,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         };
       }
 
-      // Fallback if no current profile (shouldn't happen)
       return {
         localMods: [...state.localMods, newMod],
       };
@@ -194,11 +212,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   clearMods: () => set({ localMods: [], modProgress: {} }),
 
-  setModProgress: (remoteId, progress, index = 0) =>
+  setModProgress: (remoteId, progress) =>
     set((state) => ({
       modProgress: {
         ...state.modProgress,
-        [`${remoteId}-${index}`]: {
+        [remoteId]: {
           percentage:
             ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
           speed: progress?.transferSpeed,
@@ -206,8 +224,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       },
     })),
 
-  getModProgress: (remoteId, index = 0) =>
-    get().modProgress[`${remoteId}-${index}`],
+  getModProgress: (remoteId) => get().modProgress[remoteId],
 
   setInstalledVpks: (
     remoteId: string,
@@ -233,9 +250,149 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       })),
     })),
 
-  // Analysis dialog actions
   setAnalysisResult: (result) => set({ analysisResult: result }),
   setAnalysisDialogOpen: (open) => set({ analysisDialogOpen: open }),
   clearAnalysisDialog: () =>
     set({ analysisResult: null, analysisDialogOpen: false }),
+
+  setModOrder: (remoteId: string, order: number) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        installOrder: mod.remoteId === remoteId ? order : mod.installOrder,
+      })),
+    })),
+
+  reorderMods: (orderedRemoteIds: string[]) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => {
+        const newOrder = orderedRemoteIds.indexOf(mod.remoteId);
+        return {
+          ...mod,
+          installOrder: newOrder >= 0 ? newOrder : mod.installOrder,
+        };
+      }),
+    })),
+
+  updateModVpksAfterReorder: (vpkMappings: Array<[string, string[]]>) =>
+    set((state) => {
+      logger.info("Updating mod VPK mappings after reorder", {
+        mappingsCount: vpkMappings.length,
+        mappings: vpkMappings.map(([remoteId, vpks]) => ({
+          remoteId,
+          vpkCount: vpks.length,
+        })),
+      });
+
+      const vpkMap = new Map(vpkMappings);
+      return {
+        localMods: state.localMods.map((mod) => {
+          const newVpks = vpkMap.get(mod.remoteId);
+          if (newVpks) {
+            logger.info("Updating VPKs for mod", {
+              remoteId: mod.remoteId,
+              oldVpks: mod.installedVpks,
+              newVpks,
+            });
+            return {
+              ...mod,
+              installedVpks: newVpks,
+            };
+          }
+          return mod;
+        }),
+      };
+    }),
+
+  getOrderedMods: () => {
+    const { localMods } = get();
+
+    const installedMods = localMods.filter(
+      (mod) =>
+        mod.status === ModStatus.Installed &&
+        mod.installedVpks &&
+        mod.installedVpks.length > 0,
+    );
+
+    const modsWithOrder = installedMods.map((mod, index) => ({
+      ...mod,
+      installOrder: mod.installOrder ?? index,
+    }));
+
+    return modsWithOrder.sort((a, b) => {
+      if (a.installOrder !== b.installOrder) {
+        return (a.installOrder ?? 999) - (b.installOrder ?? 999);
+      }
+      const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
+      const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
+      return dateA - dateB;
+    });
+  },
+
+  getNextInstallOrder: () => {
+    const { localMods } = get();
+    if (localMods.length === 0) return 0;
+
+    const maxOrder = Math.max(
+      ...localMods.map((mod) => mod.installOrder ?? -1),
+    );
+    return maxOrder + 1;
+  },
+
+  migrateLegacyMods: () => {
+    set((state) => {
+      const installedMods = state.localMods.filter(
+        (mod) =>
+          mod.status === ModStatus.Installed &&
+          mod.installedVpks &&
+          mod.installedVpks.length > 0,
+      );
+
+      const needsMigration = installedMods.some(
+        (mod) => mod.installOrder === undefined,
+      );
+
+      if (!needsMigration) {
+        return state;
+      }
+
+      logger.info("Migrating legacy installed mods without install order", {
+        totalMods: state.localMods.length,
+        installedMods: installedMods.length,
+        modsToMigrate: installedMods.filter(
+          (mod) => mod.installOrder === undefined,
+        ).length,
+      });
+
+      const sortedInstalledMods = [...installedMods].sort((a, b) => {
+        const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
+        const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
+        return dateA - dateB;
+      });
+
+      const modOrderUpdates = new Map<string, number>();
+      sortedInstalledMods.forEach((mod, index) => {
+        if (mod.installOrder === undefined) {
+          modOrderUpdates.set(mod.remoteId, index);
+        }
+      });
+
+      const migratedMods = state.localMods.map((mod) => {
+        const newOrder = modOrderUpdates.get(mod.remoteId);
+        return {
+          ...mod,
+          installOrder: newOrder !== undefined ? newOrder : mod.installOrder,
+        };
+      });
+
+      logger.info("Legacy mod migration completed", {
+        migratedInstalledMods: modOrderUpdates.size,
+      });
+
+      return {
+        ...state,
+        localMods: migratedMods,
+      };
+    });
+  },
 });

@@ -95,12 +95,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -172,12 +168,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -187,9 +179,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -252,9 +242,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -431,9 +419,7 @@
         "job_lock_job_name_unique": {
           "name": "job_lock_job_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "job_name"
-          ]
+          "columns": ["job_name"]
         }
       },
       "policies": {},
@@ -523,12 +509,8 @@
           "name": "mod_download_mod_id_mod_id_fk",
           "tableFrom": "mod_download",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mod_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -678,9 +660,7 @@
         "mod_remote_id_unique": {
           "name": "mod_remote_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "remote_id"
-          ]
+          "columns": ["remote_id"]
         }
       },
       "policies": {},
@@ -1071,12 +1051,8 @@
           "name": "vpk_mod_id_mod_id_fk",
           "tableFrom": "vpk",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mod_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1084,12 +1060,8 @@
           "name": "vpk_mod_download_id_mod_download_id_fk",
           "tableFrom": "vpk",
           "tableTo": "mod_download",
-          "columnsFrom": [
-            "mod_download_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mod_download_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1105,11 +1077,7 @@
     "public.vpk_state": {
       "name": "vpk_state",
       "schema": "public",
-      "values": [
-        "ok",
-        "duplicate",
-        "corrupt"
-      ]
+      "values": ["ok", "duplicate", "corrupt"]
     }
   },
   "schemas": {},

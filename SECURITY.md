@@ -19,7 +19,7 @@ For security vulnerabilities, please report them **privately** through:
 
 1. **GitHub Security Advisories** (Recommended): [Security tab](https://github.com/stormix/deadlock-modmanager/security/advisories) → "Report a vulnerability"
 2. **Email**: [security@deadlockmods.app](mailto:security@deadlockmods.app)
-3. **Discord**: [@stormix](https://discord.com/users/stormix) on our [Discord server](https://discord.gg/KSB2kzQWWE)
+3. **Discord**: [@stormix](https://discord.com/users/stormix) on our [Discord server](https://discord.gg/WbFNt8CCr8)
 
 ### 📝 What to Include
 
@@ -91,7 +91,7 @@ Some antivirus software may flag the application due to file system access and n
 
 - **Security Email**: [security@deadlockmods.app](mailto:security@deadlockmods.app)
 - **Primary Maintainer**: [@stormix](https://github.com/stormix)
-- **Discord Server**: [Join for support](https://discord.gg/KSB2kzQWWE)
+- **Discord Server**: [Join for support](https://discord.gg/WbFNt8CCr8)
 - **GitHub Security**: [Security Advisories](https://github.com/stormix/deadlock-modmanager/security/advisories)
 
 ---

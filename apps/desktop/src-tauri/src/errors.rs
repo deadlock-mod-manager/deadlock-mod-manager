@@ -12,9 +12,6 @@ pub enum Error {
   GamePathNotSet,
   #[error("Failed to parse game configuration: {0}")]
   GameConfigParse(String),
-  #[error("Mod {0} is already installed")]
-  #[allow(dead_code)]
-  ModAlreadyInstalled(String),
   #[error("Mod file not found at path")]
   ModFileNotFound,
   #[error(transparent)]
@@ -59,7 +56,6 @@ impl serde::Serialize for Error {
       Error::GameNotFound => "gameNotFound",
       Error::GamePathNotSet => "gamePathNotSet",
       Error::GameConfigParse(_) => "gameConfigParse",
-      Error::ModAlreadyInstalled(_) => "modAlreadyInstalled",
       Error::ModFileNotFound => "modFileNotFound",
       Error::KeyValues(_) => "keyValues",
       Error::Rar(_) => "rar",

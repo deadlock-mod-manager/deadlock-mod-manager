@@ -291,7 +291,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 ### How to Help
 
-1. **Join our Discord server**: First [join our Discord server](https://discord.gg/KSB2kzQWWE) to access the translation channels
+1. **Join our Discord server**: First [join our Discord server](https://discord.gg/WbFNt8CCr8) to access the translation channels
 2. **Visit the translation channel**: Head to the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel
 3. **Suggest a new language**: Open an issue to request support for your language
 4. **Improve existing translations**: Found an error or better phrasing? Submit a PR!
@@ -332,7 +332,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 - **Project Repository**: [GitHub](https://github.com/stormix/deadlock-modmanager)
 - **Issues & Bug Reports**: [GitHub Issues](https://github.com/stormix/deadlock-modmanager/issues)
 - **Feature Requests**: [GitHub Discussions](https://github.com/stormix/deadlock-modmanager/discussions)
-- **Discord Community**: [Join our Discord](https://discord.gg/KSB2kzQWWE)
+- **Discord Community**: [Join our Discord](https://discord.gg/WbFNt8CCr8)
 - **Author**: [Stormix](https://github.com/Stormix)
 
 For support and questions, please use GitHub Issues or join our Discord community. We're always happy to help!

@@ -19,7 +19,19 @@
     "noModsTitle": "No mods installed",
     "noModsDescription": "You haven't installed any mods yet. Get started by browsing available mods or analyzing your local addons folder.",
     "visitModsPage": "Visit Mods Page",
-    "analyzeLocalAddons": "Analyze Local Addons"
+    "analyzeLocalAddons": "Analyze Local Addons",
+    "enabledModsCount": "{{count}}/99 mods enabled",
+    "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
+    "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
+    "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum"
+  },
+  "modOrdering": {
+    "title": "Manage Mod Load Order",
+    "description": "Drag and drop to reorder your mods. Mods at the top load first, mods at the bottom load last.",
+    "noMods": "No installed mods to order",
+    "orderSaved": "Mod order saved successfully",
+    "orderSaveFailed": "Failed to save mod order",
+    "manageOrder": "Manage Order"
   },
   "mods": {
     "searchPlaceholder": "Search mods",

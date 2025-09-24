@@ -153,6 +153,7 @@ yay -S deadlock-modmanager
 # Neueste Entwicklungsversion
 yay -S deadlock-modmanager-git
 ```
+
 ## Loslegen im Dev Modus
 
 ### Benötigte Schritte
@@ -217,22 +218,22 @@ Wir arbeiten aktiv daran, den Deadlock Mod Manager für Nutzer weltweit zugängl
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language | Native Name | Status | Contributors |
-|----------|-------------|--------|-------------|
-| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇩🇪 **German** | Deutsch | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/) |
-| 🇫🇷 **French** | Français | 🚧 In Progress | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/) |
-| 🇸🇦 **Arabic** | العربية | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 In Progress | [_manio](https://discordapp.com/users/_manio/) |
-| 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| Language                 | Native Name     | Status         | Contributors                                                                                                       |
+| ------------------------ | --------------- | -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 🇺🇸 **English** (Default) | English         | ✅ Complete    | -                                                                                                                  |
+| 🇩🇪 **German**            | Deutsch         | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/)                                                               |
+| 🇫🇷 **French**            | Français        | 🚧 In Progress | [stormix](https://github.com/stormix)                                                                              |
+| 🇷🇺 **Russian**           | Русский         | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/)                                                         |
+| 🇸🇦 **Arabic**            | العربية         | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/)                                                     |
+| 🇵🇱 **Polish**            | Polski          | 🚧 In Progress | [\_manio](https://discordapp.com/users/_manio/)                                                                    |
+| 🇨🇭 **Swiss German**      | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇷 **Turkish**           | Türkçe          | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 
 <!-- LANGUAGE_TABLE_END -->
 
 ### Wie Sie helfen können
 
-1. **Treten Sie unserem Discord-Server bei**: Zuerst [treten Sie unserem Discord-Server bei](https://discord.gg/KSB2kzQWWE), um auf die Übersetzungskanäle zuzugreifen
+1. **Treten Sie unserem Discord-Server bei**: Zuerst [treten Sie unserem Discord-Server bei](https://discord.gg/WbFNt8CCr8), um auf die Übersetzungskanäle zuzugreifen
 2. **Besuchen Sie den Übersetzungskanal**: Gehen Sie zum [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) Kanal
 3. **Schlagen Sie eine neue Sprache vor**: Öffnen Sie ein Issue, um Unterstützung für Ihre Sprache anzufordern
 4. **Verbessern Sie bestehende Übersetzungen**: Fehler gefunden oder bessere Formulierung? Reichen Sie einen PR ein!

@@ -170,7 +170,7 @@ export const ProfileShareDialog = () => {
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button
           isLoading={isLoading}
           icon={<ShareNetworkIcon />}

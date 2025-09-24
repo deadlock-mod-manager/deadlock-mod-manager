@@ -9,6 +9,7 @@ import { ThemeProvider } from "./components/providers/theme";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useLanguageListener } from "./hooks/use-language-listener";
+import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
 import { queryClient } from "./lib/client";
@@ -19,6 +20,7 @@ import { usePersistedStore } from "./lib/store";
 const App = () => {
   useDeepLink();
   useLanguageListener();
+  useModOrderMigration();
 
   const hydrateStore = async () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });

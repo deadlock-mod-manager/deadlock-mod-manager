@@ -74,9 +74,6 @@ pub struct DeepLinkData {
 pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
   log::info!("Parsing deep link: {}", url);
 
-  // Expected format: deadlock-mod-manager:https://gamebanana.com/mmdl/1507124,Mod,616792
-  // or: deadlock-modmanager:https://gamebanana.com/mmdl/1507124,Mod,616792
-
   let url = url.trim();
 
   // Remove the protocol prefix
@@ -267,6 +264,20 @@ pub async fn uninstall_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Erro
 pub async fn purge_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.purge_mod(mod_id, vpks)
+}
+
+#[tauri::command]
+pub async fn reorder_mods(mod_order_data: Vec<(String, u32)>) -> Result<Vec<Mod>, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.reorder_mods(mod_order_data)
+}
+
+#[tauri::command]
+pub async fn reorder_mods_by_remote_id(
+  mod_order_data: Vec<(String, Vec<String>, u32)>,
+) -> Result<Vec<(String, Vec<String>)>, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.reorder_mods_by_remote_id(mod_order_data)
 }
 
 #[tauri::command]

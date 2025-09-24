@@ -25,7 +25,6 @@ pub fn show_in_folder(path: &str) -> Result<(), Error> {
   }
 }
 
-/// Show a specific file selected in the file explorer
 pub fn show_file_in_folder(file_path: &str) -> Result<(), Error> {
   #[cfg(target_os = "windows")]
   {
@@ -39,7 +38,6 @@ pub fn show_file_in_folder(file_path: &str) -> Result<(), Error> {
   }
   #[cfg(target_os = "linux")]
   {
-    // For Linux, we'll open the containing folder since there's no universal way to select a file
     let path = std::path::Path::new(file_path);
     if let Some(parent) = path.parent() {
       match Command::new("xdg-open").arg(parent).spawn() {
@@ -59,11 +57,9 @@ pub fn show_file_in_folder(file_path: &str) -> Result<(), Error> {
   }
 }
 
-/// Open a file with the system's default editor
 pub fn open_file_with_editor(file_path: &str) -> Result<(), Error> {
   #[cfg(target_os = "windows")]
   {
-    // Use notepad as a fallback, or let the system choose the default editor
     match Command::new("cmd")
       .args(["/c", "start", "", file_path])
       .spawn()

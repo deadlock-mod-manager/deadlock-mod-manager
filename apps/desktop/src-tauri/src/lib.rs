@@ -190,6 +190,8 @@ pub fn run() {
       commands::open_mods_store,
       commands::uninstall_mod,
       commands::purge_mod,
+      commands::reorder_mods,
+      commands::reorder_mods_by_remote_id,
       commands::is_game_running,
       commands::parse_deep_link,
       commands::backup_gameinfo,

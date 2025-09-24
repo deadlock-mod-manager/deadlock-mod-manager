@@ -1,5 +1,11 @@
 import { Trash } from "@phosphor-icons/react";
-import { LayoutGrid, LayoutList, Loader2, Search } from "lucide-react";
+import {
+  ArrowUpDown,
+  LayoutGrid,
+  LayoutList,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -11,8 +17,8 @@ import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { AnalyzeAddonsButton } from "@/components/my-mods/analyze-addons-button";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
+import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
-import PageTitle from "@/components/shared/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,13 +41,11 @@ import { usePersistedStore } from "@/lib/store";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
-// View mode enum
 enum ViewMode {
   GRID = "grid",
   LIST = "list",
 }
 
-// Custom ModCard for Grid View
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -49,7 +53,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
 
-  // NSFW settings and visibility using custom hook
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const deleteMod = async () => {
@@ -87,7 +90,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
                 variant='default'
               />
             ) : mod.images && mod.images.length > 0 ? (
-              // Regular mod with images
               <NSFWBlur
                 blurStrength={nsfwSettings.blurStrength}
                 className='h-48 w-full overflow-hidden rounded-t-xl'
@@ -103,7 +105,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
                 />
               </NSFWBlur>
             ) : (
-              // Fallback for mods without images or audio
               <div className='flex h-48 w-full items-center justify-center rounded-t-xl bg-secondary'>
                 <div className='text-center text-foreground/60'>
                   <div className='mx-auto mb-2 h-12 w-12' />
@@ -147,7 +148,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           </div>
         </CardHeader>
         <CardFooter className='flex justify-between px-3 py-3 pt-2'>
-          {/* Although mod is a LocalMod instance, this is okey. */}
           <ModButton remoteMod={mod} variant='iconOnly' />{" "}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -167,7 +167,6 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   );
 };
 
-// List view card for mods
 const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -176,7 +175,6 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
 
-  // NSFW settings and visibility using custom hook
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const deleteMod = async () => {
@@ -211,7 +209,6 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 variant='compact'
               />
             ) : mod.images && mod.images.length > 0 ? (
-              // Regular mod with images
               <NSFWBlur
                 blurStrength={nsfwSettings.blurStrength}
                 className='h-full w-full cursor-pointer overflow-hidden rounded-l-xl'
@@ -227,7 +224,6 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 />
               </NSFWBlur>
             ) : (
-              // Fallback for mods without images or audio
               <div className='flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-secondary'>
                 <div className='text-center text-foreground/60'>
                   <div className='mx-auto h-6 w-6' />
@@ -293,7 +289,6 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   );
 };
 
-// Simple search bar without sorting
 const SimpleSearchBar = ({
   query,
   setQuery,
@@ -319,19 +314,75 @@ const SimpleSearchBar = ({
 const MyMods = () => {
   const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.localMods);
+  const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
+  const getEnabledModsCount = usePersistedStore(
+    (state) => state.getEnabledModsCount,
+  );
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
+
   const { results, query, setQuery } = useSearch({
     data: mods,
     keys: ["name", "description", "author"],
   });
 
+  const displayMods = query.trim()
+    ? results
+    : [...mods].sort((a, b) => {
+        const aIsInstalled =
+          a.status === ModStatus.Installed &&
+          a.installedVpks &&
+          a.installedVpks.length > 0;
+        const bIsInstalled =
+          b.status === ModStatus.Installed &&
+          b.installedVpks &&
+          b.installedVpks.length > 0;
+
+        if (aIsInstalled && !bIsInstalled) return -1;
+        if (!aIsInstalled && bIsInstalled) return 1;
+
+        if (aIsInstalled && bIsInstalled) {
+          const aOrder = a.installOrder ?? 999;
+          const bOrder = b.installOrder ?? 999;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+        }
+
+        const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
+        const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
+        return dateB - dateA;
+      });
+
+  const installedMods = getOrderedMods();
+
+  const enabledModsCount = getEnabledModsCount();
+
   return (
     <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4'>
-      <PageTitle
-        className='mb-8'
-        subtitle={t("myMods.subtitle")}
-        title={t("navigation.myMods")}
-      />
+      <div className='mb-8'>
+        <div className='flex items-baseline gap-3'>
+          <h1 className='text-3xl font-bold tracking-tight'>
+            {t("navigation.myMods")}
+          </h1>
+          {mods.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "text-sm font-medium cursor-help",
+                    enabledModsCount >= 99
+                      ? "text-destructive"
+                      : enabledModsCount >= 85
+                        ? "text-orange-600"
+                        : "text-muted-foreground",
+                  )}>
+                  ({enabledModsCount}/99)
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t("myMods.modLimitTooltip")}</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+        <p className='text-muted-foreground mt-2'>{t("myMods.subtitle")}</p>
+      </div>
       <ErrorBoundary>
         {mods.length === 0 ? (
           <MyModsEmptyState />
@@ -341,6 +392,14 @@ const MyMods = () => {
               <SimpleSearchBar query={query} setQuery={setQuery} />
               <div className='flex items-center gap-2'>
                 <AnalyzeAddonsButton />
+                <ModOrderingDialog>
+                  <Button
+                    size='icon'
+                    variant='outline'
+                    disabled={installedMods.length === 0}>
+                    <ArrowUpDown className='h-4 w-4' />
+                  </Button>
+                </ModOrderingDialog>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -372,13 +431,13 @@ const MyMods = () => {
 
             {viewMode === ViewMode.GRID ? (
               <div className='grid grid-cols-4 gap-4'>
-                {results.map((mod) => (
+                {displayMods.map((mod) => (
                   <GridModCard key={mod.remoteId} mod={mod} />
                 ))}
               </div>
             ) : (
               <div className='flex flex-col gap-3'>
-                {results.map((mod) => (
+                {displayMods.map((mod) => (
                   <ListModCard key={mod.remoteId} mod={mod} />
                 ))}
               </div>

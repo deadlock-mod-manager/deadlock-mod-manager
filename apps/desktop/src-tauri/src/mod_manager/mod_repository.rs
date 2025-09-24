@@ -13,9 +13,10 @@ pub struct Mod {
   pub installed_vpks: Vec<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub install_order: Option<u32>,
 }
 
-impl Mod {}
 
 /// Manages the repository of installed and tracked mods
 pub struct ModRepository {
@@ -42,6 +43,11 @@ impl ModRepository {
   /// Get a mod by ID
   pub fn get_mod(&self, mod_id: &str) -> Option<&Mod> {
     self.mods.get(mod_id)
+  }
+
+  /// Get all mods as an iterator
+  pub fn get_all_mods(&self) -> impl Iterator<Item = &Mod> {
+    self.mods.values()
   }
 }
 

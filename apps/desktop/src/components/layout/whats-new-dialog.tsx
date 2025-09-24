@@ -53,7 +53,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
               {currentUpdate.title}
             </h3>
             <ul className='space-y-2 text-muted-foreground text-sm'>
-              {currentUpdate.features.map((feature, index) => (
+              {currentUpdate.features?.map((feature, index) => (
                 <li
                   className='flex items-start gap-2'
                   key={`feature-${index}-${feature.slice(0, 10)}`}>
