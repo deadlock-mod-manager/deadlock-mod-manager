@@ -5,7 +5,10 @@ import { useAnalyticsContext } from "../contexts/analytics-context";
  * Hook to track page views automatically
  * Should be used in route components to track navigation
  */
-export const usePageTracking = (pageName: string, properties?: Record<string, string | number | boolean>) => {
+export const usePageTracking = (
+  pageName: string,
+  properties?: Record<string, string | number | boolean>,
+) => {
   const { analytics } = useAnalyticsContext();
 
   useEffect(() => {

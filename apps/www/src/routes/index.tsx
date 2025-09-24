@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
 function HomeComponent() {
   const versionQuery = useQuery(orpc.getVersion.queryOptions());
   const version = versionQuery.data?.version || "0.0.0";
-  
+
   usePageTracking("home", { version });
 
   return (

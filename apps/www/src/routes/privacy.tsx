@@ -21,7 +21,7 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyComponent() {
   const [showBackToTop, setShowBackToTop] = useState(false);
-  
+
   usePageTracking("privacy");
 
   useEffect(() => {

@@ -106,13 +106,13 @@ export function VpkAnalyzer() {
           const endTime = Date.now();
           const durationSeconds = (endTime - startTime) / 1000;
           const identifiedCount = fileAnalysesRef.current.filter(
-            (analysis) => analysis.result?.matchedVpk?.mod
+            (analysis) => analysis.result?.matchedVpk?.mod,
           ).length;
 
           analytics.trackVpkAnalysisCompleted(
             files.length,
             identifiedCount,
-            durationSeconds
+            durationSeconds,
           );
         }
       } finally {

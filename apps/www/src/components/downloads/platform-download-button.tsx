@@ -142,7 +142,7 @@ export const PlatformDownloadButton = ({
         {
           architecture: recommendedDownload.architecture,
           file_size_mb: recommendedDownload.size,
-        }
+        },
       );
     }
   };

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/login")({
 
 function RouteComponent() {
   const [showSignIn, setShowSignIn] = useState(false);
-  
+
   usePageTracking("login", { form_type: showSignIn ? "sign_in" : "sign_up" });
 
   return showSignIn ? (

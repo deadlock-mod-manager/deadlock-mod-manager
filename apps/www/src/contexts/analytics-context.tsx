@@ -26,7 +26,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
     if (analytics.isEnabled) {
       const currentPath = window.location.pathname;
       const pageName = currentPath === "/" ? "home" : currentPath.slice(1);
-      
+
       analytics.trackPageViewed(pageName, {
         path: currentPath,
         referrer: document.referrer,
@@ -39,16 +39,12 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
     if (!analytics.isEnabled) return;
 
     const handleError = (event: ErrorEvent) => {
-      analytics.trackError(
-        "javascript_error",
-        event.message,
-        {
-          context: "global_error_handler",
-          filename: event.filename,
-          line_number: event.lineno,
-          column_number: event.colno,
-        }
-      );
+      analytics.trackError("javascript_error", event.message, {
+        context: "global_error_handler",
+        filename: event.filename,
+        line_number: event.lineno,
+        column_number: event.colno,
+      });
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -57,7 +53,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
         String(event.reason),
         {
           context: "promise_rejection_handler",
-        }
+        },
       );
     };
 
@@ -66,7 +62,10 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
 
     return () => {
       window.removeEventListener("error", handleError);
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
     };
   }, [analytics]);
 
