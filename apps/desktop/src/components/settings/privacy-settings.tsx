@@ -2,10 +2,12 @@ import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 
 const PrivacySettings = () => {
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const {
     nsfwSettings,
     updateNSFWSettings,
@@ -123,9 +125,15 @@ const PrivacySettings = () => {
             </div>
             <Switch
               checked={telemetrySettings.posthogEnabled}
-              onCheckedChange={(checked) =>
-                updateTelemetrySettings({ posthogEnabled: checked })
-              }
+              onCheckedChange={(checked) => {
+                const oldValue = telemetrySettings.posthogEnabled;
+                updateTelemetrySettings({ posthogEnabled: checked });
+                analytics.trackSettingChanged(
+                  "posthog_enabled",
+                  oldValue,
+                  checked,
+                );
+              }}
             />
           </div>
         </div>

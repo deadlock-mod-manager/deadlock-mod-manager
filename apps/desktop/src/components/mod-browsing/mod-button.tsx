@@ -15,6 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
@@ -85,6 +86,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   });
 
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const {
     download,
     downloadSelectedFiles,
@@ -123,6 +125,10 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
       switch (localMod?.status) {
         case undefined:
           await download();
+          analytics.trackModDiscovered(
+            remoteMod?.remoteId || "unknown",
+            "browse",
+          );
           break;
         case ModStatus.Downloaded:
           await install(localMod, {
@@ -139,11 +145,24 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               // Mark mod as enabled in current profile
               setModEnabledInCurrentProfile(mod.remoteId, true);
               toast.success(t("notifications.modInstalledSuccessfully"));
+              analytics.trackModInstalled(mod.remoteId, {
+                vpk_count: result.installed_vpks.length,
+                file_tree_complexity: result.file_tree?.has_multiple_files
+                  ? "complex"
+                  : "simple",
+              });
             },
             onError: (mod, error) => {
               setModStatus(mod.remoteId, ModStatus.Error);
               toast.error(
                 error.message || t("notifications.failedToInstallMod"),
+              );
+              analytics.trackError(
+                "mod_installation",
+                error.message || "Unknown installation error",
+                {
+                  mod_id: mod.remoteId,
+                },
               );
             },
             onCancel: (mod) => {
@@ -164,6 +183,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
         case ModStatus.Installed:
           await uninstall(localMod, false);
+          analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
         case ModStatus.FailedToDownload:
           break;
@@ -190,6 +210,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     setInstalledVpks,
     setModEnabledInCurrentProfile,
     t,
+    analytics,
+    remoteMod?.remoteId,
   ]);
 
   const onClick = useCallback(

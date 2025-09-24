@@ -25,7 +25,9 @@ function StatusComponent() {
 
   return (
     <div className='container mx-auto max-w-3xl py-12 text-center'>
-      <h1 className='mb-4 font-bold text-2xl'>Redirecting to status page...</h1>
+      <h1 className='mb-4 font-bold font-primary text-2xl'>
+        Redirecting to status page...
+      </h1>
       <p className='text-muted-foreground'>
         If you're not redirected automatically,{" "}
         <a className='text-primary hover:underline' href={STATUS_URL}>

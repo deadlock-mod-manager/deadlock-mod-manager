@@ -23,7 +23,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
             </span>
           </Badge>
 
-          <div className='mx-auto max-w-screen-md text-center font-bold text-4xl md:text-6xl'>
+          <div className='mx-auto max-w-screen-md text-center font-bold font-primary text-4xl md:text-6xl'>
             <h1>
               <span className='bg-gradient-to-r from-[#EFE1BE] to-primary bg-clip-text px-2 text-transparent'>
                 Deadlock Mod Manager

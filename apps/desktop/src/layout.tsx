@@ -7,11 +7,13 @@ import { Dialog } from "./components/ui/dialog";
 import { SidebarProvider } from "./components/ui/sidebar";
 import { Toaster } from "./components/ui/sonner";
 import { ScrollBackButtonProvider } from "./contexts/scroll-back-button-context";
+import { usePageTracking } from "./hooks/use-page-tracking";
 import { useWhatsNew } from "./hooks/use-whats-new";
 import { cn } from "./lib/utils";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { showWhatsNew, markVersionAsSeen } = useWhatsNew();
+  usePageTracking();
 
   return (
     <>

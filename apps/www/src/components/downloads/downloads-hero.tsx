@@ -7,7 +7,7 @@ export const DownloadsHero = () => {
       <div className='container mx-auto flex flex-col items-center space-y-8 text-center'>
         <Logo className='h-16 w-16' />
 
-        <h1 className='mb-8 font-bold text-4xl'>
+        <h1 className='mb-8 font-bold font-primary text-4xl'>
           Download Deadlock Mod Manager
         </h1>
 

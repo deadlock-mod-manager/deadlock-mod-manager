@@ -27,7 +27,7 @@ export const GettingStartedSection = () => {
         Getting Started
       </h2>
 
-      <h2 className='mb-12 text-center font-bold text-3xl md:text-4xl'>
+      <h2 className='mb-12 text-center font-bold font-primary text-3xl md:text-4xl'>
         Up and running in minutes
       </h2>
 

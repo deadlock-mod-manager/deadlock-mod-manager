@@ -61,7 +61,7 @@ export const FeaturesSection = () => {
         Features
       </h2>
 
-      <h2 className='mb-8 text-center font-bold text-3xl md:text-4xl'>
+      <h2 className='mb-8 text-center font-bold font-primary text-3xl md:text-4xl'>
         Make Deadlock yours
       </h2>
 

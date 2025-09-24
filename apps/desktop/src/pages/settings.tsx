@@ -111,13 +111,17 @@ const CustomSettingsData = () => {
           description={
             type === CustomSettingType.LAUNCH_OPTION
               ? t("settings.launchOptionsDescription")
-              : customSettingTypeHuman[type]?.description || ""
+              : customSettingTypeHuman[
+                  type as keyof typeof customSettingTypeHuman
+                ]?.description || ""
           }
           key={type}
           title={
             type === CustomSettingType.LAUNCH_OPTION
               ? t("settings.launchOptions")
-              : customSettingTypeHuman[type]?.title || ""
+              : customSettingTypeHuman[
+                  type as keyof typeof customSettingTypeHuman
+                ]?.title || ""
           }>
           <div className='grid grid-cols-1 gap-4'>
             {(settingByType?.[type] ?? []).map((setting) => (

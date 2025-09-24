@@ -7,6 +7,7 @@ import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { AnalyticsProvider } from "./contexts/analytics-context";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
@@ -35,17 +36,19 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider storageKey='deadlock-theme-v2'>
-        <AppProvider>
-          <ProgressProvider>
-            <TooltipProvider>
-              <AlertDialogProvider>
-                <Layout>
-                  <Outlet />
-                </Layout>
-              </AlertDialogProvider>
-            </TooltipProvider>
-          </ProgressProvider>
-        </AppProvider>
+        <AnalyticsProvider>
+          <AppProvider>
+            <ProgressProvider>
+              <TooltipProvider>
+                <AlertDialogProvider>
+                  <Layout>
+                    <Outlet />
+                  </Layout>
+                </AlertDialogProvider>
+              </TooltipProvider>
+            </ProgressProvider>
+          </AppProvider>
+        </AnalyticsProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

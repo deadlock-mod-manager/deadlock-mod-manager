@@ -12,7 +12,9 @@ export const Footer = () => {
       <div className='rounded-2xl border border-secondary bg-card p-10'>
         <div className='grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:grid-cols-6'>
           <div className='col-span-full flex flex-col gap-2 xl:col-span-2'>
-            <a className='flex items-center gap-2 font-bold' href='#'>
+            <a
+              className='flex items-center gap-2 font-bold font-primary'
+              href='#'>
               <Logo className='h-10 w-10' /> {APP_NAME}
             </a>
             <p className='text-sm opacity-60'>
@@ -26,7 +28,7 @@ export const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-2'>
-            <h3 className='font-bold text-lg'>Links</h3>
+            <h3 className='font-bold font-primary text-lg'>Links</h3>
             <div>
               <a
                 className='opacity-60 hover:opacity-100'
@@ -48,7 +50,7 @@ export const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-2'>
-            <h3 className='font-bold text-lg'>Support</h3>
+            <h3 className='font-bold font-primary text-lg'>Support</h3>
             <div>
               <a className='opacity-60 hover:opacity-100' href='/#faq'>
                 FAQ
@@ -63,10 +65,8 @@ export const Footer = () => {
                 Report Bug
               </a>
             </div>
-          </div>
 
-          <div className='flex flex-col gap-2'>
-            <h3 className='font-bold text-lg'>Legal</h3>
+            <h3 className='font-bold font-primary text-lg mt-4'>Legal</h3>
             <div>
               <Link className='opacity-60 hover:opacity-100' to='/privacy'>
                 Privacy Policy
@@ -80,7 +80,7 @@ export const Footer = () => {
           </div>
 
           <div className='flex flex-col gap-2'>
-            <h3 className='font-bold text-lg'>Socials</h3>
+            <h3 className='font-bold font-primary text-lg'>Socials</h3>
             <div>
               <a
                 className='opacity-60 hover:opacity-100'
@@ -115,6 +115,28 @@ export const Footer = () => {
                 rel='noopener noreferrer'
                 target='_blank'>
                 X (Twitter)
+              </a>
+            </div>
+          </div>
+
+          <div className='flex flex-col gap-2'>
+            <h3 className='font-bold font-primary text-lg'>Partners</h3>
+            <div>
+              <a
+                className='opacity-60 hover:opacity-100'
+                href='http://gamebanana.com/'
+                rel='noopener noreferrer'
+                target='_blank'>
+                GameBanana
+              </a>
+            </div>
+            <div>
+              <a
+                className='opacity-60 hover:opacity-100'
+                href='https://deadlocker.net/'
+                rel='noopener noreferrer'
+                target='_blank'>
+                Deadlocker
               </a>
             </div>
           </div>
