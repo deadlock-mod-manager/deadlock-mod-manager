@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { client } from "@/utils/orpc";
 import { Progress } from "./ui/progress";
 
@@ -25,6 +26,7 @@ interface FileAnalysisState {
 export function VpkAnalyzer() {
   const [fileAnalyses, setFileAnalyses] = useState<FileAnalysisState[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { analytics } = useAnalyticsContext();
 
   // Use a ref to store the current file analyses to avoid stale closure issues
   const fileAnalysesRef = useRef<FileAnalysisState[]>([]);
@@ -85,6 +87,12 @@ export function VpkAnalyzer() {
   const analyzeAllFiles = useCallback(
     async (files: FileAnalysisState[]) => {
       setIsAnalyzing(true);
+      const startTime = Date.now();
+
+      // Track analysis started
+      if (analytics.isEnabled) {
+        analytics.trackVpkAnalysisStarted(files.length);
+      }
 
       try {
         const analysisPromises = files.map((file, index) =>
@@ -92,11 +100,26 @@ export function VpkAnalyzer() {
         );
 
         await Promise.allSettled(analysisPromises);
+
+        // Track analysis completed
+        if (analytics.isEnabled) {
+          const endTime = Date.now();
+          const durationSeconds = (endTime - startTime) / 1000;
+          const identifiedCount = fileAnalysesRef.current.filter(
+            (analysis) => analysis.result?.matchedVpk?.mod
+          ).length;
+
+          analytics.trackVpkAnalysisCompleted(
+            files.length,
+            identifiedCount,
+            durationSeconds
+          );
+        }
       } finally {
         setIsAnalyzing(false);
       }
     },
-    [analyzeFile],
+    [analyzeFile, analytics],
   );
 
   const onDrop = useCallback(

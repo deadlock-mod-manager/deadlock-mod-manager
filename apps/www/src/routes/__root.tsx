@@ -15,6 +15,7 @@ import Loader from "@/components/loader";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { link, type orpc } from "@/utils/orpc";
 import type { AppRouterClient } from "../../../api/src/routers";
 import "../index.css";
@@ -134,12 +135,14 @@ function RootComponent() {
         defaultTheme='dark'
         disableTransitionOnChange
         storageKey='vite-ui-theme'>
-        <div className='min-h-screen'>
-          <Navbar />
-          {isFetching ? <Loader /> : <Outlet />}
-          <Footer />
-        </div>
-        <Toaster richColors />
+        <AnalyticsProvider>
+          <div className='min-h-screen'>
+            <Navbar />
+            {isFetching ? <Loader /> : <Outlet />}
+            <Footer />
+          </div>
+          <Toaster richColors />
+        </AnalyticsProvider>
       </ThemeProvider>
       <TanStackRouterDevtools position='bottom-left' />
       <ReactQueryDevtools buttonPosition='bottom-right' position='bottom' />

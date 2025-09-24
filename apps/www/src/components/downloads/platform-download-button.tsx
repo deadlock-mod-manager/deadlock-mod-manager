@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { DOWNLOAD_URL } from "@/lib/constants";
 import { detectOS } from "@/lib/os-detection";
 import type { OSInfo, PlatformDownload } from "@/types/releases";
@@ -29,6 +30,7 @@ export const PlatformDownloadButton = ({
 }: PlatformDownloadButtonProps) => {
   const [userOS, setUserOS] = useState<OSInfo | null>(null);
   const { data: releases } = useQuery(orpc.getReleases.queryOptions());
+  const { analytics } = useAnalyticsContext();
 
   useEffect(() => {
     setUserOS(detectOS());
@@ -132,6 +134,19 @@ export const PlatformDownloadButton = ({
     return `Version ${latest.version} for ${userOS.displayName}${archText}`;
   };
 
+  const handleDownloadClick = () => {
+    if (analytics.isEnabled && recommendedDownload && releases?.latest) {
+      analytics.trackDownloadStarted(
+        recommendedDownload.platform,
+        releases.latest.version,
+        {
+          architecture: recommendedDownload.architecture,
+          file_size_mb: recommendedDownload.size,
+        }
+      );
+    }
+  };
+
   return (
     <div className='flex flex-col items-center'>
       <Button
@@ -143,7 +158,8 @@ export const PlatformDownloadButton = ({
           download={recommendedDownload ? true : undefined}
           href={recommendedDownload?.url || DOWNLOAD_URL}
           rel='noopener noreferrer'
-          target={recommendedDownload ? undefined : "_blank"}>
+          target={recommendedDownload ? undefined : "_blank"}
+          onClick={handleDownloadClick}>
           {getPlatformButtonIcon()}
           {getPlatformButtonText()}
         </a>
