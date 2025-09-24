@@ -75,7 +75,7 @@ export const useAnalyticsEvents = () => {
           ...properties,
         });
         logger.info("User identified for analytics", {
-          hardwareId: hardwareId.slice(0, 8) + "...",
+          hardwareId: `${hardwareId.slice(0, 8)}...`,
         });
       } catch (error) {
         logger.warn("Failed to identify user for analytics", error);

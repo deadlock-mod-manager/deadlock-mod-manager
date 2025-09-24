@@ -118,6 +118,20 @@
           "discord": "degoods_deedos"
         }
       ]
+    },
+    {
+      "code": "zh-CN",
+      "name": "Chinese (Simplified)",
+      "nativeName": "简体中文",
+      "flag": "🇨🇳",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "待到春深方挽柳",
+          "email": "sfk_04@qq.com"
+        }
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ interface Contributor {
   name: string;
   github?: string;
   discord?: string;
+  email?: string;
 }
 
 interface Language {
@@ -53,6 +54,9 @@ function generateLanguageTable(): string {
             }
             if (contributor.discord) {
               return `[${contributor.name}](https://discordapp.com/users/${contributor.discord}/)`;
+            }
+            if (contributor.email) {
+              return `[${contributor.name}](mailto:${contributor.email})`;
             }
             return contributor.name;
           })

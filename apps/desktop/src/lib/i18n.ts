@@ -12,6 +12,9 @@ import gswTranslation from "@/locales/gsw/translation.json" with {
 import plTranslation from "@/locales/pl/translation.json" with { type: "json" };
 import ruTranslation from "@/locales/ru/translation.json" with { type: "json" };
 import trTranslation from "@/locales/tr/translation.json" with { type: "json" };
+import zhCNTranslation from "@/locales/zh-CN/translation.json" with {
+  type: "json",
+};
 
 const resources = {
   en: {
@@ -38,6 +41,9 @@ const resources = {
   ru: {
     translation: ruTranslation,
   },
+  "zh-CN": {
+    translation: zhCNTranslation,
+  },
 };
 
 i18n
@@ -46,7 +52,7 @@ i18n
   .init({
     resources,
     fallbackLng: "en",
-    supportedLngs: ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru"],
+    supportedLngs: ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN"],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
