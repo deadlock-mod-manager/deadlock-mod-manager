@@ -46,8 +46,10 @@ FROM oven/bun:1.1.38-slim AS runtime
 # Create non-root user first
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Create app directory with correct ownership from the start
-RUN mkdir -p /usr/src/app && chown appuser:appuser /usr/src/app
+# Create app directory and pnpm directories with correct ownership from the start
+RUN mkdir -p /usr/src/app && chown appuser:appuser /usr/src/app && \
+    mkdir -p /home/appuser/.local/share/pnpm && \
+    chown -R appuser:appuser /home/appuser
 
 WORKDIR /usr/src/app
 
@@ -56,7 +58,7 @@ RUN apt-get -y update && \
     apt-get -y install curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (needed for runtime)
+# Install Node.js and pnpm (needed for runtime)
 ARG NODE_VERSION=24.8.0
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
@@ -66,6 +68,10 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
 
 # Switch to non-root user before copying files
 USER appuser
+
+# Set pnpm home directory to ensure proper permissions
+ENV PNPM_HOME="/home/appuser/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
 # Copy package files with correct ownership
 COPY --chown=appuser:appuser package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
