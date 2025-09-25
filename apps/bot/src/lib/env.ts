@@ -3,6 +3,7 @@ import { z } from "zod";
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("production"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
+  REDIS_URL: z.string().default("redis://localhost:6379"),
   SENTRY_DSN: z
     .string()
     .url()
@@ -19,6 +20,8 @@ export const envSchema = z.object({
   STATUS_SELECTOR: z.string().default("main"),
   STATUS_PIN: z.coerce.boolean().default(true),
   STATUS_ENABLED: z.coerce.boolean().default(true),
+  FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
+  API_URL: z.string().url().default("https://api.deadlockmods.app"),
 });
 
 export const env = envSchema.parse(process.env);

@@ -54,6 +54,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      REDIS_URL: redis://redis:6379
       SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
       BOT_TOKEN: ${BOT_TOKEN}
       BOT_ENABLED: ${BOT_ENABLED:-false}
@@ -64,5 +65,7 @@ services:
       STATUS_SELECTOR: ${STATUS_SELECTOR:-main}
       STATUS_PIN: ${STATUS_PIN:-true}
       STATUS_ENABLED: ${STATUS_ENABLED:-true}
+      FORUM_CHANNEL_ID: ${FORUM_CHANNEL_ID:-1412799289301925908}
     depends_on:
       - postgres
+      - redis

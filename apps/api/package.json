@@ -8,6 +8,7 @@
     "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
     "test": "dotenv -e ../../.env -- bun run src/test.ts",
+    "test:mod-events": "dotenv -e ../../.env -- bun run src/scripts/test-mod-events.ts",
     "desktop:dev": "pnpm dev",
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
   },

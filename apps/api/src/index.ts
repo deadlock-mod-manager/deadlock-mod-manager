@@ -25,6 +25,7 @@ import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
 import healthRouter from "./routers/legacy/health";
 import modsRouter from "./routers/legacy/mods";
+import redirectRouter from "./routers/redirect";
 import { cronService } from "./services/cron";
 
 const app = new Hono();
@@ -92,7 +93,8 @@ app
   .route("/mods", modsRouter)
   .route("/custom-settings", customSettingsRouter)
   .route("/", healthRouter)
-  .route("/docs", docsRouter);
+  .route("/docs", docsRouter)
+  .route("/redirect", redirectRouter);
 
 const main = async () => {
   await cronService.defineJob({

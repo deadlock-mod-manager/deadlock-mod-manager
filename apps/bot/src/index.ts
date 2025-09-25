@@ -1,19 +1,24 @@
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { StatusMonitorService } from "@/lib/status-monitor";
+import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
 
 const main = async () => {
   if (env.BOT_ENABLED) {
     const statusMonitor = new StatusMonitorService();
+    const redisSubscriber = RedisSubscriberService.getInstance();
 
     client.once("clientReady", async () => {
       logger.info(`Logged in as ${client.user?.tag}`);
 
       try {
-        await statusMonitor.start(client);
+        await Promise.all([
+          statusMonitor.start(client),
+          redisSubscriber.start(),
+        ]);
       } catch (error) {
-        logger.withError(error).error("Failed to start status monitoring");
+        logger.withError(error).error("Failed to start services");
       }
     });
 
@@ -21,6 +26,7 @@ const main = async () => {
     process.on("SIGINT", () => {
       logger.info("Received SIGINT, shutting down gracefully...");
       statusMonitor.stop();
+      redisSubscriber.stop();
       client.destroy();
       process.exit(0);
     });
@@ -28,6 +34,7 @@ const main = async () => {
     process.on("SIGTERM", () => {
       logger.info("Received SIGTERM, shutting down gracefully...");
       statusMonitor.stop();
+      redisSubscriber.stop();
       client.destroy();
       process.exit(0);
     });

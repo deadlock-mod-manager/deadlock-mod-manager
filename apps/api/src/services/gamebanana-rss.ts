@@ -9,6 +9,7 @@ import { GAMEBANANA_RSS_FEED_URL } from "@/lib/constants";
 import { gamebananaRssParser } from "@/providers/game-banana/rss-parser";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
+import { RedisPublisherService } from "./redis-publisher";
 
 const logger = mainLogger.child().withContext({
   service: "gamebanana-rss",
@@ -18,12 +19,14 @@ export class GameBananaRssService {
   private static instance: GameBananaRssService;
   private readonly lockService: DistributedLockService;
   private readonly rssItemRepository: RssItemRepository;
+  private readonly redisPublisher: RedisPublisherService;
 
   constructor() {
     this.lockService = new DistributedLockService(db, logger, {
       defaultInstanceId: env.POD_NAME,
     });
     this.rssItemRepository = new RssItemRepository(db);
+    this.redisPublisher = RedisPublisherService.getInstance();
   }
 
   static getInstance(): GameBananaRssService {
@@ -103,6 +106,29 @@ export class GameBananaRssService {
             newItemTitles: result.newItems.map((item) => item.title),
           })
           .info("New RSS items detected");
+
+        // Publish events for new mods
+        for (const newItem of result.newItems) {
+          try {
+            await this.redisPublisher.publishNewMod({
+              id: newItem.id,
+              title: newItem.title,
+              link: newItem.link,
+              pubDate: newItem.pubDate.toISOString(),
+              image: newItem.image || undefined,
+              source: "gamebanana",
+            });
+          } catch (publishError) {
+            logger
+              .withError(publishError)
+              .withMetadata({
+                modTitle: newItem.title,
+                modId: newItem.id,
+              })
+              .error("Failed to publish new mod event");
+            // Continue processing other items even if one fails
+          }
+        }
       }
 
       return ok({

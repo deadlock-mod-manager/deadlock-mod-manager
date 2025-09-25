@@ -12,7 +12,10 @@
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
   },
   "dependencies": {
+    "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
+    "@deadlock-mods/vpk-parser": "workspace:*",
+    "@deadlock-mods/shared": "workspace:*",
     "@discordjs/rest": "^2.6.0",
     "@sapphire/discord.js-utilities": "^7.3.3",
     "@sapphire/framework": "^5.3.6",
@@ -23,6 +26,7 @@
     "discord-api-types": "^0.38.26",
     "discord.js": "^14.22.1",
     "genversion": "^3.2.0",
+    "ioredis": "^5.8.0",
     "lodash": "^4.17.21",
     "lzutf8": "^0.6.3",
     "neverthrow": "^8.2.0",
