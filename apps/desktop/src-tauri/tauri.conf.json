@@ -25,6 +25,11 @@
     }
   },
   "bundle": {
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
     "active": true,
     "createUpdaterArtifacts": true,
     "targets": "all",
