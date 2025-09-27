@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import useAbout from "@/hooks/use-about";
 import { useHardwareId } from "@/hooks/use-hardware-id";
 import { shareProfile } from "@/lib/api";
@@ -24,6 +25,7 @@ export const ProfileShareDialog = () => {
   const { hardwareId } = useHardwareId();
   const { version } = useAbout();
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const { getActiveProfile, localMods } = usePersistedStore();
   const [profileId, setProfileId] = useState<string | null>(null);
 
@@ -106,6 +108,10 @@ export const ProfileShareDialog = () => {
       },
       onSuccess(data) {
         setProfileId(data?.id ?? null);
+
+        if (data?.id) {
+          analytics.trackProfileShared(data.id, enabledMods.length, "link");
+        }
       },
     },
   );

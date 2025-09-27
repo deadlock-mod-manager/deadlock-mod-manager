@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
@@ -47,6 +48,7 @@ export const ProfileManagerDialog = ({
   onOpenChange,
 }: ProfileManagerDialogProps) => {
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const { localMods } = usePersistedStore();
   const confirm = useConfirm();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -89,6 +91,7 @@ export const ProfileManagerDialog = ({
 
     try {
       const result = await switchToProfile(profileId);
+      const targetProfile = profiles.find((p) => p.id === profileId);
 
       if (result.errors.length > 0) {
         toast.error(
@@ -99,9 +102,19 @@ export const ProfileManagerDialog = ({
         return;
       }
 
+      analytics.trackProfileSwitched(
+        activeProfile?.name || "Unknown",
+        targetProfile?.name || "Unknown",
+        {
+          enabled_mods: result.enabledMods.length,
+          disabled_mods: result.disabledMods.length,
+          errors: result.errors.length > 0 ? result.errors : undefined,
+        },
+      );
+
       toast.success(
         t("profiles.switchSuccess", {
-          profileName: profiles.find((p) => p.id === profileId)?.name,
+          profileName: targetProfile?.name,
         }),
       );
     } catch (error) {

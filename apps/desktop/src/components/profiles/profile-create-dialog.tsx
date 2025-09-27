@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 
 interface ProfileCreateDialogProps {
@@ -25,6 +26,7 @@ export const ProfileCreateDialog = ({
   onOpenChange,
 }: ProfileCreateDialogProps) => {
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -56,6 +58,8 @@ export const ProfileCreateDialog = ({
       );
 
       if (profileId) {
+        analytics.trackProfileCreated(profileId, 0);
+
         toast.success(
           t("profiles.createSuccess", { profileName: name.trim() }),
         );

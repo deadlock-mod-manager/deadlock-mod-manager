@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
@@ -110,6 +111,7 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
 
 export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const {
     getOrderedMods,
     reorderMods,
@@ -119,11 +121,13 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       migrateLegacyMods();
       setOrderedMods(getOrderedMods());
+      setReorderStartTime(Date.now());
     }
     setOpen(isOpen);
   };
@@ -167,8 +171,17 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
       const orderedRemoteIds = orderedMods.map((mod) => mod.remoteId);
       reorderMods(orderedRemoteIds);
 
-      // Update the VPK filenames with the new mappings from the backend
       updateModVpksAfterReorder(updatedVpkMappings);
+
+      const durationSeconds = reorderStartTime
+        ? (Date.now() - reorderStartTime) / 1000
+        : 0;
+
+      analytics.trackModsReordered({
+        mod_count: orderedMods.length,
+        reorder_method: "drag_drop",
+        duration_seconds: durationSeconds,
+      });
 
       toast.success(t("modOrdering.orderSaved"));
       setOpen(false);

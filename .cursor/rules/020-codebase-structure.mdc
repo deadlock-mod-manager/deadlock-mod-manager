@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description: Project structure, commands, and development setup guidelines for the Deadlock Mod Manager monorepo
+globs:
 alwaysApply: true
 ---
+
 # Codebase Structure and Commands
 
 ## Project Structure
@@ -10,42 +11,58 @@ alwaysApply: true
 The project follows a monorepo structure using pnpm workspaces:
 
 ### Core Directories
+
 - `apps/` - Main applications
   - `api/` - Backend API service (Bun + Hono)
+  - `bot/` - Discord bot application
   - `desktop/` - Tauri desktop application
-  - `web/` - Next.js web application
+  - `lockdex/` - Lockdex service application
+  - `www/` - Web application (Vite + React)
 - `packages/` - Shared packages and utilities
-  - `config-eslint/` - Shared ESLint configurations
-  - `config-typescript/` - Shared TypeScript configurations
+  - `common/` - Common error handling and utilities
   - `database/` - Database schema and client (Drizzle ORM)
-  - `utils/` - Shared utilities and type definitions
+  - `distributed-lock/` - Distributed locking utilities
+  - `logging/` - Structured logging package
+  - `queue/` - Queue management utilities
+  - `shared/` - Shared utilities and type definitions
+  - `vpk-parser/` - VPK file parsing utilities (Rust + TypeScript)
+- `tools/` - Development tools and configurations
+  - `typescript/` - Shared TypeScript configurations
 - `.cursor/` - Project rules and documentation
 - `.vscode/` - VS Code configuration
 - `.turbo/` - Turborepo cache and configuration
 
 ### Configuration Files
+
 - `package.json` - Root project dependencies and scripts
 - `pnpm-workspace.yaml` - Workspace configuration
 - `turbo.json` - Turborepo configuration
 - `compose.yml` - Docker Compose for local development
+- `biome.jsonc` - Biome configuration for linting and formatting
+- `lefthook.yml` - Git hooks configuration
+- `netlify.toml` - Netlify deployment configuration
 - `.gitignore` - Git ignore configuration
 
 ## Available Commands
 
 ### Development Commands
+
 ```bash
 # Start development servers
 pnpm dev                    # Start desktop development (default)
 pnpm --filter api dev       # Start API development server
+pnpm --filter bot dev       # Start Discord bot development
 pnpm --filter desktop dev   # Start desktop development
-pnpm --filter web dev       # Start web development server
+pnpm --filter lockdex dev   # Start Lockdex service development
+pnpm --filter www dev       # Start web development server
 
 # Code Quality
-pnpm lint                  # Run linting
-pnpm format               # Format code with Prettier
+pnpm lint                  # Run linting with Biome
+pnpm format               # Format code with Biome
 ```
 
 ### Database Commands
+
 ```bash
 pnpm db:push              # Push schema to database
 pnpm db:migrate:deploy    # Deploy migrations to database
@@ -54,14 +71,18 @@ pnpm generate             # Generate database migrations
 ```
 
 ### Build Commands
+
 ```bash
 pnpm build                 # Build all packages and applications
-pnpm --filter web build    # Build only web application
-pnpm --filter desktop build # Build only desktop application
 pnpm --filter api build    # Build only API
+pnpm --filter bot build    # Build only Discord bot
+pnpm --filter desktop build # Build only desktop application
+pnpm --filter lockdex build # Build only Lockdex service
+pnpm --filter www build    # Build only web application
 ```
 
 ### Package Management
+
 ```bash
 # Add dependencies to specific packages
 pnpm add <package> --filter <package-name>      # Add production dependency
@@ -71,24 +92,29 @@ pnpm add -D <package> --filter <package-name>   # Add dev dependency
 ## Development Setup
 
 1. Install dependencies:
+
    ```bash
    npm i -g pnpm
    pnpm install
    ```
 
 2. Configure environment:
+
    - Create appropriate environment files for each app
    - Fill required environment variables
 
 3. Start development:
+
    ```bash
    # Start desktop app (default)
    pnpm dev
-   
+
    # Or start individual apps
    pnpm --filter api dev
+   pnpm --filter bot dev
    pnpm --filter desktop dev
-   pnpm --filter web dev
+   pnpm --filter lockdex dev
+   pnpm --filter www dev
    ```
 
 4. Build for production:
@@ -100,10 +126,10 @@ pnpm add -D <package> --filter <package-name>   # Add dev dependency
 
 1. Always use pnpm for package management
 2. Use the `--filter` flag when working with specific packages
-3. Keep shared code in the appropriate packages directory (`packages/utils`, `packages/database`, etc.)
+3. Keep shared code in the appropriate packages directory (`packages/shared`, `packages/database`, etc.)
 4. Follow the established environment variable conventions
 5. Run code quality checks before committing:
    ```bash
    pnpm lint
    pnpm check-types
-   ``` 
+   ```

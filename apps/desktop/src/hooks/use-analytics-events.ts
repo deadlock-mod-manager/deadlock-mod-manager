@@ -376,6 +376,55 @@ export const useAnalyticsEvents = () => {
     [capture],
   );
 
+  // Profile switching events
+  const trackProfileSwitched = useCallback(
+    async (
+      fromProfileName: string,
+      toProfileName: string,
+      properties?: {
+        enabled_mods?: number;
+        disabled_mods?: number;
+        switch_duration_seconds?: number;
+        errors?: string[];
+      },
+    ) => {
+      const analyticsProperties: Record<
+        string,
+        string | number | boolean | null | undefined
+      > = {
+        from_profile: fromProfileName,
+        to_profile: toProfileName,
+        timestamp: new Date().toISOString(),
+        enabled_mods: properties?.enabled_mods,
+        disabled_mods: properties?.disabled_mods,
+        switch_duration_seconds: properties?.switch_duration_seconds,
+      };
+
+      if (properties?.errors && properties.errors.length > 0) {
+        analyticsProperties.errors = properties.errors.join(", ");
+        analyticsProperties.error_count = properties.errors.length;
+      }
+
+      await capture("profile_switched", analyticsProperties);
+    },
+    [capture],
+  );
+
+  // Mod ordering events
+  const trackModsReordered = useCallback(
+    async (properties?: {
+      mod_count?: number;
+      reorder_method?: "drag_drop" | "manual";
+      duration_seconds?: number;
+    }) => {
+      await capture("mods_reordered", {
+        timestamp: new Date().toISOString(),
+        ...properties,
+      });
+    },
+    [capture],
+  );
+
   return {
     // User identification
     identifyUser,
@@ -421,6 +470,12 @@ export const useAnalyticsEvents = () => {
     // Addon analysis
     trackAddonAnalysisStarted,
     trackAddonAnalysisCompleted,
+
+    // Profile switching
+    trackProfileSwitched,
+
+    // Mod ordering
+    trackModsReordered,
 
     // Utility
     isEnabled,

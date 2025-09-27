@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "react-query";
 import { toast } from "sonner";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { analyzeLocalAddons, getMod } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -10,8 +11,12 @@ import type { AddonAnalysisProgress } from "@/types/mods";
 
 export const useAddonAnalysis = () => {
   const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
   const [progress, setProgress] = useState<AddonAnalysisProgress | null>(null);
   const [showProgressToast, setShowProgressToast] = useState(false);
+  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(
+    null,
+  );
   const analysisResult = usePersistedStore((state) => state.analysisResult);
   const dialogOpen = usePersistedStore((state) => state.analysisDialogOpen);
   const setAnalysisResult = usePersistedStore(
@@ -78,7 +83,7 @@ export const useAddonAnalysis = () => {
       setDialogOpen(shouldShowDialog);
 
       // Process identified addons and add them to the store
-      let identifiedCount = 0;
+      let processedIdentifiedCount = 0;
       console.log("Processing analysis results:", {
         totalAddons: data.addons.length,
         addonsWithRemoteId: data.addons.filter((a) => a.remoteId).length,
@@ -93,7 +98,7 @@ export const useAddonAnalysis = () => {
 
             // Add to store as an identified local mod
             addIdentifiedLocalMod(modDetails, addon.filePath);
-            identifiedCount++;
+            processedIdentifiedCount++;
           } catch (error) {
             logger.error(
               `Failed to fetch mod details for ${addon.remoteId}:`,
@@ -102,6 +107,20 @@ export const useAddonAnalysis = () => {
           }
         }
       }
+
+      const durationSeconds = analysisStartTime
+        ? (Date.now() - analysisStartTime) / 1000
+        : 0;
+
+      const totalIdentifiedCount = data.addons.filter(
+        (addon) => addon.remoteId && addon.matchInfo,
+      ).length;
+
+      analytics.trackAddonAnalysisCompleted(
+        data.totalCount,
+        totalIdentifiedCount,
+        durationSeconds,
+      );
 
       if (data.errors.length > 0) {
         toast.warning(
@@ -112,20 +131,20 @@ export const useAddonAnalysis = () => {
         );
       } else {
         // Show different messages based on what happened
-        if (identifiedCount > 0 && shouldShowDialog) {
+        if (processedIdentifiedCount > 0 && shouldShowDialog) {
           // Some identified, some need attention
           toast.success(
             t("addons.analysisSuccessWithIdentified", {
               count: data.totalCount,
-              identified: identifiedCount,
+              identified: processedIdentifiedCount,
             }),
           );
-        } else if (identifiedCount > 0 && !shouldShowDialog) {
+        } else if (processedIdentifiedCount > 0 && !shouldShowDialog) {
           // All identified successfully
           toast.success(
             t("addons.analysisSuccessAllIdentified", {
               count: data.totalCount,
-              identified: identifiedCount,
+              identified: processedIdentifiedCount,
             }),
           );
         } else {
@@ -147,8 +166,12 @@ export const useAddonAnalysis = () => {
   const startAnalysis = () => {
     setShowProgressToast(true);
     setProgress(null);
-    // Clear previous results when starting new analysis
+    setAnalysisStartTime(Date.now());
+
     clearAnalysisDialog();
+
+    analytics.trackAddonAnalysisStarted(0);
+
     analyzeAddons();
   };
 
