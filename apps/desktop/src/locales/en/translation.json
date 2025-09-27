@@ -692,6 +692,10 @@
     "reportFailed": "Failed to submit report",
     "thankYou": "Thank You!",
     "submissionConfirmation": "Your report has been submitted and will be reviewed by moderators.",
+    "reportTypes": "Report Types",
+    "title": "Reports",
+    "description": "This mod has been reported {{count}} time",
+    "description_plural": "This mod has been reported {{count}} times",
     "types": {
       "broken": "Broken/Not Working",
       "outdated": "Outdated",
@@ -699,12 +703,20 @@
       "inappropriate": "Inappropriate Content",
       "other": "Other"
     },
-    "totalReports": "{{count}} reports",
-    "verifiedReports": "{{count}} verified reports",
-    "unverifiedReports": "{{count}} unverified reports",
+    "totalReports": "{{count}} report",
+    "totalReports_plural": "{{count}} reports",
+    "verifiedReports": "{{count}} verified report",
+    "verifiedReports_plural": "{{count}} verified reports",
+    "unverifiedReports": "{{count}} unverified report",
+    "unverifiedReports_plural": "{{count}} unverified reports",
     "verifiedCount": "{{count}} verified",
     "unverifiedCount": "{{count}} unverified",
     "verified": "verified",
-    "unverified": "unverified"
+    "unverified": "unverified",
+    "validation": {
+      "reasonMinLength": "Reason must be at least 5 characters",
+      "reasonMaxLength": "Reason must be less than 500 characters",
+      "descriptionMaxLength": "Description must be less than 2000 characters"
+    }
   }
 }

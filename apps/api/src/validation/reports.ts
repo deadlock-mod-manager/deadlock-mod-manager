@@ -65,6 +65,17 @@ export const ReportCountsResponseSchema = z.object({
   verified: z.number(),
   unverified: z.number(),
   dismissed: z.number(),
+  byType: z
+    .record(
+      z.string(),
+      z.object({
+        total: z.number(),
+        verified: z.number(),
+        unverified: z.number(),
+        dismissed: z.number(),
+      }),
+    )
+    .optional(),
 });
 
 export const CreateReportResponseSchema = z.object({

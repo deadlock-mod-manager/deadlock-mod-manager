@@ -22,11 +22,21 @@ pub struct CreateReportResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReportTypeCounts {
+  pub total: u32,
+  pub verified: u32,
+  pub unverified: u32,
+  pub dismissed: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReportCounts {
   pub total: u32,
   pub verified: u32,
   pub unverified: u32,
   pub dismissed: u32,
+  #[serde(rename = "byType")]
+  pub by_type: Option<std::collections::HashMap<String, ReportTypeCounts>>,
 }
 
 pub struct ReportService {

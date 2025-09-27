@@ -1,4 +1,4 @@
-import { AlertTriangle, Flag } from "lucide-react";
+import { Flag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,6 +8,14 @@ import {
 } from "@/components/ui/tooltip";
 import { useReportCounts } from "@/hooks/use-report-counts";
 import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { ReportTypesList } from "./report-types-list";
 
 interface ReportCounterProps {
   modId: string;
@@ -17,7 +25,7 @@ interface ReportCounterProps {
 
 export const ReportCounter = ({
   modId,
-  variant = "default",
+  variant = "compact",
   showUnverified = true,
 }: ReportCounterProps) => {
   const { t } = useTranslation();
@@ -44,12 +52,13 @@ export const ReportCounter = ({
               "h-5 rounded-full text-xs",
               hasVerifiedReports && "animate-pulse",
             )}>
-            <AlertTriangle className='h-3 w-3 mr-1' />
+            <Flag className='h-3 w-3 mr-1' />
             {hasVerifiedReports ? counts.verified : counts.unverified}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
-          <div className='text-sm'>
+          <div className='text-sm space-y-2'>
+            <div>{t("reports.totalReports", { count: counts.total })}</div>
             {hasVerifiedReports && (
               <p className='text-destructive font-medium'>
                 {t("reports.verifiedReports", { count: counts.verified })}
@@ -60,6 +69,10 @@ export const ReportCounter = ({
                 {t("reports.unverifiedReports", { count: counts.unverified })}
               </p>
             )}
+            <ReportTypesList
+              reportTypes={counts.byType || {}}
+              variant='compact'
+            />
           </div>
         </TooltipContent>
       </Tooltip>
@@ -68,7 +81,7 @@ export const ReportCounter = ({
 
   if (variant === "compact") {
     return (
-      <div className='flex items-center gap-1 text-xs text-muted-foreground'>
+      <div className='flex items-center gap-1 text-muted-foreground'>
         <Flag className='h-3 w-3' />
         <span>{counts.total}</span>
         {hasVerifiedReports && (
@@ -81,23 +94,19 @@ export const ReportCounter = ({
   }
 
   return (
-    <div className='flex items-center gap-2 text-sm'>
-      <div className='flex items-center gap-1 text-muted-foreground'>
-        <Flag className='h-4 w-4' />
-        <span>{t("reports.totalReports", { count: counts.total })}</span>
-      </div>
-
-      {hasVerifiedReports && (
-        <Badge variant='destructive' className='text-xs'>
-          {t("reports.verifiedCount", { count: counts.verified })}
-        </Badge>
-      )}
-
-      {showUnverified && hasUnverifiedReports && (
-        <Badge variant='secondary' className='text-xs'>
-          {t("reports.unverifiedCount", { count: counts.unverified })}
-        </Badge>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className='flex items-center gap-2 text-xl'>
+          <Flag className='h-4 w-4' />
+          <span>{t("reports.title")}</span>
+        </CardTitle>
+        <CardDescription>
+          {t("reports.description", { count: counts.total })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ReportTypesList reportTypes={counts.byType || {}} />
+      </CardContent>
+    </Card>
   );
 };

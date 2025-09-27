@@ -125,7 +125,6 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
                     {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
                   </span>
                 </div>
-                <ReportCounter modId={mod.id} variant='compact' />
               </div>
               <ModButton remoteMod={mod} variant='iconOnly' />
             </div>

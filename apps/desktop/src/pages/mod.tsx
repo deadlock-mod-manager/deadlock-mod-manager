@@ -170,7 +170,6 @@ const Mod = () => {
                     View original forum post
                   </Button>
                 )}
-                <ReportCounter modId={mod.id} variant='default' />
               </div>
 
               <div className='flex items-center gap-2'>
@@ -189,6 +188,8 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
+
+          <ReportCounter modId={mod.id} variant='default' />
 
           {mod.description && <ModDescription description={mod.description} />}
 

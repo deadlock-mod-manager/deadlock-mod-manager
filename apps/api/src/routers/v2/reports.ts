@@ -134,7 +134,7 @@ export const reportsRouter = {
     .output(ReportCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
-        const counts = await reportRepository.getReportCounts(input.modId);
+        const counts = await reportRepository.getReportCountsByType(input.modId);
         return counts;
       } catch (error) {
         logger

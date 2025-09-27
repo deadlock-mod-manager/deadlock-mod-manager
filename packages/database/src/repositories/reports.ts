@@ -80,6 +80,78 @@ export class ReportRepository {
     return counts;
   }
 
+  async getReportCountsByType(modId: string): Promise<{
+    total: number;
+    verified: number;
+    unverified: number;
+    dismissed: number;
+    byType: Record<
+      string,
+      { total: number; verified: number; unverified: number; dismissed: number }
+    >;
+  }> {
+    const result = await this.db
+      .select({
+        type: reports.type,
+        status: reports.status,
+        count: count(),
+      })
+      .from(reports)
+      .where(eq(reports.modId, modId))
+      .groupBy(reports.type, reports.status);
+
+    const counts = {
+      total: 0,
+      verified: 0,
+      unverified: 0,
+      dismissed: 0,
+      byType: {} as Record<
+        string,
+        {
+          total: number;
+          verified: number;
+          unverified: number;
+          dismissed: number;
+        }
+      >,
+    };
+
+    for (const row of result) {
+      counts.total += row.count;
+
+      // Update status counts
+      if (row.status === "verified") {
+        counts.verified += row.count;
+      } else if (row.status === "unverified") {
+        counts.unverified += row.count;
+      } else if (row.status === "dismissed") {
+        counts.dismissed += row.count;
+      }
+
+      if (!counts.byType[row.type]) {
+        counts.byType[row.type] = {
+          total: 0,
+          verified: 0,
+          unverified: 0,
+          dismissed: 0,
+        };
+      }
+
+      counts.byType[row.type].total += row.count;
+
+      // Update type-specific status counts
+      if (row.status === "verified") {
+        counts.byType[row.type].verified += row.count;
+      } else if (row.status === "unverified") {
+        counts.byType[row.type].unverified += row.count;
+      } else if (row.status === "dismissed") {
+        counts.byType[row.type].dismissed += row.count;
+      }
+    }
+
+    return counts;
+  }
+
   async getRecentReports(
     limit = 50,
   ): Promise<Array<Report & { modName: string; modAuthor: string }>> {

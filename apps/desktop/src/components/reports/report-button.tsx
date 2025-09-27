@@ -21,9 +21,8 @@ export const ReportButton = ({ mod }: ReportButtonProps) => {
   return (
     <>
       <Button
-        variant='outline'
+        variant='destructive'
         onClick={handleClick}
-        className='text-destructive'
         icon={<Flag className='h-4 w-4 mr-2' />}>
         {t("reports.reportMod")}
       </Button>

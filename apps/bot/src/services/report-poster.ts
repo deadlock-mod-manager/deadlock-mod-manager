@@ -1,4 +1,9 @@
-import { db, ModRepository, ReportRepository } from "@deadlock-mods/database";
+import {
+  db,
+  type Mod,
+  ModRepository,
+  ReportRepository,
+} from "@deadlock-mods/database";
 import type {
   NewReportEvent,
   ReportStatusUpdatedEvent,
@@ -87,10 +92,7 @@ export class ReportPosterService {
         throw new Error(`Mod with ID ${event.data.modId} not found`);
       }
 
-      const { embed, components } = this.formatReportPost(
-        event.data,
-        mod.remoteUrl,
-      );
+      const { embed, components } = this.formatReportPost(event.data, mod);
       const forumChannel = channel as ForumChannel;
       const threadTitle = `${this.getReportTypeEmoji(event.data.type)} ${event.data.modName} - ${event.data.type}`;
       const availableTags = this.getApplicableTags(forumChannel, event.data);
@@ -190,10 +192,7 @@ export class ReportPosterService {
         throw new Error(`Mod with ID ${event.data.modId} not found`);
       }
 
-      const { embed, components } = this.formatReportPost(
-        event.data,
-        mod.remoteUrl,
-      );
+      const { embed, components } = this.formatReportPost(event.data, mod);
 
       await starterMessage.edit({
         embeds: [embed],
@@ -291,7 +290,7 @@ export class ReportPosterService {
 
   private formatReportPost(
     reportData: NewReportEvent["data"] | ReportStatusUpdatedEvent["data"],
-    modUrl: string,
+    mod: Mod,
   ): {
     embed: EmbedBuilder;
     components: ActionRowBuilder<ButtonBuilder>[];
@@ -338,6 +337,11 @@ export class ReportPosterService {
         text: `Report ID: ${reportData.id}`,
       })
       .setTimestamp(new Date(reportData.createdAt || new Date()));
+
+    const modImage = mod.hero || (mod.images.length > 0 ? mod.images[0] : null);
+    if (modImage) {
+      embed.setImage(modImage);
+    }
 
     if (reportData.description) {
       embed.addFields({
@@ -395,7 +399,7 @@ export class ReportPosterService {
 
     const utilityRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setURL(modUrl)
+        .setURL(mod.remoteUrl)
         .setLabel("View Mod")
         .setStyle(ButtonStyle.Link)
         .setEmoji("🔗"),
