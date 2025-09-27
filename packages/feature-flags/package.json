@@ -1,0 +1,21 @@
+{
+  "name": "@deadlock-mods/feature-flags",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@type-cacheable/cache-manager-adapter": "^17.0.0",
+    "@type-cacheable/core": "^14.1.0",
+    "@deadlock-mods/common": "workspace:*",
+    "@deadlock-mods/database": "workspace:*",
+    "@deadlock-mods/logging": "workspace:*",
+    "cache-manager": "^5.7.6",
+    "dotenv": "^16.4.7",
+    "neverthrow": "^8.2.0"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*"
+  }
+}

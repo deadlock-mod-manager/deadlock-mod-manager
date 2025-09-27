@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useLaunch } from "@/hooks/use-launch";
 import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
@@ -27,6 +28,8 @@ export const Toolbar = () => {
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
+  const { isEnabled: isProfileSharingEnabled } =
+    useFeatureFlag("profile-sharing");
 
   const { data: isRunning, refetch } = useQuery({
     queryKey: ["is-game-running"],
@@ -53,7 +56,7 @@ export const Toolbar = () => {
           <Separator orientation='vertical' className='h-8' />
         </div>
         <Profile />
-        <ProfileShareDialog />
+        {isProfileSharingEnabled && <ProfileShareDialog />}
       </div>
       {!isRunning && (
         <Button

@@ -7,8 +7,8 @@ import {
 import type {
   NodeClient as SentryNodeClient,
   SeverityLevel,
-} from "@sentry/bun";
-import * as Sentry from "@sentry/bun";
+} from "@sentry/node";
+import * as Sentry from "@sentry/node";
 import { omit } from "lodash";
 import { deserializeError } from "serialize-error";
 

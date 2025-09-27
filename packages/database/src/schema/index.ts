@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./custom-settings";
+export * from "./feature-flags";
 export * from "./job-locks";
 export * from "./mods";
 export * from "./profiles";

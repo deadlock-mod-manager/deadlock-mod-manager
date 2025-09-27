@@ -113,6 +113,12 @@ export const shareProfile = async (
 export const getProfile = async (profileId: string) => {
   return await apiRequest<SharedProfile>(`/api/v2/profiles/${profileId}`);
 };
+
+export const getFeatureFlags = async () => {
+  return await apiRequest<Array<{ name: string; enabled: boolean }>>(
+    "/api/v2/feature-flags",
+  );
+};
 export const getApiHealth = async () => {
   return await apiRequest<{
     status: string;

@@ -10,9 +10,10 @@
     "db:generate": "dotenv -e ../../.env -- drizzle-kit generate",
     "db:push": "dotenv -e ../../.env -- drizzle-kit push",
     "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
-    "db:seed": "dotenv -e ../../.env -- tsx src/seed.ts"
+    "db:seed": "dotenv -e ../../.env -- bun run src/seed.ts"
   },
   "dependencies": {
+    "@deadlock-mods/logging": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.42.0",
     "pg": "^8.16.3",

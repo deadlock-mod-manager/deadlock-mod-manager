@@ -4,6 +4,6 @@ packages:
   - tools/*
 
 catalog:
-  "@sentry/bun": ^10.15.0
+  "@sentry/node": ^10.15.0
   typescript: ^5.9.2
   zod: 4.1.9

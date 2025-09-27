@@ -4,7 +4,7 @@ import {
   DistributedLockService,
 } from "@deadlock-mods/distributed-lock";
 import type { GameBanana } from "@deadlock-mods/shared";
-import * as Sentry from "@sentry/bun";
+import * as Sentry from "@sentry/node";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { providerRegistry } from "../providers";

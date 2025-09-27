@@ -4,6 +4,7 @@ import { ORPCError } from "@orpc/server";
 import { logger } from "@/lib/logger";
 import { generateHash } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
+import { featureFlagsService } from "../../services/feature-flags";
 import {
   GetProfileInputSchema,
   ShareProfileInputSchema,
@@ -18,6 +19,16 @@ export const profilesRouter = {
     .input(GetProfileInputSchema)
     .output(profileSchema)
     .handler(async ({ input }) => {
+      const isProfileSharingEnabled =
+        await featureFlagsService.isFeatureEnabled("profile-sharing");
+
+      if (!isProfileSharingEnabled) {
+        logger.warn("Profile sharing is disabled via feature flag");
+        throw new ORPCError("FORBIDDEN", {
+          message: "Profile sharing is currently disabled",
+        });
+      }
+
       const profile = await profileRepository.findById(input.id);
       if (!profile) {
         throw new ORPCError("NOT_FOUND");
@@ -29,6 +40,18 @@ export const profilesRouter = {
     .input(ShareProfileInputSchema)
     .output(ShareProfileOutputSchema)
     .handler(async ({ input }) => {
+      const isProfileSharingEnabled =
+        await featureFlagsService.isFeatureEnabled("profile-sharing");
+
+      if (!isProfileSharingEnabled) {
+        logger.warn("Profile sharing is disabled via feature flag");
+        return {
+          id: null,
+          status: "error",
+          error: "Profile sharing is currently disabled",
+        };
+      }
+
       try {
         const contentHash = generateHash(JSON.stringify(input));
 

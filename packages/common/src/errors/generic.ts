@@ -1,11 +1,6 @@
-export enum GenericErrorCode {
-  RUNTIME_ERROR = "RUNTIME_ERROR",
-  VALIDATION_ERROR = "VALIDATION_ERROR",
-  UNKNOWN_ERROR = "UNKNOWN_ERROR",
-}
-
+import { type ErrorCode, GenericErrorCode } from "./codes";
 export abstract class BaseError extends Error {
-  abstract readonly code: GenericErrorCode;
+  abstract readonly code: ErrorCode;
   readonly originalError?: unknown;
 
   constructor(message: string, originalError?: unknown) {

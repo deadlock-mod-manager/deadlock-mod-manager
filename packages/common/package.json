@@ -5,9 +5,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@isaacs/ttlcache": "^1.4.1",
+    "cache-manager": "^7.2.2",
+    "cacheable": "^1.10.4",
+    "pg": "^8.15.5",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@deadlock-mods/typescript-config": "workspace:*"
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/pg": "^8.15.5"
   }
 }
