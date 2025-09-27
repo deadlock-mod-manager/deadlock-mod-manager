@@ -28,6 +28,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useWhatsNew } from "@/hooks/use-whats-new";
+import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 import { AboutDialog } from "./about-dialog";
@@ -236,7 +237,7 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => open("https://discord.gg/WbFNt8CCr8")}>
+                  onClick={() => open(DISCORD_URL)}>
                   <DiscordLogo weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>

@@ -6,6 +6,7 @@
     "db:push": "turbo run db:push",
     "db:seed": "turbo run db:seed",
     "api:dev": "pnpm --filter api dev",
+    "dev": "turbo run dev",
     "desktop:dev": "pnpm --filter desktop tauri dev",
     "docker:api:build": "docker build -f apps/api/Dockerfile -t deadlock-api .",
     "docker:api:run": "docker run --rm -p 9000:9000 --env-file .env deadlock-api",
@@ -28,7 +29,7 @@
     "cross-env": "^10.0.0",
     "dotenv-cli": "^7.4.4",
     "lefthook": "^1.13.1",
-    "turbo": "^2.5.6",
+    "turbo": "^2.5.8",
     "typescript": "catalog:"
   },
   "engines": {

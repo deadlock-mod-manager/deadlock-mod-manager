@@ -1,5 +1,5 @@
 {
-  "name": "desktop",
+  "name": "@deadlock-mods/desktop",
   "private": true,
   "version": "0.8.3",
   "type": "module",

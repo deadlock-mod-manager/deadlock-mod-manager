@@ -20,7 +20,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import useAbout from "@/hooks/use-about";
 import useUpdateManager from "@/hooks/use-update-manager";
-import { APP_NAME, GITHUB_REPO, REDDIT_URL, X_URL } from "@/lib/constants";
+import {
+  APP_NAME,
+  DISCORD_URL,
+  GITHUB_REPO,
+  REDDIT_URL,
+  X_URL,
+} from "@/lib/constants";
 import Logo from "./logo";
 
 export const AboutDialog = () => {
@@ -86,7 +92,7 @@ export const AboutDialog = () => {
           />
           <DiscordLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open("https://discord.gg/WbFNt8CCr8")}
+            onClick={() => open(DISCORD_URL)}
           />
           <RedditLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'

@@ -24,7 +24,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           <ScrollBackButtonProvider>
             <div className={cn("flex h-full w-full flex-col")}>
               <Toolbar />
-              <div className={cn("flex flex-1 px-8 pt-4")}>{children}</div>
+              <div className={cn("flex flex-1 pr-2 pl-8 pt-4")}>{children}</div>
               <BottomBar />
             </div>
           </ScrollBackButtonProvider>

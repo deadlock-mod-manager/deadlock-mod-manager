@@ -20,6 +20,7 @@ export default defineConfig({
         '/status',
         '/privacy',
         '/terms',
+        '/discord',
       ],
       exclude: [
         '/login', // Login page might not need to be indexed
@@ -33,6 +34,7 @@ export default defineConfig({
         '/status': 'daily',
         '/privacy': 'monthly',
         '/terms': 'monthly',
+        '/discord': 'monthly', // Discord invite rarely changes
         '*': 'weekly', // default for other pages
       },
       priority: {
@@ -44,6 +46,7 @@ export default defineConfig({
         '/status': 0.6,
         '/privacy': 0.5,
         '/terms': 0.5,
+        '/discord': 0.7, // Important for community engagement
         '*': 0.6, // default for other pages
       },
       generateRobotsTxt: true,

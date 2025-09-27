@@ -4,8 +4,8 @@
   "scripts": {
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-    "start": "dotenv -e ../../.env -- bun run src/index.ts",
-    "dev": "dotenv -e ../../.env -- bun run --watch src/index.ts",
+    "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
+    "dev": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts",
     "test": "dotenv -e ../../.env -- bun run src/scripts/test.ts",
     "health-check": "bun run src/health-check.ts"

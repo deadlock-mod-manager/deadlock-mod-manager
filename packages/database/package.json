@@ -5,6 +5,7 @@
     ".": "./src/client.ts"
   },
   "scripts": {
+    "dev": "pnpm db:studio",
     "db:migrate": "dotenv -e ../../.env -- drizzle-kit migrate",
     "db:generate": "dotenv -e ../../.env -- drizzle-kit generate",
     "db:push": "dotenv -e ../../.env -- drizzle-kit push",

@@ -3,6 +3,7 @@ export const GITHUB_REPO =
   "https://github.com/deadlock-mod-manager/deadlock-mod-manager";
 export const REDDIT_URL = "https://www.reddit.com/r/DeadlockModManager/";
 export const X_URL = "https://x.com/DLModManager";
+export const DISCORD_URL = "https://deadlockmods.app/discord";
 export const APP_DESCRIPTION =
   'Deadlock Mod Manager is a tool for installing and managing mods for the Valve game "Deadlock".';
 export const COPYRIGHT =
