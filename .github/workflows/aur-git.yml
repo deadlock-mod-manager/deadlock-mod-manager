@@ -1,0 +1,38 @@
+name: Update AUR PKGBUILD for git package
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README*.md"
+      - "docs/**"
+      - ".github/**"
+      - "!.github/workflows/aur-git.yml"
+  workflow_dispatch:
+
+jobs:
+  aur-git-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone from AUR
+        run: git clone https://aur.archlinux.org/deadlock-modmanager-git.git
+
+      - name: Update pkgrel
+        run: |
+          cd deadlock-modmanager-git
+          # Get current pkgrel and increment it
+          CURRENT_PKGREL=$(grep '^pkgrel=' PKGBUILD | cut -d'=' -f2)
+          NEW_PKGREL=$((CURRENT_PKGREL + 1))
+          sed -i "s/^pkgrel=.*/pkgrel=${NEW_PKGREL}/" PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
+        with:
+          pkgname: deadlock-modmanager-git
+          pkgbuild: deadlock-modmanager-git/PKGBUILD
+          commit_username: GitHub Actions
+          commit_email: github-actions@github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to latest git commit: ${{ github.sha }}"
+          updpkgsums: true
