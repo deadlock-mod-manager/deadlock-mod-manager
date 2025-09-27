@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Home, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { usePageTracking } from "@/hooks/use-page-tracking";
 
 export const Route = createFileRoute("/$")({
   component: NotFoundComponent,
@@ -11,8 +10,6 @@ export const Route = createFileRoute("/$")({
 function NotFoundComponent() {
   const [glitchText, setGlitchText] = useState("404");
   const [isGlitching, setIsGlitching] = useState(false);
-
-  usePageTracking("404", { path: window.location.pathname });
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {

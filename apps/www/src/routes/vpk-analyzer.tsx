@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { VpkAnalyzer } from "@/components/vpk-analyzer";
-import { usePageTracking } from "@/hooks/use-page-tracking";
 
 export const Route = createFileRoute("/vpk-analyzer")({
   component: VpkAnalyzerComponent,
 });
 
 function VpkAnalyzerComponent() {
-  usePageTracking("vpk-analyzer");
   return (
     <div className='container mx-auto py-8'>
       <div className='mx-auto max-w-4xl'>

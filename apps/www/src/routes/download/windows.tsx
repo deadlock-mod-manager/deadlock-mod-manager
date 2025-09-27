@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { usePageTracking } from "@/hooks/use-page-tracking";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/download/windows")({
@@ -15,8 +14,6 @@ function DownloadWindowsComponent() {
     isLoading,
     error,
   } = useQuery(orpc.getReleases.queryOptions());
-
-  usePageTracking("download-windows");
 
   useEffect(() => {
     if (isLoading || error) return;

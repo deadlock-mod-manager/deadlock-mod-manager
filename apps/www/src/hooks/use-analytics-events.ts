@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useAnalytics } from "./use-posthog";
+import { useAnalytics } from "./use-analytics";
 
 // Analytics property types
 interface BaseAnalyticsProperties {
@@ -44,13 +44,11 @@ interface ErrorProperties extends BaseAnalyticsProperties {
  * This hook provides typed event tracking methods for key user interactions
  */
 export const useAnalyticsEvents = () => {
-  const { capture, identify, isEnabled } = useAnalytics();
+  const { capture, identify } = useAnalytics();
 
   // User identification and properties
   const identifyUser = useCallback(
     async (userId: string, properties?: UserProperties) => {
-      if (!isEnabled) return;
-
       try {
         await identify(userId, {
           platform: "web",
@@ -61,7 +59,7 @@ export const useAnalyticsEvents = () => {
         console.warn("Failed to identify user for analytics", error);
       }
     },
-    [identify, isEnabled],
+    [identify],
   );
 
   // Page navigation events
@@ -294,8 +292,5 @@ export const useAnalyticsEvents = () => {
 
     // Engagement
     trackNewsletterSignup,
-
-    // Utility
-    isEnabled,
   };
 };

@@ -124,7 +124,7 @@ export const Footer = () => {
             <div>
               <a
                 className='opacity-60 hover:opacity-100'
-                href='http://gamebanana.com/'
+                href='http://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 GameBanana
@@ -133,10 +133,19 @@ export const Footer = () => {
             <div>
               <a
                 className='opacity-60 hover:opacity-100'
-                href='https://deadlocker.net/'
+                href='https://deadlocker.net/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 Deadlocker
+              </a>
+            </div>
+            <div>
+              <a
+                className='opacity-60 hover:opacity-100'
+                href='https://deadlock-api.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
+                rel='noopener noreferrer'
+                target='_blank'>
+                Deadlock API
               </a>
             </div>
           </div>
@@ -148,7 +157,7 @@ export const Footer = () => {
             Powered by{" "}
             <a
               className='font-medium text-primary transition-all hover:opacity-80'
-              href='https://gamebanana.com/'
+              href='https://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=powered-by'
               rel='noopener noreferrer'
               target='_blank'>
               GameBanana

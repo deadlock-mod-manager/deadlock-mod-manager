@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePageTracking } from "@/hooks/use-page-tracking";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyComponent,
@@ -22,7 +21,6 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyComponent() {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  usePageTracking("privacy");
 
   useEffect(() => {
     const handleScroll = () => {
