@@ -40,6 +40,7 @@ export type ModsState = {
     vpks: string[],
     fileTree?: ModFileTree,
   ) => void;
+  setParsedHeroes: (remoteId: string, heroes: string[]) => void;
   setSelectedDownload: (remoteId: string, download: ModDownloadItem) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
@@ -238,6 +239,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+      })),
+    })),
+
+  setParsedHeroes: (remoteId: string, heroes: string[]) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        parsedHeroes:
+          mod.remoteId === remoteId ? heroes : (mod as any).parsedHeroes,
       })),
     })),
 

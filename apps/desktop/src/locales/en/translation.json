@@ -89,6 +89,7 @@
     "success": "Success",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "continue": "Continue",
     "close": "Close",
     "save": "Save",
     "delete": "Delete",
@@ -117,6 +118,10 @@
     "apiDegraded": "API Issues",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status Unknown"
+  },
+  "modConflict": {
+    "title": "{{heroes}} already active",
+    "body": "Another mod using the same hero is enabled: {{conflicts}}. Continue?"
   },
   "settings": {
     "language": "Language",

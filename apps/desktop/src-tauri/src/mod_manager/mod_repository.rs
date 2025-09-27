@@ -15,6 +15,8 @@ pub struct Mod {
   pub file_tree: Option<ModFileTree>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub install_order: Option<u32>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub parsed_heroes: Vec<String>,
 }
 
 

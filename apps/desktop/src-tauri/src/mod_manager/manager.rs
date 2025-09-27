@@ -5,6 +5,7 @@ use crate::mod_manager::{
   filesystem_helper::FileSystemHelper,
   game_config_manager::GameConfigManager,
   game_process_manager::GameProcessManager,
+  hero_parser::HeroParser,
   mod_repository::{Mod, ModRepository},
   steam_manager::SteamManager,
   vpk_manager::VpkManager,
@@ -269,6 +270,25 @@ impl ModManager {
       .copy_vpks_from_directory(&mod_files_path, &addons_path)?;
 
     deadlock_mod.installed_vpks = installed_vpks;
+
+    // Detect heroes and attach to the mod struct
+    match HeroParser::parse_heroes_from_directory(&mod_files_path) {
+      Ok(heroes) => {
+        let heroes_vec = heroes.into_iter().collect::<Vec<_>>();
+        if heroes_vec.is_empty() {
+          log::info!("No heroes detected in installed mod");
+        } else {
+          log::info!(
+            "Detected hero tags for installed mod: {}",
+            heroes_vec.join(", ")
+          );
+        }
+        deadlock_mod.parsed_heroes = heroes_vec;
+      }
+      Err(e) => {
+        log::warn!("Failed to detect heroes for installed mod: {}", e);
+      }
+    }
 
     // Store the selected file tree for display purposes
     if let Some(file_tree) = &deadlock_mod.file_tree {

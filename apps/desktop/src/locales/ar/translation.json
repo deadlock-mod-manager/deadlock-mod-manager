@@ -70,6 +70,7 @@
     "success": "نجاح",
     "cancel": "إلغاء",
     "confirm": "تأكيد",
+    "continue": "متابعة",
     "close": "إغلاق",
     "save": "حفظ",
     "delete": "مسح",
@@ -91,6 +92,10 @@
     "gameRunning": "اللعبة تعمل",
     "gameReady": "اللعبة جاهزة",
     "gameNotDetected": "اللعبة غير مكتشفة"
+  },
+  "modConflict": {
+    "title": "{{heroes}} مُفعّل بالفعل",
+    "body": "هناك تعديل آخر يستخدم نفس البطل مُفعل: {{conflicts}}. هل تريد المتابعة؟"
   },
   "settings": {
     "language": "اللغة",

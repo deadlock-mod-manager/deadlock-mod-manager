@@ -205,7 +205,9 @@ pub fn run() {
       commands::extract_archive,
       commands::remove_mod_folder,
       commands::parse_vpk_file,
-      commands::analyze_local_addons
+      commands::analyze_local_addons,
+      commands::detect_heroes_in_path,
+      commands::detect_heroes_in_download_dir
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

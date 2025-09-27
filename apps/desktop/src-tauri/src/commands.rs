@@ -2,7 +2,9 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult, Mod, ModFileTree, ModManager};
+use crate::mod_manager::{
+  AddonAnalyzer, AnalyzeAddonsResult, HeroParser, Mod, ModFileTree, ModManager,
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -486,4 +488,30 @@ pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddons
     .analyze_local_addons(game_path, Some(app_handle))
     .await?;
   Ok(result)
+}
+
+#[tauri::command]
+pub async fn detect_heroes_in_path(path: String) -> Result<Vec<String>, Error> {
+  let path_buf = PathBuf::from(&path);
+  if !path_buf.exists() {
+    return Err(Error::ModFileNotFound);
+  }
+
+  if path_buf.is_file() {
+    let heroes = HeroParser::parse_heroes_from_vpk(&path_buf)?;
+    Ok(heroes.into_iter().collect())
+  } else {
+    let heroes = HeroParser::parse_heroes_from_directory(&path_buf)?;
+    Ok(heroes.into_iter().collect())
+  }
+}
+
+#[tauri::command]
+pub async fn detect_heroes_in_download_dir(path: String) -> Result<Vec<String>, Error> {
+  let path_buf = PathBuf::from(&path);
+  if !path_buf.exists() {
+    return Err(Error::ModFileNotFound);
+  }
+  let heroes = HeroParser::parse_heroes_for_mod_download_dir(&path_buf)?;
+  Ok(heroes.into_iter().collect())
 }

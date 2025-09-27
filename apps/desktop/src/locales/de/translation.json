@@ -70,6 +70,7 @@
     "success": "Erfolg",
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
+    "continue": "Fortfahren",
     "close": "Schließen",
     "save": "Speichern",
     "delete": "Löschen",
@@ -93,6 +94,10 @@
     "gameNotDetected": "Spiel nicht erkannt",
     "never": "Niemals",
     "actions": "Aktionen"
+  },
+  "modConflict": {
+    "title": "{{heroes}} bereits aktiv",
+    "body": "Eine andere Mod mit demselben Hero ist aktiviert: {{conflicts}}. Fortfahren?"
   },
   "settings": {
     "language": "Sprache",

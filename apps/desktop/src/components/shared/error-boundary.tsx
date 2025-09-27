@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
-const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
+const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();
 
   return (
@@ -33,7 +33,7 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
 
 const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ReactErrorBoundary fallbackRender={fallbackRender}>
+    <ReactErrorBoundary FallbackComponent={FallbackComponent}>
       {children}
     </ReactErrorBoundary>
   );

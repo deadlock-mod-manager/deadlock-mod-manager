@@ -73,6 +73,7 @@
     "success": "Başarılı",
     "cancel": "İptal",
     "confirm": "Onayla",
+    "continue": "Devam et",
     "close": "Kapat",
     "save": "Kaydet",
     "delete": "Sil",
@@ -101,6 +102,10 @@
     "apiDegraded": "API Sorunları",
     "apiOffline": "API Çevrimdışı",
     "apiUnknown": "API Durumu Bilinmiyor"
+  },
+  "modConflict": {
+    "title": "{{heroes}} zaten etkin",
+    "body": "Aynı kahramanı kullanan başka bir mod etkin: {{conflicts}}. Devam edilsin mi?"
   },
   "settings": {
     "language": "Dil",

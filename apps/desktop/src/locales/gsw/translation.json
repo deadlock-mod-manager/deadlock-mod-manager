@@ -62,6 +62,7 @@
     "success": "Erfolg",
     "cancel": "Abbreche",
     "confirm": "Bestätige",
+    "continue": "Wytermache",
     "close": "Schließe",
     "save": "Speicher",
     "delete": "Lösche",
@@ -90,6 +91,10 @@
     "apiDegraded": "API Problem",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status unbekannt"
+  },
+  "modConflict": {
+    "title": "{{heroes}} isch scho aktiv",
+    "body": "Es isch scho e anderi Mod mit em gliiche Held aktiviert: {{conflicts}}. Wytermache?"
   },
   "settings": {
     "language": "Sprache",

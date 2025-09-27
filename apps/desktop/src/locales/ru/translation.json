@@ -70,6 +70,7 @@
     "success": "Успех",
     "cancel": "Отмена",
     "confirm": "Подтвердить",
+    "continue": "Продолжить",
     "close": "Закрыть",
     "save": "Сохранить",
     "delete": "Удалить",
@@ -91,6 +92,10 @@
     "gameRunning": "Игра запущена",
     "gameReady": "Игра готова к запуску",
     "gameNotDetected": "Файлы игры не найдены"
+  },
+  "modConflict": {
+    "title": "{{heroes}} уже активен",
+    "body": "Другой мод с тем же героем уже включён: {{conflicts}}. Продолжить?"
   },
   "settings": {
     "language": "Язык",

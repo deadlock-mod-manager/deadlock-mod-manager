@@ -70,6 +70,7 @@
     "success": "Sukces",
     "cancel": "Anuluj",
     "confirm": "Potwierdź",
+    "continue": "Kontynuuj",
     "close": "Zamknij",
     "save": "Zapisz",
     "delete": "Usuń",
@@ -98,6 +99,10 @@
     "apiDegraded": "Problemy z API",
     "apiOffline": "API offline",
     "apiUnknown": "Status API nieznany"
+  },
+  "modConflict": {
+    "title": "{{heroes}} już aktywny",
+    "body": "Inny mod używa tego samego bohatera: {{conflicts}}. Kontynuować?"
   },
   "settings": {
     "language": "Język",

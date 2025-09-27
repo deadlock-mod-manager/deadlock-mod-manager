@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { useConfirm } from "@/components/providers/alert-dialog";
+import { usePersistedStore } from "@/lib/store";
+import { useTranslation } from "react-i18next";
 import type {
   InstallableMod,
   LocalMod,
@@ -10,9 +13,9 @@ import type {
 import { ModStatus } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
 
-const logger = createLogger("install-with-collection");
+const logger = createLogger("activate-with-collection");
 
-export type InstallWithCollectionOptions = {
+export type ActivationOptions = {
   onStart: (mod: LocalMod) => void;
   onComplete: (mod: LocalMod, result: InstallableMod) => void;
   onError: (mod: LocalMod, error: ErrorKind) => void;
@@ -20,25 +23,25 @@ export type InstallWithCollectionOptions = {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
 };
 
-export type InstallWithCollectionFunction = (
+export type ActivateWithCollectionFunction = (
   mod: LocalMod,
-  options: InstallWithCollectionOptions,
+  options: ActivationOptions,
   preselectedFileTree?: ModFileTree,
 ) => Promise<InstallableMod | null>;
 
-export type UseInstallWithCollectionReturn = {
-  install: InstallWithCollectionFunction;
+export type UseActivationWithCollectionReturn = {
+  activate: ActivateWithCollectionFunction;
   isAnalyzing: boolean;
   currentFileTree: ModFileTree | null;
   showFileSelector: boolean;
   setShowFileSelector: (show: boolean) => void;
-  confirmInstallation: (fileTree: ModFileTree) => Promise<void>;
-  cancelInstallation: () => void;
+  confirmActivation: (fileTree: ModFileTree) => Promise<void>;
+  cancelActivation: () => void;
   currentMod: LocalMod | null;
-  currentOptions: InstallWithCollectionOptions | null;
+  currentOptions: ActivationOptions | null;
 };
 
-const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
+const useActivationWithCollection = (): UseActivationWithCollectionReturn => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFileTree, setCurrentFileTree] = useState<ModFileTree | null>(
     null,
@@ -46,15 +49,18 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
   const [showFileSelector, setShowFileSelector] = useState(false);
   const [currentMod, setCurrentMod] = useState<LocalMod | null>(null);
   const [currentOptions, setCurrentOptions] =
-    useState<InstallWithCollectionOptions | null>(null);
+    useState<ActivationOptions | null>(null);
+  const confirm = useConfirm();
+  const { setParsedHeroes } = usePersistedStore();
+  const { t } = useTranslation();
 
-  const performInstallation = async (
+  const performActivation = async (
     mod: LocalMod,
-    options: InstallWithCollectionOptions,
+    options: ActivationOptions,
     fileTree?: ModFileTree,
   ): Promise<InstallableMod | null> => {
     try {
-      logger.info("Performing installation", {
+      logger.info("Performing activation", {
         modId: mod.remoteId,
         hasFileTree: !!fileTree,
         selectedFiles: fileTree?.files.filter((f) => f.is_selected).length,
@@ -77,7 +83,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       options.onComplete(mod, result);
       return result;
     } catch (error: unknown) {
-      logger.error("Installation failed", { modId: mod.remoteId, error });
+      logger.error("Activation failed", { modId: mod.remoteId, error });
 
       if (error instanceof Error) {
         options.onError(mod, {
@@ -95,14 +101,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     }
   };
 
-  const install: InstallWithCollectionFunction = async (
+  const activate: ActivateWithCollectionFunction = async (
     mod,
     options,
     preselectedFileTree,
   ) => {
     try {
-      options.onStart(mod);
-
       if (!mod.path) {
         throw new Error("Mod is not downloaded! Might be corrupted.");
       }
@@ -111,12 +115,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         throw new Error("Mod is already installed!");
       }
 
-      // If we have a preselected file tree, use it directly
       if (preselectedFileTree) {
-        return await performInstallation(mod, options, preselectedFileTree);
+        // Only mark as starting right before actual installation
+        options.onStart(mod);
+        return await performActivation(mod, options, preselectedFileTree);
       }
 
-      // Get file structure from archive
       setIsAnalyzing(true);
       logger.info("Getting mod file structure", {
         modId: mod.remoteId,
@@ -138,19 +142,66 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         return null;
       }
 
+      let parsedHeroes: string[] = [];
+      if (mod.path) {
+        try {
+          parsedHeroes = await invoke<string[]>("detect_heroes_in_download_dir", {
+            path: mod.path,
+          });
+          if (parsedHeroes?.length) {
+            setParsedHeroes(mod.remoteId, parsedHeroes);
+          }
+        } catch (e) {
+          logger.warn("Failed to detect heroes pre-activation", {
+            modId: mod.remoteId,
+            error: (e as Error).message,
+          });
+        }
+      }
+
+      if (parsedHeroes && parsedHeroes.length > 0) {
+        const state = usePersistedStore.getState();
+        const conflicts = state.localMods.filter(
+          (m) =>
+            m.status === ModStatus.Installed &&
+            m.parsedHeroes &&
+            m.parsedHeroes.some((h) => parsedHeroes.includes(h)) &&
+            m.remoteId !== mod.remoteId,
+        );
+
+        if (conflicts.length > 0) {
+          const heroNames = parsedHeroes.join(", ");
+          const conflictNames = conflicts.map((m) => m.name).join(", ");
+          const accepted = await confirm({
+            title: t("modConflict.title", { heroes: heroNames }) as string,
+            body: t("modConflict.body", { conflicts: conflictNames }) as string,
+            cancelButton: t("common.cancel") as string,
+            actionButton: t("common.continue") as string,
+            cancelButtonVariant: "ghost",
+            actionButtonVariant: "destructive",
+          });
+
+          if (!accepted) {
+            setIsAnalyzing(false);
+            options.onCancel?.(mod);
+            return null;
+          }
+        }
+      }
+
       setCurrentFileTree(fileTree);
       options.onFileTreeAnalyzed?.(mod, fileTree);
 
-      // If it's a single file, install directly
       if (!fileTree.has_multiple_files) {
-        logger.info("Installing single-file mod directly", {
+        logger.info("Activating single-file mod directly", {
           modId: mod.remoteId,
           totalFiles: fileTree.total_files,
         });
-        return await performInstallation(mod, options, fileTree);
+        // Only mark as starting right before actual installation
+        options.onStart(mod);
+        return await performActivation(mod, options, fileTree);
       }
 
-      // For multiple files, always show file selector
       logger.info("Showing file selector", {
         modId: mod.remoteId,
         totalFiles: fileTree.total_files,
@@ -160,11 +211,10 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       setCurrentOptions(options);
       setShowFileSelector(true);
 
-      // Return null for now - the actual installation will happen after user selection
       return null;
     } catch (error: unknown) {
       setIsAnalyzing(false);
-      logger.error("Installation process failed", {
+      logger.error("Activation process failed", {
         modId: mod.remoteId,
         error,
       });
@@ -185,18 +235,18 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     }
   };
 
-  const confirmInstallation = async (fileTree: ModFileTree): Promise<void> => {
+  const confirmActivation = async (fileTree: ModFileTree): Promise<void> => {
     if (!currentMod) {
-      logger.error("No current mod for installation confirmation");
+      logger.error("No current mod for activation confirmation");
       return;
     }
 
     if (!currentOptions) {
-      logger.error("No current options for installation confirmation");
+      logger.error("No current options for activation confirmation");
       return;
     }
 
-    logger.info("User confirmed installation", {
+    logger.info("User confirmed activation", {
       modId: currentMod.remoteId,
       selectedFiles: fileTree.files.filter((f) => f.is_selected).length,
     });
@@ -204,23 +254,19 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     setShowFileSelector(false);
 
     try {
-      await performInstallation(currentMod, currentOptions, fileTree);
+      await performActivation(currentMod, currentOptions, fileTree);
     } finally {
-      // Clean up state
       setCurrentMod(null);
       setCurrentOptions(null);
       setCurrentFileTree(null);
     }
   };
 
-  const cancelInstallation = (): void => {
+  const cancelActivation = (): void => {
     if (currentMod && currentOptions) {
-      logger.info("User canceled installation", { modId: currentMod.remoteId });
-
-      // Call onCancel callback to revert mod status
+      logger.info("User canceled activation", { modId: currentMod.remoteId });
       currentOptions.onCancel?.(currentMod);
     }
-
     setShowFileSelector(false);
     setCurrentMod(null);
     setCurrentOptions(null);
@@ -228,16 +274,18 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
   };
 
   return {
-    install,
+    activate,
     isAnalyzing,
     currentFileTree,
     showFileSelector,
     setShowFileSelector,
-    confirmInstallation,
-    cancelInstallation,
+    confirmActivation,
+    cancelActivation,
     currentMod,
     currentOptions,
   };
 };
 
-export default useInstallWithCollection;
+export default useActivationWithCollection;
+
+

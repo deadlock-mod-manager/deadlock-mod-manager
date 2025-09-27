@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
-import useInstallWithCollection from "@/hooks/use-install-with-collection";
+import useActivationWithCollection from "@/hooks/use-install-with-collection";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
@@ -34,10 +34,12 @@ export const ModStatusIcon = ({
   status,
   hovering,
   className,
+  forceLoading,
 }: {
   status: ModStatus | undefined;
   hovering?: boolean;
   className?: string;
+  forceLoading?: boolean;
 }) => {
   const loadingStatuses = [
     ModStatus.Downloading,
@@ -45,6 +47,9 @@ export const ModStatusIcon = ({
     ModStatus.Installing,
   ];
   const Icon = useMemo(() => {
+    if (forceLoading) {
+      return Loader2;
+    }
     switch (status) {
       case ModStatus.Downloading:
       case ModStatus.Removing:
@@ -64,14 +69,14 @@ export const ModStatusIcon = ({
       default:
         return PlusIcon;
     }
-  }, [status, hovering]);
+  }, [status, hovering, forceLoading]);
 
   return (
     <Icon
       className={cn(
         "h-4 w-4",
         {
-          "animate-spin": status && loadingStatuses.includes(status),
+          "animate-spin": forceLoading || (status && loadingStatuses.includes(status)),
         },
         className,
       )}
@@ -95,21 +100,22 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     isDialogOpen,
   } = useDownload(remoteMod, availableFiles);
   const {
-    install,
+    activate,
     isAnalyzing,
     currentFileTree,
     showFileSelector,
     setShowFileSelector,
-    confirmInstallation,
-    cancelInstallation,
+    confirmActivation,
+    cancelActivation,
     currentMod,
-  } = useInstallWithCollection();
+  } = useActivationWithCollection();
   const { uninstall } = useUninstall();
   const {
     setInstalledVpks,
     removeMod,
     setModStatus,
     setModEnabledInCurrentProfile,
+    setParsedHeroes,
   } = usePersistedStore();
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
@@ -131,7 +137,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           );
           break;
         case ModStatus.Downloaded:
-          await install(localMod, {
+          await activate(localMod, {
             onStart: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Installing);
             },
@@ -142,7 +148,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
                 result.installed_vpks,
                 result.file_tree,
               );
-              // Mark mod as enabled in current profile
+              if (result.parsed_heroes && result.parsed_heroes.length > 0) {
+                setParsedHeroes(mod.remoteId, result.parsed_heroes);
+              }
               setModEnabledInCurrentProfile(mod.remoteId, true);
               toast.success(t("notifications.modInstalledSuccessfully"));
               analytics.trackModInstalled(mod.remoteId, {
@@ -194,7 +202,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
       }
     } finally {
-      // Add a small delay to prevent rapid successive clicks
       setTimeout(() => {
         setIsActionInProgress(false);
       }, 300);
@@ -203,12 +210,13 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     isActionInProgress,
     localMod,
     download,
-    install,
+    activate,
     uninstall,
     removeMod,
     setModStatus,
     setInstalledVpks,
     setModEnabledInCurrentProfile,
+    setParsedHeroes,
     t,
     analytics,
     remoteMod?.remoteId,
@@ -288,7 +296,11 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           <Button
             disabled={isActionInProgress || isAnalyzing}
             icon={
-              <ModStatusIcon hovering={hovering} status={localMod?.status} />
+              <ModStatusIcon
+                hovering={hovering}
+                status={localMod?.status}
+                forceLoading={isAnalyzing || isActionInProgress}
+              />
             }
             onClick={onClick}
             ref={ref}
@@ -307,8 +319,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         fileTree={currentFileTree}
         isOpen={showFileSelector}
         modName={currentMod?.name}
-        onCancel={cancelInstallation}
-        onConfirm={confirmInstallation}
+        onCancel={cancelActivation}
+        onConfirm={confirmActivation}
         onOpenChange={setShowFileSelector}
       />
 
