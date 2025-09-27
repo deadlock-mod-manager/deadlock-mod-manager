@@ -21,7 +21,6 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyComponent() {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 400);

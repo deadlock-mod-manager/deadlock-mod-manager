@@ -46,7 +46,6 @@
       "tailwind-merge": "^2.6.0"
     },
     "onlyBuiltDependencies": [
-      "@sentry/profiling-node",
       "@swc/core",
       "@tailwindcss/oxide",
       "core-js",

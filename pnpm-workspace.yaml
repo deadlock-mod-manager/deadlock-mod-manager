@@ -4,7 +4,6 @@ packages:
   - tools/*
 
 catalog:
-  '@sentry/node': ^9.46.0
-  '@sentry/profiling-node': ^8.55.0
+  "@sentry/bun": ^10.15.0
   typescript: ^5.9.2
   zod: 4.1.9

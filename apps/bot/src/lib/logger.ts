@@ -1,6 +1,6 @@
 import { createAppLogger, createLoggerContext } from "@deadlock-mods/logging";
-import type { NodeClient } from "@sentry/node";
-import * as Sentry from "@sentry/node";
+import type { NodeClient } from "@sentry/bun";
+import * as Sentry from "@sentry/bun";
 import { version } from "../version";
 import { env } from "./env";
 

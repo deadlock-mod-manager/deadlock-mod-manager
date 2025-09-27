@@ -1,6 +1,6 @@
 import { BaseProcessor, type CronJobData } from "@deadlock-mods/queue";
 import { CronPatterns } from "@deadlock-mods/queue/cron";
-import * as Sentry from "@sentry/node";
+import * as Sentry from "@sentry/bun";
 import { MonitorSlug, SERVER_TIMEZONE } from "@/lib/constants";
 import { logger as mainLogger } from "@/lib/logger";
 import { GameBananaRssService } from "@/services/gamebanana-rss";

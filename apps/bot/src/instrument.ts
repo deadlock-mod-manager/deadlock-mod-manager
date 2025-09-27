@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/node";
+import * as Sentry from "@sentry/bun";
 import { SENTRY_OPTIONS } from "./lib/constants";
 
 Sentry.init({

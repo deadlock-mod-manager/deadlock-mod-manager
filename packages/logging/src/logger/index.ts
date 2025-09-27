@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { openTelemetryPlugin } from "@loglayer/plugin-opentelemetry";
-import type { NodeClient as SentryNodeClient } from "@sentry/node";
+import type { NodeClient as SentryNodeClient } from "@sentry/bun";
 import type { ILogLayer, LogLayerConfig } from "loglayer";
 import { LogLayer, MockLogLayer } from "loglayer";
 import { serializeError } from "serialize-error";

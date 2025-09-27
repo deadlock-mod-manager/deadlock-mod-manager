@@ -10,7 +10,6 @@ export const Route = createFileRoute("/login")({
 function RouteComponent() {
   const [showSignIn, setShowSignIn] = useState(false);
 
-
   return showSignIn ? (
     <SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
   ) : (
