@@ -7,6 +7,7 @@
 mod commands;
 mod errors;
 mod mod_manager;
+mod reports;
 mod utils;
 
 #[cfg(test)]
@@ -205,7 +206,9 @@ pub fn run() {
       commands::extract_archive,
       commands::remove_mod_folder,
       commands::parse_vpk_file,
-      commands::analyze_local_addons
+      commands::analyze_local_addons,
+      commands::create_report,
+      commands::get_report_counts
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

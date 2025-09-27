@@ -104,7 +104,8 @@
     "apiHealthy": "API 在线",
     "apiDegraded": "API 存在问题",
     "apiOffline": "API 离线",
-    "apiUnknown": "API 状态未知"
+    "apiUnknown": "API 状态未知",
+    "optional": "可选"
   },
   "settings": {
     "language": "语言",

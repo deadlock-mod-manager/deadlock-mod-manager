@@ -97,7 +97,8 @@
     "apiHealthy": "API online",
     "apiDegraded": "Problemy z API",
     "apiOffline": "API offline",
-    "apiUnknown": "Status API nieznany"
+    "apiUnknown": "Status API nieznany",
+    "optional": "opcjonalne"
   },
   "settings": {
     "language": "Język",

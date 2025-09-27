@@ -1,8 +1,14 @@
-import { parseNewModEvent, REDIS_CHANNELS } from "@deadlock-mods/shared";
+import {
+  parseNewModEvent,
+  parseNewReportEvent,
+  parseReportStatusUpdatedEvent,
+  REDIS_CHANNELS,
+} from "@deadlock-mods/shared";
 import IORedis from "ioredis";
 import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
 import { ForumPosterService } from "./forum-poster";
+import { ReportPosterService } from "./report-poster";
 
 const logger = mainLogger.child().withContext({
   service: "redis-subscriber",
@@ -12,10 +18,12 @@ export class RedisSubscriberService {
   private static instance: RedisSubscriberService | null = null;
   private subscriber: IORedis | null = null;
   private forumPoster: ForumPosterService;
+  private reportPoster: ReportPosterService;
   private isStarted = false;
 
   private constructor() {
     this.forumPoster = ForumPosterService.getInstance();
+    this.reportPoster = ReportPosterService.getInstance();
   }
 
   static getInstance(): RedisSubscriberService {
@@ -52,8 +60,10 @@ export class RedisSubscriberService {
         logger.info("Redis subscriber ready");
       });
 
-      // Subscribe to new mod events
+      // Subscribe to events
       await this.subscriber.subscribe(REDIS_CHANNELS.NEW_MODS);
+      await this.subscriber.subscribe(REDIS_CHANNELS.NEW_REPORTS);
+      await this.subscriber.subscribe(REDIS_CHANNELS.REPORT_STATUS_UPDATED);
 
       // Handle incoming messages
       this.subscriber.on("message", async (channel, message) => {
@@ -100,6 +110,12 @@ export class RedisSubscriberService {
       switch (channel) {
         case REDIS_CHANNELS.NEW_MODS:
           await this.handleNewModEvent(message);
+          break;
+        case REDIS_CHANNELS.NEW_REPORTS:
+          await this.handleNewReportEvent(message);
+          break;
+        case REDIS_CHANNELS.REPORT_STATUS_UPDATED:
+          await this.handleReportStatusUpdatedEvent(message);
           break;
         default:
           logger
@@ -157,6 +173,95 @@ export class RedisSubscriberService {
           .error("Failed to validate new mod event schema");
       } else {
         logger.withError(error).error("Error processing new mod event");
+      }
+    }
+  }
+
+  private async handleNewReportEvent(message: string): Promise<void> {
+    try {
+      const rawData = JSON.parse(message);
+      const event = parseNewReportEvent(rawData);
+
+      logger
+        .withMetadata({
+          reportId: event.data.id,
+          modId: event.data.modId,
+          modName: event.data.modName,
+          reportType: event.data.type,
+        })
+        .info("Processing new report event");
+
+      await this.reportPoster.postNewReport(event);
+
+      logger
+        .withMetadata({
+          reportId: event.data.id,
+          modId: event.data.modId,
+        })
+        .info("Successfully processed new report event");
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        logger
+          .withError(error)
+          .withMetadata({
+            message: message.substring(0, 200),
+          })
+          .error("Failed to parse new report event JSON");
+      } else if (error instanceof Error && error.name === "ZodError") {
+        logger
+          .withError(error)
+          .withMetadata({
+            message: message.substring(0, 200),
+          })
+          .error("Invalid new report event schema");
+      } else {
+        logger.withError(error).error("Failed to process new report event");
+      }
+    }
+  }
+
+  private async handleReportStatusUpdatedEvent(message: string): Promise<void> {
+    try {
+      const rawData = JSON.parse(message);
+      const event = parseReportStatusUpdatedEvent(rawData);
+
+      logger
+        .withMetadata({
+          reportId: event.data.id,
+          modId: event.data.modId,
+          newStatus: event.data.status,
+          verifiedBy: event.data.verifiedBy,
+          dismissedBy: event.data.dismissedBy,
+        })
+        .info("Processing report status updated event");
+
+      await this.reportPoster.updateReportStatus(event);
+
+      logger
+        .withMetadata({
+          reportId: event.data.id,
+          newStatus: event.data.status,
+        })
+        .info("Successfully processed report status updated event");
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        logger
+          .withError(error)
+          .withMetadata({
+            message: message.substring(0, 200),
+          })
+          .error("Failed to parse report status updated event JSON");
+      } else if (error instanceof Error && error.name === "ZodError") {
+        logger
+          .withError(error)
+          .withMetadata({
+            message: message.substring(0, 200),
+          })
+          .error("Invalid report status updated event schema");
+      } else {
+        logger
+          .withError(error)
+          .error("Failed to process report status updated event");
       }
     }
   }

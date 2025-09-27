@@ -90,7 +90,15 @@
     "downloading": "загружается",
     "gameRunning": "Игра запущена",
     "gameReady": "Игра готова к запуску",
-    "gameNotDetected": "Файлы игры не найдены"
+    "gameNotDetected": "Файлы игры не найдены",
+    "never": "Никогда",
+    "actions": "Действия",
+    "copy": "Копировать",
+    "apiHealthy": "API Онлайн",
+    "apiDegraded": "Проблемы с API",
+    "apiOffline": "API Оффлайн",
+    "apiUnknown": "Статус API Неизвестен",
+    "optional": "необязательно"
   },
   "settings": {
     "language": "Язык",

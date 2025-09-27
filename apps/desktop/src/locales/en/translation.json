@@ -116,7 +116,8 @@
     "apiHealthy": "API Online",
     "apiDegraded": "API Issues",
     "apiOffline": "API Offline",
-    "apiUnknown": "API Status Unknown"
+    "apiUnknown": "API Status Unknown",
+    "optional": "optional"
   },
   "settings": {
     "language": "Language",
@@ -673,5 +674,37 @@
     "updatingProfile": "Updating current profile...",
     "processingMods": "Processing mods...",
     "modsProcessed": "Mods processed"
+  },
+  "reports": {
+    "reportMod": "Report Mod",
+    "reportDescription": "Report issues with {{modName}} by {{author}}",
+    "type": "Report Type",
+    "selectType": "Select report type",
+    "reason": "Reason",
+    "reasonPlaceholder": "Describe the issue you're experiencing...",
+    "reasonDescription": "Please provide a clear description of the problem",
+    "additionalDetails": "Additional Details",
+    "detailsPlaceholder": "Any additional information that might help...",
+    "detailsDescription": "Optional: Provide more context about the issue",
+    "submitReport": "Submit Report",
+    "submitting": "Submitting...",
+    "reportSubmitted": "Report submitted successfully",
+    "reportFailed": "Failed to submit report",
+    "thankYou": "Thank You!",
+    "submissionConfirmation": "Your report has been submitted and will be reviewed by moderators.",
+    "types": {
+      "broken": "Broken/Not Working",
+      "outdated": "Outdated",
+      "malicious": "Malicious/Harmful",
+      "inappropriate": "Inappropriate Content",
+      "other": "Other"
+    },
+    "totalReports": "{{count}} reports",
+    "verifiedReports": "{{count}} verified reports",
+    "unverifiedReports": "{{count}} unverified reports",
+    "verifiedCount": "{{count}} verified",
+    "unverifiedCount": "{{count}} unverified",
+    "verified": "verified",
+    "unverified": "unverified"
   }
 }

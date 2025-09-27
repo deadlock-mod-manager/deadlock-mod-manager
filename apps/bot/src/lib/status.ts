@@ -25,10 +25,15 @@ export class StatusMonitor {
         height: 800,
         deviceScaleFactor: 2,
       });
-      await page.goto(env.STATUS_URL, {
-        waitUntil: "networkidle2",
-        timeout: 120_000,
-      });
+
+      try {
+        await page.goto(env.STATUS_URL, {
+          waitUntil: "networkidle2",
+          timeout: 120_000,
+        });
+      } catch (error) {
+        // Continue execution - the page might have partially loaded
+      }
 
       // Try to dismiss cookie banners if present (best-effort)
       try {

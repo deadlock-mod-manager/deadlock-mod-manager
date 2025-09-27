@@ -4,5 +4,6 @@ export * from "./feature-flags";
 export * from "./job-locks";
 export * from "./mods";
 export * from "./profiles";
+export * from "./reports";
 export * from "./rss-items";
 export * from "./vpk";

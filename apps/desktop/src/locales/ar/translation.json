@@ -90,7 +90,15 @@
     "downloading": "يتم التحميل",
     "gameRunning": "اللعبة تعمل",
     "gameReady": "اللعبة جاهزة",
-    "gameNotDetected": "اللعبة غير مكتشفة"
+    "gameNotDetected": "اللعبة غير مكتشفة",
+    "never": "أبداً",
+    "actions": "الإجراءات",
+    "copy": "نسخ",
+    "apiHealthy": "API متصل",
+    "apiDegraded": "مشاكل في API",
+    "apiOffline": "API غير متصل",
+    "apiUnknown": "حالة API غير معروفة",
+    "optional": "اختياري"
   },
   "settings": {
     "language": "اللغة",

@@ -89,7 +89,8 @@
     "apiHealthy": "API Online",
     "apiDegraded": "API Problem",
     "apiOffline": "API Offline",
-    "apiUnknown": "API Status unbekannt"
+    "apiUnknown": "API Status unbekannt",
+    "optional": "optional"
   },
   "settings": {
     "language": "Sprache",

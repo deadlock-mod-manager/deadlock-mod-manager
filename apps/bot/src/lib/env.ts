@@ -21,7 +21,14 @@ export const envSchema = z.object({
   STATUS_PIN: z.coerce.boolean().default(true),
   STATUS_ENABLED: z.coerce.boolean().default(true),
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
+  REPORTS_CHANNEL_ID: z.string().default("1421566655338905620"),
   API_URL: z.string().url().default("https://api.deadlockmods.app"),
+  REPORT_MODERATOR_ROLES: z
+    .string()
+    .default(
+      "1322369692962390119,1322369688445124719,1322369689640243201,1322369690902990951",
+    )
+    .transform((val) => val.split(",").map((id) => id.trim())),
 });
 
 export const env = envSchema.parse(process.env);

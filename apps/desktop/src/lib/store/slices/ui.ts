@@ -12,6 +12,7 @@ export type ModsFilters = {
   showNSFW: boolean;
   currentSort: SortType;
   filterMode: FilterMode;
+  searchQuery: string;
 };
 
 export type UIState = {
@@ -36,6 +37,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   showNSFW: false,
   currentSort: SortType.LAST_UPDATED,
   filterMode: "include",
+  searchQuery: "",
 };
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({

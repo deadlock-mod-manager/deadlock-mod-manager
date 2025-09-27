@@ -92,7 +92,13 @@
     "gameReady": "Spiel bereit",
     "gameNotDetected": "Spiel nicht erkannt",
     "never": "Niemals",
-    "actions": "Aktionen"
+    "actions": "Aktionen",
+    "copy": "Kopieren",
+    "apiHealthy": "API Online",
+    "apiDegraded": "API Probleme",
+    "apiOffline": "API Offline",
+    "apiUnknown": "API Status Unbekannt",
+    "optional": "optional"
   },
   "settings": {
     "language": "Sprache",

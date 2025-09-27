@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult, Mod, ModFileTree, ModManager};
+use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -486,4 +487,16 @@ pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddons
     .analyze_local_addons(game_path, Some(app_handle))
     .await?;
   Ok(result)
+}
+
+#[tauri::command]
+pub async fn create_report(data: CreateReportRequest) -> Result<CreateReportResponse, Error> {
+  let report_service = ReportService::new();
+  report_service.create_report(data).await
+}
+
+#[tauri::command]
+pub async fn get_report_counts(mod_id: String) -> Result<ReportCounts, Error> {
+  let report_service = ReportService::new();
+  report_service.get_report_counts(&mod_id).await
 }

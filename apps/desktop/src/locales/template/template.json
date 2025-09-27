@@ -104,7 +104,8 @@
     "apiHealthy": "",
     "apiDegraded": "",
     "apiOffline": "",
-    "apiUnknown": ""
+    "apiUnknown": "",
+    "optional": ""
   },
   "settings": {
     "language": "",

@@ -14,6 +14,8 @@ import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { ReportButton } from "@/components/reports/report-button";
+import { ReportCounter } from "@/components/reports/report-counter";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -153,22 +155,26 @@ const Mod = () => {
             <ModInfo hasHero={hasHero} mod={mod} />
 
             <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
-              {mod.remoteUrl && (
-                <Button
-                  className='px-0'
-                  onClick={async () => {
-                    try {
-                      await open(mod.remoteUrl);
-                    } catch (_error) {
-                      toast.error("Failed to open forum post");
-                    }
-                  }}
-                  variant='link'>
-                  View original forum post
-                </Button>
-              )}
+              <div className='flex flex-col gap-2'>
+                {mod.remoteUrl && (
+                  <Button
+                    className='px-0'
+                    onClick={async () => {
+                      try {
+                        await open(mod.remoteUrl);
+                      } catch (_error) {
+                        toast.error("Failed to open forum post");
+                      }
+                    }}
+                    variant='link'>
+                    View original forum post
+                  </Button>
+                )}
+                <ReportCounter modId={mod.id} variant='default' />
+              </div>
 
               <div className='flex items-center gap-2'>
+                <ReportButton mod={mod} />
                 <ModButton remoteMod={mod} variant='default' />
                 {!!localMod?.status && (
                   <Button

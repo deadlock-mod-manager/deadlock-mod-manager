@@ -92,7 +92,13 @@
     "gameReady": "Jeu prêt",
     "gameNotDetected": "Jeu non détecté",
     "never": "Jamais",
-    "actions": "Actions"
+    "actions": "Actions",
+    "copy": "Copier",
+    "apiHealthy": "API En ligne",
+    "apiDegraded": "Problèmes API",
+    "apiOffline": "API Hors ligne",
+    "apiUnknown": "Statut API Inconnu",
+    "optional": "optionnel"
   },
   "settings": {
     "language": "Langue",

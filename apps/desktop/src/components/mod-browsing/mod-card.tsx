@@ -4,6 +4,7 @@ import { CalendarIcon, DownloadIcon, HeartIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { ReportCounter } from "@/components/reports/report-counter";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -85,6 +86,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
           {status === ModStatus.Installed && <Badge>Installed</Badge>}
           {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+          <ReportCounter modId={mod.id} variant='indicator' />
         </div>
       </div>
       <CardHeader className='px-3 py-4'>
@@ -123,6 +125,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
                     {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
                   </span>
                 </div>
+                <ReportCounter modId={mod.id} variant='compact' />
               </div>
               <ModButton remoteMod={mod} variant='iconOnly' />
             </div>

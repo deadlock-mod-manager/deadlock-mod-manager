@@ -18,7 +18,36 @@ export const NewModEventSchema = z.object({
   data: NewModEventDataSchema,
 });
 
+export const ReportEventDataSchema = z.object({
+  id: z.string(),
+  modId: z.string(),
+  modName: z.string(),
+  modAuthor: z.string(),
+  type: z.enum(["broken", "outdated", "malicious", "inappropriate", "other"]),
+  status: z.enum(["unverified", "verified", "dismissed"]),
+  reason: z.string(),
+  description: z.string().optional(),
+  verifiedBy: z.string().optional(),
+  dismissedBy: z.string().optional(),
+  dismissalReason: z.string().optional(),
+  createdAt: z.string().datetime().optional(),
+});
+
+export const NewReportEventSchema = z.object({
+  type: z.literal("new_report"),
+  data: ReportEventDataSchema,
+});
+
+export const ReportStatusUpdatedEventSchema = z.object({
+  type: z.literal("report_status_updated"),
+  data: ReportEventDataSchema,
+});
+
 export const ModEventSchema = z.union([NewModEventSchema]);
+export const ReportEventSchema = z.union([
+  NewReportEventSchema,
+  ReportStatusUpdatedEventSchema,
+]);
 
 /**
  * TypeScript types derived from Zod schemas
@@ -27,11 +56,20 @@ export type NewModEventData = z.infer<typeof NewModEventDataSchema>;
 export type NewModEvent = z.infer<typeof NewModEventSchema>;
 export type ModEvent = z.infer<typeof ModEventSchema>;
 
+export type ReportEventData = z.infer<typeof ReportEventDataSchema>;
+export type NewReportEvent = z.infer<typeof NewReportEventSchema>;
+export type ReportStatusUpdatedEvent = z.infer<
+  typeof ReportStatusUpdatedEventSchema
+>;
+export type ReportEvent = z.infer<typeof ReportEventSchema>;
+
 /**
  * Redis channel constants for pub/sub communication
  */
 export const REDIS_CHANNELS = {
   NEW_MODS: "deadlock:new_mods",
+  NEW_REPORTS: "deadlock:new_reports",
+  REPORT_STATUS_UPDATED: "deadlock:report_status_updated",
 } as const;
 
 export type RedisChannel = (typeof REDIS_CHANNELS)[keyof typeof REDIS_CHANNELS];
@@ -45,4 +83,18 @@ export const parseModEvent = (data: unknown): ModEvent => {
 
 export const parseNewModEvent = (data: unknown): NewModEvent => {
   return NewModEventSchema.parse(data);
+};
+
+export const parseReportEvent = (data: unknown): ReportEvent => {
+  return ReportEventSchema.parse(data);
+};
+
+export const parseNewReportEvent = (data: unknown): NewReportEvent => {
+  return NewReportEventSchema.parse(data);
+};
+
+export const parseReportStatusUpdatedEvent = (
+  data: unknown,
+): ReportStatusUpdatedEvent => {
+  return ReportStatusUpdatedEventSchema.parse(data);
 };

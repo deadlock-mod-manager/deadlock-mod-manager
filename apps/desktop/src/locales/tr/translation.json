@@ -100,7 +100,8 @@
     "apiHealthy": "API Çevrimiçi",
     "apiDegraded": "API Sorunları",
     "apiOffline": "API Çevrimdışı",
-    "apiUnknown": "API Durumu Bilinmiyor"
+    "apiUnknown": "API Durumu Bilinmiyor",
+    "optional": "isteğe bağlı"
   },
   "settings": {
     "language": "Dil",

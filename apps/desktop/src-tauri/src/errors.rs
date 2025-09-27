@@ -36,6 +36,8 @@ pub enum Error {
   InvalidInput(String),
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
+  #[error("Network error: {0}")]
+  NetworkError(String),
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
 }
@@ -68,6 +70,7 @@ impl serde::Serialize for Error {
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
+      Error::NetworkError(_) => "networkError",
       Error::Tauri(_) => "tauri",
     };
 
