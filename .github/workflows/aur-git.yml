@@ -1,5 +1,4 @@
 name: Update AUR PKGBUILD for git package
-
 on:
   push:
     branches:
@@ -15,16 +14,28 @@ jobs:
   aur-git-push:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get new pkgver
+        id: get_version
+        run: |
+          NEW_PKGVER=$(git describe --tags --long --abbrev=7 --match 'v[0-9]*' | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
+          echo "pkgver=$NEW_PKGVER" >> $GITHUB_OUTPUT
+          echo "New pkgver: $NEW_PKGVER"
+
       - name: Clone from AUR
         run: git clone https://aur.archlinux.org/deadlock-modmanager-git.git
 
-      - name: Update pkgrel
+      - name: Update pkgver in PKGBUILD
         run: |
           cd deadlock-modmanager-git
-          # Get current pkgrel and increment it
-          CURRENT_PKGREL=$(grep '^pkgrel=' PKGBUILD | cut -d'=' -f2)
-          NEW_PKGREL=$((CURRENT_PKGREL + 1))
-          sed -i "s/^pkgrel=.*/pkgrel=${NEW_PKGREL}/" PKGBUILD
+          sed -i "s/^pkgver=.*/pkgver=${{ steps.get_version.outputs.pkgver }}/" PKGBUILD
+          # Also reset pkgrel to 1 when pkgver changes
+          sed -i -E "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
