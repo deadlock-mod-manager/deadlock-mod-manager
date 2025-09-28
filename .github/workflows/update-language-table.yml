@@ -38,7 +38,7 @@ jobs:
         run: pnpm install
 
       - name: Generate language table
-        run: pnpm tsx scripts/generate-language-table.ts --update-readme
+        run: pnpm bun scripts/generate-language-table.ts --update-readme
 
       - name: Check for changes
         id: check-changes
