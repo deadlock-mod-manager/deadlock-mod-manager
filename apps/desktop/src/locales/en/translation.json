@@ -196,7 +196,9 @@
     "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
-    "needHelp": "Need Help?"
+    "needHelp": "Need Help?",
+    "documentation": "Documentation",
+    "viewDocs": "View Documentation"
   },
   "about": {
     "title": "About",

@@ -36,6 +36,8 @@
     <br />
     <a href="https://github.com/stormix/deadlock-modmanager/releases/latest">Télécharger</a>
     ·
+    <a href="https://docs.deadlockmods.app/">Documentation</a>
+    ·
     <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md">Signaler un Bug</a>
     ·
     <a href="https://github.com/stormix/deadlock-modmanager/issues/new?labels=enhancement&template=feature-request---.md">Demander une Fonctionnalité</a>
@@ -276,17 +278,17 @@ Nous travaillons activement pour rendre Deadlock Mod Manager accessible aux util
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language | Native Name | Status | Contributors |
-|----------|-------------|--------|-------------|
-| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇩🇪 **German** | Deutsch | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/) |
-| 🇫🇷 **French** | Français | 🚧 In Progress | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
-| 🇸🇦 **Arabic** | العربية | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 In Progress | [_manio](https://discordapp.com/users/_manio/) |
-| 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | ✅ Complete | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| Language                    | Native Name     | Status         | Contributors                                                                                                       |
+| --------------------------- | --------------- | -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 🇺🇸 **English** (Default)    | English         | ✅ Complete    | -                                                                                                                  |
+| 🇩🇪 **German**               | Deutsch         | 🚧 In Progress | [skeptic](https://discordapp.com/users/__skeptic__/)                                                               |
+| 🇫🇷 **French**               | Français        | 🚧 In Progress | [stormix](https://github.com/stormix)                                                                              |
+| 🇷🇺 **Russian**              | Русский         | 🚧 In Progress | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron)               |
+| 🇸🇦 **Arabic**               | العربية         | 🚧 In Progress | [archeroflegend](https://discordapp.com/users/archeroflegend/)                                                     |
+| 🇵🇱 **Polish**               | Polski          | 🚧 In Progress | [\_manio](https://discordapp.com/users/_manio/)                                                                    |
+| 🇨🇭 **Swiss German**         | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇷 **Turkish**              | Türkçe          | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文        | ✅ Complete    | [待到春深方挽柳](mailto:sfk_04@qq.com)                                                                             |
 
 <!-- LANGUAGE_TABLE_END -->
 

@@ -52,6 +52,15 @@ export const Footer = () => {
           <div className='flex flex-col gap-2'>
             <h3 className='font-bold font-primary text-lg'>Support</h3>
             <div>
+              <a
+                className='opacity-60 hover:opacity-100'
+                href='https://docs.deadlockmods.app/'
+                rel='noopener noreferrer'
+                target='_blank'>
+                Documentation
+              </a>
+            </div>
+            <div>
               <a className='opacity-60 hover:opacity-100' href='/#faq'>
                 FAQ
               </a>

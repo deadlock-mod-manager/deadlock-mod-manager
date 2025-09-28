@@ -68,6 +68,23 @@ const FAQList: FAQProps[] = [
     value: "item-6",
   },
   {
+    question: "Where can I find more detailed documentation?",
+    answer: (
+      <span>
+        Check out our comprehensive{" "}
+        <a
+          className='text-primary hover:underline'
+          href='https://docs.deadlockmods.app/'
+          rel='noopener'
+          target='_blank'>
+          documentation site
+        </a>{" "}
+        for detailed guides, tutorials, and technical reference materials.
+      </span>
+    ),
+    value: "item-9",
+  },
+  {
     question: "Will Deadlock have official skins?",
     answer: (
       <span>

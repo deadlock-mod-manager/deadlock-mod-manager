@@ -7,6 +7,7 @@ import {
   InfoIcon,
   MagnifyingGlass,
   Package,
+  Question,
   Sparkle,
   UploadSimple,
 } from "@phosphor-icons/react";
@@ -232,6 +233,14 @@ export const AppSidebar = () => {
                   onClick={() => forceShow()}>
                   <Sparkle weight='duotone' />
                   <span>{t("navigation.whatsNew")}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  className='cursor-pointer'
+                  onClick={() => open("https://docs.deadlockmods.app/")}>
+                  <Question weight='duotone' />
+                  <span>{t("help.viewDocs")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

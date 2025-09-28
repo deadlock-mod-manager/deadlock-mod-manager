@@ -34,6 +34,10 @@ const routeList: RouteProps[] = [
     label: "Features",
   },
   {
+    href: "https://docs.deadlockmods.app/",
+    label: "Documentation",
+  },
+  {
     href: "/#faq",
     label: "FAQ",
   },
@@ -86,7 +90,16 @@ export const Navbar = () => {
                     key={href}
                     onClick={() => setIsOpen(false)}
                     variant='ghost'>
-                    <a href={href}>{label}</a>
+                    <a
+                      href={href}
+                      rel={
+                        href.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                      target={href.startsWith("http") ? "_blank" : undefined}>
+                      {label}
+                    </a>
                   </Button>
                 ))}
               </div>
@@ -105,7 +118,15 @@ export const Navbar = () => {
             <NavigationMenuItem>
               {routeList.map(({ href, label }) => (
                 <NavigationMenuLink asChild key={href}>
-                  <a className='px-2 text-base' href={href}>
+                  <a
+                    className='px-2 text-base'
+                    href={href}
+                    rel={
+                      href.startsWith("http")
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
+                    target={href.startsWith("http") ? "_blank" : undefined}>
                     {label}
                   </a>
                 </NavigationMenuLink>
