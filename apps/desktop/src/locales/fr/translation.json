@@ -15,7 +15,23 @@
     "quit": "Quitter"
   },
   "myMods": {
-    "subtitle": "Mods que vous avez téléchargés ou installés"
+    "subtitle": "Mods que vous avez téléchargés ou installés",
+    "noModsTitle": "Aucun mod installé",
+    "noModsDescription": "Vous n'avez encore installé aucun mod. Commencez par parcourir les mods disponibles ou analyser votre dossier d'addons local.",
+    "visitModsPage": "Visiter la page des mods",
+    "analyzeLocalAddons": "Analyser les addons locaux",
+    "enabledModsCount": "{{count}}/99 mods activés",
+    "enabledModsCountNearLimit": "{{count}}/99 mods activés (approche de la limite)",
+    "enabledModsCountAtLimit": "{{count}}/99 mods activés (à la limite)",
+    "modLimitTooltip": "Deadlock limite le nombre d'addons à 99 maximum"
+  },
+  "modOrdering": {
+    "title": "Gérer l'ordre de chargement des mods",
+    "description": "Glissez-déposez pour réorganiser vos mods. Les mods en haut se chargent en premier, ceux en bas se chargent en dernier.",
+    "noMods": "Aucun mod installé à ordonner",
+    "orderSaved": "Ordre des mods sauvegardé avec succès",
+    "orderSaveFailed": "Échec de la sauvegarde de l'ordre des mods",
+    "manageOrder": "Gérer l'ordre"
   },
   "mods": {
     "searchPlaceholder": "Rechercher des mods",
@@ -42,7 +58,10 @@
     "deleteSuccess": "Mod supprimé avec succès",
     "disableSuccess": "Mod désactivé avec succès",
     "deleteError": "Échec de la suppression du mod",
-    "disableError": "Échec de la désactivation du mod"
+    "disableError": "Échec de la désactivation du mod",
+    "customModDisableTitle": "Désactiver le mod personnalisé ?",
+    "customModDisableBody": "Il s'agit d'un mod personnalisé qui a été ajouté manuellement à votre bibliothèque. Si vous le désactivez, vous ne pourrez pas le réactiver automatiquement car il ne provient pas de notre base de données. Vous devrez réinstaller manuellement le fichier original ou le rajouter via la fonction d'analyse des addons.",
+    "customModDisableAction": "Désactiver quand même"
   },
   "downloads": {
     "downloading": "Téléchargement de {{count}} mod",
@@ -285,6 +304,68 @@
     "noVpkFoundStored": "Aucun VPK trouvé - archive stockée pour traitement manuel",
     "addedSuccess": "Ajouté : {{name}}"
   },
+  "addons": {
+    "analyzeLocal": "Analyser les addons locaux",
+    "analyzeLocalTooltip": "Scannez votre répertoire de jeu Deadlock pour trouver et identifier les fichiers d'addon existants qui pourraient ne pas être gérés par ce gestionnaire de mods",
+    "analyzing": "Analyse en cours...",
+    "analysisResults": "Analyse des addons locaux",
+    "analysisResultsDescription": "{{count}} addon(s) trouvé(s) dans votre répertoire de jeu",
+    "analysisSuccess": "Analyse terminée ! {{count}} addon(s) trouvé(s)",
+    "analysisSuccessWithIdentified": "Analyse terminée ! {{count}} addon(s) trouvé(s), {{identified}} identifié(s) et ajouté(s) au profil actuel",
+    "analysisSuccessAllIdentified": "Analyse terminée ! Tous les {{identified}} addon(s) ont été automatiquement identifiés et ajoutés au profil actuel",
+    "analysisWarning": "Analyse terminée ! {{count}} addon(s) trouvé(s) avec {{errors}} erreur(s)",
+    "analysisError": "Échec de l'analyse des addons locaux",
+    "foundAddons": "Addons trouvés",
+    "noAddonsFound": "Aucun addon trouvé dans votre répertoire de jeu",
+    "errors": "Erreurs",
+    "errorsCount": "{{count}} erreur(s)",
+    "fileCount": "Fichiers",
+    "fileSize": "Taille",
+    "contentHash": "Hash du contenu",
+    "identifyMod": "Identifier le mod",
+    "identifying": "Identification...",
+    "identificationResult": "Résultat de l'identification",
+    "vpkContents": "Contenu VPK",
+    "files": "fichiers",
+    "noEntriesFound": "Aucune entrée trouvée dans le fichier VPK",
+    "show": "Afficher les détails",
+    "hide": "Masquer les détails",
+    "identificationSuccess": "Identifié avec succès : {{name}}",
+    "identificationFailed": "Impossible d'identifier ce mod",
+    "identificationError": "Échec de l'identification du mod",
+    "modName": "Nom du mod",
+    "modAuthor": "Auteur",
+    "remoteId": "ID distant",
+    "confidence": "Confiance",
+    "modNotFound": "Mod non trouvé dans la base de données",
+    "tabs": {
+      "all": "Tous",
+      "identified": "Identifiés",
+      "unknown": "Inconnus",
+      "errors": "Erreurs"
+    },
+    "stats": {
+      "identified": "Identifiés",
+      "unknown": "Inconnus",
+      "errors": "Erreurs"
+    },
+    "emptyStates": {
+      "noIdentified": "Aucun mod n'a été identifié",
+      "noIdentifiedDesc": "Ces addons pourraient être personnalisés ou ne pas être dans notre base de données",
+      "allIdentified": "Tous les addons ont été identifiés !"
+    },
+    "progress": {
+      "scanning": "Scan du répertoire des addons...",
+      "parsing": "Analyse des fichiers VPK...",
+      "analyzing_hashes": "Identification des mods...",
+      "complete": "Analyse terminée !"
+    },
+    "progressDetails": {
+      "filesFound": "{{count}} fichiers trouvés",
+      "currentFile": "Traitement de {{current}} sur {{total}}",
+      "currentFileName": "Traitement : {{fileName}}"
+    }
+  },
   "progress": {
     "pleaseWait": "Veuillez patienter..."
   },
@@ -354,6 +435,17 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.9.0": {
+        "title": "Mod Management & System Improvements",
+        "features": [
+          "📋 Mods ordering - organize your mods exactly how you want them",
+          "🔍 Local package scanning - automatically detect existing mods in your game directory",
+          "📊 Reporting system - help improve the app by reporting issues",
+          "🐧 Fixed Linux builds and scroll issues with pre-bundled GLS",
+          "✨ Some UI & UX polish",
+          "🔍 Search persistence through navigation"
+        ]
+      },
       "0.8.2": {
         "title": "Bug Fixes & Improvements",
         "features": [
@@ -504,9 +596,71 @@
   },
   "debug": {
     "title": "Debug",
-    "helloWorld": "Hello, world!"
+    "description": "Outils de débogage et utilitaires pour le développement et le dépannage.",
+    "clearModsState": "Effacer l'état des mods",
+    "confirmClearModsState": "Êtes-vous sûr de vouloir effacer l'état des mods ? Cela supprimera tous les mods de l'application mais ne les supprimera PAS de votre dossier de jeu. Vous pouvez rescanner votre dossier de mods pour les restaurer.",
+    "modsStateCleared": "État des mods effacé avec succès"
+  },
+  "contextMenu": {
+    "shareUrl": "Partager",
+    "openInGame": "Ouvrir l'emplacement dans le jeu",
+    "openModStore": "Ouvrir l'emplacement dans le magasin de mods",
+    "urlCopied": "URL copiée dans le presse-papiers !",
+    "failedToCopyUrl": "Échec de la copie de l'URL dans le presse-papiers",
+    "noUrlAvailable": "Aucune URL disponible pour ce mod",
+    "openedGameFolder": "Dossier de jeu ouvert",
+    "openedModInGame": "Fichiers de mod ouverts dans le dossier de jeu",
+    "failedToOpenGameFolder": "Échec de l'ouverture du dossier de jeu",
+    "openedModStore": "Dossier du magasin de mods ouvert",
+    "openedModInStore": "Fichiers de mod ouverts dans le magasin",
+    "failedToOpenModStore": "Échec de l'ouverture du dossier du magasin de mods"
+  },
+  "reports": {
+    "reportMod": "Signaler le mod",
+    "reportDescription": "Signaler des problèmes avec {{modName}} par {{author}}",
+    "type": "Type de signalement",
+    "selectType": "Sélectionner le type de signalement",
+    "reason": "Raison",
+    "reasonPlaceholder": "Décrivez le problème que vous rencontrez...",
+    "reasonDescription": "Veuillez fournir une description claire du problème",
+    "additionalDetails": "Détails supplémentaires",
+    "detailsPlaceholder": "Toute information supplémentaire qui pourrait aider...",
+    "detailsDescription": "Optionnel : Fournissez plus de contexte sur le problème",
+    "submitReport": "Soumettre le signalement",
+    "submitting": "Soumission...",
+    "reportSubmitted": "Signalement soumis avec succès",
+    "reportFailed": "Échec de la soumission du signalement",
+    "thankYou": "Merci !",
+    "submissionConfirmation": "Votre signalement a été soumis et sera examiné par les modérateurs.",
+    "reportTypes": "Types de signalement",
+    "title": "Signalements",
+    "description": "Ce mod a été signalé {{count}} fois",
+    "description_plural": "Ce mod a été signalé {{count}} fois",
+    "types": {
+      "broken": "Cassé/Ne fonctionne pas",
+      "outdated": "Obsolète",
+      "malicious": "Malveillant/Nuisible",
+      "inappropriate": "Contenu inapproprié",
+      "other": "Autre"
+    },
+    "totalReports": "{{count}} signalement",
+    "totalReports_plural": "{{count}} signalements",
+    "verifiedReports": "{{count}} signalement vérifié",
+    "verifiedReports_plural": "{{count}} signalements vérifiés",
+    "unverifiedReports": "{{count}} signalement non vérifié",
+    "unverifiedReports_plural": "{{count}} signalements non vérifiés",
+    "verifiedCount": "{{count}} vérifiés",
+    "unverifiedCount": "{{count}} non vérifiés",
+    "verified": "vérifié",
+    "unverified": "non vérifié",
+    "validation": {
+      "reasonMinLength": "La raison doit contenir au moins 5 caractères",
+      "reasonMaxLength": "La raison doit contenir moins de 500 caractères",
+      "descriptionMaxLength": "La description doit contenir moins de 2000 caractères"
+    }
   },
   "profiles": {
+    "share": "Partager le profil",
     "selectProfile": "Sélectionner le profil",
     "manage": "Gérer les profils",
     "manageDescription": "Créer, modifier et basculer entre différents profils de mods. Chaque profil se souvient des mods que vous avez activés.",
@@ -569,6 +723,10 @@
     "importOptionsDescription": "Choisissez comment sauvegarder ce profil importé :",
     "createNewProfile": "Créer un nouveau profil",
     "overrideExisting": "Remplacer le profil actif",
-    "overrideSuccess": "Profil actif mis à jour avec succès !"
+    "overrideSuccess": "Profil actif mis à jour avec succès !",
+    "creatingProfile": "Création d'un nouveau profil...",
+    "updatingProfile": "Mise à jour du profil actuel...",
+    "processingMods": "Traitement des mods...",
+    "modsProcessed": "Mods traités"
   }
 }

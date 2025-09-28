@@ -26,6 +26,7 @@ const knownRegexes = {
   [DeadlockHeroes.Seven]: [/seven/i],
   [DeadlockHeroes.Shiv]: [/shiv/i],
   [DeadlockHeroes.Sinclair]: [/sinclair/i],
+  [DeadlockHeroes.Victor]: [/victor/i],
   [DeadlockHeroes.Vindicta]: [/vindicta/i],
   [DeadlockHeroes.Viscous]: [/viscous/i],
   [DeadlockHeroes.Vyper]: [/vyper/i, /viper/i],

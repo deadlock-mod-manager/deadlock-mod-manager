@@ -15,7 +15,23 @@
     "quit": "Beenden"
   },
   "myMods": {
-    "subtitle": "Mods, die Sie heruntergeladen oder installiert haben"
+    "subtitle": "Mods, die Sie heruntergeladen oder installiert haben",
+    "noModsTitle": "Keine Mods installiert",
+    "noModsDescription": "Sie haben noch keine Mods installiert. Beginnen Sie, indem Sie verfügbare Mods durchsuchen oder Ihren lokalen Addons-Ordner analysieren.",
+    "visitModsPage": "Mods-Seite besuchen",
+    "analyzeLocalAddons": "Lokale Addons analysieren",
+    "enabledModsCount": "{{count}}/99 Mods aktiviert",
+    "enabledModsCountNearLimit": "{{count}}/99 Mods aktiviert (Limit nähert sich)",
+    "enabledModsCountAtLimit": "{{count}}/99 Mods aktiviert (am Limit)",
+    "modLimitTooltip": "Deadlock begrenzt die Anzahl der Addons auf maximal 99"
+  },
+  "modOrdering": {
+    "title": "Mod-Ladereihenfolge verwalten",
+    "description": "Ziehen und ablegen, um Ihre Mods neu zu ordnen. Mods oben laden zuerst, Mods unten laden zuletzt.",
+    "noMods": "Keine installierten Mods zum Ordnen",
+    "orderSaved": "Mod-Reihenfolge erfolgreich gespeichert",
+    "orderSaveFailed": "Fehler beim Speichern der Mod-Reihenfolge",
+    "manageOrder": "Reihenfolge verwalten"
   },
   "mods": {
     "searchPlaceholder": "Mods durchsuchen",
@@ -42,7 +58,10 @@
     "deleteSuccess": "Mod erfolgreich gelöscht",
     "disableSuccess": "Mod erfolgreich deaktiviert",
     "deleteError": "Fehler beim Löschen der Mod",
-    "disableError": "Fehler beim Deaktivieren der Mod"
+    "disableError": "Fehler beim Deaktivieren der Mod",
+    "customModDisableTitle": "Benutzerdefinierte Mod deaktivieren?",
+    "customModDisableBody": "Dies ist eine benutzerdefinierte Mod, die manuell zu Ihrer Bibliothek hinzugefügt wurde. Wenn Sie sie deaktivieren, können Sie sie nicht automatisch wieder aktivieren, da sie nicht aus unserer Datenbank stammt. Sie müssten die ursprüngliche Datei manuell neu installieren oder über die Addon-Analysefunktion erneut hinzufügen.",
+    "customModDisableAction": "Trotzdem deaktivieren"
   },
   "downloads": {
     "downloading": "Lade {{count}} Mod herunter",
@@ -285,6 +304,68 @@
     "noVpkFoundStored": "Keine VPK gefunden - Archiv für manuelle Verarbeitung gespeichert",
     "addedSuccess": "Hinzugefügt: {{name}}"
   },
+  "addons": {
+    "analyzeLocal": "Lokale Addons analysieren",
+    "analyzeLocalTooltip": "Scannen Sie Ihr Deadlock-Spielverzeichnis, um vorhandene Addon-Dateien zu finden und zu identifizieren, die möglicherweise nicht von diesem Mod-Manager verwaltet werden",
+    "analyzing": "Analysiere...",
+    "analysisResults": "Lokale Addon-Analyse",
+    "analysisResultsDescription": "{{count}} Addon(s) in Ihrem Spielverzeichnis gefunden",
+    "analysisSuccess": "Analyse abgeschlossen! {{count}} Addon(s) gefunden",
+    "analysisSuccessWithIdentified": "Analyse abgeschlossen! {{count}} Addon(s) gefunden, {{identified}} identifiziert und zum aktuellen Profil hinzugefügt",
+    "analysisSuccessAllIdentified": "Analyse abgeschlossen! Alle {{identified}} Addon(s) wurden automatisch identifiziert und zum aktuellen Profil hinzugefügt",
+    "analysisWarning": "Analyse abgeschlossen! {{count}} Addon(s) mit {{errors}} Fehler(n) gefunden",
+    "analysisError": "Fehler beim Analysieren lokaler Addons",
+    "foundAddons": "Gefundene Addons",
+    "noAddonsFound": "Keine Addons in Ihrem Spielverzeichnis gefunden",
+    "errors": "Fehler",
+    "errorsCount": "{{count}} Fehler",
+    "fileCount": "Dateien",
+    "fileSize": "Größe",
+    "contentHash": "Inhalt-Hash",
+    "identifyMod": "Mod identifizieren",
+    "identifying": "Identifiziere...",
+    "identificationResult": "Identifikationsergebnis",
+    "vpkContents": "VPK-Inhalte",
+    "files": "Dateien",
+    "noEntriesFound": "Keine Einträge in VPK-Datei gefunden",
+    "show": "Details anzeigen",
+    "hide": "Details ausblenden",
+    "identificationSuccess": "Erfolgreich identifiziert: {{name}}",
+    "identificationFailed": "Diese Mod konnte nicht identifiziert werden",
+    "identificationError": "Fehler beim Identifizieren der Mod",
+    "modName": "Mod-Name",
+    "modAuthor": "Autor",
+    "remoteId": "Remote-ID",
+    "confidence": "Vertrauen",
+    "modNotFound": "Mod nicht in Datenbank gefunden",
+    "tabs": {
+      "all": "Alle",
+      "identified": "Identifiziert",
+      "unknown": "Unbekannt",
+      "errors": "Fehler"
+    },
+    "stats": {
+      "identified": "Identifiziert",
+      "unknown": "Unbekannt",
+      "errors": "Fehler"
+    },
+    "emptyStates": {
+      "noIdentified": "Keine Mods wurden identifiziert",
+      "noIdentifiedDesc": "Diese Addons könnten benutzerdefiniert sein oder nicht in unserer Datenbank stehen",
+      "allIdentified": "Alle Addons wurden identifiziert!"
+    },
+    "progress": {
+      "scanning": "Scanne Addons-Verzeichnis...",
+      "parsing": "Parse VPK-Dateien...",
+      "analyzing_hashes": "Identifiziere Mods...",
+      "complete": "Analyse abgeschlossen!"
+    },
+    "progressDetails": {
+      "filesFound": "{{count}} Dateien gefunden",
+      "currentFile": "Verarbeite {{current}} von {{total}}",
+      "currentFileName": "Verarbeite: {{fileName}}"
+    }
+  },
   "progress": {
     "pleaseWait": "Bitte warten..."
   },
@@ -354,6 +435,17 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.9.0": {
+        "title": "Mod Management & System Improvements",
+        "features": [
+          "📋 Mods ordering - organize your mods exactly how you want them",
+          "🔍 Local package scanning - automatically detect existing mods in your game directory",
+          "📊 Reporting system - help improve the app by reporting issues",
+          "🐧 Fixed Linux builds and scroll issues with pre-bundled GLS",
+          "✨ Some UI & UX polish",
+          "🔍 Search persistence through navigation"
+        ]
+      },
       "0.8.2": {
         "title": "Bug Fixes & Improvements",
         "features": [
@@ -504,9 +596,71 @@
   },
   "debug": {
     "title": "Debug",
-    "helloWorld": "Hallo, Welt!"
+    "description": "Debug-Tools und Hilfsprogramme für Entwicklung und Fehlerbehebung.",
+    "clearModsState": "Mods-Status löschen",
+    "confirmClearModsState": "Sind Sie sicher, dass Sie den Mods-Status löschen möchten? Dies entfernt alle Mods aus der Anwendung, löscht sie aber NICHT aus Ihrem Spielordner. Sie können Ihren Mods-Ordner erneut scannen, um sie wiederherzustellen.",
+    "modsStateCleared": "Mods-Status erfolgreich gelöscht"
+  },
+  "contextMenu": {
+    "shareUrl": "Teilen",
+    "openInGame": "Ort im Spiel öffnen",
+    "openModStore": "Ort im Mod-Store öffnen",
+    "urlCopied": "URL in die Zwischenablage kopiert!",
+    "failedToCopyUrl": "Fehler beim Kopieren der URL in die Zwischenablage",
+    "noUrlAvailable": "Keine URL für diese Mod verfügbar",
+    "openedGameFolder": "Spielordner geöffnet",
+    "openedModInGame": "Mod-Dateien im Spielordner geöffnet",
+    "failedToOpenGameFolder": "Fehler beim Öffnen des Spielordners",
+    "openedModStore": "Mod-Store-Ordner geöffnet",
+    "openedModInStore": "Mod-Dateien im Store geöffnet",
+    "failedToOpenModStore": "Fehler beim Öffnen des Mod-Store-Ordners"
+  },
+  "reports": {
+    "reportMod": "Mod melden",
+    "reportDescription": "Probleme mit {{modName}} von {{author}} melden",
+    "type": "Meldungstyp",
+    "selectType": "Meldungstyp auswählen",
+    "reason": "Grund",
+    "reasonPlaceholder": "Beschreiben Sie das Problem, das Sie haben...",
+    "reasonDescription": "Bitte geben Sie eine klare Beschreibung des Problems an",
+    "additionalDetails": "Zusätzliche Details",
+    "detailsPlaceholder": "Zusätzliche Informationen, die helfen könnten...",
+    "detailsDescription": "Optional: Geben Sie mehr Kontext zum Problem an",
+    "submitReport": "Meldung senden",
+    "submitting": "Sende...",
+    "reportSubmitted": "Meldung erfolgreich gesendet",
+    "reportFailed": "Fehler beim Senden der Meldung",
+    "thankYou": "Vielen Dank!",
+    "submissionConfirmation": "Ihre Meldung wurde gesendet und wird von Moderatoren überprüft.",
+    "reportTypes": "Meldungstypen",
+    "title": "Meldungen",
+    "description": "Diese Mod wurde {{count}} Mal gemeldet",
+    "description_plural": "Diese Mod wurde {{count}} Mal gemeldet",
+    "types": {
+      "broken": "Defekt/Funktioniert nicht",
+      "outdated": "Veraltet",
+      "malicious": "Bösartig/Schädlich",
+      "inappropriate": "Unangemessener Inhalt",
+      "other": "Andere"
+    },
+    "totalReports": "{{count}} Meldung",
+    "totalReports_plural": "{{count}} Meldungen",
+    "verifiedReports": "{{count}} verifizierte Meldung",
+    "verifiedReports_plural": "{{count}} verifizierte Meldungen",
+    "unverifiedReports": "{{count}} unverifizierte Meldung",
+    "unverifiedReports_plural": "{{count}} unverifizierte Meldungen",
+    "verifiedCount": "{{count}} verifiziert",
+    "unverifiedCount": "{{count}} unverifiziert",
+    "verified": "verifiziert",
+    "unverified": "unverifiziert",
+    "validation": {
+      "reasonMinLength": "Grund muss mindestens 5 Zeichen lang sein",
+      "reasonMaxLength": "Grund muss weniger als 500 Zeichen lang sein",
+      "descriptionMaxLength": "Beschreibung muss weniger als 2000 Zeichen lang sein"
+    }
   },
   "profiles": {
+    "share": "Profil teilen",
     "selectProfile": "Profil auswählen",
     "manage": "Profile verwalten",
     "manageDescription": "Erstellen, bearbeiten und zwischen verschiedenen Mod-Profilen wechseln. Jedes Profil merkt sich, welche Mods Sie aktiviert haben.",
@@ -569,6 +723,10 @@
     "importOptionsDescription": "Wähle, wie dieses importierte Profil gespeichert werden soll:",
     "createNewProfile": "Neues Profil erstellen",
     "overrideExisting": "Aktives Profil überschreiben",
-    "overrideSuccess": "Aktives Profil erfolgreich aktualisiert!"
+    "overrideSuccess": "Aktives Profil erfolgreich aktualisiert!",
+    "creatingProfile": "Erstelle neues Profil...",
+    "updatingProfile": "Aktualisiere aktuelles Profil...",
+    "processingMods": "Verarbeite Mods...",
+    "modsProcessed": "Mods verarbeitet"
   }
 }

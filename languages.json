@@ -14,7 +14,7 @@
       "name": "German",
       "nativeName": "Deutsch",
       "flag": "🇩🇪",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -28,7 +28,7 @@
       "name": "French",
       "nativeName": "Français",
       "flag": "🇫🇷",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -42,7 +42,7 @@
       "name": "Russian",
       "nativeName": "Русский",
       "flag": "🇷🇺",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -60,7 +60,7 @@
       "name": "Arabic",
       "nativeName": "العربية",
       "flag": "🇸🇦",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -74,7 +74,7 @@
       "name": "Polish",
       "nativeName": "Polski",
       "flag": "🇵🇱",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -88,7 +88,7 @@
       "name": "Swiss German",
       "nativeName": "Schwiizerdütsch",
       "flag": "🇨🇭",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {
@@ -106,7 +106,7 @@
       "name": "Turkish",
       "nativeName": "Türkçe",
       "flag": "🇹🇷",
-      "status": "in-progress",
+      "status": "complete",
       "isDefault": false,
       "contributors": [
         {

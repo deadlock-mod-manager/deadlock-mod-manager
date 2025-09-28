@@ -24,6 +24,7 @@ export enum DeadlockHeroes {
   Seven = "Seven",
   Shiv = "Shiv",
   Sinclair = "Sinclair",
+  Victor = "Victor",
   Vindicta = "Vindicta",
   Viscous = "Viscous",
   Vyper = "Vyper",

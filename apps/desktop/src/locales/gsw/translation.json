@@ -338,6 +338,17 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.9.0": {
+        "title": "Mod Management & System Improvements",
+        "features": [
+          "📋 Mods ordering - organize your mods exactly how you want them",
+          "🔍 Local package scanning - automatically detect existing mods in your game directory",
+          "📊 Reporting system - help improve the app by reporting issues",
+          "🐧 Fixed Linux builds and scroll issues with pre-bundled GLS",
+          "✨ Some UI & UX polish",
+          "🔍 Search persistence through navigation"
+        ]
+      },
       "0.8.2": {
         "title": "Bug Fixes & Improvements",
         "features": [

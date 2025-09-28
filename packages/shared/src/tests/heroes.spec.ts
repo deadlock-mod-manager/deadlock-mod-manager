@@ -6,4 +6,5 @@ test("guessHero", () => {
   expect(guessHero("Raiden | Yamato Skin")).toBe(DeadlockHeroes.Yamato);
   expect(guessHero("Viscous")).toBe(DeadlockHeroes.Viscous);
   expect(guessHero("Alternative Geist")).toBe(DeadlockHeroes.LadyGeist);
+  expect(guessHero("Victor Skin Pack")).toBe(DeadlockHeroes.Victor);
 });
