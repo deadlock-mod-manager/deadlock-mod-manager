@@ -31,9 +31,6 @@
     "turbo": "^2.5.8",
     "typescript": "catalog:"
   },
-  "engines": {
-    "node": ">=24.8.0"
-  },
   "name": "@deadlock-mods/root",
   "dependencies": {
     "@changesets/cli": "^2.29.7"
