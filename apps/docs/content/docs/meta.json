@@ -1,0 +1,13 @@
+{
+  "title": "Deadlock Mod Manager",
+  "pages": [
+    "index",
+    "--- Players ---",
+    "using-mod-manager",
+    "--- Modders ---",
+    "modding",
+    "developer-docs",
+    "---Developers ---",
+    "api"
+  ]
+}

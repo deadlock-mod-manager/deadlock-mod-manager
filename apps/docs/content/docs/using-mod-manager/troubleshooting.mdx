@@ -1,0 +1,357 @@
+---
+title: Troubleshooting Guide
+description: Solutions to common issues and problems with Deadlock Mod Manager
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Troubleshooting Guide
+
+Having issues with Deadlock Mod Manager? This comprehensive troubleshooting guide covers the most common problems and their solutions.
+
+## Common Installation Issues
+
+### Application Won't Start
+
+**Symptoms:** The application fails to launch or crashes immediately upon startup.
+
+#### Windows Solutions
+
+1. **Run as Administrator**
+
+   ```bash
+   # Right-click the application and select "Run as administrator"
+   ```
+
+2. **Check Windows Defender/Antivirus**
+
+   - Add an exception for the mod manager in your antivirus software
+   - Temporarily disable real-time protection to test
+
+3. **Install Visual C++ Redistributables**
+
+   ```bash
+   # Download and install the latest Visual C++ Redistributable
+   # Available from Microsoft's website
+   ```
+
+4. **Update Windows**
+   - Ensure you're running Windows 10 version 1903 or later
+   - Install all pending Windows updates
+
+#### Linux Solutions
+
+1. **Install Dependencies**
+
+   ```bash
+   # Ubuntu/Debian
+   sudo apt update
+   sudo apt install libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev
+
+   # Arch Linux
+   sudo pacman -S webkit2gtk gtk3 librsvg
+
+   # Fedora
+   sudo dnf install webkit2gtk3-devel gtk3-devel librsvg2-devel
+   ```
+
+2. **Fix Wayland + NVIDIA Issues**
+
+   ```bash
+   # Launch with environment variable
+   WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
+   ```
+
+3. **Permissions Issues**
+   ```bash
+   # Make AppImage executable
+   chmod +x deadlock-modmanager-*.AppImage
+   ```
+
+### Game Detection Problems
+
+**Symptoms:** The mod manager can't find your Deadlock installation.
+
+#### Automatic Detection Failed
+
+1. **Verify Deadlock Installation**
+
+   - Ensure Deadlock is installed through Steam
+   - Launch Deadlock at least once to create necessary files
+   - Verify the game runs without issues
+
+2. **Check Steam Library Locations**
+
+   - Open Steam Settings > Downloads > Steam Library Folders
+   - Note all library locations where games might be installed
+   - Look for Deadlock in each library under `steamapps/common/Deadlock`
+
+## Download and Installation Issues
+
+### Download Failures
+
+**Symptoms:** Mods fail to download or downloads stop unexpectedly.
+
+#### Network Issues
+
+1. **Check Internet Connection**
+
+   - Test your internet connection with other applications
+   - Try downloading from a web browser to test connectivity
+
+2. **Firewall/Antivirus Blocking**
+
+   - Add Deadlock Mod Manager to firewall exceptions
+   - Check if your antivirus is blocking downloads
+   - Temporarily disable firewall/antivirus to test
+
+3. **Proxy/VPN Issues**
+   - If using a proxy or VPN, try disabling it temporarily
+   - Configure proxy settings if needed in the app settings
+
+#### Server Issues
+
+1. **GameBanana Server Problems**
+
+   - Check if GameBanana is accessible in your web browser
+   - Wait and retry if servers are experiencing issues
+   - Try downloading at a different time of day
+
+2. **Regional Restrictions**
+   - Some mods may have regional download restrictions
+   - Try using a VPN to a different region if necessary
+
+### Mod Installation Failures
+
+**Symptoms:** Downloads complete but mods don't install properly.
+
+#### Permission Issues
+
+1. **Insufficient Permissions**
+
+   ```bash
+   # Windows: Run as administrator
+   # Linux: Check folder permissions
+   sudo chmod -R 755 /path/to/deadlock/installation
+   ```
+
+2. **Read-only Files**
+
+   - Check if game files are set to read-only
+   - Disable Steam's file verification if enabled
+   - Ensure no other applications have game files locked
+
+3. **Access is denied. (os error 5)**
+   - This error typically occurs when the mod manager lacks permission to modify files
+   - **gameinfo.gi is read-only:** Right-click the file, select Properties, and uncheck "Read-only"
+   - **Addons folder is read-only:** Check folder properties and remove read-only attribute
+   - **High-privilege existing mods:** Some mods may have been installed with elevated privileges and cannot be removed by the mod manager. Try running the mod manager as administrator or manually remove the problematic mod files
+
+#### Disk Space Issues
+
+1. **Check Available Space**
+   - Verify sufficient disk space in both download and game directories
+   - Clear temporary files if space is low
+   - Move game installation to a drive with more space if needed
+
+### Stuck Downloads and Installations
+
+**Symptoms:** Mods get stuck during download or installation process and won't complete.
+
+#### Recovery Solutions
+
+1. **Remove Individual Stuck Mod**
+
+   - Use the trash can icon next to the stuck mod to remove it
+   - Wait for the removal process to complete
+   - Try downloading/installing the mod again
+
+2. **Clear All Mods (Nuclear Option)**
+
+   <Callout type="warn" title="Important: Backup First!">
+     Before using Clear All Mods, **ALWAYS** take a screenshot of your installed
+     mods list or backup your mods manually.
+   </Callout>
+
+   If individual mod removal doesn't work:
+
+   - Navigate to **Settings > Tools**
+   - Click the **"Clear All Mods"** button
+   - This will remove all mod manager entries but preserve the actual mod files
+
+3. **Alternative Manual Recovery**
+
+   If you prefer more control over the process:
+
+   - Copy all mods from your game's `addons` folder to a safe backup location
+   - Use the **Clear All Mods** button in Settings > Tools
+   - Copy the backed-up mods back to the `addons` folder
+   - Use **Local Analyze Addons** feature to re-add them to the mod manager
+   - This ensures you don't lose any mods while fixing stuck states
+
+## Mod-Related Issues
+
+### Mods Not Working In-Game
+
+**Symptoms:** Mods appear installed but don't work in Deadlock.
+
+#### Game Version Compatibility
+
+1. **Check Game Version**
+
+   - Verify your Deadlock version matches mod requirements
+   - Update Deadlock if you're running an older version
+   - Check mod description for version compatibility notes
+
+2. **Mod Updates Required**
+   - Check if the mod has been updated for recent game versions
+   - Look for alternative or updated versions of the mod
+   - Contact mod authors for compatibility updates
+
+#### Installation Verification
+
+1. **Verify Mod Files**
+
+   - Check that mod files are in the correct game directories
+   - Look for any error messages when toggling the mod on/off
+   - Try reinstalling the problematic mod
+
+2. **Mod Conflicts**
+   - Disable other mods to test if there's a conflict
+   - Check mod descriptions for known conflicts
+   - Install conflicting mods one at a time to identify issues
+
+## Application-Specific Issues
+
+### User Interface Problems
+
+**Symptoms:** The interface doesn't display correctly or is unresponsive.
+
+#### Display Issues
+
+1. **Scaling Problems**
+
+   - Check your system display scaling settings
+   - Try different scaling values (100%, 125%, 150%)
+   - Restart the application after changing scaling
+
+2. **Theme/Rendering Issues**
+   - Switch between light and dark themes
+   - Clear the application cache in settings
+   - Try different window sizes
+
+#### Responsiveness Issues
+
+1. **High CPU Usage**
+
+   - Check for runaway processes in Task Manager
+   - Restart the application
+   - Check for system-wide performance issues
+
+2. **Memory Leaks**
+   - Monitor memory usage over time
+   - Restart the application periodically for long sessions
+   - Report persistent memory issues on GitHub
+
+### Settings and Configuration
+
+**Symptoms:** Settings don't save or reset unexpectedly.
+
+#### Configuration File Issues
+
+1. **Corrupted Settings**
+
+   - Close the application completely
+   - Navigate to the application data directory:
+     - **Windows:** `%APPDATA%\deadlock-mod-manager\`
+     - **Linux:** `~/.config/deadlock-mod-manager/`
+   - Delete or rename the configuration file
+   - Restart the application to regenerate default settings
+
+2. **Permission Issues**
+   - Ensure the application has write permissions to its data directory
+   - Check if antivirus is blocking configuration writes
+   - Run as administrator (Windows) if necessary
+
+### Network Diagnostics
+
+#### Connection Testing
+
+1. **Test API Connectivity**
+
+   ```bash
+   # Test connection to the API
+   curl -I https://api.deadlockmods.app/mods
+   ```
+
+2. **DNS Issues**
+   - Try using different DNS servers (8.8.8.8, 1.1.1.1)
+   - Flush DNS cache:
+     - **Windows:** `ipconfig /flushdns`
+     - **Linux:** `sudo systemctl restart systemd-resolved`
+
+## Getting Additional Help
+
+### Self-Service Resources
+
+<Cards>
+  <Card
+    title="FAQ Section"
+    description="Check frequently asked questions"
+    href="/user-guide/faq"
+  />
+  <Card
+    title="Features Guide"
+    description="Learn about all available features"
+    href="/user-guide/features"
+  />
+</Cards>
+
+### Community Support
+
+1. **Discord Community**
+
+   - Join our [Discord server](https://discord.gg/WbFNt8CCr8) for real-time help
+   - Search previous discussions for similar issues
+   - Ask questions in the support channels
+
+2. **GitHub Issues**
+   - Search [existing issues](https://github.com/stormix/deadlock-modmanager/issues) for your problem
+   - Create a new issue if your problem isn't covered
+   - Include detailed information and logs when reporting
+
+### Reporting Bugs
+
+When reporting issues, please include:
+
+<Callout type="info" title="Bug Report Checklist">
+  - [ ] Detailed description of the problem - [ ] Steps to reproduce the issue -
+  [ ] System information (OS, version, etc.) - [ ] Application version and build
+  number - [ ] Screenshots or screen recordings if relevant - [ ] Log files from
+  the time of the issue - [ ] List of installed mods (if relevant)
+</Callout>
+
+### Emergency Recovery
+
+#### Complete Reset
+
+If all else fails, you can completely reset the application:
+
+1. **Backup Your Mod List**
+
+   - Export your installed mods list from Settings (if possible)
+   - Make note of which mods you had installed
+
+2. **Complete Uninstall**
+
+   - Uninstall the application normally
+   - Delete the application data directories (listed above)
+   - Clear any remaining registry entries (Windows)
+
+3. **Fresh Installation**
+   - Download and install the latest version
+   - Reconfigure settings from scratch
+   - Reinstall mods as needed
+
+Remember, the community is always ready to help! Don't hesitate to reach out on Discord or GitHub if you can't resolve an issue using this guide.

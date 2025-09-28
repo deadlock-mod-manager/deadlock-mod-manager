@@ -10,7 +10,6 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "db:migrate:deploy": {},
     "db:push": {},
     "db:seed": {},
     "dev": {

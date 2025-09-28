@@ -1,0 +1,312 @@
+---
+title: Architecture Overview
+description: Deep dive into the system architecture and design decisions of Deadlock Mod Manager
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Architecture Overview
+
+Deadlock Mod Manager is built with a modern, scalable architecture that separates concerns effectively while maintaining performance and usability. This document explores the key architectural decisions and patterns used throughout the system.
+
+## High-Level Architecture
+
+### System Overview
+
+```mermaid
+graph TD
+    A[Desktop App] --> B[API Server]
+    A --> C[Local File System]
+    A --> D[Tauri Backend]
+
+    B --> E[PostgreSQL]
+    B --> F[Redis Cache]
+    B --> G[GameBanana API]
+
+    H[Discord Bot] --> B
+    I[Web App] --> B
+
+    J[Background Workers] --> E
+    J --> F
+
+    K[External Services]
+    B --> K
+
+    subgraph "Client Layer"
+        A
+        H
+        I
+    end
+
+    subgraph "API Layer"
+        B
+        J
+    end
+
+    subgraph "Data Layer"
+        E
+        F
+        G
+        K
+    end
+```
+
+### Core Components
+
+#### 1. Desktop Application (Tauri + React)
+
+- **Frontend**: React-based UI with TypeScript
+- **Backend**: Rust-based Tauri application for system integration
+- **Communication**: IPC between frontend and backend layers
+- **File Management**: Direct file system access for mod installation
+
+#### 2. API Service (Bun + Hono)
+
+- **Data Synchronization**: Fetches mod data from GameBanana
+- **Caching Layer**: Redis for performance optimization
+- **Database**: PostgreSQL for persistent storage
+- **Background Jobs**: Queue-based processing for heavy operations
+
+#### 3. Shared Packages
+
+- **Database Schema**: Centralized data models using Drizzle ORM
+- **Logging**: Structured logging across all services
+- **Common Utilities**: Shared business logic and types
+
+## Desktop Application Architecture
+
+### Frontend Architecture (React)
+
+```mermaid
+graph TD
+    A[App.tsx] --> B[Layout Components]
+    A --> C[Page Components]
+    A --> D[Feature Components]
+
+    B --> E[Navigation]
+    B --> F[Sidebar]
+    B --> G[Header]
+
+    C --> H[Mods Page]
+    C --> I[My Mods Page]
+    C --> J[Downloads Page]
+    C --> K[Settings Page]
+
+    D --> L[Mod Browser]
+    D --> M[Download Manager]
+    D --> N[Installation Manager]
+
+    O[Contexts] --> P[Theme Context]
+    O --> Q[Settings Context]
+    O --> R[Mods Context]
+
+    S[Hooks] --> T[API Hooks]
+    S --> U[File System Hooks]
+    S --> V[State Management Hooks]
+```
+
+**Key Design Patterns:**
+
+1. **Component Composition**: Large components are broken down into smaller, reusable pieces
+2. **Context API**: Global state management for themes, settings, and mod data
+3. **Custom Hooks**: Encapsulate complex logic for API calls, file operations, and state management
+4. **Separation of Concerns**: UI components separate from business logic
+
+### Backend Architecture (Tauri/Rust)
+
+```
+Desktop Backend (Rust)
+├── File System Management
+│   ├── Mod Installation
+│   ├── File Validation
+│   ├── Backup/Restore
+│   └── Path Resolution
+├── System Integration
+│   ├── Game Detection
+│   ├── Steam Integration
+│   ├── OS-Specific Features
+│   └── Security Permissions
+├── API Communication
+│   ├── HTTP Client
+│   ├── Download Manager
+│   ├── Progress Tracking
+│   └── Error Handling
+└── IPC Layer
+    ├── Command Handlers
+    ├── Event Emission
+    ├── State Synchronization
+    └── Error Propagation
+```
+
+**Core Responsibilities:**
+
+- **File Operations**: Safe mod installation and management
+- **System Integration**: Game detection and path management
+- **Network Operations**: API communication and file downloads
+- **Security**: Secure file operations with user permissions
+
+## API Service Architecture
+
+### Service Layer Design
+
+```mermaid
+graph TD
+    A[HTTP Layer] --> B[Router Layer]
+    B --> C[Handler Layer]
+    C --> D[Service Layer]
+    D --> E[Repository Layer]
+    E --> F[Database Layer]
+
+    G[Middleware] --> A
+    H[Validation] --> C
+    I[Authentication] --> C
+    J[Rate Limiting] --> A
+
+    K[Background Jobs] --> D
+    L[Caching] --> D
+    M[External APIs] --> D
+```
+
+**Layer Responsibilities:**
+
+#### HTTP Layer
+
+- Request/response handling
+- CORS configuration
+- Rate limiting
+- Request logging
+
+#### Router Layer
+
+- Route definition and organization
+- Path parameter extraction
+- Route-specific middleware
+
+#### Handler Layer
+
+- Request validation
+- Response formatting
+- Error handling
+- Authentication checks
+
+#### Service Layer
+
+- Business logic implementation
+- External API integration
+- Background job scheduling
+- Cache management
+
+#### Repository Layer
+
+- Database query abstraction
+- Data transformation
+- Transaction management
+- Query optimization
+
+### Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as API Server
+    participant DB as PostgreSQL
+    participant GB as GameBanana
+    participant Cache as Redis
+
+    C->>API: Request mod data
+    API->>Cache: Check cache
+    alt Cache hit
+        Cache->>API: Return cached data
+        API->>C: Return response
+    else Cache miss
+        API->>DB: Query database
+        alt Data exists
+            DB->>API: Return data
+            API->>Cache: Update cache
+            API->>C: Return response
+        else Data missing
+            API->>GB: Fetch from GameBanana
+            GB->>API: Return external data
+            API->>DB: Store data
+            API->>Cache: Update cache
+            API->>C: Return response
+        end
+    end
+```
+
+## Data Architecture
+
+### Database Schema Design
+
+Refer to the drizzle schema for the database schema.
+
+**Design Principles:**
+
+- **Normalized Structure**: Reduces data redundancy
+- **Foreign Key Constraints**: Ensures data integrity
+- **Indexing Strategy**: Optimized for common query patterns
+- **Privacy-First**: No personally identifiable information stored
+
+### Caching Strategy
+
+```mermaid
+graph TD
+    A[Client Request] --> B{Cache Check}
+    B -->|Hit| C[Return Cached Data]
+    B -->|Miss| D[Database Query]
+    D --> E[Update Cache]
+    E --> F[Return Fresh Data]
+
+    G[Background Sync] --> H[Update Database]
+    H --> I[Invalidate Cache]
+    I --> J[Warm New Cache]
+```
+
+**Cache Layers:**
+
+1. **Application Cache**: In-memory caching for frequently accessed data
+2. **Redis Cache**: Distributed caching for API responses
+3. **Browser Cache**: Client-side caching for UI resources
+
+## Security Architecture
+
+### Desktop Application Security
+
+#### File System Security
+
+- **Sandboxed Operations**: All file operations go through Tauri's secure API
+- **Permission Model**: Explicit permissions for file system access
+- **Path Validation**: All paths validated before operations
+- **Backup Strategy**: Automatic backups before destructive operations
+
+#### Network Security
+
+- **HTTPS Only**: All network requests use TLS encryption
+- **Request Validation**: All API responses validated before use
+- **Rate Limiting**: Protection against abuse
+
+<Cards>
+  <Card
+    title="Contributing Guidelines"
+    description="Learn how to contribute to the project architecture"
+    href="/tech-guide/contributing"
+  />
+  <Card
+    title="API Reference"
+    description="Detailed API documentation for developers"
+    href="/tech-guide/api-reference"
+  />
+  <Card
+    title="Development Setup"
+    description="Set up your development environment"
+    href="/tech-guide/development-setup"
+  />
+</Cards>
+
+<Callout type="info" title="Architecture Questions?">
+  If you have questions about architectural decisions or want to propose
+  improvements, please join our [Discord
+  community](https://discord.gg/WbFNt8CCr8) or [create an
+  issue](https://github.com/stormix/deadlock-modmanager/issues) for discussion.
+</Callout>

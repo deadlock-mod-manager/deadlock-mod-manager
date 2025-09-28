@@ -119,4 +119,3 @@ When updating the schema:
 1. Modify `src/schema.ts`
 2. Generate migration: `pnpm db:generate`
 3. Review the generated migration in `drizzle/` directory
-4. Deploy: `pnpm db:migrate:deploy`

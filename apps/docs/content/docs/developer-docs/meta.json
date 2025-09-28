@@ -1,0 +1,12 @@
+{
+  "title": "Developer Documentation",
+  "description": "Development setup, architecture, and contribution guidelines",
+  "pages": [
+    "index",
+    "development-setup",
+    "project-structure",
+    "architecture",
+    "contributing",
+    "api-reference"
+  ]
+}

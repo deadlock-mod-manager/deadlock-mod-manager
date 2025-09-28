@@ -1,0 +1,12 @@
+{
+  "title": "Using Mod Manager",
+  "description": "Learn how to install and use Deadlock Mod Manager",
+  "pages": [
+    "index",
+    "installation",
+    "getting-started",
+    "features",
+    "troubleshooting",
+    "faq"
+  ]
+}

@@ -1,0 +1,259 @@
+---
+title: Getting Started
+description: Learn how to use Deadlock Mod Manager effectively after installation
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Getting Started
+
+Once you have Deadlock Mod Manager installed, this guide will walk you through the essential steps to start managing your Deadlock mods effectively.
+
+![Deadlock Mod Manager Main Interface](/assets/mods.png)
+
+## First Time Setup
+
+### Automatic Game Detection
+
+When you first launch Deadlock Mod Manager, it will attempt to automatically detect your Deadlock installation:
+
+1. **Launch the application** from your desktop or applications menu
+2. **Wait for automatic detection** - the app scans common Steam installation directories
+3. **Verify detection** - if successful, you'll see a "Game Ready" in the bottom status bar
+
+### Initial Settings Review
+
+Before you start installing mods, review these essential settings:
+
+#### Game Settings
+
+Deadlock uses a configuration file called `gameinfo.gi` to control which game files are loaded. This file is essential for mod support, as it allows the game to load custom content from additional directories. The mod manager automatically handles this configuration file, which is stored in your Deadlock installation folder. When you first install the mod manager, you'll see a "Vanilla" status - indicating you have the original, unmodified game files.
+
+If you've made manual changes to `gameinfo.gi` previously, we recommend following these steps:
+
+1. Create a backup of your existing file
+2. Use Steam's "Verify Game Files" feature to restore the original configuration
+3. Allow the mod manager to handle all future modifications automatically
+
+P.S. The mod manager will only modify the `gameinfo.gi` file after you Launch Modded for the first time.
+
+![Game Settings](/assets/game-settings.png)
+
+<Callout type="info" title="Tip: Gameinfo.gi is read only">
+  Some times this file is set to read only. Which prevents the mod manager from
+  modifying it. You can change this by right clicking the file and selecting
+  "Properties". Then uncheck the "Read only" checkbox.
+</Callout>
+
+## Already Have Mods Installed?
+
+If you've previously installed mods manually without using the mod manager, you can easily import them into the mod manager to take advantage of proper mod management features.
+
+### Preparing Your Installation
+
+Before importing your existing mods, it's important to restore your game to a clean state:
+
+1. **Backup your current `gameinfo.gi` file** (located in your Deadlock installation directory)
+2. **Use Steam's "Verify Game Files" feature** to restore the original `gameinfo.gi`
+3. **Restart the mod manager** to ensure it detects the clean installation
+
+<Callout type="warning" title="Important: Clean Slate Approach">
+  Restoring your gameinfo.gi ensures the mod manager can properly manage your
+  game configuration. Any manual modifications you made will be replaced with
+  automated management.
+</Callout>
+
+### Import Your Existing Mods
+
+Once your gameinfo is restored, you can import your manually installed mods:
+
+1. **Navigate to the "My Mods" tab**
+2. **Click the "Analyze Local Addons" button** - this scans your addons folder for existing mods
+3. **Review detected mods** - the mod manager will identify compatible mods in your installation
+4. **Enable imported mods** as needed using the mod manager's interface
+
+![Analyze Local Addons](/assets/local-mod-analyze.png)
+
+The Analyze Local Addons feature will detect VPK files and other mod files in your Deadlock addons directory and attempt to match them with mods in the database. Successfully matched mods will appear in your My Mods list and can be managed normally.
+
+<Callout type="info" title="Note about Mod Recognition">
+  The mod manager may not recognize all manually installed mods, especially
+  custom or modified versions. You will be able to add the unrecognized mods
+  manually and specify information about them.
+</Callout>
+
+## Understanding the Interface
+
+### Main Navigation
+
+The application is organized into four main sections:
+
+1. **Mods** - Browse and discover available mods
+2. **My Mods** - Manage your installed mods
+3. **Downloads** - Monitor download progress and history
+4. **Settings** - Configure application preferences
+
+### Mods Browser
+
+![Mods Browser](/assets/mods.png)
+
+The Mods section is your gateway to discovering new content:
+
+- **Search bar**: Find mods by name, author, or description
+- **Filter options**: Sort by downloads, date, rating, or category. Filters support two modes: include and exclude. There are also quick filters for audio mods, outdated mods, and NSFW content.
+- **Mod cards**: Each mod shows preview images, description, and key information
+- **Install buttons**: One-click installation for any mod
+
+### Individual Mod Pages
+
+![Mod Details](/assets/mod-page-1.png)
+
+Click on any mod to view detailed information:
+
+- **Info Card**: Basic information about the mod (name, author, category, downloads, rating, etc.)
+- **Description**: Detailed information about what the mod does (the quality of the description is not guaranteed, only a few authors take time to write a good description)
+- **Files**: Files that will be installed by the mod (some mods have multiple variants, so you can choose which one to install)
+- **Installation info**: File size, version, and update history
+- **Gallery**: Gallery of screenshots and videos
+- **Audio**: Audio preview of the mod
+
+![Mod Details](/assets/mod-page-2.png)
+![Mod Details](/assets/mod-page-3.png)
+
+## Installing Your First Mod
+
+### Step-by-Step Installation
+
+1. **Browse available mods** in the Mods tab
+2. **Find a mod you want to install** using search or browsing
+3. **Click on the mod** to view its details page
+4. **Review the mod information** including screenshots and description
+5. **Click the "Download Mod" button** to begin the download (you can also click the "+" to download the mod without opening the mod page)
+
+![Installation Process](/assets/mod-download-1.png)
+![Installation Process](/assets/mod-download-2.png)
+
+6. After the mod is download, it's disabled by default, you can enable it by clicking the "Enable Mod" button.
+   ![Installation Process](/assets/mod-download-3.png)
+
+### Monitoring Downloads
+
+Switch to the **Downloads** tab to monitor progress:
+
+![Downloads Management](/assets/downloads.png)
+
+- **Active downloads**: See real-time progress bars
+- **Download speed**: Monitor network usage
+
+### Verifying Installation
+
+After installation completes:
+
+1. **Check the "My Mods" tab** to see your installed mods
+   ![Installed Mods](/assets/mods-installed.png)
+2. **Verify mod status** - installed mods are indicated by a checkmark "✓"
+3. Mods that are downloaded but not enabled have a "⬇️" icon and their image is grayed out.
+   ![Installed Mods](/assets/disabled-mods.png)
+
+4. **Launch Deadlock** to test the mod in-game by clicking the "Launch Modded" button.
+   ![Launch Modded](/assets/launch.png)
+
+## Managing Your Mods
+
+### My Mods Overview
+
+The **My Mods** section provides comprehensive mod management:
+
+- **Installed mods list**: All your currently installed mods
+- **Enable/Disable toggles**: Quickly activate or deactivate mods
+- **Uninstall options**: Remove mods you no longer want
+
+### Enable/Disable Mods
+
+You can control which mods are active without uninstalling them:
+
+1. **Navigate to My Mods**
+2. **Find the mod** you want to toggle
+3. **Click the mod button** below the mod name (the button will change to "Disable Mod" if the mod is enabled). A handy tooltip will appear to help you.
+4. **Changes take effect** immediately (no game restart required)
+
+### Changing Load Order
+
+Since version 0.9.0, Deadlock Mod Manager supports customizing the load order of your installed mods, this is particularly useful if you install mods that might conflict with each other (Icon set mods for example).
+![Mod Ordering](/assets/mod-ordering.png)
+
+1. **Navigate to My Mods**
+2. **Click the double arrow icon** next to the Analyze Local Addons button
+3. **Drag and drop the mods** to change the load order.
+4. **Hit the "Save" button** to save the new load order.
+
+Mod ordering works by changing the numbering of the VPK files in the addons folder.
+
+### Updating Mods
+
+We currently do not have a way to update mods. We are working on it. But in the meantime, you can manually update by removing the mod and adding it again, we recommend doint it on the mod page so you don't have to search for it again.
+
+### Uninstalling Mods
+
+To remove mods you no longer want:
+
+1. **Go to My Mods**
+2. **Find the mod** you want to remove
+3. **Click the "Uninstall" button** (usually represented by a trash icon)
+4. **Confirm the removal** when prompted
+5. **Files are safely removed** from your Deadlock installation
+
+## Best Practices
+
+### Mod Organization
+
+- **Read descriptions carefully** before installing mods
+- **Check compatibility** there are a lot of outdated mods out there, and new game updates almost always break old mods.
+- **Start with popular mods** that have good community ratings
+- **Install one mod at a time** to test stability
+
+### Performance Considerations
+
+- **Monitor game performance** after installing multiple mods
+- **Disable unused mods** rather than keeping them all active
+- **Regular maintenance** - periodically review and clean up your mod collection
+- **Keep mods updated** to ensure compatibility with game updates
+
+### Troubleshooting Tips
+
+- **If a mod isn't working**, try disabling and re-enabling it
+- **Check mod compatibility** with your current Deadlock version
+- **Restart the game** after installing or updating mods
+- **Contact mod authors** through the community for mod-specific issues
+
+## What's Next?
+
+Now that you're familiar with the basics:
+
+<Cards>
+  <Card
+    title="Explore Features"
+    description="Discover all the advanced features and capabilities"
+    href="/using-mod-manager/features"
+  />
+  <Card
+    title="Troubleshooting Guide"
+    description="Solve common issues and problems"
+    href="/using-mod-manager/troubleshooting"
+  />
+  <Card
+    title="FAQ"
+    description="Find answers to frequently asked questions"
+    href="/using-mod-manager/faq"
+  />
+</Cards>
+
+## Getting Help
+
+If you run into issues or have questions:
+
+- **Check the Troubleshooting guide** for common solutions
+- **Visit our Discord** for community support: [Discord Server](https://deadlockmods.app/discord)
+- **Report bugs** on [GitHub Issues](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues)
+- **Browse the FAQ** for quick answers to common questions

@@ -1,0 +1,174 @@
+---
+title: Overview
+description: Complete API documentation for the Deadlock Mod Manager API
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# API Reference
+
+Welcome to the Deadlock Mod Manager API documentation. This interactive API reference provides detailed information about all available endpoints, request/response schemas, and includes a built-in API playground for testing.
+
+<Callout type="info" title="API Information">
+  **Base URL**: `https://api.deadlockmods.app` **Current Version**: v2 (with v1
+  compatibility) **Response Format**: JSON **Authentication**: Public API (no
+  authentication required for most endpoints)
+</Callout>
+
+## Quick Start
+
+The Deadlock Mod Manager API provides public access to mod data, download information, and system status. All endpoints are RESTful and return JSON responses.
+
+### Example Request
+
+```bash
+curl "https://api.deadlockmods.app/v2/mods"
+```
+
+### Example Response
+
+```json
+{
+  "mods": [
+    {
+      "id": 12345,
+      "name": "Enhanced UI Pack",
+      "description": "Comprehensive UI improvements",
+      "downloads": 15420,
+      "author": "ModAuthor",
+      "updated_at": "2024-01-20T14:45:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 156
+  }
+}
+```
+
+## API Categories
+
+The API is organized into several categories:
+
+<Cards>
+  <Card
+    title="Mods API"
+    description="Browse and search mods, get detailed mod information"
+    href="/docs/api/listModsV2"
+  />
+  <Card
+    title="Downloads API"
+    description="Get download links and track download statistics"
+    href="/docs/api/getModDownloadsV2"
+  />
+  <Card
+    title="Profile API"
+    description="User profile sharing and analytics features"
+    href="/docs/api/getProfile"
+  />
+  <Card
+    title="System API"
+    description="Health checks, version info, and system status"
+    href="/docs/api/healthCheck"
+  />
+</Cards>
+
+## Key Features
+
+### Interactive Documentation
+
+- **Live API Testing**: Test endpoints directly in the documentation
+- **Request/Response Examples**: See real examples for each endpoint
+- **Schema Validation**: Automatic validation of request parameters
+- **Code Generation**: Generate client code in multiple languages
+
+### Comprehensive Coverage
+
+- **Complete Endpoint Documentation**: Every API endpoint is documented
+- **Parameter Details**: Full parameter descriptions and validation rules
+- **Response Schemas**: Detailed response structure documentation
+- **Error Handling**: Complete error response documentation
+
+## API Versions
+
+### Version 2 (Current)
+
+- Enhanced pagination and filtering
+- Improved response schemas
+- Better error handling
+- Full backward compatibility with v1
+
+### Version 1 (Legacy)
+
+- Still supported for existing integrations
+- Basic mod listing and download functionality
+- Limited filtering options
+
+<Callout type="warning" title="Migration Notice">
+  While v1 endpoints are still supported, we recommend migrating to v2 for new
+  integrations. v2 provides enhanced features and better performance.
+</Callout>
+
+## Rate Limits
+
+All API endpoints are rate-limited to ensure fair usage:
+
+- **Standard Endpoints**: 100 requests per minute per IP
+- **Download Endpoints**: 10 concurrent downloads per IP
+- **Bulk Operations**: 5 requests per minute per IP
+
+Rate limit information is included in response headers:
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 99
+X-RateLimit-Reset: 1640995200
+```
+
+## Error Handling
+
+The API uses standard HTTP status codes and returns consistent error responses:
+
+```json
+{
+  "error": {
+    "code": "MOD_NOT_FOUND",
+    "message": "The requested mod could not be found",
+    "details": {
+      "mod_id": 12345,
+      "timestamp": "2024-01-21T10:30:00Z"
+    }
+  }
+}
+```
+
+## Getting Support
+
+Need help with the API?
+
+<Cards>
+  <Card
+    title="Discord Community"
+    description="Get help from developers and the community"
+    href="https://discord.gg/WbFNt8CCr8"
+  />
+  <Card
+    title="GitHub Issues"
+    description="Report API bugs or request features"
+    href="https://github.com/stormix/deadlock-modmanager/issues"
+  />
+  <Card
+    title="Integration Guide"
+    description="Detailed guide for integrating with the API"
+    href="/docs/tech-guide/api-reference"
+  />
+</Cards>
+
+## Next Steps
+
+- **Browse Endpoints**: Explore the interactive API documentation below
+- **Test in Browser**: Use the built-in API playground to test endpoints
+- **Build Integration**: Check out our integration examples and SDKs
+- **Join Community**: Connect with other developers using the API

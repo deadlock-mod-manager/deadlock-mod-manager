@@ -1,0 +1,211 @@
+---
+title: Installation Guide
+description: How to download and install Deadlock Mod Manager on your system
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Installation Guide
+
+Deadlock Mod Manager is available for Windows and Linux. Choose your preferred installation method below.
+
+![Installation Process](/assets/download-page.png)
+
+## Download Options
+
+### Option 1: Direct Download (Recommended)
+
+The easiest way to install Deadlock Mod Manager is to download the latest release directly from our website:
+
+[Download Deadlock Mod Manager](https://deadlockmods.app/download)
+
+### Option 2: Github Releases
+
+![Github Releases](/assets/github-releases.png)
+
+<Cards>
+  <Card
+    title="Download for Windows"
+    description="Windows 10/11 (x64) - setup.exe or .msi installer"
+    href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest"
+  />
+  <Card
+    title="Download for Linux"
+    description="Ubuntu/Debian (.deb) or universal (.AppImage)"
+    href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest"
+  />
+</Cards>
+
+1. Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
+2. Download the appropriate installer for your operating system
+3. Run the installer and follow the setup instructions
+
+### Option 3: Package Managers
+
+For users who prefer package managers, Deadlock Mod Manager is available through several official repositories:
+
+#### Windows (winget)
+
+<Callout type="warning" title="Winget">
+  Pushing new versions to winget is a work in progress. Microsoft takes a while
+  to approve new versions.
+</Callout>
+
+```bash
+winget install --id=Stormix.DeadlockModManager
+```
+
+#### Arch Linux (AUR)
+
+```bash
+# Latest stable release
+yay -S deadlock-modmanager
+
+# Latest development build
+yay -S deadlock-modmanager-git
+```
+
+More package managers will be added in the future. If you would like to maintain a package manager for Deadlock Mod Manager, please contact us on [Discord](https://deadlockmods.app/discord).
+
+## Platform-Specific Installation
+
+### Windows Installation
+
+1. **Download the installer** (.exe file) from the releases page
+2. **Run the installer** by double-clicking the downloaded file
+
+<Callout type="warning" title="Windows Security Warning">
+  You might see a prompt saying "Windows has protected your PC" due to the app
+  not being code-signed yet. Click **More Info** and then **Run Anyway** to
+  proceed with the installation.
+</Callout>
+
+3. **Follow the setup wizard** to choose installation location and options
+4. **Launch the application** from the Start Menu or desktop shortcut
+
+### Linux Installation
+
+#### Ubuntu/Debian (.deb package)
+
+```bash
+# Download the .deb file, then install
+sudo dpkg -i deadlock-modmanager_*.deb
+sudo apt-get install -f  # Fix any dependency issues
+```
+
+#### Universal (.AppImage)
+
+```bash
+# Make the AppImage executable
+chmod +x deadlock-modmanager-*.AppImage
+
+# Run the application
+./deadlock-modmanager-*.AppImage
+```
+
+#### Arch Linux (AUR)
+
+```bash
+# Using yay (recommended)
+yay -S deadlock-modmanager
+
+# Or using makepkg directly
+git clone https://aur.archlinux.org/deadlock-modmanager.git
+cd deadlock-modmanager
+makepkg -si
+```
+
+<Callout type="info" title="Linux Compatibility Note">
+If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs or AMD GPUs, run the application with:
+
+```bash
+WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
+```
+
+AUR users have this automatically handled in the .desktop file.
+
+</Callout>
+
+## Post-Installation Setup
+
+After installing Deadlock Mod Manager, you'll need to complete the initial setup:
+
+### First Launch
+
+1. **Launch the application** from your desktop or applications menu
+2. **Grant necessary permissions** when prompted (file system access for mod installation)
+3. The app will attempt to **automatically detect your Deadlock installation**
+
+### Verify Installation
+
+To ensure everything is working correctly:
+
+![First Launch](/assets/verify.png)
+
+1. **Check the bottom status bar** - API should be online (green) and the game should be "ready".
+2. **Browse the Mods tab** - you should see available mods loading
+3. **Test downloading a mod** - try installing a simple mod to verify functionality
+
+## Troubleshooting Installation Issues
+
+### Common Issues
+
+#### "App won't start" or crashes on launch
+
+- **Windows**: Run as administrator once, then normally
+- **Linux**: Ensure all dependencies are installed (`sudo apt install libwebkit2gtk-4.0-dev` on Ubuntu)
+
+#### "Cannot find Deadlock installation"
+
+- Verify Deadlock is installed through Steam
+- Check that the game has been launched at least once
+- If the game is still not detected, please open an issue on [GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues) with your system info and the steps you took to install the game.
+
+#### Download/installation issues
+
+- Check your internet connection
+- Verify you have write permissions to the Deadlock directory
+- Try running the app as administrator (Windows) or with sudo (Linux)
+
+  <Callout type="warning" title="Region-Specific Issues">
+    Users in certain regions (Brazil, China, Iran, Russia, Turkey, Ukraine) may
+    need to use a VPN to access mod downloads due to upstream provider
+    restrictions from sites like GameBanana
+  </Callout>
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check existing issues** on [GitHub Issues](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues)
+2. **Join our Discord** for community support: [Discord Server](https://discord.gg/WbFNt8CCr8)
+3. **Create a new issue** with details about your system and the problem
+
+## Security & Safety
+
+<Callout type="info" title="Safety Information">
+  Deadlock Mod Manager is open source and safe to use. If you have security concerns:
+
+    - **View the source code**: All code is publicly available on [GitHub](https://github.com/stormix/deadlock-modmanager)
+    - **Scan downloads**: You can run downloaded files through [VirusTotal](https://www.virustotal.com/) for additional peace of mind
+    - **Community verified**: The application is used by thousands of users in the community
+
+</Callout>
+
+## Next Steps
+
+Once you have successfully installed Deadlock Mod Manager:
+
+<Cards>
+  <Card
+    title="Getting Started Guide"
+    description="Learn how to use the mod manager effectively"
+    href="/user-guide/getting-started"
+  />
+  <Card
+    title="Features Overview"
+    description="Explore all available features and capabilities"
+    href="/user-guide/features"
+  />
+</Cards>

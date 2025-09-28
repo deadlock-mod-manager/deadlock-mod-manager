@@ -1,0 +1,451 @@
+---
+title: Development Setup
+description: Set up your development environment for contributing to Deadlock Mod Manager
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Development Setup
+
+This guide will help you set up your development environment to contribute to Deadlock Mod Manager. The project is a monorepo built with modern tools and technologies.
+
+## Prerequisites
+
+Before you begin, ensure you have the following tools installed:
+
+### Required Tools
+
+#### Node.js (>= 24.8.0)
+
+Download from [nodejs.org](https://nodejs.org/) or use a version manager:
+
+```bash
+# Using nvm (recommended)
+nvm install 24
+nvm use 24
+
+# Using fnm
+fnm install 24
+fnm use 24
+```
+
+#### pnpm (>= 10.17.0)
+
+Install the package manager:
+
+```bash
+npm install -g pnpm
+
+# Verify installation
+pnpm --version
+```
+
+#### Rust (Latest Stable)
+
+Required for the Tauri desktop application:
+
+```bash
+# Install rustup (Rust installer)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Windows: Download from https://rustup.rs/
+# Follow the installation prompts
+
+# Verify installation
+rustc --version
+cargo --version
+```
+
+#### Docker
+
+For local database development:
+
+- **Windows**: [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- **Linux**: [Docker Engine](https://docs.docker.com/engine/install/)
+
+```bash
+# Verify installation
+docker --version
+docker compose --version
+```
+
+### Platform-Specific Requirements
+
+#### Windows
+
+- **Visual Studio Build Tools** or **Visual Studio Community** with C++ support
+- **Windows 10 SDK** (automatically installed with VS Build Tools)
+
+#### Linux
+
+Install system dependencies:
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y \
+    libwebkit2gtk-4.1-dev \
+    libappindicator3-dev \
+    librsvg2-dev \
+    patchelf \
+    build-essential \
+    curl \
+    wget \
+    file \
+    libssl-dev \
+    libgtk-3-dev \
+    libayatana-appindicator3-dev
+
+# Arch Linux
+sudo pacman -S \
+    webkit2gtk-4.1 \
+    gtk3 \
+    librsvg \
+    base-devel \
+    curl \
+    wget \
+    file \
+    openssl \
+    appmenu-gtk-module \
+    gtk3-print-backends \
+    libappindicator-gtk3
+
+# Fedora
+sudo dnf install -y \
+    webkit2gtk4.1-devel \
+    gtk3-devel \
+    librsvg2-devel \
+    openssl-devel \
+    curl \
+    wget \
+    file \
+    libappindicator-gtk3-devel
+```
+
+## Project Setup
+
+### 1. Fork and Clone
+
+1. **Fork the repository** on GitHub: [deadlock-modmanager](https://github.com/stormix/deadlock-modmanager)
+
+2. **Clone your fork**:
+
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/deadlock-modmanager.git
+   cd deadlock-modmanager
+   ```
+
+### 2. Install Dependencies
+
+Install all project dependencies:
+
+```bash
+# Install all dependencies for the monorepo
+pnpm install
+
+# This will install dependencies for all packages and apps
+```
+
+<Callout type="info" title="Installation Time">
+  The first installation may take 5-10 minutes as it needs to download and
+  compile Rust dependencies for Tauri.
+</Callout>
+
+### 3. Environment Configuration
+
+Copy the example environment file and configure it:
+
+```bash
+# Copy the example environment file
+cp env.example .env
+
+# Edit the file with your preferred editor
+code .env  # VS Code
+nano .env  # Terminal editor
+```
+
+**Required Environment Variables:**
+
+```bash
+# Database configuration
+DATABASE_URL=postgresql://turborepo:123456789@localhost:5435/turborepo
+NODE_ENV=development
+
+# Optional services (can be left empty for basic development)
+REDIS_URL=redis://localhost:6379
+SENTRY_DSN=your_sentry_dsn_here # you can put whatever text you want here
+
+# API configuration (optional)
+PORT=3001
+HOST=localhost
+```
+
+### 4. Database Setup
+
+Start the development database using Docker:
+
+```bash
+# Start PostgreSQL and Redis containers
+docker compose up -d
+
+# Verify containers are running
+docker compose ps
+```
+
+Apply the database schema:
+
+```bash
+# Push the database schema
+pnpm db:push
+
+# Optional: Seed with initial data
+pnpm db:seed
+```
+
+### 5. Verify Installation
+
+Test that everything is working:
+
+```bash
+# Run type checking
+pnpm check-types
+
+# Run linting
+pnpm lint
+
+# Build all packages (this may take a while first time)
+pnpm build
+```
+
+## Development Commands
+
+### Core Commands
+
+| Command                     | Description                             |
+| --------------------------- | --------------------------------------- |
+| `pnpm dev`                  | Start desktop app development (default) |
+| `pnpm --filter desktop dev` | Start desktop app development           |
+| `pnpm --filter api dev`     | Start API server development            |
+| `pnpm --filter www dev`     | Start web app development               |
+| `pnpm --filter docs dev`    | Start documentation development         |
+
+### Quality Assurance
+
+| Command            | Description                      |
+| ------------------ | -------------------------------- |
+| `pnpm lint`        | Run linting with Biome           |
+| `pnpm lint:fix`    | Fix linting issues automatically |
+| `pnpm format`      | Format code with Biome           |
+| `pnpm check-types` | Run TypeScript type checking     |
+
+### Database Commands
+
+| Command           | Description                     |
+| ----------------- | ------------------------------- |
+| `pnpm db:push`    | Push schema changes to database |
+| `pnpm db:seed`    | Seed database with initial data |
+| `pnpm db:migrate` | Run migrations                  |
+| `pnpm generate`   | Generate database migrations    |
+
+### Build Commands
+
+| Command                       | Description                         |
+| ----------------------------- | ----------------------------------- |
+| `pnpm build`                  | Build all packages and applications |
+| `pnpm --filter desktop build` | Build only desktop application      |
+| `pnpm --filter api build`     | Build only API server               |
+
+## Development Workflow
+
+### 1. Starting Development
+
+For **desktop app development** (most common):
+
+```bash
+# Start the API server (in one terminal)
+pnpm --filter api dev
+
+# Start the desktop app (in another terminal)
+pnpm --filter desktop dev
+```
+
+For **web development**:
+
+```bash
+# Start the web app
+pnpm --filter www dev
+```
+
+For **documentation development**:
+
+```bash
+# Start the docs site
+pnpm --filter docs dev
+```
+
+### 2. Making Changes
+
+1. **Create a feature branch**:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** following the [coding style guidelines](/tech-guide/contributing)
+
+3. **Test your changes**:
+
+   ```bash
+   pnpm lint:Fix
+   pnpm format:Fix
+   pnpm check-types
+   pnpm test  # If tests exist for your changes
+   ```
+
+4. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "feat: add your feature description"
+   ```
+
+### 3. Staying Updated
+
+Keep your fork synchronized with the upstream repository:
+
+```bash
+# Fetch latest changes
+git fetch upstream
+
+# Merge upstream changes into your main branch
+git checkout main
+git merge upstream/main
+
+# Push updates to your fork
+git push origin main
+```
+
+## IDE Configuration
+
+### Cursor / VS Code (Recommended)
+
+The project includes VS Code configuration with recommended extensions:
+
+1. **Install recommended extensions** when prompted
+2. **Enable format on save** (already configured in workspace settings)
+3. **Use the integrated terminal** for running commands
+
+**Recommended Extensions:**
+
+- Rust Analyzer
+- Tauri
+- TypeScript and JavaScript Language Features
+- Tailwind CSS IntelliSense
+- Biome (for linting/formatting)
+
+### Other IDEs
+
+The project should work with any IDE that supports:
+
+- TypeScript/JavaScript
+- Rust
+- EditorConfig
+- Biome
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Command not found" errors
+
+```bash
+# Ensure pnpm is installed globally
+npm install -g pnpm
+
+# Refresh your shell
+source ~/.bashrc  # or ~/.zshrc
+```
+
+#### Rust compilation errors
+
+```bash
+# Update Rust to latest stable
+rustup update stable
+
+# Clear Rust cache
+cargo clean
+
+# For Linux: ensure system dependencies are installed
+```
+
+#### Database connection issues
+
+```bash
+# Restart Docker containers
+docker compose down
+docker compose up -d
+
+# Check container logs
+docker compose logs postgres
+```
+
+#### Port conflicts
+
+```bash
+# Check what's running on ports
+lsof -i :3001  # API port
+lsof -i :3000  # Web port
+lsof -i :1420  # Tauri dev port
+
+# Kill processes if needed
+kill -9 <PID>
+```
+
+### Getting Help
+
+If you encounter issues:
+
+<Cards>
+  <Card
+    title="Troubleshooting Guide"
+    description="Common solutions for development issues"
+    href="/user-guide/troubleshooting"
+  />
+  <Card
+    title="Discord Community"
+    description="Get help from other developers"
+    href="https://discord.gg/WbFNt8CCr8"
+  />
+  <Card
+    title="GitHub Issues"
+    description="Report bugs or ask technical questions"
+    href="https://github.com/stormix/deadlock-modmanager/issues"
+  />
+</Cards>
+
+## Next Steps
+
+Once your development environment is set up:
+
+<Cards>
+  <Card
+    title="Project Structure"
+    description="Understand how the codebase is organized"
+    href="/tech-guide/project-structure"
+  />
+  <Card
+    title="Architecture Overview"
+    description="Learn about the system architecture"
+    href="/tech-guide/architecture"
+  />
+  <Card
+    title="Contributing Guidelines"
+    description="Learn how to contribute effectively"
+    href="/tech-guide/contributing"
+  />
+</Cards>
+
+<Callout type="success" title="Ready to Contribute!">
+  With your development environment set up, you're ready to start contributing
+  to Deadlock Mod Manager. Welcome to the team! 🚀
+</Callout>

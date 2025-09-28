@@ -4,6 +4,7 @@
     "ignoreUnknown": false,
     "includes": [
       "**/*",
+      "!apps/docs/.next",
       "!apps/www/src/routeTree.gen.ts",
       "!**/components/ui",
       "!apps/desktop/src/components/ui",

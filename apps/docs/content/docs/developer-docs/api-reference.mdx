@@ -1,0 +1,747 @@
+---
+title: API Integration Guide
+description: Comprehensive guide for integrating with the Deadlock Mod Manager API
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# API Integration Guide
+
+This guide provides comprehensive information for developers integrating with the Deadlock Mod Manager API. For interactive API documentation with live testing capabilities, visit our [API Reference](/api).
+
+<Callout type="info" title="Interactive API Documentation">
+  For the complete, interactive API reference with live endpoint testing, visit
+  our [API Reference section](/api). This page focuses on integration patterns
+  and advanced usage.
+</Callout>
+
+<Callout type="info" title="API Version">
+  Current API Version: **v1** Base URL: `https://api.deadlock-mods.com/v1` All
+  endpoints return JSON and require HTTPS.
+</Callout>
+
+## Authentication
+
+### Public Endpoints
+
+Most endpoints are public and don't require authentication:
+
+```typescript
+// No authentication required for public mod data
+const response = await fetch("https://api.deadlock-mods.com/v1/mods");
+const data = await response.json();
+```
+
+### Rate Limiting
+
+All endpoints are rate-limited to ensure fair usage:
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 99
+X-RateLimit-Reset: 1640995200
+```
+
+**Rate Limits:**
+
+- **Public endpoints**: 100 requests per minute per IP
+- **Download endpoints**: 10 concurrent downloads per IP
+- **Upload endpoints**: 5 requests per minute per IP (authenticated)
+
+## Core Endpoints
+
+### Mods
+
+#### List Mods
+
+Retrieve a paginated list of available mods.
+
+```http
+GET /v1/mods
+```
+
+**Query Parameters:**
+
+| Parameter  | Type    | Description                                    | Default   |
+| ---------- | ------- | ---------------------------------------------- | --------- |
+| `page`     | integer | Page number (1-based)                          | 1         |
+| `limit`    | integer | Items per page (1-100)                         | 20        |
+| `search`   | string  | Search query for mod names/descriptions        | -         |
+| `category` | string  | Filter by category slug                        | -         |
+| `author`   | string  | Filter by author name                          | -         |
+| `sort`     | string  | Sort by: `popular`, `recent`, `name`, `rating` | `popular` |
+
+**Example Request:**
+
+```typescript
+const response = await fetch("/v1/mods?search=ui&category=interface&limit=10");
+const data = await response.json();
+```
+
+**Response:**
+
+```json
+{
+  "mods": [
+    {
+      "id": 12345,
+      "gamebanana_id": 67890,
+      "name": "Enhanced UI Pack",
+      "slug": "enhanced-ui-pack",
+      "description": "Comprehensive UI improvements for better gameplay experience",
+      "short_description": "UI improvements and enhancements",
+      "category": {
+        "id": 1,
+        "name": "Interface",
+        "slug": "interface"
+      },
+      "author": {
+        "id": 1001,
+        "name": "ModAuthor",
+        "profile_url": "https://gamebanana.com/members/1001"
+      },
+      "stats": {
+        "downloads": 15420,
+        "views": 89123,
+        "likes": 342,
+        "rating": 4.8
+      },
+      "images": {
+        "icon": "https://images.gamebanana.com/img/ico/sprays/123.png",
+        "banner": "https://images.gamebanana.com/img/ss/sprays/123_banner.jpg",
+        "screenshots": [
+          "https://images.gamebanana.com/img/ss/sprays/123_1.jpg",
+          "https://images.gamebanana.com/img/ss/sprays/123_2.jpg"
+        ]
+      },
+      "files": [
+        {
+          "id": 1,
+          "filename": "enhanced_ui_v1.2.zip",
+          "filesize": 2048576,
+          "download_count": 15420,
+          "created_at": "2024-01-15T10:30:00Z",
+          "updated_at": "2024-01-20T14:45:00Z"
+        }
+      ],
+      "tags": ["ui", "interface", "enhancement"],
+      "compatibility": {
+        "game_version": ">=0.1.0",
+        "mod_manager_version": ">=1.0.0"
+      },
+      "created_at": "2024-01-10T08:00:00Z",
+      "updated_at": "2024-01-20T14:45:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 156,
+    "total_pages": 16,
+    "has_next": true,
+    "has_prev": false
+  }
+}
+```
+
+#### Get Mod Details
+
+Retrieve detailed information about a specific mod.
+
+```http
+GET /v1/mods/{mod_id}
+```
+
+**Path Parameters:**
+
+| Parameter | Type    | Description           |
+| --------- | ------- | --------------------- |
+| `mod_id`  | integer | Unique mod identifier |
+
+**Example Request:**
+
+```typescript
+const response = await fetch("/v1/mods/12345");
+const mod = await response.json();
+```
+
+**Response:**
+
+```json
+{
+  "mod": {
+    "id": 12345,
+    "gamebanana_id": 67890,
+    "name": "Enhanced UI Pack",
+    "slug": "enhanced-ui-pack",
+    "description": "A comprehensive UI overhaul that improves the visual design...",
+    "installation_notes": "Extract to your Deadlock/game folder. Backup existing files.",
+    "changelog": [
+      {
+        "version": "1.2.0",
+        "date": "2024-01-20T14:45:00Z",
+        "changes": [
+          "Fixed compatibility with latest game update",
+          "Added new health bar designs",
+          "Improved minimap visibility"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "type": "game_version",
+        "value": ">=0.1.0",
+        "description": "Requires Deadlock version 0.1.0 or higher"
+      }
+    ],
+    "conflicts": [
+      {
+        "mod_id": 54321,
+        "mod_name": "Alternative UI Mod",
+        "reason": "Both mods modify the same UI files"
+      }
+    ]
+  }
+}
+```
+
+### Categories
+
+#### List Categories
+
+Retrieve all available mod categories.
+
+```http
+GET /v1/categories
+```
+
+**Response:**
+
+```json
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Interface",
+      "slug": "interface",
+      "description": "UI modifications and enhancements",
+      "mod_count": 45,
+      "icon": "https://api.deadlock-mods.com/assets/icons/interface.svg"
+    },
+    {
+      "id": 2,
+      "name": "Gameplay",
+      "slug": "gameplay",
+      "description": "Mods that change game mechanics",
+      "mod_count": 23,
+      "icon": "https://api.deadlock-mods.com/assets/icons/gameplay.svg"
+    }
+  ]
+}
+```
+
+### Downloads
+
+#### Download Mod File
+
+Initiate a download for a mod file.
+
+```http
+GET /v1/mods/{mod_id}/download
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Description                                     |
+| --------- | ------- | ----------------------------------------------- |
+| `file_id` | integer | Specific file ID (optional, defaults to latest) |
+
+**Example Request:**
+
+```typescript
+const response = await fetch("/v1/mods/12345/download?file_id=1");
+```
+
+**Response:**
+
+```json
+{
+  "download": {
+    "id": "dl_abc123",
+    "url": "https://files.gamebanana.com/mods/...",
+    "expires_at": "2024-01-21T10:30:00Z",
+    "filename": "enhanced_ui_v1.2.zip",
+    "filesize": 2048576,
+    "checksum": {
+      "md5": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+      "sha256": "1234567890abcdef..."
+    }
+  }
+}
+```
+
+#### Download Statistics
+
+Get download statistics for analytics.
+
+```http
+GET /v1/stats/downloads
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Description                    |
+| --------- | ------- | ------------------------------ |
+| `period`  | string  | `day`, `week`, `month`, `year` |
+| `mod_id`  | integer | Filter by specific mod         |
+
+**Response:**
+
+```json
+{
+  "stats": {
+    "total_downloads": 1234567,
+    "period_downloads": 12345,
+    "top_mods": [
+      {
+        "mod_id": 12345,
+        "name": "Enhanced UI Pack",
+        "downloads": 1542
+      }
+    ]
+  }
+}
+```
+
+## Desktop Integration API
+
+### Tauri Commands
+
+The desktop application exposes these Tauri commands for frontend-backend communication:
+
+#### File System Operations
+
+```typescript
+// Check if game is installed
+const gameInstalled = await invoke<boolean>("check_game_installation", {
+  gamePath: "/path/to/deadlock",
+});
+
+// Install a mod
+const result = await invoke<InstallResult>("install_mod", {
+  modId: 12345,
+  filePath: "/path/to/mod.zip",
+  options: {
+    backup: true,
+    overwrite: false,
+  },
+});
+
+// Uninstall a mod
+await invoke<void>("uninstall_mod", {
+  modId: 12345,
+  restoreBackup: true,
+});
+```
+
+#### System Integration
+
+```typescript
+// Get system information
+const systemInfo = await invoke<SystemInfo>("get_system_info");
+
+// Open file explorer
+await invoke<void>("open_file_explorer", {
+  path: "/path/to/directory",
+});
+
+// Show in file manager
+await invoke<void>("show_in_file_manager", {
+  filePath: "/path/to/file.zip",
+});
+```
+
+#### Game Integration
+
+```typescript
+// Detect game installation
+const detectionResult = await invoke<GameDetection>("detect_game_installation");
+
+// Launch game
+await invoke<void>("launch_game", {
+  gamePath: "/path/to/deadlock",
+  args: ["--windowed"],
+});
+
+// Get mod status
+const modStatus = await invoke<ModStatus[]>("get_mod_status", {
+  gamePath: "/path/to/deadlock",
+});
+```
+
+### Events
+
+The desktop application emits events for real-time updates:
+
+```typescript
+import { listen } from "@tauri-apps/api/event";
+
+// Download progress
+await listen<DownloadProgress>("download-progress", (event) => {
+  console.log(`Download ${event.payload.id}: ${event.payload.progress}%`);
+});
+
+// Installation progress
+await listen<InstallProgress>("install-progress", (event) => {
+  console.log(`Installing: ${event.payload.status}`);
+});
+
+// Error events
+await listen<ErrorEvent>("error", (event) => {
+  console.error("Error occurred:", event.payload.message);
+});
+```
+
+## Data Types
+
+### Core Models
+
+#### Mod
+
+```typescript
+interface Mod {
+  id: number;
+  gamebanana_id: number;
+  name: string;
+  slug: string;
+  description: string;
+  short_description?: string;
+  category: Category;
+  author: Author;
+  stats: ModStats;
+  images: ModImages;
+  files: ModFile[];
+  tags: string[];
+  compatibility: Compatibility;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### ModFile
+
+```typescript
+interface ModFile {
+  id: number;
+  filename: string;
+  filesize: number;
+  download_count: number;
+  checksum?: {
+    md5?: string;
+    sha256?: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### Category
+
+```typescript
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  mod_count: number;
+  icon?: string;
+}
+```
+
+#### Author
+
+```typescript
+interface Author {
+  id: number;
+  name: string;
+  profile_url?: string;
+  avatar?: string;
+  mod_count?: number;
+}
+```
+
+### Desktop Application Types
+
+#### InstallResult
+
+```typescript
+interface InstallResult {
+  success: boolean;
+  mod_id: number;
+  installed_files: string[];
+  backup_created: boolean;
+  message?: string;
+  error?: string;
+}
+```
+
+#### SystemInfo
+
+```typescript
+interface SystemInfo {
+  platform: "windows" | "linux";
+  arch: string;
+  version: string;
+  total_memory: number;
+  available_memory: number;
+  cpu_count: number;
+}
+```
+
+#### GameDetection
+
+```typescript
+interface GameDetection {
+  found: boolean;
+  path?: string;
+  version?: string;
+  valid: boolean;
+  steam_id?: string;
+  executable_path?: string;
+}
+```
+
+## Error Handling
+
+### Standard Error Response
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": {
+    "code": "MOD_NOT_FOUND",
+    "message": "The requested mod could not be found",
+    "details": {
+      "mod_id": 12345,
+      "timestamp": "2024-01-21T10:30:00Z"
+    }
+  }
+}
+```
+
+### Error Codes
+
+| Code                  | HTTP Status | Description                    |
+| --------------------- | ----------- | ------------------------------ |
+| `MOD_NOT_FOUND`       | 404         | Requested mod doesn't exist    |
+| `INVALID_PARAMETERS`  | 400         | Request parameters are invalid |
+| `RATE_LIMITED`        | 429         | Rate limit exceeded            |
+| `SERVER_ERROR`        | 500         | Internal server error          |
+| `SERVICE_UNAVAILABLE` | 503         | External service unavailable   |
+
+### Desktop Application Errors
+
+```typescript
+interface TauriError {
+  code: string;
+  message: string;
+  details?: Record<string, any>;
+}
+
+// Common error codes
+const ErrorCodes = {
+  GAME_NOT_FOUND: "GAME_NOT_FOUND",
+  INSTALL_FAILED: "INSTALL_FAILED",
+  PERMISSION_DENIED: "PERMISSION_DENIED",
+  FILE_NOT_FOUND: "FILE_NOT_FOUND",
+  CHECKSUM_MISMATCH: "CHECKSUM_MISMATCH",
+} as const;
+```
+
+## SDK and Client Libraries
+
+### JavaScript/TypeScript SDK
+
+```typescript
+import { DeadlockModsAPI } from "@deadlock-mods/api-client";
+
+const api = new DeadlockModsAPI({
+  baseURL: "https://api.deadlock-mods.com/v1",
+  timeout: 5000,
+});
+
+// Type-safe API calls
+const mods = await api.mods.list({
+  search: "ui",
+  limit: 20,
+});
+
+const mod = await api.mods.get(12345);
+const download = await api.mods.download(12345);
+```
+
+### React Hooks
+
+```typescript
+import { useMods, useMod, useModDownload } from "@deadlock-mods/react-hooks";
+
+function ModBrowser() {
+  const {
+    data: mods,
+    loading,
+    error,
+  } = useMods({
+    search: "ui",
+    category: "interface",
+  });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {mods?.mods.map((mod) => (
+        <ModCard key={mod.id} mod={mod} />
+      ))}
+    </div>
+  );
+}
+
+function ModCard({ mod }: { mod: Mod }) {
+  const { download, progress, downloading } = useModDownload();
+
+  const handleDownload = () => {
+    download(mod.id);
+  };
+
+  return (
+    <div>
+      <h3>{mod.name}</h3>
+      <button onClick={handleDownload} disabled={downloading}>
+        {downloading ? `Downloading ${progress}%` : "Download"}
+      </button>
+    </div>
+  );
+}
+```
+
+## Webhooks (Planned)
+
+<Callout type="info" title="Coming Soon">
+  Webhook support is planned for future releases to enable real-time mod updates
+  and notifications.
+</Callout>
+
+Future webhook events will include:
+
+```typescript
+interface WebhookEvent {
+  type: "mod.created" | "mod.updated" | "mod.deleted";
+  timestamp: string;
+  data: {
+    mod_id: number;
+    changes?: string[];
+  };
+}
+```
+
+## API Versioning
+
+### Version Strategy
+
+- **Current Version**: v1
+- **Backward Compatibility**: Guaranteed within major versions
+- **Deprecation Policy**: 6 months notice for breaking changes
+- **Version Header**: `Accept: application/vnd.deadlock-mods.v1+json`
+
+### Migration Guide
+
+When API versions change:
+
+1. **Review changelog** for breaking changes
+2. **Test against new version** in development
+3. **Update client code** as needed
+4. **Monitor deprecation warnings**
+
+## Rate Limiting & Performance
+
+### Best Practices
+
+1. **Cache responses** when possible
+2. **Use pagination** for large datasets
+3. **Implement exponential backoff** for retries
+4. **Monitor rate limits** in response headers
+5. **Use conditional requests** with ETags
+
+### Performance Tips
+
+```typescript
+// Good: Cache frequently accessed data
+const cachedMods = new Map();
+
+async function getCachedMod(modId: number) {
+  if (cachedMods.has(modId)) {
+    return cachedMods.get(modId);
+  }
+
+  const mod = await api.mods.get(modId);
+  cachedMods.set(modId, mod);
+  return mod;
+}
+
+// Good: Use pagination efficiently
+async function getAllMods() {
+  const allMods = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await api.mods.list({ page, limit: 100 });
+    allMods.push(...response.mods);
+    hasMore = response.pagination.has_next;
+    page++;
+  }
+
+  return allMods;
+}
+```
+
+## Support and Resources
+
+<Cards>
+  <Card
+    title="Interactive API Documentation"
+    description="Browse and test API endpoints live"
+    href="/api"
+  />
+  <Card
+    title="API Status"
+    description="Check API availability and performance"
+    href="https://status.deadlockmods.app"
+  />
+  <Card
+    title="Discord Community"
+    description="Get help from other developers"
+    href="https://discord.gg/WbFNt8CCr8"
+  />
+  <Card
+    title="GitHub Issues"
+    description="Report API issues and bugs"
+    href="https://github.com/stormix/deadlock-modmanager/issues"
+  />
+  <Card
+    title="OpenAPI Specification"
+    description="Machine-readable API specification"
+    href="https://api.deadlockmods.app/openapi.json"
+  />
+</Cards>
+
+<Callout type="info" title="Need Help?">
+  If you have questions about the API or need help integrating with Deadlock Mod
+  Manager, please join our [Discord community](https://discord.gg/WbFNt8CCr8) or
+  [create an issue](https://github.com/stormix/deadlock-modmanager/issues) on
+  GitHub.
+</Callout>

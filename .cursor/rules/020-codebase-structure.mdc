@@ -65,7 +65,6 @@ pnpm format               # Format code with Biome
 
 ```bash
 pnpm db:push              # Push schema to database
-pnpm db:migrate:deploy    # Deploy migrations to database
 pnpm db:seed              # Seed database with initial data
 pnpm generate             # Generate database migrations
 ```

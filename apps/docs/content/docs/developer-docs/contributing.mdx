@@ -1,0 +1,714 @@
+---
+title: Contributing Guidelines
+description: Comprehensive guide for contributing to Deadlock Mod Manager development
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Contributing Guidelines
+
+Thank you for your interest in contributing to Deadlock Mod Manager! This guide provides comprehensive information for developers who want to contribute code, documentation, translations, or other improvements to the project.
+
+<Callout type="success" title="Welcome Contributors!">
+  We welcome contributions of all kinds - from bug fixes and feature
+  implementations to documentation improvements and translations. Every
+  contribution makes the project better for the entire community.
+</Callout>
+
+## Getting Started
+
+### Before You Begin
+
+1. **Read the Code of Conduct**: Familiarize yourself with our [community guidelines](https://github.com/stormix/deadlock-modmanager/blob/main/CODE_OF_CONDUCT.md)
+2. **Set up your development environment**: Follow the [Development Setup](/tech-guide/development-setup) guide
+3. **Understand the project structure**: Review the [Project Structure](/tech-guide/project-structure) documentation
+4. **Join the community**: Connect with us on [Discord](https://discord.gg/WbFNt8CCr8) for discussions and support
+
+### Types of Contributions
+
+We accept various types of contributions:
+
+- 🐛 **Bug fixes** - Fix issues and improve stability
+- ✨ **New features** - Implement new functionality
+- 📚 **Documentation** - Improve guides, API docs, and examples
+- 🌐 **Translations** - Add or improve language support
+- 🔧 **Code quality** - Refactoring, performance improvements, and cleanup
+- 🧪 **Testing** - Add or improve test coverage
+- 🎨 **Design** - UI/UX improvements and design assets
+
+## Development Workflow
+
+### 1. Planning Your Contribution
+
+#### For Bug Fixes
+
+1. **Check existing issues**: Search for existing bug reports
+2. **Create an issue**: If none exists, create a detailed bug report
+3. **Discuss the approach**: Comment on the issue with your proposed solution
+4. **Get approval**: Wait for maintainer feedback before starting work
+
+#### For New Features
+
+1. **Create a feature request**: Open an issue with the feature template
+2. **Discuss the design**: Engage with maintainers and community for feedback
+3. **Create a design document**: For complex features, outline the approach
+4. **Get approval**: Ensure the feature aligns with project goals
+5. **Break down the work**: Split large features into smaller, manageable tasks
+
+### 2. Setting Up Your Fork
+
+```bash
+# Fork the repository on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/deadlock-modmanager.git
+cd deadlock-modmanager
+
+# Add the upstream repository
+git remote add upstream https://github.com/stormix/deadlock-modmanager.git
+
+# Install dependencies
+pnpm install
+
+# Set up the development environment
+cp env.example .env
+docker compose up -d
+pnpm db:push
+```
+
+### 3. Creating a Feature Branch
+
+```bash
+# Sync with upstream
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# Create a new feature branch
+git checkout -b feature/your-feature-name
+# or for bug fixes
+git checkout -b fix/issue-description
+```
+
+### 4. Making Changes
+
+#### Code Quality Guidelines
+
+Follow these essential guidelines when making changes:
+
+**TypeScript Standards:**
+
+- Never use `any` types - use proper type definitions
+- Use interfaces for object shapes that will be extended
+- Use type aliases for complex types and unions
+- Implement proper error handling with typed exceptions
+
+**React Component Guidelines:**
+
+- Use functional components with hooks
+- Keep components small and focused on single responsibilities
+- Use proper prop typing with TypeScript interfaces
+- Implement proper error boundaries where needed
+
+**Styling Guidelines:**
+
+- Use Tailwind CSS v4 with configuration in `index.css` rather than `tailwind.config.js`
+- Follow the existing design system and component patterns
+- Ensure responsive design for all screen sizes
+- Use semantic HTML elements for accessibility
+
+**Backend Guidelines:**
+
+- Use structured logging with the `@deadlock-mods/logging` package
+- Implement proper request validation with Zod schemas
+- Follow REST API conventions for new endpoints
+- Use database transactions for multi-step operations
+
+#### File Organization
+
+When adding new files:
+
+```bash
+# For React components
+src/components/[ComponentName]/
+├── index.tsx           # Main component
+├── [ComponentName].tsx # Implementation (if complex)
+├── types.ts           # Component-specific types
+└── hooks.ts           # Component-specific hooks
+
+# For API endpoints
+src/routers/[feature]/
+├── index.ts           # Router exports
+├── handlers.ts        # Request handlers
+├── validation.ts      # Request/response schemas
+└── types.ts          # Feature-specific types
+
+# For shared utilities
+packages/shared/src/
+├── utils/            # Utility functions
+├── types/           # Shared type definitions
+├── constants/       # Application constants
+└── validators/      # Shared validation schemas
+```
+
+### 5. Testing Your Changes
+
+#### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests for specific packages
+pnpm --filter desktop test
+pnpm --filter api test
+
+# Run tests in watch mode during development
+pnpm test:watch
+```
+
+#### Writing Tests
+
+**Unit Tests for Components:**
+
+```typescript
+import { render, screen } from "@testing-library/react";
+import { ModCard } from "./ModCard";
+
+describe("ModCard", () => {
+  it("displays mod information correctly", () => {
+    const mockMod = {
+      id: 1,
+      name: "Test Mod",
+      description: "A test mod",
+      author: "Test Author",
+    };
+
+    render(<ModCard mod={mockMod} />);
+
+    expect(screen.getByText("Test Mod")).toBeInTheDocument();
+    expect(screen.getByText("Test Author")).toBeInTheDocument();
+  });
+});
+```
+
+**Integration Tests for API:**
+
+```typescript
+import { test, expect } from "bun:test";
+import { app } from "../src/index";
+
+test("GET /api/mods returns mod list", async () => {
+  const response = await app.request("/api/mods");
+  const data = await response.json();
+
+  expect(response.status).toBe(200);
+  expect(Array.isArray(data.mods)).toBe(true);
+});
+```
+
+### 6. Code Quality Checks
+
+Before committing, ensure your code passes all quality checks:
+
+```bash
+# Run linting
+pnpm lint
+
+# Fix linting issues automatically
+pnpm lint:fix
+
+# Format code
+pnpm format
+
+# Type checking
+pnpm check-types
+
+# Run all quality checks
+pnpm validate
+```
+
+#### Git Hooks
+
+The project uses Lefthook for automated quality checks:
+
+```yaml
+# .lefthook.yml (configured automatically)
+pre-commit:
+  commands:
+    format:
+      run: pnpm format:fix
+    lint:
+      run: pnpm lint:fix
+    types:
+      run: pnpm check-types
+```
+
+These checks run automatically on commit and will prevent commits if issues are found.
+
+## Commit Guidelines
+
+### Commit Message Format
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+
+- `feat`: New features
+- `fix`: Bug fixes
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring without functionality changes
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependency updates
+- `ci`: CI/CD configuration changes
+
+**Examples:**
+
+```bash
+feat(desktop): add mod search functionality
+fix(api): handle pagination edge cases properly
+docs(readme): update installation instructions
+refactor(shared): extract common validation logic
+test(desktop): add unit tests for mod installation
+chore(deps): update Tauri to v2.1.0
+```
+
+### Scope Guidelines
+
+Use these scopes to indicate the affected area:
+
+- `desktop`: Desktop application changes
+- `api`: API server changes
+- `web`: Web application changes
+- `docs`: Documentation changes
+- `shared`: Shared packages changes
+- `database`: Database schema or migration changes
+- `ci`: CI/CD pipeline changes
+
+## Pull Request Process
+
+### 1. Preparing Your PR
+
+Before submitting:
+
+```bash
+# Sync with upstream
+git fetch upstream main
+git rebase upstream/main
+
+# Run final checks
+pnpm validate
+pnpm build
+
+# Push to your fork
+git push origin feature/your-feature-name
+```
+
+### 2. Creating the Pull Request
+
+Use the pull request template and provide:
+
+**PR Title:** Use conventional commit format
+
+```
+feat(desktop): add advanced mod filtering options
+```
+
+**PR Description:**
+
+```markdown
+## Description
+
+Brief description of the changes and motivation.
+
+## Type of Change
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+
+- [ ] I have tested these changes locally
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+
+## Screenshots (if applicable)
+
+Include screenshots of UI changes.
+
+## Checklist
+
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have read and followed the contributing guidelines
+```
+
+### 3. Code Review Process
+
+#### What to Expect
+
+1. **Automated Checks**: CI/CD pipeline runs tests and quality checks
+2. **Maintainer Review**: Project maintainers review the code
+3. **Feedback Incorporation**: Address review comments
+4. **Approval**: Maintainer approval required for merge
+5. **Merge**: Maintainers handle the merge process
+
+#### Review Criteria
+
+Reviewers look for:
+
+- **Code Quality**: Follows project standards and best practices
+- **Functionality**: Changes work as intended and don't break existing features
+- **Testing**: Adequate test coverage for changes
+- **Documentation**: Necessary documentation updates included
+- **Performance**: No negative performance impact
+- **Security**: No security vulnerabilities introduced
+
+### 4. Addressing Review Feedback
+
+```bash
+# Make requested changes
+git add .
+git commit -m "fix: address review feedback"
+
+# If you need to modify commit history
+git rebase -i HEAD~n  # where n is number of commits to modify
+
+# Push changes
+git push origin feature/your-feature-name
+```
+
+## Specific Contribution Areas
+
+### Frontend Development (Desktop App)
+
+#### Component Development
+
+```typescript
+// src/components/ModInstaller/ModInstaller.tsx
+import { useState } from "react";
+import { useMod } from "@/hooks/useMod";
+import { Button } from "@/components/ui/Button";
+
+interface ModInstallerProps {
+  modId: string;
+}
+
+export function ModInstaller({ modId }: ModInstallerProps) {
+  const [isInstalling, setIsInstalling] = useState(false);
+  const { mod, installMod } = useMod(modId);
+
+  const handleInstall = async () => {
+    setIsInstalling(true);
+    try {
+      await installMod();
+    } catch (error) {
+      console.error("Installation failed:", error);
+    } finally {
+      setIsInstalling(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleInstall}
+      disabled={isInstalling}
+      className="bg-primary text-primary-foreground"
+    >
+      {isInstalling ? "Installing..." : "Install"}
+    </Button>
+  );
+}
+```
+
+#### State Management
+
+Use React Context for global state:
+
+```typescript
+// src/contexts/ModsContext.tsx
+import { createContext, useContext, useReducer } from "react";
+import type { Mod } from "@/types/mod";
+
+interface ModsState {
+  mods: Mod[];
+  installedMods: Mod[];
+  loading: boolean;
+}
+
+const ModsContext = createContext<ModsState | null>(null);
+
+export function ModsProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(modsReducer, initialState);
+
+  return (
+    <ModsContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </ModsContext.Provider>
+  );
+}
+```
+
+### Backend Development (API)
+
+#### API Endpoints
+
+```typescript
+// src/routers/mods/handlers.ts
+import { createRoute } from "@hono/zod-openapi";
+import { z } from "zod";
+
+const ModSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string(),
+  author: z.string(),
+});
+
+export const getModsRoute = createRoute({
+  method: "get",
+  path: "/mods",
+  request: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+      search: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            mods: z.array(ModSchema),
+            total: z.number(),
+            page: z.number(),
+            limit: z.number(),
+          }),
+        },
+      },
+      description: "List of mods",
+    },
+  },
+});
+
+export async function getMods(c: Context) {
+  const { page = "1", limit = "20", search } = c.req.valid("query");
+
+  const result = await modService.getMods({
+    page: parseInt(page),
+    limit: parseInt(limit),
+    search,
+  });
+
+  return c.json(result);
+}
+```
+
+### Database Changes
+
+#### Adding Migrations
+
+```bash
+# Generate a new migration
+pnpm --filter database db:generate
+
+# Example migration file
+```
+
+```typescript
+// packages/database/src/migrations/0001_add_mod_ratings.sql
+CREATE TABLE mod_ratings (
+  id SERIAL PRIMARY KEY,
+  mod_id INTEGER REFERENCES mods(id) ON DELETE CASCADE,
+  user_hash VARCHAR(64) NOT NULL,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(mod_id, user_hash)
+);
+
+CREATE INDEX idx_mod_ratings_mod_id ON mod_ratings(mod_id);
+CREATE INDEX idx_mod_ratings_rating ON mod_ratings(rating DESC);
+```
+
+## Translation Contributions
+
+### Adding a New Language
+
+1. **Join the Discord**: Connect with the translation team in [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067)
+
+2. **Create translation files**:
+
+   ```bash
+   # Copy English template
+   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[language-code].json
+   ```
+
+3. **Translate the content**:
+
+   ```json
+   {
+     "common": {
+       "loading": "Laden...",
+       "error": "Fehler",
+       "success": "Erfolgreich"
+     },
+     "mods": {
+       "title": "Mods",
+       "search": "Mods durchsuchen...",
+       "install": "Installieren"
+     }
+   }
+   ```
+
+4. **Test your translations**:
+
+   ```bash
+   pnpm --filter desktop dev
+   # Change language in settings to test
+   ```
+
+5. **Submit a PR** with your translations
+
+### Translation Guidelines
+
+- **Context Understanding**: Understand the UI context before translating
+- **Consistency**: Use consistent terminology throughout
+- **Length Considerations**: Keep translations roughly the same length as originals
+- **Placeholders**: Don't translate placeholders like `{{username}}`
+- **Cultural Adaptation**: Adapt content to local culture when appropriate
+
+## Documentation Contributions
+
+### Improving Existing Documentation
+
+1. **Identify gaps**: Look for missing or unclear information
+2. **Make improvements**: Update or add content as needed
+3. **Test examples**: Ensure all code examples work correctly
+4. **Update navigation**: Modify meta.json files if adding new pages
+
+### Adding New Documentation
+
+```markdown
+---
+title: Your Page Title
+description: Brief description of the page content
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Your Page Title
+
+Content goes here...
+
+<Callout type="info" title="Important Note">
+Highlight important information with callouts.
+</Callout>
+
+## Next Steps
+
+<Cards>
+  <Card 
+    title="Related Guide" 
+    description="Link to related documentation"
+    href="/path-to-guide" 
+  />
+</Cards>
+```
+
+## Community Guidelines
+
+### Communication
+
+- **Be respectful**: Treat all community members with respect
+- **Be constructive**: Provide helpful feedback and suggestions
+- **Be patient**: Remember that contributors have different experience levels
+- **Be inclusive**: Welcome newcomers and diverse perspectives
+
+### Getting Help
+
+1. **Read the documentation**: Check existing guides and documentation first
+2. **Search issues**: Look for existing discussions about your question
+3. **Ask in Discord**: Join our [Discord community](https://discord.gg/WbFNt8CCr8) for real-time help
+4. **Create an issue**: For bugs or feature requests, create a GitHub issue
+
+### Recognition
+
+Contributors are recognized through:
+
+- **GitHub Contributors**: Listed in repository contributors
+- **Release Notes**: Significant contributions mentioned in releases
+- **Discord Roles**: Special contributor roles in the Discord community
+- **Contributor Spotlight**: Featured contributors in community updates
+
+## Maintainer Guidelines
+
+### For Project Maintainers
+
+#### Review Process
+
+1. **Automated Checks**: Ensure all CI checks pass
+2. **Code Review**: Review for quality, security, and consistency
+3. **Testing**: Verify functionality works as expected
+4. **Documentation**: Ensure documentation is updated if needed
+5. **Breaking Changes**: Assess impact of any breaking changes
+
+#### Merge Guidelines
+
+- **Squash and merge**: For feature branches with multiple commits
+- **Rebase and merge**: For clean, single-commit changes
+- **Merge commit**: For complex features that benefit from commit history
+
+#### Release Management
+
+- **Semantic Versioning**: Follow semver for all releases
+- **Changelog**: Maintain detailed changelog with all changes
+- **Release Notes**: Create detailed release notes for major releases
+- **Backward Compatibility**: Ensure API compatibility when possible
+
+## Getting Support
+
+Need help with your contribution?
+
+<Cards>
+  <Card
+    title="Discord Community"
+    description="Get real-time help from other contributors"
+    href="https://discord.gg/WbFNt8CCr8"
+  />
+  <Card
+    title="GitHub Discussions"
+    description="Ask questions and share ideas"
+    href="https://github.com/stormix/deadlock-modmanager/discussions"
+  />
+  <Card
+    title="GitHub Issues"
+    description="Report bugs or request features"
+    href="https://github.com/stormix/deadlock-modmanager/issues"
+  />
+  <Card
+    title="Development Setup"
+    description="Set up your development environment"
+    href="/tech-guide/development-setup"
+  />
+</Cards>
+
+<Callout type="success" title="Thank You!">
+  Your contributions make Deadlock Mod Manager better for everyone. Whether
+  you're fixing a typo in the documentation or implementing a major feature,
+  every contribution is valuable and appreciated. Welcome to the team! 🎉
+</Callout>
