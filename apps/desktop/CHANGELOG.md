@@ -1,5 +1,11 @@
 # desktop
 
+## 0.9.1
+
+### Patch Changes
+
+- Fix Posthog integration
+
 ## 0.9.0
 
 ### Minor Changes
