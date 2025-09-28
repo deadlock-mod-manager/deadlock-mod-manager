@@ -1,5 +1,18 @@
 # desktop
 
+## 0.9.0
+
+### Minor Changes
+
+- Fix linux builds required GLS by pre-bundling it. Should also help with scroll problems (I think).
+- 42c5aab: Mods Ordering
+- Ability to scan local packages for existing addons
+- Reporting system
+
+### Patch Changes
+
+- @deadlock-mods/shared@1.4.0
+
 ## 0.8.3
 
 ### Patch Changes

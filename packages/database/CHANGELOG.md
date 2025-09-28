@@ -1,5 +1,11 @@
 # @deadlock-mods/database
 
+## 1.4.0
+
+### Minor Changes
+
+- Reporting system
+
 ## 1.3.1
 
 ### Patch Changes

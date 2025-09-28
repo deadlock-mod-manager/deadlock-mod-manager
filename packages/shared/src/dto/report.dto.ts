@@ -26,7 +26,10 @@ export interface ReportCountsDto {
   verified: number;
   unverified: number;
   dismissed: number;
-  byType?: Record<string, { total: number; verified: number; unverified: number; dismissed: number }>;
+  byType?: Record<
+    string,
+    { total: number; verified: number; unverified: number; dismissed: number }
+  >;
 }
 
 export interface ModWithReportCountsDto {

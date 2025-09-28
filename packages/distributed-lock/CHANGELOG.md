@@ -1,5 +1,12 @@
 # @deadlock-mods/distributed-lock
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @deadlock-mods/database@1.4.0
+
 ## 1.0.0
 
 ### Added
