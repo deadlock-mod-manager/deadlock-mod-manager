@@ -27,6 +27,7 @@ const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
     method: body ? "POST" : "GET",
     headers: {
       "Content-Type": "application/json",
+      Origin: "",
     },
     body: body ? JSON.stringify(body) : undefined,
   });
