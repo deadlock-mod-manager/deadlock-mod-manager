@@ -128,74 +128,15 @@
 
 ## Utilisation
 
-### Installation
+Pour des instructions d'installation détaillées, des guides de démarrage, le dépannage et la documentation des fonctionnalités, veuillez consulter notre documentation complète :
 
-#### Options de Téléchargement
+📖 **[Guide Joueur](https://docs.deadlockmods.app/using-mod-manager)** - Installation, utilisation et dépannage
 
-**Option 1 : Téléchargement Direct**
+Pour l'aide et le support :
 
-- Visitez la [page des versions](https://github.com/stormix/deadlock-modmanager/releases/latest)
-- Téléchargez l'installateur approprié pour votre système d'exploitation (Windows, macOS ou Linux)
-- Exécutez l'installateur et suivez les instructions de configuration
-
-**Option 2 : Gestionnaires de Paquets**
-
-_Windows (winget):_
-
-```bash
-winget install --id=Stormix.DeadlockModManager
-```
-
-_Arch Linux (AUR):_
-
-```bash
-# Dernière version stable
-yay -S deadlock-modmanager
-
-# Dernière version de développement
-yay -S deadlock-modmanager-git
-```
-
-#### Sécurité et Sûreté
-
-> [!NOTE]
-> Vous pourriez recevoir une invite disant "Windows a protégé votre PC". Dans ce cas, cliquez sur Plus d'informations et Exécuter quand même.
-
-> [!TIP]
-> Si vous n'êtes pas sûr de la sécurité de cette application, je suggère de la faire analyser par un service comme [VirusTotal](https://www.virustotal.com/).
-
-#### Notes Spécifiques aux Plateformes
-
-**Compatibilité Linux (Wayland + NVIDIA)**
-
-Si vous rencontrez des problèmes avec l'application qui ne s'affiche pas correctement ou qui plante sur Wayland avec des GPU NVIDIA, exécutez l'application avec :
-
-```bash
-WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
-```
-
-Cela résout un problème connu avec webkit2gtk sur les pilotes NVIDIA. Les utilisateurs AUR ont cela géré automatiquement dans le fichier .desktop.
-
-### Commencer
-
-1. **Configuration Initiale**
-
-   - Lancez le Deadlock Mod Manager
-   - L'application détectera automatiquement votre installation Deadlock
-   - Si elle n'est pas détectée automatiquement, vous pouvez définir manuellement le répertoire du jeu dans les Paramètres
-
-2. **Parcourir et Installer des Mods**
-
-   - Parcourez les mods disponibles dans l'onglet "Mods"
-   - Utilisez la fonction de recherche pour trouver des mods spécifiques
-   - Cliquez sur "Télécharger" sur n'importe quel mod que vous voulez installer
-   - Le mod sera automatiquement téléchargé et installé
-
-3. **Gérer vos Mods**
-   - Visualisez vos mods installés dans l'onglet "Mes Mods"
-   - Activez/désactivez les mods selon vos besoins
-   - Désinstallez les mods que vous ne voulez plus
-   - Mettez à jour les mods obsolètes lorsque de nouvelles versions sont disponibles
+- 📚 [Documentation Complète](https://docs.deadlockmods.app/)
+- 💬 [Communauté Discord](https://discord.gg/WbFNt8CCr8)
+- 🐛 [Signaler des Problèmes](https://github.com/stormix/deadlock-modmanager/issues)
 
 ## Qu'est-ce qui est inclus ?
 
@@ -214,59 +155,12 @@ Ce monorepo inclut les paquets/applications suivants :
 
 - `@deadlock-mods/typescript-config` : Configurations TypeScript
 
-## Getting Started
+## Développement
 
-### Prerequisites
+Pour la configuration du développement, l'architecture du projet, les directives de contribution et la documentation d'intégration API, veuillez consulter :
 
-- Node.js >= 18
-- pnpm
-- Docker (for local database)
-- Rust (for desktop app)
-
-### Installation
-
-1. Install dependencies:
-
-```bash
-pnpm install
-```
-
-2. Set up the database:
-
-```bash
-# Start the database (requires Docker)
-docker compose up -d
-```
-
-3. Copy .env file:
-
-```bash
-cp example.env .env
-```
-
-4. Run the migrations:
-
-```bash
-pnpm db:push
-```
-
-5. Fill db with data:
-
-```bash
-docker exec api bun run src/test.ts
-```
-
-6. Run the API server:
-
-```bash
-pnpm api:dev
-```
-
-7. Run the desktop app:
-
-```bash
-pnpm desktop:dev
-```
+🔧 **[Documentation Développeur](https://docs.deadlockmods.app/developer-docs)** - Configuration du développement et architecture  
+🔌 **[Référence API](https://docs.deadlockmods.app/api)** - Documentation API interactive
 
 ## Traduction & Localisation
 

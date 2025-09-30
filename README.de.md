@@ -128,87 +128,38 @@
 
 ## Verwendung
 
-### Installation
+Für detaillierte Installationsanleitungen, Erste-Schritte-Guides, Fehlerbehebung und Funktionsdokumentation besuchen Sie bitte unsere umfassende Dokumentation:
 
-#### Download-Optionen
+📖 **[Spieler-Guide](https://docs.deadlockmods.app/using-mod-manager)** - Installation, Verwendung und Fehlerbehebung
 
-**Option 1: Direkter Download**
+Für Hilfe und Support:
 
-- Besuchen Sie die [Releases-Seite](https://github.com/stormix/deadlock-modmanager/releases/latest)
-- Laden Sie das entsprechende Installationsprogramm für Ihr Betriebssystem herunter (Windows, macOS oder Linux)
-- Führen Sie das Installationsprogramm aus und folgen Sie den Setup-Anweisungen
+- 📚 [Vollständige Dokumentation](https://docs.deadlockmods.app/)
+- 💬 [Discord-Community](https://discord.gg/WbFNt8CCr8)
+- 🐛 [Probleme melden](https://github.com/stormix/deadlock-modmanager/issues)
 
-**Option 2: Paket-Manager**
+## Was ist enthalten?
 
-_Windows (winget):_
+Dieses Monorepo enthält die folgenden Pakete/Apps:
 
-```bash
-winget install --id=Stormix.DeadlockModManager
-```
+### Apps
 
-_Arch Linux (AUR):_
+- `web`: Eine [Next.js](https://nextjs.org/)-Webanwendung mit Projektinformationen und Status
+- `desktop`: Eine [Tauri](https://tauri.app/) + React Desktop-Anwendung (der Haupt-Mod-Manager)
+- `api`: Ein [Bun](https://bun.sh/) + [Hono](https://hono.dev/) API-Server, der Mod-Daten von GameBanana synchronisiert
 
-```bash
-# Neueste stabile Version
-yay -S deadlock-modmanager
+### Pakete
 
-# Neueste Entwicklungsversion
-yay -S deadlock-modmanager-git
-```
+- `@deadlock-mods/database`: [Drizzle ORM](https://orm.drizzle.team/) Wrapper zur Verwaltung und zum Zugriff auf die Datenbank
+- `@deadlock-mods/shared`: Gemeinsam genutzte Utilities und Typdefinitionen
+- `@deadlock-mods/typescript-config`: TypeScript-Konfigurationen
 
-## Loslegen im Dev Modus
+## Entwicklung
 
-### Benötigte Schritte
+Für Entwicklungssetup, Projektarchitektur, Beitragsrichtlinien und API-Integrationsdokumentation besuchen Sie bitte:
 
-- Node.js >= 18
-- pnpm
-- Docker (for local database)
-- Rust (for desktop app)
-
-### Installation
-
-1. Install dependencies:
-
-```bash
-pnpm install
-```
-
-2. Set up the database:
-
-```bash
-# Start the database (benötigt Docker)
-docker compose up -d
-```
-
-3. Copy .env file:
-
-```bash
-cp example.env .env
-```
-
-4. Run the migrations:
-
-```bash
-pnpm db:push
-```
-
-5. Fill db with data:
-
-```bash
-docker exec api bun run src/test.ts
-```
-
-6. Run the API server:
-
-```bash
-pnpm api:dev
-```
-
-7. Run the desktop app:
-
-```bash
-pnpm desktop:dev
-```
+🔧 **[Entwickler-Dokumentation](https://docs.deadlockmods.app/developer-docs)** - Entwicklungssetup und Architektur  
+🔌 **[API-Referenz](https://docs.deadlockmods.app/api)** - Interaktive API-Dokumentation
 
 ## Übersetzung & Lokalisierung
 
