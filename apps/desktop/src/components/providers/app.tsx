@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { createContext, useContext, useEffect, useRef } from "react";
-import { downloadManager } from "@/lib/download/manager";
+import { createContext, useContext, useEffect } from "react";
 import { usePersistedStore } from "@/lib/store";
 
 type AppProviderProps = {
@@ -14,25 +13,7 @@ type AppProviderState = {
 const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
-  const queueInterval = useRef<number | null>(null);
   const { gamePath, setGamePath } = usePersistedStore();
-
-  useEffect(() => {
-    if (!queueInterval.current) {
-      downloadManager.init().then(() => {
-        queueInterval.current = setInterval(
-          () => downloadManager.process(),
-          100,
-        ) as unknown as number; // This is annoying
-      });
-    }
-
-    return () => {
-      if (queueInterval.current) {
-        clearInterval(queueInterval.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!gamePath) {

@@ -26,6 +26,7 @@ pub struct DownloadTask {
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DownloadStartedEvent {
   pub mod_id: String,
 }
@@ -44,12 +45,14 @@ pub struct DownloadProgressEvent {
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DownloadCompletedEvent {
   pub mod_id: String,
   pub path: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
   pub mod_id: String,
   pub error: String,
