@@ -132,6 +132,20 @@
           "email": "sfk_04@qq.com"
         }
       ]
+    },
+    {
+      "code": "he",
+      "name": "Hebrew",
+      "nativeName": "עברית",
+      "flag": "🇮🇱",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "deftera",
+          "discord": "deftera"
+        }
+      ]
     }
   ]
 }

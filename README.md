@@ -294,6 +294,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇨🇭 **Swiss German**         | Schwiizerdütsch | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇷 **Turkish**              | Türkçe          | 🚧 In Progress | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇨🇳 **Chinese (Simplified)** | 简体中文        | ✅ Complete    | [待到春深方挽柳](mailto:sfk_04@qq.com)                                                                             |
+| 🇮🇱 **Hebrew**               | עברית          | ✅ Complete    | [deftera](https://discordapp.com/users/deftera/)                                                                  |
 
 <!-- LANGUAGE_TABLE_END -->
 

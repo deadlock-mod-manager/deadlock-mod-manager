@@ -19,6 +19,7 @@ const languages = [
   { code: "tr", name: "Türkçe", flag: "🇹🇷" },
   { code: "ru", name: "Русский", flag: "🇷🇺" },
   { code: "zh-CN", name: "简体中文", flag: "🇨🇳" },
+  { code: "he", name: "עברית", flag: "🇮🇱" }
 ];
 
 export const LanguageSettings = () => {
