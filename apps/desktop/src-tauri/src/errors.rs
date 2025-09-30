@@ -46,6 +46,14 @@ pub enum Error {
   BackupNotFound,
   #[error("Invalid backup format: {0}")]
   BackupInvalidFormat(String),
+  #[error("Download failed: {0}")]
+  DownloadFailed(String),
+  #[error("Download cancelled")]
+  DownloadCancelled,
+  #[error("Invalid download URL: {0}")]
+  InvalidDownloadUrl(String),
+  #[error("File write failed: {0}")]
+  FileWriteFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -81,6 +89,10 @@ impl serde::Serialize for Error {
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
       Error::BackupNotFound => "backupNotFound",
       Error::BackupInvalidFormat(_) => "backupInvalidFormat",
+      Error::DownloadFailed(_) => "downloadFailed",
+      Error::DownloadCancelled => "downloadCancelled",
+      Error::InvalidDownloadUrl(_) => "invalidDownloadUrl",
+      Error::FileWriteFailed(_) => "fileWriteFailed",
     };
 
     state.serialize_field("kind", kind)?;

@@ -5,6 +5,7 @@
 )]
 
 mod commands;
+mod download_manager;
 mod errors;
 mod mod_manager;
 mod reports;
@@ -245,7 +246,11 @@ pub fn run() {
       commands::restore_addons_backup,
       commands::delete_addons_backup,
       commands::get_addons_backup_info,
-      commands::open_addons_backups_folder
+      commands::open_addons_backups_folder,
+      commands::queue_download,
+      commands::cancel_download,
+      commands::get_download_status,
+      commands::get_all_downloads
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -50,7 +50,9 @@ dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.2"
 vpk-parser = { path = "../../../packages/vpk-parser" }
 tokio = { version = "1.47.1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json"] }
+tokio-util = "0.7"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures = "0.3"
 tauri-plugin-dialog = "2"
 
 [dev-dependencies]

@@ -975,6 +975,7 @@ version = "0.9.2"
 dependencies = [
  "chrono",
  "dotenvy",
+ "futures",
  "keyvalues-serde",
  "log",
  "regex",
@@ -1004,6 +1005,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.16",
  "tokio",
+ "tokio-util",
  "unrar",
  "vpk-parser",
  "zip 5.1.1",
