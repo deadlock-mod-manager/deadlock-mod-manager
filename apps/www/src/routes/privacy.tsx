@@ -339,10 +339,11 @@ function PrivacyComponent() {
                     </div>
 
                     <p className='text-muted-foreground leading-relaxed mb-4'>
-                      We collect anonymous usage analytics through Google Analytics 4 to
-                      improve the application experience. This feature is
-                      enabled by default, but you can disable it at any time in
-                      the app's Privacy Settings. When enabled, we collect:
+                      We collect anonymous usage analytics through Google
+                      Analytics 4 to improve the application experience. This
+                      feature is enabled by default, but you can disable it at
+                      any time in the app's Privacy Settings. When enabled, we
+                      collect:
                     </p>
 
                     <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>

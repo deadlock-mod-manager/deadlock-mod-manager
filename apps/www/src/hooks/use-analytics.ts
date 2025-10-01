@@ -1,5 +1,5 @@
-import ReactGA from "react-ga4";
 import { useEffect, useRef } from "react";
+import ReactGA from "react-ga4";
 
 export interface AnalyticsProperties {
   [key: string]: string | number | boolean | null | undefined;
