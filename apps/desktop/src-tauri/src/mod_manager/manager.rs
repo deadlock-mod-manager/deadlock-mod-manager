@@ -55,6 +55,11 @@ impl ModManager {
     Ok(game_path)
   }
 
+  pub fn set_game_path(&mut self, path: PathBuf) -> Result<PathBuf, Error> {
+    self.steam_manager.set_game_path(path.clone())?;
+    Ok(path)
+  }
+
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
     self.process_manager.is_game_running()
   }

@@ -93,7 +93,7 @@ pub fn run() {
     }
   }
 
-  let mut builder = tauri::Builder::default();
+  let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
 
   #[cfg(desktop)]
   {
@@ -178,6 +178,7 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       commands::find_game_path,
+      commands::set_game_path,
       commands::get_mod_file_tree,
       commands::install_mod,
       commands::stop_game,

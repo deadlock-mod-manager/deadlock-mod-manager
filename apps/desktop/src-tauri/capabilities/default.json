@@ -38,12 +38,23 @@
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://gamebanana.com/**" },
-        { "url": "https://*.gamebanana.com/**" },
-        { "url": "https://*.deadlockmods.app/**" },
-        { "url": "https://*.deadlockmods.com/**" },
-        { "url": "http://localhost:9000/**" }
+        {
+          "url": "https://gamebanana.com/**"
+        },
+        {
+          "url": "https://*.gamebanana.com/**"
+        },
+        {
+          "url": "https://*.deadlockmods.app/**"
+        },
+        {
+          "url": "https://*.deadlockmods.com/**"
+        },
+        {
+          "url": "http://localhost:9000/**"
+        }
       ]
-    }
+    },
+    "dialog:default"
   ]
 }

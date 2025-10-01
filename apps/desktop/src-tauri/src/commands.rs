@@ -145,6 +145,15 @@ pub async fn find_game_path() -> Result<String, Error> {
 }
 
 #[tauri::command]
+pub async fn set_game_path(path: String) -> Result<String, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let path_buf = PathBuf::from(&path);
+  let game_path = mod_manager.set_game_path(path_buf)?;
+  log::info!("Game path manually set to: {:?}", game_path);
+  Ok(game_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let path = PathBuf::from(&mod_path);

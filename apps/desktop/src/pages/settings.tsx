@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
+import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import PrivacySettings from "@/components/settings/privacy-settings";
@@ -242,6 +243,12 @@ const CustomSettings = () => {
             </TabsContent>
 
             <TabsContent className='mt-0 space-y-2' value='game'>
+              <Section
+                description={t("settings.gamePathDescription")}
+                title={t("settings.gamePath")}>
+                <GamePathSettings />
+              </Section>
+
               <Section
                 description={t("settings.gameConfigDescription")}
                 title={t("settings.gameConfigManagement")}>

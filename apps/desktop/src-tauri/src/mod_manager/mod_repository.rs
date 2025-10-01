@@ -17,7 +17,6 @@ pub struct Mod {
   pub install_order: Option<u32>,
 }
 
-
 /// Manages the repository of installed and tracked mods
 pub struct ModRepository {
   mods: HashMap<String, Mod>,
@@ -50,7 +49,6 @@ impl ModRepository {
     self.mods.values()
   }
 }
-
 
 impl Default for ModRepository {
   fn default() -> Self {

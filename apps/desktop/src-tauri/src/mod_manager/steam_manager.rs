@@ -55,6 +55,24 @@ impl SteamManager {
     self.game_path.as_ref()
   }
 
+  /// Set the game path manually
+  pub fn set_game_path(&mut self, path: PathBuf) -> Result<(), Error> {
+    if !path.exists() {
+      return Err(Error::GameNotFound);
+    }
+
+    let gameinfo_path = path.join("game").join("citadel").join("gameinfo.gi");
+    if !gameinfo_path.exists() {
+      return Err(Error::InvalidInput(
+        "Invalid game path: gameinfo.gi not found in game/citadel directory".to_string(),
+      ));
+    }
+
+    log::info!("Manually set game path to: {:?}", path);
+    self.game_path = Some(path);
+    Ok(())
+  }
+
   /// Get the current Steam directory if available
   pub fn get_steam_dir(&self) -> Option<&steamlocate::SteamDir> {
     self.steam_dir.as_ref()
