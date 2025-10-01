@@ -192,8 +192,8 @@
     "rememberPerItemChoices": "Einzelne Auswahlmöglichkeiten merken",
     "rememberPerItemChoicesDescription": "Merken, wenn Sie sich entscheiden, bestimmte NSFW-Inhalte anzuzeigen/auszublenden",
     "telemetryTitle": "Nutzungsanalysen",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Helfen Sie bei der Verbesserung der Anwendung, indem Sie anonyme Nutzungsstatistiken und Feature-Analysen senden"
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Helfen Sie bei der Verbesserung der Anwendung, indem Sie anonyme Nutzungsstatistiken und Feature-Analysen senden"
   },
   "help": {
     "needHelp": "Hilfe?"

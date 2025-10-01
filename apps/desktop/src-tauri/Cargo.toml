@@ -46,7 +46,6 @@ steamlocate = "2.0.1"
 tauri-plugin-deep-link = "2.4"
 sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
-tauri-plugin-posthog = "0.2.2"
 dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.2"
 vpk-parser = { path = "../../../packages/vpk-parser" }

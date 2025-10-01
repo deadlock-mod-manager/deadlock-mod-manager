@@ -47,7 +47,7 @@ jobs:
         id: release-notes
         run: |
           RELEASE_NOTES=$(bun run scripts/generate-release-notes.ts "${{ env.PACKAGE_VERSION }}" "${{ steps.previous-tag.outputs.previous_tag }}")
-          
+
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -159,7 +159,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
-          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-release.outputs.release_id }}

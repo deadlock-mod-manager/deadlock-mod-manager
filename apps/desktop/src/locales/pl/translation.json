@@ -196,9 +196,9 @@
     "blurStrengthDescription": "Stopień rozmycia treści NSFW, gdy są widoczne (w pikselach)",
     "rememberPerItemChoices": "Zapamiętaj wybory dla poszczególnych elementów",
     "rememberPerItemChoicesDescription": "Zapamiętuj, gdy wybierasz pokazanie/ukrycie konkretnych treści NSFW",
-    "telemetryTitle": "Usage Analytics",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "telemetryTitle": "Analityka użycia",
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Pomóż ulepszyć aplikację, wysyłając anonimowe statystyki użytkowania i analizy funkcji"
   },
   "help": {
     "needHelp": "Potrzebujesz Pomocy?"

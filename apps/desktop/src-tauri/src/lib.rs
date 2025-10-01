@@ -17,7 +17,6 @@ use std::env;
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
-use tauri_plugin_posthog::{init, PostHogConfig};
 use tauri_plugin_store::StoreExt;
 
 fn handle_deep_link_url(
@@ -146,10 +145,6 @@ pub fn run() {
         .filter(|metadata| metadata.target() != "tracing")
         .build(),
     )
-    .plugin(init(PostHogConfig {
-      api_key: option_env!("POSTHOG_KEY").unwrap_or_default().to_string(),
-      ..Default::default()
-    }))
     .plugin(tauri_plugin_machine_uid::init());
 
   builder

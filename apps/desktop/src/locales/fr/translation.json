@@ -191,9 +191,9 @@
     "blurStrengthDescription": "Combien flouter le contenu NSFW quand il est visible (pixels)",
     "rememberPerItemChoices": "Se souvenir des choix par élément",
     "rememberPerItemChoicesDescription": "Se souvenir quand vous choisissez d'afficher/masquer des éléments NSFW spécifiques",
-    "telemetryTitle": "Usage Analytics",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "telemetryTitle": "Analytique d'utilisation",
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Aidez à améliorer l'application en envoyant des statistiques d'utilisation anonymes et des analyses de fonctionnalités"
   },
   "help": {
     "needHelp": "Besoin d'aide ?"

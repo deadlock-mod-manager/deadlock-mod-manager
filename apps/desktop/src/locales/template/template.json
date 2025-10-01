@@ -180,8 +180,8 @@
     "rememberPerItemChoices": "",
     "rememberPerItemChoicesDescription": "",
     "telemetryTitle": "",
-    "posthogAnalytics": "",
-    "posthogAnalyticsDescription": ""
+    "analyticsEnabled": "",
+    "analyticsEnabledDescription": ""
   },
   "help": {
     "needHelp": ""

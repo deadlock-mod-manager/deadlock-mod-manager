@@ -175,9 +175,9 @@
     "blurStrengthDescription": "NSFW içerikleri görünür olduğunda ne kadar bulanıklaştırılacağını belirleyin (piksel)",
     "rememberPerItemChoices": "Öğe bazlı seçimleri hatırla",
     "rememberPerItemChoicesDescription": "Belirli NSFW içerikleri göster/gizle seçimlerinizi hatırla",
-    "telemetryTitle": "Usage Analytics",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "telemetryTitle": "Kullanım Analitiği",
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Anonim kullanım istatistikleri ve özellik analitiği göndererek uygulamayı geliştirmemize yardımcı olun"
   },
   "help": {
     "needHelp": "Yardım?"

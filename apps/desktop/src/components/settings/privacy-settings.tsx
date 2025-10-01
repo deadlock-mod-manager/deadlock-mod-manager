@@ -117,19 +117,19 @@ const PrivacySettings = () => {
           <div className='flex items-center justify-between'>
             <div className='space-y-0.5'>
               <Label className='text-base'>
-                {t("privacy.posthogAnalytics")}
+                {t("privacy.analyticsEnabled")}
               </Label>
               <div className='text-muted-foreground text-sm'>
-                {t("privacy.posthogAnalyticsDescription")}
+                {t("privacy.analyticsEnabledDescription")}
               </div>
             </div>
             <Switch
-              checked={telemetrySettings.posthogEnabled}
+              checked={telemetrySettings.analyticsEnabled}
               onCheckedChange={(checked) => {
-                const oldValue = telemetrySettings.posthogEnabled;
-                updateTelemetrySettings({ posthogEnabled: checked });
+                const oldValue = telemetrySettings.analyticsEnabled;
+                updateTelemetrySettings({ analyticsEnabled: checked });
                 analytics.trackSettingChanged(
-                  "posthog_enabled",
+                  "analytics_enabled",
                   oldValue,
                   checked,
                 );

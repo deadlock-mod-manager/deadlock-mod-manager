@@ -180,8 +180,8 @@
     "rememberPerItemChoices": "记住每个项目的选择",
     "rememberPerItemChoicesDescription": "记住您选择显示/隐藏特定NSFW项目的时机",
     "telemetryTitle": "使用情况分析",
-    "posthogAnalytics": "PostHog 分析",
-    "posthogAnalyticsDescription": "通过发送匿名的使用统计和功能分析数据来帮助改进应用程序"
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "通过发送匿名的使用统计和功能分析数据来帮助改进应用程序"
   },
   "help": {
     "needHelp": "需要帮助？"

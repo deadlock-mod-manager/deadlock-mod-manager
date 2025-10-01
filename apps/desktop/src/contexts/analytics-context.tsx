@@ -41,7 +41,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
       analytics.isEnabled &&
       hardwareId &&
       !isIdentified.current &&
-      telemetrySettings.posthogEnabled &&
+      telemetrySettings.analyticsEnabled &&
       modsState &&
       profilesState
     ) {
@@ -62,7 +62,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   }, [
     analytics,
     hardwareId,
-    telemetrySettings.posthogEnabled,
+    telemetrySettings.analyticsEnabled,
     version,
     modsState,
     profilesState,
@@ -72,7 +72,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   useEffect(() => {
     if (
       analytics.isEnabled &&
-      telemetrySettings.posthogEnabled &&
+      telemetrySettings.analyticsEnabled &&
       modsState &&
       profilesState
     ) {
@@ -86,7 +86,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
     }
   }, [
     analytics,
-    telemetrySettings.posthogEnabled,
+    telemetrySettings.analyticsEnabled,
     version,
     modsState,
     profilesState,

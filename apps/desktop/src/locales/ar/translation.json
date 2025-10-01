@@ -216,8 +216,8 @@
     "rememberPerItemChoices": "تذكر خيارات العنصر الفردي",
     "rememberPerItemChoicesDescription": "تذكر عندما تختار إظهار/إخفاء عناصر NSFW محددة",
     "telemetryTitle": "تحليلات الاستخدام",
-    "posthogAnalytics": "تحليلات PostHog",
-    "posthogAnalyticsDescription": "ساعد في تحسين التطبيق عبر إرسال إحصاءات مجهولة للاستخدام وتحليلات الميزات"
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "ساعد في تحسين التطبيق عبر إرسال إحصاءات مجهولة للاستخدام وتحليلات الميزات"
   },
   "help": {
     "needHelp": "تحتاج المساعدة؟"

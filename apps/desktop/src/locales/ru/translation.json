@@ -192,8 +192,8 @@
     "rememberPerItemChoices": "Запомнить выбор каждого элемента",
     "rememberPerItemChoicesDescription": "Запомнить, когда вы решите показывать/скрывать определенные NSFW ",
     "telemetryTitle": "Аналитика использования приложения",
-    "posthogAnalytics": "Аналитика PostHog",
-    "posthogAnalyticsDescription": "Помочь разработке приложения, разрешая отправку анонимной информации об использовании приложения и аналитики новых функций"
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Помочь разработке приложения, разрешая отправку анонимной информации об использовании приложения и аналитики новых функций"
   },
   "help": {
     "needHelp": "Нужна помощь?"

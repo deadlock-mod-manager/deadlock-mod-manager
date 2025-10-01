@@ -200,8 +200,8 @@
     "rememberPerItemChoices": "Remember Per-Item Choices",
     "rememberPerItemChoicesDescription": "Remember when you choose to show/hide specific NSFW items",
     "telemetryTitle": "Usage Analytics",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
   },
   "help": {
     "needHelp": "Need Help?",

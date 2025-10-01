@@ -164,9 +164,9 @@
     "blurStrengthDescription": "Wie starch NSFW-Inhalte unscharf gmacht werde sölled, wenn sie sichtbar sind (Pixel)",
     "rememberPerItemChoices": "Einzenlni Uswahlmöglichkeite merke",
     "rememberPerItemChoicesDescription": "Merke, wenn Sie sich entscheidet, bestimmti NSFW-Inhalte azeige/usblende",
-    "telemetryTitle": "Usage Analytics",
-    "posthogAnalytics": "PostHog Analytics",
-    "posthogAnalyticsDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
+    "telemetryTitle": "Nutzungsanalyse",
+    "analyticsEnabled": "Google Analytics",
+    "analyticsEnabledDescription": "Hälfe Sie d'Awendig verbessere, indem Sie anonymi Nutzigstatistike und Feature-Analyse schicke"
   },
   "help": {
     "needHelp": "Hilfe?"

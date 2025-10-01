@@ -7,11 +7,11 @@ import type { LocalSetting, SystemSetting } from "@/types/settings";
 import type { State } from "..";
 
 export type TelemetrySettings = {
-  posthogEnabled: boolean;
+  analyticsEnabled: boolean;
 };
 
 const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
-  posthogEnabled: true,
+  analyticsEnabled: true,
 };
 
 export type SettingsState = {
