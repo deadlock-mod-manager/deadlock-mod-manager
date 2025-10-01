@@ -70,22 +70,27 @@ jobs:
             matrix='{"platform":["windows-latest","ubuntu-24.04"]}'
           else
             # For manual dispatch, build based on inputs
-            platforms=()
+            platforms=""
+            
             if [ "${{ inputs.build_windows }}" = "true" ]; then
-              platforms+=("windows-latest")
+              platforms="windows-latest"
             fi
+            
             if [ "${{ inputs.build_linux }}" = "true" ]; then
-              platforms+=("ubuntu-24.04")
+              if [ -z "$platforms" ]; then
+                platforms="ubuntu-24.04"
+              else
+                platforms="$platforms,ubuntu-24.04"
+              fi
             fi
             
             # If no platforms selected, default to all
-            if [ ${#platforms[@]} -eq 0 ]; then
-              platforms=("windows-latest" "ubuntu-24.04")
+            if [ -z "$platforms" ]; then
+              platforms="windows-latest,ubuntu-24.04"
             fi
             
-            # Convert to JSON format
-            platform_json=$(printf '%s\n' "${platforms[@]}" | jq -R . | jq -s .)
-            matrix="{\"platform\":$platform_json}"
+            # Convert to JSON array
+            matrix=$(echo "$platforms" | jq -Rc 'split(",") | {platform: .}')
           fi
 
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
@@ -206,8 +211,16 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Install dependencies
         run: pnpm install
+
+      - name: Update version with commit hash
+        run: pnpm version:nightly ${{ needs.check-commits.outputs.latest_commit }}
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
