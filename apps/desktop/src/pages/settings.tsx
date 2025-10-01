@@ -16,7 +16,7 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "lucide-react";
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
 import { toast } from "sonner";
@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
@@ -153,10 +154,20 @@ const CustomSettings = () => {
   const { t } = useTranslation();
   const { clearMods, localMods: mods } = usePersistedStore();
   const confirm = useConfirm();
+  const { analytics } = useAnalyticsContext();
+  const [activeTab, setActiveTab] = useState("launch-options");
 
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
+
+  // Track settings tab changes
+  useEffect(() => {
+    analytics.trackPageViewed(`settings-${activeTab}`, {
+      path: "/settings",
+      tab: activeTab,
+    });
+  }, [activeTab, analytics]);
 
   const clearAllMods = async () => {
     if (!(await confirm(t("settings.confirmClearAllMods")))) {
@@ -184,7 +195,11 @@ const CustomSettings = () => {
       <div className='flex w-full flex-col gap-4'>
         <PageTitle className='px-4' title={t("navigation.settings")} />
 
-        <Tabs className='flex h-full gap-6' defaultValue='launch-options'>
+        <Tabs
+          className='flex h-full gap-6'
+          defaultValue='launch-options'
+          onValueChange={setActiveTab}
+          value={activeTab}>
           <TabsList className='h-fit w-48 flex-col gap-1 bg-background p-3'>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'

@@ -68,7 +68,6 @@ export const useAnalytics = (): UseAnalyticsReturn => {
 
     try {
       ReactGA.event(event, properties);
-      logger.debug("Analytics event captured successfully", { event });
     } catch (error) {
       logger.warn("Analytics capture failed:", error);
     }

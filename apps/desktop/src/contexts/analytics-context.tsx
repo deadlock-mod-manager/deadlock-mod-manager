@@ -28,6 +28,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   const { hardwareId } = useHardwareId();
   const { version } = useAbout();
   const isIdentified = useRef<boolean>(false);
+  const hasTrackedAppStart = useRef<boolean>(false);
 
   const telemetrySettings = usePersistedStore(
     (state) => state.telemetrySettings,
@@ -72,6 +73,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   useEffect(() => {
     if (
       analytics.isEnabled &&
+      !hasTrackedAppStart.current &&
       telemetrySettings.analyticsEnabled &&
       modsState &&
       profilesState
@@ -82,6 +84,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
         total_profiles_at_startup: Object.keys(profilesState).length,
       });
 
+      hasTrackedAppStart.current = true;
       logger.info("App started event tracked");
     }
   }, [

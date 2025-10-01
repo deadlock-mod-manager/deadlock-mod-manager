@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import logger from "@/lib/logger";
-import { useAnalytics } from "./use-posthog";
+import { useAnalytics } from "./use-analytics";
 
 // Analytics property types
 interface BaseAnalyticsProperties {
