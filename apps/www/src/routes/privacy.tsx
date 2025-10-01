@@ -339,7 +339,7 @@ function PrivacyComponent() {
                     </div>
 
                     <p className='text-muted-foreground leading-relaxed mb-4'>
-                      We collect anonymous usage analytics through PostHog to
+                      We collect anonymous usage analytics through Google Analytics 4 to
                       improve the application experience. This feature is
                       enabled by default, but you can disable it at any time in
                       the app's Privacy Settings. When enabled, we collect:
@@ -373,11 +373,11 @@ function PrivacyComponent() {
                       collected. All analytics data is processed in accordance
                       with{" "}
                       <a
-                        href='https://posthog.com/privacy'
+                        href='https://policies.google.com/privacy'
                         rel='noopener noreferrer'
                         target='_blank'
                         className='text-primary hover:underline'>
-                        PostHog's Privacy Policy
+                        Google's Privacy Policy
                       </a>
                       .
                     </p>

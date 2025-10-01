@@ -1,10 +1,11 @@
-import { usePostHog } from "posthog-js/react";
+import ReactGA from "react-ga4";
+import { useEffect, useRef } from "react";
 
-export interface PostHogProperties {
+export interface AnalyticsProperties {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-export interface PostHogUserProperties {
+export interface AnalyticsUserProperties {
   [key: string]: string | number | boolean | null | undefined;
 }
 
@@ -12,44 +13,55 @@ export interface UseAnalyticsReturn {
   /**
    * Capture an event with properties if telemetry is enabled
    */
-  capture: (event: string, properties?: PostHogProperties) => Promise<void>;
+  capture: (event: string, properties?: AnalyticsProperties) => Promise<void>;
   /**
    * Identify a user with properties if telemetry is enabled
    */
   identify: (
     distinctId: string,
-    properties?: PostHogUserProperties,
+    properties?: AnalyticsUserProperties,
   ) => Promise<void>;
 }
 
 /**
- * Custom hook for PostHog analytics for the web application
+ * Custom hook for Google Analytics for the web application
  *
- * This hook initializes PostHog and provides methods for tracking events.
+ * This hook initializes Google Analytics 4 and provides methods for tracking events.
  * It respects user privacy settings and only tracks when analytics are enabled.
  */
 export const useAnalytics = (): UseAnalyticsReturn => {
-  const posthog = usePostHog();
+  const isInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isInitialized.current && import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      try {
+        ReactGA.initialize(import.meta.env.VITE_GA_MEASUREMENT_ID);
+        isInitialized.current = true;
+      } catch (error) {
+        console.warn("Failed to initialize Google Analytics:", error);
+      }
+    }
+  }, []);
 
   const capture = async (
     event: string,
-    properties?: PostHogProperties,
+    properties?: AnalyticsProperties,
   ): Promise<void> => {
     try {
-      posthog.capture(event, properties);
+      ReactGA.event(event, properties);
     } catch (error) {
-      console.warn("PostHog capture failed:", error);
+      console.warn("Analytics capture failed:", error);
     }
   };
 
   const identify = async (
     distinctId: string,
-    properties?: PostHogUserProperties,
+    properties?: AnalyticsUserProperties,
   ): Promise<void> => {
     try {
-      posthog.identify(distinctId, properties);
+      ReactGA.set({ userId: distinctId, ...properties });
     } catch (error) {
-      console.warn("PostHog identify failed:", error);
+      console.warn("Analytics identify failed:", error);
     }
   };
 
