@@ -109,6 +109,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
@@ -127,24 +129,55 @@ jobs:
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
+      - name: Get last nightly tag
+        id: last-nightly
+        run: |
+          LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
+          echo "last_nightly=$LAST_NIGHTLY" >> $GITHUB_OUTPUT
+          echo "Last nightly tag: $LAST_NIGHTLY"
+
+      - name: Generate commit list
+        id: commits
+        run: |
+          if [ -n "${{ steps.last-nightly.outputs.last_nightly }}" ]; then
+            COMMIT_RANGE="${{ steps.last-nightly.outputs.last_nightly }}..HEAD"
+          else
+            COMMIT_RANGE="HEAD"
+          fi
+
+          COMMIT_LIST=$(git log $COMMIT_RANGE --pretty=format:"- %s (%h)" --no-merges)
+
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create nightly release
         id: create-release
         uses: actions/github-script@v6
+        env:
+          COMMITS: ${{ steps.commits.outputs.commits }}
         with:
           script: |
             const tag = process.env.TAG_NAME;
             const commitCount = ${{ needs.check-commits.outputs.commit_count }};
+            const commits = process.env.COMMITS;
 
             console.log(`Creating nightly release: ${tag}`);
+
             const releaseBody = [
-              "**Nightly build from latest development**",
+              "**🌙 Nightly build from latest development**",
               "",
               `📅 **Built:** ${new Date().toISOString().split('T')[0]}`,
               `📊 **Commits since last nightly:** ${commitCount}`,
-              `🔗 **Commit:** ${context.sha.substring(0, 7)}`,
+              `🔗 **Latest Commit:** ${context.sha.substring(0, 7)}`,
               "",
               "⚠️ **Warning:** This is a nightly build and may contain unstable features or bugs.",
               "",
+              "## 📋 Changes in this nightly build",
+              "",
+              commits || "No commits found",
+              "",
+              "---",
               "*This release was generated automatically from the latest development branch.*"
             ].join('\n');
 
@@ -232,6 +265,7 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
+          args: ${{ matrix.platform == 'windows-latest' && '--bundles nsis,updater' || '' }}
 
   publish-nightly:
     permissions:

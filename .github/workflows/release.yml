@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
@@ -26,15 +28,39 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - uses: pnpm/action-setup@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")" >> $GITHUB_ENV
+
+      - name: Get previous release tag
+        id: previous-tag
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "nightly" | grep -v "v${{ env.PACKAGE_VERSION }}" | head -1)
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+          echo "Previous release tag: $PREVIOUS_TAG"
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          RELEASE_NOTES=$(bun run scripts/generate-release-notes.ts "${{ env.PACKAGE_VERSION }}" "${{ steps.previous-tag.outputs.previous_tag }}")
+          
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create or get existing release
         id: create-release
         uses: actions/github-script@v6
+        env:
+          RELEASE_BODY: ${{ steps.release-notes.outputs.release_notes }}
         with:
           script: |
             const tag = `v${process.env.PACKAGE_VERSION}`;
+            const releaseBody = process.env.RELEASE_BODY;
 
             // First, try to get existing release by tag
             try {
@@ -45,6 +71,15 @@ jobs:
               });
               
               console.log(`Found existing release: ${release.id}`);
+              
+              // Update the existing release with new body
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                body: releaseBody
+              });
+              
               return release.id;
             } catch (error) {
               if (error.status === 404) {
@@ -54,8 +89,8 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   tag_name: tag,
-                  name: tag,
-                  body: '*This release was generated automatically using GitHub Actions.*',
+                  name: `Release ${process.env.PACKAGE_VERSION}`,
+                  body: releaseBody,
                   draft: true,
                   prerelease: false
                 });

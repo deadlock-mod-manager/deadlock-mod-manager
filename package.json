@@ -18,11 +18,12 @@
     "format:fix": "biome format . --write",
     "lint:fix": "biome check . --write",
     "check-types": "turbo run check-types",
-    "generate-lang-table": "bun scripts/generate-language-table.ts --update-readme",
+    "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
     "upgrade-dependencies": "pnpm dlx taze -r",
     "version:generate": "turbo run version:generate",
-    "version:nightly": "bun scripts/update-nightly-version.ts"
+    "version:nightly": "bun run scripts/update-nightly-version.ts",
+    "release-notes": "bun run scripts/generate-release-notes.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
