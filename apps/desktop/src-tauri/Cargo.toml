@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-mod-manager"
-version = "0.8.2"
+version = "0.9.1"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <contact@stormix.co>"]
 license = "GPL-3.0"
@@ -60,7 +60,7 @@ tempfile = "3.22.0"
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
 lto = true        # Enable Link Time Optimization
-opt-level = "z"   # Optimize for size.
+opt-level = "s"   # Optimize for size.
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "abort"   # Abort on panic
 strip = true      # Automatically strip symbols from the binary.
