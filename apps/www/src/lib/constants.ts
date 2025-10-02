@@ -7,3 +7,4 @@ export const APP_NAME = "Deadlock Mod Manager";
 export const COPYRIGHT = `© ${new Date().getFullYear()} ${APP_NAME}`;
 export const SITE_URL = "https://deadlockmods.app";
 export const STATUS_URL = "https://status.deadlockmods.app";
+export const DOCS_URL = "https://docs.deadlockmods.app";

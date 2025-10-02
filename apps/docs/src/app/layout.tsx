@@ -1,5 +1,5 @@
 import "@/app/global.css";
-import { RootProvider } from "fumadocs-ui/provider";
+import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
@@ -24,8 +24,35 @@ export const metadata: Metadata = {
   },
   description:
     "Complete documentation for Deadlock Mod Manager - installation, usage, troubleshooting, and development guides.",
+  keywords: [
+    "Deadlock",
+    "Deadlock mods",
+    "mod manager",
+    "game mods",
+    "Deadlock Mod Manager",
+    "modding",
+    "documentation",
+    "guide",
+    "tutorial",
+  ],
+  authors: [{ name: "Deadlock Mods Team" }],
+  creator: "Deadlock Mods",
+  publisher: "Deadlock Mods",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     type: "website",
+    locale: "en_US",
+    url: "https://docs.deadlockmods.app",
     siteName: "Deadlock Mod Manager Docs",
     title: {
       template: "%s - Deadlock Mod Manager Docs",
@@ -42,6 +69,10 @@ export const metadata: Metadata = {
     },
     description:
       "Complete documentation for Deadlock Mod Manager - installation, usage, troubleshooting, and development guides.",
+    creator: "@deadlockmods",
+  },
+  alternates: {
+    canonical: "https://docs.deadlockmods.app",
   },
 };
 

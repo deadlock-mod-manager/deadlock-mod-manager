@@ -15,6 +15,7 @@ import { Route as StatusRouteImport } from './routes/status'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
@@ -52,6 +53,11 @@ const DownloadRoute = DownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DiscordRoute = DiscordRouteImport.update({
   id: '/discord',
   path: '/discord',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/discord': typeof DiscordRoute
+  '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/discord': typeof DiscordRoute
+  '/docs': typeof DocsRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/discord': typeof DiscordRoute
+  '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/discord'
+    | '/docs'
     | '/download'
     | '/login'
     | '/privacy'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/discord'
+    | '/docs'
     | '/login'
     | '/privacy'
     | '/status'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/discord'
+    | '/docs'
     | '/download'
     | '/login'
     | '/privacy'
@@ -173,6 +185,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   DiscordRoute: typeof DiscordRoute
+  DocsRoute: typeof DocsRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/download'
       fullPath: '/download'
       preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discord': {
@@ -290,6 +310,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   DiscordRoute: DiscordRoute,
+  DocsRoute: DocsRoute,
   DownloadRoute: DownloadRouteWithChildren,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,

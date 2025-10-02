@@ -26,7 +26,7 @@
     <meta name="color-scheme" content="dark light" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://deadlockmods.com/" />
+    <meta property="og:url" content="https://deadlockmods.app/" />
     <meta
       property="og:title"
       content="Deadlock Mod Manager - Download, Install & Manage Deadlock Mods"
@@ -46,7 +46,7 @@
     <meta property="og:locale" content="en_US" />
 
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://deadlockmods.com/" />
+    <meta property="twitter:url" content="https://deadlockmods.app/" />
     <meta
       property="twitter:title"
       content="Deadlock Mod Manager - Download, Install & Manage Deadlock Mods"
@@ -72,7 +72,7 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-    <link rel="canonical" href="https://deadlockmods.com/" />
+    <link rel="canonical" href="https://deadlockmods.app/" />
 
     <!-- Favicon and Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -93,7 +93,7 @@
         "@type": "SoftwareApplication",
         "name": "Deadlock Mod Manager",
         "description": "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection.",
-        "url": "https://deadlockmods.com/",
+        "url": "https://deadlockmods.app/",
         "downloadUrl": "https://github.com/stormix/deadlock-modmanager/releases/latest",
         "author": {
           "@type": "Person",
@@ -120,6 +120,76 @@
           "ratingValue": "5",
           "ratingCount": "1"
         }
+      }
+    </script>
+
+    <!-- Website Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Deadlock Mod Manager",
+        "url": "https://deadlockmods.app",
+        "description": "The ultimate mod manager for Valve's Deadlock game",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Deadlock Mod Manager",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://deadlockmods.app/og-image.png"
+          },
+          "url": "https://deadlockmods.app",
+          "sameAs": [
+            "https://github.com/Stormix/deadlock-modmanager",
+            "https://discord.gg/deadlockmods"
+          ]
+        }
+      }
+    </script>
+
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://deadlockmods.app/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Download",
+            "item": "https://deadlockmods.app/download"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Docs",
+            "item": "https://deadlockmods.app/docs"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "Documentation",
+            "item": "https://docs.deadlockmods.app/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "name": "VPK Analyzer",
+            "item": "https://deadlockmods.app/vpk-analyzer"
+          },
+          {
+            "@type": "ListItem",
+            "position": 6,
+            "name": "Status",
+            "item": "https://deadlockmods.app/status"
+          }
+        ]
       }
     </script>
   </head>

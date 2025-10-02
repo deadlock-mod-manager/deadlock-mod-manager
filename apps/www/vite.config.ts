@@ -21,9 +21,10 @@ export default defineConfig({
         '/privacy',
         '/terms',
         '/discord',
+        '/docs',
       ],
       exclude: [
-        '/login', // Login page might not need to be indexed
+        '/login',
       ],
       changefreq: {
         '/': 'weekly',
@@ -34,20 +35,22 @@ export default defineConfig({
         '/status': 'daily',
         '/privacy': 'monthly',
         '/terms': 'monthly',
-        '/discord': 'monthly', // Discord invite rarely changes
-        '*': 'weekly', // default for other pages
+        '/discord': 'monthly',
+        '/docs': 'weekly',
+        '*': 'weekly',
       },
       priority: {
         '/': 1.0,
         '/download': 0.9,
         '/download/windows': 0.8,
         '/download/linux': 0.8,
+        '/docs': 0.9,
         '/vpk-analyzer': 0.7,
         '/status': 0.6,
         '/privacy': 0.5,
         '/terms': 0.5,
-        '/discord': 0.7, // Important for community engagement
-        '*': 0.6, // default for other pages
+        '/discord': 0.7,
+        '*': 0.6,
       },
       generateRobotsTxt: true,
       robots: [
