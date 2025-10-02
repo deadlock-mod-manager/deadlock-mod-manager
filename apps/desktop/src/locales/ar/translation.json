@@ -202,6 +202,15 @@
     "tauriVersion": "إصدار Tauri",
     "copyright": "غير تابعة لشركة Valve. Deadlock وشعار Deadlock هما علامتان تجاريتان مسجلتان لشركة Valve Corporation."
   },
+  "update": {
+    "available": "تحديث متاح",
+    "newVersionAvailable": "إصدار جديد ({{version}}) متاح. أنت تستخدم حاليًا الإصدار {{currentVersion}}.",
+    "releaseNotes": "ملاحظات الإصدار",
+    "downloading": "جاري تنزيل التحديث",
+    "downloadAndInstall": "تنزيل وتثبيت",
+    "later": "لاحقاً",
+    "installing": "جاري التثبيت..."
+  },
   "privacy": {
     "title": "الخصوصية والمحتوى",
     "description": "التحكم في كيفية عرض محتوى NSFW (غير آمن للعمل) وتصفيته.",
@@ -393,6 +402,12 @@
     "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
     "gotIt": "فهمت!",
     "versions": {
+      "0.9.2": {
+        "title": "Settings & Configuration",
+        "features": [
+          "⚙️ Game path settings - manually configure your game installation path for better compatibility"
+        ]
+      },
       "0.9.0": {
         "title": "تحسينات إدارة التعديلات والنظام",
         "features": [

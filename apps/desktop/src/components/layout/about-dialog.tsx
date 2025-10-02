@@ -108,7 +108,8 @@ export const AboutDialog = () => {
           className='h-7 gap-1'
           onClick={async () => {
             try {
-              if (await checkForUpdates()) {
+              const update = await checkForUpdates();
+              if (update) {
                 toast.loading(t("about.downloadingUpdate"));
                 await updateAndRelaunch();
               } else {

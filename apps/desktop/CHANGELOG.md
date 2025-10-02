@@ -1,5 +1,11 @@
 # desktop
 
+## 0.9.2
+
+### Minor Changes
+
+- 6f93442: Game path settings
+
 ## 0.9.1
 
 ### Patch Changes

@@ -222,6 +222,15 @@
     "tauriVersion": "Tauri версии:",
     "copyright": "Не связан с Valve. Deadlock и логотип Deadlock являются зарегистрированными торговыми марками Valve Corporation."
   },
+  "update": {
+    "available": "Доступно Обновление",
+    "newVersionAvailable": "Доступна новая версия ({{version}}). Вы используете версию {{currentVersion}}.",
+    "releaseNotes": "Примечания к Выпуску",
+    "downloading": "Загрузка обновления",
+    "downloadAndInstall": "Скачать и Установить",
+    "later": "Позже",
+    "installing": "Установка..."
+  },
   "filters": {
     "filters": "Фильтры",
     "mode": "Режим фильтров",
@@ -394,6 +403,12 @@
     "fullReleaseNotes": "Полный список изменений",
     "gotIt": "Ок!",
     "versions": {
+      "0.9.2": {
+        "title": "Settings & Configuration",
+        "features": [
+          "⚙️ Game path settings - manually configure your game installation path for better compatibility"
+        ]
+      },
       "0.9.0": {
         "title": "Улучшения Управления Модами и Системы",
         "features": [

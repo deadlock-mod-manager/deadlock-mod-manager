@@ -9,11 +9,19 @@ const useUpdateManager = () => {
   const [update, setUpdate] = useState<Update | null>(null);
   const [downloaded, setDownloaded] = useState(0);
   const [size, setSize] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const downloadProgress = size > 0 ? Math.round((downloaded / size) * 100) : 0;
 
   const checkForUpdates = async () => {
-    const update = await check();
-    setUpdate(update);
-    return !!update;
+    try {
+      const update = await check();
+      setUpdate(update);
+      return update;
+    } catch (error) {
+      logger.error("Failed to check for updates", { error });
+      return null;
+    }
   };
 
   const updateAndRelaunch = async () => {
@@ -21,7 +29,10 @@ const useUpdateManager = () => {
       return;
     }
 
-    // alternatively we could also call update.download() and update.install() separately
+    setIsDownloading(true);
+    setDownloaded(0);
+    setSize(0);
+
     await update.downloadAndInstall((event) => {
       switch (event.event) {
         case "Started":
@@ -43,7 +54,21 @@ const useUpdateManager = () => {
     await relaunch();
   };
 
-  return { update, checkForUpdates, updateAndRelaunch };
+  const reset = () => {
+    setUpdate(null);
+    setDownloaded(0);
+    setSize(0);
+    setIsDownloading(false);
+  };
+
+  return {
+    update,
+    checkForUpdates,
+    updateAndRelaunch,
+    isDownloading,
+    downloadProgress,
+    reset,
+  };
 };
 
 export default useUpdateManager;

@@ -195,6 +195,15 @@
     "tauriVersion": "Tauri-Version:",
     "copyright": "Nöd mit Valve verbunde. Deadlock und s'Deadlock-Logo sind iitreiti Marke der Valve Corporation."
   },
+  "update": {
+    "available": "Update Verfüegbar",
+    "newVersionAvailable": "Ä neui Version ({{version}}) isch verfüegbar. Sie verwended momentan d'Version {{currentVersion}}.",
+    "releaseNotes": "Release-Notize",
+    "downloading": "Update wird abeglade",
+    "downloadAndInstall": "Abelade und Installliere",
+    "later": "Spöter",
+    "installing": "Wird installiert..."
+  },
   "menu": {
     "about": "Informatione",
     "quit": "Beende"
@@ -338,6 +347,12 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.9.2": {
+        "title": "Settings & Configuration",
+        "features": [
+          "⚙️ Game path settings - manually configure your game installation path for better compatibility"
+        ]
+      },
       "0.9.0": {
         "title": "Mod Management & System Improvements",
         "features": [

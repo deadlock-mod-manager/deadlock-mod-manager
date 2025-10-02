@@ -210,6 +210,15 @@
     "tauriVersion": "Tauri 版本：",
     "copyright": "与 Valve 无关联。Deadlock 和 Deadlock 徽标是 Valve Corporation 的注册商标。"
   },
+  "update": {
+    "available": "更新可用",
+    "newVersionAvailable": "新版本 ({{version}}) 可用。您当前使用的版本是 {{currentVersion}}。",
+    "releaseNotes": "发行说明",
+    "downloading": "正在下载更新",
+    "downloadAndInstall": "下载并安装",
+    "later": "稍后",
+    "installing": "正在安装..."
+  },
   "filters": {
     "filters": "筛选器",
     "mode": "筛选模式",
@@ -424,6 +433,12 @@
     "fullReleaseNotes": "完整发行说明",
     "gotIt": "知道了！",
     "versions": {
+      "0.9.2": {
+        "title": "Settings & Configuration",
+        "features": [
+          "⚙️ Game path settings - manually configure your game installation path for better compatibility"
+        ]
+      },
       "0.9.0": {
         "title": "模组管理与系统改进",
         "features": [
