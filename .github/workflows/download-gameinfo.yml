@@ -1,0 +1,61 @@
+name: Download Gameinfo.gi from Deadlock Steam
+on: [workflow_dispatch, push]
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env:
+      APPID: "1422450"
+      DEPOTID: "1422456"
+      MANIFESTID: "" # set a manifest ID to pin; empty = latest
+      OUTDIR: "_depot"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download DepotDownloader
+        run: |
+          curl -L -o DepotDownloader.zip https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip
+          unzip DepotDownloader.zip -d DepotDownloader
+          chmod +x DepotDownloader/DepotDownloader
+
+      - name: Prepare filelist
+        run: echo "game/citadel/gameinfo.gi" > filelist.txt
+
+      - name: Cache depot by manifest
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OUTDIR }}
+          key: depot-${{ env.APPID }}-${{ env.DEPOTID }}-${{ env.MANIFESTID }}
+
+      - name: Fetch file via DepotDownloader
+        env:
+          STEAM_USER: ${{ secrets.STEAM_USER }}
+          STEAM_PASS: ${{ secrets.STEAM_PASS }}
+        run: |
+          if [ -z "${MANIFESTID}" ]; then
+            ./DepotDownloader/DepotDownloader -app ${APPID} -depot ${DEPOTID} \
+              -filelist filelist.txt -username "$STEAM_USER" -password "$STEAM_PASS" \
+              -dir "${OUTDIR}"
+          else
+            ./DepotDownloader/DepotDownloader -app ${APPID} -depot ${DEPOTID} -manifest ${MANIFESTID} \
+              -filelist filelist.txt -username "$STEAM_USER" -password "$STEAM_PASS" \
+              -dir "${OUTDIR}"
+          fi
+
+      - name: Move target into repo folder
+        run: |
+          install -D "${OUTDIR}/game/citadel/gameinfo.gi" "apps/api/src/static/artifacts/deadlock/gameinfo.gi"
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet apps/api/src/static/artifacts/deadlock/gameinfo.gi || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/api/src/static/artifacts/deadlock/gameinfo.gi
+          git commit -m "chore: update gameinfo.gi from depot"
+          git push
