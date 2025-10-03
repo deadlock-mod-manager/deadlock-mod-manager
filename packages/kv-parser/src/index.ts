@@ -4,5 +4,6 @@ export * from "./ast-serializer";
 export * from "./diff-applicator";
 export * from "./diff-generator";
 export * from "./document";
+export * from "./document-base";
 export * from "./parser";
 export * from "./types";

@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseKvFile, serializeKv } from "../src/parser";
+import { parseKv, parseKvFile, serializeKv } from "../src/parser";
 
 describe("gameinfo.gi", () => {
   it("should parse the real gameinfo.gi file", () => {
@@ -51,7 +51,7 @@ describe("gameinfo.gi", () => {
     const filePath = resolve(__dirname, "../data/gameinfo.gi");
     const parsed = parseKvFile(filePath);
     const serialized = serializeKv(parsed);
-    const reparsed = parseKvFile(filePath);
+    const reparsed = parseKv(serialized);
 
     // Should have the same structure
     expect(reparsed).toHaveProperty("GameInfo");
