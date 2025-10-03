@@ -1,12 +1,3 @@
-/**
- * AST Parser - Builds Abstract Syntax Tree from tokens
- *
- * This parser preserves perfect fidelity of the original file:
- * - All comments, whitespace, formatting
- * - Exact positions and raw text
- * - Quote styles and escape sequences
- */
-
 import type {
   ASTParseOptions,
   CommentNode,
@@ -189,15 +180,10 @@ export class ASTParser {
 
     // If we found a conditional on the same line, parse the whitespace and conditional
     if (foundConditional) {
-      if (
-        this.currentToken.type === TokenType.WHITESPACE &&
-        !this.currentToken.value.includes("\n")
-      ) {
+      if (foundWhitespace) {
         conditionalSeparator = this.parseWhitespace();
       }
-      if (this.currentToken.type === TokenType.CONDITIONAL) {
-        conditional = this.parseConditional();
-      }
+      conditional = this.parseConditional();
     }
 
     const endToken = this.tokens[this.pos - 1] || this.currentToken;
