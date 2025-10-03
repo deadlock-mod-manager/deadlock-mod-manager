@@ -85,8 +85,8 @@ Root
       const input = `
 "Root"
 {
-    "IntKey"    "123"
-    "NegativeInt"    "-456"
+    "IntKey"    123
+    "NegativeInt"    -456
 }
 `;
       const result = parseKv(input);
@@ -102,8 +102,8 @@ Root
       const input = `
 "Root"
 {
-    "FloatKey"    "123.456"
-    "NegativeFloat"    "-78.9"
+    "FloatKey"    123.456
+    "NegativeFloat"    -78.9
 }
 `;
       const result = parseKv(input);

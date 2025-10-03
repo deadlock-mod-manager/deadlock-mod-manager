@@ -43,6 +43,7 @@
 
 		SearchPaths
         {  
+            Game                citadel/addons
             Mod                 citadel
             Write               citadel          
             Game                citadel

@@ -56,8 +56,8 @@ describe("edge cases from real-world VDF files", () => {
       const input = `
 "Config"
 {
-    "BigInt"    "999999999"
-    "BigFloat"  "123456.789"
+    "BigInt"    999999999
+    "BigFloat"  123456.789
 }
 `;
       const result = parseKv(input);
@@ -73,8 +73,8 @@ describe("edge cases from real-world VDF files", () => {
       const input = `
 "Config"
 {
-    "NegInt"    "-123"
-    "NegFloat"  "-45.67"
+    "NegInt"    -123
+    "NegFloat"  -45.67
 }
 `;
       const result = parseKv(input);
@@ -90,8 +90,8 @@ describe("edge cases from real-world VDF files", () => {
       const input = `
 "Config"
 {
-    "Zero"      "0"
-    "ZeroFloat" "0.0"
+    "Zero"      0
+    "ZeroFloat" 0.0
 }
 `;
       const result = parseKv(input);
@@ -103,7 +103,7 @@ describe("edge cases from real-world VDF files", () => {
       });
     });
 
-    it("should handle numbers as strings when quoted unnecessarily", () => {
+    it("should preserve quoted numeric literals as strings", () => {
       const input = `
 "Config"
 {
@@ -112,14 +112,60 @@ describe("edge cases from real-world VDF files", () => {
 `;
       const result = parseKv(input);
       expect(result.Config).toHaveProperty("QuotedNumber");
-      // Should be converted to number
+      // Quoted numbers should remain as strings
       expect(
         typeof (
           result.Config as {
-            QuotedNumber: number;
+            QuotedNumber: string;
           }
         ).QuotedNumber,
-      ).toBe("number");
+      ).toBe("string");
+      expect(
+        (
+          result.Config as {
+            QuotedNumber: string;
+          }
+        ).QuotedNumber,
+      ).toBe("42");
+    });
+
+    it("should distinguish between quoted and unquoted numeric values", () => {
+      const input = `
+"Config"
+{
+    "UnquotedInt"     42
+    "QuotedInt"       "42"
+    "UnquotedFloat"   3.14
+    "QuotedFloat"     "3.14"
+    "UnquotedNeg"     -10
+    "QuotedNeg"       "-10"
+}
+`;
+      const result = parseKv(input);
+      const config = result.Config as {
+        UnquotedInt: number;
+        QuotedInt: string;
+        UnquotedFloat: number;
+        QuotedFloat: string;
+        UnquotedNeg: number;
+        QuotedNeg: string;
+      };
+
+      // Unquoted numbers should be parsed as numbers
+      expect(typeof config.UnquotedInt).toBe("number");
+      expect(config.UnquotedInt).toBe(42);
+      expect(typeof config.UnquotedFloat).toBe("number");
+      expect(config.UnquotedFloat).toBe(3.14);
+      expect(typeof config.UnquotedNeg).toBe("number");
+      expect(config.UnquotedNeg).toBe(-10);
+
+      // Quoted numbers should remain as strings
+      expect(typeof config.QuotedInt).toBe("string");
+      expect(config.QuotedInt).toBe("42");
+      expect(typeof config.QuotedFloat).toBe("string");
+      expect(config.QuotedFloat).toBe("3.14");
+      expect(typeof config.QuotedNeg).toBe("string");
+      expect(config.QuotedNeg).toBe("-10");
     });
   });
 
@@ -312,11 +358,11 @@ describe("edge cases from real-world VDF files", () => {
       const input = `
 "Root"
 {
-    "Item"    "1"
-    "Item"    "2"
-    "Item"    "3"
-    "Item"    "4"
-    "Item"    "5"
+    "Item"    1
+    "Item"    2
+    "Item"    3
+    "Item"    4
+    "Item"    5
 }
 `;
       const result = parseKv(input);
@@ -351,8 +397,8 @@ describe("edge cases from real-world VDF files", () => {
       const input = `
 "Config"
 {
-    "Enabled"     "1"
-    "Disabled"    "0"
+    "Enabled"     1
+    "Disabled"    0
 }
 `;
       const result = parseKv(input);

@@ -134,11 +134,12 @@ export class ASTParser {
     if (this.currentToken.type === TokenType.OPEN_BRACE) {
       value = this.parseObject();
     } else if (this.currentToken.type === TokenType.STRING) {
-      // Try to parse as number
+      // Try to parse as number only if not quoted
       const strValue = this.currentToken.value;
       const numValue = Number(strValue);
+      const isQuoted = this.currentToken.metadata?.quoted === true;
 
-      if (!Number.isNaN(numValue) && strValue.trim() !== "") {
+      if (!isQuoted && !Number.isNaN(numValue) && strValue.trim() !== "") {
         value = this.parseNumber();
       } else {
         value = this.parseString();
