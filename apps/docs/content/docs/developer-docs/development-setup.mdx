@@ -161,8 +161,9 @@ Copy the example environment file and configure it:
 cp env.example .env
 
 # Edit the file with your preferred editor
-code .env  # VS Code
-nano .env  # Terminal editor
+cursor .env # Cursor
+code .env   # VS Code
+nano .env   # Terminal editor
 ```
 
 **Required Environment Variables:**
@@ -203,7 +204,14 @@ pnpm db:push
 pnpm db:seed
 ```
 
-### 5. Verify Installation
+### 5. Build VPK Analyzer
+
+```bash
+# Analyzer is needed for local API 
+cargo build
+```
+
+### 6. Verify Installation
 
 Test that everything is working:
 
@@ -225,10 +233,10 @@ pnpm build
 | Command                     | Description                             |
 | --------------------------- | --------------------------------------- |
 | `pnpm dev`                  | Start desktop app development (default) |
-| `pnpm --filter desktop dev` | Start desktop app development           |
-| `pnpm --filter api dev`     | Start API server development            |
-| `pnpm --filter www dev`     | Start web app development               |
-| `pnpm --filter docs dev`    | Start documentation development         |
+| `pnpm desktop:dev`          | Start desktop app development           |
+| `pnpm api:dev`              | Start API server development            |
+| `pnpm www:dev`              | Start web app development               |
+| `pnpm docs:dev`             | Start documentation development         |
 
 ### Quality Assurance
 
@@ -255,6 +263,7 @@ pnpm build
 | `pnpm build`                  | Build all packages and applications |
 | `pnpm --filter desktop build` | Build only desktop application      |
 | `pnpm --filter api build`     | Build only API server               |
+| `cargo build`                 | Build VPK analyzer                  |
 
 ## Development Workflow
 
@@ -264,24 +273,24 @@ For **desktop app development** (most common):
 
 ```bash
 # Start the API server (in one terminal)
-pnpm --filter api dev
+pnpm api:dev
 
 # Start the desktop app (in another terminal)
-pnpm --filter desktop dev
+pnpm desktop:dev
 ```
 
 For **web development**:
 
 ```bash
 # Start the web app
-pnpm --filter www dev
+pnpm www:dev
 ```
 
 For **documentation development**:
 
 ```bash
 # Start the docs site
-pnpm --filter docs dev
+pnpm docs:dev
 ```
 
 ### 2. Making Changes
@@ -386,7 +395,7 @@ docker compose down
 docker compose up -d
 
 # Check container logs
-docker compose logs postgres
+docker logs postgres
 ```
 
 #### Port conflicts
