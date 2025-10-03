@@ -4,6 +4,8 @@ on: [workflow_dispatch, push]
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       APPID: "1422450"
       DEPOTID: "1422456"
@@ -11,6 +13,8 @@ jobs:
       OUTDIR: "_depot"
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download DepotDownloader
         run: |
