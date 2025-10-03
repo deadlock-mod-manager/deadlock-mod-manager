@@ -1,5 +1,8 @@
 name: Download Gameinfo.gi from Deadlock Steam
-on: [workflow_dispatch, push]
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *" # Run daily at midnight UTC
 
 jobs:
   fetch:
