@@ -1,0 +1,48 @@
+// Complex KeyValues example with comments
+"GameConfig"
+{
+    // Basic metadata
+    "meta"
+    {
+        "version"    "2.1.0"
+        "game"    "Deadlock"
+        "author"    "Valve"
+    }
+
+    /*
+     * Character definitions
+     */
+    "characters"
+    {
+        "hero_1"
+        {
+            "name"    "Infernus"
+            "health"    "550"
+            "damage"    "25.5"
+            "abilities"
+            {
+                "ability_1"    "flame_dash"
+                "ability_2"    "catalyst"
+            }
+        }
+
+        "hero_2"
+        {
+            "name"    "Bebop"
+            "health"    "600"
+            "damage"    "22.0"
+        }
+    }
+
+    "item"
+    {
+        "id"    "100"
+        "name"    "Basic Magazine"
+    }
+
+    "item"
+    {
+        "id"    "101"
+        "name"    "Rapid Rounds"
+    }
+}

@@ -46,6 +46,10 @@ const routeList: RouteProps[] = [
     label: "VPK Analyzer",
   },
   {
+    href: "/kv-parser",
+    label: "KV Parser",
+  },
+  {
     href: "/status",
     label: "Status",
   },

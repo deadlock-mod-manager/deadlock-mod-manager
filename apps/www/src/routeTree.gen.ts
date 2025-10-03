@@ -14,6 +14,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as KvParserRouteImport } from './routes/kv-parser'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
@@ -46,6 +47,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KvParserRoute = KvParserRouteImport.update({
+  id: '/kv-parser',
+  path: '/kv-parser',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadRoute = DownloadRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
+  '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/status': typeof StatusRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/discord'
     | '/docs'
     | '/download'
+    | '/kv-parser'
     | '/login'
     | '/privacy'
     | '/status'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/discord'
     | '/docs'
+    | '/kv-parser'
     | '/login'
     | '/privacy'
     | '/status'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/discord'
     | '/docs'
     | '/download'
+    | '/kv-parser'
     | '/login'
     | '/privacy'
     | '/status'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
   DownloadRoute: typeof DownloadRouteWithChildren
+  KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   StatusRoute: typeof StatusRoute
@@ -229,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kv-parser': {
+      id: '/kv-parser'
+      path: '/kv-parser'
+      fullPath: '/kv-parser'
+      preLoaderRoute: typeof KvParserRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download': {
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,
   DownloadRoute: DownloadRouteWithChildren,
+  KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   StatusRoute: StatusRoute,
