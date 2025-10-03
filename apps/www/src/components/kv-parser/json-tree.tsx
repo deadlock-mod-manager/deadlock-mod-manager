@@ -1,6 +1,6 @@
 import type { KeyValuesValue } from "@deadlock-mods/kv-parser";
 import { ChevronDown, ChevronRight, Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ interface JsonTreeProps {
   data: KeyValuesValue;
   name?: string;
   level?: number;
+  expandOverride?: boolean | null;
 }
 
 function getValueType(value: KeyValuesValue): string {
@@ -19,10 +20,21 @@ function getValueType(value: KeyValuesValue): string {
   return "unknown";
 }
 
-function JsonTreeNode({ data, name, level = 0 }: JsonTreeProps) {
+function JsonTreeNode({
+  data,
+  name,
+  level = 0,
+  expandOverride = null,
+}: JsonTreeProps) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
   const valueType = getValueType(data);
   const isExpandable = valueType === "object" || valueType === "array";
+
+  useEffect(() => {
+    if (expandOverride !== null) {
+      setIsExpanded(expandOverride);
+    }
+  }, [expandOverride]);
 
   const handleCopy = async () => {
     const value =
@@ -75,6 +87,7 @@ function JsonTreeNode({ data, name, level = 0 }: JsonTreeProps) {
           {(data as unknown[]).map((item, index) => (
             <JsonTreeNode
               data={item as KeyValuesValue}
+              expandOverride={expandOverride}
               key={`item-${index}-${typeof item === "object" ? JSON.stringify(item).slice(0, 20) : item}`}
               level={level + 1}
               name={`[${index}]`}
@@ -90,6 +103,7 @@ function JsonTreeNode({ data, name, level = 0 }: JsonTreeProps) {
           {Object.entries(data as object).map(([key, value]) => (
             <JsonTreeNode
               data={value as KeyValuesValue}
+              expandOverride={expandOverride}
               key={key}
               level={level + 1}
               name={key}
@@ -154,23 +168,38 @@ interface JsonTreeViewProps {
   onCollapseAll?: () => void;
 }
 
-export function JsonTreeView({ data }: JsonTreeViewProps) {
-  const [expandAll, setExpandAll] = useState(false);
+export function JsonTreeView({
+  data,
+  onExpandAll,
+  onCollapseAll,
+}: JsonTreeViewProps) {
+  const [expandAll, setExpandAll] = useState<boolean | null>(null);
 
-  const handleExpandAll = () => {
-    setExpandAll(!expandAll);
+  const handleToggleExpand = () => {
+    if (expandAll === true) {
+      setExpandAll(false);
+      onCollapseAll?.();
+    } else {
+      setExpandAll(true);
+      onExpandAll?.();
+    }
   };
 
   return (
     <div className='space-y-2'>
       <div className='flex items-center justify-between'>
         <h3 className='font-semibold text-sm'>Parsed Structure</h3>
-        <Button onClick={handleExpandAll} size='sm' variant='outline'>
-          {expandAll ? "Collapse All" : "Expand All"}
+        <Button onClick={handleToggleExpand} size='sm' variant='outline'>
+          {expandAll === true ? "Collapse All" : "Expand All"}
         </Button>
       </div>
       <div className='rounded-lg border border-muted-foreground/20 bg-muted/10 p-4 overflow-auto max-h-[600px]'>
-        <JsonTreeNode data={data} level={expandAll ? 0 : 1} />
+        <JsonTreeNode
+          data={data}
+          expandOverride={
+            expandAll === true ? true : expandAll === false ? false : null
+          }
+        />
       </div>
     </div>
   );

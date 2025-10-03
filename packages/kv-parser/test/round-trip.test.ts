@@ -70,9 +70,9 @@ describe("round-trip conversion", () => {
       const input = `
 "Config"
 {
-    "Integer"    "42"
-    "Float"      "3.14"
-    "Negative"   "-10"
+    "Integer"    42
+    "Float"      3.14
+    "Negative"   -10
 }
 `;
       const parsed1 = parseKv(input);
