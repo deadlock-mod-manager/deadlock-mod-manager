@@ -1,9 +1,3 @@
-/**
- * Diff Applicator - Applies diffs to KeyValues documents
- *
- * This applies diffs surgically to preserve formatting when possible
- */
-
 import type {
   DiffEntry,
   DocumentDiff,
@@ -115,12 +109,20 @@ export class DiffApplicator {
     switch (change.op) {
       case "replace":
         // Find and update the key-value node
-        DiffApplicator.updateKeyValueInAST(parent, key, change.newValue);
+        DiffApplicator.updateKeyValueInAST(
+          parent,
+          key,
+          change.newValue as KeyValuesValue,
+        );
         break;
 
       case "add":
         // Add a new key-value node
-        DiffApplicator.addKeyValueToAST(parent, key, change.newValue);
+        DiffApplicator.addKeyValueToAST(
+          parent,
+          key,
+          change.newValue as KeyValuesValue,
+        );
         break;
 
       case "remove":

@@ -1,9 +1,3 @@
-/**
- * Diff Generator - Generates diffs between two KeyValues documents
- *
- * This generates surgical diffs that can be applied to preserve formatting
- */
-
 import type {
   DiffEntry,
   DocumentDiff,
