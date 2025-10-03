@@ -1,0 +1,48 @@
+{
+  "name": "@deadlock-mods/kv-parser",
+  "version": "1.0.0",
+  "description": "KeyValues (VDF) parser for Valve's KeyValues format in TypeScript",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/index.browser.ts"
+  },
+  "bin": {
+    "kv-parser": "./bin/cli.ts"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "cli": "bun run bin/cli.ts"
+  },
+  "keywords": [
+    "keyvalues",
+    "vdf",
+    "valve",
+    "parser",
+    "deadlock",
+    "source-engine",
+    "typescript"
+  ],
+  "author": "stormix <contact@stormix.co>",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
+    "directory": "packages/kv-parser"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/bun": "^1.2.23",
+    "@types/node": "^24.5.2",
+    "@types/yargs": "^17.0.33",
+    "bun-types": "^1.2.19",
+    "chalk": "^5.6.2",
+    "picocolors": "^1.1.1",
+    "vitest": "^3.2.4",
+    "yargs": "^18.0.0"
+  }
+}

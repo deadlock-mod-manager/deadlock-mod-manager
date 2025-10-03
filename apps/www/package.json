@@ -10,6 +10,7 @@
     "start": "vite"
   },
   "dependencies": {
+    "@deadlock-mods/kv-parser": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.8.9",
@@ -37,6 +38,7 @@
     "react-dropzone": "^14.3.8",
     "react-ga4": "^2.1.0",
     "react-icons": "^5.5.0",
+    "shiki": "^3.13.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
