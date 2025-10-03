@@ -1,12 +1,3 @@
-/**
- * AST Serializer - Reconstructs source text from AST with perfect fidelity
- *
- * This serializer preserves:
- * - All comments and whitespace
- * - Exact formatting and quote styles
- * - Original structure and layout
- */
-
 import type {
   ASTNode,
   CommentNode,

@@ -1,12 +1,3 @@
-/**
- * AST (Abstract Syntax Tree) types for KeyValues format
- *
- * This provides perfect fidelity preservation of the original file:
- * - Position tracking for every node
- * - Raw text preservation (comments, whitespace, quote style)
- * - Modification tracking for surgical edits
- */
-
 import type { KeyValuesObject, KeyValuesValue } from "./types";
 
 /**

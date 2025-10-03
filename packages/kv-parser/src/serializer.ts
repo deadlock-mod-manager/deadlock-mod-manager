@@ -71,8 +71,6 @@ export class KvSerializer {
   }
 
   private serializeValue(value: KeyValuesValue, indent: number): string {
-    const indentStr = " ".repeat(indent);
-
     if (typeof value === "string" || typeof value === "number") {
       return this.formatValue(value);
     }

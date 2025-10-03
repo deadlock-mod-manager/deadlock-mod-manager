@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test": "vitest",
-    "cli": "bun run bin/cli.ts"
+    "cli": "bun run bin/cli.ts",
+    "check-types": "tsc --noEmit --skipLibCheck"
   },
   "keywords": [
     "keyvalues",
