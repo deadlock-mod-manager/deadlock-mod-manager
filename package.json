@@ -18,6 +18,7 @@
     "format:fix": "biome format . --write",
     "lint:fix": "biome check . --write",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
     "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
     "upgrade-dependencies": "pnpm dlx taze -r",
