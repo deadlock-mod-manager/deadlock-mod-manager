@@ -381,7 +381,7 @@ describe("Diff System", () => {
 
         // Extract data from result
         const resultData = DiffGenerator.astToData(resultAst);
-        expect(resultData.Root.Key).toBe("NewValue");
+        expect((resultData.Root as Record<string, unknown>).Key).toBe("NewValue");
       });
     });
 

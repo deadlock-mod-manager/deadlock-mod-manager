@@ -233,7 +233,7 @@ export class DiffGenerator {
   /**
    * Convert AST to data object (simplified extraction)
    */
-  private static astToData(node: DocumentNode | ObjectNode): KeyValuesObject {
+  static astToData(node: DocumentNode | ObjectNode): KeyValuesObject {
     const result: KeyValuesObject = {};
 
     for (const child of node.children) {
@@ -275,7 +275,7 @@ export class DiffGenerator {
   /**
    * Create an empty document node
    */
-  private static createEmptyDocument(): DocumentNode {
+  static createEmptyDocument(): DocumentNode {
     return {
       type: "document",
       start: { offset: 0, line: 1, column: 0 },

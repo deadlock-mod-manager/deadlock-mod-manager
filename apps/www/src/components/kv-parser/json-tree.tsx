@@ -34,11 +34,17 @@ function JsonTreeNode({ data, name, level = 0 }: JsonTreeProps) {
   const renderValue = () => {
     if (valueType === "string") {
       return (
-        <span className='text-green-600 dark:text-green-400'>"{data}"</span>
+        <span className='text-green-600 dark:text-green-400'>
+          "{data.toString()}"
+        </span>
       );
     }
     if (valueType === "number") {
-      return <span className='text-blue-600 dark:text-blue-400'>{data}</span>;
+      return (
+        <span className='text-blue-600 dark:text-blue-400'>
+          {data.toString()}
+        </span>
+      );
     }
     if (valueType === "array") {
       return (
