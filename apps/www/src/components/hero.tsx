@@ -55,9 +55,9 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
           className='absolute bottom-32 left-12 h-16 w-16 animate-spin-slow text-primary/5 opacity-50 [animation-duration:8s] sm:bottom-40 sm:left-16 sm:h-20 sm:w-20 lg:bottom-48 lg:left-24'
         />
       </div>
-      <div className='mx-auto max-w-7xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10 sm:pb-24 lg:flex lg:px-8 lg:py-40'>
-        <div className='mx-auto max-w-2xl lg:mx-0 lg:shrink-0 lg:pt-8'>
-          <div className='mt-16 sm:mt-24 lg:mt-16'>
+      <div className='mx-auto max-w-7xl px-4 pt-6 pb-16 sm:px-6 sm:pt-10 sm:pb-24 lg:flex lg:items-center lg:px-8 lg:py-40'>
+        <div className='mx-auto max-w-2xl lg:mx-0 lg:shrink-0'>
+          <div className='mt-16 sm:mt-24 lg:mt-0'>
             <a
               href={`${GITHUB_REPO}/releases/tag/v${version}`}
               target='_blank'

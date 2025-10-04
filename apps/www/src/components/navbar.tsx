@@ -1,10 +1,16 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@deadlock-mods/ui/components/dropdown-menu";
+import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@deadlock-mods/ui/components/sheet";
-import { List, PhosphorIcons, X } from "@deadlock-mods/ui/icons";
+import { Github, List, PhosphorIcons, X } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
 import React from "react";
 import { LuExternalLink } from "react-icons/lu";
@@ -59,7 +65,7 @@ export const Navbar = () => {
             <span className='font-bold font-primary text-lg'>{APP_NAME}</span>
           </Link>
         </div>
-        <div className='hidden lg:flex lg:gap-x-12'>
+        <div className='hidden lg:flex lg:gap-x-6'>
           {routeList.map((item) => (
             <a
               key={item.label}
@@ -73,12 +79,37 @@ export const Navbar = () => {
               )}
             </a>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger className='flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-foreground/80 transition-colors outline-none data-[state=open]:text-foreground/80'>
+              Tools
+              <PhosphorIcons.CaretDownIcon className='size-4' />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align='start'
+              sideOffset={12}
+              className='min-w-[220px] bg-background/95 backdrop-blur-sm border-border/50 shadow-xl p-2'>
+              <DropdownMenuItem
+                asChild
+                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
+                <Link to='/vpk-analyzer' className='w-full font-medium'>
+                  VPK Analyzer
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                asChild
+                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
+                <Link to='/kv-parser' className='w-full font-medium'>
+                  KeyValues Parser
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className='hidden flex-1 items-center justify-end gap-x-6 sm:flex'>
           <Button
             size='sm'
             href={GITHUB_REPO}
-            icon={<PhosphorIcons.GithubLogoIcon />}>
+            icon={<Github className='size-4' />}>
             <span className='hidden md:inline'>View Source</span>
             <span className='md:hidden'>Source</span>
           </Button>
@@ -130,6 +161,25 @@ export const Navbar = () => {
                         )}
                       </a>
                     ))}
+                    <div className='-mx-3 px-3 py-2'>
+                      <div className='font-semibold text-base/7 text-muted-foreground'>
+                        Tools
+                      </div>
+                      <div className='mt-2 space-y-2'>
+                        <Link
+                          to='/vpk-analyzer'
+                          onClick={() => setMobileMenuOpen(false)}
+                          className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
+                          VPK Analyzer
+                        </Link>
+                        <Link
+                          to='/kv-parser'
+                          onClick={() => setMobileMenuOpen(false)}
+                          className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
+                          KeyValues Parser
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
