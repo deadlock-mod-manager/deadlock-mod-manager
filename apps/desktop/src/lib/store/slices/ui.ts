@@ -2,16 +2,14 @@ import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
 import type { State } from "..";
 
-export type FilterMode = "include" | "exclude";
-
 export type ModsFilters = {
-  hideOutdated: boolean;
+  showSafe: boolean;
+  showNSFW: boolean;
+  showOutdated: boolean;
+  showAudioOnly: boolean;
   selectedCategories: string[];
   selectedHeroes: string[];
-  showAudioOnly: boolean;
-  showNSFW: boolean;
   currentSort: SortType;
-  filterMode: FilterMode;
   searchQuery: string;
 };
 
@@ -30,13 +28,13 @@ export type UIState = {
 };
 
 const DEFAULT_MODS_FILTERS: ModsFilters = {
-  hideOutdated: true,
+  showSafe: true,
+  showNSFW: false,
+  showOutdated: false,
+  showAudioOnly: true,
   selectedCategories: [],
   selectedHeroes: [],
-  showAudioOnly: false,
-  showNSFW: false,
   currentSort: SortType.LAST_UPDATED,
-  filterMode: "include",
   searchQuery: "",
 };
 
