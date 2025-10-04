@@ -7,6 +7,7 @@ import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Debug from "./pages/debug";
 import Downloads from "./pages/downloads";
+import GamePresets from "./pages/game-presets";
 import Mod from "./pages/mod";
 import GetMods from "./pages/mods";
 import MyMods from "./pages/my-mods";
@@ -30,6 +31,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Debug />} path='/debug' />
+              <Route element={<GamePresets />} path='/presets' />
             </Route>
           </Routes>
         </BrowserRouter>

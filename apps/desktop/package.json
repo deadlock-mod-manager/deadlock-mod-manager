@@ -59,6 +59,8 @@
     "react-query": "^3.39.3",
     "react-router": "^7.9.1",
     "recharts": "^2.15.4",
+    "shiki": "^3.13.0",
+    "sonner": "^1.7.4",
     "tailwindcss-animate": "^1.0.7",
     "tauri-controls": "^0.4.0",
     "tauri-plugin-sentry-api": "^0.3.1",

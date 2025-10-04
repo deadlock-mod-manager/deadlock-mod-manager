@@ -100,7 +100,7 @@ importers:
         version: 10.15.0
       better-auth:
         specifier: ^1.3.12
-        version: 1.3.12(next@15.5.4(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+        version: 1.3.12(next@15.5.4(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       croner:
         specifier: ^9.1.0
         version: 9.1.0
@@ -364,6 +364,12 @@ importers:
       recharts:
         specifier: ^2.15.4
         version: 2.15.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      shiki:
+        specifier: ^3.13.0
+        version: 3.13.0
+      sonner:
+        specifier: ^1.7.4
+        version: 1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.17)
@@ -606,7 +612,7 @@ importers:
         version: 1.131.48(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       better-auth:
         specifier: ^1.3.12
-        version: 1.3.12(next@15.5.4(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+        version: 1.3.12(next@15.5.4(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -14145,7 +14151,7 @@ snapshots:
 
   basic-ftp@5.0.5: {}
 
-  better-auth@1.3.12(next@15.5.4(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
+  better-auth@1.3.12(next@15.5.4(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.18
@@ -14158,7 +14164,7 @@ snapshots:
       jose: 6.1.0
       kysely: 0.28.5
       nanostores: 1.0.1
-      zod: 4.1.9
+      zod: 4.1.11
     optionalDependencies:
       next: 15.5.4(@babel/core@7.28.3)(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react: 19.1.1

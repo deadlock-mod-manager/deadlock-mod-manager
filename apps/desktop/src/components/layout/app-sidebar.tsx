@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
+  BlueprintIcon,
   BugBeetleIcon,
   DiscordLogo,
   Download,
@@ -94,6 +95,12 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
     ),
     url: "/downloads",
     icon: Download,
+  },
+  {
+    id: "presets",
+    title: () => <span>{t("navigation.presets")}</span>,
+    url: "/presets",
+    icon: BlueprintIcon,
   },
   {
     id: "settings",
@@ -240,7 +247,7 @@ export const AppSidebar = () => {
                   className='cursor-pointer'
                   onClick={() => open("https://docs.deadlockmods.app/")}>
                   <Question weight='duotone' />
-                  <span>{t("help.viewDocs")}</span>
+                  <span>{t("help.documentation")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
