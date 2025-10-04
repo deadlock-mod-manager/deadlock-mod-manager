@@ -92,10 +92,6 @@ impl ModManager {
 
     self.config_manager.toggle_mods(game_path, vanilla)?;
 
-    if vanilla {
-      self.clear_mods()?;
-    }
-
     Ok(())
   }
 
