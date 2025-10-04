@@ -1,11 +1,11 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+
 import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import { SortType } from "./constants";
 
-export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
+export { cn } from "@deadlock-mods/ui/lib/utils";
+
 export const formatSize = (size: number) => {
   const units = ["B", "KB", "MB", "GB"];
   let formattedSize = size;
@@ -62,8 +62,11 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
   });
 };
 
-export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
-  const cutoffDate = new Date("2025-08-19");
-  const modUpdatedDate = new Date(mod.remoteUpdatedAt);
-  return modUpdatedDate < cutoffDate;
+export const isModOutdated = (_mod: { remoteUpdatedAt: string | Date }) => {
+  // TODO: Implement this
+
+  // const cutoffDate = new Date("2025-08-19");
+  // const modUpdatedDate = new Date(mod.remoteUpdatedAt);
+  // return modUpdatedDate < cutoffDate;
+  return false;
 };

@@ -5,7 +5,6 @@ import type { State } from "..";
 export type FilterMode = "include" | "exclude";
 
 export type ModsFilters = {
-  hideOutdated: boolean;
   selectedCategories: string[];
   selectedHeroes: string[];
   showAudioOnly: boolean;
@@ -30,7 +29,6 @@ export type UIState = {
 };
 
 const DEFAULT_MODS_FILTERS: ModsFilters = {
-  hideOutdated: true,
   selectedCategories: [],
   selectedHeroes: [],
   showAudioOnly: false,

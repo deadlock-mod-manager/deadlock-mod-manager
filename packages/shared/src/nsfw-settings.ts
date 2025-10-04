@@ -9,7 +9,7 @@ export type NSFWSettings = {
 
 // Default NSFW settings
 export const DEFAULT_NSFW_SETTINGS: NSFWSettings = {
-  hideNSFW: true,
+  hideNSFW: false,
   blurStrength: 16,
   showLikelyNSFW: false,
   rememberPerItemOverrides: true,

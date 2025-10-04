@@ -13,18 +13,22 @@ export const MyModsEmptyState = () => {
   };
 
   return (
-    <div className='flex h-[calc(100vh-300px)] flex-col items-center justify-center text-muted-foreground'>
+    <div className='flex h-[calc(100vh-300px)] flex-col items-center justify-center'>
       <Package className='mb-4 h-16 w-16' />
-      <h3 className='mb-2 font-medium text-xl'>{t("myMods.noModsTitle")}</h3>
-      <p className='mb-6 text-center text-sm max-w-md'>
+      <h3 className='mb-2 font-medium text-xl text-muted-foreground'>
+        {t("myMods.noModsTitle")}
+      </h3>
+      <p className='mb-6 text-center text-sm max-w-md text-muted-foreground'>
         {t("myMods.noModsDescription")}
       </p>
       <div className='flex gap-3'>
-        <Button onClick={handleVisitModsPage} variant='default'>
-          <Search className='mr-2 h-4 w-4' />
+        <Button
+          onClick={handleVisitModsPage}
+          variant='default'
+          icon={<Search className='h-4 w-4' />}>
           {t("myMods.visitModsPage")}
         </Button>
-        <AnalyzeAddonsButton />
+        <AnalyzeAddonsButton size='default' className='text-white' />
       </div>
     </div>
   );

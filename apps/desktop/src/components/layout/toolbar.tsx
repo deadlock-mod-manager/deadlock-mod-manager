@@ -39,7 +39,7 @@ export const Toolbar = () => {
 
   return (
     <div className='flex w-full flex-row items-center justify-end gap-4 border-t border-b pl-6 pr-6 py-4'>
-      <div className='flex flex-grow flex-row items-center justify-start gap-2 px-4'>
+      <div className='flex flex-grow flex-row items-center justify-start gap-2 pr-4'>
         <div
           className={cn(
             "overflow-hidden transition-all duration-300 ease-in-out flex items-center gap-2",

@@ -14,7 +14,6 @@ import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
 import { ModCategory } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import { isModOutdated } from "@/lib/utils";
 
 const GetModsData = () => {
   const { t } = useTranslation();
@@ -25,7 +24,6 @@ const GetModsData = () => {
   });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
   const {
-    hideOutdated,
     selectedCategories,
     selectedHeroes,
     showAudioOnly,
@@ -40,13 +38,6 @@ const GetModsData = () => {
   const { setScrollElement, scrollY } = useScrollPosition("/mods");
 
   let filteredResults = results;
-
-  if (hideOutdated) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isOutdated = isModOutdated(mod);
-      return filterMode === "include" ? !isOutdated : isOutdated;
-    });
-  }
 
   // Filter by categories
   if (selectedCategories.length > 0) {
@@ -144,7 +135,6 @@ const GetModsData = () => {
     <div className='flex flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
-        hideOutdated={hideOutdated}
         mods={data ?? []}
         onCategoriesChange={(selectedCategories) =>
           updateModsFilters({ selectedCategories })
@@ -152,9 +142,6 @@ const GetModsData = () => {
         onFilterModeChange={(filterMode) => updateModsFilters({ filterMode })}
         onHeroesChange={(selectedHeroes) =>
           updateModsFilters({ selectedHeroes })
-        }
-        onHideOutdatedChange={(hideOutdated) =>
-          updateModsFilters({ hideOutdated })
         }
         onShowAudioOnlyChange={(showAudioOnly) =>
           updateModsFilters({ showAudioOnly })
@@ -191,7 +178,6 @@ const GetModsData = () => {
             selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
             !nsfwSettings.hideNSFW ||
-            hideOutdated ||
             showAudioOnly
               ? t("mods.noModsMatchFilters")
               : t("mods.noModsAvailable")}
@@ -199,7 +185,6 @@ const GetModsData = () => {
           {(selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
             !nsfwSettings.hideNSFW ||
-            hideOutdated ||
             showAudioOnly) && (
             <p className='mt-2 text-muted-foreground text-xs'>
               Try clearing some filters to see more results

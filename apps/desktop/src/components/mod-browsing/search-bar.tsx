@@ -27,8 +27,6 @@ type SearchBarProps = {
   onHeroesChange: (heroes: string[]) => void;
   showNSFW: boolean;
   onShowNSFWChange: (showNSFW: boolean) => void;
-  hideOutdated: boolean;
-  onHideOutdatedChange: (hideOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
   filterMode: FilterMode;
@@ -47,8 +45,6 @@ const SearchBar = ({
   onHeroesChange,
   showNSFW,
   onShowNSFWChange,
-  hideOutdated,
-  onHideOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
   filterMode,
@@ -90,15 +86,13 @@ const SearchBar = ({
     onHeroesChange([]);
     onShowNSFWChange(false);
     onShowAudioOnlyChange(false);
-    onHideOutdatedChange(false); // Clear all filters including hide outdated
   };
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     showNSFW ||
-    showAudioOnly ||
-    hideOutdated;
+    showAudioOnly;
 
   return (
     <div className='flex flex-col gap-3'>
@@ -113,12 +107,10 @@ const SearchBar = ({
           />
           <FiltersDropdown
             filterMode={filterMode}
-            hideOutdated={hideOutdated}
             mods={mods}
             onCategoriesChange={onCategoriesChange}
             onFilterModeChange={onFilterModeChange}
             onHeroesChange={onHeroesChange}
-            onHideOutdatedChange={onHideOutdatedChange}
             onShowAudioOnlyChange={onShowAudioOnlyChange}
             onShowNSFWChange={onShowNSFWChange}
             selectedCategories={selectedCategories}
@@ -186,21 +178,6 @@ const SearchBar = ({
               </button>
             </Badge>
           ))}
-
-          {/* Hide outdated filter badge */}
-          {hideOutdated && (
-            <Badge className='flex items-center gap-1' variant='secondary'>
-              {filterMode === "include"
-                ? t("filters.hideOutdatedBadge")
-                : t("filters.showOutdatedBadge")}
-              <button
-                className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onHideOutdatedChange(false)}
-                type='button'>
-                <X className='h-3 w-3' />
-              </button>
-            </Badge>
-          )}
 
           {/* NSFW filter badge */}
           {showNSFW && (

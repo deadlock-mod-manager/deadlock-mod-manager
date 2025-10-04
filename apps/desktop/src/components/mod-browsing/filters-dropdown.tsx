@@ -22,8 +22,6 @@ type FiltersDropdownProps = {
   onHeroesChange: (heroes: string[]) => void;
   showNSFW: boolean;
   onShowNSFWChange: (showNSFW: boolean) => void;
-  hideOutdated: boolean;
-  onHideOutdatedChange: (hideOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
   filterMode: FilterMode;
@@ -38,8 +36,6 @@ const FiltersDropdown = ({
   onHeroesChange,
   showNSFW,
   onShowNSFWChange,
-  hideOutdated,
-  onHideOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
   filterMode,
@@ -50,13 +46,11 @@ const FiltersDropdown = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     showNSFW ||
-    hideOutdated ||
     showAudioOnly;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
     (showNSFW ? 1 : 0) +
-    (hideOutdated ? 1 : 0) +
     (showAudioOnly ? 1 : 0);
 
   return (
@@ -64,8 +58,9 @@ const FiltersDropdown = ({
       <DropdownMenuTrigger asChild>
         <Button
           className='relative'
+          size='iconExpand'
+          icon={<Filter className='h-4 w-4' />}
           variant={hasActiveFilters ? "default" : "outline"}>
-          <Filter className='mr-2 h-4 w-4' />
           {t("filters.filters")}
           {hasActiveFilters && (
             <span className='ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs'>
@@ -105,19 +100,9 @@ const FiltersDropdown = ({
         />
         <DropdownMenuSeparator />
         <div className='space-y-2'>
-          <Label className='font-medium text-sm'>{t("filters.content")}</Label>
-          <div className='flex items-center justify-between'>
-            <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
-              {filterMode === "include"
-                ? t("filters.hideOutdated")
-                : t("filters.showOutdated")}
-            </Label>
-            <Switch
-              checked={hideOutdated}
-              id='hideOutdatedSwitch'
-              onCheckedChange={onHideOutdatedChange}
-            />
-          </div>
+          <Label className='font-medium text-sm'>
+            {t("filters.quickFilters")}
+          </Label>
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='showNsfwSwitch'>
               {filterMode === "include"
