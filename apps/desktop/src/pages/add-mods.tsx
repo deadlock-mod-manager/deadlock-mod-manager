@@ -70,7 +70,6 @@ const AddMods = () => {
   const { processMod } = useModProcessor();
 
   const form = useForm<AddModFormValues>({
-    // @ts-expect-error - Type compatibility issue with Zod resolver
     resolver: zodResolver(addModSchema),
     defaultValues: { category: ModCategory.SKINS, sourceType: "vpk" },
   });
