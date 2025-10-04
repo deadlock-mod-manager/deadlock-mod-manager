@@ -1,3 +1,14 @@
+import { Button, buttonVariants } from "@deadlock-mods/ui/components/button";
+import {
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@deadlock-mods/ui/components/dialog";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CloudArrowDown,
   DiscordLogo,
@@ -5,19 +16,8 @@ import {
   RedditLogo,
   XLogo,
 } from "@phosphor-icons/react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import useAbout from "@/hooks/use-about";
 import useUpdateManager from "@/hooks/use-update-manager";
 import {
@@ -123,11 +123,11 @@ export const AboutDialog = () => {
           variant='outline'>
           <CloudArrowDown /> {t("about.checkForUpdates")}
         </Button>
-        <DialogPrimitive.Close
+        <DialogClose
           className={buttonVariants({ variant: "ghost", className: "h-7" })}
           type='submit'>
           {t("about.close")}
-        </DialogPrimitive.Close>
+        </DialogClose>
       </DialogFooter>
     </DialogContent>
   );

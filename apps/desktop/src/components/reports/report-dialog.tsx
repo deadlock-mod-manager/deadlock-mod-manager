@@ -1,12 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Flag } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@deadlock-mods/ui/components/dialog";
 import {
   Form,
   FormControl,
@@ -23,15 +16,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "@deadlock-mods/ui/components/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@deadlock-mods/ui/components/select";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { Flag } from "@deadlock-mods/ui/icons";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import { useCreateReport } from "@/hooks/use-create-report";
 import { useHardwareId } from "@/hooks/use-hardware-id";
 

@@ -1,3 +1,6 @@
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { Tabs, TabsList, TabsTrigger } from "@deadlock-mods/ui/components/tabs";
 import { DownloadSimple, FolderOpen, Package } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
@@ -5,9 +8,6 @@ import { useTranslation } from "react-i18next";
 import DownloadCard from "@/components/downloads/download-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 

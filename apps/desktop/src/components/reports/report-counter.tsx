@@ -1,20 +1,20 @@
-import { Flag } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useReportCounts } from "@/hooks/use-report-counts";
-import { cn } from "@/lib/utils";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../ui/card";
+} from "@deadlock-mods/ui/components/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { Flag } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
+import { useReportCounts } from "@/hooks/use-report-counts";
+import { cn } from "@/lib/utils";
 import { ReportTypesList } from "./report-types-list";
 
 interface ReportCounterProps {

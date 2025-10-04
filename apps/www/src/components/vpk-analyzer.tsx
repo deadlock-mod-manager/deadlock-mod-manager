@@ -1,18 +1,18 @@
-import { useCallback, useRef, useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
+import { Progress } from "@deadlock-mods/ui/components/progress";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useCallback, useRef, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { client } from "@/utils/orpc";
-import { Progress } from "./ui/progress";
 
 type VpkAnalysisResult = Awaited<ReturnType<typeof client.analyseVPK>>;
 

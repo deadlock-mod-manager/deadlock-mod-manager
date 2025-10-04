@@ -1,5 +1,5 @@
-import { FileDown, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { FileDown, Users } from "@deadlock-mods/ui/icons";
 import {
   formatDownloadCount,
   formatFileSize,

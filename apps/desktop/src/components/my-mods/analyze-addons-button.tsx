@@ -1,12 +1,12 @@
-import { Search } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
+import { Search } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { AnalysisProgressToast } from "./analysis-progress-toast";
 import { AnalysisResultsDialog } from "./analysis-results-dialog";

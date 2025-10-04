@@ -1,6 +1,6 @@
+import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import React from "react";
 import { LuDownload, LuPlay, LuSearch } from "react-icons/lu";
-import { Card, CardContent } from "@/components/ui/card";
 
 const steps = [
   {

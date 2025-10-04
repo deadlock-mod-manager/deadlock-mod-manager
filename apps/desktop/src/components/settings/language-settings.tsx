@@ -1,13 +1,13 @@
-import { Globe } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Label } from "@/components/ui/label";
+import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@deadlock-mods/ui/components/select";
+import { Globe } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 
 const languages = [
   { code: "en", name: "English", flag: "🇺🇸" },

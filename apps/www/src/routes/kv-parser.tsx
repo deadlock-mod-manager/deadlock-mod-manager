@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { toast } from "sonner";
-import { KvViewer } from "@/components/kv-parser/kv-viewer";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { KvViewer } from "@/components/kv-parser/kv-viewer";
 
 export const Route = createFileRoute("/kv-parser")({
   component: KvParserComponent,

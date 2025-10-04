@@ -1,5 +1,10 @@
-import { Volume2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
+import { Volume2 } from "@deadlock-mods/ui/icons";
 
 interface ModAudioPreviewProps {
   audioUrl: string;

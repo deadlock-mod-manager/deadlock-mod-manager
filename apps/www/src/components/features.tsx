@@ -1,3 +1,9 @@
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
 import React from "react";
 import {
   LuDownload,
@@ -7,7 +13,6 @@ import {
   LuSettings,
 } from "react-icons/lu";
 import { RiOpenSourceFill } from "react-icons/ri";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type FeaturesProps = {
   icon: React.ElementType;

@@ -1,3 +1,16 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Dialog, DialogTrigger } from "@deadlock-mods/ui/components/dialog";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@deadlock-mods/ui/components/sidebar";
 import {
   BugBeetleIcon,
   DiscordLogo,
@@ -15,19 +28,6 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
 import { useWhatsNew } from "@/hooks/use-whats-new";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";

@@ -1,8 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { ArrowUpDown, Search, X } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Input } from "@deadlock-mods/ui/components/input";
 import {
   Select,
   SelectContent,
@@ -10,7 +8,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@deadlock-mods/ui/components/select";
+import { ArrowUpDown, Search, X } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import { ModCategory, SortType } from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";

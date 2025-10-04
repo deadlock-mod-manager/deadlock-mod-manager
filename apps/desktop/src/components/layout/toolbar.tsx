@@ -1,16 +1,17 @@
-import { StopIcon } from "@phosphor-icons/react";
-import { PlayCircleIcon } from "@phosphor-icons/react/dist/ssr";
-import { invoke } from "@tauri-apps/api/core";
-import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
+import { ArrowLeft } from "@deadlock-mods/ui/icons";
+import { StopIcon } from "@phosphor-icons/react";
+import { PlayCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useQuery } from "react-query";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useLaunch } from "@/hooks/use-launch";
@@ -18,7 +19,6 @@ import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ProfileShareDialog } from "../profiles/profile-share-dialog";
-import { Separator } from "../ui/separator";
 import Profile from "./profile";
 
 export const Toolbar = () => {

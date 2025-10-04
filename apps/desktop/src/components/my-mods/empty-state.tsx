@@ -1,7 +1,7 @@
-import { Package, Search } from "lucide-react";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Package, Search } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
 import { AnalyzeAddonsButton } from "./analyze-addons-button";
 
 export const MyModsEmptyState = () => {

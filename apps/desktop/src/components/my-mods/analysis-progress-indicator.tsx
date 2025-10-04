@@ -1,5 +1,5 @@
+import { Progress } from "@deadlock-mods/ui/components/progress";
 import { useTranslation } from "react-i18next";
-import { Progress } from "@/components/ui/progress";
 import type { AddonAnalysisProgress } from "@/types/mods";
 
 interface AnalysisProgressIndicatorProps {

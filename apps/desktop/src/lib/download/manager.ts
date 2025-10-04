@@ -1,7 +1,7 @@
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { BaseDirectory, exists, mkdir } from "@tauri-apps/plugin-fs";
 import { download } from "@tauri-apps/plugin-upload";
-import { toast } from "sonner";
 import type { DownloadableMod, ModDownloadItem } from "@/types/mods";
 import { getModDownload } from "../api";
 import { createLogger } from "../logger";

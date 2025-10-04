@@ -1,13 +1,20 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { format } from "date-fns";
-import { Calendar, Download, Hash, InfoIcon, Tag, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
+import {
+  Calendar,
+  Download,
+  Hash,
+  InfoIcon,
+  Tag,
+  User,
+} from "@deadlock-mods/ui/icons";
+import { format } from "date-fns";
 import { usePersistedStore } from "@/lib/store";
 
 interface ModInfoProps {

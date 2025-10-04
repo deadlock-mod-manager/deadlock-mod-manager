@@ -1,6 +1,6 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import { useState } from "react";
 import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
-import { Button } from "@/components/ui/button";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { usePersistedStore } from "@/lib/store";
 

@@ -1,12 +1,12 @@
-import { DownloadIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@deadlock-mods/ui/components/card";
+import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { DownloadIcon } from "@deadlock-mods/ui/icons";
 
 const ModCardSkeleton = () => {
   return (

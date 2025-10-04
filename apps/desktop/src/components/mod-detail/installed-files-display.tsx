@@ -1,13 +1,13 @@
-import { Archive } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+} from "@deadlock-mods/ui/components/card";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { Archive } from "@deadlock-mods/ui/icons";
 import { formatSize } from "@/lib/utils";
 import type { ModFileTree } from "@/types/mods";
 

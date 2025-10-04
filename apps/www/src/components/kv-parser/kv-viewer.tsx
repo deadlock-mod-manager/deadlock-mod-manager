@@ -1,13 +1,13 @@
 import { type KeyValuesValue, parseKv } from "@deadlock-mods/kv-parser/browser";
-import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
+import { useMemo, useState } from "react";
 import { JsonTreeView } from "./json-tree";
 import { SyntaxHighlighter } from "./syntax-highlighter";
 

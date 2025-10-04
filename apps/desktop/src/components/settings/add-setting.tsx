@@ -2,13 +2,7 @@ import {
   CustomSettingType,
   customSettingTypeHuman,
 } from "@deadlock-mods/shared";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle } from "@phosphor-icons/react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@deadlock-mods/ui/components/dialog";
 import {
   Form,
   FormControl,
@@ -26,8 +20,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@deadlock-mods/ui/components/form";
+import { Input } from "@deadlock-mods/ui/components/input";
 import {
   Select,
   SelectContent,
@@ -35,7 +29,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@deadlock-mods/ui/components/select";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PlusCircle } from "@phosphor-icons/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import {
   type CreateSettingSchema,

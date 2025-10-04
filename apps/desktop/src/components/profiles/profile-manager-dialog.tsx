@@ -1,3 +1,19 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@deadlock-mods/ui/components/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@deadlock-mods/ui/components/dialog";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   ChevronDown,
   ChevronUp,
@@ -5,22 +21,10 @@ import {
   Plus,
   Trash2,
   Users,
-} from "lucide-react";
+} from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";

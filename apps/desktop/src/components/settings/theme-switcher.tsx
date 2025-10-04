@@ -1,13 +1,13 @@
-import { Monitor, Moon, Sun } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { useTheme } from "@/components/providers/theme";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@deadlock-mods/ui/components/dropdown-menu";
+import { Monitor, Moon, Sun } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "@/components/providers/theme";
 
 export function ThemeSwitcher() {
   const { t } = useTranslation();

@@ -1,7 +1,7 @@
-import { Eye, EyeOff } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Eye, EyeOff } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 type NSFWBlurProps = {
   children: React.ReactNode;

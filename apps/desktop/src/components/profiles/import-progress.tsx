@@ -1,6 +1,6 @@
-import { CheckCircle, Download, Package } from "lucide-react";
+import { Progress } from "@deadlock-mods/ui/components/progress";
+import { CheckCircle, Download, Package } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { Progress } from "@/components/ui/progress";
 import type { ImportProgress } from "@/hooks/use-profile-import";
 
 interface ImportProgressProps {

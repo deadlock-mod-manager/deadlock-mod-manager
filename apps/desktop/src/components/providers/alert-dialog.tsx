@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -6,9 +5,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "@deadlock-mods/ui/components/alert-dialog";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Input } from "@deadlock-mods/ui/components/input";
+import * as React from "react";
 
 export const AlertDialogContext = React.createContext<
   (

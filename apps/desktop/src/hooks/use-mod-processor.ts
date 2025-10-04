@@ -1,10 +1,10 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import type { ModCategory } from "@/lib/constants";
 import {

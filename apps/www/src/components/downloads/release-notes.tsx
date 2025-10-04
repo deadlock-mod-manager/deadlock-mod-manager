@@ -1,4 +1,4 @@
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@deadlock-mods/ui/components/separator";
 
 interface ReleaseNotesProps {
   releaseNotes: string;

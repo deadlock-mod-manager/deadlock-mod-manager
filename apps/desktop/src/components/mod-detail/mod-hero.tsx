@@ -1,7 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { Music } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Music } from "@deadlock-mods/ui/icons";
 import { useRef } from "react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface ModHeroProps {

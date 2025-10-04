@@ -1,10 +1,10 @@
-import { ArrowLineLeft } from "@phosphor-icons/react";
-import { useTranslation } from "react-i18next";
 import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@deadlock-mods/ui/components/sidebar";
+import { ArrowLineLeft } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 export const SidebarCollapse = () => {

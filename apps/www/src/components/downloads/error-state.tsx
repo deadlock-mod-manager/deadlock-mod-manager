@@ -1,5 +1,5 @@
-import { AlertCircle, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { AlertCircle, Download } from "@deadlock-mods/ui/icons";
 import { DOWNLOAD_URL } from "@/lib/constants";
 
 export const ErrorState = () => (

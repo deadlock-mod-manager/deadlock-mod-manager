@@ -1,11 +1,11 @@
+import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { Warning } from "@phosphor-icons/react";
 import {
   type FallbackProps,
   ErrorBoundary as ReactErrorBoundary,
 } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 
 const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();

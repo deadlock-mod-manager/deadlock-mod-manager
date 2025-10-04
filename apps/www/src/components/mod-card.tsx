@@ -1,7 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { LuDownload, LuHeart, LuSettings } from "react-icons/lu";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatDownloads } from "@/lib/utils";
 
 interface ModCardProps {

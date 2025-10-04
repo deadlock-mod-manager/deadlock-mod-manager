@@ -1,8 +1,5 @@
-import { format } from "date-fns";
-import { Download, HardDrive } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +7,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@deadlock-mods/ui/components/dialog";
+import { Download, HardDrive } from "@deadlock-mods/ui/icons";
+import { format } from "date-fns";
+import { useState } from "react";
 import { formatSize } from "@/lib/utils";
 import type { ModDownloadItem } from "@/types/mods";
 

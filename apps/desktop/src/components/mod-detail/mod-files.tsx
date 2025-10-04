@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
 import { formatSize } from "@/lib/utils";
 import type { ModDownloadItem } from "@/types/mods";
 

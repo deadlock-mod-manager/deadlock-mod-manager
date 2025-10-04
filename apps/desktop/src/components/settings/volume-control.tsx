@@ -1,7 +1,7 @@
-import { Volume1, Volume2, VolumeX } from "lucide-react";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Slider } from "@deadlock-mods/ui/components/slider";
+import { Volume1, Volume2, VolumeX } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { usePersistedStore } from "@/lib/store";
 
 const VolumeControl = () => {

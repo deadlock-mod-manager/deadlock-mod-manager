@@ -1,6 +1,6 @@
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";

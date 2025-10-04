@@ -5,11 +5,10 @@ import {
   useContext,
   useEffect,
 } from "react";
-import { useAnalyticsEvents } from "../hooks/use-analytics-events";
+import { useAnalytics } from "../hooks/use-analytics";
 
 interface AnalyticsContextType {
-  // The analytics events hook is re-exported for convenience
-  analytics: ReturnType<typeof useAnalyticsEvents>;
+  analytics: ReturnType<typeof useAnalytics>;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | null>(null);
@@ -19,7 +18,7 @@ interface AnalyticsProviderProps {
 }
 
 export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
-  const analytics = useAnalyticsEvents();
+  const analytics = useAnalytics();
 
   // Track initial page view when analytics is ready
   useEffect(() => {

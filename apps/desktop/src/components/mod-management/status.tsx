@@ -1,6 +1,6 @@
-import { Check, Download, Loader2, X } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Check, Download, Loader2, X } from "@deadlock-mods/ui/icons";
 import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 

@@ -1,3 +1,4 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import {
@@ -6,7 +7,6 @@ import {
   createHighlighter,
   type HighlighterGeneric,
 } from "shiki";
-import { Button } from "@/components/ui/button";
 import { keyvaluesLanguage } from "@/lib/kv-grammar";
 
 interface SyntaxHighlighterProps {

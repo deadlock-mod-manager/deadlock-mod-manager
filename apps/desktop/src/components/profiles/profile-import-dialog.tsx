@@ -1,10 +1,5 @@
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
-import { ImportIcon } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useMutation, useQueries } from "react-query";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@deadlock-mods/ui/components/dialog";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ImportIcon } from "@deadlock-mods/ui/icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useMutation, useQueries } from "react-query";
 import { useProfileImport } from "@/hooks/use-profile-import";
 import { getMod, getProfile } from "@/lib/api";
 import {

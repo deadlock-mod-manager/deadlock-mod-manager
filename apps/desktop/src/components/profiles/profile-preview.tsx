@@ -1,10 +1,10 @@
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
-import { Save, UserPlus } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { DialogFooter } from "@deadlock-mods/ui/components/dialog";
+import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { Save, UserPlus } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { ImportProgress } from "@/hooks/use-profile-import";
 import { ImportProgressDisplay } from "./import-progress";
 

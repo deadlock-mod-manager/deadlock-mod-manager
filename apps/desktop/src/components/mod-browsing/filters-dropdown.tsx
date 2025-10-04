@@ -1,15 +1,15 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { Filter } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from "@deadlock-mods/ui/components/dropdown-menu";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
+import { Filter } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import CategoryFilter from "./category-filter";
 import HeroFilter from "./hero-filter";

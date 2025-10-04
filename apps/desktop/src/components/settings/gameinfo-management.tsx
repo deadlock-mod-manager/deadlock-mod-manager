@@ -1,4 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import {
   AlertTriangle,
   CheckCircle,
@@ -8,20 +16,12 @@ import {
   RefreshCcw,
   RotateCcw,
   Shield,
-} from "lucide-react";
+} from "@deadlock-mods/ui/icons";
+import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
-import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 // Type definitions for the gameinfo status from Rust
 type GameInfoStatus = {

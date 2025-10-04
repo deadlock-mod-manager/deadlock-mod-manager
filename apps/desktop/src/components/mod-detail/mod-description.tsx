@@ -1,5 +1,10 @@
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
 import { Markup } from "interweave";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ModDescriptionProps {
   description: string;

@@ -1,18 +1,18 @@
 import { profileSchema, type SharedProfile } from "@deadlock-mods/shared";
-import { CopyIcon, ShareNetworkIcon } from "@phosphor-icons/react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useMutation } from "react-query";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from "@deadlock-mods/ui/components/dialog";
+import { Input } from "@deadlock-mods/ui/components/input";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { CopyIcon, ShareNetworkIcon } from "@phosphor-icons/react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useMutation } from "react-query";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import useAbout from "@/hooks/use-about";
 import { useHardwareId } from "@/hooks/use-hardware-id";

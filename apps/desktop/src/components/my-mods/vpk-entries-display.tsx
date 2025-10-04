@@ -1,15 +1,20 @@
-import type { VpkEntry } from "@deadlock-mods/vpk-parser";
-import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@deadlock-mods/ui/components/collapsible";
+import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
+import {
+  ChevronDown,
+  ChevronRight,
+  File,
+  Folder,
+} from "@deadlock-mods/ui/icons";
+import type { VpkEntry } from "@deadlock-mods/vpk-parser";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface VpkEntriesDisplayProps {
   entries: VpkEntry[];

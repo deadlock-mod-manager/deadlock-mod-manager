@@ -1,13 +1,18 @@
 import type { NSFWSettings } from "@deadlock-mods/shared";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel";
+} from "@deadlock-mods/ui/components/carousel";
+import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 
 interface ModGalleryProps {
   images: string[];

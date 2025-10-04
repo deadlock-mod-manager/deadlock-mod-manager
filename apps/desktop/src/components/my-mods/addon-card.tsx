@@ -1,9 +1,14 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { identifyMod } from "@/lib/api";
 import type { LocalAddonInfo } from "@/types/mods";
 

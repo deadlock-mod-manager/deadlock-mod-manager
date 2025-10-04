@@ -1,15 +1,15 @@
-import { invoke } from "@tauri-apps/api/core";
-import { FolderOpen } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { FaShare } from "react-icons/fa";
-import { toast } from "sonner";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+} from "@deadlock-mods/ui/components/context-menu";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { FolderOpen } from "@deadlock-mods/ui/icons";
+import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
+import { FaShare } from "react-icons/fa";
 import type { LocalMod } from "@/types/mods";
 
 interface ModContextMenuProps {

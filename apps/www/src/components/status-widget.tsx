@@ -1,6 +1,6 @@
+import { RefreshCwIcon } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { RefreshCwIcon } from "lucide-react";
 import { orpc } from "@/utils/orpc";
 
 type StatusWidgetProps = {

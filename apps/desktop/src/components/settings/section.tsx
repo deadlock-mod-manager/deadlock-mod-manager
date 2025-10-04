@@ -1,5 +1,5 @@
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { cn } from "@/lib/utils";
 
 const Section = ({

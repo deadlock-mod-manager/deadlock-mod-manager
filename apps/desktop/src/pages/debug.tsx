@@ -1,8 +1,8 @@
-import { TrashIcon } from "lucide-react";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { TrashIcon } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { usePersistedStore } from "@/lib/store";
 
 const State = () => {

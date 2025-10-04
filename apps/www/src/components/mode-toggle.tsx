@@ -1,12 +1,12 @@
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@deadlock-mods/ui/components/dropdown-menu";
+import { Moon, Sun } from "@deadlock-mods/ui/icons";
+import { useTheme } from "@/components/theme-provider";
 
 export function ModeToggle() {
   const { setTheme } = useTheme();

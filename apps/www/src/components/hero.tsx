@@ -1,6 +1,6 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { PlatformDownloadButton } from "@/components/downloads/platform-download-button";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { GITHUB_REPO } from "@/lib/constants";
 
 export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
@@ -37,16 +37,14 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
           </p>
 
           <div className='flex flex-col gap-3 sm:flex-row sm:justify-center'>
-            {/* OS-detected Download Button */}
             <PlatformDownloadButton className='min-w-48' />
 
-            {/* All Downloads Button */}
             <Button
-              asChild
               className='min-w-32 border-foreground/20 bg-background/50 font-semibold text-foreground backdrop-blur-sm'
               size='lg'
-              variant='outline'>
-              <a href='/download'>All Downloads</a>
+              variant='outline'
+              href='/download'>
+              All Downloads
             </Button>
           </div>
         </div>

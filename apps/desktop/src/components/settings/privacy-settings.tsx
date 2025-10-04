@@ -1,7 +1,7 @@
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Slider } from "@deadlock-mods/ui/components/slider";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useTranslation } from "react-i18next";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 

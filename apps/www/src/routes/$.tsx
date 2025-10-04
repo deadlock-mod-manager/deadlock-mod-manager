@@ -1,7 +1,7 @@
+import { Button } from "@deadlock-mods/ui/components/button";
+import { ArrowLeft, Home, Search } from "@deadlock-mods/ui/icons";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Home, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$")({
   component: NotFoundComponent,

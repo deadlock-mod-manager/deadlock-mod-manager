@@ -1,20 +1,27 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { useHover } from "@uidotdev/usehooks";
-import { Check, DownloadIcon, Loader2, PlusIcon, X, XIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { GrInstallOption } from "react-icons/gr";
-import { RiErrorWarningLine } from "react-icons/ri";
-import { toast } from "sonner";
-import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
-import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
-import ErrorBoundary from "@/components/shared/error-boundary";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
+import {
+  Check,
+  DownloadIcon,
+  Loader2,
+  PlusIcon,
+  X,
+  XIcon,
+} from "@deadlock-mods/ui/icons";
+import { useHover } from "@uidotdev/usehooks";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { GrInstallOption } from "react-icons/gr";
+import { RiErrorWarningLine } from "react-icons/ri";
+import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
+import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";

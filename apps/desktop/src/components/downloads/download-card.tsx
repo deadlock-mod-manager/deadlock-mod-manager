@@ -1,14 +1,14 @@
-import { FolderOpen } from "@phosphor-icons/react";
-import { invoke } from "@tauri-apps/api/core";
-import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Card } from "@deadlock-mods/ui/components/card";
+import { Progress } from "@deadlock-mods/ui/components/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
+import { FolderOpen } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
+import { useMemo } from "react";
 import { usePersistedStore } from "@/lib/store";
 import { formatSize, formatSpeed } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";

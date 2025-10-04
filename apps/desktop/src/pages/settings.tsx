@@ -3,8 +3,23 @@ import {
   CustomSettingType,
   customSettingTypeHuman,
 } from "@deadlock-mods/shared";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-shell";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Label } from "@deadlock-mods/ui/components/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deadlock-mods/ui/components/select";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@deadlock-mods/ui/components/tabs";
 import {
   FolderOpen,
   GamepadIcon,
@@ -15,11 +30,12 @@ import {
   ShieldIcon,
   TrashIcon,
   WrenchIcon,
-} from "lucide-react";
+} from "@deadlock-mods/ui/icons";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
-import { toast } from "sonner";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
@@ -36,17 +52,6 @@ import ThemeSwitcher from "@/components/settings/theme-switcher";
 import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";

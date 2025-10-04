@@ -1,3 +1,7 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CheckCircle,
   CloudArrowDown,
@@ -10,10 +14,6 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useApiStatus } from "@/hooks/use-api-status";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { isGameRunning } from "@/lib/api";

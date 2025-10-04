@@ -1,10 +1,13 @@
+import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ArrowLeft, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { open } from "@tauri-apps/plugin-shell";
-import { ArrowLeft, Trash } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
-import { toast } from "sonner";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
@@ -17,9 +20,6 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
 import ErrorBoundary from "@/components/shared/error-boundary";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardFooter } from "@/components/ui/card";
 import { useMod } from "@/hooks/use-mod";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";

@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@deadlock-mods/ui/icons";
 
 export const LoadingState = () => (
   <div className='container mx-auto max-w-4xl py-12'>

@@ -1,12 +1,12 @@
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Input } from "@deadlock-mods/ui/components/input";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { FolderOpen, RefreshCw } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 

@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@deadlock-mods/ui/components/accordion";
 
 type FAQProps = {
   question: string;

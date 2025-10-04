@@ -1,18 +1,18 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { format } from "date-fns";
-import { CalendarIcon, DownloadIcon, HeartIcon } from "lucide-react";
-import { useNavigate } from "react-router";
-import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
-import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
-import { ReportCounter } from "@/components/reports/report-counter";
-import ModCardSkeleton from "@/components/skeletons/mod-card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@deadlock-mods/ui/components/card";
+import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
+import { format } from "date-fns";
+import { useNavigate } from "react-router";
+import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
+import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { ReportCounter } from "@/components/reports/report-counter";
+import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";

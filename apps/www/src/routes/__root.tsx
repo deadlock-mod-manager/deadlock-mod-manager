@@ -1,3 +1,4 @@
+import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { createORPCClient } from "@orpc/client";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { QueryClient } from "@tanstack/react-query";
@@ -14,7 +15,6 @@ import { Footer } from "@/components/footer";
 import Loader from "@/components/loader";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { link, type orpc } from "@/utils/orpc";
 import type { AppRouterClient } from "../../../api/src/routers";

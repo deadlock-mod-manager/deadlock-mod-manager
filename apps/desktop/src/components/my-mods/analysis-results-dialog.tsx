@@ -1,4 +1,29 @@
-import { open } from "@tauri-apps/plugin-shell";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@deadlock-mods/ui/components/dialog";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deadlock-mods/ui/components/select";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@deadlock-mods/ui/components/tabs";
 import {
   AlertTriangle,
   CheckCircle,
@@ -6,34 +31,14 @@ import {
   Plus,
   Search,
   XCircle,
-} from "lucide-react";
+} from "@deadlock-mods/ui/icons";
+import { open } from "@tauri-apps/plugin-shell";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import ModMetadataForm, {
   type ModMetadata,
   type ModMetadataFormHandle,
 } from "@/components/mod-creation/mod-metadata-form";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useModProcessor } from "@/hooks/use-mod-processor";
 import { ModCategory } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";

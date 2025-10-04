@@ -1,6 +1,12 @@
-import { AlertTriangle, Bug, Clock, HelpCircle, Shield } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import {
+  AlertTriangle,
+  Bug,
+  Clock,
+  HelpCircle,
+  Shield,
+} from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
 
 interface ReportTypeCounts {
   total: number;

@@ -1,8 +1,8 @@
-import { Sun } from "lucide-react";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
+import { Sun } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/providers/theme";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 
 export const FlashbangToggle = () => {
   const { t } = useTranslation();

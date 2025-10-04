@@ -1,8 +1,8 @@
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Download } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
-import { Button } from "@/components/ui/button";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { DOWNLOAD_URL } from "@/lib/constants";
 import { detectOS } from "@/lib/os-detection";
@@ -21,6 +21,48 @@ interface PlatformDownloadButtonProps {
     | "link";
   showVersionInfo?: boolean;
 }
+
+interface PlatformIconProps {
+  os: OSInfo["os"];
+}
+
+const PlatformIcon = ({ os }: PlatformIconProps) => {
+  if (os === "unknown") {
+    return <Download className='h-4 w-4' />;
+  }
+
+  switch (os) {
+    case "windows":
+      return <FaWindows className='h-4 w-4' />;
+    case "macos":
+      return <FaApple className='h-4 w-4' />;
+    case "linux":
+      return <FaLinux className='h-4 w-4' />;
+    default:
+      return <Download className='h-4 w-4' />;
+  }
+};
+
+interface PlatformButtonTextProps {
+  os: OSInfo["os"];
+}
+
+const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
+  if (os === "unknown") {
+    return "Download";
+  }
+
+  switch (os) {
+    case "windows":
+      return "Download for Windows";
+    case "macos":
+      return "Download for macOS";
+    case "linux":
+      return "Download for Linux";
+    default:
+      return "Download";
+  }
+};
 
 export const PlatformDownloadButton = ({
   size = "lg",
@@ -78,40 +120,6 @@ export const PlatformDownloadButton = ({
 
   const recommendedDownload = getRecommendedDownload();
 
-  const getPlatformButtonText = (): string => {
-    if (!userOS || userOS.os === "unknown") {
-      return "Download";
-    }
-
-    switch (userOS.os) {
-      case "windows":
-        return "Download for Windows";
-      case "macos":
-        return "Download for macOS";
-      case "linux":
-        return "Download for Linux";
-      default:
-        return "Download";
-    }
-  };
-
-  const getPlatformButtonIcon = () => {
-    if (!userOS || userOS.os === "unknown") {
-      return <Download className='h-4 w-4' />;
-    }
-
-    switch (userOS.os) {
-      case "windows":
-        return <FaWindows className='h-4 w-4' />;
-      case "macos":
-        return <FaApple className='h-4 w-4' />;
-      case "linux":
-        return <FaLinux className='h-4 w-4' />;
-      default:
-        return <Download className='h-4 w-4' />;
-    }
-  };
-
   const getVersionInfo = (): string => {
     if (!userOS) {
       return "";
@@ -160,8 +168,8 @@ export const PlatformDownloadButton = ({
           rel='noopener noreferrer'
           target={recommendedDownload ? undefined : "_blank"}
           onClick={handleDownloadClick}>
-          {getPlatformButtonIcon()}
-          {getPlatformButtonText()}
+          <PlatformIcon os={userOS?.os || "unknown"} />
+          <PlatformButtonText os={userOS?.os || "unknown"} />
         </a>
       </Button>
 

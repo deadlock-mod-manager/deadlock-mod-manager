@@ -1,13 +1,13 @@
-import { Download } from "lucide-react";
-import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@deadlock-mods/ui/components/accordion";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Download } from "@deadlock-mods/ui/icons";
+import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
 import { formatFileSize } from "@/lib/os-detection";
 import type { PlatformDownload, Release } from "@/types/releases";
 

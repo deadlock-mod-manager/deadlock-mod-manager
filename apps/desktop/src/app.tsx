@@ -1,3 +1,4 @@
+import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
 import { load } from "@tauri-apps/plugin-store";
 import usePromise from "react-promise-suspense";
 import { QueryClientProvider } from "react-query";
@@ -7,7 +8,6 @@ import { UpdateDialog } from "./components/layout/update-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
-import { TooltipProvider } from "./components/ui/tooltip";
 import { AnalyticsProvider } from "./contexts/analytics-context";
 import { useAutoUpdate } from "./hooks/use-auto-update";
 import { useDeepLink } from "./hooks/use-deep-link";

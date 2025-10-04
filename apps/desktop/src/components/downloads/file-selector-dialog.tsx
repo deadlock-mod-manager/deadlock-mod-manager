@@ -1,8 +1,6 @@
-import { Archive, File, FolderOpen } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +8,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@deadlock-mods/ui/components/dialog";
+import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
+import { Archive, File, FolderOpen } from "@deadlock-mods/ui/icons";
+import { useEffect, useState } from "react";
 import { formatSize } from "@/lib/utils";
 import type { ModFileTree } from "@/types/mods";
 

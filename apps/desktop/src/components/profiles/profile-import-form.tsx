@@ -1,9 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { DialogFooter } from "@deadlock-mods/ui/components/dialog";
 import {
   Form,
   FormControl,
@@ -12,8 +8,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@deadlock-mods/ui/components/form";
+import { Input } from "@deadlock-mods/ui/components/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 
 const formSchema = z.object({
   profileId: z.string().min(1),

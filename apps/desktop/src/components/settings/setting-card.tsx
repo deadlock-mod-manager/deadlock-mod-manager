@@ -1,31 +1,31 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
-import { PencilIcon, TrashIcon } from "lucide-react";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { PencilIcon, TrashIcon } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
 const WHITESPACE_REGEX = /\s+/;
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+} from "@deadlock-mods/ui/components/dialog";
+import { Input } from "@deadlock-mods/ui/components/input";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
 
 type SettingsCardProps = {
   setting: LocalSetting | undefined;

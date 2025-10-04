@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@deadlock-mods/ui/components",
+    "utils": "@deadlock-mods/ui/lib/utils",
+    "hooks": "@deadlock-mods/ui/hooks",
+    "lib": "@deadlock-mods/ui/lib",
+    "ui": "@deadlock-mods/ui/components",
+    "icons": "@deadlock-mods/ui/icons"
+  },
+  "iconLibrary": "lucide"
+}

@@ -1,5 +1,5 @@
+import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Link } from "@tanstack/react-router";
-import { Separator } from "@/components/ui/separator";
 import { APP_NAME, COPYRIGHT } from "@/lib/constants";
 import Logo from "./logo";
 import { StatusWidget } from "./status-widget";

@@ -1,10 +1,15 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
 import { Link } from "@tanstack/react-router";
 import { Interweave } from "interweave";
 import { LuDownload, LuEye, LuHeart } from "react-icons/lu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDownloads } from "@/lib/utils";
 
 interface ModPreviewProps {

@@ -1,7 +1,7 @@
-import { Loader2, X } from "lucide-react";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Progress } from "@deadlock-mods/ui/components/progress";
+import { Loader2, X } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import type { AddonAnalysisProgress } from "@/types/mods";
 
 interface AnalysisProgressToastProps {

@@ -1,5 +1,5 @@
-import { Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Download } from "@deadlock-mods/ui/icons";
 import { formatFileSize, getPlatformIcon } from "@/lib/os-detection";
 import type { OSInfo, PlatformDownload } from "@/types/releases";
 

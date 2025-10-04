@@ -1,6 +1,6 @@
 import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
-import { toast } from "sonner";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";

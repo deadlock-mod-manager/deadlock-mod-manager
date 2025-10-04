@@ -1,11 +1,11 @@
-import { AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@deadlock-mods/ui/components/tooltip";
+import { AlertTriangle } from "@deadlock-mods/ui/icons";
 
 type OutdatedModWarningProps = {
   variant?: "indicator" | "alert";

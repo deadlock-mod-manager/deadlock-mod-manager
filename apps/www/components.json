@@ -12,10 +12,11 @@
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
+    "utils": "@deadlock-mods/ui/lib/utils",
+    "ui": "@deadlock-mods/ui/components",
     "lib": "@/lib",
-    "hooks": "@/hooks"
+    "hooks": "@/hooks",
+    "icons": "@deadlock-mods/ui/icons"
   },
   "iconLibrary": "lucide"
 }

@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@deadlock-mods/ui/icons";
 import Logo from "@/components/layout/logo";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";

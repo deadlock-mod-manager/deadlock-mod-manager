@@ -1,8 +1,8 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { Flag } from "lucide-react";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Flag } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { ReportDialog } from "./report-dialog";
 
 interface ReportButtonProps {

@@ -1,14 +1,11 @@
-import { Link } from "@tanstack/react-router";
-import { MenuIcon } from "lucide-react";
-import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-import { Separator } from "@/components/ui/separator";
+} from "@deadlock-mods/ui/components/navigation-menu";
+import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
   Sheet,
   SheetContent,
@@ -16,7 +13,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "@deadlock-mods/ui/components/sheet";
+import { MenuIcon } from "@deadlock-mods/ui/icons";
+import { Link } from "@tanstack/react-router";
+import React from "react";
 import { APP_NAME, DISCORD_URL, REDDIT_URL, X_URL } from "@/lib/constants";
 import DiscordIcon from "./icons/discord-icon";
 import RedditIcon from "./icons/reddit-icon";
@@ -141,41 +141,25 @@ export const Navbar = () => {
 
         <Button
           aria-label='Join Discord Server'
-          asChild
           size='icon'
-          variant='ghost'>
-          <a
-            aria-label='Join Discord Server'
-            href={DISCORD_URL}
-            rel='noopener noreferrer'
-            target='_blank'>
-            <DiscordIcon className='h-5 w-5' />
-          </a>
-        </Button>
-
+          variant='ghost'
+          href={DISCORD_URL}
+          icon={<DiscordIcon className='h-5 w-5' />}
+        />
         <Button
           aria-label='Follow on Reddit'
-          asChild
+          icon={<RedditIcon className='h-5 w-5' />}
           size='icon'
-          variant='ghost'>
-          <a
-            aria-label='Follow on Reddit'
-            href={REDDIT_URL}
-            rel='noopener noreferrer'
-            target='_blank'>
-            <RedditIcon className='h-5 w-5' />
-          </a>
-        </Button>
-
-        <Button aria-label='Follow on X' asChild size='icon' variant='ghost'>
-          <a
-            aria-label='Follow on X'
-            href={X_URL}
-            rel='noopener noreferrer'
-            target='_blank'>
-            <XIcon className='h-5 w-5' />
-          </a>
-        </Button>
+          href={REDDIT_URL}
+          variant='ghost'
+        />
+        <Button
+          aria-label='Follow on X'
+          size='icon'
+          variant='ghost'
+          href={X_URL}
+          icon={<XIcon className='h-5 w-5' />}
+        />
       </div>
     </header>
   );

@@ -1,12 +1,12 @@
-import { Laptop, Moon, Sun } from "@phosphor-icons/react";
-import { useTheme } from "@/components/providers/theme";
 import {
   MenubarContent,
   MenubarMenu,
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarTrigger,
-} from "@/components/ui/menubar";
+} from "@deadlock-mods/ui/components/menubar";
+import { Laptop, Moon, Sun } from "@phosphor-icons/react";
+import { useTheme } from "@/components/providers/theme";
 
 export function MenuModeToggle() {
   const { setTheme, theme } = useTheme();

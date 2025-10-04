@@ -1,11 +1,11 @@
+import { Dialog } from "@deadlock-mods/ui/components/dialog";
+import { SidebarProvider } from "@deadlock-mods/ui/components/sidebar";
+import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
 import { Menu } from "./components/layout/menu";
 import { Toolbar } from "./components/layout/toolbar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
-import { Dialog } from "./components/ui/dialog";
-import { SidebarProvider } from "./components/ui/sidebar";
-import { Toaster } from "./components/ui/sonner";
 import { ScrollBackButtonProvider } from "./contexts/scroll-back-button-context";
 import { usePageTracking } from "./hooks/use-page-tracking";
 import { useWhatsNew } from "./hooks/use-whats-new";

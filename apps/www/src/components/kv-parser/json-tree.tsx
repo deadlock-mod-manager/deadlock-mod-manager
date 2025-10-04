@@ -1,9 +1,9 @@
 import type { KeyValuesValue } from "@deadlock-mods/kv-parser";
-import { ChevronDown, ChevronRight, Copy } from "lucide-react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ChevronDown, ChevronRight, Copy } from "@deadlock-mods/ui/icons";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 interface JsonTreeProps {
   data: KeyValuesValue;

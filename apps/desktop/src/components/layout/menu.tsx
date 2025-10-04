@@ -1,5 +1,5 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { WindowTitlebar } from "tauri-controls";
-import { Badge } from "@/components/ui/badge";
 import useAbout from "@/hooks/use-about";
 import Logo from "./logo";
 

@@ -1,17 +1,17 @@
-import { CloudArrowDown } from "@phosphor-icons/react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import type { Update } from "@tauri-apps/plugin-updater";
-import { useTranslation } from "react-i18next";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+} from "@deadlock-mods/ui/components/dialog";
+import { Progress } from "@deadlock-mods/ui/components/progress";
+import { CloudArrowDown } from "@phosphor-icons/react";
+import type { Update } from "@tauri-apps/plugin-updater";
+import { useTranslation } from "react-i18next";
 
 type UpdateDialogProps = {
   open: boolean;
@@ -76,11 +76,11 @@ export const UpdateDialog = ({
         <DialogFooter>
           {!isDownloading && (
             <>
-              <DialogPrimitive.Close
+              <DialogClose
                 className={buttonVariants({ variant: "outline" })}
                 type='button'>
                 {t("update.later")}
-              </DialogPrimitive.Close>
+              </DialogClose>
               <Button onClick={onUpdate} type='button'>
                 <CloudArrowDown className='mr-2 h-4 w-4' />
                 {t("update.downloadAndInstall")}

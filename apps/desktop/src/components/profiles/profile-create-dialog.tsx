@@ -1,7 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -9,10 +6,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@deadlock-mods/ui/components/dialog";
+import { Input } from "@deadlock-mods/ui/components/input";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 

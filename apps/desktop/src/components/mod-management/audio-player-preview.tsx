@@ -1,5 +1,5 @@
-import { Music, Pause, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Music, Pause, Play } from "@deadlock-mods/ui/icons";
 import { useAudio } from "@/hooks/use-audio";
 import { cn } from "@/lib/utils";
 

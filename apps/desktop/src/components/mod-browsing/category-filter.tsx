@@ -1,7 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { Check } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Command,
   CommandEmpty,
@@ -9,13 +7,15 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { Label } from "@/components/ui/label";
+} from "@deadlock-mods/ui/components/command";
+import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@deadlock-mods/ui/components/popover";
+import { Check } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
