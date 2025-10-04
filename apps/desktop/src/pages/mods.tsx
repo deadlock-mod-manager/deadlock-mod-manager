@@ -25,12 +25,12 @@ const GetModsData = () => {
   });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
   const {
-    hideOutdated,
+    showSafe,
+    showNSFW,
+    showOutdated,
+    showAudioOnly,
     selectedCategories,
     selectedHeroes,
-    showAudioOnly,
-    showNSFW,
-    filterMode,
   } = modsFilters;
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: data ?? [],
@@ -41,72 +41,61 @@ const GetModsData = () => {
 
   let filteredResults = results;
 
-  if (hideOutdated) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isOutdated = isModOutdated(mod);
-      return filterMode === "include" ? !isOutdated : isOutdated;
-    });
-  }
+  // Filter by content type (safe/NSFW/outdated)
+  filteredResults = filteredResults.filter((mod) => {
+    const isOutdated = isModOutdated(mod);
+    const isNSFW = mod.isNSFW;
 
-  // Filter by categories
+    // If outdated, only include if showOutdated is true
+    if (isOutdated && !showOutdated) return false;
+
+    // If NSFW, only include if showNSFW is true
+    if (isNSFW && !showNSFW) return false;
+
+    // If safe (not NSFW), only include if showSafe is true
+    if (!isNSFW && !showSafe) return false;
+
+    return true;
+  });
+
+  // Filter by categories (only show selected categories)
   if (selectedCategories.length > 0) {
     filteredResults = filteredResults.filter((mod) => {
-      let matchesCategory = false;
-
       // Check if mod category is in selected categories
       if (selectedCategories.includes(mod.category)) {
-        matchesCategory = true;
+        return true;
       }
 
       // If OTHER_MISC is selected, include mods with non-predefined categories
-      if (
-        !matchesCategory &&
-        selectedCategories.includes(ModCategory.OTHER_MISC)
-      ) {
+      if (selectedCategories.includes(ModCategory.OTHER_MISC)) {
         const predefinedCategories = Object.values(ModCategory);
-        matchesCategory = !predefinedCategories.includes(
-          mod.category as ModCategory,
-        );
+        return !predefinedCategories.includes(mod.category as ModCategory);
       }
 
-      // Return based on filter mode
-      return filterMode === "include" ? matchesCategory : !matchesCategory;
+      return false;
     });
   }
 
+  // Filter by heroes (only show selected heroes)
   if (selectedHeroes.length > 0) {
     filteredResults = filteredResults.filter((mod) => {
-      let matchesHero = false;
-
       if (selectedHeroes.includes("None")) {
-        matchesHero =
-          !mod.hero || (mod.hero !== null && selectedHeroes.includes(mod.hero));
-      } else {
-        matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
+        return (
+          !mod.hero || (mod.hero !== null && selectedHeroes.includes(mod.hero))
+        );
       }
-
-      // Return based on filter mode
-      return filterMode === "include" ? matchesHero : !matchesHero;
+      return mod.hero !== null && selectedHeroes.includes(mod.hero);
     });
   }
 
+  // Apply global NSFW setting (this overrides the toggle)
   if (nsfwSettings.hideNSFW) {
     filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
   }
 
-  if (showNSFW) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isNSFW = mod.isNSFW;
-      return filterMode === "include" ? isNSFW : !isNSFW;
-    });
-  }
-
-  if (showAudioOnly) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isAudio = mod.isAudio;
-      // Return based on filter mode
-      return filterMode === "include" ? isAudio : !isAudio;
-    });
+  // Filter by audio mods only (if enabled)
+  if (!showAudioOnly) {
+    filteredResults = filteredResults.filter((mod) => !mod.isAudio);
   }
 
   // Group mods into rows of 4 for virtualization
@@ -143,30 +132,30 @@ const GetModsData = () => {
   return (
     <div className='flex flex-col gap-4'>
       <SearchBar
-        filterMode={filterMode}
-        hideOutdated={hideOutdated}
         mods={data ?? []}
         onCategoriesChange={(selectedCategories) =>
           updateModsFilters({ selectedCategories })
         }
-        onFilterModeChange={(filterMode) => updateModsFilters({ filterMode })}
         onHeroesChange={(selectedHeroes) =>
           updateModsFilters({ selectedHeroes })
         }
-        onHideOutdatedChange={(hideOutdated) =>
-          updateModsFilters({ hideOutdated })
+        onShowSafeChange={(showSafe) => updateModsFilters({ showSafe })}
+        onShowNSFWChange={(showNSFW) => updateModsFilters({ showNSFW })}
+        onShowOutdatedChange={(showOutdated) =>
+          updateModsFilters({ showOutdated })
         }
         onShowAudioOnlyChange={(showAudioOnly) =>
           updateModsFilters({ showAudioOnly })
         }
-        onShowNSFWChange={(showNSFW) => updateModsFilters({ showNSFW })}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
         setQuery={setQuery}
         setSortType={setSortType}
-        showAudioOnly={showAudioOnly}
+        showSafe={showSafe}
         showNSFW={showNSFW}
+        showOutdated={showOutdated}
+        showAudioOnly={showAudioOnly}
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (
@@ -190,17 +179,19 @@ const GetModsData = () => {
             {query.trim() ||
             selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
-            !nsfwSettings.hideNSFW ||
-            hideOutdated ||
-            showAudioOnly
+            !showSafe ||
+            showNSFW ||
+            showOutdated ||
+            !showAudioOnly
               ? t("mods.noModsMatchFilters")
               : t("mods.noModsAvailable")}
           </p>
           {(selectedCategories.length > 0 ||
             selectedHeroes.length > 0 ||
-            !nsfwSettings.hideNSFW ||
-            hideOutdated ||
-            showAudioOnly) && (
+            !showSafe ||
+            showNSFW ||
+            showOutdated ||
+            !showAudioOnly) && (
             <p className='mt-2 text-muted-foreground text-xs'>
               Try clearing some filters to see more results
             </p>

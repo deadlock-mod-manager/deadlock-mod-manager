@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModCategory, SortType } from "@/lib/constants";
-import type { FilterMode } from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";
 
 type SearchBarProps = {
@@ -25,14 +24,14 @@ type SearchBarProps = {
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
+  showSafe: boolean;
+  onShowSafeChange: (showSafe: boolean) => void;
   showNSFW: boolean;
   onShowNSFWChange: (showNSFW: boolean) => void;
-  hideOutdated: boolean;
-  onHideOutdatedChange: (hideOutdated: boolean) => void;
+  showOutdated: boolean;
+  onShowOutdatedChange: (showOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
-  filterMode: FilterMode;
-  onFilterModeChange: (filterMode: FilterMode) => void;
 };
 
 const SearchBar = ({
@@ -45,14 +44,14 @@ const SearchBar = ({
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
+  showSafe,
+  onShowSafeChange,
   showNSFW,
   onShowNSFWChange,
-  hideOutdated,
-  onHideOutdatedChange,
+  showOutdated,
+  onShowOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
-  filterMode,
-  onFilterModeChange,
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const getHeroDisplayName = (hero: string) => {
@@ -88,17 +87,19 @@ const SearchBar = ({
   const clearAllFilters = () => {
     onCategoriesChange([]);
     onHeroesChange([]);
-    onShowNSFWChange(false);
-    onShowAudioOnlyChange(false);
-    onHideOutdatedChange(false); // Clear all filters including hide outdated
+    onShowSafeChange(true); // Reset to default (show safe content)
+    onShowNSFWChange(false); // Reset to default (hide NSFW)
+    onShowOutdatedChange(false); // Reset to default (hide outdated)
+    onShowAudioOnlyChange(true); // Reset to default (show audio mods)
   };
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
+    !showSafe ||
     showNSFW ||
-    showAudioOnly ||
-    hideOutdated;
+    showOutdated ||
+    !showAudioOnly;
 
   return (
     <div className='flex flex-col gap-3'>
@@ -124,19 +125,19 @@ const SearchBar = ({
             )}
           </div>
           <FiltersDropdown
-            filterMode={filterMode}
-            hideOutdated={hideOutdated}
             mods={mods}
             onCategoriesChange={onCategoriesChange}
-            onFilterModeChange={onFilterModeChange}
             onHeroesChange={onHeroesChange}
-            onHideOutdatedChange={onHideOutdatedChange}
-            onShowAudioOnlyChange={onShowAudioOnlyChange}
+            onShowSafeChange={onShowSafeChange}
             onShowNSFWChange={onShowNSFWChange}
+            onShowOutdatedChange={onShowOutdatedChange}
+            onShowAudioOnlyChange={onShowAudioOnlyChange}
             selectedCategories={selectedCategories}
             selectedHeroes={selectedHeroes}
-            showAudioOnly={showAudioOnly}
+            showSafe={showSafe}
             showNSFW={showNSFW}
+            showOutdated={showOutdated}
+            showAudioOnly={showAudioOnly}
           />
         </div>
         <div className='flex items-center gap-4'>
@@ -162,9 +163,7 @@ const SearchBar = ({
       {hasActiveFilters && (
         <div className='flex flex-wrap items-center gap-2'>
           <span className='text-muted-foreground text-sm'>
-            {filterMode === "include"
-              ? t("filters.includingFilters")
-              : t("filters.excludingFilters")}
+            {t("filters.activeFilters")}
           </span>
 
           {/* Category badges */}
@@ -199,15 +198,13 @@ const SearchBar = ({
             </Badge>
           ))}
 
-          {/* Hide outdated filter badge */}
-          {hideOutdated && (
+          {/* Safe content disabled badge */}
+          {!showSafe && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {filterMode === "include"
-                ? t("filters.hideOutdatedBadge")
-                : t("filters.showOutdatedBadge")}
+              {t("filters.safeContentHidden")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onHideOutdatedChange(false)}
+                onClick={() => onShowSafeChange(true)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>
@@ -217,9 +214,7 @@ const SearchBar = ({
           {/* NSFW filter badge */}
           {showNSFW && (
             <Badge className='flex items-center gap-1' variant='destructive'>
-              {filterMode === "include"
-                ? t("filters.showNSFW")
-                : t("filters.hideNSFW")}
+              {t("filters.nsfwContentShown")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onShowNSFWChange(false)}
@@ -229,15 +224,26 @@ const SearchBar = ({
             </Badge>
           )}
 
-          {/* Audio only filter badge */}
-          {showAudioOnly && (
+          {/* Outdated content shown badge */}
+          {showOutdated && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {filterMode === "include"
-                ? t("filters.audioOnly")
-                : t("filters.hideAudio")}
+              {t("filters.outdatedContentShown")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onShowAudioOnlyChange(false)}
+                onClick={() => onShowOutdatedChange(false)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
+
+          {/* Audio mods hidden badge */}
+          {!showAudioOnly && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {t("filters.audioModsHidden")}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onShowAudioOnlyChange(true)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>

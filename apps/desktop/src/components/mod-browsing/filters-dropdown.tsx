@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { FilterMode } from "@/lib/store/slices/ui";
 import CategoryFilter from "./category-filter";
 import HeroFilter from "./hero-filter";
 
@@ -20,14 +19,14 @@ type FiltersDropdownProps = {
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
+  showSafe: boolean;
+  onShowSafeChange: (showSafe: boolean) => void;
   showNSFW: boolean;
   onShowNSFWChange: (showNSFW: boolean) => void;
-  hideOutdated: boolean;
-  onHideOutdatedChange: (hideOutdated: boolean) => void;
+  showOutdated: boolean;
+  onShowOutdatedChange: (showOutdated: boolean) => void;
   showAudioOnly: boolean;
   onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
-  filterMode: FilterMode;
-  onFilterModeChange: (filterMode: FilterMode) => void;
 };
 
 const FiltersDropdown = ({
@@ -36,28 +35,30 @@ const FiltersDropdown = ({
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
+  showSafe,
+  onShowSafeChange,
   showNSFW,
   onShowNSFWChange,
-  hideOutdated,
-  onHideOutdatedChange,
+  showOutdated,
+  onShowOutdatedChange,
   showAudioOnly,
   onShowAudioOnlyChange,
-  filterMode,
-  onFilterModeChange,
 }: FiltersDropdownProps) => {
   const { t } = useTranslation();
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
+    !showSafe ||
     showNSFW ||
-    hideOutdated ||
-    showAudioOnly;
+    showOutdated ||
+    !showAudioOnly;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
+    (!showSafe ? 1 : 0) +
     (showNSFW ? 1 : 0) +
-    (hideOutdated ? 1 : 0) +
-    (showAudioOnly ? 1 : 0);
+    (showOutdated ? 1 : 0) +
+    (!showAudioOnly ? 1 : 0);
 
   return (
     <DropdownMenu>
@@ -75,24 +76,6 @@ const FiltersDropdown = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start' className='space-y-4 p-4'>
-        <div className='space-y-2'>
-          <Label className='font-medium text-sm'>{t("filters.mode")}</Label>
-          <div className='flex gap-2'>
-            <Button
-              onClick={() => onFilterModeChange("include")}
-              size='sm'
-              variant={filterMode === "include" ? "default" : "outline"}>
-              {t("filters.include")}
-            </Button>
-            <Button
-              onClick={() => onFilterModeChange("exclude")}
-              size='sm'
-              variant={filterMode === "exclude" ? "default" : "outline"}>
-              {t("filters.exclude")}
-            </Button>
-          </div>
-        </div>
-        <DropdownMenuSeparator />
         <CategoryFilter
           mods={mods}
           onCategoriesChange={onCategoriesChange}
@@ -105,24 +88,22 @@ const FiltersDropdown = ({
         />
         <DropdownMenuSeparator />
         <div className='space-y-2'>
-          <Label className='font-medium text-sm'>{t("filters.content")}</Label>
+          <Label className='font-medium text-sm'>
+            {t("filters.contentFilters")}
+          </Label>
           <div className='flex items-center justify-between'>
-            <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
-              {filterMode === "include"
-                ? t("filters.hideOutdated")
-                : t("filters.showOutdated")}
+            <Label className='font-normal text-sm' htmlFor='showSafeSwitch'>
+              {t("filters.safeContent")}
             </Label>
             <Switch
-              checked={hideOutdated}
-              id='hideOutdatedSwitch'
-              onCheckedChange={onHideOutdatedChange}
+              checked={showSafe}
+              id='showSafeSwitch'
+              onCheckedChange={onShowSafeChange}
             />
           </div>
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='showNsfwSwitch'>
-              {filterMode === "include"
-                ? t("filters.showNSFWContent")
-                : t("filters.hideNSFWContent")}
+              {t("filters.nsfwContent")}
             </Label>
             <Switch
               checked={showNSFW}
@@ -131,10 +112,18 @@ const FiltersDropdown = ({
             />
           </div>
           <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='showOutdatedSwitch'>
+              {t("filters.outdatedContent")}
+            </Label>
+            <Switch
+              checked={showOutdated}
+              id='showOutdatedSwitch'
+              onCheckedChange={onShowOutdatedChange}
+            />
+          </div>
+          <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='audioOnlySwitch'>
-              {filterMode === "include"
-                ? t("filters.audioModsOnly")
-                : t("filters.excludeAudioMods")}
+              {t("filters.audioModsOnly")}
             </Label>
             <Switch
               checked={showAudioOnly}
