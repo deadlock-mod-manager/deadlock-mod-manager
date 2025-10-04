@@ -52,21 +52,7 @@ export default defineConfig({
         '/discord': 0.7,
         '*': 0.6,
       },
-      generateRobotsTxt: true,
-      robots: [
-        {
-          userAgent: '*',
-          allow: '/',
-        },
-        {
-          userAgent: 'Googlebot',
-          allow: '/',
-        },
-        {
-          userAgent: 'Bingbot',
-          allow: '/',
-        },
-      ],
+      generateRobotsTxt: false,
     }),
   ],
   resolve: {
