@@ -48,3 +48,9 @@ export const ReleasesResponseSchema = z.object({
     }),
   ),
 });
+
+export const StatsResponseSchema = z.object({
+  totalMods: z.number(),
+  modDownloads: z.number(),
+  appDownloads: z.number(),
+});

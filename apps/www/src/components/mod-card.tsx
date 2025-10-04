@@ -13,19 +13,19 @@ interface ModCardProps {
 export const ModCard = ({ mod, isSelected, onClick }: ModCardProps) => {
   return (
     <Card
-      className={`cursor-pointer overflow-hidden transition-all duration-300 ${
+      className={`group cursor-pointer overflow-hidden transition-all duration-300 ${
         isSelected
-          ? "border-primary/60 bg-primary/5 shadow-lg shadow-primary/20"
-          : "border-primary/20 bg-card/80 hover:border-primary/40 hover:bg-primary/5"
+          ? "border-primary/60 bg-primary/5 ring-1 ring-primary/20"
+          : "border-muted/50 bg-background/50 backdrop-blur-sm hover:border-primary/40 hover:bg-primary/5"
       }`}
       onClick={onClick}>
-      <CardContent className='relative p-4'>
-        <div className='flex items-center gap-4'>
-          <div className='relative h-16 w-16 overflow-hidden rounded-lg border border-primary/20'>
+      <CardContent className='relative p-4 sm:p-5'>
+        <div className='flex items-center gap-3 sm:gap-4'>
+          <div className='relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm sm:h-16 sm:w-16'>
             {mod.images && mod.images.length > 0 ? (
               <img
                 alt={`${mod.name} preview`}
-                className='h-full w-full object-cover'
+                className='h-full w-full object-cover transition-transform duration-300 group-hover:scale-105'
                 src={mod.images[0]}
               />
             ) : null}
@@ -34,30 +34,32 @@ export const ModCard = ({ mod, isSelected, onClick }: ModCardProps) => {
               style={{
                 display: mod.images && mod.images.length > 0 ? "none" : "flex",
               }}>
-              <LuSettings className='h-6 w-6 text-primary' />
+              <LuSettings className='h-5 w-5 text-primary sm:h-6 sm:w-6' />
             </div>
           </div>
 
-          <div className='min-w-0 flex-1'>
-            <div className='mb-1 flex items-center gap-2'>
-              <h4 className='truncate font-semibold text-foreground'>
+          <div className='min-w-0 flex-1 overflow-hidden'>
+            <div className='mb-1.5 flex items-center gap-2'>
+              <h4 className='truncate font-semibold text-sm text-foreground transition-colors group-hover:text-primary sm:text-base'>
                 {mod.name}
               </h4>
             </div>
-            <p className='mb-2 text-muted-foreground text-sm'>
+            <p className='mb-2.5 truncate text-muted-foreground text-xs sm:text-sm'>
               by {mod.author}
             </p>
-            <div className='flex items-center gap-4 text-muted-foreground text-xs'>
-              <div className='flex items-center gap-1'>
-                <LuDownload className='h-3 w-3' />
-                <span>{formatDownloads(mod.downloadCount)}</span>
+            <div className='flex flex-wrap items-center gap-3 text-muted-foreground text-xs sm:gap-4'>
+              <div className='flex items-center gap-1.5'>
+                <LuDownload className='h-3 w-3 text-primary' />
+                <span className='font-medium'>
+                  {formatDownloads(mod.downloadCount)}
+                </span>
               </div>
-              <div className='flex items-center gap-1'>
+              <div className='flex items-center gap-1.5'>
                 <LuHeart className='h-3 w-3 text-red-500' />
-                <span>{mod.likes}</span>
+                <span className='font-medium'>{mod.likes}</span>
               </div>
               <Badge
-                className='border-primary/30 text-primary text-xs'
+                className='border-primary/30 bg-primary/10 text-primary text-xs font-medium'
                 variant='outline'>
                 {mod.category}
               </Badge>
@@ -65,10 +67,10 @@ export const ModCard = ({ mod, isSelected, onClick }: ModCardProps) => {
           </div>
 
           <div
-            className={`h-3 w-3 rounded-full transition-all duration-300 ${
+            className={`h-2.5 w-2.5 shrink-0 rounded-full transition-all duration-300 sm:h-3 sm:w-3 ${
               isSelected
-                ? "bg-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)]"
-                : "bg-primary/20"
+                ? "scale-125 bg-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)] ring-2 ring-primary/30"
+                : "bg-primary/20 group-hover:bg-primary/40"
             }`}
           />
         </div>

@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import React from "react";
 import {
   LuDownload,
@@ -61,16 +62,33 @@ const featureList: FeaturesProps[] = [
 
 export const FeaturesSection = () => {
   return (
-    <section className='container mx-auto py-24 sm:py-32' id='features'>
-      <h2 className='mb-2 text-center text-lg text-primary tracking-wider'>
+    <section
+      className='container relative mx-auto overflow-hidden px-4 py-16 sm:px-6 sm:py-24 lg:py-32'
+      id='features'>
+      {/* Decorative Cogs */}
+      <div className='pointer-events-none absolute inset-0'>
+        {/* Top Right Small Cog */}
+        <PhosphorIcons.GearIcon
+          weight='duotone'
+          className='absolute top-4 right-4 h-20 w-20 animate-spin-slow text-primary/5 opacity-50 [animation-duration:20s] sm:top-8 sm:right-8 sm:h-24 sm:w-24 lg:top-12 lg:right-12 lg:h-28 lg:w-28'
+        />
+
+        {/* Bottom Left Wrench */}
+        <PhosphorIcons.WrenchIcon
+          weight='duotone'
+          className='absolute bottom-8 left-4 h-18 w-18 rotate-90 text-primary/5 opacity-50 sm:bottom-12 sm:left-8 sm:h-24 sm:w-24 lg:bottom-16 lg:left-12'
+        />
+      </div>
+
+      <h2 className='relative mb-2 text-center text-lg text-primary tracking-wider'>
         Features
       </h2>
 
-      <h2 className='mb-8 text-center font-bold font-primary text-3xl md:text-4xl'>
+      <h2 className='relative mb-6 text-center font-bold font-primary text-3xl sm:mb-8 md:text-4xl'>
         Make Deadlock yours
       </h2>
 
-      <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+      <div className='relative grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3'>
         {featureList.map(({ icon, title, description }) => (
           <Card
             className='h-full border-muted/50 bg-background/50 backdrop-blur-sm'

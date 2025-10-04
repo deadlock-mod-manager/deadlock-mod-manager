@@ -134,7 +134,7 @@ export const VersionAccordion = ({ releases }: VersionAccordionProps) => {
                   </div>
                 </AccordionTrigger>
 
-                <AccordionContent className='px-4 pb-4'>
+                <AccordionContent className='px-4 pb-4 py-4'>
                   <div className='grid gap-4 md:grid-cols-3'>
                     <PlatformColumn
                       downloads={platformGroups.macos}

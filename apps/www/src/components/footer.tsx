@@ -1,73 +1,64 @@
-import { Separator } from "@deadlock-mods/ui/components/separator";
+import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
-import { APP_NAME, COPYRIGHT } from "@/lib/constants";
+import { APP_NAME, COPYRIGHT, social } from "@/lib/constants";
 import Logo from "./logo";
-import { StatusWidget } from "./status-widget";
 
 export const Footer = () => {
   return (
-    <footer
-      className='container mx-auto w-[90%] py-24 sm:py-32 md:w-[70%] lg:w-[75%] lg:max-w-screen-xl'
-      id='footer'>
-      <div className='rounded-2xl border border-secondary bg-card p-10'>
-        <div className='grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-4 xl:grid-cols-6'>
-          <div className='col-span-full flex flex-col gap-2 xl:col-span-2'>
+    <footer className='border border-secondary bg-card' id='footer'>
+      <div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20'>
+        <div className='grid grid-cols-1 gap-8 lg:grid-cols-4 lg:gap-12'>
+          <div className='lg:col-span-2'>
             <a
-              className='flex items-center gap-2 font-bold font-primary'
+              className='flex items-center gap-2 font-bold font-primary text-xl sm:text-2xl'
               href='#'>
-              <Logo className='h-10 w-10' /> {APP_NAME}
+              <Logo className='h-10 w-10 sm:h-12 sm:w-12' /> {APP_NAME}
             </a>
-            <p className='text-sm opacity-60'>
+            <p className='mt-4 text-sm opacity-60 max-w-md'>
               A small, open-source app for installing and managing mods for the
               Valve game Deadlock.
             </p>
-            <p className='text-sm opacity-60'>
-              Not affiliated with Valve. “Deadlock” and related marks are
+            <p className='mt-2 text-sm opacity-60 max-w-md'>
+              Not affiliated with Valve. "Deadlock" and related marks are
               trademarks of Valve Corporation.
             </p>
           </div>
 
-          <div className='flex flex-col gap-2'>
-            <h3 className='font-bold font-primary text-lg'>Links</h3>
-            <div>
+          <div className='grid grid-cols-2 gap-6 sm:grid-cols-3 sm:gap-8 lg:col-span-2'>
+            <div className='flex flex-col gap-3'>
+              <h3 className='font-bold font-primary'>Links</h3>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager/releases/latest'
                 rel='noopener noreferrer'
                 target='_blank'>
                 Download
               </a>
-            </div>
-            <div>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager'
                 rel='noopener noreferrer'
                 target='_blank'>
                 Source Code
               </a>
             </div>
-          </div>
 
-          <div className='flex flex-col gap-2'>
-            <h3 className='font-bold font-primary text-lg'>Support</h3>
-            <div>
+            <div className='flex flex-col gap-3'>
+              <h3 className='font-bold font-primary'>Support</h3>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://docs.deadlockmods.app/'
                 rel='noopener noreferrer'
                 target='_blank'>
                 Documentation
               </a>
-            </div>
-            <div>
-              <a className='opacity-60 hover:opacity-100' href='/#faq'>
+              <a
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                href='/#faq'>
                 FAQ
               </a>
-            </div>
-            <div>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md'
                 rel='noopener noreferrer'
                 target='_blank'>
@@ -75,82 +66,24 @@ export const Footer = () => {
               </a>
             </div>
 
-            <h3 className='font-bold font-primary text-lg mt-4'>Legal</h3>
-            <div>
-              <Link className='opacity-60 hover:opacity-100' to='/privacy'>
-                Privacy Policy
-              </Link>
-            </div>
-            <div>
-              <Link className='opacity-60 hover:opacity-100' to='/terms'>
-                Terms of Service
-              </Link>
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-2'>
-            <h3 className='font-bold font-primary text-lg'>Socials</h3>
-            <div>
+            <div className='flex flex-col gap-3'>
+              <h3 className='font-bold font-primary'>Partners</h3>
               <a
-                className='opacity-60 hover:opacity-100'
-                href='https://github.com/Stormix/deadlock-modmanager'
-                rel='noopener noreferrer'
-                target='_blank'>
-                GitHub
-              </a>
-            </div>
-            <div>
-              <a
-                className='opacity-60 hover:opacity-100'
-                href='https://github.com/Stormix/deadlock-modmanager/discussions'
-                rel='noopener noreferrer'
-                target='_blank'>
-                Discussions
-              </a>
-            </div>
-            <div>
-              <a
-                className='opacity-60 hover:opacity-100'
-                href='https://www.reddit.com/r/DeadlockModManager/'
-                rel='noopener noreferrer'
-                target='_blank'>
-                Reddit
-              </a>
-            </div>
-            <div>
-              <a
-                className='opacity-60 hover:opacity-100'
-                href='https://x.com/DLModManager'
-                rel='noopener noreferrer'
-                target='_blank'>
-                X (Twitter)
-              </a>
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-2'>
-            <h3 className='font-bold font-primary text-lg'>Partners</h3>
-            <div>
-              <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='http://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 GameBanana
               </a>
-            </div>
-            <div>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://deadlocker.net/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 Deadlocker
               </a>
-            </div>
-            <div>
               <a
-                className='opacity-60 hover:opacity-100'
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://deadlock-api.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
@@ -160,31 +93,54 @@ export const Footer = () => {
           </div>
         </div>
 
-        <Separator className='my-6' />
-        <section className='flex flex-col items-center gap-4 text-center'>
-          <p className='text-sm opacity-60'>
-            Powered by{" "}
-            <a
-              className='font-medium text-primary transition-all hover:opacity-80'
-              href='https://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=powered-by'
-              rel='noopener noreferrer'
-              target='_blank'>
-              GameBanana
-            </a>{" "}
-            for mod content and community.
-          </p>
-          <p>
-            {COPYRIGHT}. Created by{" "}
-            <a
-              className='border-primary text-primary transition-all hover:border-b-2'
-              href='https://github.com/Stormix'
-              rel='noopener noreferrer'
-              target='_blank'>
-              Stormix
-            </a>
-          </p>
-          <StatusWidget />
-        </section>
+        <div className='mt-12 pt-8 border-t border-secondary/50'>
+          <div className='flex flex-col items-center gap-6'>
+            <div className='flex gap-6'>
+              {social.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  target='_blank'
+                  className='opacity-60 hover:opacity-100 transition-opacity'
+                  rel='noopener noreferrer'>
+                  <span className='sr-only'>{item.name}</span>
+                  <item.icon aria-hidden='true' className='size-6' />
+                </a>
+              ))}
+            </div>
+
+            <div className='flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm opacity-60'>
+              <Link
+                className='hover:opacity-100 transition-opacity'
+                to='/privacy'>
+                Privacy Policy
+              </Link>
+              <span className='hidden sm:inline'>•</span>
+              <Link
+                className='hover:opacity-100 transition-opacity'
+                to='/terms'>
+                Terms of Service
+              </Link>
+            </div>
+
+            <p className='text-sm text-center'>
+              {COPYRIGHT}. Made with{" "}
+              <PhosphorIcons.HeartIcon
+                weight='duotone'
+                className='w-4 h-4 inline-block'
+              />{" "}
+              by{" "}
+              <a
+                className='border-primary text-primary transition-all hover:border-b-2'
+                href='https://github.com/Stormix'
+                rel='noopener noreferrer'
+                target='_blank'>
+                Stormix
+              </a>
+              .
+            </p>
+          </div>
+        </div>
       </div>
     </footer>
   );

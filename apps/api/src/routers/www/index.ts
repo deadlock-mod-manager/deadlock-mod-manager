@@ -2,11 +2,14 @@ import { env } from "@/lib/env";
 import { publicProcedure } from "../../lib/orpc";
 import { GitHubReleasesService } from "../../services/github-releases";
 import { HealthService } from "../../services/health";
+import { StatsService } from "../../services/stats";
 import type { ReleasesResponse } from "../../types/github-releases";
 import type { HealthResponse } from "../../types/health";
+import type { StatsResponse } from "../../types/stats";
 import {
   HealthResponseSchema,
   ReleasesResponseSchema,
+  StatsResponseSchema,
   StatusResponseSchema,
   VersionResponseSchema,
 } from "../../validation/www";
@@ -99,5 +102,13 @@ export const publicRouter = {
           error instanceof Error ? error.message : "Unknown error occurred";
         throw new Error(`Failed to fetch releases: ${errorMessage}`);
       }
+    }),
+
+  getStats: publicProcedure
+    .route({ method: "GET", path: "/stats" })
+    .output(StatsResponseSchema)
+    .handler(async (): Promise<StatsResponse> => {
+      const service = StatsService.getInstance();
+      return await service.getStats();
     }),
 };

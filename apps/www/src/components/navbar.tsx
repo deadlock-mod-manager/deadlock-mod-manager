@@ -1,31 +1,20 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@deadlock-mods/ui/components/navigation-menu";
-import { Separator } from "@deadlock-mods/ui/components/separator";
-import {
   Sheet,
   SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@deadlock-mods/ui/components/sheet";
-import { MenuIcon } from "@deadlock-mods/ui/icons";
+import { List, PhosphorIcons, X } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
 import React from "react";
-import { APP_NAME, DISCORD_URL, REDDIT_URL, X_URL } from "@/lib/constants";
-import DiscordIcon from "./icons/discord-icon";
-import RedditIcon from "./icons/reddit-icon";
-import XIcon from "./icons/x-icon";
+import { LuExternalLink } from "react-icons/lu";
+import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
 import Logo from "./logo";
 
 type RouteProps = {
   href: string;
   label: string;
+  external?: boolean;
 };
 
 const routeList: RouteProps[] = [
@@ -34,133 +23,120 @@ const routeList: RouteProps[] = [
     label: "Features",
   },
   {
-    href: "https://docs.deadlockmods.app/",
-    label: "Documentation",
+    href: "/#stats",
+    label: "Stats",
+  },
+  {
+    href: "/#showcase",
+    label: "Showcase",
   },
   {
     href: "/#faq",
     label: "FAQ",
   },
   {
-    href: "/vpk-analyzer",
-    label: "VPK Analyzer",
-  },
-  {
-    href: "/kv-parser",
-    label: "KV Parser",
-  },
-  {
     href: "/status",
     label: "Status",
+  },
+  {
+    href: "https://docs.deadlockmods.app/",
+    label: "Documentation",
+    external: true,
   },
 ];
 
 export const Navbar = () => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   return (
-    <header className='sticky top-5 z-40 mx-auto flex w-[90%] items-center justify-between rounded-2xl border border-secondary bg-card bg-opacity-15 px-8 py-3 shadow-inner md:w-[70%] lg:w-[75%] lg:max-w-screen-xl'>
-      <Link className='flex items-center gap-2 font-bold text-lg' to='/'>
-        <Logo className='h-10 w-10' />
-        <span className='font-bold font-primary text-lg'>{APP_NAME}</span>
-      </Link>
-
-      <div className='flex items-center lg:hidden'>
-        <Sheet onOpenChange={setIsOpen} open={isOpen}>
-          <SheetTrigger asChild>
-            <MenuIcon
-              className='cursor-pointer lg:hidden'
-              onClick={() => setIsOpen(!isOpen)}
-            />
-          </SheetTrigger>
-
-          <SheetContent
-            className='flex flex-col justify-between rounded-tr-2xl rounded-br-2xl border-secondary bg-card'
-            side='left'>
-            <div>
-              <SheetHeader className='mb-4 ml-4'>
-                <SheetTitle className='flex items-center'>
-                  <Link className='flex items-center' to='/'>
-                    <Logo className='h-4 w-4' />
-                    Deadlock Mod Manager
-                  </Link>
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className='flex flex-col gap-2'>
-                {routeList.map(({ href, label }) => (
-                  <Button
-                    asChild
-                    className='justify-start text-base'
-                    key={href}
-                    onClick={() => setIsOpen(false)}
-                    variant='ghost'>
-                    <a
-                      href={href}
-                      rel={
-                        href.startsWith("http")
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
-                      target={href.startsWith("http") ? "_blank" : undefined}>
-                      {label}
-                    </a>
-                  </Button>
-                ))}
+    <header className='bg-background'>
+      <nav
+        aria-label='Global'
+        className='mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 lg:px-8'>
+        <div className='flex lg:flex-1'>
+          <Link className='flex items-center gap-2 -m-1.5 p-1.5' to='/'>
+            <span className='sr-only'>{APP_NAME}</span>
+            <Logo className='h-8 w-auto' />
+            <span className='font-bold font-primary text-lg'>{APP_NAME}</span>
+          </Link>
+        </div>
+        <div className='hidden lg:flex lg:gap-x-12'>
+          {routeList.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              rel={item.external ? "noopener noreferrer" : undefined}
+              target={item.external ? "_blank" : undefined}
+              className='flex items-center gap-1 text-sm/6 font-semibold text-foreground'>
+              {item.label}
+              {item.external && (
+                <LuExternalLink className='size-3.5' aria-hidden='true' />
+              )}
+            </a>
+          ))}
+        </div>
+        <div className='hidden flex-1 items-center justify-end gap-x-6 sm:flex'>
+          <Button
+            size='sm'
+            href={GITHUB_REPO}
+            icon={<PhosphorIcons.GithubLogoIcon />}>
+            <span className='hidden md:inline'>View Source</span>
+            <span className='md:hidden'>Source</span>
+          </Button>
+        </div>
+        <div className='flex lg:hidden'>
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <button
+                type='button'
+                className='-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-muted-foreground'>
+                <span className='sr-only'>Open main menu</span>
+                <List aria-hidden='true' className='size-6' />
+              </button>
+            </SheetTrigger>
+            <SheetContent side='right' className='w-full sm:max-w-sm'>
+              <div className='flex items-center gap-x-6'>
+                <Link className='flex items-center gap-2 -m-1.5 p-1.5' to='/'>
+                  <span className='sr-only'>{APP_NAME}</span>
+                  <Logo className='h-8 w-auto' />
+                </Link>
+                <Button size='sm' className='ml-auto' href='/download'>
+                  Download
+                </Button>
+                <button
+                  type='button'
+                  onClick={() => setMobileMenuOpen(false)}
+                  className='-m-2.5 rounded-md p-2.5 text-muted-foreground'>
+                  <span className='sr-only'>Close menu</span>
+                  <X aria-hidden='true' className='size-6' />
+                </button>
               </div>
-            </div>
-
-            <SheetFooter className='flex-col items-start justify-start sm:flex-col'>
-              <Separator className='mb-2' />
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <div className='hidden items-center gap-2 lg:flex'>
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              {routeList.map(({ href, label }) => (
-                <NavigationMenuLink asChild key={href}>
-                  <a
-                    className='px-2 text-base'
-                    href={href}
-                    rel={
-                      href.startsWith("http")
-                        ? "noopener noreferrer"
-                        : undefined
-                    }
-                    target={href.startsWith("http") ? "_blank" : undefined}>
-                    {label}
-                  </a>
-                </NavigationMenuLink>
-              ))}
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        <Button
-          aria-label='Join Discord Server'
-          size='icon'
-          variant='ghost'
-          href={DISCORD_URL}
-          icon={<DiscordIcon className='h-5 w-5' />}
-        />
-        <Button
-          aria-label='Follow on Reddit'
-          icon={<RedditIcon className='h-5 w-5' />}
-          size='icon'
-          href={REDDIT_URL}
-          variant='ghost'
-        />
-        <Button
-          aria-label='Follow on X'
-          size='icon'
-          variant='ghost'
-          href={X_URL}
-          icon={<XIcon className='h-5 w-5' />}
-        />
-      </div>
+              <div className='mt-6 flow-root'>
+                <div className='-my-6 divide-y divide-border'>
+                  <div className='space-y-2 py-6'>
+                    {routeList.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        rel={item.external ? "noopener noreferrer" : undefined}
+                        target={item.external ? "_blank" : undefined}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className='-mx-3 flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted'>
+                        {item.label}
+                        {item.external && (
+                          <LuExternalLink
+                            className='size-4'
+                            aria-hidden='true'
+                          />
+                        )}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
     </header>
   );
 };
