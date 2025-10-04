@@ -34,8 +34,8 @@ Before you begin, ensure you have the following installed:
 2. **Clone your fork** locally:
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/deadlock-modmanager.git
-   cd deadlock-modmanager
+   git clone https://github.com/YOUR_USERNAME/deadlock-mod-manager.git
+   cd deadlock-mod-manager
    ```
 
 3. **Install dependencies**:
@@ -114,7 +114,7 @@ pnpm db:seed
 This is a monorepo organized as follows:
 
 ```
-deadlock-modmanager/
+deadlock-mod-manager/
 ├── apps/
 │   ├── api/          # Backend API (Bun + Hono)
 │   ├── desktop/      # Main desktop app (Tauri + React)
