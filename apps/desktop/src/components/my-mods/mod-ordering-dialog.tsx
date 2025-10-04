@@ -10,6 +10,11 @@ import {
   DialogTrigger,
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { GripVertical, Loader2, Save, X } from "@deadlock-mods/ui/icons";
 import {
   closestCenter,
@@ -200,7 +205,12 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>{children}</DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
+      </Tooltip>
       <DialogContent className='max-w-2xl max-h-[80vh] flex flex-col'>
         <DialogHeader>
           <DialogTitle>{t("modOrdering.title")}</DialogTitle>

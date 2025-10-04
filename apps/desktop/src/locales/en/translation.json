@@ -26,6 +26,7 @@
     "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum"
   },
   "modOrdering": {
+    "manageOrderTooltip": "Manage the order in which mods are loaded",
     "title": "Manage Mod Load Order",
     "description": "Drag and drop to reorder your mods. Mods at the top load first, mods at the bottom load last.",
     "noMods": "No installed mods to order",
@@ -34,6 +35,7 @@
     "manageOrder": "Manage Order"
   },
   "mods": {
+    "manageOrder": "Manage Order",
     "searchPlaceholder": "Search mods",
     "noPreviewAvailable": "No preview available",
     "audio": "Audio",
@@ -354,8 +356,8 @@
     "error": "Error occurred",
     "disableMod": "Disable Mod?",
     "enableMod": "Enable Mod?",
-    "installedTooltip": "Mod is enabled, do you want to disable it? This will not delete the mod, just disable it ingame.",
-    "downloadedTooltip": "Mod is downloaded, do you want to enable it?"
+    "installedTooltip": "Toggle to disable mod (will not delete, just disable it ingame)",
+    "downloadedTooltip": "Toggle to enable mod"
   },
   "addons": {
     "analyzeLocal": "Analyze Local Addons",

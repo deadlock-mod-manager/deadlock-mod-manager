@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Search } from "@deadlock-mods/ui/icons";
+import { ScanSearch } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { AnalysisProgressToast } from "./analysis-progress-toast";
@@ -36,11 +36,12 @@ export const AnalyzeAddonsButton = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              variant='outline'
               onClick={startAnalysis}
               disabled={isLoading}
               isLoading={isLoading}
-              icon={<Search className='w-4 h-4' />}
-              variant='outline'
+              icon={<ScanSearch className='w-4 h-4' />}
+              size='iconExpand'
               className={className}>
               {isLoading ? t("addons.analyzing") : t("addons.analyzeLocal")}
             </Button>

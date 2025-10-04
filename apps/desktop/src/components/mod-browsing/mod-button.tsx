@@ -1,6 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -290,25 +291,58 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
 
   return (
     <ErrorBoundary>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            disabled={isActionInProgress || isAnalyzing}
-            icon={
-              <ModStatusIcon hovering={hovering} status={localMod?.status} />
-            }
-            onClick={onClick}
-            ref={ref}
-            size={variant === "iconOnly" ? "icon" : "lg"}
-            title={text}
-            variant={buttonVariant}>
-            {variant === "iconOnly" ? null : text}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
+      {localMod?.status === ModStatus.Downloaded ||
+      localMod?.status === ModStatus.Installed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {variant === "iconOnly" ? (
+              <div className='flex items-center justify-center'>
+                <Switch
+                  checked={localMod?.status === ModStatus.Installed}
+                  disabled={isActionInProgress || isAnalyzing}
+                  onCheckedChange={async () => {
+                    await action();
+                  }}
+                />
+              </div>
+            ) : (
+              <div className='flex items-center gap-3 rounded-lg border border-input bg-background px-4 py-2.5 shadow-sm'>
+                <Switch
+                  checked={localMod?.status === ModStatus.Installed}
+                  disabled={isActionInProgress || isAnalyzing}
+                  onCheckedChange={async () => {
+                    await action();
+                  }}
+                />
+                <span className='font-medium text-sm'>{text}</span>
+              </div>
+            )}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              disabled={isActionInProgress || isAnalyzing}
+              icon={
+                <ModStatusIcon hovering={hovering} status={localMod?.status} />
+              }
+              onClick={onClick}
+              ref={ref}
+              size={variant === "iconOnly" ? "icon" : "lg"}
+              title={text}
+              variant={buttonVariant}>
+              {variant === "iconOnly" ? null : text}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       <FileSelectorDialog
         fileTree={currentFileTree}

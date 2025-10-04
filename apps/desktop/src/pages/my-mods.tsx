@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
-import { Input } from "@deadlock-mods/ui/components/input";
+import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tooltip,
@@ -19,10 +19,9 @@ import {
   LayoutGrid,
   LayoutList,
   Loader2,
-  Search,
 } from "@deadlock-mods/ui/icons";
 import { Trash } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
@@ -299,15 +298,12 @@ const SimpleSearchBar = ({
   const { t } = useTranslation();
 
   return (
-    <div className='relative w-full max-w-sm'>
-      <Search className='absolute top-2.5 left-2 h-4 w-4 text-muted-foreground' />
-      <Input
-        className='pl-8'
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t("mods.searchPlaceholder")}
-        value={query}
-      />
-    </div>
+    <SearchInput
+      className='w-full max-w-sm'
+      onChange={(e) => setQuery(e.target.value)}
+      placeholder={t("mods.searchPlaceholder")}
+      value={query}
+    />
   );
 };
 
@@ -319,6 +315,8 @@ const MyMods = () => {
     (state) => state.getEnabledModsCount,
   );
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -355,8 +353,19 @@ const MyMods = () => {
 
   const enabledModsCount = getEnabledModsCount();
 
+  useLayoutEffect(() => {
+    if (scrollContainerRef.current && scrollPositionRef.current > 0) {
+      scrollContainerRef.current.scrollTop = scrollPositionRef.current;
+    }
+  });
+
   return (
-    <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4'>
+    <div
+      ref={scrollContainerRef}
+      className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4'
+      onScroll={(e) => {
+        scrollPositionRef.current = e.currentTarget.scrollTop;
+      }}>
       <div className='mb-8'>
         <div className='flex items-baseline gap-3'>
           <h1 className='text-3xl font-bold tracking-tight'>
@@ -394,10 +403,11 @@ const MyMods = () => {
                 <AnalyzeAddonsButton />
                 <ModOrderingDialog>
                   <Button
-                    size='icon'
+                    size='iconExpand'
                     variant='outline'
-                    disabled={installedMods.length === 0}>
-                    <ArrowUpDown className='h-4 w-4' />
+                    disabled={installedMods.length === 0}
+                    icon={<ArrowUpDown className='h-4 w-4' />}>
+                    {t("mods.manageOrder")}
                   </Button>
                 </ModOrderingDialog>
                 <Tooltip>
@@ -407,9 +417,9 @@ const MyMods = () => {
                       size='icon'
                       variant={
                         viewMode === ViewMode.GRID ? "default" : "outline"
-                      }>
-                      <LayoutGrid className='h-4 w-4' />
-                    </Button>
+                      }
+                      icon={<LayoutGrid className='h-4 w-4' />}
+                    />
                   </TooltipTrigger>
                   <TooltipContent>{t("mods.gridView")}</TooltipContent>
                 </Tooltip>
@@ -420,9 +430,9 @@ const MyMods = () => {
                       size='icon'
                       variant={
                         viewMode === ViewMode.LIST ? "default" : "outline"
-                      }>
-                      <LayoutList className='h-4 w-4' />
-                    </Button>
+                      }
+                      icon={<LayoutList className='h-4 w-4' />}
+                    />
                   </TooltipTrigger>
                   <TooltipContent>{t("mods.listView")}</TooltipContent>
                 </Tooltip>
@@ -430,7 +440,7 @@ const MyMods = () => {
             </div>
 
             {viewMode === ViewMode.GRID ? (
-              <div className='grid grid-cols-4 gap-4'>
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                 {displayMods.map((mod) => (
                   <GridModCard key={mod.remoteId} mod={mod} />
                 ))}

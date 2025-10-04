@@ -63,12 +63,12 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
               <Download className='text-muted-foreground' />
               <span className='text-sm'>Downloads: {mod.downloadCount}</span>
             </div>
-            <div className='flex items-center gap-2'>
-              <InfoIcon className='text-muted-foreground' />
-              <span className='text-sm'>
-                Mod Status: {localMod?.status ?? "-"}
-              </span>
-            </div>
+            {localMod?.status && (
+              <div className='flex items-center gap-2'>
+                <InfoIcon className='text-muted-foreground' />
+                <span className='text-sm'>Mod Status: {localMod?.status}</span>
+              </div>
+            )}
           </div>
 
           {mod.tags && mod.tags.length > 0 && (

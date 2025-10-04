@@ -1,6 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Input } from "@deadlock-mods/ui/components/input";
+import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import {
   Select,
   SelectContent,
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { ArrowUpDown, Search, X } from "@deadlock-mods/ui/icons";
+import { ArrowUpDown, X } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { ModCategory, SortType } from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
@@ -104,25 +104,13 @@ const SearchBar = ({
     <div className='flex flex-col gap-3'>
       <div className='flex items-center justify-between gap-4'>
         <div className='flex items-center gap-3'>
-          <div className='relative'>
-            <Search className='absolute top-2.5 left-2 h-4 w-4 text-muted-foreground' />
-            <Input
-              className='w-80 pr-8 pl-8'
-              id='search'
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("mods.searchPlaceholder")}
-              value={query}
-            />
-            {query && (
-              <button
-                aria-label='Clear search'
-                className='absolute top-2.5 right-2 h-4 w-4 text-muted-foreground transition-colors hover:text-foreground'
-                onClick={() => setQuery("")}
-                type='button'>
-                <X className='h-4 w-4' />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            className='w-80'
+            id='search'
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("mods.searchPlaceholder")}
+            value={query}
+          />
           <FiltersDropdown
             filterMode={filterMode}
             hideOutdated={hideOutdated}

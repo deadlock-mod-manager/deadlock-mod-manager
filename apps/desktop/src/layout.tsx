@@ -1,5 +1,8 @@
 import { Dialog } from "@deadlock-mods/ui/components/dialog";
-import { SidebarProvider } from "@deadlock-mods/ui/components/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@deadlock-mods/ui/components/sidebar";
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
@@ -21,13 +24,17 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Menu />
         <SidebarProvider>
           <AppSidebar />
-          <ScrollBackButtonProvider>
-            <div className={cn("flex h-full w-full flex-col")}>
-              <Toolbar />
-              <div className={cn("flex flex-1 pr-2 pl-8 pt-4")}>{children}</div>
-              <BottomBar />
-            </div>
-          </ScrollBackButtonProvider>
+          <SidebarInset>
+            <ScrollBackButtonProvider>
+              <div className={cn("flex h-full w-full flex-col")}>
+                <Toolbar />
+                <div className={cn("flex flex-1 pr-2 pl-2 pt-4")}>
+                  {children}
+                </div>
+                <BottomBar />
+              </div>
+            </ScrollBackButtonProvider>
+          </SidebarInset>
         </SidebarProvider>
       </main>
       <Toaster />
