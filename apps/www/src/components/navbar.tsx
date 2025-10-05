@@ -16,6 +16,7 @@ import React from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
 import Logo from "./logo";
+import UserMenu from "./user-menu";
 
 type RouteProps = {
   href: string;
@@ -113,6 +114,7 @@ export const Navbar = () => {
             <span className='hidden md:inline'>View Source</span>
             <span className='md:hidden'>Source</span>
           </Button>
+          <UserMenu />
         </div>
         <div className='flex lg:hidden'>
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -130,16 +132,16 @@ export const Navbar = () => {
                   <span className='sr-only'>{APP_NAME}</span>
                   <Logo className='h-8 w-auto' />
                 </Link>
-                <Button size='sm' className='ml-auto' href='/download'>
-                  Download
-                </Button>
-                <button
-                  type='button'
-                  onClick={() => setMobileMenuOpen(false)}
-                  className='-m-2.5 rounded-md p-2.5 text-muted-foreground'>
-                  <span className='sr-only'>Close menu</span>
-                  <X aria-hidden='true' className='size-6' />
-                </button>
+                <div className='ml-auto flex items-center gap-2'>
+                  <UserMenu />
+                  <button
+                    type='button'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className='-m-2.5 rounded-md p-2.5 text-muted-foreground'>
+                    <span className='sr-only'>Close menu</span>
+                    <X aria-hidden='true' className='size-6' />
+                  </button>
+                </div>
               </div>
               <div className='mt-6 flow-root'>
                 <div className='-my-6 divide-y divide-border'>

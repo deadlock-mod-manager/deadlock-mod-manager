@@ -13,11 +13,12 @@
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
   },
   "dependencies": {
-    "@deadlock-mods/instrumentation": "workspace:*",
+    "@better-fetch/fetch": "^1.1.18",
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/feature-flags": "workspace:*",
+    "@deadlock-mods/instrumentation": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",

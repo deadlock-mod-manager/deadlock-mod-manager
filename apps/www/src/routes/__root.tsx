@@ -11,11 +11,10 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
-import { Footer } from "@/components/footer";
 import Loader from "@/components/loader";
-import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
+import { MainLayout } from "@/layouts/main-layout";
 import { link, type orpc } from "@/utils/orpc";
 import type { AppRouterClient } from "../../../api/src/routers";
 import "../index.css";
@@ -132,9 +131,15 @@ function RootComponent() {
   const isFetching = useRouterState({
     select: (s) => s.isLoading,
   });
+  const pathname = useRouterState({
+    select: (s) => s.location.pathname,
+  });
 
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
+
+  const fullscreenRoutes = ["/login"];
+  const isFullscreenRoute = fullscreenRoutes.includes(pathname);
 
   return (
     <>
@@ -145,11 +150,15 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey='vite-ui-theme'>
         <AnalyticsProvider>
-          <div className='min-h-screen'>
-            <Navbar />
-            {isFetching ? <Loader /> : <Outlet />}
-            <Footer />
-          </div>
+          {isFullscreenRoute ? (
+            isFetching ? (
+              <Loader />
+            ) : (
+              <Outlet />
+            )
+          ) : (
+            <MainLayout>{isFetching ? <Loader /> : <Outlet />}</MainLayout>
+          )}
           <Toaster richColors />
         </AnalyticsProvider>
       </ThemeProvider>
