@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use tauri::{AppHandle, Emitter, Manager};
+use tauri_plugin_store::StoreExt;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
@@ -508,4 +509,60 @@ pub async fn create_report(data: CreateReportRequest) -> Result<CreateReportResp
 pub async fn get_report_counts(mod_id: String) -> Result<ReportCounts, Error> {
   let report_service = ReportService::new();
   report_service.get_report_counts(&mod_id).await
+}
+
+#[tauri::command]
+pub async fn store_auth_token(app_handle: AppHandle, token: String) -> Result<(), Error> {
+  log::info!("Storing authentication token");
+
+  let store = app_handle
+    .store("state.json")
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+
+  store.set("auth_token", serde_json::json!(token));
+
+  store
+    .save()
+    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {}", e)))?;
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn get_auth_token(app_handle: AppHandle) -> Result<Option<String>, Error> {
+  log::debug!("Retrieving authentication token");
+
+  let store = app_handle
+    .store("state.json")
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+
+  let token = store.get("auth_token");
+
+  match token {
+    Some(value) => {
+      if let Some(token_str) = value.as_str() {
+        Ok(Some(token_str.to_string()))
+      } else {
+        Ok(None)
+      }
+    }
+    None => Ok(None),
+  }
+}
+
+#[tauri::command]
+pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
+  log::info!("Clearing authentication token");
+
+  let store = app_handle
+    .store("state.json")
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+
+  let _ = store.delete("auth_token");
+
+  store
+    .save()
+    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {}", e)))?;
+
+  Ok(())
 }

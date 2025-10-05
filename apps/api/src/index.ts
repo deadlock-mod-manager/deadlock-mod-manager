@@ -21,6 +21,7 @@ import { env } from "./lib/env";
 import { logger } from "./lib/logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
+import desktopAuthRouter from "./routers/desktop-auth";
 import artifactsRouter from "./routers/legacy/artifacts";
 import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
@@ -96,7 +97,8 @@ app
   .route("/", healthRouter)
   .route("/docs", docsRouter)
   .route("/redirect", redirectRouter)
-  .route("/artifacts", artifactsRouter);
+  .route("/artifacts", artifactsRouter)
+  .route("/auth/desktop", desktopAuthRouter);
 
 const main = async () => {
   await cronService.defineJob({

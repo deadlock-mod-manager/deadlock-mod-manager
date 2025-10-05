@@ -38,6 +38,37 @@ fn handle_deep_link_url(
     return Ok(()); // Don't fail the whole app
   };
 
+  // Check if this is an auth callback
+  if data_part.starts_with("//auth-callback") {
+    log::info!("Processing auth callback deep link");
+    
+    // Parse query parameters
+    if let Some(query_start) = data_part.find('?') {
+      let query = &data_part[query_start + 1..];
+      let params: std::collections::HashMap<String, String> = query
+        .split('&')
+        .filter_map(|pair| {
+          let mut parts = pair.split('=');
+          Some((parts.next()?.to_string(), parts.next()?.to_string()))
+        })
+        .collect();
+      
+      if let Some(token) = params.get("token") {
+        log::info!("Auth token received via deep link");
+        
+        if let Some(window) = app_handle.get_webview_window("main") {
+          window.emit("auth-callback-received", token)?;
+        }
+        
+        return Ok(());
+      }
+    }
+    
+    log::error!("Auth callback deep link missing token parameter");
+    return Ok(());
+  }
+
+  // Handle mod installation deep links
   // Split by comma to get the three parts
   let parts: Vec<&str> = data_part.split(',').collect();
 
@@ -204,7 +235,10 @@ pub fn run() {
       commands::parse_vpk_file,
       commands::analyze_local_addons,
       commands::create_report,
-      commands::get_report_counts
+      commands::get_report_counts,
+      commands::store_auth_token,
+      commands::get_auth_token,
+      commands::clear_auth_token
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

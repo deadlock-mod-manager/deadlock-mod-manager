@@ -138,7 +138,7 @@ function RootComponent() {
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
 
-  const fullscreenRoutes = ["/login"];
+  const fullscreenRoutes = ["/login", "/auth/desktop-callback"];
   const isFullscreenRoute = fullscreenRoutes.includes(pathname);
 
   return (

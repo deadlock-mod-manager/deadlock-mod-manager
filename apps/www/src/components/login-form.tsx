@@ -26,12 +26,12 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type SteamEmailFormData = z.infer<typeof steamEmailSchema>;
 
 export default function LoginForm() {
-  const navigate = useNavigate({
-    from: "/login",
-  });
   const searchParams = useSearch({ from: "/login" });
-  const { isPending } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const [showSteamEmailPrompt, setShowSteamEmailPrompt] = useState(false);
+  const navigate = useNavigate({ from: "/login" });
+
+  const isDesktopFlow = (searchParams as { desktop?: string }).desktop;
 
   useEffect(() => {
     const error = (searchParams as { error?: string }).error;
@@ -72,10 +72,12 @@ export default function LoginForm() {
       },
       {
         onSuccess: () => {
-          navigate({
-            to: "/",
-          });
-          toast.success("Sign in successful");
+          if (isDesktopFlow) {
+            window.location.href = "/auth/desktop-callback";
+          } else {
+            navigate({ to: "/" });
+            toast.success("Sign in successful");
+          }
         },
         onError: (error) => {
           toast.error(error.error.message || error.error.statusText);
@@ -86,13 +88,24 @@ export default function LoginForm() {
 
   const onSteamSubmit = async (data: SteamEmailFormData) => {
     authClient.signIn.steam({
-      callbackURL: `${window.location.origin}/`,
-      errorCallbackURL: `${window.location.origin}/login?error=steam_auth_failed`,
+      callbackURL: isDesktopFlow
+        ? `${window.location.origin}/auth/desktop-callback`
+        : `${window.location.origin}/`,
+      errorCallbackURL: `${window.location.origin}/login?error=steam_auth_failed${isDesktopFlow ? "&desktop=true" : ""}`,
       email: data.steamEmail,
     });
   };
 
   if (isPending) {
+    return <Loader />;
+  }
+
+  if (session) {
+    if (isDesktopFlow) {
+      window.location.href = "/auth/desktop-callback";
+      return <Loader />;
+    }
+    navigate({ to: "/" });
     return <Loader />;
   }
 
@@ -221,7 +234,9 @@ export default function LoginForm() {
             onClick={() => {
               authClient.signIn.social({
                 provider: "github",
-                callbackURL: `${window.location.origin}/`,
+                callbackURL: isDesktopFlow
+                  ? `${window.location.origin}/auth/desktop-callback`
+                  : `${window.location.origin}/`,
               });
             }}
             className='flex w-full items-center justify-center gap-3 rounded-md bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-xs inset-ring inset-ring-border hover:bg-accent focus-visible:inset-ring-transparent'>

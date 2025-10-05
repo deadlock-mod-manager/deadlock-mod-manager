@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { type AuthState, createAuthSlice } from "./slices/auth";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
 import { createProfilesSlice, type ProfilesState } from "./slices/profiles";
@@ -13,7 +14,8 @@ export type State = ModsState &
   GameState &
   SettingsState &
   UIState &
-  ScrollState;
+  ScrollState &
+  AuthState;
 
 export const usePersistedStore = create<State>()(
   persist(
@@ -24,6 +26,7 @@ export const usePersistedStore = create<State>()(
       ...createSettingsSlice(...a),
       ...createUISlice(...a),
       ...createScrollSlice(...a),
+      ...createAuthSlice(...a),
     }),
     {
       name: "local-config",
@@ -91,6 +94,14 @@ export const usePersistedStore = create<State>()(
           // Exclude analysis dialog state (ephemeral)
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
+          // Exclude auth state (managed separately via secure storage)
+          user: _user,
+          session: _session,
+          isAuthenticated: _isAuthenticated,
+          isLoading: _isLoading,
+          setAuth: _setAuth,
+          clearAuth: _clearAuth,
+          setLoading: _setLoading,
           ...rest
         } = state;
         return rest;

@@ -32,6 +32,7 @@ import { useWhatsNew } from "@/hooks/use-whats-new";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
+import UserMenu from "../user-menu";
 import { AboutDialog } from "./about-dialog";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -250,6 +251,12 @@ export const AppSidebar = () => {
                   <DiscordLogo weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>
+              </SidebarMenuItem>
+              <Separator />
+              <SidebarMenuItem>
+                <div className='flex items-center justify-center p-2'>
+                  <UserMenu />
+                </div>
               </SidebarMenuItem>
               <SidebarCollapse />
             </SidebarMenu>
