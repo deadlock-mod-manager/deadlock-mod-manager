@@ -25,15 +25,6 @@ function RouteComponent() {
 
         <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]'>
           <LoginForm />
-
-          <p className='mt-10 text-center text-sm/6 text-muted-foreground'>
-            Not a member?{" "}
-            <a
-              href='#'
-              className='font-semibold text-primary hover:text-primary/80'>
-              Start a 14 day free trial
-            </a>
-          </p>
         </div>
       </div>
     </FullscreenLayout>
