@@ -135,6 +135,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
           const frontendOrigin = new URL(
             ctx.request?.url || ctx.context.baseURL,
           ).origin;
+          const apiOrigin = new URL(ctx.context.baseURL).origin;
           const callbackURL =
             ctx.body.callbackURL || new URL("/", frontendOrigin).toString();
           const email = ctx.body.email;
@@ -153,7 +154,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
           const openidQueryParams = new URLSearchParams({
             "openid.ns": "http://specs.openid.net/auth/2.0",
             "openid.mode": "checkid_setup",
-            "openid.realm": frontendOrigin,
+            "openid.realm": apiOrigin,
             "openid.identity":
               "http://specs.openid.net/auth/2.0/identifier_select",
             "openid.claimed_id":
@@ -385,23 +386,21 @@ export const steam = (config: SteamAuthPluginOptions) =>
           );
 
           if (verifyRes.error) {
-            ctx.context.logger.error(
-              `Steam OpenID validation failed:`,
-              verifyRes.error,
-            );
-            ctx.context.logger.error(
-              `An error occurred while verifying the Steam OpenID:`,
-              verifyRes.error,
-            );
+            ctx.context.logger.error("Steam OpenID validation request failed", {
+              error: verifyRes.error,
+              return_to: params["openid.return_to"],
+              claimed_id: params["openid.claimed_id"],
+            });
             throw ctx.redirect(
               `${errorURL}?error=steam_openid_validation_failed`,
             );
           }
           if (!verifyRes.data.includes("is_valid:true")) {
-            ctx.context.logger.error(
-              `Steam OpenID validation failed:`,
-              verifyRes.data,
-            );
+            ctx.context.logger.error("Steam OpenID validation failed", {
+              response: verifyRes.data,
+              return_to: params["openid.return_to"],
+              claimed_id: params["openid.claimed_id"],
+            });
             throw ctx.redirect(
               `${errorURL}?error=steam_openid_validation_failed`,
             );
@@ -629,9 +628,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             });
           }
 
-          const frontendOrigin = new URL(
-            ctx.request?.url || ctx.context.baseURL,
-          ).origin;
+          const apiOrigin = new URL(ctx.context.baseURL).origin;
           const callbackURL = ctx.body.callbackURL || `${ctx.context.baseURL}/`;
           const errorCallbackURL =
             ctx.body.errorCallbackURL || `${ctx.context.baseURL}/error`;
@@ -639,13 +636,13 @@ export const steam = (config: SteamAuthPluginOptions) =>
           const queryParams = new URLSearchParams({
             callbackURL,
             errorCallbackURL,
-            linkAccount: "true", // Flag to indicate this is for account linking
+            linkAccount: "true",
           });
 
           const openidQueryParams = new URLSearchParams({
             "openid.ns": "http://specs.openid.net/auth/2.0",
             "openid.mode": "checkid_setup",
-            "openid.realm": frontendOrigin,
+            "openid.realm": apiOrigin,
             "openid.identity":
               "http://specs.openid.net/auth/2.0/identifier_select",
             "openid.claimed_id":
