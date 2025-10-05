@@ -10,12 +10,20 @@ import {
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@deadlock-mods/ui/components/tabs";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   ArrowUpDown,
+  Check,
+  Download,
   LayoutGrid,
   LayoutList,
   Loader2,
@@ -43,6 +51,12 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 enum ViewMode {
   GRID = "grid",
   LIST = "list",
+}
+
+enum ModFilter {
+  ALL = "all",
+  ENABLED = "enabled",
+  DISABLED = "disabled",
 }
 
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
@@ -307,6 +321,32 @@ const SimpleSearchBar = ({
   );
 };
 
+const ModsList = ({
+  mods,
+  viewMode,
+}: {
+  mods: LocalMod[];
+  viewMode: ViewMode;
+}) => {
+  if (viewMode === ViewMode.GRID) {
+    return (
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+        {mods.map((mod) => (
+          <GridModCard key={mod.remoteId} mod={mod} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className='flex flex-col gap-3'>
+      {mods.map((mod) => (
+        <ListModCard key={mod.remoteId} mod={mod} />
+      ))}
+    </div>
+  );
+};
+
 const MyMods = () => {
   const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.localMods);
@@ -315,6 +355,7 @@ const MyMods = () => {
     (state) => state.getEnabledModsCount,
   );
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
+  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
 
@@ -323,35 +364,57 @@ const MyMods = () => {
     keys: ["name", "description", "author"],
   });
 
-  const displayMods = query.trim()
-    ? results
-    : [...mods].sort((a, b) => {
-        const aIsInstalled =
-          a.status === ModStatus.Installed &&
-          a.installedVpks &&
-          a.installedVpks.length > 0;
-        const bIsInstalled =
-          b.status === ModStatus.Installed &&
-          b.installedVpks &&
-          b.installedVpks.length > 0;
+  const filterModsByStatus = (modsToFilter: LocalMod[]) => {
+    switch (activeTab) {
+      case ModFilter.ENABLED:
+        return modsToFilter.filter(
+          (mod) =>
+            mod.status === ModStatus.Installed &&
+            mod.installedVpks &&
+            mod.installedVpks.length > 0,
+        );
+      case ModFilter.DISABLED:
+        return modsToFilter.filter(
+          (mod) =>
+            mod.status !== ModStatus.Installed ||
+            !mod.installedVpks ||
+            mod.installedVpks.length === 0,
+        );
+      default:
+        return modsToFilter;
+    }
+  };
 
-        if (aIsInstalled && !bIsInstalled) return -1;
-        if (!aIsInstalled && bIsInstalled) return 1;
+  const sortedMods = [...mods].sort((a, b) => {
+    const aIsInstalled =
+      a.status === ModStatus.Installed &&
+      a.installedVpks &&
+      a.installedVpks.length > 0;
+    const bIsInstalled =
+      b.status === ModStatus.Installed &&
+      b.installedVpks &&
+      b.installedVpks.length > 0;
 
-        if (aIsInstalled && bIsInstalled) {
-          const aOrder = a.installOrder ?? 999;
-          const bOrder = b.installOrder ?? 999;
-          if (aOrder !== bOrder) return aOrder - bOrder;
-        }
+    if (aIsInstalled && !bIsInstalled) return -1;
+    if (!aIsInstalled && bIsInstalled) return 1;
 
-        const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
-        const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
-        return dateB - dateA;
-      });
+    if (aIsInstalled && bIsInstalled) {
+      const aOrder = a.installOrder ?? 999;
+      const bOrder = b.installOrder ?? 999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+    }
+
+    const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
+    const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  const displayMods = filterModsByStatus(query.trim() ? results : sortedMods);
 
   const installedMods = getOrderedMods();
 
   const enabledModsCount = getEnabledModsCount();
+  const disabledModsCount = mods.length - enabledModsCount;
 
   useLayoutEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
@@ -366,94 +429,126 @@ const MyMods = () => {
       onScroll={(e) => {
         scrollPositionRef.current = e.currentTarget.scrollTop;
       }}>
-      <div className='mb-8'>
-        <div className='flex items-baseline gap-3'>
-          <h1 className='text-3xl font-bold tracking-tight'>
-            {t("navigation.myMods")}
-          </h1>
-          {mods.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={cn(
-                    "text-sm font-medium cursor-help",
-                    enabledModsCount >= 99
-                      ? "text-destructive"
-                      : enabledModsCount >= 85
-                        ? "text-orange-600"
-                        : "text-muted-foreground",
-                  )}>
-                  ({enabledModsCount}/99)
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{t("myMods.modLimitTooltip")}</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-        <p className='text-muted-foreground mt-2'>{t("myMods.subtitle")}</p>
-      </div>
       <ErrorBoundary>
-        {mods.length === 0 ? (
-          <MyModsEmptyState />
-        ) : (
-          <div className='flex flex-col gap-4'>
-            <div className='flex items-center justify-between'>
-              <SimpleSearchBar query={query} setQuery={setQuery} />
-              <div className='flex items-center gap-2'>
-                <AnalyzeAddonsButton />
-                <ModOrderingDialog>
-                  <Button
-                    size='iconExpand'
-                    variant='outline'
-                    disabled={installedMods.length === 0}
-                    icon={<ArrowUpDown className='h-4 w-4' />}>
-                    {t("mods.manageOrder")}
-                  </Button>
-                </ModOrderingDialog>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setViewMode(ViewMode.GRID)}
-                      size='icon'
-                      variant={
-                        viewMode === ViewMode.GRID ? "default" : "outline"
-                      }
-                      icon={<LayoutGrid className='h-4 w-4' />}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>{t("mods.gridView")}</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setViewMode(ViewMode.LIST)}
-                      size='icon'
-                      variant={
-                        viewMode === ViewMode.LIST ? "default" : "outline"
-                      }
-                      icon={<LayoutList className='h-4 w-4' />}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>{t("mods.listView")}</TooltipContent>
-                </Tooltip>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as ModFilter)}>
+          <div className='mb-8 flex flex-row '>
+            <div className='flex flex-col flex-grow'>
+              <div className='flex items-baseline gap-3'>
+                <h1 className='text-3xl font-bold tracking-tight'>
+                  {t("navigation.myMods")}
+                </h1>
+                {mods.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={cn(
+                          "text-sm font-medium cursor-help",
+                          enabledModsCount >= 99
+                            ? "text-destructive"
+                            : enabledModsCount >= 85
+                              ? "text-orange-600"
+                              : "text-muted-foreground",
+                        )}>
+                        ({enabledModsCount}/99)
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t("myMods.modLimitTooltip")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
+              <p className='text-muted-foreground mt-2'>
+                {t("myMods.subtitle")}
+              </p>
             </div>
 
-            {viewMode === ViewMode.GRID ? (
-              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-                {displayMods.map((mod) => (
-                  <GridModCard key={mod.remoteId} mod={mod} />
-                ))}
-              </div>
-            ) : (
-              <div className='flex flex-col gap-3'>
-                {displayMods.map((mod) => (
-                  <ListModCard key={mod.remoteId} mod={mod} />
-                ))}
-              </div>
-            )}
+            <div className='flex gap-2 items-center'>
+              <AnalyzeAddonsButton size='lg' />
+              <ModOrderingDialog>
+                <Button
+                  size='lg'
+                  variant='outline'
+                  disabled={installedMods.length === 0}
+                  icon={<ArrowUpDown className='h-4 w-4' />}>
+                  {t("mods.manageOrder")}
+                </Button>
+              </ModOrderingDialog>
+            </div>
           </div>
-        )}
+          {mods.length === 0 && <MyModsEmptyState />}
+          {mods.length > 0 && (
+            <div className='flex flex-col gap-4'>
+              <div className='flex items-center justify-between'>
+                <SimpleSearchBar query={query} setQuery={setQuery} />
+                <div className='flex items-center gap-2'>
+                  <TabsList>
+                    <TabsTrigger value={ModFilter.ALL}>
+                      {t("myMods.tabs.all")}
+                      <span className='ml-2 text-muted-foreground text-xs'>
+                        ({mods.length})
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger value={ModFilter.ENABLED}>
+                      <Check className='mr-2 h-4 w-4' />
+                      {t("myMods.tabs.installed")}
+                      <span className='ml-2 text-muted-foreground text-xs'>
+                        ({enabledModsCount})
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger value={ModFilter.DISABLED}>
+                      <Download className='mr-2 h-4 w-4' />
+                      {t("myMods.tabs.downloaded")}
+                      <span className='ml-2 text-muted-foreground text-xs'>
+                        ({disabledModsCount})
+                      </span>
+                    </TabsTrigger>
+                  </TabsList>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setViewMode(ViewMode.GRID)}
+                        size='icon'
+                        variant={
+                          viewMode === ViewMode.GRID ? "default" : "outline"
+                        }
+                        icon={<LayoutGrid className='h-4 w-4' />}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{t("mods.gridView")}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setViewMode(ViewMode.LIST)}
+                        size='icon'
+                        variant={
+                          viewMode === ViewMode.LIST ? "default" : "outline"
+                        }
+                        icon={<LayoutList className='h-4 w-4' />}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{t("mods.listView")}</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+
+              <TabsContent value={ModFilter.ALL}>
+                <ModsList mods={displayMods} viewMode={viewMode} />
+              </TabsContent>
+
+              <TabsContent value={ModFilter.ENABLED}>
+                <ModsList mods={displayMods} viewMode={viewMode} />
+              </TabsContent>
+
+              <TabsContent value={ModFilter.DISABLED}>
+                <ModsList mods={displayMods} viewMode={viewMode} />
+              </TabsContent>
+            </div>
+          )}
+        </Tabs>
       </ErrorBoundary>
     </div>
   );

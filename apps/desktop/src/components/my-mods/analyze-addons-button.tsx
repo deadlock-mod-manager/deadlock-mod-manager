@@ -13,7 +13,7 @@ import { AnalysisResultsDialog } from "./analysis-results-dialog";
 
 interface AnalyzeAddonsButtonProps {
   className?: string;
-  size?: "default" | "iconExpand";
+  size?: "default" | "iconExpand" | "lg";
 }
 
 export const AnalyzeAddonsButton = ({

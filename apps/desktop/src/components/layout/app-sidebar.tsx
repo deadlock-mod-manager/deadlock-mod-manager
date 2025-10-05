@@ -56,8 +56,8 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
   {
     id: "my-mods",
     title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
-      <div className='flex items-center gap-2'>
-        {t("navigation.myMods")}{" "}
+      <div className='flex items-center justify-between w-full'>
+        <span>{t("navigation.myMods")}</span>
         {count !== undefined && (
           <Badge
             className='px-1 py-0.1 text-xs'
@@ -85,12 +85,12 @@ const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
   {
     id: "downloads",
     title: ({ downloads }: { downloads?: number }) => (
-      <span>
+      <div className='flex items-center justify-between w-full'>
         {t("navigation.downloads")}{" "}
         {downloads !== undefined && downloads > 0 && (
           <Badge className='px-1 py-0.1 text-xs'>{downloads}</Badge>
         )}
-      </span>
+      </div>
     ),
     url: "/downloads",
     icon: Download,

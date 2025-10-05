@@ -23,7 +23,12 @@
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
-    "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum"
+    "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum",
+    "tabs": {
+      "all": "All",
+      "installed": "Installed",
+      "downloaded": "Downloaded"
+    }
   },
   "modOrdering": {
     "manageOrderTooltip": "Manage the order in which mods are loaded",
@@ -32,10 +37,10 @@
     "noMods": "No installed mods to order",
     "orderSaved": "Mod order saved successfully",
     "orderSaveFailed": "Failed to save mod order",
-    "manageOrder": "Manage Order"
+    "manageOrder": "Change Mods Order"
   },
   "mods": {
-    "manageOrder": "Manage Order",
+    "manageOrder": "Change Mods Order",
     "searchPlaceholder": "Search mods",
     "noPreviewAvailable": "No preview available",
     "audio": "Audio",
