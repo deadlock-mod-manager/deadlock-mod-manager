@@ -525,6 +525,21 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "background": {
+      "title": "Tło",
+      "description": "Dostosuj tła aplikacji.",
+      "detailedDescription": "Ten plugin pozwala ustawić niestandardowe obrazy tła dla całej aplikacji. Możesz użyć URL do obrazu online lub przesłać lokalny plik obrazu. Plugin obsługuje efekty przezroczystości i rozmycia, aby dostosować wygląd. Możesz również wybrać, czy uwzględnić pasek boczny w efekcie tła.",
+      "usageInstructions": "Aby użyć tego pluginu: 1) Włącz plugin za pomocą przełącznika, 2) Wprowadź URL obrazu lub kliknij 'Wybierz obraz', aby przesłać lokalny plik, 3) Dostosuj ustawienia przezroczystości i rozmycia według potrzeb, 4) Opcjonalnie włącz 'Uwzględnij pasek boczny', aby zastosować tło również do paska bocznego.",
+      "imageUrl": "URL obrazu",
+      "opacity": "Przezroczystość",
+      "blur": "Rozmycie",
+      "includeSidebar": "Uwzględnij pasek boczny",
+      "chooseImage": "Wybierz obraz"
+    },
+    "usageInstructions": "Instrukcje użytkowania",
+    "renderActive": "Plugin jest aktywny i działa w tle"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",

@@ -1,0 +1,5 @@
+{
+  "title": "Plugin Documentation",
+  "description": "Documentation for specific plugins and their features",
+  "pages": ["index", "background"]
+}

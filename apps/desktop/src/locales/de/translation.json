@@ -98,6 +98,8 @@
     "yes": "Ja",
     "no": "Nein",
     "create": "Erstellen",
+    "back": "Zurück",
+    "settings": "Einstellungen",
     "gameDetected": "Spiel erkannt",
     "gameInstalledAt": "Spiel installiert unter {{path}}",
     "launchVanilla": "Vanilla starten",
@@ -117,7 +119,11 @@
     "apiDegraded": "API Probleme",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status Unbekannt",
-    "optional": "optional"
+    "optional": "optional",
+    "none": "Keine",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "open": "Öffnen"
   },
   "settings": {
     "language": "Sprache",
@@ -136,6 +142,8 @@
     "launchOptionsDescription": "Passen Sie die Startoptionen für das Spiel an. Diese werden unabhängig vom ausgewählten Spielmodus (Vanilla oder Modded) angewendet.",
     "game": "Spiel",
     "application": "Anwendung",
+    "plugin": "Plugin",
+    "pluginDescription": "Plugins und Integrationen für die Desktop-App verwalten.",
     "privacy": "Datenschutz",
     "about": "Über",
     "systemSettings": "Systemeinstellungen",
@@ -617,6 +625,21 @@
       "websiteUrl": "https://example.com/mod",
       "shortDescription": "Kurze Beschreibung (optional)"
     }
+  },
+  "plugins": {
+    "background": {
+      "title": "Hintergrund",
+      "description": "Anwendungs-Hintergründe anpassen.",
+      "detailedDescription": "Dieses Plugin ermöglicht es Ihnen, benutzerdefinierte Hintergrundbilder für die gesamte Anwendung festzulegen. Sie können entweder eine URL zu einem Online-Bild verwenden oder eine lokale Bilddatei hochladen. Das Plugin unterstützt Deckkraft- und Unschärfe-Effekte zur Anpassung des Erscheinungsbilds. Sie können auch wählen, ob die Seitenleiste in den Hintergrund-Effekt einbezogen werden soll.",
+      "usageInstructions": "So verwenden Sie dieses Plugin: 1) Aktivieren Sie das Plugin mit dem Schalter, 2) Geben Sie eine Bild-URL ein oder klicken Sie auf 'Bild auswählen', um eine lokale Datei hochzuladen, 3) Passen Sie die Deckkraft- und Unschärfe-Einstellungen nach Wunsch an, 4) Aktivieren Sie optional 'Seitenleiste einbeziehen', um den Hintergrund auch auf die Seitenleiste anzuwenden.",
+      "imageUrl": "Bild-URL",
+      "opacity": "Deckkraft",
+      "blur": "Unschärfe",
+      "includeSidebar": "Seitenleiste einbeziehen",
+      "chooseImage": "Bild auswählen"
+    },
+    "usageInstructions": "Anleitung zur Verwendung",
+    "renderActive": "Plugin ist aktiv und läuft im Hintergrund"
   },
   "accessibility": {
     "close": "Schließen",

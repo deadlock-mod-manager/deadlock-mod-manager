@@ -602,6 +602,21 @@
       "shortDescription": "简短描述（可选）"
     }
   },
+  "plugins": {
+    "background": {
+      "title": "背景",
+      "description": "自定义应用程序背景。",
+      "detailedDescription": "此插件允许您为整个应用程序设置自定义背景图像。您可以使用在线图像的URL或上传本地图像文件。插件支持透明度和模糊效果来自定义外观。您还可以选择是否在背景效果中包含侧边栏。",
+      "usageInstructions": "要使用此插件：1）使用开关启用插件，2）输入图像URL或点击'选择图像'上传本地文件，3）根据需要调整透明度和模糊设置，4）可选地启用'包含侧边栏'以将背景也应用到侧边栏。",
+      "imageUrl": "图像URL",
+      "opacity": "透明度",
+      "blur": "模糊",
+      "includeSidebar": "包含侧边栏",
+      "chooseImage": "选择图像"
+    },
+    "usageInstructions": "使用说明",
+    "renderActive": "插件处于活动状态并在后台运行"
+  },
   "accessibility": {
     "close": "关闭",
     "previousSlide": "上一张",
