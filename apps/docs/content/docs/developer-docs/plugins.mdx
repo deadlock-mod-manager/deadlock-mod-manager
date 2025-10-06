@@ -1,0 +1,171 @@
+---
+title: Plugin System
+description: Plugin architecture, loader system, and creating custom plugins
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Plugin System
+
+The plugin system allows developers to create custom functionality for Deadlock Mod Manager. Plugins are loaded dynamically and can render UI globally or provide settings interfaces.
+
+## Architecture
+
+### Core Components
+
+- **Plugin Loader** (`lib/plugins.ts`): Discovers and loads plugins from `src/plugins/*/`
+- **Global Renderer** (`components/global-plugin-renderer.tsx`): Renders active plugins globally
+- **Plugin Types** (`types/plugins.ts`): TypeScript definitions
+
+### Plugin Discovery
+
+```typescript
+// Scans for manifest files
+const manifestModules = import.meta.glob("@/plugins/*/manifest.json", {
+  eager: true,
+  import: "default",
+});
+
+// Lazy loads entry points
+const entryModules = import.meta.glob([
+  "@/plugins/*/src/**/*.tsx",
+  "@/plugins/*/index.tsx"
+], {
+  eager: false,
+});
+```
+
+### State Management
+
+```typescript
+// Plugin enabled state
+enabledPlugins: Record<string, boolean>
+
+// Plugin settings
+pluginSettings: Record<string, unknown>
+
+// Methods
+setEnabledPlugin(id: string, enabled: boolean): void
+setPluginSettings(id: string, value: unknown): void
+```
+
+## Creating a Plugin
+
+### 1. Plugin Structure
+
+```
+src/plugins/your-plugin/
+├── manifest.json
+├── index.tsx
+└── public/icon.svg
+```
+
+### 2. Manifest (`manifest.json`)
+
+```json
+{
+  "id": "your-plugin",
+  "nameKey": "plugins.yourPlugin.title",
+  "descriptionKey": "plugins.yourPlugin.description",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "icon": "public/icon.svg",
+  "entry": "./index.tsx"
+}
+```
+
+### 3. Plugin Implementation (`index.tsx`)
+
+```typescript
+import { useTranslation } from "react-i18next";
+import { usePersistedStore } from "@/lib/store";
+import type { PluginModule } from "@/plugins/types";
+
+export const manifest = {
+  id: "your-plugin",
+  nameKey: "plugins.yourPlugin.title",
+  descriptionKey: "plugins.yourPlugin.description",
+  version: "1.0.0",
+  author: "Your Name",
+  icon: "public/icon.svg",
+} as const;
+
+const Settings = () => {
+  const { t } = useTranslation();
+  const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]);
+  const setSettings = usePersistedStore((s) => s.setPluginSettings);
+
+  return <div>{/* Your settings UI */}</div>;
+};
+
+const Render = () => {
+  const isEnabled = usePersistedStore((s) => s.enabledPlugins[manifest.id] ?? false);
+  if (!isEnabled) return null;
+  
+  return <div>{/* Your global UI */}</div>;
+};
+
+const mod: PluginModule = {
+  manifest,
+  Render,
+  Settings,
+};
+
+export default mod;
+```
+
+### 4. Add Translations
+
+```json
+// locales/en/translation.json
+{
+  "plugins": {
+    "yourPlugin": {
+      "title": "Your Plugin",
+      "description": "Plugin description"
+    }
+  }
+}
+```
+
+## Best Practices
+
+### State Management
+
+```typescript
+// Always check enabled state before rendering
+const isEnabled = usePersistedStore((s) => s.enabledPlugins[manifest.id] ?? false);
+if (!isEnabled) return null;
+
+// Use global store for settings
+const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]);
+const setSettings = usePersistedStore((s) => s.setPluginSettings);
+```
+
+### Error Handling
+
+```typescript
+const Render = () => {
+  try {
+    return <YourComponent />;
+  } catch (error) {
+    console.error('Plugin error:', error);
+    return null;
+  }
+};
+```
+
+## Troubleshooting
+
+<Callout type="warning">
+**Plugin Not Loading**
+- Check manifest.json syntax
+- Verify entry point path
+- Ensure proper exports in plugin file
+</Callout>
+
+<Callout type="warning">
+**Settings Not Persisting**
+- Use global store methods
+- Check plugin ID consistency
+</Callout>

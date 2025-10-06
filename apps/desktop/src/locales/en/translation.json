@@ -105,6 +105,8 @@
     "yes": "Yes",
     "no": "No",
     "create": "Create",
+    "back": "Back",
+    "settings": "Settings",
     "gameDetected": "Game Detected",
     "gameInstalledAt": "Game installed at {{path}}",
     "launchVanilla": "Launch Without Mods",
@@ -124,7 +126,11 @@
     "apiDegraded": "API Issues",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status Unknown",
-    "optional": "optional"
+    "optional": "optional",
+    "none": "None",
+    "enable": "Enable",
+    "disable": "Disable",
+    "open": "Open"
   },
   "settings": {
     "language": "Language",
@@ -143,6 +149,8 @@
     "launchOptionsDescription": "Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).",
     "game": "Game",
     "application": "Application",
+    "plugin": "Plugin",
+    "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "Privacy",
     "about": "About",
     "systemSettings": "System Settings",
@@ -613,6 +621,21 @@
       "websiteUrl": "https://example.com/mod",
       "shortDescription": "Short description (optional)"
     }
+  },
+  "plugins": {
+    "background": {
+      "title": "Background",
+      "description": "Customize application backgrounds.",
+      "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
+      "usageInstructions": "To use this plugin: 1) Enable the plugin using the toggle, 2) Enter an image URL or click 'Choose Image' to upload a local file, 3) Adjust opacity and blur settings as desired, 4) Optionally enable 'Include sidebar' to apply the background to the sidebar as well.",
+      "imageUrl": "Image URL",
+      "opacity": "Opacity",
+      "blur": "Blur",
+      "includeSidebar": "Include sidebar",
+      "chooseImage": "Choose Image"
+    },
+    "usageInstructions": "Usage Instructions",
+    "renderActive": "Plugin is active and running in the background"
   },
   "accessibility": {
     "close": "Close",

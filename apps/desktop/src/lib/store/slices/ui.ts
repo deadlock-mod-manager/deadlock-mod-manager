@@ -20,12 +20,19 @@ export type UIState = {
   audioVolume: number; // Volume as percentage (0-100)
   modsFilters: ModsFilters;
 
+  // Plugins
+  enabledPlugins: Record<string, boolean>;
+  pluginSettings: Record<string, unknown>;
+
   forceShowWhatsNew: () => void;
   markVersionAsSeen: (version: string) => void;
   setShowWhatsNew: (show: boolean) => void;
   setAudioVolume: (volume: number) => void;
   updateModsFilters: (filters: Partial<ModsFilters>) => void;
   resetModsFilters: () => void;
+
+  setEnabledPlugin: (id: string, enabled: boolean) => void;
+  setPluginSettings: (id: string, value: unknown) => void;
 };
 
 const DEFAULT_MODS_FILTERS: ModsFilters = {
@@ -43,6 +50,8 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%
   modsFilters: DEFAULT_MODS_FILTERS,
+  enabledPlugins: {},
+  pluginSettings: {},
 
   forceShowWhatsNew: () =>
     set(() => ({
@@ -73,5 +82,14 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   resetModsFilters: () =>
     set(() => ({
       modsFilters: DEFAULT_MODS_FILTERS,
+    })),
+
+  setEnabledPlugin: (id: string, enabled: boolean) =>
+    set((state) => ({
+      enabledPlugins: { ...state.enabledPlugins, [id]: enabled },
+    })),
+  setPluginSettings: (id: string, value: unknown) =>
+    set((state) => ({
+      pluginSettings: { ...state.pluginSettings, [id]: value },
     })),
 });

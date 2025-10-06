@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./app";
+import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Debug from "./pages/debug";
@@ -10,6 +11,7 @@ import Downloads from "./pages/downloads";
 import Mod from "./pages/mod";
 import GetMods from "./pages/mods";
 import MyMods from "./pages/my-mods";
+import PluginEntry from "./pages/plugin";
 import CustomSettings from "./pages/settings";
 import Splash from "./pages/splash";
 
@@ -29,10 +31,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<CustomSettings />} path='/settings' />
+              <Route element={<PluginEntry />} path='/plugins/:id' />
               <Route element={<Debug />} path='/debug' />
             </Route>
           </Routes>
         </BrowserRouter>
+        <GlobalPluginRenderer />
       </Suspense>
     </QueryClientProvider>
   </React.StrictMode>,

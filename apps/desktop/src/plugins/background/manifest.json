@@ -1,0 +1,11 @@
+{
+  "id": "background",
+  "nameKey": "plugins.background.title",
+  "descriptionKey": "plugins.background.description",
+  "version": "0.0.1",
+  "author": "Skeptic",
+  "homepageUrl": "https://docs.deadlockmods.app/plugins/background",
+  "icon": "public/icon.svg",
+  "tags": ["official"],
+  "entry": "./index.tsx"
+}
