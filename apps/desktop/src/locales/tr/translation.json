@@ -607,6 +607,21 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "background": {
+      "title": "Arka Plan",
+      "description": "Uygulama arka planlarını özelleştirin.",
+      "detailedDescription": "Bu eklenti, tüm uygulama için özel arka plan görüntüleri ayarlamanıza olanak tanır. Çevrimiçi bir görüntünün URL'sini kullanabilir veya yerel bir görüntü dosyası yükleyebilirsiniz. Eklenti, görünümü özelleştirmek için şeffaflık ve bulanıklık efektlerini destekler. Ayrıca yan çubuğu arka plan efektine dahil edip etmeyeceğinizi seçebilirsiniz.",
+      "usageInstructions": "Bu eklentiyi kullanmak için: 1) Eklentiyi anahtar kullanarak etkinleştirin, 2) Bir görüntü URL'si girin veya yerel bir dosya yüklemek için 'Görüntü Seç' seçeneğine tıklayın, 3) Şeffaflık ve bulanıklık ayarlarını istediğiniz gibi ayarlayın, 4) İsteğe bağlı olarak arka planı yan çubuğa da uygulamak için 'Yan çubuğu dahil et' seçeneğini etkinleştirin.",
+      "imageUrl": "Görüntü URL'si",
+      "opacity": "Şeffaflık",
+      "blur": "Bulanıklık",
+      "includeSidebar": "Yan çubuğu dahil et",
+      "chooseImage": "Görüntü seç"
+    },
+    "usageInstructions": "Kullanım Talimatları",
+    "renderActive": "Eklenti etkin ve arka planda çalışıyor"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",

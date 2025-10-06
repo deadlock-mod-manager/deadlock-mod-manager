@@ -7,6 +7,7 @@
     "api:dev": "pnpm --filter api dev",
     "dev": "turbo run dev",
     "desktop:dev": "pnpm --filter desktop tauri dev",
+    "docs:dev": "pnpm --filter docs dev",
     "docker:api:build": "docker build -f apps/api/Dockerfile -t deadlock-api .",
     "docker:api:run": "docker run --rm -p 9000:9000 --env-file .env deadlock-api",
     "docker:api:dev": "docker compose up api --build",

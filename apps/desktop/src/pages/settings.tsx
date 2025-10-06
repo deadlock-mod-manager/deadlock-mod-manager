@@ -25,6 +25,7 @@ import {
   GamepadIcon,
   InfoIcon,
   MonitorIcon,
+  PlugIcon,
   PlusIcon,
   Settings,
   ShieldIcon,
@@ -44,6 +45,7 @@ import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { LanguageSettings } from "@/components/settings/language-settings";
+import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
@@ -228,6 +230,12 @@ const CustomSettings = () => {
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='plugin'>
+              <PlugIcon className='h-5 w-5' />
+              {t("settings.plugin")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='tools'>
               <WrenchIcon className='h-5 w-5' />
               {t("settings.tools")}
@@ -262,6 +270,14 @@ const CustomSettings = () => {
                   <CustomSettingsData />
                 </ErrorBoundary>
               </Suspense>
+            </TabsContent>
+
+            <TabsContent className='mt-0 space-y-2' value='plugin'>
+              <Section
+                description={t("settings.pluginDescription")}
+                title={t("settings.plugin")}>
+                <PluginList />
+              </Section>
             </TabsContent>
 
             <TabsContent className='mt-0 space-y-2' value='game'>
