@@ -500,6 +500,14 @@
     }
   },
   "plugins": {
+    "flashbang": {
+      "title": "Flashbang Modus",
+      "description": "Erzwingt Helli Mod i de aagmässene Ziit.",
+      "detailedDescription": "Dr Flashbang-Modus schaltet d App i de definierte Stunde uf Hell – unabhängig vom Theme.",
+      "usageInstructions": "Plug-in aktivierä und Start-/Endstund (0–23) iistellä.",
+      "startHour": "Startstund (0–23)",
+      "endHour": "Endstund (0–23)"
+    },
     "background": {
       "title": "Hintergrund",
       "description": "Anwendigshintergründ aapasse.",

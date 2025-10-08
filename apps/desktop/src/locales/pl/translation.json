@@ -504,6 +504,14 @@
     }
   },
   "plugins": {
+    "flashbang": {
+      "title": "Tryb Flashbang",
+      "description": "Wymusza jasny motyw w wybranych godzinach.",
+      "detailedDescription": "Tryb Flashbang przełącza aplikację na jasny motyw w skonfigurowanych godzinach, niezależnie od wybranego motywu.",
+      "usageInstructions": "Włącz wtyczkę i ustaw godzinę rozpoczęcia i zakończenia (0–23).",
+      "startHour": "Godzina rozpoczęcia (0–23)",
+      "endHour": "Godzina zakończenia (0–23)"
+    },
     "background": {
       "title": "Tło",
       "description": "Dostosuj tła aplikacji.",

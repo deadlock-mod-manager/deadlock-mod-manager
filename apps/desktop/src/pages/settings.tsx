@@ -37,9 +37,10 @@ import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
+import { useLocation } from "react-router";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
-import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
+// Flashbang is now a plugin; legacy toggle removed
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { LanguageSettings } from "@/components/settings/language-settings";
@@ -162,7 +163,11 @@ const CustomSettings = () => {
   const { clearMods, localMods: mods } = usePersistedStore();
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
-  const [activeTab, setActiveTab] = useState("launch-options");
+  const location = useLocation();
+  const initialTab =
+    (location.state as { activeTab?: string } | null)?.activeTab ??
+    "launch-options";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
@@ -317,7 +322,7 @@ const CustomSettings = () => {
                     <ThemeSwitcher />
                   </div>
 
-                  <FlashbangToggle />
+                  {null}
                   <VolumeControl />
                 </div>
               </Section>

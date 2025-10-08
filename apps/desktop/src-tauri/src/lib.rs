@@ -5,6 +5,7 @@
 )]
 
 mod commands;
+mod discord_rpc;
 mod errors;
 mod mod_manager;
 mod reports;
@@ -179,6 +180,7 @@ pub fn run() {
     .plugin(tauri_plugin_machine_uid::init());
 
   builder
+    .manage(discord_rpc::DiscordState::new())
     .setup(|app| {
       let handle = app.app_handle();
 
@@ -238,7 +240,10 @@ pub fn run() {
       commands::get_report_counts,
       commands::store_auth_token,
       commands::get_auth_token,
-      commands::clear_auth_token
+      commands::clear_auth_token,
+      commands::set_discord_presence,
+      commands::clear_discord_presence,
+      commands::disconnect_discord
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

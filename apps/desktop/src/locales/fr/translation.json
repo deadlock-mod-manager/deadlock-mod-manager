@@ -597,6 +597,18 @@
     }
   },
   "plugins": {
+    "flashbang": {
+      "title": "Mode Flashbang",
+      "description": "Force le mode clair pendant une plage horaire.",
+      "detailedDescription": "Le mode Flashbang passe l’application en mode clair pendant les heures configurées, quel que soit le thème.",
+      "usageInstructions": "Activez le plugin et définissez l’heure de début et de fin (0–23).",
+      "startHour": "Heure de début (0–23)",
+      "endHour": "Heure de fin (0–23)"
+    },
+    "themes": {
+      "title": "Thèmes",
+      "description": "Créez vos propres thèmes ou utilisez des préréglages comme Nightshift."
+    },
     "background": {
       "title": "Arrière-plan",
       "description": "Personnaliser les arrière-plans de l'application.",

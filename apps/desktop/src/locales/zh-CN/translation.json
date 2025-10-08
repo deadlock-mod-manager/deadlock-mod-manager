@@ -581,6 +581,14 @@
     }
   },
   "plugins": {
+    "flashbang": {
+      "title": "闪光弹模式",
+      "description": "在设定时间段强制使用浅色主题。",
+      "detailedDescription": "闪光弹模式会在配置的时间段内强制切换为浅色主题，不受主题设置影响。",
+      "usageInstructions": "启用插件并设置开始/结束小时（0–23）。",
+      "startHour": "开始小时（0–23）",
+      "endHour": "结束小时（0–23）"
+    },
     "background": {
       "title": "背景",
       "description": "自定义应用程序背景。",

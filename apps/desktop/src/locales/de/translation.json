@@ -605,6 +605,22 @@
     }
   },
   "plugins": {
+    "themes": {
+      "title": "Themes",
+      "description": "Erstelle eigene Themes oder nutze Presets wie Nightshift."
+    },
+    "flashbang": {
+      "title": "Flashbang-Modus",
+      "description": "Erzwingt Light Mode innerhalb eines Zeitfensters.",
+      "detailedDescription": "Der Flashbang‑Modus schaltet die App im gewählten Zeitraum in den Light Mode – unabhängig von der Theme‑Einstellung.",
+      "usageInstructions": "Plugin aktivieren und Start‑/Endstunde (0–23) festlegen.",
+      "startHour": "Stunde Start (0–23)",
+      "endHour": "Stunde Ende (0–23)"
+    },
+    "sudo": {
+      "title": "Superuser-Modus",
+      "description": "Erweiterte Mod-Verwaltung für fortgeschrittene Nutzer."
+    },
     "background": {
       "title": "Hintergrund",
       "description": "Anwendungs-Hintergründe anpassen.",
@@ -615,6 +631,28 @@
       "blur": "Unschärfe",
       "includeSidebar": "Seitenleiste einbeziehen",
       "chooseImage": "Bild auswählen"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Zeige deine Aktivität in Discord.",
+      "detailedDescription": "Dieses Plugin zeigt deine Aktivität im Deadlock Mod Manager auf deinem Discord-Profil mithilfe von Discord Rich Presence an. Deine Freunde können sehen, was du im Mod Manager machst.",
+      "usageInstructions": "So verwendest du dieses Plugin: 1) Erstelle eine Discord-Anwendung im Discord Developer Portal, 2) Kopiere deine Application ID und füge sie unten ein, 3) Passe optional den angezeigten Text an, 4) Lade benutzerdefinierte Bilder als Rich Presence Assets zu deiner Discord-Anwendung hoch.",
+      "applicationId": "Discord Application ID",
+      "optional": "(optional)",
+      "applicationIdDescription": "Erforderlich: Erstelle deine eigene Discord-Anwendung unter https://discord.com/developers/applications um dieses Plugin zu nutzen",
+      "details": "Details-Text",
+      "state": "Status-Text",
+      "largeImageKey": "Großes Bild-Schlüssel",
+      "largeImageText": "Großes Bild-Text",
+      "smallImageKey": "Kleines Bild-Schlüssel",
+      "smallImageText": "Kleines Bild-Text",
+      "showElapsedTime": "Verstrichene Zeit anzeigen",
+      "showElapsedTimeDescription": "Zeige an, wie lange du den Mod Manager bereits verwendest",
+      "setupGuide": "Einrichtungsanleitung",
+      "setupStep1": "Besuche das Discord Developer Portal und erstelle eine neue Anwendung",
+      "setupStep2": "Kopiere deine Application ID von der Seite 'General Information'",
+      "setupStep3": "Lade Bilder als Rich Presence Assets mit passenden Schlüsselnamen hoch",
+      "setupStep4": "Füge deine Application ID oben ein und aktiviere das Plugin"
     },
     "usageInstructions": "Anleitung zur Verwendung",
     "renderActive": "Plugin ist aktiv und läuft im Hintergrund"

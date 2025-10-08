@@ -52,6 +52,7 @@ vpk-parser = { path = "../../../packages/vpk-parser" }
 tokio = { version = "1.47.1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json"] }
 tauri-plugin-dialog = "2"
+discord-rich-presence = "0.2"
 
 [dev-dependencies]
 tempfile = "3.22.0"
