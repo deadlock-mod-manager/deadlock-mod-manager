@@ -87,7 +87,9 @@ const PluginEntry = () => {
               {isEnabled ? t("common.disable") : t("common.enable")}
             </Button>
             <Button
-              onClick={() => navigate(-1)}
+              onClick={() =>
+                navigate("/settings", { state: { activeTab: "plugin" } })
+              }
               size='default'
               variant='outline'>
               {t("common.back")}

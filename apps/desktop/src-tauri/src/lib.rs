@@ -6,6 +6,7 @@
 
 mod commands;
 mod download_manager;
+mod discord_rpc;
 mod errors;
 mod mod_manager;
 mod reports;
@@ -179,6 +180,7 @@ pub fn run() {
     .plugin(tauri_plugin_machine_uid::init());
 
   builder
+    .manage(discord_rpc::DiscordState::new())
     .setup(|app| {
       let handle = app.app_handle();
 
@@ -249,7 +251,10 @@ pub fn run() {
       commands::cancel_download,
       commands::get_download_status,
       commands::get_all_downloads,
-      commands::replace_mod_vpks
+      commands::replace_mod_vpks,
+      commands::set_discord_presence,
+      commands::clear_discord_presence,
+      commands::disconnect_discord
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

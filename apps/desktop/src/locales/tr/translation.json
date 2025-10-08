@@ -608,6 +608,14 @@
     }
   },
   "plugins": {
+    "flashbang": {
+      "title": "Flashbang Modu",
+      "description": "Belirlenen saatlerde Açık Tema zorlanır.",
+      "detailedDescription": "Flashbang modu, yapılandırılan saatlerde tema ayarından bağımsız olarak uygulamayı Açık Tema’ya geçirir.",
+      "usageInstructions": "Eklentiyi etkinleştirip başlangıç ve bitiş saatini (0–23) seçin.",
+      "startHour": "Başlangıç saati (0–23)",
+      "endHour": "Bitiş saati (0–23)"
+    },
     "background": {
       "title": "Arka Plan",
       "description": "Uygulama arka planlarını özelleştirin.",
