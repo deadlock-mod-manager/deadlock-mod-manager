@@ -7,6 +7,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,24 +17,20 @@ import {
   DiscordLogo,
   Download,
   Gear,
+  House,
   type Icon,
-  InfoIcon,
   MagnifyingGlass,
   Package,
   Question,
-  Sparkle,
   UploadSimple,
 } from "@phosphor-icons/react";
 import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { useWhatsNew } from "@/hooks/use-whats-new";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
-import UserMenu from "../user-menu";
-import { AboutDialog } from "./about-dialog";
 import { SidebarCollapse } from "./sidebar-collapse";
 
 type SidebarItem = {
@@ -51,78 +48,94 @@ type SidebarItem = {
   dialog?: React.ComponentType;
   icon: Icon;
   bottom?: boolean;
+  group?: string;
 };
 
-const getSidebarItems = (t: (key: string) => string): SidebarItem[] => [
-  {
-    id: "my-mods",
-    title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
-      <div className='flex items-center justify-between w-full'>
-        <span>{t("navigation.myMods")}</span>
-        {count !== undefined && (
-          <Badge
-            className='px-1 py-0.1 text-xs'
-            variant={isActive ? "inverted" : "default"}>
-            {count}
-          </Badge>
-        )}
-      </div>
-    ),
-    url: "/",
-    icon: Package,
-  },
-  {
-    id: "get-mods",
-    title: () => <span>{t("navigation.getMods")}</span>,
-    url: "/mods",
-    icon: MagnifyingGlass,
-  },
-  {
-    id: "add-mods",
-    title: () => <span>{t("navigation.addMods")}</span>,
-    url: "/add-mods",
-    icon: UploadSimple,
-  },
-  {
-    id: "downloads",
-    title: ({ downloads }: { downloads?: number }) => (
-      <div className='flex items-center justify-between w-full'>
-        {t("navigation.downloads")}{" "}
-        {downloads !== undefined && downloads > 0 && (
-          <Badge className='px-1 py-0.1 text-xs'>{downloads}</Badge>
-        )}
-      </div>
-    ),
-    url: "/downloads",
-    icon: Download,
-  },
-  {
-    id: "settings",
-    title: () => <span>{t("navigation.settings")}</span>,
-    url: "/settings",
-    icon: Gear,
-    bottom: true,
-  },
-  {
-    id: "about",
-    title: () => <span>{t("navigation.about")}</span>,
-    url: "/about",
-    icon: InfoIcon,
-    dialog: AboutDialog,
-    bottom: true,
-  },
-  ...(import.meta.env.DEV
-    ? [
-        {
-          id: "debug",
-          title: () => <span>Debug</span>,
-          url: "/debug",
-          icon: BugBeetleIcon,
-          bottom: true,
-        },
-      ]
-    : []),
-];
+const getSidebarItems = (
+  t: (key: string) => string,
+  group?: string,
+): SidebarItem[] => {
+  const allItems: SidebarItem[] = [
+    {
+      id: "dashboard",
+      title: () => <span>{t("navigation.dashboard")}</span>,
+      url: "/",
+      icon: House,
+      group: "general",
+    },
+    {
+      id: "my-mods",
+      title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
+        <div className='flex items-center justify-between w-full'>
+          <span>{t("navigation.myMods")}</span>
+          {count !== undefined && (
+            <Badge
+              className='px-1 py-0.1 text-xs'
+              variant={isActive ? "inverted" : "default"}>
+              {count}
+            </Badge>
+          )}
+        </div>
+      ),
+      url: "/my-mods",
+      icon: Package,
+      group: "mods",
+    },
+    {
+      id: "get-mods",
+      title: () => <span>{t("navigation.getMods")}</span>,
+      url: "/mods",
+      icon: MagnifyingGlass,
+      group: "mods",
+    },
+    {
+      id: "add-mods",
+      title: () => <span>{t("navigation.addMods")}</span>,
+      url: "/add-mods",
+      icon: UploadSimple,
+      group: "mods",
+    },
+    {
+      id: "downloads",
+      title: ({ downloads }: { downloads?: number }) => (
+        <div className='flex items-center justify-between w-full'>
+          {t("navigation.downloads")}{" "}
+          {downloads !== undefined && downloads > 0 && (
+            <Badge className='px-1 py-0.1 text-xs'>{downloads}</Badge>
+          )}
+        </div>
+      ),
+      url: "/downloads",
+      icon: Download,
+      group: "general",
+    },
+    {
+      id: "settings",
+      title: () => <span>{t("navigation.settings")}</span>,
+      url: "/settings",
+      icon: Gear,
+      group: "general",
+    },
+    ...(import.meta.env.DEV
+      ? [
+          {
+            id: "debug",
+            title: () => <span>Debug</span>,
+            url: "/debug",
+            icon: BugBeetleIcon,
+            bottom: true,
+            group: "Dev",
+          },
+        ]
+      : []),
+  ];
+
+  if (group) {
+    return allItems.filter((item) => item.group === group);
+  }
+
+  return allItems;
+};
 
 type SidebarItemProps = {
   item: SidebarItem;
@@ -184,64 +197,88 @@ export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
-  const { forceShow } = useWhatsNew();
 
-  const items = getSidebarItems(t);
+  const allItems = getSidebarItems(t);
+
+  const topItems = allItems.filter((item) => !item.bottom);
+  const bottomItems = allItems.filter((item) => item.bottom);
+
+  const topGroups = [...new Set(topItems.map((item) => item.group))].filter(
+    Boolean,
+  ) as string[];
+  const bottomGroups = [
+    ...new Set(bottomItems.map((item) => item.group)),
+  ].filter(Boolean) as string[];
+
+  const groupLabels: Record<string, string> = {
+    mods: "Mods",
+    general: "General",
+  };
 
   return (
     <Sidebar
-      className='absolute top-10 left-0 z-50 flex h-[calc(100vh-40px)] w-[12rem] flex-col border-t'
+      className='z-50 flex h-[calc(100vh-96px)] absolute bottom-0 left-0 w-[12rem] flex-col border-t'
       collapsible='icon'
       variant='sidebar'>
-      <SidebarContent className='flex-grow'>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items
-                .filter((item) => !item.bottom)
-                .map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarItemComponent
-                      item={item}
-                      location={location}
-                      mods={mods}
-                    />
-                  </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className='flex-grow pt-2'>
+        {topGroups.map((group) => {
+          const groupItems = topItems.filter((item) => item.group === group);
+          return (
+            <SidebarGroup key={group}>
+              <SidebarGroupLabel>
+                {groupLabels[group] || group}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {groupItems.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarItemComponent
+                        item={item}
+                        location={location}
+                        mods={mods}
+                      />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
       <SidebarFooter>
+        {bottomGroups.map((group) => {
+          const groupItems = bottomItems.filter((item) => item.group === group);
+          return (
+            <SidebarGroup key={group}>
+              <SidebarGroupLabel>
+                {groupLabels[group] || group}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {groupItems.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarItemComponent
+                        item={item}
+                        location={location}
+                        mods={mods}
+                      />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items
-                .filter((item) => item.bottom)
-                .map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarItemComponent
-                      item={item}
-                      location={location}
-                      mods={mods}
-                    />
-                  </SidebarMenuItem>
-                ))}
               <Separator />
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  className='cursor-pointer'
-                  onClick={() => forceShow()}>
-                  <Sparkle weight='duotone' />
-                  <span>{t("navigation.whatsNew")}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
                   onClick={() => open("https://docs.deadlockmods.app/")}>
                   <Question weight='duotone' />
-                  <span>{t("help.viewDocs")}</span>
+                  <span>{t("help.documentation")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -253,11 +290,6 @@ export const AppSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <Separator />
-              <SidebarMenuItem>
-                <div className='flex items-center justify-center p-2'>
-                  <UserMenu />
-                </div>
-              </SidebarMenuItem>
               <SidebarCollapse />
             </SidebarMenu>
           </SidebarGroupContent>

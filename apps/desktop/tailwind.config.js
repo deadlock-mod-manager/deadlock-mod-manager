@@ -14,7 +14,10 @@ export default {
         sans: ['Inter', 'sans-serif'],
       },
       colors: {
-        background: 'hsl(var(--background))',
+        background: {
+          DEFAULT: 'hsl(var(--background))',
+          dark: 'hsl(var(--background-dark))',
+        },
         foreground: 'hsl(var(--foreground))',
         toast: {
           background: 'hsl(var(--toast-background))',

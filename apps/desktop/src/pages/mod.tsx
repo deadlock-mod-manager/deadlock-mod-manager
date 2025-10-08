@@ -85,7 +85,7 @@ const Mod = () => {
   if (error && !isLoading) {
     return (
       <ErrorBoundary>
-        <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
+        <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full overflow-y-auto overflow-x-hidden px-4'>
           <div className='container mx-auto max-w-6xl space-y-6 py-6'>
             <div className='mb-4 flex items-center justify-between'>
               <Button
@@ -132,7 +132,7 @@ const Mod = () => {
     <ErrorBoundary>
       <div
         ref={scrollContainerRef}
-        className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full overflow-y-auto overflow-x-hidden px-4'>
+        className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full overflow-y-auto overflow-x-hidden px-4'>
         <div className='container mx-auto max-w-6xl space-y-6 py-6'>
           <div className='mb-4 flex items-center justify-between'>
             <Button

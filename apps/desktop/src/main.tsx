@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./app";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
+import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
 import Downloads from "./pages/downloads";
 import Mod from "./pages/mod";
@@ -23,7 +24,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <BrowserRouter>
           <Routes>
             <Route element={<App />}>
-              <Route element={<MyMods />} path='/' />
+              <Route element={<Dashboard />} path='/' />
+              <Route element={<MyMods />} path='/my-mods' />
               <Route element={<GetMods />} path='/mods' />
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />

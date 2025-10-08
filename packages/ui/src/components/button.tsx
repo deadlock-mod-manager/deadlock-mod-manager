@@ -22,6 +22,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         text: "text-primary",
         destructiveOutline: "text-destructive shadow-sm",
+        transparent: "bg-transparent hover:bg-transparent",
       },
       size: {
         default: "h-9 px-4 py-2",
@@ -30,6 +31,7 @@ const buttonVariants = cva(
         icon: "h-9 w-9",
         iconExpand: "h-9 transition-all duration-300",
         text: "p-0 text-sm",
+        "no-padding": "p-0",
       },
     },
     defaultVariants: {

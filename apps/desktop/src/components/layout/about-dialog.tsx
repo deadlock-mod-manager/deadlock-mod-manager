@@ -46,7 +46,7 @@ export const AboutDialog = () => {
         </div>
 
         <DialogTitle className='flex flex-col items-center gap-2 pt-2'>
-          {APP_NAME} ({name})
+          {APP_NAME}
           <span className='flex gap-1 font-medium font-mono text-xs'>
             Version {version}
             <span className='font-medium font-sans text-gray-400'>
@@ -71,14 +71,13 @@ export const AboutDialog = () => {
           <div>{t("about.description")}</div>
           <Separator className='w-8' />
           <div className='text-muted-foreground text-xs'>
-            {t("about.poweredBy")}{" "}
+            Project created and maintained by{" "}
             <button
               className='cursor-pointer font-medium text-primary hover:underline'
-              onClick={() => open("https://gamebanana.com/")}
+              onClick={() => open("https://x.com/stormix_dev")}
               type='button'>
-              GameBanana
-            </button>{" "}
-            {t("about.forModContent")}
+              Stormix
+            </button>
           </div>
           <div className='font-bold text-xs'>{t("about.copyright")}</div>
         </div>

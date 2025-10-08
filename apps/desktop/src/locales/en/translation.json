@@ -1,8 +1,9 @@
 {
   "navigation": {
-    "myMods": "My mods",
-    "getMods": "Get Mods",
-    "addMods": "Add Mods",
+    "dashboard": "Dashboard",
+    "myMods": "Mods Library",
+    "getMods": "Mods Store",
+    "addMods": "Add Local Mod",
     "downloads": "Downloads",
     "settings": "Settings",
     "whatsNew": "What's New",
@@ -626,6 +627,17 @@
     "previous": "Previous",
     "next": "Next",
     "morePages": "More pages"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Your mod management overview",
+    "announcements": "Announcements",
+    "latestMods": "Latest Mods",
+    "popularMods": "Popular Mods",
+    "noAnnouncementsTitle": "No Announcements",
+    "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
+    "checkBackLater": "Check back later for updates",
+    "noModsAvailable": "No mods available"
   },
   "debug": {
     "title": "Debug",

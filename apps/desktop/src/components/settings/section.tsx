@@ -21,7 +21,7 @@ const Section = ({
     <div className={cn("flex flex-col py-4", className)}>
       <div className='flex w-full flex-row items-center justify-between'>
         <div className='flex flex-col gap-1'>
-          <h3 className='font-semibold text-primary/10 text-xl'>{title}</h3>
+          <h3 className='font-semibold text-primary text-xl'>{title}</h3>
           {description && (
             <div className='flex-wrap text-muted-foreground text-sm'>
               {description}

@@ -122,7 +122,7 @@ const AddMods = () => {
   };
 
   return (
-    <div className='h-[calc(100vh-160px)] w-full px-4'>
+    <div className='w-full px-4'>
       <div className='space-y-8'>
         <PageTitle
           subtitle={t("addMods.subtitle")}

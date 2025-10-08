@@ -196,7 +196,7 @@ const CustomSettings = () => {
   };
 
   return (
-    <div className='flex h-[calc(100vh-160px)] w-full'>
+    <div className='flex w-full'>
       <div className='flex w-full flex-col gap-4'>
         <PageTitle className='px-4' title={t("navigation.settings")} />
 

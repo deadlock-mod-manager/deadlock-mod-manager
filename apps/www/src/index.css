@@ -35,6 +35,7 @@ body {
 
 :root {
   --background: 0 0% 100%;
+  --background-dark: 0 0% 95%;
   --foreground: 15 10% 16%;
   --card: 0 0% 100%;
   --card-foreground: 15 10% 16%;
@@ -71,6 +72,7 @@ body {
 
 .dark {
   --background: 20 9% 6%;
+  --background-dark: 20 10% 4%;
   --foreground: 38 65% 97%;
   --card: 20 9% 6%;
   --card-foreground: 38 65% 97%;
@@ -115,6 +117,7 @@ body {
   --radius-xl: calc(var(--radius) + 4px);
 
   --color-background: hsl(var(--background));
+  --color-background-dark: hsl(var(--background-dark));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));

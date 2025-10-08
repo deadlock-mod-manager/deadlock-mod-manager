@@ -474,7 +474,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
                 ?.updateUserInfoOnLink === true
             ) {
               await ctx.context.internalAdapter.updateUser(user.id, {
-                name: profile.realname || user.name,
+                name: profile.personaname || user.name,
                 image: profile.avatarfull || user.image,
               });
             }
@@ -519,7 +519,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
             user = await ctx.context.internalAdapter.createUser({
               ...(userDetails || {}),
-              name: userDetails?.name || profile.realname || "Unknown",
+              name: userDetails?.name || profile.personaname || "Unknown",
               email: userDetails?.email || email,
               emailVerified: userDetails?.emailVerified || false,
               image: userDetails?.image || profile.avatarfull || "",

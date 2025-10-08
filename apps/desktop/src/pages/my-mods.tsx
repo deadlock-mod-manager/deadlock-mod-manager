@@ -425,7 +425,7 @@ const MyMods = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-160px)] w-full gap-4 overflow-y-auto px-4'
+      className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full gap-4 overflow-y-auto px-4'
       onScroll={(e) => {
         scrollPositionRef.current = e.currentTarget.scrollTop;
       }}>
@@ -436,7 +436,7 @@ const MyMods = () => {
           <div className='mb-8 flex flex-row '>
             <div className='flex flex-col flex-grow'>
               <div className='flex items-baseline gap-3'>
-                <h1 className='text-3xl font-bold tracking-tight'>
+                <h1 className='text-2xl font-bold tracking-tight'>
                   {t("navigation.myMods")}
                 </h1>
                 {mods.length > 0 && (

@@ -4,15 +4,8 @@ import {
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@deadlock-mods/ui/components/dropdown-menu";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
-import { LogInIcon, LogOutIcon, UserIcon } from "@deadlock-mods/ui/icons";
+import { LogInIcon } from "@deadlock-mods/ui/icons";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function UserMenu() {
@@ -43,40 +36,20 @@ export default function UserMenu() {
       .slice(0, 2) || user.email.slice(0, 2).toUpperCase();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant='ghost' className='relative h-10 w-10 rounded-full p-0'>
-          <Avatar className='h-10 w-10'>
-            <AvatarImage
-              src={user.image || undefined}
-              alt={user.name || user.email}
-            />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
+    <div className='flex items-center gap-4'>
+      <div className='flex flex-col gap-2 overflow-hidden items-end'>
+        <p className='font-medium leading-none'>{user.name}</p>
+        <Button variant='text' size='text' className='text-xs' onClick={logout}>
+          Sign out
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='w-56' align='end' forceMount>
-        <div className='flex items-center justify-start gap-2 p-2'>
-          <div className='flex flex-col space-y-1'>
-            {user.name && (
-              <p className='text-sm font-medium leading-none'>{user.name}</p>
-            )}
-            <p className='text-xs leading-none text-muted-foreground'>
-              {user.email}
-            </p>
-          </div>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <UserIcon className='mr-2 h-4 w-4' />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
-          <LogOutIcon className='mr-2 h-4 w-4' />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </div>
+      <Avatar className='h-12 w-12'>
+        <AvatarImage
+          src={user.image || undefined}
+          alt={user.name || user.email}
+        />
+        <AvatarFallback>{initials}</AvatarFallback>
+      </Avatar>
+    </div>
   );
 }

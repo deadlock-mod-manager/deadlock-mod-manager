@@ -6,8 +6,9 @@ import {
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
-import { Menu } from "./components/layout/menu";
+import { Titlebar } from "./components/layout/titlebar";
 import { Toolbar } from "./components/layout/toolbar";
+import { Topbar } from "./components/layout/topbar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
 import { ScrollBackButtonProvider } from "./contexts/scroll-back-button-context";
 import { usePageTracking } from "./hooks/use-page-tracking";
@@ -21,14 +22,16 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <main className='h-screen overflow-hidden'>
-        <Menu />
+        <Titlebar />
+        <Topbar />
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
             <ScrollBackButtonProvider>
               <div className={cn("flex h-full w-full flex-col")}>
                 <Toolbar />
-                <div className={cn("flex flex-1 pr-2 pl-2 pt-4")}>
+                <div
+                  className={cn("flex pr-2 pl-2 pt-4 h-[calc(100vh-198px)]")}>
                   {children}
                 </div>
                 <BottomBar />

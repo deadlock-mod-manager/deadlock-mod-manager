@@ -9,6 +9,7 @@ import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
+import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
@@ -100,25 +101,22 @@ const GetModsData = () => {
     });
   }
 
-  // Group mods into rows of 4 for virtualization
-  const COLUMNS_PER_ROW = 4;
-  const modRows: ModDto[][] = [];
-  for (let i = 0; i < filteredResults.length; i += COLUMNS_PER_ROW) {
-    modRows.push(filteredResults.slice(i, i + COLUMNS_PER_ROW));
-  }
-
   const parentRef = useRef<HTMLDivElement>(null);
+  const columnsPerRow = useResponsiveColumns();
+
+  const modRows: ModDto[][] = [];
+  for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
+    modRows.push(filteredResults.slice(i, i + columnsPerRow));
+  }
 
   const rowVirtualizer = useVirtualizer({
     count: modRows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 320 + 20, // Estimated height of ModCard + gap (updated for better spacing)
-    overscan: 2, // Render 2 extra rows above and below visible area
-    // Use saved scroll position as initial offset - this is the key to smooth restoration!
+    estimateSize: () => 320 + 20,
+    overscan: 2,
     initialOffset: scrollY,
   });
 
-  // Set scroll element for position tracking
   useEffect(() => {
     if (parentRef.current) {
       setScrollElement(parentRef.current);
@@ -213,7 +211,7 @@ const GetModsData = () => {
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}>
-                <div className='grid grid-cols-4 gap-4 px-1'>
+                <div className='grid grid-cols-1 gap-4 px-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                   {modRows[virtualRow.index]?.map((mod) => (
                     <ModCard key={mod.id} mod={mod} />
                   ))}
@@ -231,7 +229,7 @@ const GetMods = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='h-[calc(100vh-160px)] w-full px-4'>
+    <div className='w-full px-4'>
       <PageTitle
         className='mb-4'
         subtitle={t("mods.subtitle")}
@@ -241,7 +239,7 @@ const GetMods = () => {
         fallback={
           <div className='flex flex-col gap-4'>
             <SearchBarSkeleton />
-            <div className='grid grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
               {Array.from({ length: 25 }, () => (
                 <ModCard key={crypto.randomUUID()} mod={undefined} />
               ))}
