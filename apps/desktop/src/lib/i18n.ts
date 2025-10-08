@@ -15,6 +15,9 @@ import trTranslation from "@/locales/tr/translation.json" with { type: "json" };
 import zhCNTranslation from "@/locales/zh-CN/translation.json" with {
   type: "json",
 };
+import zhTWTranslation from "@/locales/zh-TW/translation.json" with {
+  type: "json",
+};
 
 const resources = {
   en: {
@@ -44,6 +47,9 @@ const resources = {
   "zh-CN": {
     translation: zhCNTranslation,
   },
+  "zh-TW": {
+    translation: zhTWTranslation,
+  },
 };
 
 i18n
@@ -52,7 +58,18 @@ i18n
   .init({
     resources,
     fallbackLng: "en",
-    supportedLngs: ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN"],
+    supportedLngs: [
+      "en",
+      "de",
+      "fr",
+      "ar",
+      "pl",
+      "gsw",
+      "tr",
+      "ru",
+      "zh-CN",
+      "zh-TW",
+    ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },

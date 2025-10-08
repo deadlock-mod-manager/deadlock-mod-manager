@@ -132,6 +132,20 @@
           "email": "sfk_04@qq.com"
         }
       ]
+    },
+    {
+      "code": "zh-TW",
+      "name": "Chinese (Traditional)",
+      "nativeName": "繁體中文",
+      "flag": "🇹🇼",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "白雲",
+          "github": "phillychi3"
+        }
+      ]
     }
   ]
 }
