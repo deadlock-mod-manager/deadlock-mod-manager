@@ -50,7 +50,7 @@ pub fn get_api_url() -> String {
 pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
   log::info!("Setting language to: {}", language);
 
-  let supported_languages = ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN"];
+  let supported_languages = ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN", "zh-TW"];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(
       "Unsupported language: {}",
