@@ -718,6 +718,22 @@
     }
   },
   "plugins": {
+    "themes": {
+      "title": "Themes",
+      "description": "Create your own themes or use presets like Nightshift."
+    },
+    "flashbang": {
+      "title": "Flashbang Mode",
+      "description": "Force Light Mode during a scheduled time window.",
+      "detailedDescription": "Flashbang mode switches the app to Light Mode during the configured hours, regardless of your theme setting.",
+      "usageInstructions": "Enable the plugin and choose start and end hour (0–23).",
+      "startHour": "Start hour (0–23)",
+      "endHour": "End hour (0–23)"
+    },
+    "sudo": {
+      "title": "Superuser Mode",
+      "description": "Advanced mod management tools for experienced users."
+    },
     "background": {
       "title": "Background",
       "description": "Customize application backgrounds.",
@@ -728,6 +744,28 @@
       "blur": "Blur",
       "includeSidebar": "Include sidebar",
       "chooseImage": "Choose Image"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Show what you're doing in Discord.",
+      "detailedDescription": "This plugin displays your activity in the Deadlock Mod Manager on your Discord profile using Discord Rich Presence. Your friends will see what you're doing in the mod manager.",
+      "usageInstructions": "To use this plugin: 1) Create a Discord Application in the Discord Developer Portal, 2) Copy your Application ID and paste it below, 3) Optionally customize the displayed text, 4) Upload custom images to your Discord Application as Rich Presence assets.",
+      "applicationId": "Discord Application ID",
+      "optional": "(optional)",
+      "applicationIdDescription": "Required: Create your own Discord Application at https://discord.com/developers/applications to use this plugin",
+      "details": "Details Text",
+      "state": "State Text",
+      "largeImageKey": "Large Image Key",
+      "largeImageText": "Large Image Text",
+      "smallImageKey": "Small Image Key",
+      "smallImageText": "Small Image Text",
+      "showElapsedTime": "Show Elapsed Time",
+      "showElapsedTimeDescription": "Display how long you've been using the mod manager",
+      "setupGuide": "Setup Guide",
+      "setupStep1": "Visit the Discord Developer Portal and create a new application",
+      "setupStep2": "Copy your Application ID from the 'General Information' page",
+      "setupStep3": "Upload images as Rich Presence assets with matching key names",
+      "setupStep4": "Paste your Application ID above and enable the plugin"
     },
     "usageInstructions": "Usage Instructions",
     "renderActive": "Plugin is active and running in the background"

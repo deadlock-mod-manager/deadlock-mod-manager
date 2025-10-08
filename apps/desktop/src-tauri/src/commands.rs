@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
 use crate::ingest_tool;
@@ -13,7 +14,7 @@ use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, Re
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
@@ -946,5 +947,194 @@ pub async fn initialize_ingest_tool() -> Result<(), Error> {
   });
 
   log::info!("Ingest tool initialized successfully");
+  Ok(())
+}
+
+// ============================================================================
+// Discord RPC Commands
+// ============================================================================
+
+#[tauri::command]
+pub async fn set_discord_presence(
+  state: State<'_, DiscordState>,
+  application_id: String,
+  activity: DiscordActivity,
+) -> Result<(), Error> {
+  log::info!("Setting Discord presence for app ID: {}", application_id);
+  log::info!("Activity data: {:?}", activity);
+
+  // Check if we need to create a new client
+  let needs_new_client = {
+    let client_lock = state
+      .client
+      .lock()
+      .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
+    client_lock.is_none()
+  };
+
+  // If client doesn't exist, create a new one
+  if needs_new_client {
+    log::info!("No Discord client found, attempting to connect...");
+
+    // Try multiple times to connect
+    let mut connect_attempts = 0;
+    let max_connect_attempts = 3;
+
+    while connect_attempts < max_connect_attempts {
+      match discord_rpc::connect_discord(&application_id) {
+        Ok(client) => {
+          log::info!("Successfully connected to Discord");
+
+          // Store the client
+          {
+            let mut client_lock = state.client.lock().map_err(|e| {
+              Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e))
+            })?;
+            *client_lock = Some(client);
+          }
+
+          // Wait a bit for the connection to stabilize
+          tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+          break;
+        }
+        Err(e) => {
+          connect_attempts += 1;
+          log::warn!("Connection attempt {} failed: {}", connect_attempts, e);
+
+          if connect_attempts < max_connect_attempts {
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+          }
+        }
+      }
+    }
+
+    if connect_attempts >= max_connect_attempts {
+      log::error!(
+        "Failed to connect to Discord after {} attempts",
+        max_connect_attempts
+      );
+      log::info!("Discord might not be running or the Application ID might be invalid");
+      return Err(Error::InvalidInput(
+        "Failed to connect to Discord. Make sure Discord is running and you're logged in."
+          .to_string(),
+      ));
+    }
+  }
+
+  // Set the presence
+  let mut attempts = 0;
+  let max_attempts = 3;
+
+  while attempts < max_attempts {
+    let result = {
+      let mut client_lock = state.client.lock().map_err(|e| {
+        Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e))
+      })?;
+
+      if let Some(client) = client_lock.as_mut() {
+        log::info!("Setting Discord presence... (attempt {})", attempts + 1);
+        discord_rpc::set_presence(client, activity.clone())
+      } else {
+        Err("No Discord client available".to_string())
+      }
+    };
+
+    match result {
+      Ok(_) => {
+        log::info!("Discord presence set successfully");
+        return Ok(());
+      }
+      Err(e) => {
+        attempts += 1;
+        log::warn!("Attempt {} failed to set Discord presence: {}", attempts, e);
+
+        // If the IPC pipe was closed (Windows os error 232 or similar), try to reconnect once per attempt
+        let should_reconnect = e.contains("pipe")
+          || e.contains("Pipe")
+          || e.contains("os error 232")
+          || e.contains("Broken pipe");
+        if should_reconnect {
+          log::info!("Detected closed Discord IPC pipe. Reconnecting...");
+
+          // Drop the old client and create a new one
+          {
+            let mut client_lock = state.client.lock().map_err(|e| {
+              Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e))
+            })?;
+            *client_lock = None;
+          }
+
+          let mut reconnected = false;
+          match discord_rpc::connect_discord(&application_id) {
+            Ok(client) => {
+              // Limit the mutex guard lifetime to this inner block
+              {
+                let mut guard = state.client.lock().map_err(|e| {
+                  Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e))
+                })?;
+                *guard = Some(client);
+              } // guard dropped here
+              reconnected = true;
+            }
+            Err(conn_err) => {
+              log::warn!("Reconnection attempt failed: {}", conn_err);
+            }
+          }
+
+          if reconnected {
+            // small delay to stabilize connection (no mutex guards held)
+            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+            log::info!("Reconnected to Discord IPC successfully");
+          }
+        }
+
+        if attempts < max_attempts {
+          tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        }
+      }
+    }
+  }
+
+  log::error!(
+    "Failed to set Discord presence after {} attempts",
+    max_attempts
+  );
+  Err(Error::InvalidInput(
+    "Failed to set Discord presence after multiple attempts".to_string(),
+  ))
+}
+
+#[tauri::command]
+pub async fn clear_discord_presence(state: State<'_, DiscordState>) -> Result<(), Error> {
+  log::info!("Clearing Discord presence");
+
+  let mut client_lock = state
+    .client
+    .lock()
+    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
+
+  if let Some(client) = client_lock.as_mut() {
+    discord_rpc::clear_presence(client)
+      .map_err(|e| Error::InvalidInput(format!("Failed to clear presence: {}", e)))?;
+  }
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn disconnect_discord(state: State<'_, DiscordState>) -> Result<(), Error> {
+  log::info!("Disconnecting from Discord");
+
+  let mut client_lock = state
+    .client
+    .lock()
+    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
+
+  if let Some(client) = client_lock.as_mut() {
+    discord_rpc::disconnect_discord(client)
+      .map_err(|e| Error::InvalidInput(format!("Failed to disconnect: {}", e)))?;
+    *client_lock = None;
+  }
+
   Ok(())
 }

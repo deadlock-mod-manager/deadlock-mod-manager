@@ -1,0 +1,11 @@
+{
+  "id": "flashbang",
+  "nameKey": "plugins.flashbang.title",
+  "descriptionKey": "plugins.flashbang.description",
+  "version": "0.0.1",
+  "author": "Skeptic",
+  "homepageUrl": "https://docs.deadlockmods.app/plugins/flashbang",
+  "icon": "public/icon.png",
+  "tags": ["official"],
+  "entry": "./index.tsx"
+}
