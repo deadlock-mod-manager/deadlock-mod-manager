@@ -83,7 +83,11 @@ const PluginEntry = () => {
           <PageTitle title={t(plugin.manifest.nameKey)} />
           <div className='flex items-center gap-2'>
             <Button
-              onClick={() => setEnabled(id!, !isEnabled)}
+              disabled={!id}
+              onClick={() => {
+                if (!id) return;
+                setEnabled(id, !isEnabled);
+              }}
               size='default'
               variant={isEnabled ? "default" : "outline"}>
               {isEnabled ? t("common.disable") : t("common.enable")}
