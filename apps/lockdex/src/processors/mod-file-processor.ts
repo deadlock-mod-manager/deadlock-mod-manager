@@ -10,10 +10,12 @@ import { BaseProcessor } from "@deadlock-mods/queue";
 import { VpkParser } from "@deadlock-mods/vpk-parser";
 import { logger } from "@/lib/logger";
 import { archiveExtractorFactory } from "@/services/archive";
+import { diskSpaceMonitor } from "@/services/disk-space-monitor";
 import { downloadService } from "@/services/download";
 import { sevenZipExtractor } from "@/services/extractors/7z-extractor";
 import { rarExtractor } from "@/services/extractors/rar-extractor";
 import { zipExtractor } from "@/services/extractors/zip-extractor";
+import { tempCleanupService } from "@/services/temp-cleanup";
 import type { ModFileProcessingJobData } from "@/types/jobs";
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
@@ -67,6 +69,32 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`,
       );
 
+      // Check disk space before processing
+      const hasSpace = await diskSpaceMonitor.hasSpaceForFile(jobData.size);
+      if (!hasSpace) {
+        this.logger.error("Insufficient disk space for processing mod file");
+
+        // Try emergency cleanup
+        try {
+          await tempCleanupService.emergencyCleanup();
+
+          // Check again after cleanup
+          const hasSpaceAfterCleanup = await diskSpaceMonitor.hasSpaceForFile(
+            jobData.size,
+          );
+          if (!hasSpaceAfterCleanup) {
+            return this.handleError(
+              new Error("Insufficient disk space even after cleanup"),
+            );
+          }
+        } catch (cleanupError) {
+          this.logger.withError(cleanupError).error("Emergency cleanup failed");
+          return this.handleError(
+            new Error("Insufficient disk space and cleanup failed"),
+          );
+        }
+      }
+
       await using downloadResult = await downloadService.downloadFile(
         jobData.url,
         {
@@ -94,6 +122,24 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       return this.handleSuccess(jobData);
     } catch (error) {
       this.logger.withError(error).error("Error processing mod file");
+
+      // If it's a disk space error, try emergency cleanup
+      if (
+        error instanceof Error &&
+        error.message.includes("No space left on device")
+      ) {
+        this.logger.warn(
+          "Disk space error detected, attempting emergency cleanup",
+        );
+        try {
+          await tempCleanupService.emergencyCleanup();
+        } catch (cleanupError) {
+          this.logger
+            .withError(cleanupError)
+            .error("Emergency cleanup failed after processing error");
+        }
+      }
+
       return this.handleError(error as Error);
     }
   }
