@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -180,13 +181,17 @@ const Render = () => {
   const current = settings ?? DEFAULT_SETTINGS;
   const [mounted, setMounted] = useState(false);
 
-  const style = useMemo<React.CSSProperties>(() => {
+  const style = useMemo<CSSProperties>(() => {
     const chosen =
       current.sourceType === "local" ? current.imageData : current.imageUrl;
     if (!chosen) return { display: "none" };
     return {
       position: "fixed",
-      inset: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      // If includeSidebar is false, offset the background so it doesn't cover the sidebar
+      left: current.includeSidebar ? 0 : "12rem",
       backgroundImage: `url(${chosen})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
@@ -201,6 +206,7 @@ const Render = () => {
     current.imageData,
     current.opacity,
     current.blur,
+    current.includeSidebar,
   ]);
 
   useEffect(() => setMounted(true), []);

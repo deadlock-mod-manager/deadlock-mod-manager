@@ -1,7 +1,7 @@
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -13,7 +13,6 @@ export const manifest = {
   descriptionKey: "plugins.discord.description",
   version: "0.0.1",
   author: "Skeptic",
-  icon: "public/icon.svg",
 } as const;
 
 // Official Discord Application ID for Deadlock Mod Manager
@@ -113,8 +112,6 @@ const Settings = () => {
           </button>
         </div>
       </div>
-
-      {null}
     </div>
   );
 };
@@ -128,14 +125,24 @@ const Render = () => {
   );
   // Discord expects unix seconds
   const [startTimestamp] = useState(() => Math.floor(Date.now() / 1000));
+  const timeoutsRef = useRef<number[]>([]);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     logger.info("Discord plugin effect triggered", {
       isEnabled,
     });
 
+    // reset cancellation and clear any leftover timers
+    cancelledRef.current = false;
+    if (timeoutsRef.current.length > 0) {
+      for (const id of timeoutsRef.current) clearTimeout(id);
+      timeoutsRef.current.length = 0;
+    }
+
     // Use a timeout to avoid rapid connect/disconnect cycles
-    const timeoutId = setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (cancelledRef.current) return;
       if (!isEnabled) {
         logger.info("Plugin disabled, clearing presence");
         invoke("clear_discord_presence")
@@ -169,6 +176,7 @@ const Render = () => {
 
       // Try to set presence with retry logic
       const attemptConnection = async (retries = 3) => {
+        if (cancelledRef.current) return;
         try {
           await invoke("set_discord_presence", {
             applicationId: applicationId,
@@ -181,7 +189,12 @@ const Render = () => {
               `Failed to set Discord presence, retrying... (${retries} attempts left)`,
               error,
             );
-            setTimeout(() => attemptConnection(retries - 1), 2000);
+            if (cancelledRef.current) return;
+            const retryId = window.setTimeout(() => {
+              if (cancelledRef.current) return;
+              attemptConnection(retries - 1);
+            }, 2000);
+            timeoutsRef.current.push(retryId);
           } else {
             logger.warn(
               "Failed to set Discord presence after all attempts:",
@@ -194,9 +207,14 @@ const Render = () => {
 
       attemptConnection();
     }, 1000); // Wait 1 second before connecting
+    timeoutsRef.current.push(timeoutId);
 
     return () => {
-      clearTimeout(timeoutId);
+      cancelledRef.current = true;
+      if (timeoutsRef.current.length > 0) {
+        for (const id of timeoutsRef.current) clearTimeout(id);
+        timeoutsRef.current.length = 0;
+      }
       // Cleanup: clear presence instead of disconnecting
       logger.info("Cleaning up Discord connection");
       invoke("clear_discord_presence")

@@ -14,7 +14,7 @@
   "scripts": {
     "build": "pnpm run generate-types && cargo build --release",
     "build:debug": "pnpm run generate-types && cargo build",
-    "generate-types": "cargo test --lib --quiet > /dev/null 2>&1 || true",
+    "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
     "test": "vitest",
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",

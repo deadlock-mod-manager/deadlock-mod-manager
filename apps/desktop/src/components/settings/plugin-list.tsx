@@ -1,3 +1,4 @@
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -87,6 +88,12 @@ export const PluginList = () => {
                     disabled={!p.entryImporter}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (
+                        p.manifest.id === "sudo" ||
+                        p.manifest.id === "themes"
+                      ) {
+                        toast.info("This plugin is still in development.");
+                      }
                       navigate(`/plugins/${p.manifest.id}`);
                     }}
                     type='button'>

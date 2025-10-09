@@ -1,0 +1,40 @@
+---
+title: Flashbang Plugin
+description: Force Light Mode during a scheduled time window
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Flashbang Plugin
+
+Flashbang forces the app into Light Mode during a scheduled window, regardless of your selected theme.
+
+## Quick Start
+
+1. Go to Settings → Plugins
+2. Find "Flashbang Mode"
+3. Click "Enable"
+4. Click "Open" to set the schedule
+
+## Settings
+
+- **Start hour (0–23)**: Beginning of the Light Mode period
+- **End hour (0–23)**: End of the Light Mode period
+
+Overnight windows are supported. For example, Start 20 and End 8 applies from 20:00 to 08:00 next day.
+
+## Tips
+
+- Works alongside the normal theme preference; outside the window your usual theme applies
+- Schedule values are stored locally and applied instantly
+
+## Troubleshooting
+
+<Callout type="warning">
+If Light Mode is not applied during the window:
+- Ensure the plugin is enabled in Settings → Plugins
+- Verify start/end hours are correct for your local time
+- Leave the app open for up to 60 seconds after changing the schedule to allow the periodic check to apply
+</Callout>
+
+

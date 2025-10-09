@@ -27,9 +27,11 @@ const PluginEntry = () => {
 
   useEffect(() => {
     let cancelled = false;
+    // Always clear prior module state when plugin changes or effect reruns
+    setModule(null);
     (async () => {
       if (!plugin?.entryImporter) {
-        return;
+        return; // module already reset above so UI clears
       }
 
       try {
@@ -107,7 +109,9 @@ const PluginEntry = () => {
           <div className='px-4'>
             <Section
               title={t("common.settings")}
-              description={t("plugins.background.description")}>
+              description={t(plugin.manifest.descriptionKey, {
+                defaultValue: t("plugins.background.description"),
+              })}>
               <ErrorBoundary>
                 <Suspense
                   fallback={
