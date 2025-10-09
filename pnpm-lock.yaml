@@ -9,9 +9,6 @@ catalogs:
     '@sentry/node':
       specifier: ^10.15.0
       version: 10.15.0
-    typescript:
-      specifier: ^5.9.2
-      version: 5.9.2
     zod:
       specifier: 4.1.9
       version: 4.1.9
@@ -531,9 +528,6 @@ importers:
       bullmq:
         specifier: ^5.58.7
         version: 5.58.7
-      diskusage:
-        specifier: ^1.2.0
-        version: 1.2.0
       dotenv-cli:
         specifier: ^7.4.4
         version: 7.4.4
@@ -567,7 +561,7 @@ importers:
         version: link:../../tools/typescript
       '@types/bun':
         specifier: latest
-        version: 1.2.23(@types/react@19.0.2)
+        version: 1.2.23
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -5882,9 +5876,6 @@ packages:
     resolution: {integrity: sha512-3k+Kisd/v570Jr68A1kNs7qVhNehDwDJAPe4DZ2Syt+/zobf9zEcuYFvsfIaAOgCa0BiHMfOOKQY4eYINl0z7w==}
     engines: {node: '>=18'}
 
-  diskusage@1.2.0:
-    resolution: {integrity: sha512-2u3OG3xuf5MFyzc4MctNRUKjjwK+UkovRYdD2ed/NZNZPrt0lqHnLKxGhlFVvAb4/oufIgQG3nWgwmeTbHOvXA==}
-
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
 
@@ -6071,9 +6062,6 @@ packages:
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
-
-  es6-promise@4.2.8:
-    resolution: {integrity: sha512-HJDGx5daxeIvxdBxvG2cb9g4tEvwIk3i8+nhX0yGrYmZUzbkdg8QbDevheDB8gd0//uPj4c1EQua8Q+MViT0/w==}
 
   esast-util-from-estree@2.0.0:
     resolution: {integrity: sha512-4CyanoAudUSBAn5K13H4JhsMH6L9ZP7XbLVe/dKybkxMO7eDyLsT8UHl9TRNrU2Gr9nz+FovfSIjuXWJ81uVwQ==}
@@ -7272,9 +7260,6 @@ packages:
 
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
-
-  nan@2.23.0:
-    resolution: {integrity: sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==}
 
   nano-time@1.0.0:
     resolution: {integrity: sha512-flnngywOoQ0lLQOTRNexn2gGSNuM9bKj9RZAWSzhQ+UJYaAFG9bac4DW9VHjUAzrOaIcajHybCTHe/bkvozQqA==}
@@ -13634,6 +13619,12 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
+  '@types/bun@1.2.23':
+    dependencies:
+      bun-types: 1.2.23
+    transitivePeerDependencies:
+      - '@types/react'
+
   '@types/bun@1.2.23(@types/react@19.0.2)':
     dependencies:
       bun-types: 1.2.23(@types/react@19.0.2)
@@ -14282,6 +14273,10 @@ snapshots:
       '@types/node': 24.5.2
       '@types/react': 19.0.2
 
+  bun-types@1.2.23:
+    dependencies:
+      '@types/node': 24.5.2
+
   bun-types@1.2.23(@types/react@19.0.2):
     dependencies:
       '@types/node': 24.5.2
@@ -14789,11 +14784,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  diskusage@1.2.0:
-    dependencies:
-      es6-promise: 4.2.8
-      nan: 2.23.0
-
   dlv@1.1.3: {}
 
   dom-helpers@5.2.1:
@@ -14889,8 +14879,6 @@ snapshots:
       is-arrayish: 0.2.1
 
   es-module-lexer@1.7.0: {}
-
-  es6-promise@4.2.8: {}
 
   esast-util-from-estree@2.0.0:
     dependencies:
@@ -16520,8 +16508,6 @@ snapshots:
       any-promise: 1.3.0
       object-assign: 4.1.1
       thenify-all: 1.6.0
-
-  nan@2.23.0: {}
 
   nano-time@1.0.0:
     dependencies:

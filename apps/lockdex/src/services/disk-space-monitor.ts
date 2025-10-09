@@ -1,7 +1,6 @@
+import { statfs } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { promisify } from "node:util";
 import type { Logger } from "@deadlock-mods/logging";
-import diskusage from "diskusage";
 import { logger } from "@/lib/logger";
 
 export interface DiskSpaceInfo {
@@ -112,7 +111,7 @@ export class DiskSpaceMonitor {
   }
 
   /**
-   * Get filesystem statistics using diskusage library
+   * Get filesystem statistics using Node.js built-in statfs
    */
   private async getFilesystemStats(path: string): Promise<{
     totalBytes: number;
@@ -120,18 +119,17 @@ export class DiskSpaceMonitor {
     usedBytes: number;
   }> {
     try {
-      // Use diskusage library for accurate cross-platform disk space info
-      const checkAsync = promisify(diskusage.check);
-      const stats = (await checkAsync(path)) as {
-        total: number;
-        free: number;
-        available: number;
-      };
+      // Use Node.js built-in statfs for accurate cross-platform disk space info
+      const stats = await statfs(path);
+
+      const totalBytes = stats.blocks * stats.bsize;
+      const freeBytes = stats.bfree * stats.bsize;
+      const usedBytes = totalBytes - freeBytes;
 
       return {
-        totalBytes: stats.total,
-        freeBytes: stats.free,
-        usedBytes: stats.total - stats.free,
+        totalBytes,
+        freeBytes,
+        usedBytes,
       };
     } catch (error) {
       this.logger
