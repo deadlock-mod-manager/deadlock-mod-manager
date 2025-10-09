@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.38 AS builder
+FROM oven/bun:1.2 AS builder
 
 WORKDIR /usr/src/app
 
@@ -41,7 +41,7 @@ RUN cd packages/vpk-parser && \
     cd ../..
 
 # Runtime stage - Minimal image with only runtime dependencies
-FROM oven/bun:1.1.38-slim AS runtime
+FROM oven/bun:1.2-slim AS runtime
 
 # Create non-root user first
 RUN groupadd -r appuser && useradd -r -g appuser appuser

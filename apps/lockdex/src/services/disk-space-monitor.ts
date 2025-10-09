@@ -110,16 +110,12 @@ export class DiskSpaceMonitor {
     return diskInfo.freeBytes >= requiredSpace && !diskInfo.isLowSpace;
   }
 
-  /**
-   * Get filesystem statistics using Node.js built-in statfs
-   */
   private async getFilesystemStats(path: string): Promise<{
     totalBytes: number;
     freeBytes: number;
     usedBytes: number;
   }> {
     try {
-      // Use Node.js built-in statfs for accurate cross-platform disk space info
       const stats = await statfs(path);
 
       const totalBytes = stats.blocks * stats.bsize;
