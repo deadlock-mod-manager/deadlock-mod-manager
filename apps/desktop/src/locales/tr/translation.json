@@ -585,6 +585,51 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Discord'da Deadlock etkinliğinizi gösterir. Eklentiyi etkinleştirin ve isterseniz Rich Presence'ta görünen Detaylar ve Durum metinlerini özelleştirin.",
+      "detailedDescription": "Deadlock Mod Manager etkinliğinizi Discord profilinizde Rich Presence ile gösterir. Sadece etkinleştirin ve isterseniz Detaylar ve Durum metinlerini düzenleyin.",
+      "usageInstructions": "Eklentiyi etkinleştirin, ardından isteğe bağlı olarak Detaylar ve Durum metnini düzenleyin.",
+      "applicationId": "Discord Uygulama Kimliği",
+      "optional": "(isteğe bağlı)",
+      "applicationIdDescription": "Kurulum gerekmez: Bu eklenti resmi Discord uygulamamızı kullanır.",
+      "details": "Detaylar Metni",
+      "state": "Durum Metni",
+      "largeImageKey": "Büyük Görsel Anahtarı",
+      "largeImageText": "Büyük Görsel Metni",
+      "smallImageKey": "Küçük Görsel Anahtarı",
+      "smallImageText": "Küçük Görsel Metni",
+      "showElapsedTime": "Geçen Süreyi Göster",
+      "showElapsedTimeDescription": "Mod yöneticisini ne kadar süredir kullandığınızı göster",
+      "setupGuide": "Kurulum Rehberi",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
+    "flashbang": {
+      "title": "Flashbang Modu",
+      "description": "Belirlenen saatlerde Açık Tema zorlanır.",
+      "detailedDescription": "Flashbang modu, yapılandırılan saatlerde tema ayarından bağımsız olarak uygulamayı Açık Tema’ya geçirir.",
+      "usageInstructions": "Eklentiyi etkinleştirip başlangıç ve bitiş saatini (0–23) seçin.",
+      "startHour": "Başlangıç saati (0–23)",
+      "endHour": "Bitiş saati (0–23)"
+    },
+    "background": {
+      "title": "Arka Plan",
+      "description": "Uygulama arka planlarını özelleştirin.",
+      "detailedDescription": "Bu eklenti, tüm uygulama için özel arka plan görüntüleri ayarlamanıza olanak tanır. Çevrimiçi bir görüntünün URL'sini kullanabilir veya yerel bir görüntü dosyası yükleyebilirsiniz. Eklenti, görünümü özelleştirmek için şeffaflık ve bulanıklık efektlerini destekler. Ayrıca yan çubuğu arka plan efektine dahil edip etmeyeceğinizi seçebilirsiniz.",
+      "usageInstructions": "Bu eklentiyi kullanmak için: 1) Eklentiyi anahtar kullanarak etkinleştirin, 2) Bir görüntü URL'si girin veya yerel bir dosya yüklemek için 'Görüntü Seç' seçeneğine tıklayın, 3) Şeffaflık ve bulanıklık ayarlarını istediğiniz gibi ayarlayın, 4) İsteğe bağlı olarak arka planı yan çubuğa da uygulamak için 'Yan çubuğu dahil et' seçeneğini etkinleştirin.",
+      "imageUrl": "Görüntü URL'si",
+      "opacity": "Şeffaflık",
+      "blur": "Bulanıklık",
+      "includeSidebar": "Yan çubuğu dahil et",
+      "chooseImage": "Görüntü seç"
+    },
+    "usageInstructions": "Kullanım Talimatları",
+    "renderActive": "Eklenti etkin ve arka planda çalışıyor"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",

@@ -503,6 +503,51 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie. Włącz wtyczkę, a następnie opcjonalnie dostosuj teksty Szczegóły i Status wyświetlane w Rich Presence.",
+      "detailedDescription": "Wyświetla aktywność w Deadlock Mod Manager na profilu Discord przy użyciu Rich Presence. Wystarczy włączyć wtyczkę i opcjonalnie edytować teksty Szczegóły i Status.",
+      "usageInstructions": "Włącz wtyczkę, a następnie opcjonalnie edytuj teksty Szczegóły i Status.",
+      "applicationId": "ID aplikacji Discord",
+      "optional": "(opcjonalne)",
+      "applicationIdDescription": "Brak konfiguracji: wtyczka używa naszej oficjalnej aplikacji Discord.",
+      "details": "Tekst 'Szczegóły'",
+      "state": "Tekst 'Status'",
+      "largeImageKey": "Klucz dużego obrazu",
+      "largeImageText": "Tekst dużego obrazu",
+      "smallImageKey": "Klucz małego obrazu",
+      "smallImageText": "Tekst małego obrazu",
+      "showElapsedTime": "Pokaż czas trwania",
+      "showElapsedTimeDescription": "Pokazuje, jak długo używasz menedżera modów",
+      "setupGuide": "Instrukcja konfiguracji",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
+    "flashbang": {
+      "title": "Tryb Flashbang",
+      "description": "Wymusza jasny motyw w wybranych godzinach.",
+      "detailedDescription": "Tryb Flashbang przełącza aplikację na jasny motyw w skonfigurowanych godzinach, niezależnie od wybranego motywu.",
+      "usageInstructions": "Włącz wtyczkę i ustaw godzinę rozpoczęcia i zakończenia (0–23).",
+      "startHour": "Godzina rozpoczęcia (0–23)",
+      "endHour": "Godzina zakończenia (0–23)"
+    },
+    "background": {
+      "title": "Tło",
+      "description": "Dostosuj tła aplikacji.",
+      "detailedDescription": "Ten plugin pozwala ustawić niestandardowe obrazy tła dla całej aplikacji. Możesz użyć URL do obrazu online lub przesłać lokalny plik obrazu. Plugin obsługuje efekty przezroczystości i rozmycia, aby dostosować wygląd. Możesz również wybrać, czy uwzględnić pasek boczny w efekcie tła.",
+      "usageInstructions": "Aby użyć tego pluginu: 1) Włącz plugin za pomocą przełącznika, 2) Wprowadź URL obrazu lub kliknij 'Wybierz obraz', aby przesłać lokalny plik, 3) Dostosuj ustawienia przezroczystości i rozmycia według potrzeb, 4) Opcjonalnie włącz 'Uwzględnij pasek boczny', aby zastosować tło również do paska bocznego.",
+      "imageUrl": "URL obrazu",
+      "opacity": "Przezroczystość",
+      "blur": "Rozmycie",
+      "includeSidebar": "Uwzględnij pasek boczny",
+      "chooseImage": "Wybierz obraz"
+    },
+    "usageInstructions": "Instrukcje użytkowania",
+    "renderActive": "Plugin jest aktywny i działa w tle"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",
