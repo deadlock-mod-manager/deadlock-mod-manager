@@ -526,6 +526,28 @@
     }
   },
   "plugins": {
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie. Włącz wtyczkę, a następnie opcjonalnie dostosuj teksty Szczegóły i Status wyświetlane w Rich Presence.",
+      "detailedDescription": "Wyświetla aktywność w Deadlock Mod Manager na profilu Discord przy użyciu Rich Presence. Wystarczy włączyć wtyczkę i opcjonalnie edytować teksty Szczegóły i Status.",
+      "usageInstructions": "Włącz wtyczkę, a następnie opcjonalnie edytuj teksty Szczegóły i Status.",
+      "applicationId": "ID aplikacji Discord",
+      "optional": "(opcjonalne)",
+      "applicationIdDescription": "Brak konfiguracji: wtyczka używa naszej oficjalnej aplikacji Discord.",
+      "details": "Tekst 'Szczegóły'",
+      "state": "Tekst 'Status'",
+      "largeImageKey": "Klucz dużego obrazu",
+      "largeImageText": "Tekst dużego obrazu",
+      "smallImageKey": "Klucz małego obrazu",
+      "smallImageText": "Tekst małego obrazu",
+      "showElapsedTime": "Pokaż czas trwania",
+      "showElapsedTimeDescription": "Pokazuje, jak długo używasz menedżera modów",
+      "setupGuide": "Instrukcja konfiguracji",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
     "flashbang": {
       "title": "Tryb Flashbang",
       "description": "Wymusza jasny motyw w wybranych godzinach.",

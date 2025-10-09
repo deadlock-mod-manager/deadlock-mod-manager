@@ -15,11 +15,15 @@ const GlobalPluginRenderer = () => {
 
   // Create a stable reference for enabled plugin IDs
   const enabledPluginIds = useMemo(
-    () => Object.keys(enabledPlugins),
+    () =>
+      Object.entries(enabledPlugins)
+        .filter(([, enabled]) => !!enabled)
+        .map(([id]) => id),
     [enabledPlugins],
   );
 
   useEffect(() => {
+    let cancelled = false;
     const loadEnabledPlugins = async () => {
       const newLoadedPlugins: Record<string, PluginModule> = {};
 
@@ -48,7 +52,7 @@ const GlobalPluginRenderer = () => {
                 ? (candidate as PluginModule)
                 : undefined;
 
-            if (resolved?.Render) {
+            if (!cancelled && resolved?.Render) {
               newLoadedPlugins[plugin.manifest.id] = resolved;
             }
           } catch (error) {
@@ -60,10 +64,15 @@ const GlobalPluginRenderer = () => {
         }
       }
 
-      setLoadedPlugins(newLoadedPlugins);
+      if (!cancelled) {
+        setLoadedPlugins(newLoadedPlugins);
+      }
     };
 
     loadEnabledPlugins();
+    return () => {
+      cancelled = true;
+    };
   }, [enabledPluginIds, plugins]);
 
   return (

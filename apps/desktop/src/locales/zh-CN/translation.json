@@ -603,6 +603,28 @@
     }
   },
   "plugins": {
+    "discord": {
+      "title": "Discord 富状态",
+      "description": "在 Discord 上显示你的 Deadlock 活动。启用插件后，可选地自定义在富状态中显示的“详细信息”和“状态”文本。",
+      "detailedDescription": "使用 Discord Rich Presence 在你的个人资料上显示 Deadlock Mod Manager 的活动。只需启用插件，并可选地编辑“详细信息”和“状态”文本。",
+      "usageInstructions": "启用插件，然后可选地编辑“详细信息”和“状态”文本。",
+      "applicationId": "Discord 应用 ID",
+      "optional": "（可选）",
+      "applicationIdDescription": "无需设置：本插件使用我们的官方 Discord 应用。",
+      "details": "详细信息文本",
+      "state": "状态文本",
+      "largeImageKey": "大图键",
+      "largeImageText": "大图文本",
+      "smallImageKey": "小图键",
+      "smallImageText": "小图文本",
+      "showElapsedTime": "显示已用时间",
+      "showElapsedTimeDescription": "显示你使用模组管理器的时长",
+      "setupGuide": "设置指南",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
     "flashbang": {
       "title": "闪光弹模式",
       "description": "在设定时间段强制使用浅色主题。",
