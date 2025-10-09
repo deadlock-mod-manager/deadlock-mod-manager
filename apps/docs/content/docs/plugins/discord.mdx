@@ -1,0 +1,47 @@
+---
+title: Discord Plugin
+description: Show your Deadlock activity on Discord using Rich Presence
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Discord Plugin
+
+The Discord plugin displays your Deadlock Mod Manager activity on your Discord profile using Rich Presence.
+
+## Quick Start
+
+1. Go to Settings → Plugins
+2. Find "Discord Rich Presence"
+3. Click "Enable"
+4. Click "Open" to customize
+
+<Callout>
+No setup required — this plugin uses our official Discord application. You can customize the text that appears on your profile.
+</Callout>
+
+## Customization
+
+- **Details Text**: First line in your Rich Presence
+- **State Text**: Second line under details
+- **Show Elapsed Time**: Toggle whether a running timer is shown
+
+### Examples
+
+- Details: Managing Deadlock Mods
+- State: Using Deadlock Mod Manager
+
+## Troubleshooting
+
+<Callout type="warning">
+If presence doesn't appear:
+- Ensure Discord is running and you are logged in
+- Keep the app in the foreground for a few seconds after enabling
+- Toggle the plugin off and on again to reconnect
+</Callout>
+
+## Technical Notes
+
+The plugin uses a shared Application ID and sets Rich Presence via a Tauri command. Only text fields are customizable; images are disabled to avoid per-user app setup.
+
+

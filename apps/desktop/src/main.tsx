@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { QueryClientProvider } from "react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./app";
-import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Debug from "./pages/debug";
@@ -36,7 +35,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             </Route>
           </Routes>
         </BrowserRouter>
-        <GlobalPluginRenderer />
       </Suspense>
     </QueryClientProvider>
   </React.StrictMode>,

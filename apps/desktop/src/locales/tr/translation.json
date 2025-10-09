@@ -586,6 +586,28 @@
     }
   },
   "plugins": {
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Discord'da Deadlock etkinliğinizi gösterir. Eklentiyi etkinleştirin ve isterseniz Rich Presence'ta görünen Detaylar ve Durum metinlerini özelleştirin.",
+      "detailedDescription": "Deadlock Mod Manager etkinliğinizi Discord profilinizde Rich Presence ile gösterir. Sadece etkinleştirin ve isterseniz Detaylar ve Durum metinlerini düzenleyin.",
+      "usageInstructions": "Eklentiyi etkinleştirin, ardından isteğe bağlı olarak Detaylar ve Durum metnini düzenleyin.",
+      "applicationId": "Discord Uygulama Kimliği",
+      "optional": "(isteğe bağlı)",
+      "applicationIdDescription": "Kurulum gerekmez: Bu eklenti resmi Discord uygulamamızı kullanır.",
+      "details": "Detaylar Metni",
+      "state": "Durum Metni",
+      "largeImageKey": "Büyük Görsel Anahtarı",
+      "largeImageText": "Büyük Görsel Metni",
+      "smallImageKey": "Küçük Görsel Anahtarı",
+      "smallImageText": "Küçük Görsel Metni",
+      "showElapsedTime": "Geçen Süreyi Göster",
+      "showElapsedTimeDescription": "Mod yöneticisini ne kadar süredir kullandığınızı göster",
+      "setupGuide": "Kurulum Rehberi",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
     "flashbang": {
       "title": "Flashbang Modu",
       "description": "Belirlenen saatlerde Açık Tema zorlanır.",

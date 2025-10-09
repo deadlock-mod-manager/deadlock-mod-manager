@@ -4,6 +4,7 @@ import usePromise from "react-promise-suspense";
 import { QueryClientProvider } from "react-query";
 import { Outlet } from "react-router";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
+import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
@@ -55,6 +56,7 @@ const App = () => {
                   <Layout>
                     <Outlet />
                   </Layout>
+                  <GlobalPluginRenderer />
                   <UpdateDialog
                     downloadProgress={downloadProgress}
                     isDownloading={isDownloading}
