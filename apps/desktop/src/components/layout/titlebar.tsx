@@ -319,7 +319,7 @@ export const Titlebar = () => {
     <>
       <WindowTitlebar className='z-20 bg-background'>
         <div className='inline-flex h-fit w-fit items-center gap-2 px-2 py-1'>
-          <Logo className='h-6 w-6' />
+          <Logo className='size-5' />
           <Menubar className='border-none bg-transparent shadow-none h-auto p-0'>
             {menuItems.map((menu) => (
               <MenubarMenu key={menu.label}>

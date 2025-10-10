@@ -351,9 +351,6 @@ const MyMods = () => {
   const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
-  const getEnabledModsCount = usePersistedStore(
-    (state) => state.getEnabledModsCount,
-  );
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -413,8 +410,18 @@ const MyMods = () => {
 
   const installedMods = getOrderedMods();
 
-  const enabledModsCount = getEnabledModsCount();
-  const disabledModsCount = mods.length - enabledModsCount;
+  const enabledModsCount = mods.filter(
+    (mod) =>
+      mod.status === ModStatus.Installed &&
+      mod.installedVpks &&
+      mod.installedVpks.length > 0,
+  ).length;
+  const disabledModsCount = mods.filter(
+    (mod) =>
+      mod.status !== ModStatus.Installed ||
+      !mod.installedVpks ||
+      mod.installedVpks.length === 0,
+  ).length;
 
   useLayoutEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
