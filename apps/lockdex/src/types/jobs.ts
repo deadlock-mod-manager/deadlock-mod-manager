@@ -28,3 +28,7 @@ export interface CronJobData extends BaseJobData {
   limit?: number;
   jobData: Record<string, unknown>;
 }
+
+export interface TempCleanupJobData extends BaseJobData {
+  timestamp?: string;
+}

@@ -129,10 +129,10 @@ export class TempCleanupService {
                   `Cleaning up old temp directory: ${entry} (age: ${Math.round(age / 1000)}s)`,
                 );
 
+                const dirSize = await this.calculateDirectorySize(fullPath);
                 await rm(fullPath, { recursive: true, force: true });
                 result.cleanedDirectories++;
-                result.freedBytes +=
-                  await this.calculateDirectorySize(fullPath);
+                result.freedBytes += dirSize;
 
                 this.logger.debug(`Cleaned up: ${entry}`);
               }
@@ -192,9 +192,10 @@ export class TempCleanupService {
             if (stats.isDirectory()) {
               this.logger.info(`Startup cleanup: ${entry}`);
 
+              const dirSize = await this.calculateDirectorySize(fullPath);
               await rm(fullPath, { recursive: true, force: true });
               result.cleanedDirectories++;
-              result.freedBytes += await this.calculateDirectorySize(fullPath);
+              result.freedBytes += dirSize;
             }
           } catch (error) {
             const errorMsg =
@@ -247,9 +248,10 @@ export class TempCleanupService {
             if (stats.isDirectory()) {
               this.logger.info(`Emergency cleanup: ${entry}`);
 
+              const dirSize = await this.calculateDirectorySize(fullPath);
               await rm(fullPath, { recursive: true, force: true });
               result.cleanedDirectories++;
-              result.freedBytes += await this.calculateDirectorySize(fullPath);
+              result.freedBytes += dirSize;
             }
           } catch (error) {
             const errorMsg =

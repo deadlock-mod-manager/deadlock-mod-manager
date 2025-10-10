@@ -1,3 +1,6 @@
+import { readdir, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { logger } from "@/lib/logger";
 import { diskSpaceMonitor } from "@/services/disk-space-monitor";
 import { tempCleanupService } from "@/services/temp-cleanup";
@@ -87,11 +90,25 @@ export class DiskHealthMonitor {
   async performHealthCheck(): Promise<void> {
     try {
       const diskInfo = await diskSpaceMonitor.checkDiskSpace();
+      const tempDirInfo = await this.checkTempDirectories();
 
       if (this.config.logDiskInfo) {
         this.logger.info(
           `Disk health check: ${diskInfo.usagePercentage.toFixed(1)}% used, ` +
-            `${(diskInfo.freeBytes / 1024 / 1024 / 1024).toFixed(2)} GB free`,
+            `${(diskInfo.freeBytes / 1024 / 1024 / 1024).toFixed(2)} GB free, ` +
+            `temp dirs: ${tempDirInfo.count} (${(tempDirInfo.totalSizeMB).toFixed(2)} MB)`,
+        );
+      }
+
+      if (tempDirInfo.count > 50) {
+        this.logger.warn(
+          `High number of temp directories detected: ${tempDirInfo.count}`,
+        );
+      }
+
+      if (tempDirInfo.totalSizeMB > 1024) {
+        this.logger.warn(
+          `Temp directories consuming significant space: ${tempDirInfo.totalSizeMB.toFixed(2)} MB`,
         );
       }
 
@@ -110,6 +127,84 @@ export class DiskHealthMonitor {
       }
     } catch (error) {
       this.logger.withError(error).error("Disk health check failed");
+    }
+  }
+
+  /**
+   * Check temp directories for potential issues
+   */
+  private async checkTempDirectories(): Promise<{
+    count: number;
+    totalSizeMB: number;
+    patterns: Record<string, number>;
+  }> {
+    const patterns = {
+      "mod-download-": 0,
+      "archive-extract-": 0,
+      "7z-stream-": 0,
+      "7z-partial-": 0,
+    };
+
+    let totalSize = 0;
+    let count = 0;
+
+    try {
+      const tempDir = tmpdir();
+      const entries = await readdir(tempDir);
+
+      for (const entry of entries) {
+        for (const pattern of Object.keys(patterns) as Array<
+          keyof typeof patterns
+        >) {
+          if (entry.startsWith(pattern)) {
+            const fullPath = join(tempDir, entry);
+            try {
+              const stats = await stat(fullPath);
+              if (stats.isDirectory()) {
+                count++;
+                patterns[pattern]++;
+                totalSize += await this.calculateDirectorySize(fullPath);
+              }
+            } catch {
+              // Ignore errors for individual directories
+            }
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.withError(error).warn("Failed to check temp directories");
+    }
+
+    return {
+      count,
+      totalSizeMB: totalSize / 1024 / 1024,
+      patterns,
+    };
+  }
+
+  /**
+   * Calculate directory size recursively
+   */
+  private async calculateDirectorySize(dirPath: string): Promise<number> {
+    try {
+      const entries = await readdir(dirPath);
+      let totalSize = 0;
+
+      for (const entry of entries) {
+        const fullPath = join(dirPath, entry);
+        const stats = await stat(fullPath);
+
+        if (stats.isDirectory()) {
+          totalSize += await this.calculateDirectorySize(fullPath);
+        } else {
+          totalSize += stats.size;
+        }
+      }
+
+      return totalSize;
+    } catch {
+      return 0;
     }
   }
 

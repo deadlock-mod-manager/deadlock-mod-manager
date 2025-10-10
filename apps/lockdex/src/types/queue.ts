@@ -7,6 +7,7 @@ export interface QueueConfig {
       type: string;
       delay: number;
     };
+    timeout?: number;
     removeOnComplete?: number;
     removeOnFail?: number;
   };

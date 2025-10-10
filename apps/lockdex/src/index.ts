@@ -6,6 +6,7 @@ import redis from "./lib/redis";
 import { modFileProcessor } from "./processors/mod-file-processor";
 import { modProcessor } from "./processors/mod-processor";
 import { modsSchedulerProcessor } from "./processors/mods-scheduler";
+import { tempCleanupProcessor } from "./processors/temp-cleanup-processor";
 import { cronService } from "./services/cron";
 import { diskHealthMonitor } from "./services/disk-health-monitor";
 import { modFileProcessingQueue, modsQueue } from "./services/queue";
@@ -38,7 +39,18 @@ const main = async () => {
     enabled: true,
   });
 
+  await cronService.defineJob({
+    name: "temp-cleanup",
+    pattern: CronPatterns.EVERY_30_MINUTES,
+    processor: tempCleanupProcessor,
+    enabled: true,
+  });
+
   process.on("SIGTERM", async () => {
+    logger.info("SIGTERM received, initiating graceful shutdown");
+
+    await tempCleanupService.cleanupOldTempDirectories();
+
     await Promise.all([
       modsWorker.close(),
       modFileWorker.close(),
@@ -47,6 +59,8 @@ const main = async () => {
       cronService.shutdown(),
       diskHealthMonitor.stop(),
     ]);
+
+    logger.info("Graceful shutdown completed");
   });
 };
 
