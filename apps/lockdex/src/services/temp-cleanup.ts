@@ -178,7 +178,9 @@ export class TempCleanupService {
 
     try {
       const tempDir = tmpdir();
+      this.logger.info(`Scanning temp directory: ${tempDir}`);
       const entries = await readdir(tempDir);
+      this.logger.info(`Found ${entries.length} entries in temp directory`);
 
       for (const entry of entries) {
         if (this.matchesPattern(entry)) {
@@ -231,7 +233,9 @@ export class TempCleanupService {
 
     try {
       const tempDir = tmpdir();
+      this.logger.info(`Emergency cleanup scanning: ${tempDir}`);
       const entries = await readdir(tempDir);
+      this.logger.info(`Emergency cleanup found ${entries.length} entries`);
 
       for (const entry of entries) {
         if (this.matchesPattern(entry)) {
@@ -255,6 +259,9 @@ export class TempCleanupService {
               .withError(error)
               .warn(`Failed emergency cleanup: ${entry}`);
           }
+        } else {
+          // Log entries that don't match patterns for diagnostic purposes
+          this.logger.debug(`Skipping non-matching entry: ${entry}`);
         }
       }
 

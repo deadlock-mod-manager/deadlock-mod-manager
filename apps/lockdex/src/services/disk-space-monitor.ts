@@ -62,6 +62,7 @@ export class DiskSpaceMonitor {
   async checkDiskSpace(): Promise<DiskSpaceInfo> {
     try {
       const tempDir = tmpdir();
+      this.logger.debug(`Checking disk space for: ${tempDir}`);
 
       // Get filesystem stats using statvfs equivalent
       const fsStats = await this.getFilesystemStats(tempDir);
