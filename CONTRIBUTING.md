@@ -23,7 +23,7 @@ Thank you for your interest in contributing to Deadlock Mod Manager! This guide 
 Before you begin, ensure you have the following installed:
 
 - **Node.js** (>= 24.8.0) - [Download here](https://nodejs.org/) or use nvm
-- **pnpm** (>= 10.17.0) - Install with `npm install -g pnpm`
+- **pnpm** (>= 10.18.2) - Install with `npm install -g pnpm`
 - **Docker** - For local database development
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
 - **Git** - For version control
