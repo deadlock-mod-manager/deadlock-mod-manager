@@ -37,7 +37,7 @@ export interface ModMetadata {
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
-  const { addLocalMod: addMod, setModPath, setModStatus } = usePersistedStore();
+  const { addLocalMod: addMod, setModStatus } = usePersistedStore();
 
   const processArchive = async (
     file: File,
@@ -246,8 +246,7 @@ export const useModProcessor = () => {
       category,
     };
 
-    addMod(modDto, { path: modDir, status: ModStatus.Downloaded });
-    setModPath(modId, modDir);
+    addMod(modDto, { status: ModStatus.Downloaded });
     setModStatus(modId, ModStatus.Downloaded);
 
     setProcessing(true, t("addMods.modAddedSuccess"));
@@ -326,11 +325,9 @@ export const useModProcessor = () => {
 
     // Set status to Installed since this addon is already in the game directory
     addMod(modDto, {
-      path: existingPath, // Use the existing VPK path
       status: ModStatus.Installed, // Already installed
       installedVpks: [existingPath], // Reference to the existing VPK
     });
-    setModPath(modId, existingPath);
     setModStatus(modId, ModStatus.Installed);
 
     setProcessing(true, t("addMods.modAddedSuccess"));

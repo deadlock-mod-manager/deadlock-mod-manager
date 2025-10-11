@@ -64,6 +64,20 @@ interface AddonInfoProps {
 
 const AddonInfo = ({ addon, isIdentified }: AddonInfoProps) => {
   if (isIdentified) {
+    // Check if this is a prefixed VPK (has remoteId but no matchInfo)
+    if (addon.remoteId && !addon.matchInfo) {
+      return (
+        <div className='space-y-1'>
+          <p className='text-xs text-foreground font-medium'>
+            Downloaded Mod (ID: {addon.remoteId})
+          </p>
+          <p className='text-xs text-muted-foreground'>
+            Currently disabled - ready to enable
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className='space-y-1'>
         <p className='text-xs text-foreground font-medium'>
@@ -146,14 +160,12 @@ const AddonSummaryCard = ({
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
 }) => {
   const localMods = usePersistedStore((state) => state.localMods);
-  const isIdentified = !!(addon.remoteId && addon.matchInfo);
+  const isIdentified = !!addon.remoteId;
   const hasError = !addon.vpkParsed || !addon.vpkParsed.fingerprint;
 
   // Check if this addon has already been added to the library
-  const isAlreadyInLibrary = localMods.some(
-    (mod) =>
-      mod.path === addon.filePath ||
-      mod.installedVpks?.includes(addon.filePath),
+  const isAlreadyInLibrary = localMods.some((mod) =>
+    mod.installedVpks?.includes(addon.filePath),
   );
 
   const handleExternalLinkClick = async () => {
@@ -450,9 +462,7 @@ export const AnalysisResultsDialog = ({
     return null;
   }
 
-  const identifiedAddons = result.addons.filter(
-    (addon) => addon.remoteId && addon.matchInfo,
-  );
+  const identifiedAddons = result.addons.filter((addon) => addon.remoteId);
   const unknownAddons = result.addons.filter(
     (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
   );

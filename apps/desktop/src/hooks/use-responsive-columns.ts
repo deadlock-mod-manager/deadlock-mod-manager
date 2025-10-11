@@ -7,7 +7,7 @@ export const useResponsiveColumns = (defaultColumns = 4) => {
     const updateColumns = () => {
       const width = window.innerWidth;
       if (width >= 1536) setColumnsPerRow(6);
-      else if (width >= 1280) setColumnsPerRow(4);
+      else if (width >= 1280) setColumnsPerRow(5);
       else if (width >= 1024) setColumnsPerRow(4);
       else if (width >= 768) setColumnsPerRow(3);
       else if (width >= 640) setColumnsPerRow(2);

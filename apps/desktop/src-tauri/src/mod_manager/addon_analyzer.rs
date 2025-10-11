@@ -252,17 +252,41 @@ impl AddonAnalyzer {
       });
     }
 
+    // Separate prefixed VPKs from non-prefixed ones
+    let mut prefixed_vpk_paths = Vec::new();
+    let mut non_prefixed_vpk_paths = Vec::new();
+
+    for vpk_path in vpk_file_paths {
+      if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
+        if Self::extract_mod_id_from_filename(file_name).is_some() {
+          prefixed_vpk_paths.push(vpk_path);
+        } else {
+          non_prefixed_vpk_paths.push(vpk_path);
+        }
+      }
+    }
+
+    if !prefixed_vpk_paths.is_empty() {
+      log::info!(
+        "Found {} prefixed VPKs (will skip hash analysis) and {} non-prefixed VPKs (will analyze fully)",
+        prefixed_vpk_paths.len(),
+        non_prefixed_vpk_paths.len()
+      );
+    }
+
     log::info!(
-      "Found {} VPK files, starting parallel analysis",
-      vpk_file_paths.len()
+      "Found {} VPK files total, starting parallel analysis",
+      prefixed_vpk_paths.len() + non_prefixed_vpk_paths.len()
     );
+
+    let total_files = prefixed_vpk_paths.len() + non_prefixed_vpk_paths.len();
 
     // Emit files found progress
     self.emit_progress(
       &app_handle,
       "parsing",
       "Parsing VPK files...",
-      Some(vpk_file_paths.len()),
+      Some(total_files),
       None,
       None,
       15,
@@ -272,10 +296,72 @@ impl AddonAnalyzer {
     let batch_size = 4; // Process 4 files at a time
     let mut addons = Vec::new();
     let mut errors = Vec::new();
-    let total_files = vpk_file_paths.len();
     let mut processed_files = 0;
 
-    for batch in vpk_file_paths.chunks(batch_size) {
+    // First, process prefixed VPKs (parse only, no hash analysis needed)
+    for batch in prefixed_vpk_paths.chunks(batch_size) {
+      let mut handles = Vec::new();
+
+      for file_path in batch {
+        let file_path = file_path.clone();
+        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path));
+        handles.push(handle);
+      }
+
+      // Wait for all tasks in this batch to complete
+      for handle in handles {
+        processed_files += 1;
+        let progress = 15 + ((processed_files as f32 / total_files as f32) * 35.0) as u8;
+
+        match handle.await {
+          Ok(Ok(mut addon_info)) => {
+            // Extract mod ID from the prefixed filename
+            if let Some(mod_id) = Self::extract_mod_id_from_filename(&addon_info.file_name) {
+              // Mark this as already identified by prefix (no hash analysis needed)
+              addon_info.remote_id = Some(mod_id);
+            }
+
+            self.emit_progress(
+              &app_handle,
+              "parsing",
+              "Parsing VPK files...",
+              Some(total_files),
+              Some(processed_files),
+              Some(addon_info.file_name.clone()),
+              progress,
+            );
+            addons.push(addon_info);
+          }
+          Ok(Err(e)) => {
+            errors.push(e);
+            self.emit_progress(
+              &app_handle,
+              "parsing",
+              "Parsing VPK files...",
+              Some(total_files),
+              Some(processed_files),
+              None,
+              progress,
+            );
+          }
+          Err(e) => {
+            errors.push(format!("Task failed: {}", e));
+            self.emit_progress(
+              &app_handle,
+              "parsing",
+              "Parsing VPK files...",
+              Some(total_files),
+              Some(processed_files),
+              None,
+              progress,
+            );
+          }
+        }
+      }
+    }
+
+    // Now process non-prefixed VPKs (full parsing)
+    for batch in non_prefixed_vpk_paths.chunks(batch_size) {
       let mut handles = Vec::new();
 
       for file_path in batch {
@@ -339,24 +425,45 @@ impl AddonAnalyzer {
       errors.len()
     );
 
-    // Now perform hash analysis for each addon to identify remote mods
-    log::info!("Starting hash analysis for {} addons", addons.len());
+    // Separate prefixed addons (already have remote_id) from non-prefixed ones (need hash analysis)
+    let mut prefixed_addons = Vec::new();
+    let mut non_prefixed_addons = Vec::new();
+
+    for addon in addons {
+      if addon.remote_id.is_some() {
+        prefixed_addons.push(addon);
+      } else {
+        non_prefixed_addons.push(addon);
+      }
+    }
+
+    log::info!(
+      "Skipping hash analysis for {} prefixed addons (already identified), analyzing {} non-prefixed addons",
+      prefixed_addons.len(),
+      non_prefixed_addons.len()
+    );
+
+    // Now perform hash analysis for non-prefixed addons only
+    log::info!(
+      "Starting hash analysis for {} non-prefixed addons",
+      non_prefixed_addons.len()
+    );
 
     // Emit hash analysis start progress
     self.emit_progress(
       &app_handle,
       "analyzing_hashes",
       "Identifying mods using hash analysis...",
-      Some(addons.len()),
+      Some(non_prefixed_addons.len()),
       None,
       None,
       50,
     );
 
     let mut identified_addons = Vec::new();
-    let total_addons = addons.len();
+    let total_addons = non_prefixed_addons.len();
 
-    for (index, mut addon) in addons.into_iter().enumerate() {
+    for (index, mut addon) in non_prefixed_addons.into_iter().enumerate() {
       let current_addon_num = index + 1;
       let progress = 50 + ((current_addon_num as f32 / total_addons as f32) * 45.0) as u8; // 50-95%
 
@@ -402,9 +509,15 @@ impl AddonAnalyzer {
       identified_addons.push(addon);
     }
 
+    // Add prefixed addons to the results
+    let prefixed_count = prefixed_addons.len();
+    identified_addons.extend(prefixed_addons);
+
     log::info!(
-      "Hash analysis complete: {} addons processed",
-      identified_addons.len()
+      "Hash analysis complete: {} addons processed ({} prefixed, {} analyzed)",
+      identified_addons.len(),
+      prefixed_count,
+      total_addons
     );
 
     // Emit completion progress
@@ -440,6 +553,12 @@ impl AddonAnalyzer {
       }
     }
     Ok(())
+  }
+
+  /// Check if a VPK filename has a mod ID prefix and extract it
+  fn extract_mod_id_from_filename(filename: &str) -> Option<String> {
+    use crate::mod_manager::vpk_manager::VpkManager;
+    VpkManager::extract_mod_id_from_prefix(filename)
   }
 
   /// Fast VPK parsing with minimal data extraction for identification

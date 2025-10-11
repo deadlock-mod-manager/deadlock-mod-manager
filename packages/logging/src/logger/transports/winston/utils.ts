@@ -33,7 +33,9 @@ export const formatLogComponents = ({
   let formattedMetadata = "";
   let error = initialError as LogMessageError | undefined;
 
-  console.log("error", JSON.stringify(initialError, null, 2));
+  if (initialError) {
+    console.error("Error: ", JSON.stringify(initialError, null, 2));
+  }
 
   if (isMessageObject(message)) {
     error = message.error;

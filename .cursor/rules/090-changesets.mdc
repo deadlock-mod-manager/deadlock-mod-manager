@@ -1,0 +1,200 @@
+---
+description: Changesets: Guidelines for creating changesets for notable features and fixes
+alwaysApply: true
+---
+
+# Changeset Guidelines
+
+## Overview
+
+This project uses `@changesets/cli` to manage versioning and changelogs. When you implement features or fixes that are worth mentioning in the changelog, you MUST create a changeset.
+
+## AI Agent Workflow
+
+As an AI agent, you cannot run the interactive `pnpm changeset` command. Instead, you should automatically create changeset files:
+
+1. **After completing a task**, evaluate if a changeset is needed based on the criteria below
+2. **Create a changeset file** in `.changeset/` directory:
+   - Generate a random kebab-case filename (e.g., `happy-pigs-dance.md`, `brave-lions-jump.md`)
+   - Use the proper YAML frontmatter format with package names and change types
+   - Write a clear, user-facing summary of the change
+3. The changeset file will be committed alongside the code changes
+
+### Changeset File Format
+
+```markdown
+---
+"@deadlock-mods/package-name": minor
+"@deadlock-mods/another-package": patch
+---
+
+Clear, concise description of the change from the user's perspective.
+```
+
+## When to Create a Changeset
+
+Create a changeset for:
+
+- **New features** - Any new functionality that users will interact with
+- **Bug fixes** - Fixes that resolve user-facing issues or critical bugs
+- **Breaking changes** - Any changes that require user action or break existing functionality
+- **Performance improvements** - Significant optimizations that users will notice
+- **Security fixes** - Any security-related patches
+
+## When NOT to Create a Changeset
+
+Skip changesets for:
+
+- Refactoring that doesn't change functionality
+- Code style changes or formatting
+- Documentation updates
+- Internal tooling changes
+- Development dependencies updates
+- Test updates without functional changes
+
+## Creating a Changeset
+
+When creating a changeset file, you need to specify:
+
+1. **Packages** - Which packages are affected by your changes
+2. **Change type** - One of:
+   - `patch` - Bug fixes and minor changes (0.0.X)
+   - `minor` - New features that are backwards compatible (0.X.0)
+   - `major` - Breaking changes (X.0.0)
+3. **Summary** - A clear description of the change in a user-friendly way
+
+### Writing Good Changeset Summaries
+
+**✅ Good summaries:**
+
+```markdown
+Add dark mode toggle to settings page
+Fix crash when downloading large mod files
+Improve mod installation performance by 50%
+```
+
+**❌ Bad summaries:**
+
+```markdown
+Updated code
+Fixed bug
+Refactored component
+```
+
+### Guidelines for Summaries
+
+- Write from the user's perspective
+- Be specific and concise
+- Start with a verb (Add, Fix, Improve, Remove, etc.)
+- Focus on what changed, not how it was implemented
+- Keep it under 80 characters when possible
+
+## Changeset Files
+
+Changesets are stored in `.changeset/` directory as markdown files. Each file:
+
+- Contains YAML frontmatter with affected packages and change types
+- Contains a markdown description of the change
+- Is committed to git alongside your code changes
+
+Example changeset file:
+
+```markdown
+---
+"@deadlock-mods/desktop": minor
+"@deadlock-mods/api": patch
+---
+
+Add support for mod collections with automatic dependency resolution
+```
+
+## Workflow Integration
+
+1. Make your code changes
+2. AI agent automatically creates a changeset file in `.changeset/` directory
+3. Commit both your code changes and the changeset file together
+4. When ready to release, changesets will automatically:
+   - Generate changelog entries
+   - Bump version numbers
+   - Create release notes
+
+## Multiple Changes in One PR
+
+If your PR includes multiple notable changes:
+
+- Create separate changeset files for each distinct feature/fix
+- Each changeset should focus on one specific change
+
+## Monorepo Considerations
+
+This project is a monorepo with multiple packages:
+
+- **Apps**: `api`, `bot`, `desktop`, `lockdex`, `www`
+- **Packages**: `common`, `database`, `logging`, `shared`, `ui`, `vpk-parser`, etc.
+
+When creating changesets:
+
+- Only include packages that are directly affected by your change
+- Don't include packages that are only affected as transitive dependencies
+- Use correct package names from the monorepo (check `package.json` files)
+
+## Examples
+
+### Example 1: New Feature
+
+File: `.changeset/happy-elephants-smile.md`
+
+```markdown
+---
+"@deadlock-mods/desktop": minor
+---
+
+Add mod conflict detection with visual indicators
+```
+
+### Example 2: Bug Fix Affecting Multiple Packages
+
+File: `.changeset/brave-lions-jump.md`
+
+```markdown
+---
+"@deadlock-mods/desktop": patch
+"@deadlock-mods/shared": patch
+---
+
+Fix incorrect mod version comparison logic
+```
+
+### Example 3: Breaking Change
+
+File: `.changeset/serious-tigers-roar.md`
+
+```markdown
+---
+"@deadlock-mods/api": major
+---
+
+Remove deprecated /v1/mods endpoint (use /v2/mods instead)
+```
+
+## Filename Generation
+
+Generate random, friendly filenames using the pattern `adjective-animals-verb.md`:
+
+- Use 2-3 random words separated by hyphens
+- Keep it simple and memorable
+- Examples: `happy-dogs-run.md`, `clever-cats-jump.md`, `swift-birds-fly.md`
+
+## Verification
+
+After AI agent creates a changeset:
+
+1. Verify a new file was created in `.changeset/`
+2. Check the frontmatter has correct package names and change types
+3. Ensure the summary is clear and user-facing
+4. The changeset file will be committed with your code changes
+
+## Additional Resources
+
+- [Changesets Documentation](https://github.com/changesets/changesets)
+- Project root `package.json` for changeset configuration

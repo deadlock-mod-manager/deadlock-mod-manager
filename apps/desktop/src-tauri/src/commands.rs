@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{
@@ -11,11 +12,14 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_store::StoreExt;
+use tokio::sync::OnceCell;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
-static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
+pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
+  LazyLock::new(|| Mutex::new(ModManager::new()));
 static API_URL: LazyLock<Mutex<String>> =
   LazyLock::new(|| Mutex::new("http://localhost:9000".to_string()));
+static DOWNLOAD_MANAGER: OnceCell<DownloadManager> = OnceCell::const_new();
 
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
@@ -670,4 +674,60 @@ pub async fn get_addons_backup_info(file_name: String) -> Result<AddonsBackup, E
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();
   backup_manager.get_backup_info(&file_name)
+}
+
+async fn get_download_manager(app_handle: AppHandle) -> &'static DownloadManager {
+  DOWNLOAD_MANAGER
+    .get_or_init(|| async { DownloadManager::new(app_handle) })
+    .await
+}
+
+#[tauri::command]
+pub async fn queue_download(
+  app_handle: AppHandle,
+  mod_id: String,
+  files: Vec<DownloadFileDto>,
+) -> Result<(), Error> {
+  log::info!(
+    "Received download request for mod: {} with {} files",
+    mod_id,
+    files.len()
+  );
+
+  let app_local_data_dir = app_handle
+    .path()
+    .app_local_data_dir()
+    .map_err(|e| Error::Tauri(e))?;
+
+  let target_dir = app_local_data_dir.join("mods").join(&mod_id);
+
+  let task = DownloadTask {
+    mod_id,
+    files,
+    target_dir,
+  };
+
+  let manager = get_download_manager(app_handle).await;
+  manager.queue_download(task).await
+}
+
+#[tauri::command]
+pub async fn cancel_download(app_handle: AppHandle, mod_id: String) -> Result<(), Error> {
+  let manager = get_download_manager(app_handle).await;
+  manager.cancel_download(&mod_id).await
+}
+
+#[tauri::command]
+pub async fn get_download_status(
+  app_handle: AppHandle,
+  mod_id: String,
+) -> Result<Option<DownloadStatus>, Error> {
+  let manager = get_download_manager(app_handle).await;
+  manager.get_download_status(&mod_id).await
+}
+
+#[tauri::command]
+pub async fn get_all_downloads(app_handle: AppHandle) -> Result<Vec<DownloadStatus>, Error> {
+  let manager = get_download_manager(app_handle).await;
+  manager.get_all_downloads().await
 }

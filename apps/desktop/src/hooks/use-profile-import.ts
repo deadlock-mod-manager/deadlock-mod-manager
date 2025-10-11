@@ -29,7 +29,6 @@ export const useProfileImport = () => {
     getActiveProfile,
     addLocalMod,
     setModStatus,
-    setModPath,
     setModProgress,
     setInstalledVpks,
     localMods,
@@ -89,7 +88,6 @@ export const useProfileImport = () => {
               path,
             });
             setModStatus(mod.remoteId, ModStatus.Downloaded);
-            setModPath(mod.remoteId, path);
             resolve(path);
           },
           onError: (error) => {
@@ -107,7 +105,6 @@ export const useProfileImport = () => {
       modToInstall = {
         ...mod,
         status: ModStatus.Downloaded,
-        path: downloadedPath,
         downloadedAt: new Date(),
       };
 
@@ -120,7 +117,6 @@ export const useProfileImport = () => {
       modToInstall = existingMod;
       logger.info("Using existing downloaded mod", {
         modId: mod.remoteId,
-        path: existingMod.path,
       });
     }
 

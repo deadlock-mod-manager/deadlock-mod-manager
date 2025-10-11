@@ -17,6 +17,10 @@ alwaysApply: true
 
 - If you've learned new concepts, workflows, or best practices during task completion, suggest updates to the relevant rules
 - For new workflows that aren't covered by existing rules, suggest creating a new rule file
+- **Create a changeset if your changes are worth mentioning in the changelog:**
+  - Run `pnpm changeset` for new features, bug fixes, or breaking changes
+  - See `090-changesets.mdc` for detailed guidelines on when and how to create changesets
+  - Skip changesets for refactoring, formatting, or internal changes
 - Evaluate whether tests should be added for your changes:
   - For functional code, new features, API changes, or bug fixes, tests are essential
   - For content-only changes like frontend changes or documentation updates, tests are typically not required
@@ -46,6 +50,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **060-tailwind-v4.mdc** - Guidelines for using Tailwind CSS v4
 - **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
 - **080-ai-interaction.mdc** - AI interaction guidelines and communication style rules
+- **090-changesets.mdc** - Changeset management for features and fixes
 
 ### Special Rules
 

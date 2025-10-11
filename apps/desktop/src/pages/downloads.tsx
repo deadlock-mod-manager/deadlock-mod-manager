@@ -7,10 +7,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
-import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Tabs, TabsList, TabsTrigger } from "@deadlock-mods/ui/components/tabs";
-import { DownloadSimple, FolderOpen, Package } from "@phosphor-icons/react";
-import { invoke } from "@tauri-apps/api/core";
+import { DownloadSimple, Package } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import DownloadCard from "@/components/downloads/download-card";
@@ -90,19 +88,7 @@ const Downloads = () => {
     [downloads],
   );
 
-  const downloadFolder = useMemo(() => {
-    // Get the path of the first completed download
-    const completed = downloads.find(
-      (d) => d.status !== ModStatus.Downloading && d.path,
-    );
-    return completed?.path?.split("\\").slice(0, -1).join("\\") || null;
-  }, [downloads]);
-
-  const handleOpenFolder = () => {
-    if (downloadFolder) {
-      invoke("show_in_folder", { path: downloadFolder });
-    }
-  };
+  const handleOpenFolder = () => {};
 
   return (
     <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full overflow-y-auto pl-4 pr-2'>
@@ -130,18 +116,6 @@ const Downloads = () => {
           </TabsList>
         </Tabs>
       </div>
-
-      {downloads.length > 0 && downloadFolder && (
-        <>
-          <div className='mb-4 flex flex-wrap gap-2'>
-            <Button onClick={handleOpenFolder} size='sm' variant='outline'>
-              <FolderOpen className='mr-1 h-4 w-4' />
-              {t("downloads.openDownloadFolder")}
-            </Button>
-          </div>
-          <Separator className='mb-4' />
-        </>
-      )}
 
       <ErrorBoundary>
         {sortedDownloads.length > 0 ? (

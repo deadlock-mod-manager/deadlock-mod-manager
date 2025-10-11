@@ -27,7 +27,6 @@ export enum ModStatus {
 export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
-  path?: string;
   downloads?: ModDownloadItem[];
   selectedDownload?: ModDownloadItem;
   installedVpks?: string[];
@@ -45,7 +44,6 @@ export interface DownloadableMod extends Omit<LocalMod, "status"> {
 export type InstallableMod = {
   id: string;
   name: string;
-  path: string;
   installed_vpks: string[];
   file_tree?: ModFileTree;
 };

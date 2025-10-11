@@ -19,6 +19,7 @@ import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
 import { queryClient } from "./lib/client";
 import { STORE_NAME } from "./lib/constants";
+import { downloadManager } from "./lib/download/manager";
 import logger from "./lib/logger";
 import { usePersistedStore } from "./lib/store";
 
@@ -43,8 +44,11 @@ const App = () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });
     await usePersistedStore.persist.rehydrate();
     await initializeApiUrl();
+    await downloadManager.init();
 
-    logger.debug("Store rehydrated and API URL initialized");
+    logger.debug(
+      "Store rehydrated, API URL initialized, and download manager ready",
+    );
   };
 
   usePromise(hydrateStore, []);

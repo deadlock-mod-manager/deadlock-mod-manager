@@ -1,190 +1,174 @@
-import { toast } from "@deadlock-mods/ui/components/sonner";
-import { appLocalDataDir, join } from "@tauri-apps/api/path";
-import { BaseDirectory, exists, mkdir } from "@tauri-apps/plugin-fs";
-import { download } from "@tauri-apps/plugin-upload";
-import type { DownloadableMod, ModDownloadItem } from "@/types/mods";
-import { getModDownload } from "../api";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { toast } from "sonner";
+import type { DownloadableMod, Progress } from "@/types/mods";
 import { createLogger } from "../logger";
 
 const logger = createLogger("download-manager");
 
-const createIfNotExists = async (path: string) => {
-  logger.debug(`Creating directory if not exists: ${path}`);
-  try {
-    const dirExists = await exists(path, {
-      baseDir: BaseDirectory.AppLocalData,
-    });
-    if (!dirExists) {
-      logger.info(`Creating ${path} directory`);
-      await mkdir(path, { baseDir: BaseDirectory.AppLocalData });
-    }
-  } catch (error) {
-    logger.error(error);
-    toast.error(`Failed to create ${path} directory`);
-  }
-};
+interface DownloadStartedEvent {
+  modId: string;
+}
+
+interface DownloadProgressEvent {
+  modId: string;
+  fileIndex: number;
+  totalFiles: number;
+  progress: number;
+  progressTotal: number;
+  total: number;
+  transferSpeed: number;
+  percentage: number;
+}
+
+interface DownloadCompletedEvent {
+  modId: string;
+  path: string;
+}
+
+interface DownloadErrorEvent {
+  modId: string;
+  error: string;
+}
 
 class DownloadManager {
-  private queue: DownloadableMod[] = [];
-  private readonly progressUpdateTimers: Record<
-    string,
-    { lastUpdate: number; timerId: number | null }
-  > = {};
-  private readonly THROTTLE_MS = 500; // Only update progress every 500ms
-
-  constructor() {
-    this.queue = [];
-  }
-
-  addToQueue(mod: DownloadableMod) {
-    this.queue.push(mod);
-  }
-
-  removeFromQueue(mod: DownloadableMod) {
-    this.queue = this.queue.filter((m) => m.id !== mod.id);
-    // Clean up any timers
-    if (this.progressUpdateTimers[mod.remoteId]) {
-      if (this.progressUpdateTimers[mod.remoteId].timerId) {
-        clearTimeout(
-          this.progressUpdateTimers[mod.remoteId].timerId as unknown as number,
-        );
-      }
-      delete this.progressUpdateTimers[mod.remoteId];
-    }
-  }
+  private pendingDownloads: Map<string, DownloadableMod> = new Map();
+  private unlistenFns: UnlistenFn[] = [];
 
   async init() {
-    await createIfNotExists("mods");
+    logger.info("Download manager initializing");
+
+    const unlistenStarted = await listen<DownloadStartedEvent>(
+      "download-started",
+      (event) => {
+        const mod = this.pendingDownloads.get(event.payload.modId);
+        if (mod) {
+          logger.info("Download started", { mod: event.payload.modId });
+          mod.onStart();
+        }
+      },
+    );
+
+    const unlistenProgress = await listen<DownloadProgressEvent>(
+      "download-progress",
+      (event) => {
+        const mod = this.pendingDownloads.get(event.payload.modId);
+        if (mod) {
+          const progress: Progress = {
+            progress: event.payload.progress,
+            progressTotal: event.payload.progressTotal,
+            total: event.payload.total,
+            transferSpeed: event.payload.transferSpeed,
+          };
+          mod.onProgress(progress);
+        }
+      },
+    );
+
+    const unlistenCompleted = await listen<DownloadCompletedEvent>(
+      "download-completed",
+      (event) => {
+        const mod = this.pendingDownloads.get(event.payload.modId);
+        if (mod) {
+          logger.info("Download complete", {
+            mod: event.payload.modId,
+            path: event.payload.path,
+          });
+          mod.onComplete(event.payload.path);
+          this.pendingDownloads.delete(event.payload.modId);
+        }
+      },
+    );
+
+    const unlistenError = await listen<DownloadErrorEvent>(
+      "download-error",
+      (event) => {
+        const mod = this.pendingDownloads.get(event.payload.modId);
+        if (mod) {
+          logger.error("Download error", {
+            mod: event.payload.modId,
+            error: event.payload.error,
+          });
+          mod.onError(new Error(event.payload.error));
+          this.pendingDownloads.delete(event.payload.modId);
+        }
+      },
+    );
+
+    this.unlistenFns.push(
+      unlistenStarted,
+      unlistenProgress,
+      unlistenCompleted,
+      unlistenError,
+    );
+
     logger.info("Download manager initialized");
   }
 
-  // Throttled progress update to prevent storage spam
-  private throttledProgressUpdate(
-    mod: DownloadableMod,
-    progress: {
-      progress: number;
-      progressTotal: number;
-      total: number;
-      transferSpeed: number;
-    },
-    index = 0,
-  ) {
-    const now = Date.now();
-    const modId = mod.remoteId;
-
-    // Initialize timer entry if it doesn't exist
-    if (!this.progressUpdateTimers[`${modId}-${index}`]) {
-      this.progressUpdateTimers[`${modId}-${index}`] = {
-        lastUpdate: 0,
-        timerId: null,
-      };
+  async cleanup() {
+    for (const unlisten of this.unlistenFns) {
+      unlisten();
     }
-
-    const timerEntry = this.progressUpdateTimers[`${modId}-${index}`];
-
-    // Always process 100% complete updates immediately
-    const isComplete = progress.progressTotal === progress.total;
-
-    // If enough time has passed since last update or download is complete
-    if (isComplete || now - timerEntry.lastUpdate >= this.THROTTLE_MS) {
-      // Clear any pending timer
-      if (timerEntry.timerId !== null) {
-        clearTimeout(timerEntry.timerId as unknown as number);
-        timerEntry.timerId = null;
-      }
-
-      // Update progress immediately
-      mod.onProgress(progress);
-      timerEntry.lastUpdate = now;
-
-      // Handle completion
-      if (isComplete) {
-        logger.info("Download complete", { mod: modId, index });
-      }
-    }
-    // If there's no pending timer and we're not at the throttle interval yet
-    else if (timerEntry.timerId === null) {
-      // Schedule an update for when the throttle interval is reached
-      const delay = this.THROTTLE_MS - (now - timerEntry.lastUpdate);
-      timerEntry.timerId = setTimeout(() => {
-        mod.onProgress(progress);
-        timerEntry.lastUpdate = Date.now();
-        timerEntry.timerId = null;
-      }, delay) as unknown as number;
-    }
-    // Otherwise, we already have a pending update scheduled, so do nothing
+    this.unlistenFns = [];
+    this.pendingDownloads.clear();
   }
 
-  private async downloadFiles(mod: DownloadableMod, modDir: string) {
+  addToQueue(mod: DownloadableMod) {
+    this.pendingDownloads.set(mod.remoteId, mod);
+    this.queueDownload(mod).catch((error) => {
+      logger.error("Failed to queue download", { error });
+      toast.error(`Failed to queue download: ${error.message}`);
+      mod.onError(error);
+      this.pendingDownloads.delete(mod.remoteId);
+    });
+  }
+
+  private async queueDownload(mod: DownloadableMod) {
     if (!mod.downloads || mod.downloads.length === 0) {
       throw new Error("No downloads available for this mod");
     }
 
-    await Promise.allSettled(
-      mod.downloads.map(async (file, index) => {
-        logger.info("Downloading file", {
-          mod: mod.remoteId,
-          file: file.name,
-          size: file.size,
-        });
+    logger.info("Queueing download for mod", {
+      mod: mod.remoteId,
+      files: mod.downloads.length,
+    });
 
-        await download(file.url, await join(modDir, file.name), (progress) => {
-          this.throttledProgressUpdate(mod, progress, index);
-          if (
-            progress.progressTotal === progress.total &&
-            this.progressUpdateTimers[`${mod.remoteId}-${index}`]
-          ) {
-            delete this.progressUpdateTimers[`${mod.remoteId}-${index}`];
-          }
-        });
-      }),
-    );
-
-    mod.onComplete(modDir);
+    await invoke("queue_download", {
+      modId: mod.remoteId,
+      files: mod.downloads.map((d) => ({
+        url: d.url,
+        name: d.name,
+        size: d.size || 0,
+      })),
+    });
   }
 
-  async process() {
-    if (this.queue.length === 0) {
-      return;
-    }
-    const mod = this.queue.shift();
-    if (!mod) {
-      return;
-    }
-
+  async cancelDownload(modId: string) {
     try {
-      mod.onStart();
-      logger.info("Starting download", { mod: mod.remoteId });
-
-      const modsDir = await appLocalDataDir();
-      const modDir = await join(modsDir, "mods", mod.remoteId);
-
-      await createIfNotExists(modDir);
-
-      if (!mod.downloads) {
-        logger.info("Getting mod download links", { mod: mod.remoteId });
-        const downloads = await getModDownload(mod.remoteId);
-        mod.downloads = downloads as unknown as ModDownloadItem[]; // Type assertion since the API returns compatible structure
-      }
-
-      if (!mod.downloads || mod.downloads.length === 0) {
-        throw new Error("No downloads available for this mod");
-      }
-
-      logger.info(`Mod has ${mod.downloads.length} downloadable files`, {
-        mod: mod.remoteId,
-      });
-
-      // Download all files for now, but this can be made selective in the future
-      await this.downloadFiles(mod, modDir);
+      await invoke("cancel_download", { modId });
+      this.pendingDownloads.delete(modId);
+      logger.info("Download cancelled", { mod: modId });
     } catch (error) {
-      logger.error(error);
-      toast.error("Failed to download mod");
-      mod.onError(error as Error);
-      // Clean up timer entry on error
-      if (this.progressUpdateTimers[mod.remoteId]) {
-        delete this.progressUpdateTimers[mod.remoteId];
-      }
+      logger.error("Failed to cancel download", { error });
+      throw error;
+    }
+  }
+
+  async getDownloadStatus(modId: string) {
+    try {
+      return await invoke("get_download_status", { modId });
+    } catch (error) {
+      logger.error("Failed to get download status", { error });
+      throw error;
+    }
+  }
+
+  async getAllDownloads() {
+    try {
+      return await invoke("get_all_downloads");
+    } catch (error) {
+      logger.error("Failed to get all downloads", { error });
+      throw error;
     }
   }
 }

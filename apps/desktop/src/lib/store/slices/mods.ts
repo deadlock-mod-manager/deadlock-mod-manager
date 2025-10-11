@@ -28,11 +28,14 @@ export type ModsState = {
 
   setDefaultSort: (sortType: SortType) => void;
   addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
-  addIdentifiedLocalMod: (mod: ModDto, filePath: string) => void;
+  addIdentifiedLocalMod: (
+    mod: ModDto,
+    filePath: string,
+    markAsInstalled?: boolean,
+  ) => void;
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
   setModStatus: (remoteId: string, status: ModStatus) => void;
-  setModPath: (remoteId: string, path: string) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
   setInstalledVpks: (
@@ -89,13 +92,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     }),
 
-  addIdentifiedLocalMod: (mod, filePath) =>
+  addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
     set((state) => {
       logger.info("Adding identified local mod", {
         modId: mod.id,
         remoteId: mod.remoteId,
         name: mod.name,
         filePath,
+        markAsInstalled,
         existingModCount: state.localMods.length,
       });
 
@@ -113,11 +117,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
       const newMod = {
         ...mod,
-        status: ModStatus.Installed,
-        path: filePath,
+        status: markAsInstalled ? ModStatus.Installed : ModStatus.Downloaded,
         downloadedAt: new Date(),
-        installedVpks: [filePath],
-        installOrder: maxOrder + 1,
+        installedVpks: markAsInstalled ? [filePath] : [],
+        installOrder: markAsInstalled ? maxOrder + 1 : undefined,
       };
 
       logger.info("Adding new mod to store and enabling in current profile", {
@@ -189,14 +192,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       })),
     }));
   },
-
-  setModPath: (remoteId, path) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        path: mod.remoteId === remoteId ? path : mod.path,
-      })),
-    })),
 
   removeMod: (remoteId) =>
     set((state) => {

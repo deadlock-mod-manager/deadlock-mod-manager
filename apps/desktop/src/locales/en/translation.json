@@ -6,6 +6,7 @@
     "addMods": "Add Local Mod",
     "downloads": "Downloads",
     "settings": "Settings",
+    "developer": "Developer Tools",
     "whatsNew": "What's New",
     "needHelp": "Need Help ?",
     "collapseMenu": "Collapse menu",
@@ -213,7 +214,9 @@
     "description": "Description",
     "addSetting": "Add Setting",
     "settingCreated": "Setting created",
-    "information": "Information"
+    "information": "Information",
+    "developerMode": "Developer Mode",
+    "developerModeDescription": "Enable developer mode to access advanced tools and debugging features"
   },
   "game": {
     "createBackup": "Create Backup",
@@ -715,6 +718,11 @@
     "clearModsState": "Clear Mods State",
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "modsStateCleared": "Mods state cleared successfully"
+  },
+  "developer": {
+    "title": "Developer Tools",
+    "description": "Advanced tools and features for developers",
+    "placeholder": "Developer tools will be available here"
   },
   "contextMenu": {
     "shareUrl": "Share",

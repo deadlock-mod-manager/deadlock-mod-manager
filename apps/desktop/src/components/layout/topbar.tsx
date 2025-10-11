@@ -9,7 +9,7 @@ export const Topbar = () => {
   return (
     <div className='border-t border-border h-16 justify-between items-center flex px-4'>
       <div className='flex items-center gap-2'>
-        <Logo className='h-12 w-12' />
+        <Logo className='size-11' />
         <span className='font-primary text-2xl'>Deadlock Mod Manager</span>
         {version && (
           <span className='text-muted-foreground text-xs'>v{version}</span>

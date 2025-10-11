@@ -84,6 +84,7 @@ export const useAddonAnalysis = () => {
 
       // Process identified addons and add them to the store
       let processedIdentifiedCount = 0;
+      let processedPrefixedCount = 0;
       console.log("Processing analysis results:", {
         totalAddons: data.addons.length,
         addonsWithRemoteId: data.addons.filter((a) => a.remoteId).length,
@@ -91,14 +92,21 @@ export const useAddonAnalysis = () => {
       });
 
       for (const addon of data.addons) {
-        if (addon.remoteId && addon.matchInfo) {
+        if (addon.remoteId) {
           try {
             // Fetch full mod details from API using the mod's remote ID
             const modDetails = await getMod(addon.remoteId);
 
-            // Add to store as an identified local mod
-            addIdentifiedLocalMod(modDetails, addon.filePath);
-            processedIdentifiedCount++;
+            if (addon.matchInfo) {
+              // This is a fully identified mod (has matchInfo) - add as installed
+              addIdentifiedLocalMod(modDetails, addon.filePath);
+              processedIdentifiedCount++;
+            } else {
+              // This is a prefixed VPK (no matchInfo) - add as downloaded but not installed
+              // Path can be empty since install_mod will find and rename the prefixed VPKs in addons
+              addIdentifiedLocalMod(modDetails, "", false);
+              processedPrefixedCount++;
+            }
           } catch (error) {
             logger.error(
               `Failed to fetch mod details for ${addon.remoteId}:`,

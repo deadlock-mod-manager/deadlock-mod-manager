@@ -101,7 +101,6 @@ export const useDeepLink = () => {
     addLocalMod: addMod,
     setModStatus,
     setModProgress,
-    setModPath,
     setInstalledVpks,
   } = usePersistedStore();
   const { install } = useInstall();
@@ -154,27 +153,29 @@ export const useDeepLink = () => {
                 return;
               }
 
-              // Add mod to local store
-              addMod(modData);
-
               // Get file info from HTTP headers
               toast.success("Preparing 1-click mod download...");
               const fileInfo = await getFileInfoFromHeaders(download_url);
+
+              const downloadFiles = [
+                {
+                  url: download_url,
+                  name: fileInfo.name,
+                  size: fileInfo.size,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+              ];
+
+              // Add mod to local store with download info
+              addMod(modData, { downloads: downloadFiles });
 
               // Start direct download and installation using the provided URL
               toast.success("Starting 1-click mod install...");
 
               downloadManager.addToQueue({
                 ...modData,
-                downloads: [
-                  {
-                    url: download_url,
-                    name: fileInfo.name,
-                    size: fileInfo.size,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                ],
+                downloads: downloadFiles,
                 onStart: () => {
                   setModStatus(modData.remoteId, ModStatus.Downloading);
                   logger.info(
@@ -188,7 +189,6 @@ export const useDeepLink = () => {
                 onComplete: async (path) => {
                   // Set mod as downloaded
                   setModStatus(modData.remoteId, ModStatus.Downloaded);
-                  setModPath(modData.remoteId, path);
 
                   logger.info(
                     "Download completed, starting auto-installation for mod:",
