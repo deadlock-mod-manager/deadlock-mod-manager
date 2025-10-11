@@ -6,21 +6,21 @@ pub fn show_in_folder(path: &str) -> Result<(), Error> {
   {
     match Command::new("explorer").arg(path).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
     }
   }
   #[cfg(target_os = "linux")]
   {
     match Command::new("xdg-open").arg(path).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
     }
   }
   #[cfg(target_os = "macos")]
   {
     match Command::new("open").arg(path).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
     }
   }
 }
@@ -33,7 +33,7 @@ pub fn show_file_in_folder(file_path: &str) -> Result<(), Error> {
       .spawn()
     {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
     }
   }
   #[cfg(target_os = "linux")]
@@ -42,17 +42,17 @@ pub fn show_file_in_folder(file_path: &str) -> Result<(), Error> {
     if let Some(parent) = path.parent() {
       match Command::new("xdg-open").arg(parent).spawn() {
         Ok(_) => Ok(()),
-        Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+        Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
       }
     } else {
-      Err(Error::FailedToOpenFolder("Invalid file path".to_string()))
+      Err(Error::InvalidInput("Invalid file path".to_string()))
     }
   }
   #[cfg(target_os = "macos")]
   {
     match Command::new("open").args(["-R", file_path]).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(e.to_string())),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open folder: {}", e))),
     }
   }
 }
@@ -65,7 +65,7 @@ pub fn open_file_with_editor(file_path: &str) -> Result<(), Error> {
       .spawn()
     {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(format!(
+      Err(e) => Err(Error::InvalidInput(format!(
         "Failed to open file: {}",
         e.to_string()
       ))),
@@ -75,7 +75,7 @@ pub fn open_file_with_editor(file_path: &str) -> Result<(), Error> {
   {
     match Command::new("xdg-open").arg(file_path).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(format!(
+      Err(e) => Err(Error::InvalidInput(format!(
         "Failed to open file: {}",
         e.to_string()
       ))),
@@ -85,7 +85,7 @@ pub fn open_file_with_editor(file_path: &str) -> Result<(), Error> {
   {
     match Command::new("open").arg(file_path).spawn() {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::FailedToOpenFolder(format!(
+      Err(e) => Err(Error::InvalidInput(format!(
         "Failed to open file: {}",
         e.to_string()
       ))),

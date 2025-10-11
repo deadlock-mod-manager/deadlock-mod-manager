@@ -1,5 +1,6 @@
 use crate::errors::Error;
 use crate::mod_manager::{
+  addons_backup_manager::AddonsBackupManager,
   archive_extractor::ArchiveExtractor,
   file_tree::{FileTreeAnalyzer, ModFileTree},
   filesystem_helper::FileSystemHelper,
@@ -22,6 +23,7 @@ pub struct ModManager {
   file_tree_analyzer: FileTreeAnalyzer,
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
+  addons_backup_manager: AddonsBackupManager,
 }
 
 impl ModManager {
@@ -35,6 +37,7 @@ impl ModManager {
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
+      addons_backup_manager: AddonsBackupManager::new(),
     };
 
     // Try to find the game path on initialization
@@ -57,6 +60,7 @@ impl ModManager {
 
   pub fn set_game_path(&mut self, path: PathBuf) -> Result<PathBuf, Error> {
     self.steam_manager.set_game_path(path.clone())?;
+    self.addons_backup_manager.set_game_path(path.clone());
     Ok(path)
   }
 
@@ -624,6 +628,28 @@ impl ModManager {
       .remove_directory_recursive(&validated_path)?;
     log::info!("Successfully removed mod folder: {:?}", validated_path);
     Ok(())
+  }
+
+  pub fn get_addons_backup_manager(&mut self) -> &mut AddonsBackupManager {
+    if let Some(game_path) = self.steam_manager.get_game_path() {
+      self.addons_backup_manager.set_game_path(game_path.clone());
+    }
+    &mut self.addons_backup_manager
+  }
+
+  pub fn set_backup_manager_app_handle(&mut self, app_handle: tauri::AppHandle) {
+    self.addons_backup_manager.set_app_handle(app_handle);
+  }
+
+  pub fn open_addons_backups_folder(&mut self) -> Result<(), Error> {
+    let backup_manager = self.get_addons_backup_manager();
+    let backup_dir = backup_manager.get_backup_directory()?;
+
+    self.filesystem.create_directories(&backup_dir)?;
+
+    self
+      .filesystem
+      .open_folder(&backup_dir.to_string_lossy().to_string())
   }
 }
 

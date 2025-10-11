@@ -2,7 +2,9 @@ use std::sync::Mutex;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult, Mod, ModFileTree, ModManager};
+use crate::mod_manager::{
+  AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, Mod, ModFileTree, ModManager,
+};
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -50,7 +52,9 @@ pub fn get_api_url() -> String {
 pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
   log::info!("Setting language to: {}", language);
 
-  let supported_languages = ["en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN", "zh-TW"];
+  let supported_languages = [
+    "en", "de", "fr", "ar", "pl", "gsw", "tr", "ru", "zh-CN", "zh-TW",
+  ];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(
       "Unsupported language: {}",
@@ -565,4 +569,79 @@ pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
     .map_err(|e| Error::InvalidInput(format!("Failed to save store: {}", e)))?;
 
   Ok(())
+}
+
+#[tauri::command]
+pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup, Error> {
+  log::info!("Creating addons backup");
+
+  // Get backup manager and paths - release lock quickly
+  let (addons_path, backup_dir, filename) = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.set_backup_manager_app_handle(app_handle.clone());
+    let backup_manager = mod_manager.get_addons_backup_manager();
+
+    let addons_path = backup_manager.get_addons_path()?;
+    let backup_dir = backup_manager.get_backup_directory()?;
+    let filename = backup_manager.generate_backup_filename();
+
+    (addons_path, backup_dir, filename)
+  }; // Lock released here
+
+  // Run the backup creation in a blocking task WITHOUT holding the lock
+  tokio::task::spawn_blocking(move || {
+    crate::mod_manager::addons_backup_manager::AddonsBackupManager::create_backup_async(
+      addons_path,
+      backup_dir,
+      filename,
+      app_handle,
+    )
+  })
+  .await
+  .map_err(|e| Error::BackupCreationFailed(format!("Task join error: {}", e)))?
+}
+
+#[tauri::command]
+pub async fn list_addons_backups() -> Result<Vec<AddonsBackup>, Error> {
+  log::info!("Listing addons backups");
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let backup_manager = mod_manager.get_addons_backup_manager();
+  backup_manager.list_backups()
+}
+
+#[tauri::command]
+pub async fn restore_addons_backup(file_name: String, strategy: String) -> Result<(), Error> {
+  log::info!(
+    "Restoring addons backup: {} with strategy: {}",
+    file_name,
+    strategy
+  );
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let backup_manager = mod_manager.get_addons_backup_manager();
+  let restore_strategy =
+    crate::mod_manager::addons_backup_manager::RestoreStrategy::from_str(&strategy)?;
+  backup_manager.restore_backup(&file_name, restore_strategy)
+}
+
+#[tauri::command]
+pub async fn delete_addons_backup(file_name: String) -> Result<(), Error> {
+  log::info!("Deleting addons backup: {}", file_name);
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let backup_manager = mod_manager.get_addons_backup_manager();
+  backup_manager.delete_backup(&file_name)
+}
+
+#[tauri::command]
+pub async fn open_addons_backups_folder() -> Result<(), Error> {
+  log::info!("Opening addons backups folder");
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.open_addons_backups_folder()
+}
+
+#[tauri::command]
+pub async fn get_addons_backup_info(file_name: String) -> Result<AddonsBackup, Error> {
+  log::info!("Getting addons backup info: {}", file_name);
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let backup_manager = mod_manager.get_addons_backup_manager();
+  backup_manager.get_backup_info(&file_name)
 }

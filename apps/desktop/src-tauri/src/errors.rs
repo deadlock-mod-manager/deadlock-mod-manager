@@ -28,8 +28,6 @@ pub enum Error {
   GameNotRunning,
   #[error("Failed to launch game: {0}")]
   GameLaunchFailed(String),
-  #[error("Failed to open folder: {0}")]
-  FailedToOpenFolder(String),
   #[error("Failed to extract mod: {0}")]
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
@@ -40,6 +38,14 @@ pub enum Error {
   NetworkError(String),
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
+  #[error("Failed to create backup: {0}")]
+  BackupCreationFailed(String),
+  #[error("Failed to restore backup: {0}")]
+  BackupRestoreFailed(String),
+  #[error("Backup not found")]
+  BackupNotFound,
+  #[error("Invalid backup format: {0}")]
+  BackupInvalidFormat(String),
 }
 
 impl serde::Serialize for Error {
@@ -66,12 +72,15 @@ impl serde::Serialize for Error {
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
-      Error::FailedToOpenFolder(_) => "failedToOpenFolder",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
       Error::NetworkError(_) => "networkError",
       Error::Tauri(_) => "tauri",
+      Error::BackupCreationFailed(_) => "backupCreationFailed",
+      Error::BackupRestoreFailed(_) => "backupRestoreFailed",
+      Error::BackupNotFound => "backupNotFound",
+      Error::BackupInvalidFormat(_) => "backupInvalidFormat",
     };
 
     state.serialize_field("kind", kind)?;

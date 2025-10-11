@@ -41,7 +41,7 @@ fn handle_deep_link_url(
   // Check if this is an auth callback
   if data_part.starts_with("//auth-callback") {
     log::info!("Processing auth callback deep link");
-    
+
     // Parse query parameters
     if let Some(query_start) = data_part.find('?') {
       let query = &data_part[query_start + 1..];
@@ -52,18 +52,18 @@ fn handle_deep_link_url(
           Some((parts.next()?.to_string(), parts.next()?.to_string()))
         })
         .collect();
-      
+
       if let Some(token) = params.get("token") {
         log::info!("Auth token received via deep link");
-        
+
         if let Some(window) = app_handle.get_webview_window("main") {
           window.emit("auth-callback-received", token)?;
         }
-        
+
         return Ok(());
       }
     }
-    
+
     log::error!("Auth callback deep link missing token parameter");
     return Ok(());
   }
@@ -238,7 +238,13 @@ pub fn run() {
       commands::get_report_counts,
       commands::store_auth_token,
       commands::get_auth_token,
-      commands::clear_auth_token
+      commands::clear_auth_token,
+      commands::create_addons_backup,
+      commands::list_addons_backups,
+      commands::restore_addons_backup,
+      commands::delete_addons_backup,
+      commands::get_addons_backup_info,
+      commands::open_addons_backups_folder
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

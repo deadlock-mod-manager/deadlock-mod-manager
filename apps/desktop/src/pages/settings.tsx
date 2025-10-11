@@ -38,6 +38,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
+import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
@@ -382,6 +383,11 @@ const CustomSettings = () => {
                     {t("settings.clearAllMods")}
                   </Button>
                 </div>
+              </Section>
+              <Section
+                description={t("settings.addonsBackupDescription")}
+                title={t("settings.addonsBackup")}>
+                <AddonsBackupManagement />
               </Section>
             </TabsContent>
 
