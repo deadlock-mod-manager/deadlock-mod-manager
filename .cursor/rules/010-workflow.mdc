@@ -22,10 +22,14 @@ alwaysApply: true
   - For content-only changes like frontend changes or documentation updates, tests are typically not required
   - When in doubt, err on the side of adding tests - they provide long-term stability and prevent regressions
 - Always run appropriate linting and formatting before considering a task complete:
+
+  - Commands must be run from the root of the monorepo
+
   ```bash
-  pnpm lint
-  pnpm format
+  pnpm lint:fix
+  pnpm format:fix
   ```
+
 - Verify that no regressions are introduced by your changes
 
 ## Available Rules
@@ -41,6 +45,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
 - **060-tailwind-v4.mdc** - Guidelines for using Tailwind CSS v4
 - **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
+- **080-ai-interaction.mdc** - AI interaction guidelines and communication style rules
 
 ### Special Rules
 

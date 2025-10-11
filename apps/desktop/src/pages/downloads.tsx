@@ -1,4 +1,12 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@deadlock-mods/ui/components/empty";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Tabs, TabsList, TabsTrigger } from "@deadlock-mods/ui/components/tabs";
 import { DownloadSimple, FolderOpen, Package } from "@phosphor-icons/react";
@@ -143,18 +151,24 @@ const Downloads = () => {
             ))}
           </div>
         ) : (
-          <div className='flex h-[calc(100vh-300px)] flex-col items-center justify-center text-muted-foreground'>
-            <Package className='mb-4 h-16 w-16' />
-            <h3 className='mb-2 font-medium text-xl'>
-              {t("downloads.noDownloadsFound")}
-            </h3>
-            <p className='mb-4'>{t("downloads.noDownloadsMatchFilter")}</p>
+          <Empty className='h-[calc(100vh-300px)]'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <Package className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("downloads.noDownloadsFound")}</EmptyTitle>
+              <EmptyDescription>
+                {t("downloads.noDownloadsMatchFilter")}
+              </EmptyDescription>
+            </EmptyHeader>
             {filter !== "all" && (
-              <Button onClick={() => setFilter("all")} variant='outline'>
-                {t("downloads.viewAllDownloads")}
-              </Button>
+              <EmptyContent>
+                <Button onClick={() => setFilter("all")} variant='outline'>
+                  {t("downloads.viewAllDownloads")}
+                </Button>
+              </EmptyContent>
             )}
-          </div>
+          </Empty>
         )}
       </ErrorBoundary>
     </div>

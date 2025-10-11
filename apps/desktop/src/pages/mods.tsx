@@ -1,5 +1,13 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@deadlock-mods/ui/components/empty";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Suspense, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -155,40 +163,31 @@ const GetModsData = () => {
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (
-        <div className='flex flex-col items-center justify-center py-12 text-center'>
-          <div className='mb-2 text-muted-foreground'>
-            <svg
-              className='mx-auto mb-4 h-12 w-12'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth={1.5}
-              viewBox='0 0 24 24'>
-              <path
-                d='m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-          </div>
-          <h3 className='mb-1 font-medium text-lg'>{t("mods.noModsFound")}</h3>
-          <p className='text-muted-foreground text-sm'>
-            {query.trim() ||
-            selectedCategories.length > 0 ||
-            selectedHeroes.length > 0 ||
-            !nsfwSettings.hideNSFW ||
-            showAudioOnly
-              ? t("mods.noModsMatchFilters")
-              : t("mods.noModsAvailable")}
-          </p>
-          {(selectedCategories.length > 0 ||
-            selectedHeroes.length > 0 ||
-            !nsfwSettings.hideNSFW ||
-            showAudioOnly) && (
-            <p className='mt-2 text-muted-foreground text-xs'>
-              Try clearing some filters to see more results
-            </p>
-          )}
-        </div>
+        <Empty className='py-12'>
+          <EmptyHeader>
+            <EmptyMedia variant='default'>
+              <MagnifyingGlass className='h-16 w-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
+            <EmptyDescription>
+              {query.trim() ||
+              selectedCategories.length > 0 ||
+              selectedHeroes.length > 0 ||
+              !nsfwSettings.hideNSFW ||
+              showAudioOnly
+                ? t("mods.noModsMatchFilters")
+                : t("mods.noModsAvailable")}
+            </EmptyDescription>
+            {(selectedCategories.length > 0 ||
+              selectedHeroes.length > 0 ||
+              !nsfwSettings.hideNSFW ||
+              showAudioOnly) && (
+              <EmptyDescription className='text-xs'>
+                Try clearing some filters to see more results
+              </EmptyDescription>
+            )}
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div
           className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto'
