@@ -102,6 +102,20 @@
       ]
     },
     {
+      "code": "th",
+      "name": "Thai",
+      "nativeName": "ไทย",
+      "flag": "🇹🇭",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "altqx",
+          "discord": "altq"
+        }
+      ]
+    },
+    {
       "code": "tr",
       "name": "Turkish",
       "nativeName": "Türkçe",

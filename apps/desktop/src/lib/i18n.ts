@@ -11,6 +11,7 @@ import gswTranslation from "@/locales/gsw/translation.json" with {
 };
 import plTranslation from "@/locales/pl/translation.json" with { type: "json" };
 import ruTranslation from "@/locales/ru/translation.json" with { type: "json" };
+import thTranslation from "@/locales/th/translation.json" with { type: "json" };
 import trTranslation from "@/locales/tr/translation.json" with { type: "json" };
 import zhCNTranslation from "@/locales/zh-CN/translation.json" with {
   type: "json",
@@ -37,6 +38,9 @@ const resources = {
   },
   pl: {
     translation: plTranslation,
+  },
+  th: {
+    translation: thTranslation,
   },
   tr: {
     translation: trTranslation,
@@ -65,6 +69,7 @@ i18n
       "ar",
       "pl",
       "gsw",
+      "th",
       "tr",
       "ru",
       "zh-CN",

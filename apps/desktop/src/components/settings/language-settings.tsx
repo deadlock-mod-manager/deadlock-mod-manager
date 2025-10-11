@@ -16,6 +16,7 @@ const languages = [
   { code: "ar", name: "العربية", flag: "🇸🇦" },
   { code: "pl", name: "Polski", flag: "🇵🇱" },
   { code: "gsw", name: "Schweizerdeutsch", flag: "🇨🇭" },
+  { code: "th", name: "ไทย", flag: "🇹🇭" },
   { code: "tr", name: "Türkçe", flag: "🇹🇷" },
   { code: "ru", name: "Русский", flag: "🇷🇺" },
   { code: "zh-CN", name: "简体中文", flag: "🇨🇳" },
