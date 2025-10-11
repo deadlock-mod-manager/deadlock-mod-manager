@@ -725,3 +725,37 @@ pub async fn get_all_downloads(app_handle: AppHandle) -> Result<Vec<DownloadStat
   let manager = get_download_manager(app_handle).await;
   manager.get_all_downloads().await
 }
+
+#[tauri::command]
+pub async fn replace_mod_vpks(
+  mod_id: String,
+  source_vpk_paths: Vec<String>,
+  installed_vpks: Option<Vec<String>>,
+) -> Result<(), Error> {
+  log::info!(
+    "Replacing VPK files for mod {}: {} files",
+    mod_id,
+    source_vpk_paths.len()
+  );
+
+  let source_paths: Vec<PathBuf> = source_vpk_paths.iter().map(|s| PathBuf::from(s)).collect();
+
+  // Validate all source files exist and are VPK files
+  for path in &source_paths {
+    if !path.exists() {
+      return Err(Error::ModFileNotFound);
+    }
+    if path.extension().and_then(|e| e.to_str()) != Some("vpk") {
+      return Err(Error::InvalidInput(format!(
+        "File is not a VPK: {:?}",
+        path.file_name().unwrap_or_default()
+      )));
+    }
+  }
+
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.replace_mod_vpks(mod_id, source_paths, installed_vpks.unwrap_or_default())?;
+
+  log::info!("VPK replacement command completed successfully");
+  Ok(())
+}

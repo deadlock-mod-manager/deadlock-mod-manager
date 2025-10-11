@@ -600,5 +600,18 @@
     "createNewProfile": "Create New Profile",
     "overrideExisting": "Override Active Profile",
     "overrideSuccess": "Active profile updated successfully!"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "VPK-Dateie ersetze",
+      "description": "Mod-Dateie für schnälli Iteration währed dr Entwicklig ersetze",
+      "dragAndDrop": "VPK-Dateie da abelege",
+      "selectFiles": "Dateie uswähle",
+      "currentFiles": "Aktuelli VPK-Dateie",
+      "replaceAll": "Alli Dateie ersetze",
+      "selectToReplace": "{{count}} Datei(e) zum Ersetze uswähle",
+      "success": "VPK-Dateie erfolgriich ersetzt",
+      "error": "Fehler bim Ersetze vo de VPK-Dateie"
+    }
   }
 }

@@ -688,5 +688,18 @@
     "updatingProfile": "جاري تحديث الملف الشخصي الحالي...",
     "processingMods": "جاري معالجة التعديلات...",
     "modsProcessed": "تمت معالجة التعديلات"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "استبدال ملفات VPK",
+      "description": "استبدال ملفات التعديل للتكرار السريع أثناء التطوير",
+      "dragAndDrop": "اسحب وأفلت ملفات VPK هنا",
+      "selectFiles": "اختر الملفات",
+      "currentFiles": "ملفات VPK الحالية",
+      "replaceAll": "استبدال جميع الملفات",
+      "selectToReplace": "اختر {{count}} ملف(ات) للاستبدال",
+      "success": "تم استبدال ملفات VPK بنجاح",
+      "error": "فشل في استبدال ملفات VPK"
+    }
   }
 }

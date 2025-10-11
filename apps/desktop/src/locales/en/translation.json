@@ -803,6 +803,19 @@
     "processingMods": "Processing mods...",
     "modsProcessed": "Mods processed"
   },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "Replace VPK Files",
+      "description": "Replace mod files for quick iteration during development",
+      "dragAndDrop": "Drag and drop VPK files here",
+      "selectFiles": "Select Files",
+      "currentFiles": "Current VPK Files",
+      "replaceAll": "Replace All Files",
+      "selectToReplace": "Select {{count}} file(s) to replace",
+      "success": "VPK files replaced successfully",
+      "error": "Failed to replace VPK files"
+    }
+  },
   "reports": {
     "reportMod": "Report Mod",
     "reportDescription": "Report issues with {{modName}} by {{author}}",

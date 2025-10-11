@@ -606,5 +606,18 @@
     "createNewProfile": "Utwórz nowy profil",
     "overrideExisting": "Zastąp aktywny profil",
     "overrideSuccess": "Aktywny profil został pomyślnie zaktualizowany!"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "Zamień pliki VPK",
+      "description": "Zamień pliki modów na szybkie iteracje podczas programowania",
+      "dragAndDrop": "Przeciągnij i upuść pliki VPK tutaj",
+      "selectFiles": "Wybierz pliki",
+      "currentFiles": "Bieżące pliki VPK",
+      "replaceAll": "Zamień wszystkie pliki",
+      "selectToReplace": "Wybierz {{count}} plik(ów) do zamiany",
+      "success": "Pliki VPK zostały pomyślnie zamienione",
+      "error": "Nie udało się zamienić plików VPK"
+    }
   }
 }

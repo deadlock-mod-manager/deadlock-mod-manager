@@ -16,6 +16,7 @@ import { ModFiles } from "@/components/mod-detail/mod-files";
 import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
+import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
@@ -56,7 +57,7 @@ const Mod = () => {
 
   const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
 
-  const { localMods } = usePersistedStore();
+  const { localMods, developerMode } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
@@ -192,6 +193,10 @@ const Mod = () => {
           <ReportCounter modId={mod.id} variant='default' />
 
           {mod.description && <ModDescription description={mod.description} />}
+
+          {developerMode && localMod && (
+            <VpkReplacementSection mod={localMod} />
+          )}
 
           {isInstalled && localMod?.installedFileTree && (
             <InstalledFilesDisplay

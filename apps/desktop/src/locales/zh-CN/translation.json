@@ -701,5 +701,18 @@
     "updatingProfile": "正在更新当前配置...",
     "processingMods": "正在处理模组...",
     "modsProcessed": "模组处理完成"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "替换 VPK 文件",
+      "description": "在开发过程中替换模组文件以快速迭代",
+      "dragAndDrop": "将 VPK 文件拖放到此处",
+      "selectFiles": "选择文件",
+      "currentFiles": "当前 VPK 文件",
+      "replaceAll": "替换所有文件",
+      "selectToReplace": "选择 {{count}} 个文件进行替换",
+      "success": "VPK 文件替换成功",
+      "error": "VPK 文件替换失败"
+    }
   }
 }

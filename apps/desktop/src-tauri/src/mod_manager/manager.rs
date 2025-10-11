@@ -467,6 +467,59 @@ impl ModManager {
     self.filesystem.get_mods_store_path()
   }
 
+  /// Replace VPK files for a mod
+  pub fn replace_mod_vpks(
+    &mut self,
+    mod_id: String,
+    source_vpk_paths: Vec<std::path::PathBuf>,
+    installed_vpks_from_frontend: Vec<String>,
+  ) -> Result<(), Error> {
+    log::info!("Replacing VPK files for mod: {}", mod_id);
+    log::info!(
+      "Installed VPKs from frontend: {:?}",
+      installed_vpks_from_frontend
+    );
+
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    let addons_path = game_path.join("game").join("citadel").join("addons");
+
+    // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
+    let (installed_vpks, original_names) = if !installed_vpks_from_frontend.is_empty() {
+      log::info!("Using installed VPKs from frontend");
+      (installed_vpks_from_frontend, Vec::new())
+    } else if let Some(mod_info) = self.mod_repository.get_mod(&mod_id) {
+      log::info!("Found mod in repository: {}", mod_id);
+      (
+        mod_info.installed_vpks.clone(),
+        mod_info.original_vpk_names.clone(),
+      )
+    } else {
+      log::info!(
+        "Mod not in repository and no installed VPKs provided, will find VPKs by prefix: {}",
+        mod_id
+      );
+      // Mod not in repository - it might be disabled or the repository wasn't loaded
+      // We'll let replace_vpks find the prefixed VPKs directly
+      (Vec::new(), Vec::new())
+    };
+
+    // Use VpkManager to replace the files
+    self.vpk_manager.replace_vpks(
+      &addons_path,
+      &mod_id,
+      &source_vpk_paths,
+      &installed_vpks,
+      &original_names,
+    )?;
+
+    log::info!("Successfully replaced VPK files for mod: {}", mod_id);
+    Ok(())
+  }
+
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory
   fn validate_path_within_mods_root(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     // Get the mods root directory and canonicalize it

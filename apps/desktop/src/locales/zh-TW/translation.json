@@ -729,6 +729,19 @@
     "processingMods": "正在處理模組...",
     "modsProcessed": "模組處理完成"
   },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "替換 VPK 檔案",
+      "description": "在開發過程中替換模組檔案以快速迭代",
+      "dragAndDrop": "將 VPK 檔案拖放到此處",
+      "selectFiles": "選擇檔案",
+      "currentFiles": "當前 VPK 檔案",
+      "replaceAll": "替換所有檔案",
+      "selectToReplace": "選擇 {{count}} 個檔案進行替換",
+      "success": "VPK 檔案替換成功",
+      "error": "VPK 檔案替換失敗"
+    }
+  },
   "reports": {
     "reportMod": "檢舉模組",
     "reportDescription": "檢舉 {{author}} 的 {{modName}} 相關問題",

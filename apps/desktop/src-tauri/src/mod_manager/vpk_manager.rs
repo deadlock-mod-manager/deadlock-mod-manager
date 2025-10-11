@@ -378,6 +378,120 @@ impl VpkManager {
     }
     None
   }
+
+  /// Replace VPK files for a mod with new ones
+  /// Handles both enabled (pak##_dir.vpk) and disabled (modid_*.vpk) mods
+  pub fn replace_vpks(
+    &self,
+    addons_path: &Path,
+    mod_id: &str,
+    source_vpk_paths: &[std::path::PathBuf],
+    installed_vpks: &[String],
+    _original_names: &[String],
+  ) -> Result<(), Error> {
+    if source_vpk_paths.is_empty() {
+      return Err(Error::InvalidInput(
+        "No VPK files provided for replacement".into(),
+      ));
+    }
+
+    if !addons_path.exists() {
+      return Err(Error::Io(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!("Addons path not found: {:?}", addons_path),
+      )));
+    }
+
+    log::info!(
+      "Replacing {} VPK file(s) for mod {}",
+      source_vpk_paths.len(),
+      mod_id
+    );
+
+    // Determine if mod is enabled (has installed_vpks) or disabled (has prefixed VPKs)
+    let is_enabled = !installed_vpks.is_empty();
+
+    if is_enabled {
+      // Mod is enabled - replace pak##_dir.vpk files
+      if source_vpk_paths.len() != installed_vpks.len() {
+        return Err(Error::InvalidInput(format!(
+          "Replacement VPK count ({}) does not match installed VPK count ({})",
+          source_vpk_paths.len(),
+          installed_vpks.len()
+        )));
+      }
+
+      for (source_path, installed_vpk) in source_vpk_paths.iter().zip(installed_vpks.iter()) {
+        let dest_path = addons_path.join(installed_vpk);
+
+        if !dest_path.exists() {
+          log::warn!("Installed VPK not found: {}", installed_vpk);
+          continue;
+        }
+
+        self.filesystem.copy_file(source_path, &dest_path)?;
+        log::info!(
+          "Replaced enabled VPK: {} with {:?}",
+          installed_vpk,
+          source_path.file_name().unwrap_or_default()
+        );
+      }
+    } else {
+      // Mod is disabled - replace prefixed VPKs
+      log::info!("Looking for prefixed VPKs with pattern: {}_*.vpk", mod_id);
+      let prefixed_vpks = self.find_prefixed_vpks(addons_path, mod_id)?;
+      log::info!(
+        "Found {} prefixed VPK(s): {:?}",
+        prefixed_vpks.len(),
+        prefixed_vpks
+      );
+
+      if prefixed_vpks.is_empty() {
+        // List all VPK files in addons to help debug
+        let all_vpks: Vec<String> = std::fs::read_dir(addons_path)
+          .ok()
+          .and_then(|entries| {
+            Some(
+              entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().map_or(false, |ext| ext == "vpk"))
+                .filter_map(|e| e.file_name().to_str().map(String::from))
+                .collect(),
+            )
+          })
+          .unwrap_or_default();
+        log::warn!("No prefixed VPKs found. All VPKs in addons: {:?}", all_vpks);
+        return Err(Error::ModFileNotFound);
+      }
+
+      if source_vpk_paths.len() != prefixed_vpks.len() {
+        return Err(Error::InvalidInput(format!(
+          "Replacement VPK count ({}) does not match mod VPK count ({})",
+          source_vpk_paths.len(),
+          prefixed_vpks.len()
+        )));
+      }
+
+      for (source_path, prefixed_vpk) in source_vpk_paths.iter().zip(prefixed_vpks.iter()) {
+        let dest_path = addons_path.join(prefixed_vpk);
+
+        if !dest_path.exists() {
+          log::warn!("Prefixed VPK not found: {}", prefixed_vpk);
+          continue;
+        }
+
+        self.filesystem.copy_file(source_path, &dest_path)?;
+        log::info!(
+          "Replaced disabled VPK: {} with {:?}",
+          prefixed_vpk,
+          source_path.file_name().unwrap_or_default()
+        );
+      }
+    }
+
+    log::info!("VPK replacement completed successfully for mod {}", mod_id);
+    Ok(())
+  }
 }
 
 impl Default for VpkManager {

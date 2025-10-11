@@ -248,7 +248,8 @@ pub fn run() {
       commands::queue_download,
       commands::cancel_download,
       commands::get_download_status,
-      commands::get_all_downloads
+      commands::get_all_downloads,
+      commands::replace_mod_vpks
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

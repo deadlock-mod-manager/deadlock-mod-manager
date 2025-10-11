@@ -761,5 +761,18 @@
     "updatingProfile": "Aktualisiere aktuelles Profil...",
     "processingMods": "Verarbeite Mods...",
     "modsProcessed": "Mods verarbeitet"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "VPK-Dateien ersetzen",
+      "description": "Mod-Dateien für schnelle Iteration während der Entwicklung ersetzen",
+      "dragAndDrop": "VPK-Dateien hier ablegen",
+      "selectFiles": "Dateien auswählen",
+      "currentFiles": "Aktuelle VPK-Dateien",
+      "replaceAll": "Alle Dateien ersetzen",
+      "selectToReplace": "{{count}} Datei(en) zum Ersetzen auswählen",
+      "success": "VPK-Dateien erfolgreich ersetzt",
+      "error": "Fehler beim Ersetzen der VPK-Dateien"
+    }
   }
 }

@@ -688,5 +688,18 @@
     "updatingProfile": "Обновление текущего профиля...",
     "processingMods": "Обработка модов...",
     "modsProcessed": "Моды обработаны"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "Заменить файлы VPK",
+      "description": "Замена файлов модов для быстрой итерации во время разработки",
+      "dragAndDrop": "Перетащите файлы VPK сюда",
+      "selectFiles": "Выбрать файлы",
+      "currentFiles": "Текущие файлы VPK",
+      "replaceAll": "Заменить все файлы",
+      "selectToReplace": "Выберите {{count}} файл(ов) для замены",
+      "success": "Файлы VPK успешно заменены",
+      "error": "Не удалось заменить файлы VPK"
+    }
   }
 }

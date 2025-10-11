@@ -589,5 +589,18 @@
     "createNewProfile": "",
     "overrideExisting": "",
     "overrideSuccess": ""
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "",
+      "description": "",
+      "dragAndDrop": "",
+      "selectFiles": "",
+      "currentFiles": "",
+      "replaceAll": "",
+      "selectToReplace": "",
+      "success": "",
+      "error": ""
+    }
   }
 }

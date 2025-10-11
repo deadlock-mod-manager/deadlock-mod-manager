@@ -692,5 +692,18 @@
     "createNewProfile": "Yeni Profil Oluştur",
     "overrideExisting": "Aktif Profili Değiştir",
     "overrideSuccess": "Aktif profil başarıyla güncellendi!"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "VPK Dosyalarını Değiştir",
+      "description": "Geliştirme sırasında hızlı iterasyon için mod dosyalarını değiştirin",
+      "dragAndDrop": "VPK dosyalarını buraya sürükleyip bırakın",
+      "selectFiles": "Dosya Seç",
+      "currentFiles": "Mevcut VPK Dosyaları",
+      "replaceAll": "Tüm Dosyaları Değiştir",
+      "selectToReplace": "Değiştirilecek {{count}} dosya seçin",
+      "success": "VPK dosyaları başarıyla değiştirildi",
+      "error": "VPK dosyaları değiştirilemedi"
+    }
   }
 }

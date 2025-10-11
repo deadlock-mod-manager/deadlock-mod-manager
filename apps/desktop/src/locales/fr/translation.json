@@ -761,5 +761,18 @@
     "updatingProfile": "Mise à jour du profil actuel...",
     "processingMods": "Traitement des mods...",
     "modsProcessed": "Mods traités"
+  },
+  "modDetail": {
+    "vpkReplacement": {
+      "title": "Remplacer les fichiers VPK",
+      "description": "Remplacer les fichiers de mod pour une itération rapide pendant le développement",
+      "dragAndDrop": "Glissez-déposez les fichiers VPK ici",
+      "selectFiles": "Sélectionner les fichiers",
+      "currentFiles": "Fichiers VPK actuels",
+      "replaceAll": "Remplacer tous les fichiers",
+      "selectToReplace": "Sélectionnez {{count}} fichier(s) à remplacer",
+      "success": "Fichiers VPK remplacés avec succès",
+      "error": "Échec du remplacement des fichiers VPK"
+    }
   }
 }
