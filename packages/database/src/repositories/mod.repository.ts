@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";
@@ -10,6 +10,7 @@ export class ModRepository {
     return await this.db
       .select()
       .from(mods)
+      .where(eq(mods.isBlacklisted, false))
       .orderBy(desc(mods.remoteUpdatedAt));
   }
 
@@ -23,6 +24,17 @@ export class ModRepository {
   }
 
   async findByRemoteId(remoteId: string): Promise<Mod | null> {
+    const result = await this.db
+      .select()
+      .from(mods)
+      .where(and(eq(mods.remoteId, remoteId), eq(mods.isBlacklisted, false)))
+      .limit(1);
+    return result.length > 0 ? result[0] : null;
+  }
+
+  async findByRemoteIdIncludingBlacklisted(
+    remoteId: string,
+  ): Promise<Mod | null> {
     const result = await this.db
       .select()
       .from(mods)
@@ -87,5 +99,39 @@ export class ModRepository {
       .where(eq(mods.remoteId, remoteId))
       .limit(1);
     return result.length > 0;
+  }
+
+  async blacklistMod(
+    remoteId: string,
+    reason: string,
+    blacklistedBy: string,
+  ): Promise<Mod> {
+    const result = await this.db
+      .update(mods)
+      .set({
+        isBlacklisted: true,
+        blacklistReason: reason,
+        blacklistedAt: new Date(),
+        blacklistedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(mods.remoteId, remoteId))
+      .returning();
+    return result[0];
+  }
+
+  async unblacklistMod(remoteId: string): Promise<Mod> {
+    const result = await this.db
+      .update(mods)
+      .set({
+        isBlacklisted: false,
+        blacklistReason: null,
+        blacklistedAt: null,
+        blacklistedBy: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(mods.remoteId, remoteId))
+      .returning();
+    return result[0];
   }
 }

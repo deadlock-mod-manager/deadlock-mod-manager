@@ -29,6 +29,15 @@ export const envSchema = z.object({
       "1322369692962390119,1322369688445124719,1322369689640243201,1322369690902990951",
     )
     .transform((val) => val.split(",").map((id) => id.trim())),
+  BLACKLIST_MODERATOR_ROLES: z
+    .string()
+    .default("1322369688445124719,1322369692962390119")
+    .transform((val) =>
+      val
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
 });
 
 export const env = envSchema.parse(process.env);
