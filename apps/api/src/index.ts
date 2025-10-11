@@ -8,6 +8,7 @@ import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
+import { featureFlagDefinitions } from "./config/feature-flags";
 import { apiHandler } from "./handlers/api";
 import { rpcHandler } from "./handlers/rpc";
 import { auth } from "./lib/auth";
@@ -29,6 +30,7 @@ import healthRouter from "./routers/legacy/health";
 import modsRouter from "./routers/legacy/mods";
 import redirectRouter from "./routers/redirect";
 import { cronService } from "./services/cron";
+import { featureFlagsService } from "./services/feature-flags";
 
 const app = new Hono();
 
@@ -101,6 +103,11 @@ app
   .route("/auth/desktop", desktopAuthRouter);
 
 const main = async () => {
+  // Bootstrap feature flags
+  logger.info("Bootstrapping feature flags");
+  await featureFlagsService.bootstrap(featureFlagDefinitions);
+
+  logger.info("Defining cron jobs");
   await cronService.defineJob({
     name: ModsSyncProcessor.name,
     pattern: ModsSyncProcessor.cronPattern,

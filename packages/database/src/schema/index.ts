@@ -6,4 +6,5 @@ export * from "./mods";
 export * from "./profiles";
 export * from "./reports";
 export * from "./rss-items";
+export * from "./segments";
 export * from "./vpk";
