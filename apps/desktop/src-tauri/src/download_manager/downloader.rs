@@ -13,9 +13,7 @@ const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
 #[derive(Clone, Debug)]
 pub struct DownloadProgress {
   pub downloaded: u64,
-  pub total: u64,
   pub speed: f64,
-  pub percentage: f64,
 }
 
 pub async fn download_file<F>(
@@ -89,18 +87,7 @@ where
         0.0
       };
 
-      let percentage = if total_size > 0 {
-        (downloaded as f64 / total_size as f64) * 100.0
-      } else {
-        0.0
-      };
-
-      on_progress(DownloadProgress {
-        downloaded,
-        total: total_size,
-        speed,
-        percentage,
-      });
+      on_progress(DownloadProgress { downloaded, speed });
 
       last_progress_time = now;
     }

@@ -19,6 +19,7 @@ export type SettingsState = {
   nsfwSettings: NSFWSettings;
   telemetrySettings: TelemetrySettings;
   perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
+  developerMode: boolean;
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -37,6 +38,9 @@ export type SettingsState = {
 
   // Telemetry settings management
   updateTelemetrySettings: (updates: Partial<TelemetrySettings>) => void;
+
+  // Developer mode management
+  setDeveloperMode: (enabled: boolean) => void;
 };
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
@@ -47,6 +51,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   nsfwSettings: DEFAULT_NSFW_SETTINGS,
   telemetrySettings: DEFAULT_TELEMETRY_SETTINGS,
   perItemNSFWOverrides: {},
+  developerMode: false,
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
@@ -134,5 +139,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   updateTelemetrySettings: (updates: Partial<TelemetrySettings>) =>
     set((state) => ({
       telemetrySettings: { ...state.telemetrySettings, ...updates },
+    })),
+
+  // Developer mode management
+  setDeveloperMode: (enabled: boolean) =>
+    set(() => ({
+      developerMode: enabled,
     })),
 });

@@ -71,17 +71,6 @@ const useUninstall = () => {
       }
 
       if (remove) {
-        // For non-installed mods, we need to delete the folder manually
-        if (mod.status !== ModStatus.Installed && mod.path) {
-          try {
-            await invoke("remove_mod_folder", { modPath: mod.path });
-          } catch (error) {
-            logger.warn(
-              "Failed to remove mod folder, continuing with removal",
-              error,
-            );
-          }
-        }
         await removeMod(mod.remoteId);
       }
       toast.success(

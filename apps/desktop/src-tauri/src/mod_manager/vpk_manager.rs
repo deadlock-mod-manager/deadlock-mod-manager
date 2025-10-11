@@ -44,66 +44,6 @@ impl VpkManager {
     Ok(highest)
   }
 
-  pub fn copy_vpks_from_directory(
-    &self,
-    source_dir: &Path,
-    destination_dir: &Path,
-  ) -> Result<Vec<String>, Error> {
-    self.copy_vpks_from_directory_with_start(source_dir, destination_dir, None)
-  }
-
-  pub fn copy_vpks_from_directory_with_start(
-    &self,
-    source_dir: &Path,
-    destination_dir: &Path,
-    start_number: Option<u32>,
-  ) -> Result<Vec<String>, Error> {
-    let mut installed_vpks = Vec::new();
-    let mut vpk_files = Vec::new();
-
-    // Recursively collect all VPK files
-    self.collect_vpks_recursive(source_dir, &mut vpk_files)?;
-
-    // Sort VPK files to ensure consistent ordering
-    vpk_files.sort();
-
-    // Get the starting number (either specified or next available)
-    let mut current_number =
-      start_number.unwrap_or_else(|| self.find_highest_vpk_number(destination_dir).unwrap_or(0));
-
-    // Copy and rename VPK files with sequential numbering
-    for vpk_path in vpk_files {
-      current_number += 1;
-      let new_name = format!("pak{:02}_dir.vpk", current_number);
-      let new_path = destination_dir.join(&new_name);
-
-      self.filesystem.copy_file(&vpk_path, &new_path)?;
-      installed_vpks.push(new_name.clone());
-
-      log::info!("Installed VPK: {} as {}", vpk_path.display(), new_name);
-    }
-
-    Ok(installed_vpks)
-  }
-
-  fn collect_vpks_recursive(
-    &self,
-    dir: &Path,
-    vpk_files: &mut Vec<std::path::PathBuf>,
-  ) -> Result<(), Error> {
-    for entry in fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_dir() {
-        self.collect_vpks_recursive(&path, vpk_files)?;
-      } else if path.extension().map_or(false, |ext| ext == "vpk") {
-        vpk_files.push(path);
-      }
-    }
-    Ok(())
-  }
-
   pub fn reorder_vpks(
     &self,
     mod_vpk_mapping: &[(String, Vec<String>)], // (mod_id, vpk_filenames)
@@ -250,6 +190,193 @@ impl VpkManager {
     }
 
     Ok(())
+  }
+
+  /// Copy VPK files from source directory to addons with mod ID prefix
+  pub fn copy_vpks_with_prefix(
+    &self,
+    source_dir: &Path,
+    destination_dir: &Path,
+    mod_id: &str,
+  ) -> Result<Vec<String>, Error> {
+    let mut prefixed_vpks = Vec::new();
+    let mut vpk_files = Vec::new();
+
+    // Recursively collect all VPK files
+    self.collect_vpks_from_dir(source_dir, &mut vpk_files)?;
+    vpk_files.sort();
+
+    for vpk_path in vpk_files {
+      if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
+        let prefixed_name = format!("{}_{}", mod_id, file_name);
+        let dest_path = destination_dir.join(&prefixed_name);
+
+        self.filesystem.copy_file(&vpk_path, &dest_path)?;
+        prefixed_vpks.push(prefixed_name.clone());
+
+        log::info!(
+          "Copied VPK with prefix: {} -> {}",
+          vpk_path.display(),
+          prefixed_name
+        );
+      }
+    }
+
+    Ok(prefixed_vpks)
+  }
+
+  /// Helper method to recursively collect VPK files
+  fn collect_vpks_from_dir(
+    &self,
+    dir: &Path,
+    vpk_files: &mut Vec<std::path::PathBuf>,
+  ) -> Result<(), Error> {
+    for entry in fs::read_dir(dir)? {
+      let entry = entry?;
+      let path = entry.path();
+
+      if path.is_dir() {
+        self.collect_vpks_from_dir(&path, vpk_files)?;
+      } else if path.extension().map_or(false, |ext| ext == "vpk") {
+        vpk_files.push(path);
+      }
+    }
+    Ok(())
+  }
+
+  /// Find all VPK files with a specific mod ID prefix
+  pub fn find_prefixed_vpks(&self, addons_path: &Path, mod_id: &str) -> Result<Vec<String>, Error> {
+    let mut prefixed_vpks = Vec::new();
+
+    if !addons_path.exists() {
+      return Ok(prefixed_vpks);
+    }
+
+    let prefix = format!("{}_", mod_id);
+
+    for entry in fs::read_dir(addons_path)? {
+      let entry = entry?;
+      let path = entry.path();
+
+      if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+          if file_name.starts_with(&prefix) {
+            prefixed_vpks.push(file_name.to_string());
+          }
+        }
+      }
+    }
+
+    prefixed_vpks.sort();
+    Ok(prefixed_vpks)
+  }
+
+  /// Enable VPKs by renaming them from prefixed to sequential numbering
+  pub fn enable_vpks(
+    &self,
+    addons_path: &Path,
+    mod_id: &str,
+    prefixed_vpks: &[String],
+  ) -> Result<Vec<String>, Error> {
+    if prefixed_vpks.is_empty() {
+      return Ok(Vec::new());
+    }
+
+    let mut current_number = self.find_highest_vpk_number(addons_path)?;
+    let mut new_vpk_names = Vec::new();
+
+    for prefixed_name in prefixed_vpks {
+      let old_path = addons_path.join(prefixed_name);
+      if !old_path.exists() {
+        log::warn!("Prefixed VPK not found: {}", prefixed_name);
+        continue;
+      }
+
+      current_number += 1;
+      let new_name = format!("pak{:02}_dir.vpk", current_number);
+      let new_path = addons_path.join(&new_name);
+
+      fs::rename(&old_path, &new_path)?;
+      new_vpk_names.push(new_name.clone());
+
+      log::info!(
+        "Enabled VPK for mod {}: {} -> {}",
+        mod_id,
+        prefixed_name,
+        new_name
+      );
+    }
+
+    Ok(new_vpk_names)
+  }
+
+  /// Disable VPKs by renaming them from sequential numbering to prefixed
+  pub fn disable_vpks(
+    &self,
+    addons_path: &Path,
+    mod_id: &str,
+    installed_vpks: &[String],
+    original_names: &[String],
+  ) -> Result<Vec<String>, Error> {
+    if installed_vpks.is_empty() {
+      return Ok(Vec::new());
+    }
+
+    let mut prefixed_vpks = Vec::new();
+
+    for (index, vpk_name) in installed_vpks.iter().enumerate() {
+      let old_path = addons_path.join(vpk_name);
+      if !old_path.exists() {
+        log::warn!("Installed VPK not found: {}", vpk_name);
+        continue;
+      }
+
+      let original_name = original_names
+        .get(index)
+        .map(|s| s.as_str())
+        .unwrap_or("addon.vpk");
+
+      let prefixed_name = format!("{}_{}", mod_id, original_name);
+      let new_path = addons_path.join(&prefixed_name);
+
+      fs::rename(&old_path, &new_path)?;
+      prefixed_vpks.push(prefixed_name.clone());
+
+      log::info!(
+        "Disabled VPK for mod {}: {} -> {}",
+        mod_id,
+        vpk_name,
+        prefixed_name
+      );
+    }
+
+    Ok(prefixed_vpks)
+  }
+
+  /// Remove all VPK files matching a mod ID prefix
+  pub fn remove_vpks_by_mod_id(&self, addons_path: &Path, mod_id: &str) -> Result<(), Error> {
+    let prefixed_vpks = self.find_prefixed_vpks(addons_path, mod_id)?;
+
+    for vpk_name in prefixed_vpks {
+      let vpk_path = addons_path.join(&vpk_name);
+      if vpk_path.exists() {
+        self.filesystem.remove_file(&vpk_path)?;
+        log::info!("Removed prefixed VPK: {}", vpk_name);
+      }
+    }
+
+    Ok(())
+  }
+
+  /// Extract mod ID from a prefixed VPK filename
+  pub fn extract_mod_id_from_prefix(filename: &str) -> Option<String> {
+    if let Some(underscore_pos) = filename.find('_') {
+      let potential_id = &filename[..underscore_pos];
+      if potential_id.chars().all(|c| c.is_ascii_digit()) {
+        return Some(potential_id.to_string());
+      }
+    }
+    None
   }
 }
 

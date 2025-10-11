@@ -135,7 +135,6 @@ class DownloadManager {
 
     await invoke("queue_download", {
       modId: mod.remoteId,
-      modName: mod.name,
       files: mod.downloads.map((d) => ({
         url: d.url,
         name: d.name,

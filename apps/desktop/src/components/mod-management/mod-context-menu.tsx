@@ -49,18 +49,9 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
 
   const handleOpenModStore = async () => {
     try {
-      // Try to use the mod's path if available, otherwise try the ID
-      if (mod.path) {
-        await invoke("show_in_folder", { path: mod.path });
-        toast.success(t("contextMenu.openedModInStore"));
-      } else if (mod.id) {
-        await invoke("show_mod_in_store", { modId: mod.remoteId });
-        toast.success(t("contextMenu.openedModInStore"));
-      } else {
-        // Fallback to general mod store
-        await invoke("open_mods_store");
-        toast.success(t("contextMenu.openedModStore"));
-      }
+      // Open the mods store (addons folder)
+      await invoke("open_mods_store");
+      toast.success(t("contextMenu.openedModStore"));
     } catch (error) {
       // If specific mod folder fails, fallback to general mod store
       try {

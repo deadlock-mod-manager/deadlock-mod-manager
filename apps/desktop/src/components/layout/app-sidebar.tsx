@@ -14,6 +14,7 @@ import {
 } from "@deadlock-mods/ui/components/sidebar";
 import {
   BugBeetleIcon,
+  Code,
   DiscordLogo,
   Download,
   Gear,
@@ -53,6 +54,7 @@ type SidebarItem = {
 
 const getSidebarItems = (
   t: (key: string) => string,
+  developerMode: boolean,
   group?: string,
 ): SidebarItem[] => {
   const allItems: SidebarItem[] = [
@@ -116,6 +118,18 @@ const getSidebarItems = (
       icon: Gear,
       group: "general",
     },
+    ...(developerMode
+      ? [
+          {
+            id: "developer",
+            title: () => <span>{t("navigation.developer")}</span>,
+            url: "/developer",
+            icon: Code,
+            group: "Developer",
+            bottom: true,
+          },
+        ]
+      : []),
     ...(import.meta.env.DEV
       ? [
           {
@@ -124,7 +138,7 @@ const getSidebarItems = (
             url: "/debug",
             icon: BugBeetleIcon,
             bottom: true,
-            group: "Dev",
+            group: "Developer",
           },
         ]
       : []),
@@ -197,8 +211,9 @@ export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
+  const developerMode = usePersistedStore((state) => state.developerMode);
 
-  const allItems = getSidebarItems(t);
+  const allItems = getSidebarItems(t, developerMode);
 
   const topItems = allItems.filter((item) => !item.bottom);
   const bottomItems = allItems.filter((item) => item.bottom);

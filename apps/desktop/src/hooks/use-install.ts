@@ -19,10 +19,6 @@ const useInstall = () => {
     try {
       options.onStart(mod);
 
-      if (!mod.path) {
-        throw new Error("Mod is not downloaded! Might be corrupted.");
-      }
-
       if (mod.status === ModStatus.Installed) {
         throw new Error("Mod is already installed!");
       }
@@ -31,7 +27,6 @@ const useInstall = () => {
         deadlockMod: {
           id: mod.remoteId,
           name: mod.name,
-          path: mod.path,
         },
       })) as InstallableMod;
 

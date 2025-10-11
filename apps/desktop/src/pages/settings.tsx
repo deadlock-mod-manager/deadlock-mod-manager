@@ -39,6 +39,7 @@ import { useQuery } from "react-query";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
+import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
@@ -283,6 +284,7 @@ const CustomSettings = () => {
                 title={t("settings.systemSettings")}>
                 <div className='grid grid-cols-1 gap-4'>
                   <SystemSettings />
+                  <DeveloperModeToggle />
                 </div>
               </Section>
 

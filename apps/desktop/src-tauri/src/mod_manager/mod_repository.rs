@@ -1,20 +1,20 @@
 use crate::mod_manager::file_tree::ModFileTree;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Represents a single mod in the system
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Mod {
   pub id: String,
   pub name: String,
-  pub path: PathBuf,
   #[serde(default)]
   pub installed_vpks: Vec<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub install_order: Option<u32>,
+  #[serde(default)]
+  pub original_vpk_names: Vec<String>,
 }
 
 /// Manages the repository of installed and tracked mods

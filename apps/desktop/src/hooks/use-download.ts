@@ -11,7 +11,7 @@ export const useDownload = (
   availableFiles: ModDownloadDto,
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addLocalMod, localMods, setModPath, setModProgress, setModStatus } =
+  const { addLocalMod, localMods, setModProgress, setModStatus } =
     usePersistedStore();
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
@@ -21,7 +21,7 @@ export const useDownload = (
       return;
     }
 
-    addLocalMod(mod as unknown as ModDto); // This is safe and intentional for compatibility with the my mods page
+    addLocalMod(mod as unknown as ModDto, { downloads: selectedFiles });
 
     return downloadManager.addToQueue({
       ...(mod as unknown as ModDto),
@@ -36,7 +36,6 @@ export const useDownload = (
       onComplete: (path) => {
         logger.info("Download complete", { mod: mod.remoteId, path });
         setModStatus(mod.remoteId, ModStatus.Downloaded);
-        setModPath(mod.remoteId, path);
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
       },

@@ -98,70 +98,30 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
   const install: InstallWithCollectionFunction = async (
     mod,
     options,
-    preselectedFileTree,
+    _preselectedFileTree,
   ) => {
     try {
       options.onStart(mod);
-
-      if (!mod.path) {
-        throw new Error("Mod is not downloaded! Might be corrupted.");
-      }
 
       if (mod.status === ModStatus.Installed) {
         throw new Error("Mod is already installed!");
       }
 
-      // If we have a preselected file tree, use it directly
-      if (preselectedFileTree) {
-        return await performInstallation(mod, options, preselectedFileTree);
-      }
-
-      // Get file structure from archive
-      setIsAnalyzing(true);
-      logger.info("Getting mod file structure", {
+      // For the new prefix system, we just enable the mod by calling install_mod
+      // which will rename the prefixed VPKs
+      logger.info("Enabling mod by removing VPK prefix", {
         modId: mod.remoteId,
-        path: mod.path,
       });
 
-      const fileTree = await invoke<ModFileTree>("get_mod_file_tree", {
-        modPath: mod.path,
-      });
+      const result = (await invoke("install_mod", {
+        deadlockMod: {
+          id: mod.remoteId,
+          name: mod.name,
+        },
+      })) as InstallableMod;
 
-      setIsAnalyzing(false);
-
-      if (!fileTree) {
-        logger.error("Failed to get file tree", { modId: mod.remoteId });
-        options.onError(mod, {
-          kind: "unknown",
-          message: "Failed to analyze mod files",
-        });
-        return null;
-      }
-
-      setCurrentFileTree(fileTree);
-      options.onFileTreeAnalyzed?.(mod, fileTree);
-
-      // If it's a single file, install directly
-      if (!fileTree.has_multiple_files) {
-        logger.info("Installing single-file mod directly", {
-          modId: mod.remoteId,
-          totalFiles: fileTree.total_files,
-        });
-        return await performInstallation(mod, options, fileTree);
-      }
-
-      // For multiple files, always show file selector
-      logger.info("Showing file selector", {
-        modId: mod.remoteId,
-        totalFiles: fileTree.total_files,
-      });
-
-      setCurrentMod(mod);
-      setCurrentOptions(options);
-      setShowFileSelector(true);
-
-      // Return null for now - the actual installation will happen after user selection
-      return null;
+      options.onComplete(mod, result);
+      return result;
     } catch (error: unknown) {
       setIsAnalyzing(false);
       logger.error("Installation process failed", {

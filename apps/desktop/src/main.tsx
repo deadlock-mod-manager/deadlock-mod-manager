@@ -7,6 +7,7 @@ import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
+import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Mod from "./pages/mod";
 import GetMods from "./pages/mods";
@@ -31,6 +32,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<CustomSettings />} path='/settings' />
+              <Route element={<Developer />} path='/developer' />
               <Route element={<Debug />} path='/debug' />
             </Route>
           </Routes>

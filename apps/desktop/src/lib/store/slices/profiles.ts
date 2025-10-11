@@ -219,13 +219,11 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
           if (
             localMod &&
             (localMod.status === ModStatus.Downloaded ||
-              localMod.status === ModStatus.Installed) &&
-            localMod.path
+              localMod.status === ModStatus.Installed)
           ) {
             try {
               logger.info("Enabling mod", {
                 modId: localMod.remoteId,
-                path: localMod.path,
                 installedVpks: localMod.installedVpks,
                 fileTree: localMod.installedFileTree,
               });
@@ -233,7 +231,6 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
                 deadlockMod: {
                   id: localMod.remoteId,
                   name: localMod.name,
-                  path: localMod.path,
                   installed_vpks: localMod.installedVpks || [],
                   file_tree: localMod.installedFileTree,
                 },
@@ -250,8 +247,8 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
                 `Failed to enable mod ${localMod.remoteId}: ${error}`,
               );
             }
-          } else if (localMod && !localMod.path) {
-            logger.warn("Mod found but has no path, skipping", {
+          } else if (localMod) {
+            logger.warn("Mod found but cannot be enabled, skipping", {
               modId: localMod.remoteId,
               status: localMod.status,
             });

@@ -20,7 +20,6 @@ pub struct DownloadFileDto {
 #[derive(Clone, Debug)]
 pub struct DownloadTask {
   pub mod_id: String,
-  pub mod_name: String,
   pub files: Vec<DownloadFileDto>,
   pub target_dir: PathBuf,
 }
@@ -309,6 +308,27 @@ impl DownloadManager {
       downloaded_files.len()
     );
 
+    // Extract archives and copy VPKs to addons with prefix
+    if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files).await {
+      log::error!(
+        "Failed to process downloaded files for mod {}: {}",
+        mod_id,
+        e
+      );
+
+      app_handle
+        .emit(
+          "download-error",
+          DownloadErrorEvent {
+            mod_id: mod_id.clone(),
+            error: format!("Failed to process files: {}", e),
+          },
+        )
+        .ok();
+
+      return Err(e);
+    }
+
     app_handle
       .emit(
         "download-completed",
@@ -320,6 +340,98 @@ impl DownloadManager {
       .ok();
 
     Ok(())
+  }
+
+  async fn process_downloaded_files(
+    task: &DownloadTask,
+    downloaded_files: &[PathBuf],
+  ) -> Result<(), Error> {
+    use crate::commands::MANAGER;
+    use crate::mod_manager::archive_extractor::ArchiveExtractor;
+    use crate::mod_manager::vpk_manager::VpkManager;
+
+    log::info!("Processing downloaded files for mod: {}", task.mod_id);
+
+    // Get game path and addons path
+    let (game_path, mod_files_cache) = {
+      let manager = MANAGER.lock().unwrap();
+      let game_path = manager
+        .get_steam_manager()
+        .get_game_path()
+        .ok_or(Error::GamePathNotSet)?
+        .clone();
+
+      let mod_files_cache = task.target_dir.join("files");
+      (game_path, mod_files_cache)
+    };
+
+    let addons_path = game_path.join("game").join("citadel").join("addons");
+
+    // Create cache directory
+    if !mod_files_cache.exists() {
+      std::fs::create_dir_all(&mod_files_cache)?;
+    }
+
+    let extractor = ArchiveExtractor::new();
+    let vpk_manager = VpkManager::new();
+
+    // Extract archives to cache
+    for file_path in downloaded_files {
+      if extractor.is_supported_archive(file_path) {
+        log::info!("Extracting archive: {:?}", file_path);
+
+        let temp_dir = tempfile::tempdir()?;
+        extractor.extract_archive(file_path, temp_dir.path())?;
+
+        // Copy VPK files from temp to cache
+        let vpk_files = Self::find_vpk_files_recursive(temp_dir.path())?;
+        for vpk_path in vpk_files {
+          if let Some(file_name) = vpk_path.file_name() {
+            let dest_path = mod_files_cache.join(file_name);
+            std::fs::copy(&vpk_path, &dest_path)?;
+            log::info!("Copied VPK to cache: {:?}", file_name);
+          }
+        }
+
+        // Clean up archive after extraction
+        log::info!("Removing archive: {:?}", file_path);
+        std::fs::remove_file(file_path)?;
+      }
+    }
+
+    // Copy VPKs from cache to addons with prefix
+    if mod_files_cache.exists() {
+      log::info!(
+        "Copying VPKs to addons with prefix for mod: {}",
+        task.mod_id
+      );
+      vpk_manager.copy_vpks_with_prefix(&mod_files_cache, &addons_path, &task.mod_id)?;
+    }
+
+    log::info!(
+      "Finished processing downloaded files for mod: {}",
+      task.mod_id
+    );
+    Ok(())
+  }
+
+  fn find_vpk_files_recursive(dir: &std::path::Path) -> Result<Vec<PathBuf>, Error> {
+    let mut vpk_files = Vec::new();
+
+    if dir.is_dir() {
+      for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_dir() {
+          vpk_files.extend(Self::find_vpk_files_recursive(&path)?);
+        } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+          vpk_files.push(path);
+        }
+      }
+    }
+
+    Ok(vpk_files)
   }
 
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {

@@ -15,7 +15,8 @@ use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
-static MANAGER: LazyLock<Mutex<ModManager>> = LazyLock::new(|| Mutex::new(ModManager::new()));
+pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
+  LazyLock::new(|| Mutex::new(ModManager::new()));
 static API_URL: LazyLock<Mutex<String>> =
   LazyLock::new(|| Mutex::new("http://localhost:9000".to_string()));
 static DOWNLOAD_MANAGER: OnceCell<DownloadManager> = OnceCell::const_new();
@@ -685,7 +686,6 @@ async fn get_download_manager(app_handle: AppHandle) -> &'static DownloadManager
 pub async fn queue_download(
   app_handle: AppHandle,
   mod_id: String,
-  mod_name: String,
   files: Vec<DownloadFileDto>,
 ) -> Result<(), Error> {
   log::info!(
@@ -703,7 +703,6 @@ pub async fn queue_download(
 
   let task = DownloadTask {
     mod_id,
-    mod_name,
     files,
     target_dir,
   };
