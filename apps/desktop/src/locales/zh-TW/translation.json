@@ -165,7 +165,6 @@
     "toolsDescription": "用於管理模組的實用功能",
     "openGameFolder": "開啟遊戲資料夾",
     "openModsFolder": "開啟模組資料夾",
-    "openModsStore": "開啟模組商店",
     "clearAllMods": "清除所有模組",
     "addonsBackup": "插件備份",
     "addonsBackupDescription": "建立和還原已安裝插件的備份。備份以壓縮封存形式儲存。",
@@ -653,16 +652,12 @@
   "contextMenu": {
     "shareUrl": "分享",
     "openInGame": "在遊戲資料夾中開啟位置",
-    "openModStore": "在模組商店中開啟位置",
     "urlCopied": "URL 已複製到剪貼簿！",
     "failedToCopyUrl": "複製 URL 到剪貼簿失敗",
     "noUrlAvailable": "此模組無可用 URL",
     "openedGameFolder": "已開啟遊戲資料夾",
     "openedModInGame": "已在遊戲資料夾中開啟模組檔案",
-    "failedToOpenGameFolder": "開啟遊戲資料夾失敗",
-    "openedModStore": "已開啟模組商店資料夾",
-    "openedModInStore": "已在商店中開啟模組檔案",
-    "failedToOpenModStore": "開啟模組商店資料夾失敗"
+    "failedToOpenGameFolder": "開啟遊戲資料夾失敗"
   },
   "profiles": {
     "share": "分享設定檔",

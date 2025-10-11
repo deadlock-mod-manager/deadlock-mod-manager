@@ -150,7 +150,6 @@
     "toolsDescription": "الوظائف المساعدة لإدارة التعديلات الخاصة بك",
     "openGameFolder": "افتح مجلد اللعبة",
     "openModsFolder": "افتح مجلد التعديلات",
-    "openModsStore": "افتح متجر التعديلات",
     "clearAllMods": "امسح جميع التعديلات",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
     "allModsCleared": "تم مسح جميع التعديلات",
@@ -602,7 +601,6 @@
   "contextMenu": {
     "shareUrl": "مشاركة",
     "openInGame": "فتح الموقع في اللعبة",
-    "openModStore": "فتح الموقع في متجر التعديلات",
     "urlCopied": "تم نسخ الرابط إلى الحافظة!",
     "failedToCopyUrl": "فشل في نسخ الرابط إلى الحافظة",
     "openInBrowser": "فتح في المتصفح"

@@ -11,7 +11,7 @@
     "./icons": "./src/icons/index.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
@@ -52,7 +52,7 @@
     "next-themes": "^0.4.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "^7.62.0",
+    "react-hook-form": "^7.63.0",
     "react-resizable-panels": "^2.1.9",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",

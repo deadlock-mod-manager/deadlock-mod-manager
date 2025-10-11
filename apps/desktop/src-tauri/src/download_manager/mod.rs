@@ -406,6 +406,10 @@ impl DownloadManager {
         task.mod_id
       );
       vpk_manager.copy_vpks_with_prefix(&mod_files_cache, &addons_path, &task.mod_id)?;
+
+      // Clean up the cache directory after successful copy
+      log::info!("Cleaning up mod files cache: {:?}", mod_files_cache);
+      std::fs::remove_dir_all(&mod_files_cache)?;
     }
 
     log::info!(

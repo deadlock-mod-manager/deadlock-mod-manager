@@ -47,22 +47,6 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
     }
   };
 
-  const handleOpenModStore = async () => {
-    try {
-      // Open the mods store (addons folder)
-      await invoke("open_mods_store");
-      toast.success(t("contextMenu.openedModStore"));
-    } catch (error) {
-      // If specific mod folder fails, fallback to general mod store
-      try {
-        await invoke("open_mods_store");
-        toast.success(t("contextMenu.openedModStore"));
-      } catch (fallbackError) {
-        toast.error(t("contextMenu.failedToOpenModStore"));
-      }
-    }
-  };
-
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
@@ -77,10 +61,6 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
         <ContextMenuItem onClick={handleOpenInGame}>
           <FolderOpen className='mr-2 h-4 w-4' />
           {t("contextMenu.openInGame")}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenModStore}>
-          <FolderOpen className='mr-2 h-4 w-4' />
-          {t("contextMenu.openModStore")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

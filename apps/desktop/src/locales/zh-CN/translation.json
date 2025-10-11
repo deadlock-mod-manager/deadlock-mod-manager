@@ -138,7 +138,6 @@
     "toolsDescription": "用于管理模组的实用功能",
     "openGameFolder": "打开游戏文件夹",
     "openModsFolder": "打开模组文件夹",
-    "openModsStore": "打开模组商店",
     "clearAllMods": "清除所有模组",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
     "allModsCleared": "所有模组已清除",
@@ -626,16 +625,12 @@
   "contextMenu": {
     "shareUrl": "分享",
     "openInGame": "在游戏文件夹中打开位置",
-    "openModStore": "在模组商店中打开位置",
     "urlCopied": "URL 已复制到剪贴板！",
     "failedToCopyUrl": "复制 URL 到剪贴板失败",
     "noUrlAvailable": "此模组无可用 URL",
     "openedGameFolder": "已打开游戏文件夹",
     "openedModInGame": "已在游戏文件夹中打开模组文件",
-    "failedToOpenGameFolder": "打开游戏文件夹失败",
-    "openedModStore": "已打开模组商店文件夹",
-    "openedModInStore": "已在商店中打开模组文件",
-    "failedToOpenModStore": "打开模组商店文件夹失败"
+    "failedToOpenGameFolder": "打开游戏文件夹失败"
   },
   "profiles": {
     "share": "分享配置",

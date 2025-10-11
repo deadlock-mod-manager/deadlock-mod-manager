@@ -65,15 +65,6 @@ impl FileSystemHelper {
     )
   }
 
-  /// Open the mods store directory in file explorer
-  pub fn open_mods_store(&self) -> Result<(), Error> {
-    let mods_path = self.get_mods_store_path()?;
-    if !mods_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-    self.open_folder(&mods_path.to_string_lossy().to_string())
-  }
-
   /// Get all files in a directory with a specific extension
   pub fn get_files_with_extension(
     &self,

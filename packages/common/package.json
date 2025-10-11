@@ -5,9 +5,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@isaacs/ttlcache": "^1.4.1",
-    "cache-manager": "^7.2.2",
-    "cacheable": "^1.10.4",
+    "@isaacs/ttlcache": "catalog:",
+    "@type-cacheable/cache-manager-adapter": "catalog:",
+    "@type-cacheable/core": "catalog:",
+    "cache-manager": "catalog:",
+    "cacheable": "catalog:",
     "pg": "^8.15.5",
     "zod": "catalog:"
   },

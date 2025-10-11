@@ -230,18 +230,6 @@ export const Titlebar = () => {
           action: handleOpenGameFolder,
           shortcut: "Ctrl+Shift+G",
         },
-        {
-          label: "Open Mods Store",
-          action: async () => {
-            try {
-              await invoke("open_mods_store");
-            } catch (error) {
-              logger.error("Failed to open mods store", { error });
-              toast.error(t("common.failedToOpenFolder"));
-            }
-          },
-          shortcut: "Ctrl+Shift+M",
-        },
         { separator: true, label: "" },
         {
           label: "Settings",

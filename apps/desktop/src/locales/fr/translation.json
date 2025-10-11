@@ -150,7 +150,6 @@
     "toolsDescription": "Fonctions utilitaires pour gérer vos mods",
     "openGameFolder": "Ouvrir le dossier du jeu",
     "openModsFolder": "Ouvrir le dossier des mods",
-    "openModsStore": "Ouvrir le magasin de mods",
     "clearAllMods": "Effacer tous les mods",
     "confirmClearAllMods": "Êtes-vous sûr de vouloir effacer tous les mods ? Cette action ne peut pas être annulée.",
     "allModsCleared": "Tous les mods ont été effacés",
@@ -642,16 +641,12 @@
   "contextMenu": {
     "shareUrl": "Partager",
     "openInGame": "Ouvrir l'emplacement dans le jeu",
-    "openModStore": "Ouvrir l'emplacement dans le magasin de mods",
     "urlCopied": "URL copiée dans le presse-papiers !",
     "failedToCopyUrl": "Échec de la copie de l'URL dans le presse-papiers",
     "noUrlAvailable": "Aucune URL disponible pour ce mod",
     "openedGameFolder": "Dossier de jeu ouvert",
     "openedModInGame": "Fichiers de mod ouverts dans le dossier de jeu",
-    "failedToOpenGameFolder": "Échec de l'ouverture du dossier de jeu",
-    "openedModStore": "Dossier du magasin de mods ouvert",
-    "openedModInStore": "Fichiers de mod ouverts dans le magasin",
-    "failedToOpenModStore": "Échec de l'ouverture du dossier du magasin de mods"
+    "failedToOpenGameFolder": "Échec de l'ouverture du dossier de jeu"
   },
   "reports": {
     "reportMod": "Signaler le mod",

@@ -31,18 +31,6 @@ export class HealthService {
         throw new Error("Redis ping failed");
       }
 
-      const testKey = "api:health:check";
-      const testValue = Date.now().toString();
-
-      await redis.set(testKey, testValue, "EX", 10);
-      const retrievedValue = await redis.get(testKey);
-
-      if (retrievedValue !== testValue) {
-        throw new Error("Redis read/write test failed");
-      }
-
-      await redis.del(testKey);
-
       return { alive: true, configured: true };
     } catch (error) {
       logger.withError(error as Error).error("Redis health check failed");

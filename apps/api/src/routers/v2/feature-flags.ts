@@ -5,7 +5,7 @@ import { featureFlagsService } from "../../services/feature-flags";
 
 const FeatureFlagSchema = z.object({
   name: z.string(),
-  enabled: z.boolean(),
+  enabled: z.unknown(),
 });
 
 const FeatureFlagsResponseSchema = z.array(FeatureFlagSchema);

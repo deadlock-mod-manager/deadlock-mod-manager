@@ -1,6 +1,7 @@
 {
   "extends": "@deadlock-mods/typescript-config/base.json",
   "compilerOptions": {
+    "lib": ["ESNext", "dom"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "baseUrl": ".",

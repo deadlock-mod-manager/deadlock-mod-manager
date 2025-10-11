@@ -215,7 +215,6 @@ pub fn run() {
       commands::clear_mods,
       commands::open_mods_folder,
       commands::open_game_folder,
-      commands::open_mods_store,
       commands::uninstall_mod,
       commands::purge_mod,
       commands::reorder_mods,

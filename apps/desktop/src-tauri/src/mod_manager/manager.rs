@@ -447,10 +447,6 @@ impl ModManager {
       .open_folder(&game_path.to_string_lossy().to_string())
   }
 
-  pub fn open_mods_store(&self) -> Result<(), Error> {
-    self.filesystem.open_mods_store()
-  }
-
   /// Get a reference to the steam manager
   pub fn get_steam_manager(&self) -> &SteamManager {
     &self.steam_manager

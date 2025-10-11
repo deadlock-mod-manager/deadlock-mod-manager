@@ -142,7 +142,7 @@ export class GitHubReleasesService {
         );
       }
 
-      const releases: GitHubRelease[] = await response.json();
+      const releases = (await response.json()) as GitHubRelease[];
 
       if (!releases || releases.length === 0) {
         throw new Error("No releases found");

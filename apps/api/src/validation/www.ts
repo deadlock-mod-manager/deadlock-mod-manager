@@ -11,6 +11,8 @@ export const HealthResponseSchema = z.object({
     error: z.string().optional(),
     configured: z.boolean(),
   }),
+  version: z.string(),
+  spec: z.string(),
 });
 
 export const VersionResponseSchema = z.object({

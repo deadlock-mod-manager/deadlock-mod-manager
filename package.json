@@ -42,7 +42,8 @@
     "overrides": {
       "@types/react": "19.0.2",
       "@types/react-dom": "19.0.2",
-      "tailwind-merge": "^2.6.0"
+      "tailwind-merge": "^2.6.0",
+      "drizzle-orm": "^0.42.0"
     },
     "onlyBuiltDependencies": [
       "@swc/core",

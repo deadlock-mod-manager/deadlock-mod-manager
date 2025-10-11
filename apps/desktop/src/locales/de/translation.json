@@ -150,7 +150,6 @@
     "toolsDescription": "Hilfsfunktionen zur Verwaltung Ihrer Mods",
     "openGameFolder": "Spielordner öffnen",
     "openModsFolder": "Mods-Ordner öffnen",
-    "openModsStore": "Mods-Store öffnen",
     "clearAllMods": "Alle Mods löschen",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alle Mods löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "allModsCleared": "Alle Mods wurden gelöscht",
@@ -642,16 +641,12 @@
   "contextMenu": {
     "shareUrl": "Teilen",
     "openInGame": "Ort im Spiel öffnen",
-    "openModStore": "Ort im Mod-Store öffnen",
     "urlCopied": "URL in die Zwischenablage kopiert!",
     "failedToCopyUrl": "Fehler beim Kopieren der URL in die Zwischenablage",
     "noUrlAvailable": "Keine URL für diese Mod verfügbar",
     "openedGameFolder": "Spielordner geöffnet",
     "openedModInGame": "Mod-Dateien im Spielordner geöffnet",
-    "failedToOpenGameFolder": "Fehler beim Öffnen des Spielordners",
-    "openedModStore": "Mod-Store-Ordner geöffnet",
-    "openedModInStore": "Mod-Dateien im Store geöffnet",
-    "failedToOpenModStore": "Fehler beim Öffnen des Mod-Store-Ordners"
+    "failedToOpenGameFolder": "Fehler beim Öffnen des Spielordners"
   },
   "reports": {
     "reportMod": "Mod melden",

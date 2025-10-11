@@ -167,7 +167,6 @@
     "toolsDescription": "Utility functions for managing your mods",
     "openGameFolder": "Open Game Folder",
     "openModsFolder": "Open Mods Folder",
-    "openModsStore": "Open Mods Store",
     "clearAllMods": "Clear All Mods",
     "confirmClearAllMods": "Are you sure you want to clear all mods? This action cannot be undone.",
     "allModsCleared": "All mods have been cleared",
@@ -727,16 +726,12 @@
   "contextMenu": {
     "shareUrl": "Share",
     "openInGame": "Open Location in Game",
-    "openModStore": "Open Location in Mod Store",
     "urlCopied": "URL copied to clipboard!",
     "failedToCopyUrl": "Failed to copy URL to clipboard",
     "noUrlAvailable": "No URL available for this mod",
     "openedGameFolder": "Opened game folder",
     "openedModInGame": "Opened mod files in game folder",
-    "failedToOpenGameFolder": "Failed to open game folder",
-    "openedModStore": "Opened mod store folder",
-    "openedModInStore": "Opened mod files in store",
-    "failedToOpenModStore": "Failed to open mod store folder"
+    "failedToOpenGameFolder": "Failed to open game folder"
   },
   "profiles": {
     "share": "Share Profile",

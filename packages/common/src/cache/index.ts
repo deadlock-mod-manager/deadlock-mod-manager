@@ -1,6 +1,5 @@
 import TTLCache from "@isaacs/ttlcache";
-import { createCache } from "cache-manager";
-import { createKeyv } from "cacheable";
+import { createCache, memoryStore } from "cache-manager";
 
 export const createTTLCache = <K, V>(
   options: TTLCache.Options<K, V>,
@@ -21,11 +20,9 @@ export const TTL_CACHE = new TTLCache({
   ttl: 1000 * 60 * 15,
 });
 
-export const DEFAULT_CACHE = createCache({
-  ttl: 1000 * 60 * 15,
-  stores: [
-    createKeyv({
-      lruSize: 1000,
-    }),
-  ],
-});
+export const DEFAULT_CACHE = createCache(
+  memoryStore({
+    max: 1000,
+    ttl: 1000 * 60 * 15,
+  }),
+);

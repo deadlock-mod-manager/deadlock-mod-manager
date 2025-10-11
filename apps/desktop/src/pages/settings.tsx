@@ -372,13 +372,6 @@ const CustomSettings = () => {
                   </Button>
                   <Button
                     className='w-fit'
-                    onClick={() => invoke("open_mods_store")}
-                    variant='outline'>
-                    <FolderOpen className='h-4 w-4' />
-                    {t("settings.openModsStore")}
-                  </Button>
-                  <Button
-                    className='w-fit'
                     onClick={clearAllMods}
                     variant='destructive'>
                     <TrashIcon className='h-4 w-4' />
