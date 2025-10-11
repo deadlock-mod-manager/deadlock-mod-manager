@@ -233,6 +233,7 @@ pub fn run() {
       commands::extract_archive,
       commands::remove_mod_folder,
       commands::parse_vpk_file,
+      commands::check_addons_exist,
       commands::analyze_local_addons,
       commands::create_report,
       commands::get_report_counts,

@@ -455,6 +455,48 @@
       "currentFileName": "Processing: {{fileName}}"
     }
   },
+  "onboarding": {
+    "title": "Welcome to Deadlock Mod Manager",
+    "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started.",
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "skip": "Skip Setup",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "gamePath": {
+      "title": "Game Path Detection",
+      "description": "We'll automatically detect your Deadlock installation path.",
+      "detecting": "Detecting game path...",
+      "success": "Game path detected successfully!",
+      "error": "Could not detect game path",
+      "errorDescription": "Please manually browse to your Deadlock installation folder.",
+      "retry": "Retry Detection",
+      "browse": "Browse Manually",
+      "changePath": "Change Path"
+    },
+    "api": {
+      "title": "API Connection",
+      "description": "Checking connection to the mod database server.",
+      "checking": "Connecting to API...",
+      "success": "Connected successfully!",
+      "error": "Failed to connect to API",
+      "errorDescription": "Please check your internet connection and try again.",
+      "retry": "Retry Connection",
+      "version": "API Version"
+    },
+    "addons": {
+      "title": "Existing Mods",
+      "description": "We'll check if you have any existing mods in your game folder.",
+      "checking": "Checking for existing mods...",
+      "noMods": "No existing mods found",
+      "noModsDescription": "You can start fresh and browse mods from the catalog.",
+      "modsFound": "Existing mods detected!",
+      "modsFoundDescription": "Would you like to analyze and import them?",
+      "analyze": "Analyze Mods",
+      "analyzing": "Analyzing...",
+      "skipAnalysis": "Skip for Now"
+    }
+  },
   "errors": {
     "genericMessage": "We're sorry, but an error occurred while processing your request.",
     "errorCode": "Error code:",

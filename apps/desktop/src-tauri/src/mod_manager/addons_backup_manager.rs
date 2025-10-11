@@ -220,29 +220,6 @@ impl AddonsBackupManager {
     format!("addons-backup-{}", now.format("%Y-%m-%d_%H-%M-%S"))
   }
 
-  fn count_vpk_files(&self, dir: &Path) -> Result<u32, Error> {
-    let mut count = 0;
-
-    if !dir.exists() {
-      return Ok(0);
-    }
-
-    for entry in fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_file() {
-        if let Some(ext) = path.extension() {
-          if ext == "vpk" {
-            count += 1;
-          }
-        }
-      }
-    }
-
-    Ok(count)
-  }
-
   fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
     // Extract timestamp from filename format: addons-backup-YYYY-MM-DD_HH-MM-SS.7z
     let without_ext = filename.strip_suffix(".7z")?;
@@ -387,17 +364,12 @@ impl AddonsBackupManager {
       })?;
     }
 
-    let parent_dir = addons_path
-      .parent()
-      .ok_or_else(|| Error::BackupRestoreFailed("Invalid addons path".to_string()))?;
-
     log::info!(
       "Restoring backup from {:?} to {:?}",
       backup_path,
-      parent_dir
+      addons_path
     );
 
-    // Copy all files from backup folder to addons folder
     for entry in fs::read_dir(&backup_path)
       .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {}", e)))?
     {
@@ -408,7 +380,7 @@ impl AddonsBackupManager {
 
       if path.is_file() {
         if let Some(file_name) = path.file_name() {
-          let dest_path = parent_dir.join(file_name);
+          let dest_path = addons_path.join(file_name);
           fs::copy(&path, &dest_path)
             .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {}", e)))?;
         }

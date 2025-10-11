@@ -5,6 +5,7 @@ import { QueryClientProvider } from "react-query";
 import { Outlet } from "react-router";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { UpdateDialog } from "./components/layout/update-dialog";
+import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
@@ -13,6 +14,7 @@ import { useAutoUpdate } from "./hooks/use-auto-update";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
+import { useOnboarding } from "./hooks/use-onboarding";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
 import { queryClient } from "./lib/client";
@@ -33,6 +35,9 @@ const App = () => {
     handleUpdate,
     handleDismiss,
   } = useAutoUpdate();
+
+  const { showOnboarding, completeOnboarding, skipOnboarding } =
+    useOnboarding();
 
   const hydrateStore = async () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });
@@ -62,6 +67,11 @@ const App = () => {
                     onUpdate={handleUpdate}
                     open={showUpdateDialog}
                     update={update}
+                  />
+                  <OnboardingWizard
+                    open={showOnboarding}
+                    onComplete={completeOnboarding}
+                    onSkip={skipOnboarding}
                   />
                 </AlertDialogProvider>
               </TooltipProvider>

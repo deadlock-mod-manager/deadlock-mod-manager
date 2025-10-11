@@ -19,6 +19,7 @@ export type UIState = {
   lastSeenVersion: string | null;
   audioVolume: number; // Volume as percentage (0-100)
   modsFilters: ModsFilters;
+  hasCompletedOnboarding: boolean;
 
   forceShowWhatsNew: () => void;
   markVersionAsSeen: (version: string) => void;
@@ -26,6 +27,7 @@ export type UIState = {
   setAudioVolume: (volume: number) => void;
   updateModsFilters: (filters: Partial<ModsFilters>) => void;
   resetModsFilters: () => void;
+  setHasCompletedOnboarding: (completed: boolean) => void;
 };
 
 const DEFAULT_MODS_FILTERS: ModsFilters = {
@@ -43,6 +45,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%
   modsFilters: DEFAULT_MODS_FILTERS,
+  hasCompletedOnboarding: false,
 
   forceShowWhatsNew: () =>
     set(() => ({
@@ -73,5 +76,10 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   resetModsFilters: () =>
     set(() => ({
       modsFilters: DEFAULT_MODS_FILTERS,
+    })),
+
+  setHasCompletedOnboarding: (completed: boolean) =>
+    set(() => ({
+      hasCompletedOnboarding: completed,
     })),
 });

@@ -486,6 +486,32 @@ pub fn parse_vpk_file(
 }
 
 #[tauri::command]
+pub async fn check_addons_exist() -> Result<bool, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => return Ok(false),
+  };
+  drop(mod_manager);
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+
+  if !addons_path.exists() {
+    return Ok(false);
+  }
+
+  for entry in std::fs::read_dir(addons_path)? {
+    let entry = entry?;
+    if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {
+      log::info!("Found VPK file in addons folder");
+      return Ok(true);
+    }
+  }
+
+  Ok(false)
+}
+
+#[tauri::command]
 pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddonsResult, Error> {
   // Get the game path first, then release the lock
   let game_path = {
