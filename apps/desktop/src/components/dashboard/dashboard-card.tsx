@@ -21,7 +21,7 @@ export const DashboardCard = ({
   contentClassName,
 }: DashboardCardProps) => {
   return (
-    <Card className='h-full px-8 pb-2 bg-[#0d0b0a]'>
+    <Card className='h-full px-8 pb-2 bg-[#0d0b0a] ns-corners'>
       <CardHeader className='py-4 px-0'>
         <CardTitle className='flex items-center gap-2 border-b border-border pb-4'>
           {icon}

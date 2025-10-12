@@ -142,7 +142,7 @@
     "launchOptionsDescription": "Passen Sie die Startoptionen für das Spiel an. Diese werden unabhängig vom ausgewählten Spielmodus (Vanilla oder Modded) angewendet.",
     "game": "Spiel",
     "application": "Anwendung",
-    "plugin": "Plugin",
+    "plugin": "Plugins",
     "pluginDescription": "Plugins und Integrationen für die Desktop-App verwalten.",
     "privacy": "Datenschutz",
     "about": "Über",
@@ -629,7 +629,16 @@
   "plugins": {
     "themes": {
       "title": "Themes",
-      "description": "Erstelle eigene Themes oder nutze Presets wie Nightshift."
+      "description": "Erstelle eigene Themes oder nutze Presets wie Nightshift.",
+      "preDefinedThemes": "Vordefinierte Themes",
+      "customThemes": "Eigene Themes",
+      "preDefinedDescription": "Wähle aus sorgfältig gestalteten Themes, die dein Erlebnis verbessern.",
+      "customDescription": "Erstelle dein eigenes Theme mit deinen bevorzugten Farben und Stilen.",
+      "customThemeBuilder": "Theme-Builder",
+      "customThemeBuilderDescription": "Erstelle dein eigenes Theme durch Auswahl von Farben und Stilen.",
+      "activeTheme": "Aktives Theme",
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren"
     },
     "flashbang": {
       "title": "Flashbang-Modus",
