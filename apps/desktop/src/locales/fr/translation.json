@@ -653,6 +653,12 @@
       "title": "Thèmes",
       "description": "Créez vos propres thèmes ou utilisez des préréglages comme Nightshift."
     },
+    "nightshift": {
+      "description": "Conçu pour Deadlock Night Shift : un thème cyberpunk avec des accents turquoise, privilégiant la clarté et la rapidité grâce à une typographie soignée, un minimum de distractions et un rendu sombre et apaisant pour les longues sessions.",
+      "visit": "Visiter Nightshift :",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "background": {
       "title": "Arrière-plan",
       "description": "Personnaliser les arrière-plans de l'application.",

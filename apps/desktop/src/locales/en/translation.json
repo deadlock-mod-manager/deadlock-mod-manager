@@ -731,6 +731,12 @@
       "activate": "Activate",
       "deactivate": "Deactivate"
     },
+    "nightshift": {
+      "description": "Built for Deadlock Night Shift: a teal-accented, cyberpunk theme that prioritizes clarity and speed with clean typography, minimal distractions, and a calm, low-light look for long sessions.",
+      "visit": "Visit Nightshift:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Force Light Mode during a scheduled time window.",

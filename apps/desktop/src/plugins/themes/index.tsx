@@ -107,7 +107,11 @@ const Settings = () => {
                 }>
                 <CardHeader>
                   <CardTitle className='text-lg'>{theme.name}</CardTitle>
-                  <CardDescription>{theme.description}</CardDescription>
+                  <CardDescription>
+                    {theme.id === "nightshift"
+                      ? t("plugins.nightshift.description")
+                      : theme.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className='flex flex-col gap-4'>
                   <div className='relative w-full aspect-[16/9] rounded-md border overflow-hidden bg-muted'>
@@ -122,6 +126,28 @@ const Settings = () => {
                       }}
                     />
                   </div>
+
+                  {theme.id === "nightshift" && (
+                    <div className='text-sm text-muted-foreground'>
+                      <span className='mr-2'>
+                        {t("plugins.nightshift.visit")}
+                      </span>
+                      <a
+                        className='text-primary hover:underline mr-3'
+                        href='https://x.com/dlnightshift'
+                        target='_blank'
+                        rel='noreferrer'>
+                        {t("plugins.nightshift.twitter")}
+                      </a>
+                      <a
+                        className='text-primary hover:underline'
+                        href='https://discord.gg/z3nftGA8'
+                        target='_blank'
+                        rel='noreferrer'>
+                        {t("plugins.nightshift.discord")}
+                      </a>
+                    </div>
+                  )}
 
                   <div className='flex gap-2'>
                     {current.activeTheme === theme.id ? (

@@ -603,6 +603,12 @@
     }
   },
   "plugins": {
+    "nightshift": {
+      "description": "为 Deadlock Night Shift 打造：一款带有青色点缀的赛博朋克主题，以清晰与速度为优先，使用干净的字体、最小化干扰，并提供适合长时间使用的柔和低亮外观。",
+      "visit": "访问 Nightshift：",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "discord": {
       "title": "Discord 富状态",
       "description": "在 Discord 上显示你的 Deadlock 活动。启用插件后，可选地自定义在富状态中显示的“详细信息”和“状态”文本。",

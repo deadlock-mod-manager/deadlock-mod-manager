@@ -539,6 +539,12 @@
       "includeSidebar": "Siteleiste iibeziehe",
       "chooseImage": "Bild uswähle"
     },
+    "nightshift": {
+      "description": "Für Deadlock Night Shift gmacht: es cyberpunk‑Theme mit türkisfarbige Akzänte, wo Uebersicht und Gschwindigkeit im Fokus stöh – kliari Typografie, weniger Ablenkig und es ruehigs Low‑Light‑Aussehe für lengeri Sessione.",
+      "visit": "Nightshift bsueche:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "usageInstructions": "Aaleitig zur Verwendig",
     "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund"
   },
