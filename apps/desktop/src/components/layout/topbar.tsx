@@ -9,10 +9,10 @@ type ThemesPluginSettings = { activeTheme?: string } | undefined;
 export const Topbar = () => {
   const { version } = useAbout();
   const themesEnabled = usePersistedStore(
-    (s) => s.enabledPlugins["themes"] ?? false,
+    (s) => s.enabledPlugins.themes ?? false,
   );
   const themesSettings = usePersistedStore(
-    (s) => s.pluginSettings["themes"],
+    (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
   const isNightshiftActive =
     themesEnabled && themesSettings?.activeTheme === "nightshift";
