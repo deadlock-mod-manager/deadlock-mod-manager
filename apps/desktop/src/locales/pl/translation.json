@@ -567,6 +567,12 @@
       "includeSidebar": "Uwzględnij pasek boczny",
       "chooseImage": "Wybierz obraz"
     },
+    "nightshift": {
+      "description": "Stworzony dla Deadlock Night Shift: cyberpunkowy motyw z turkusowymi akcentami, który stawia na klarowność i szybkość, z czystą typografią, minimalnymi rozpraszaczami i spokojnym, przyciemnionym wyglądem do długich sesji.",
+      "visit": "Odwiedź Nightshift:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "usageInstructions": "Instrukcje użytkowania",
     "renderActive": "Plugin jest aktywny i działa w tle"
   },

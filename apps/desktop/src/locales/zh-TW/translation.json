@@ -785,5 +785,13 @@
       "reasonMaxLength": "原因不得超過 500 個字元",
       "descriptionMaxLength": "描述不得超過 2000 個字元"
     }
+  },
+  "plugins": {
+    "nightshift": {
+      "description": "為 Deadlock Night Shift 打造：具青色點綴的賽博龐克主題，重視清晰與速度，採用乾淨的字體、最少的干擾，並以沉穩的低光外觀陪你長時間使用。",
+      "visit": "造訪 Nightshift：",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    }
   }
 }

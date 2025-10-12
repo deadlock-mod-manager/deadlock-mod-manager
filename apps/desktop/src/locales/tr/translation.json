@@ -608,6 +608,12 @@
     }
   },
   "plugins": {
+    "nightshift": {
+      "description": "Deadlock Night Shift için hazırlandı: turkuaz vurgulara sahip, net tipografi ve minimum dikkat dağıtıcı ile açıklık ve hızı önceleyen; uzun oturumlar için sakin, düşük ışık görünümüne sahip bir siberpunk tema.",
+      "visit": "Nightshift'i ziyaret et:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
     "discord": {
       "title": "Discord Rich Presence",
       "description": "Discord'da Deadlock etkinliğinizi gösterir. Eklentiyi etkinleştirin ve isterseniz Rich Presence'ta görünen Detaylar ve Durum metinlerini özelleştirin.",
