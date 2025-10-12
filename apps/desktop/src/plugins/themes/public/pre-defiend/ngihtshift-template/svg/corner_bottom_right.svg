@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+<linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0%" stop-color="#D9B76E"/>
+  <stop offset="35%" stop-color="#EAD39C"/>
+  <stop offset="55%" stop-color="#B9924E"/>
+  <stop offset="100%" stop-color="#D9B76E"/>
+</linearGradient>
+
+<filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#071E22" flood-opacity="0.55"/>
+</filter>
+</defs>
+  <g transform="scale(-1,-1) translate(-40,-40)">
+<path d="M4 36 L4 8 Q4 4 8 4 L36 4" fill="none" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/>
+<path d="M8 20 L20 8" fill="none" stroke="url(#goldGradient)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="4" cy="36" r="2" fill="#EAD39C"/><circle cx="36" cy="4" r="2" fill="#EAD39C"/>
+</g>
+</svg>

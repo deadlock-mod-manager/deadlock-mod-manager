@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+<linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+  <stop offset="0%" stop-color="#D9B76E"/>
+  <stop offset="35%" stop-color="#EAD39C"/>
+  <stop offset="55%" stop-color="#B9924E"/>
+  <stop offset="100%" stop-color="#D9B76E"/>
+</linearGradient>
+
+<filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#071E22" flood-opacity="0.55"/>
+</filter>
+</defs>
+  <circle cx="48" cy="48" r="30" fill="none" stroke="url(#goldGradient)" stroke-width="3"/><line x1="78.00" y1="48.00" x2="86.00" y2="48.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="73.98" y1="63.00" x2="80.91" y2="67.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="63.00" y1="73.98" x2="67.00" y2="80.91" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="48.00" y1="78.00" x2="48.00" y2="86.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="33.00" y1="73.98" x2="29.00" y2="80.91" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="22.02" y1="63.00" x2="15.09" y2="67.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="18.00" y1="48.00" x2="10.00" y2="48.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="22.02" y1="33.00" x2="15.09" y2="29.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="33.00" y1="22.02" x2="29.00" y2="15.09" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="48.00" y1="18.00" x2="48.00" y2="10.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="63.00" y1="22.02" x2="67.00" y2="15.09" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><line x1="73.98" y1="33.00" x2="80.91" y2="29.00" stroke="url(#goldGradient)" stroke-width="3" stroke-linecap="round"/><circle cx="48" cy="48" r="10" fill="#8C6A2F" stroke="url(#goldGradient)" stroke-width="2"/>
+</svg>

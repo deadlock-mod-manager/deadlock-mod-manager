@@ -190,8 +190,7 @@ const Render = () => {
       top: 0,
       right: 0,
       bottom: 0,
-      // If includeSidebar is false, offset the background so it doesn't cover the sidebar
-      left: current.includeSidebar ? 0 : "12rem",
+      left: 0,
       backgroundImage: `url(${chosen})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
@@ -206,6 +205,34 @@ const Render = () => {
     current.imageData,
     current.opacity,
     current.blur,
+  ]);
+
+  // Apply CSS class to control sidebar and footer transparency
+  useEffect(() => {
+    if (!mounted || !isEnabled) return;
+
+    const root = document.documentElement;
+    const chosen =
+      current.sourceType === "local" ? current.imageData : current.imageUrl;
+
+    if (chosen && current.includeSidebar) {
+      // Apply background styling to sidebar and footer when includeSidebar is enabled
+      root.classList.add("background-plugin-active");
+    } else {
+      // Reset to default values when plugin is disabled or includeSidebar is false
+      root.classList.remove("background-plugin-active");
+    }
+
+    return () => {
+      // Cleanup on unmount
+      root.classList.remove("background-plugin-active");
+    };
+  }, [
+    mounted,
+    isEnabled,
+    current.sourceType,
+    current.imageData,
+    current.imageUrl,
     current.includeSidebar,
   ]);
 
