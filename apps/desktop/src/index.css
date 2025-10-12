@@ -183,45 +183,45 @@
 
 /* Background Plugin Styles */
 .background-plugin-active [data-sidebar="sidebar"] {
-  background-color: transparent !important;
-  border-color: transparent !important;
+  background-color: transparent;
+  border-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="sidebar"] * {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="content"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="footer"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="group"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="group-content"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="menu"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="menu-item"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .background-plugin-active [data-sidebar="menu-button"] {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 /* Target the bottom bar by its structure */
 .background-plugin-active
 .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
-  background-color: transparent !important;
-  border-color: transparent !important;
+  background-color: transparent;
+  border-color: transparent;
 }
