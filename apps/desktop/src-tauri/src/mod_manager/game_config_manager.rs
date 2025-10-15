@@ -343,9 +343,64 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Reset to vanilla state (restore backup and clear mod paths)
-  pub fn reset_to_vanilla(&mut self, game_path: &Path) -> Result<(), Error> {
-    log::info!("Resetting gameinfo.gi to vanilla state");
+  /// Apply vanilla gameinfo.gi content to the game
+  pub fn apply_vanilla_gameinfo(
+    &mut self,
+    game_path: &Path,
+    vanilla_content: String,
+  ) -> Result<(), Error> {
+    log::info!("Applying vanilla gameinfo.gi content");
+
+    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+    // Validate the downloaded content
+    let temp_path = gameinfo_path.with_extension("gi.tmp");
+    fs::write(&temp_path, &vanilla_content)?;
+
+    let validation = self.validate_gameinfo_syntax(&temp_path)?;
+    fs::remove_file(&temp_path)?;
+
+    if !validation.is_valid {
+      log::warn!(
+        "Downloaded vanilla gameinfo.gi has syntax issues: {:?}",
+        validation.errors
+      );
+      // Fall back to backup restore
+      return self.reset_to_vanilla_fallback(game_path);
+    }
+
+    // Create backup of current file before replacing
+    if gameinfo_path.exists() {
+      let backup_path = gameinfo_path.with_extension("gi.bak");
+      if !backup_path.exists() {
+        fs::copy(&gameinfo_path, &backup_path)?;
+        log::info!("Created backup before vanilla reset: {:?}", backup_path);
+      }
+    }
+
+    // Write the vanilla content
+    fs::write(&gameinfo_path, vanilla_content)?;
+    log::info!("Successfully replaced gameinfo.gi with vanilla version");
+
+    // Validate the result
+    let status = self.get_gameinfo_status(game_path)?;
+    if status.has_mod_paths {
+      log::warn!("Warning: File may still contain mod paths after reset");
+    }
+
+    if !status.syntax_valid {
+      return Err(Error::GameConfigParse(
+        "Reset resulted in invalid gameinfo.gi".to_string(),
+      ));
+    }
+
+    log::info!("Successfully applied vanilla gameinfo.gi");
+    Ok(())
+  }
+
+  /// Fallback method to reset to vanilla using backup restore
+  pub fn reset_to_vanilla_fallback(&mut self, game_path: &Path) -> Result<(), Error> {
+    log::info!("Using fallback method to reset to vanilla state");
 
     // First try to restore from backup
     if let Err(e) = self.restore_gameinfo_backup(game_path) {
@@ -366,7 +421,7 @@ impl GameConfigManager {
       ));
     }
 
-    log::info!("Successfully reset to vanilla state");
+    log::info!("Successfully reset to vanilla state using fallback method");
     Ok(())
   }
 

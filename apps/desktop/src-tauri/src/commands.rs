@@ -7,6 +7,8 @@ use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, Mod, ModFileTree, ModManager,
 };
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
+use log;
+use reqwest;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -325,14 +327,50 @@ pub async fn restore_gameinfo_backup() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn reset_to_vanilla() -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = match mod_manager.get_steam_manager().get_game_path() {
-    Some(path) => path.clone(),
-    None => return Err(Error::GamePathNotSet),
+  let api_url = get_api_url();
+
+  // Get game path first
+  let game_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .get_steam_manager()
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone()
   };
+
+  // Download vanilla gameinfo.gi
+  let vanilla_content = {
+    let url = format!("{}/artifacts/deadlock/gameinfo.gi", api_url);
+    log::info!("Downloading vanilla gameinfo.gi from: {}", url);
+
+    let client = reqwest::Client::new();
+    let response =
+      client.get(&url).send().await.map_err(|e| {
+        Error::NetworkError(format!("Failed to download vanilla gameinfo.gi: {}", e))
+      })?;
+
+    if !response.status().is_success() {
+      return Err(Error::NetworkError(format!(
+        "Server returned error status: {}",
+        response.status()
+      )));
+    }
+
+    response
+      .text()
+      .await
+      .map_err(|e| Error::NetworkError(format!("Failed to read response: {}", e)))?
+  };
+
+  // Apply the vanilla content
+  let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager
     .get_config_manager_mut()
-    .reset_to_vanilla(&game_path)
+    .apply_vanilla_gameinfo(&game_path, vanilla_content)?;
+
+  log::info!("Successfully reset to vanilla state using API");
+  Ok(())
 }
 
 #[tauri::command]
