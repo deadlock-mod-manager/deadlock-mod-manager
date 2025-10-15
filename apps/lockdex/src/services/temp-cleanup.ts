@@ -1,8 +1,8 @@
 import { readdir, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Logger } from "@deadlock-mods/logging";
 import { logger } from "@/lib/logger";
+import { getTempDir } from "@/lib/temp-dir";
 
 export interface CleanupConfig {
   /**
@@ -110,7 +110,7 @@ export class TempCleanupService {
     };
 
     try {
-      const tempDir = tmpdir();
+      const tempDir = await getTempDir();
       const entries = await readdir(tempDir);
 
       for (const entry of entries) {
@@ -177,7 +177,7 @@ export class TempCleanupService {
     };
 
     try {
-      const tempDir = tmpdir();
+      const tempDir = await getTempDir();
       this.logger.info(`Scanning temp directory: ${tempDir}`);
       const entries = await readdir(tempDir);
       this.logger.info(`Found ${entries.length} entries in temp directory`);
@@ -233,7 +233,7 @@ export class TempCleanupService {
     };
 
     try {
-      const tempDir = tmpdir();
+      const tempDir = await getTempDir();
       this.logger.info(`Emergency cleanup scanning: ${tempDir}`);
       const entries = await readdir(tempDir);
       this.logger.info(`Emergency cleanup found ${entries.length} entries`);

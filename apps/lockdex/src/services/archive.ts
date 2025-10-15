@@ -1,8 +1,8 @@
 import { createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Logger } from "@deadlock-mods/logging";
+import { getTempDir } from "@/lib/temp-dir";
 import type {
   ArchiveEntry,
   ExtractionOptions,
@@ -168,7 +168,8 @@ export abstract class ArchiveExtractor {
   protected async createTempDir(
     prefix = "archive-extract-",
   ): Promise<TempDirResult> {
-    const tempDirPath = await mkdtemp(join(tmpdir(), prefix));
+    const baseTempDir = await getTempDir();
+    const tempDirPath = await mkdtemp(join(baseTempDir, prefix));
 
     this.logger.debug(`Created temporary directory: ${tempDirPath}`);
 

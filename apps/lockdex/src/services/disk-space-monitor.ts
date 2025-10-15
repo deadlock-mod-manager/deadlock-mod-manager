@@ -1,7 +1,7 @@
 import { statfs } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import type { Logger } from "@deadlock-mods/logging";
 import { logger } from "@/lib/logger";
+import { getTempDir } from "@/lib/temp-dir";
 
 export interface DiskSpaceInfo {
   totalBytes: number;
@@ -61,7 +61,7 @@ export class DiskSpaceMonitor {
    */
   async checkDiskSpace(): Promise<DiskSpaceInfo> {
     try {
-      const tempDir = tmpdir();
+      const tempDir = await getTempDir();
       this.logger.debug(`Checking disk space for: ${tempDir}`);
 
       // Get filesystem stats using statvfs equivalent

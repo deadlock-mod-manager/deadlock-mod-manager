@@ -1,11 +1,11 @@
 import { createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { Logger } from "@deadlock-mods/logging";
 import { logger } from "@/lib/logger";
+import { getTempDir } from "@/lib/temp-dir";
 
 export interface DownloadOptions {
   /**
@@ -311,7 +311,8 @@ export class DownloadService {
    * Create a temporary directory for downloads
    */
   private async createTempDir(): Promise<string> {
-    const tempDirPath = await mkdtemp(join(tmpdir(), "mod-download-"));
+    const baseTempDir = await getTempDir();
+    const tempDirPath = await mkdtemp(join(baseTempDir, "mod-download-"));
     this.logger.debug(`Created temporary directory: ${tempDirPath}`);
     return tempDirPath;
   }

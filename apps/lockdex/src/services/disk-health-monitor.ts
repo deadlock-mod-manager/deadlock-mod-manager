@@ -1,7 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { logger } from "@/lib/logger";
+import { getTempDir } from "@/lib/temp-dir";
 import { diskSpaceMonitor } from "@/services/disk-space-monitor";
 import { tempCleanupService } from "@/services/temp-cleanup";
 
@@ -149,7 +149,7 @@ export class DiskHealthMonitor {
     let count = 0;
 
     try {
-      const tempDir = tmpdir();
+      const tempDir = await getTempDir();
       const entries = await readdir(tempDir);
 
       for (const entry of entries) {
