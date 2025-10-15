@@ -7389,7 +7389,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uds_windows",
- "uuid",
+ "uuid 1.18.1",
  "windows-sys 0.61.2",
  "winnow 0.7.13",
  "zbus_macros",

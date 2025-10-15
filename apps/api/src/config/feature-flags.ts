@@ -22,4 +22,10 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "boolean",
     defaultValue: false,
   },
+  {
+    name: "show-plugins",
+    description: "Show plugins feature in the application",
+    type: "boolean",
+    defaultValue: false,
+  },
 ];

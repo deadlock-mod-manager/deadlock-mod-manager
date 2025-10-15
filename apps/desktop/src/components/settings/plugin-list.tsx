@@ -60,7 +60,7 @@ export const PluginList = () => {
                   {p.iconUrl ? (
                     <img
                       alt={p.manifest.id}
-                      className='h-12 w-12'
+                      className='h-12 w-12 '
                       src={p.iconUrl}
                     />
                   ) : (
@@ -105,12 +105,10 @@ export const PluginList = () => {
               {isExpanded && (
                 <div className='px-3 pb-3 border-t bg-muted/20'>
                   <div className='flex flex-col gap-3 mt-3 ml-6'>
-                    {/* Detailed Description */}
                     <div className='text-sm text-muted-foreground leading-relaxed'>
                       {t(`plugins.${p.manifest.id}.detailedDescription`)}
                     </div>
 
-                    {/* Usage Instructions */}
                     <div className='text-sm text-muted-foreground leading-relaxed'>
                       <strong className='text-foreground'>
                         {t("plugins.usageInstructions", "Usage Instructions")}:
@@ -119,7 +117,6 @@ export const PluginList = () => {
                       {t(`plugins.${p.manifest.id}.usageInstructions`)}
                     </div>
 
-                    {/* Plugin Details */}
                     <div className='flex flex-col gap-2 pt-2 border-t border-border/50'>
                       <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                         <TagIcon className='h-4 w-4' />

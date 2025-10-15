@@ -60,6 +60,7 @@ import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
@@ -172,6 +173,7 @@ const CustomSettings = () => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const { isEnabled: showPlugins } = useFeatureFlag("show-plugins");
 
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
@@ -235,12 +237,14 @@ const CustomSettings = () => {
               <MonitorIcon className='h-5 w-5' />
               {t("settings.application")}
             </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='plugin'>
-              <PlugIcon className='h-5 w-5' />
-              {t("settings.plugin")}
-            </TabsTrigger>
+            {showPlugins && (
+              <TabsTrigger
+                className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+                value='plugin'>
+                <PlugIcon className='h-5 w-5' />
+                {t("settings.plugin")}
+              </TabsTrigger>
+            )}
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='tools'>
@@ -285,13 +289,15 @@ const CustomSettings = () => {
               </Suspense>
             </TabsContent>
 
-            <TabsContent className='mt-0 space-y-2' value='plugin'>
-              <Section
-                description={t("settings.pluginDescription")}
-                title={t("settings.plugin")}>
-                <PluginList />
-              </Section>
-            </TabsContent>
+            {showPlugins && (
+              <TabsContent className='mt-0 space-y-2' value='plugin'>
+                <Section
+                  description={t("settings.pluginDescription")}
+                  title={t("settings.plugin")}>
+                  <PluginList />
+                </Section>
+              </TabsContent>
+            )}
 
             <TabsContent className='mt-0 space-y-2' value='game'>
               <Section
