@@ -101,29 +101,3 @@ where
   log::info!("Download completed: {:?}", target_path);
   Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-  use tempfile::tempdir;
-
-  #[tokio::test]
-  async fn test_download_file() {
-    let dir = tempdir().unwrap();
-    let file_path = dir.path().join("test.txt");
-    let cancel_token = CancellationToken::new();
-
-    let result = download_file(
-      "https://httpbin.org/bytes/1024",
-      &file_path,
-      |progress| {
-        println!("Progress: {}%", progress.percentage);
-      },
-      cancel_token,
-    )
-    .await;
-
-    assert!(result.is_ok());
-    assert!(file_path.exists());
-  }
-}

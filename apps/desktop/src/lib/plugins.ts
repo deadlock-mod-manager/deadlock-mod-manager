@@ -1,17 +1,14 @@
 import type { LoadedPlugin, PluginManifest } from "@/types/plugins";
 
-// Load all plugin manifests under src/plugins/*/manifest.json
 const manifestModules = import.meta.glob("@/plugins/*/manifest.json", {
   eager: true,
   import: "default",
 }) as Record<string, PluginManifest>;
 
-// Load all icons under each plugin folder (common names or any file under public/)
 const iconModules = import.meta.glob("@/plugins/*/**", {
   eager: true,
 }) as Record<string, { default?: string } | string>;
 
-// Lazy import possible entry modules - be more specific to avoid conflicts
 const entryModules = import.meta.glob(
   [
     "@/plugins/*/src/**/*.tsx",
@@ -25,10 +22,6 @@ const entryModules = import.meta.glob(
 );
 
 function normalizePath(inputPath: string): string {
-  // Normalize path by:
-  // 1) collapsing multiple slashes
-  // 2) removing "./" segments
-  // 3) resolving simple ".." segments without escaping base
   const collapsed = inputPath.replace(/\/+/g, "/");
   const parts = collapsed.split("/");
   const out: string[] = [];
@@ -45,15 +38,12 @@ function normalizePath(inputPath: string): string {
 }
 
 function resolveEntryPath(basePath: string, entryPath: string): string {
-  // Handle relative paths like "./src/index.tsx"
   if (entryPath.startsWith("./")) {
     return normalizePath(`${basePath}/${entryPath.slice(2)}`);
   }
-  // Handle absolute paths (shouldn't happen in our case)
   if (entryPath.startsWith("/")) {
     return entryPath;
   }
-  // Handle relative paths without ./
   return normalizePath(`${basePath}/${entryPath}`);
 }
 
@@ -69,7 +59,6 @@ export function getPlugins(): LoadedPlugin[] {
 
     let iconUrl: string | undefined;
     if (manifest.icon) {
-      // Try to resolve the icon relative to the base path
       const iconPath = normalizePath(`${basePath}/${manifest.icon}`);
       const mod = iconModules[iconPath] as
         | { default?: string }
@@ -79,7 +68,6 @@ export function getPlugins(): LoadedPlugin[] {
       else if (mod && typeof mod.default === "string") iconUrl = mod.default;
     }
 
-    // Prepare entry importer if provided
     let entryImporter: (() => Promise<unknown>) | undefined;
     if (manifest.entry) {
       const entryPath = resolveEntryPath(basePath, manifest.entry);
@@ -93,7 +81,6 @@ export function getPlugins(): LoadedPlugin[] {
     plugins.push(plugin);
   }
 
-  // Stable sort: official first, then by name
   plugins.sort((a, b) => {
     const aOfficial = a.manifest.tags?.includes("official") ? 0 : 1;
     const bOfficial = b.manifest.tags?.includes("official") ? 0 : 1;
