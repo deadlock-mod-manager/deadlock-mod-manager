@@ -528,7 +528,7 @@
   "plugins": {
     "discord": {
       "title": "Discord Rich Presence",
-      "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie. Włącz wtyczkę, a następnie opcjonalnie dostosuj teksty Szczegóły i Status wyświetlane w Rich Presence.",
+      "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie.",
       "detailedDescription": "Wyświetla aktywność w Deadlock Mod Manager na profilu Discord przy użyciu Rich Presence. Wystarczy włączyć wtyczkę i opcjonalnie edytować teksty Szczegóły i Status.",
       "usageInstructions": "Włącz wtyczkę, a następnie opcjonalnie edytuj teksty Szczegóły i Status.",
       "applicationId": "ID aplikacji Discord",
@@ -568,10 +568,22 @@
       "chooseImage": "Wybierz obraz"
     },
     "nightshift": {
-      "description": "Stworzony dla Deadlock Night Shift: cyberpunkowy motyw z turkusowymi akcentami, który stawia na klarowność i szybkość, z czystą typografią, minimalnymi rozpraszaczami i spokojnym, przyciemnionym wyglądem do długich sesji.",
+      "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",
       "visit": "Odwiedź Nightshift:",
       "twitter": "Twitter",
       "discord": "Discord"
+    },
+    "themes": {
+      "title": "Motywy",
+      "description": "Twórz własne motywy lub użyj presetów jak Nightshift.",
+      "detailedDescription": "Zmieniaj wygląd aplikacji za pomocą gotowych presetów, np. Nightshift. Gdy motyw jest aktywny, wtyczka Tło jest automatycznie wyłączana, aby uniknąć konfliktów wizualnych.",
+      "usageInstructions": "Otwórz wtyczkę, wybierz preset w 'Predefiniowane motywy', a następnie kliknij Aktywuj. Kliknij Dezaktywuj, aby wrócić do domyślnego wyglądu."
+    },
+    "sudo": {
+      "title": "Tryb Superuser",
+      "description": "Zaawansowane narzędzia zarządzania modami dla doświadczonych użytkowników.",
+      "detailedDescription": "Odblokowuje narzędzia deweloperskie i funkcje eksperymentalne. Niektóre działania mogą modyfikować pliki lub pomijać zabezpieczenia. Używaj ostrożnie.",
+      "usageInstructions": "Włącz wtyczkę, aby uruchomić Tryb Superuser. Zaawansowane opcje staną się widoczne w całej aplikacji. Wyłącz wtyczkę, aby je ukryć."
     },
     "usageInstructions": "Instrukcje użytkowania",
     "renderActive": "Plugin jest aktywny i działa w tle"

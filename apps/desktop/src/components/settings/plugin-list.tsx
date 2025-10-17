@@ -1,4 +1,4 @@
-import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -11,12 +11,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getPlugins } from "@/lib/plugins";
+import { usePersistedStore } from "@/lib/store";
 import type { LoadedPlugin } from "@/types/plugins";
 
 export const PluginList = () => {
   const { t } = useTranslation();
   const plugins = getPlugins();
   const navigate = useNavigate();
+  const { togglePlugin, isPluginEnabled } = usePersistedStore();
   const [expandedPlugins, setExpandedPlugins] = useState<Set<string>>(
     new Set(),
   );
@@ -42,7 +44,7 @@ export const PluginList = () => {
   };
 
   return (
-    <div className='max-h-[50vh] overflow-y-auto rounded-md border'>
+    <div className='rounded-md border'>
       <ul className='divide-y'>
         {plugins.map((p: LoadedPlugin) => {
           const isExpanded = expandedPlugins.has(p.manifest.id);
@@ -83,17 +85,19 @@ export const PluginList = () => {
                   </span>
                 </div>
                 <div className='ml-4 flex items-center gap-2 flex-shrink-0'>
+                  <Switch
+                    checked={isPluginEnabled(p.manifest.id)}
+                    onCheckedChange={(checked) => {
+                      togglePlugin(p.manifest.id);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className='data-[state=checked]:bg-primary'
+                  />
                   <button
                     className='inline-flex items-center gap-1 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50'
                     disabled={!p.entryImporter}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (
-                        p.manifest.id === "sudo" ||
-                        p.manifest.id === "themes"
-                      ) {
-                        toast.info("This plugin is still in development.");
-                      }
                       navigate(`/plugins/${p.manifest.id}`);
                     }}
                     type='button'>

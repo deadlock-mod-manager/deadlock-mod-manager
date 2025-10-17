@@ -20,6 +20,7 @@ export type SettingsState = {
   telemetrySettings: TelemetrySettings;
   perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
   developerMode: boolean;
+  enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -41,6 +42,10 @@ export type SettingsState = {
 
   // Developer mode management
   setDeveloperMode: (enabled: boolean) => void;
+
+  // Plugin management
+  togglePlugin: (pluginId: string) => void;
+  isPluginEnabled: (pluginId: string) => boolean;
 };
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
@@ -52,6 +57,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   telemetrySettings: DEFAULT_TELEMETRY_SETTINGS,
   perItemNSFWOverrides: {},
   developerMode: false,
+  enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
@@ -146,4 +152,17 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     set(() => ({
       developerMode: enabled,
     })),
+
+  // Plugin management
+  togglePlugin: (pluginId: string) =>
+    set((state) => ({
+      enabledPlugins: {
+        ...state.enabledPlugins,
+        [pluginId]: !state.enabledPlugins[pluginId],
+      },
+    })),
+
+  isPluginEnabled: (pluginId: string) => {
+    return get().enabledPlugins[pluginId] ?? true; // Default to enabled
+  },
 });
