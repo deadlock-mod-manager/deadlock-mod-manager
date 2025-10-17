@@ -1,6 +1,6 @@
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { toast } from "sonner";
 import type { DownloadableMod, Progress } from "@/types/mods";
 import { createLogger } from "../logger";
 
