@@ -608,15 +608,27 @@
     }
   },
   "plugins": {
+    "themes": {
+      "title": "Temalar",
+      "description": "Kendi temalarını oluştur veya Nightshift gibi hazır ayarları kullan.",
+      "detailedDescription": "Uygulamanın görünümünü Nightshift gibi özenle hazırlanmış temalarla değiştir. Bir tema etkin olduğunda, görsel çakışmaları önlemek için Arka Plan eklentisi otomatik olarak devre dışı bırakılır.",
+      "usageInstructions": "Eklentiyi aç, 'Önceden Tanımlı Temalar' bölümünden bir tema seç ve Etkinleştir'e bas. Varsayılan görünüme dönmek için Devre Dışı Bırak'ı kullan."
+    },
+    "sudo": {
+      "title": "Süper Kullanıcı Modu",
+      "description": "Deneyimli kullanıcılar için gelişmiş mod yönetimi araçları.",
+      "detailedDescription": "Geliştirici odaklı kontrolleri ve deneysel özellikleri açar. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",
+      "usageInstructions": "Süper Kullanıcı Modunu açmak için eklentiyi etkinleştirin. Geliştirici seçenekleri ve gelişmiş araçlar uygulama genelinde görünür olur. Tekrar gizlemek için eklentiyi devre dışı bırakın."
+    },
     "nightshift": {
-      "description": "Deadlock Night Shift için hazırlandı: turkuaz vurgulara sahip, net tipografi ve minimum dikkat dağıtıcı ile açıklık ve hızı önceleyen; uzun oturumlar için sakin, düşük ışık görünümüne sahip bir siberpunk tema.",
+      "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
       "visit": "Nightshift'i ziyaret et:",
       "twitter": "Twitter",
       "discord": "Discord"
     },
     "discord": {
       "title": "Discord Rich Presence",
-      "description": "Discord'da Deadlock etkinliğinizi gösterir. Eklentiyi etkinleştirin ve isterseniz Rich Presence'ta görünen Detaylar ve Durum metinlerini özelleştirin.",
+      "description": "Discord'da Deadlock etkinliğinizi gösterir.",
       "detailedDescription": "Deadlock Mod Manager etkinliğinizi Discord profilinizde Rich Presence ile gösterir. Sadece etkinleştirin ve isterseniz Detaylar ve Durum metinlerini düzenleyin.",
       "usageInstructions": "Eklentiyi etkinleştirin, ardından isteğe bağlı olarak Detaylar ve Durum metnini düzenleyin.",
       "applicationId": "Discord Uygulama Kimliği",

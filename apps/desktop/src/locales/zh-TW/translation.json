@@ -788,10 +788,44 @@
   },
   "plugins": {
     "nightshift": {
-      "description": "為 Deadlock Night Shift 打造：具青色點綴的賽博龐克主題，重視清晰與速度，採用乾淨的字體、最少的干擾，並以沉穩的低光外觀陪你長時間使用。",
+      "description": "具青色點綴的賽博龐克主題，專為清晰度與長時間遊戲而設計。",
       "visit": "造訪 Nightshift：",
       "twitter": "Twitter",
       "discord": "Discord"
+    },
+    "discord": {
+      "title": "Discord 豐富狀態",
+      "description": "在 Discord 上顯示你的 Deadlock 活動。",
+      "detailedDescription": "使用 Discord Rich Presence 在你的個人檔案上顯示 Deadlock Mod Manager 的活動。只需啟用外掛程式，並可選擇編輯「詳細資訊」和「狀態」文字。",
+      "usageInstructions": "啟用外掛程式，然後可選擇編輯「詳細資訊」和「狀態」文字。",
+      "applicationId": "Discord 應用程式 ID",
+      "optional": "（可選）",
+      "applicationIdDescription": "無需設定：此外掛程式使用我們的官方 Discord 應用程式。",
+      "details": "詳細資訊文字",
+      "state": "狀態文字",
+      "largeImageKey": "大圖按鍵",
+      "largeImageText": "大圖文字",
+      "smallImageKey": "小圖按鍵",
+      "smallImageText": "小圖文字",
+      "showElapsedTime": "顯示經過時間",
+      "showElapsedTimeDescription": "顯示你使用模組管理器的時間",
+      "setupGuide": "設定指南",
+      "setupStep1": "造訪 Discord 開發者入口網站並建立新的應用程式",
+      "setupStep2": "從「一般資訊」頁面複製你的應用程式 ID",
+      "setupStep3": "將圖片上傳為 Rich Presence 資產，並使用相符的按鍵名稱",
+      "setupStep4": "將你的應用程式 ID 貼上並啟用外掛程式"
+    },
+    "themes": {
+      "title": "主題",
+      "description": "建立自訂主題或使用 Nightshift 等預設。",
+      "detailedDescription": "透過 Nightshift 等精選預設切換應用程式外觀。當主題啟用時，為避免視覺衝突，背景外掛會自動停用。",
+      "usageInstructions": "開啟外掛，在『預設主題』中選擇預設並按下啟用。按下停用可回到預設外觀。"
+    },
+    "sudo": {
+      "title": "超級使用者模式",
+      "description": "進階使用者的高階管理工具。",
+      "detailedDescription": "開啟面向開發者的控制與實驗功能。部分操作可能修改檔案或略過防護，請謹慎使用。",
+      "usageInstructions": "啟用外掛以開啟超級使用者模式。進階選項將出現在應用各處；停用外掛即可隱藏。"
     }
   }
 }

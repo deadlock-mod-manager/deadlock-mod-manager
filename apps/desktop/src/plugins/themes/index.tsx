@@ -60,10 +60,6 @@ const Settings = () => {
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
   const current = settings ?? DEFAULT_SETTINGS;
 
-  const activeThemeData = PRE_DEFINED_THEMES.find(
-    (theme) => theme.id === current.activeTheme,
-  );
-
   return (
     <div className='flex flex-col gap-4 pl-4 pr-4'>
       <div className='flex gap-2 border-b pb-4'>
@@ -91,7 +87,7 @@ const Settings = () => {
       </div>
 
       {current.activeSection === "pre-defined" ? (
-        <div className='flex flex-col gap-4 max-h-[calc(100vh-20rem)] overflow-y-auto'>
+        <div className='flex flex-col gap-4'>
           <p className='text-sm text-muted-foreground'>
             {t("plugins.themes.preDefinedDescription")}
           </p>
@@ -102,7 +98,7 @@ const Settings = () => {
                 key={theme.id}
                 className={
                   current.activeTheme === theme.id
-                    ? "border-primary h-full"
+                    ? "border-border h-full"
                     : "border-border h-full"
                 }>
                 <CardHeader>
@@ -182,7 +178,7 @@ const Settings = () => {
           </div>
         </div>
       ) : (
-        <div className='flex flex-col gap-4 max-h-[calc(100vh-20rem)] overflow-y-auto'>
+        <div className='flex flex-col gap-4'>
           <p className='text-sm text-muted-foreground'>
             {t("plugins.themes.customDescription")}
           </p>
@@ -203,13 +199,7 @@ const Settings = () => {
         </div>
       )}
 
-      {current.activeTheme && activeThemeData && (
-        <div className='border-t pt-4 mt-2'>
-          <p className='text-sm text-primary font-medium'>
-            {t("plugins.themes.activeTheme")}: {activeThemeData.name}
-          </p>
-        </div>
-      )}
+      {/* Footer indicator removed intentionally */}
     </div>
   );
 };

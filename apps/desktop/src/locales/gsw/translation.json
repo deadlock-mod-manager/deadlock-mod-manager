@@ -540,10 +540,44 @@
       "chooseImage": "Bild uswähle"
     },
     "nightshift": {
-      "description": "Für Deadlock Night Shift gmacht: es cyberpunk‑Theme mit türkisfarbige Akzänte, wo Uebersicht und Gschwindigkeit im Fokus stöh – kliari Typografie, weniger Ablenkig und es ruehigs Low‑Light‑Aussehe für lengeri Sessione.",
+      "description": "Es cyberpunk‑Theme mit türkisfarbige Akzänte für Uebersicht und lengeri Gaming‑Sessione.",
       "visit": "Nightshift bsueche:",
       "twitter": "Twitter",
       "discord": "Discord"
+    },
+    "themes": {
+      "title": "Themes",
+      "description": "Eigene Themes erstelle oder Presets wie Nightshift verwände.",
+      "detailedDescription": "Wechsle s'Gsicht vo dr App mit vorbautä Presets wie Nightshift. Wenn es Theme aktiv isch, wird s'Hintergrund‑Plugin automatisch deaktiviert, zum Konflikt verhinderä.",
+      "usageInstructions": "Plugin öffne, unter 'Vordefiniert' es Preset uswähle und 'Aktiviere' drücke. Mit 'Deaktiviere' zum Standard zrugg."
+    },
+    "sudo": {
+      "title": "Superuser‑Modus",
+      "description": "Erwiiterti Mod‑Verwaltig für erfahrni Nutzer.",
+      "detailedDescription": "Schaltet Entwickler‑Funktione und experimental Tools frei. Eini Aktione chönd Dateie ändere oder Schutze umgoh – mit Vorsicht bruche.",
+      "usageInstructions": "Plugin aktiviere, zum dr Superuser‑Modus aaschalte. D'Erweitertigä Optionä erscheine in dr App. Zum Usschalte s'Plugin wieder deaktivierä."
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Zeigt dini Deadlock‑Aktivität uf Discord.",
+      "detailedDescription": "Zeigt dini Aktivität im Deadlock Mod Manager als Rich Presence uf dim Discord‑Profil. Einfach aktiviere und optional Details‑ und Status‑Text apasse.",
+      "usageInstructions": "Plugin aktiviere, denn optional Details‑ und Status‑Text bearbeite.",
+      "applicationId": "Discord Application ID",
+      "optional": "(optional)",
+      "applicationIdDescription": "Kei Iirichtig nötig: Das Plugin brucht unseri offizielli Discord‑Aawendig.",
+      "details": "Details‑Text",
+      "state": "Status‑Text",
+      "largeImageKey": "Grosses Bild‑Schlüssel",
+      "largeImageText": "Grosses Bild‑Text",
+      "smallImageKey": "Chliines Bild‑Schlüssel",
+      "smallImageText": "Chliines Bild‑Text",
+      "showElapsedTime": "Verstricheni Ziit azeige",
+      "showElapsedTimeDescription": "Zeig a, wie lang du de Mod Manager scho bruchsch",
+      "setupGuide": "Iirichtigs‑Aaleitig",
+      "setupStep1": "Bsuech s Discord Developer Portal und erstelle e nöii Aawendig",
+      "setupStep2": "Kopier dini Application ID vo de Site 'General Information'",
+      "setupStep3": "Lade Bilder als Rich Presence Assets mit passende Schlüsselname ufe",
+      "setupStep4": "Füeg dini Application ID obe i und aktiviere s Plugin"
     },
     "usageInstructions": "Aaleitig zur Verwendig",
     "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund"

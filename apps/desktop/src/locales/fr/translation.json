@@ -621,7 +621,7 @@
   "plugins": {
     "discord": {
       "title": "Discord Rich Presence",
-      "description": "Affiche votre activité Deadlock sur Discord. Activez le plugin, puis personnalisez éventuellement les champs Détails et État affichés dans votre Rich Presence.",
+      "description": "Affiche votre activité Deadlock sur Discord.",
       "detailedDescription": "Affiche votre activité dans Deadlock Mod Manager sur votre profil Discord via Rich Presence. Il suffit d'activer le plugin et de personnaliser éventuellement les textes Détails et État visibles sur votre profil.",
       "usageInstructions": "Activez le plugin puis, si vous le souhaitez, modifiez les textes Détails et État.",
       "applicationId": "ID d'application Discord",
@@ -651,10 +651,12 @@
     },
     "themes": {
       "title": "Thèmes",
-      "description": "Créez vos propres thèmes ou utilisez des préréglages comme Nightshift."
+      "description": "Créez vos propres thèmes ou utilisez des préréglages comme Nightshift.",
+      "detailedDescription": "Changez le style visuel de l’application grâce à des préréglages comme Nightshift. Quand un thème est actif, le plugin Arrière‑plan est désactivé automatiquement pour éviter les conflits visuels.",
+      "usageInstructions": "Ouvrez le plugin, choisissez un préréglage dans 'Thèmes prédéfinis', puis cliquez sur Activer. Cliquez sur Désactiver pour revenir à l’apparence par défaut."
     },
     "nightshift": {
-      "description": "Conçu pour Deadlock Night Shift : un thème cyberpunk avec des accents turquoise, privilégiant la clarté et la rapidité grâce à une typographie soignée, un minimum de distractions et un rendu sombre et apaisant pour les longues sessions.",
+      "description": "Un thème cyberpunk avec des accents turquoise conçu pour la clarté et les longues sessions de jeu.",
       "visit": "Visiter Nightshift :",
       "twitter": "Twitter",
       "discord": "Discord"

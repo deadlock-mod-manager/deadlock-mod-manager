@@ -630,6 +630,8 @@
     "themes": {
       "title": "Themes",
       "description": "Erstelle eigene Themes oder nutze Presets wie Nightshift.",
+      "detailedDescription": "Wechsle den Look der App mit kuratierten Presets wie Nightshift. Während ein Theme aktiv ist, wird das Hintergrund‑Plugin automatisch deaktiviert, um visuelle Konflikte zu vermeiden.",
+      "usageInstructions": "Plugin öffnen, unter 'Vordefinierte Themes' ein Preset wählen und Aktivieren drücken. Mit Deaktivieren zum Standard‑Look zurückkehren.",
       "preDefinedThemes": "Vordefinierte Themes",
       "customThemes": "Eigene Themes",
       "preDefinedDescription": "Wähle aus sorgfältig gestalteten Themes, die dein Erlebnis verbessern.",
@@ -641,7 +643,7 @@
       "deactivate": "Deaktivieren"
     },
     "nightshift": {
-      "description": "Entwickelt für Deadlock Night Shift: ein cyberpunkiges Theme mit türkisfarbenen Akzenten, das Klarheit und Schnelligkeit priorisiert – mit klarer Typografie, wenigen Ablenkungen und einem ruhigen Low‑Light‑Look für lange Sessions.",
+      "description": "Ein cyberpunkiges Theme mit türkisfarbenen Akzenten für Klarheit und lange Gaming-Sessions.",
       "visit": "Nightshift besuchen:",
       "twitter": "Twitter",
       "discord": "Discord"
@@ -656,7 +658,9 @@
     },
     "sudo": {
       "title": "Superuser-Modus",
-      "description": "Erweiterte Mod-Verwaltung für fortgeschrittene Nutzer."
+      "description": "Erweiterte Mod-Verwaltung für fortgeschrittene Nutzer.",
+      "detailedDescription": "Schaltet entwicklerorientierte Steuerungen und experimentelle Funktionen frei. Manche Aktionen können Dateien ändern oder Schutzmechanismen umgehen. Mit Vorsicht verwenden.",
+      "usageInstructions": "Plugin aktivieren, um den Superuser‑Modus einzuschalten. Entwickleroptionen und erweiterte Tools werden in der App sichtbar. Zum Beenden Plugin wieder deaktivieren."
     },
     "background": {
       "title": "Hintergrund",
@@ -671,7 +675,7 @@
     },
     "discord": {
       "title": "Discord Rich Presence",
-      "description": "Zeigt deine Deadlock‑Aktivität auf Discord an. Aktiviere das Plugin und passe optional die Felder Details und Status für die Rich Presence an.",
+      "description": "Zeigt deine Deadlock‑Aktivität auf Discord an.",
       "detailedDescription": "Zeigt deine Aktivität im Deadlock Mod Manager als Rich Presence auf deinem Discord‑Profil. Einfach aktivieren und optional Details‑ und Status‑Text anpassen.",
       "usageInstructions": "Plugin aktivieren, dann optional Details‑ und Status‑Text bearbeiten.",
       "applicationId": "Discord Application ID",

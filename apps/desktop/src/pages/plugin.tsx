@@ -77,7 +77,7 @@ const PluginEntry = () => {
   }
 
   return (
-    <div className='flex h-[calc(100vh-160px)] w-full overflow-y-auto'>
+    <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin flex h-[calc(100vh-160px)] w-full overflow-y-auto'>
       <div className='flex w-full flex-col gap-4'>
         <div className='flex items-center justify-between px-4'>
           <PageTitle title={t(plugin.manifest.nameKey)} />
