@@ -105,7 +105,19 @@ app
 const main = async () => {
   // Bootstrap feature flags
   logger.info("Bootstrapping feature flags");
-  await featureFlagsService.bootstrap(featureFlagDefinitions);
+  const bootstrapResult = await featureFlagsService.bootstrap(
+    featureFlagDefinitions,
+  );
+
+  if (bootstrapResult.isErr()) {
+    logger
+      .withError(bootstrapResult.error)
+      .error("Failed to bootstrap feature flags");
+  } else {
+    logger
+      .withMetadata({ successCount: bootstrapResult.value })
+      .info("Feature flags bootstrapped successfully");
+  }
 
   logger.info("Defining cron jobs");
   await cronService.defineJob({

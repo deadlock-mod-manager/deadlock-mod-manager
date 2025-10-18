@@ -129,7 +129,6 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     const fileRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<FormValues>({
-      // @ts-expect-error - Type compatibility issue with Zod resolver
       resolver: zodResolver(schema),
       defaultValues: {
         name: initial?.name ?? "",

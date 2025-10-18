@@ -1,13 +1,5 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import { FolderOpen } from "@phosphor-icons/react";
-import { invoke } from "@tauri-apps/api/core";
 import { useMemo } from "react";
 import { usePersistedStore } from "@/lib/store";
 import { formatSize, formatSpeed } from "@/lib/utils";
@@ -41,21 +33,6 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
       <div className='flex items-center justify-between text-sm'>
         <span>{percentage.toFixed(1)}%</span>
         <span>{formatSpeed(speed)}</span>
-        <div className='flex items-center gap-2'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() =>
-                  invoke("show_in_folder", { path: download.path })
-                }
-                size={"icon"}
-                variant='outline'>
-                <FolderOpen className='h-4 w-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Open folder</TooltipContent>
-          </Tooltip>
-        </div>
       </div>
     </Card>
   );

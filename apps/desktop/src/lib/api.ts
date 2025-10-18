@@ -23,11 +23,23 @@ export const initializeApiUrl = async (): Promise<void> => {
 };
 
 const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // Get auth token if available
+  try {
+    const token = await invoke<string | null>("get_auth_token");
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // nothing
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: body ? "POST" : "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
 

@@ -60,19 +60,23 @@ export class FeatureFlagService {
 
   /**
    * Get a feature flag value with type support, the result is cached for 15 minutes
+   *
+   * @param featureFlagName - The name of the feature flag
+   * @param options - Options including shouldThrow and userId for segment overrides
+   * @returns The feature flag value
    */
   @Cacheable({
     cacheKey: (args) => {
-      const featureFlagId = args[0];
+      const featureFlagName = args[0];
       const options = args[1];
       const userId = options?.userId ?? "";
-      return `${featureFlagId}-${userId}`;
+      return `${featureFlagName}-${userId}`;
     },
     ttlSeconds: 15 * 60, // 15 minutes
     client: cacheClient,
   })
   async getFeatureFlagValue<T = unknown>(
-    featureFlagId: string,
+    featureFlagName: string,
     options?: {
       shouldThrow?: boolean;
       userId?: string;
@@ -80,7 +84,7 @@ export class FeatureFlagService {
   ): Promise<T> {
     const { shouldThrow = false, userId } = options ?? {};
     const featureFlagResult =
-      await this.featureFlagRepository.findById(featureFlagId);
+      await this.featureFlagRepository.findByName(featureFlagName);
 
     if (featureFlagResult.isErr()) {
       if (shouldThrow) {
@@ -89,7 +93,7 @@ export class FeatureFlagService {
 
       this.logger
         .withError(featureFlagResult.error)
-        .error("Failed to find feature flag, returning null");
+        .error("Failed to find feature flag by name, returning null");
 
       return null as T;
     }
@@ -97,7 +101,7 @@ export class FeatureFlagService {
 
     if (userId && this.segmentService) {
       const override = await this.getFeatureFlagOverrides(
-        featureFlagId,
+        featureFlag.id,
         userId,
         shouldThrow,
       );
@@ -112,16 +116,20 @@ export class FeatureFlagService {
   /**
    * Check if a feature flag is enabled (boolean convenience method)
    * The result is cached for 15 minutes
+   *
+   * @param featureFlagName - The name of the feature flag
+   * @param options - Options including shouldThrow and userId for segment overrides
+   * @returns True if the feature flag is enabled
    */
   async isFeatureFlagEnabled(
-    featureFlagId: string,
+    featureFlagName: string,
     options?: {
       shouldThrow?: boolean;
       userId?: string;
     },
   ): Promise<boolean> {
     const value = await this.getFeatureFlagValue<boolean>(
-      featureFlagId,
+      featureFlagName,
       options,
     );
     return Boolean(value);

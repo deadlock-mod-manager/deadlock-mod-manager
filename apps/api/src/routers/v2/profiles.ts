@@ -19,10 +19,19 @@ export const profilesRouter = {
     .input(GetProfileInputSchema)
     .output(profileSchema)
     .handler(async ({ input }) => {
-      const isProfileSharingEnabled =
+      const featureEnabledResult =
         await featureFlagsService.isFeatureEnabled("profile-sharing");
 
-      if (!isProfileSharingEnabled) {
+      if (featureEnabledResult.isErr()) {
+        logger
+          .withError(featureEnabledResult.error)
+          .error("Failed to check profile-sharing feature flag");
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to check feature availability",
+        });
+      }
+
+      if (!featureEnabledResult.value) {
         logger.warn("Profile sharing is disabled via feature flag");
         throw new ORPCError("FORBIDDEN", {
           message: "Profile sharing is currently disabled",
@@ -40,10 +49,21 @@ export const profilesRouter = {
     .input(ShareProfileInputSchema)
     .output(ShareProfileOutputSchema)
     .handler(async ({ input }) => {
-      const isProfileSharingEnabled =
+      const featureEnabledResult =
         await featureFlagsService.isFeatureEnabled("profile-sharing");
 
-      if (!isProfileSharingEnabled) {
+      if (featureEnabledResult.isErr()) {
+        logger
+          .withError(featureEnabledResult.error)
+          .error("Failed to check profile-sharing feature flag");
+        return {
+          id: null,
+          status: "error",
+          error: "Failed to check feature availability",
+        };
+      }
+
+      if (!featureEnabledResult.value) {
         logger.warn("Profile sharing is disabled via feature flag");
         return {
           id: null,
