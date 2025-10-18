@@ -7,6 +7,7 @@ import {
   TagIcon,
   UserIcon,
 } from "@deadlock-mods/ui/icons";
+import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -87,7 +88,7 @@ export const PluginList = () => {
                 <div className='ml-4 flex items-center gap-2 flex-shrink-0'>
                   <Switch
                     checked={isPluginEnabled(p.manifest.id)}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={() => {
                       togglePlugin(p.manifest.id);
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -128,19 +129,59 @@ export const PluginList = () => {
                       </div>
                       <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                         <UserIcon className='h-4 w-4' />
-                        <span>{p.manifest.author}</span>
+                        {Array.isArray(p.manifest.author) ? (
+                          <span className='flex flex-wrap items-center gap-x-2 gap-y-1'>
+                            {p.manifest.author.map((name, idx) => {
+                              const url = Array.isArray(p.manifest.authorUrl)
+                                ? p.manifest.authorUrl[idx]
+                                : typeof p.manifest.authorUrl === "string"
+                                  ? p.manifest.authorUrl
+                                  : undefined;
+                              return url ? (
+                                <button
+                                  key={name}
+                                  className='text-primary hover:underline'
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void open(url);
+                                  }}
+                                  type='button'>
+                                  {name}
+                                </button>
+                              ) : (
+                                <span key={name}>{name}</span>
+                              );
+                            })}
+                          </span>
+                        ) : p.manifest.authorUrl ? (
+                          <button
+                            className='text-primary hover:underline'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const url = Array.isArray(p.manifest.authorUrl)
+                                ? p.manifest.authorUrl[0]
+                                : p.manifest.authorUrl;
+                              if (url) void open(url);
+                            }}
+                            type='button'>
+                            {p.manifest.author}
+                          </button>
+                        ) : (
+                          <span>{p.manifest.author}</span>
+                        )}
                       </div>
                       {p.manifest.homepageUrl && (
                         <div className='flex items-center gap-2 text-sm'>
                           <ExternalLinkIcon className='h-4 w-4 text-muted-foreground' />
-                          <a
+                          <button
                             className='text-primary hover:underline'
-                            href={p.manifest.homepageUrl}
-                            target='_blank'
-                            rel='noreferrer'
-                            onClick={(e) => e.stopPropagation()}>
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void open(p.manifest.homepageUrl!);
+                            }}
+                            type='button'>
                             Homepage
-                          </a>
+                          </button>
                         </div>
                       )}
                     </div>

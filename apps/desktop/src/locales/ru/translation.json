@@ -615,6 +615,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Тёмная тема с чёрно‑красными градиентами и малиновыми акцентами.",
+      "visit": "Тема от Skeptic"
+    },
     "themes": {
       "title": "Темы",
       "description": "Создавайте собственные темы или используйте пресеты, такие как Nightshift.",

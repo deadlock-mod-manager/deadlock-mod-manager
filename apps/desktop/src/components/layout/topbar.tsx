@@ -14,17 +14,22 @@ export const Topbar = () => {
   const themesSettings = usePersistedStore(
     (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
-  const isNightshiftActive =
-    themesEnabled && themesSettings?.activeTheme === "nightshift";
+  const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
+  const themedIconSrc =
+    activeTheme === "nightshift"
+      ? "/src/plugins/themes/public/pre-defiend/nightshift/icon.png"
+      : activeTheme === "bloodmoon"
+        ? "/src/plugins/themes/public/pre-defiend/bloodmoon/icon.png"
+        : undefined;
 
   return (
     <div className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'>
       <div className='flex items-center gap-2'>
-        {isNightshiftActive ? (
+        {themedIconSrc ? (
           <img
             alt='Deadlock'
             className='h-11 w-11 object-contain'
-            src='/src/plugins/themes/public/pre-defiend/nightshift/icon.png'
+            src={themedIconSrc}
           />
         ) : (
           <Logo className='size-11' />

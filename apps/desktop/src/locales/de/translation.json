@@ -648,6 +648,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Ein dunkles Theme mit schwarz-roten Gradienten und karmesinroten Akzenten.",
+      "visit": "Theme von Skeptic"
+    },
     "flashbang": {
       "title": "Flashbang-Modus",
       "description": "Erzwingt Light Mode innerhalb eines Zeitfensters.",

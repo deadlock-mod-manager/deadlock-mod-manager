@@ -545,6 +545,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Es dunkels Theme mit schwarz‑rote Gradiente und karmesinrote Akzänte.",
+      "visit": "Theme vo Skeptic"
+    },
     "themes": {
       "title": "Themes",
       "description": "Eigene Themes erstelle oder Presets wie Nightshift verwände.",

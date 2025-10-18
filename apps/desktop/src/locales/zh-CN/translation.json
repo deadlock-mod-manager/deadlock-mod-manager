@@ -609,6 +609,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "带有黑红渐变和深红色点缀的暗黑主题。",
+      "visit": "Skeptic 制作的主题"
+    },
     "discord": {
       "title": "Discord 富状态",
       "description": "在 Discord 上显示你的 Deadlock 活动。",

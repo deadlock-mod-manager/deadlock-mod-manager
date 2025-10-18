@@ -5,7 +5,8 @@ export type PluginManifest = {
   nameKey: string; // i18n key for plugin title
   descriptionKey: string; // i18n key for plugin description
   version: string;
-  author: string;
+  author: string | string[];
+  authorUrl?: string | string[];
   homepageUrl?: string;
   icon: string; // relative path within the plugin folder to an svg/png
   tags?: PluginTag[];

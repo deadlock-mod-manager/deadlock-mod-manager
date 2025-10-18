@@ -4,6 +4,7 @@
   "descriptionKey": "plugins.sudo.description",
   "version": "0.0.1",
   "author": "Skeptic",
+  "authorUrl": "https://github.com/Skeptic-systems",
   "homepageUrl": "https://docs.deadlockmods.app/plugins/sudo",
   "icon": "public/icon.svg",
   "tags": ["official"],
