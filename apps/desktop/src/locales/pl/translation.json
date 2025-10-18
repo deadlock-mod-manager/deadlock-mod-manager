@@ -573,6 +573,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Ciemny motyw z czarno-czerwonymi gradientami i karmazynowymi akcentami.",
+      "visit": "Motyw autorstwa Skeptic"
+    },
     "themes": {
       "title": "Motywy",
       "description": "Twórz własne motywy lub użyj presetów jak Nightshift.",

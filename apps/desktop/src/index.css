@@ -327,3 +327,105 @@
   border-bottom: 2px solid;
   border-radius: 3px;
 }
+
+/* Bloodmoon Theme Styles */
+.bloodmoon-theme-active [data-sidebar="sidebar"] {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="sidebar"] * {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="content"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="footer"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="group"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="group-content"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="menu"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active [data-sidebar="menu-button"] {
+  background-color: transparent;
+}
+
+.bloodmoon-theme-active
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  background-color: transparent;
+  border-color: hsl(var(--border));
+}
+
+.bloodmoon-theme-active {
+  /* Red-black gradient lines */
+  --border: 0 84% 60%;
+  --sidebar-border: 0 84% 60%;
+}
+
+/* Bloodmoon borders are applied via scoped .bm-frame class at runtime */
+/* Bloodmoon corner accents for dashboard cards (non-intrusive) */
+.bloodmoon-theme-active .bm-corners {
+  position: relative;
+}
+.bloodmoon-theme-active .bm-corners::before,
+.bloodmoon-theme-active .bm-corners::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: hsl(var(--border));
+  opacity: 0.9;
+}
+.bloodmoon-theme-active .bm-corners::before {
+  top: 10px;
+  left: 10px;
+  border-left: 2px solid;
+  border-top: 2px solid;
+  border-radius: 3px;
+}
+.bloodmoon-theme-active .bm-corners::after {
+  top: 10px;
+  right: 10px;
+  border-right: 2px solid;
+  border-top: 2px solid;
+  border-radius: 3px;
+}
+.bloodmoon-theme-active .bm-corners > *:last-child::before,
+.bloodmoon-theme-active .bm-corners > *:last-child::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: hsl(var(--border));
+  opacity: 0.9;
+}
+.bloodmoon-theme-active .bm-corners > *:last-child::before {
+  bottom: 10px;
+  left: 10px;
+  border-left: 2px solid;
+  border-bottom: 2px solid;
+  border-radius: 3px;
+}
+.bloodmoon-theme-active .bm-corners > *:last-child::after {
+  bottom: 10px;
+  right: 10px;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+  border-radius: 3px;
+}

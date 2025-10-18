@@ -6,10 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import { open } from "@tauri-apps/plugin-shell";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
+import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
 
 export const manifest = {
@@ -49,6 +51,14 @@ const PRE_DEFINED_THEMES = [
     component: NightshiftTheme,
     previewImage:
       "/src/plugins/themes/public/pre-defiend/nightshift/preview.png",
+  },
+  {
+    id: "bloodmoon",
+    name: "Bloodmoon",
+    description: "A dark theme with black-red gradients and crimson accents",
+    component: BloodmoonTheme,
+    previewImage:
+      "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
   },
 ];
 
@@ -98,18 +108,20 @@ const Settings = () => {
                 key={theme.id}
                 className={
                   current.activeTheme === theme.id
-                    ? "border-border h-full"
-                    : "border-border h-full"
+                    ? "border-border h-full flex flex-col"
+                    : "border-border h-full flex flex-col"
                 }>
-                <CardHeader>
+                <CardHeader className='min-h-[120px]'>
                   <CardTitle className='text-lg'>{theme.name}</CardTitle>
                   <CardDescription>
                     {theme.id === "nightshift"
                       ? t("plugins.nightshift.description")
-                      : theme.description}
+                      : theme.id === "bloodmoon"
+                        ? t("plugins.bloodmoon.description")
+                        : theme.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className='flex flex-col gap-4'>
+                <CardContent className='flex flex-col gap-4 flex-1'>
                   <div className='relative w-full aspect-[16/9] rounded-md border overflow-hidden bg-muted'>
                     <img
                       src={theme.previewImage}
@@ -123,54 +135,75 @@ const Settings = () => {
                     />
                   </div>
 
-                  {theme.id === "nightshift" && (
-                    <div className='text-sm text-muted-foreground'>
-                      <span className='mr-2'>
-                        {t("plugins.nightshift.visit")}
-                      </span>
-                      <a
-                        className='text-primary hover:underline mr-3'
-                        href='https://x.com/dlnightshift'
-                        target='_blank'
-                        rel='noreferrer'>
-                        {t("plugins.nightshift.twitter")}
-                      </a>
-                      <a
-                        className='text-primary hover:underline'
-                        href='https://discord.gg/z3nftGA8'
-                        target='_blank'
-                        rel='noreferrer'>
-                        {t("plugins.nightshift.discord")}
-                      </a>
-                    </div>
-                  )}
-
-                  <div className='flex gap-2'>
-                    {current.activeTheme === theme.id ? (
-                      <Button
-                        variant='destructive'
-                        onClick={() =>
-                          setSettings(manifest.id, {
-                            ...current,
-                            activeTheme: undefined,
-                          })
-                        }
-                        className='flex-1'>
-                        {t("plugins.themes.deactivate")}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant='default'
-                        onClick={() =>
-                          setSettings(manifest.id, {
-                            ...current,
-                            activeTheme: theme.id,
-                          })
-                        }
-                        className='flex-1'>
-                        {t("plugins.themes.activate")}
-                      </Button>
+                  <div className='flex-1 flex flex-col justify-between'>
+                    {theme.id === "nightshift" && (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-2'>
+                          {t("plugins.nightshift.visit")}
+                        </span>
+                        <a
+                          className='text-primary hover:underline mr-3'
+                          href='https://x.com/dlnightshift'
+                          target='_blank'
+                          rel='noreferrer'>
+                          {t("plugins.nightshift.twitter")}
+                        </a>
+                        <a
+                          className='text-primary hover:underline'
+                          href='https://discord.gg/z3nftGA8'
+                          target='_blank'
+                          rel='noreferrer'>
+                          {t("plugins.nightshift.discord")}
+                        </a>
+                      </div>
                     )}
+
+                    {theme.id === "bloodmoon" && (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-1'>
+                          {t("plugins.bloodmoon.visit")
+                            .replace("Skeptic", "")
+                            .trim()}
+                        </span>
+                        <button
+                          className='text-primary hover:underline'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void open("https://github.com/Skeptic-systems");
+                          }}
+                          type='button'>
+                          Skeptic
+                        </button>
+                      </div>
+                    )}
+
+                    <div className='flex gap-2'>
+                      {current.activeTheme === theme.id ? (
+                        <Button
+                          variant='destructive'
+                          onClick={() =>
+                            setSettings(manifest.id, {
+                              ...current,
+                              activeTheme: undefined,
+                            })
+                          }
+                          className='flex-1'>
+                          {t("plugins.themes.deactivate")}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant='default'
+                          onClick={() =>
+                            setSettings(manifest.id, {
+                              ...current,
+                              activeTheme: theme.id,
+                            })
+                          }
+                          className='flex-1'>
+                          {t("plugins.themes.activate")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -793,6 +793,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "帶有黑紅漸變和深紅色點綴的暗黑主題。",
+      "visit": "Skeptic 製作的主題"
+    },
     "discord": {
       "title": "Discord 豐富狀態",
       "description": "在 Discord 上顯示你的 Deadlock 活動。",

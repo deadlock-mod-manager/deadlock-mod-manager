@@ -739,6 +739,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "A dark theme with black-red gradients and crimson accents.",
+      "visit": "Theme by Skeptic"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Force Light Mode during a scheduled time window.",

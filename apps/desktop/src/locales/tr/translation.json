@@ -626,6 +626,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Siyah-kırmızı gradyanlar ve koyu kırmızı vurgularla karanlık tema.",
+      "visit": "Skeptic tarafından tema"
+    },
     "discord": {
       "title": "Discord Rich Presence",
       "description": "Discord'da Deadlock etkinliğinizi gösterir.",

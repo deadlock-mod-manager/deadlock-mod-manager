@@ -661,6 +661,10 @@
       "twitter": "Twitter",
       "discord": "Discord"
     },
+    "bloodmoon": {
+      "description": "Un thème sombre avec des dégradés noir-rouge et des accents carmin.",
+      "visit": "Thème par Skeptic"
+    },
     "background": {
       "title": "Arrière-plan",
       "description": "Personnaliser les arrière-plans de l'application.",
