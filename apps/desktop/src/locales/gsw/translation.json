@@ -551,8 +551,9 @@
     },
     "themes": {
       "title": "Themes",
-      "description": "Eigene Themes erstelle oder Presets wie Nightshift verwände.",
-      "detailedDescription": "Wechsle s'Gsicht vo dr App mit vorbautä Presets wie Nightshift. Wenn es Theme aktiv isch, wird s'Hintergrund‑Plugin automatisch deaktiviert, zum Konflikt verhinderä.",
+      "description": "Eigene Themes erstelle oder kuratiereti Presets verwände.",
+      "settingsDescription": "Usseh verwalte und zwüsche kuratierete Presets oder eigete Stile wähle.",
+      "detailedDescription": "Wechsle s'Gsicht vo dr App mit vorbautä Presets. Wenn es Theme aktiv isch, wird s'Hintergrund‑Plugin automatisch deaktiviert, zum Konflikt verhinderä.",
       "usageInstructions": "Plugin öffne, unter 'Vordefiniert' es Preset uswähle und 'Aktiviere' drücke. Mit 'Deaktiviere' zum Standard zrugg."
     },
     "sudo": {

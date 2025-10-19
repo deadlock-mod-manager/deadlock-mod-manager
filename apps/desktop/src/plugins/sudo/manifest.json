@@ -8,5 +8,6 @@
   "homepageUrl": "https://docs.deadlockmods.app/plugins/sudo",
   "icon": "public/icon.svg",
   "tags": ["official"],
-  "entry": "./index.tsx"
+  "entry": "./index.tsx",
+  "disabledPlugins": []
 }

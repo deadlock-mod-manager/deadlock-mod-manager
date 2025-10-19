@@ -610,8 +610,9 @@
   "plugins": {
     "themes": {
       "title": "Temalar",
-      "description": "Kendi temalarını oluştur veya Nightshift gibi hazır ayarları kullan.",
-      "detailedDescription": "Uygulamanın görünümünü Nightshift gibi özenle hazırlanmış temalarla değiştir. Bir tema etkin olduğunda, görsel çakışmaları önlemek için Arka Plan eklentisi otomatik olarak devre dışı bırakılır.",
+      "description": "Kendi temalarını oluştur veya özenle seçilmiş hazır ayarları kullan.",
+      "settingsDescription": "Görünümü ayarla ve seçilmiş hazır ayarlar ile özel stiller arasında seçim yap.",
+      "detailedDescription": "Uygulamanın görünümünü özenle hazırlanmış temalarla değiştir. Bir tema etkin olduğunda, görsel çakışmaları önlemek için Arka Plan eklentisi otomatik olarak devre dışı bırakılır.",
       "usageInstructions": "Eklentiyi aç, 'Önceden Tanımlı Temalar' bölümünden bir tema seç ve Etkinleştir'e bas. Varsayılan görünüme dönmek için Devre Dışı Bırak'ı kullan."
     },
     "sudo": {

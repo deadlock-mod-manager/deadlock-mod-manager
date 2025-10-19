@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
+import { getPlugins } from "@/lib/plugins";
 import type { State } from "..";
 
 export type FilterMode = "include" | "exclude";
@@ -92,9 +93,29 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>
-    set((state) => ({
-      enabledPlugins: { ...state.enabledPlugins, [id]: enabled },
-    })),
+    set((state) => {
+      if (!enabled) {
+        return { enabledPlugins: { ...state.enabledPlugins, [id]: false } };
+      }
+      const all = getPlugins().map((p) => p.manifest);
+      const manifest = all.find((m) => m.id === id);
+      const forwardDisable = Array.isArray(manifest?.disabledPlugins)
+        ? manifest!.disabledPlugins!
+        : [];
+      const reverseDisable = all
+        .filter(
+          (m) =>
+            Array.isArray(m.disabledPlugins) && m.disabledPlugins!.includes(id),
+        )
+        .map((m) => m.id);
+      const next = { ...state.enabledPlugins, [id]: true } as Record<
+        string,
+        boolean
+      >;
+      for (const target of forwardDisable) next[target] = false;
+      for (const target of reverseDisable) next[target] = false;
+      return { enabledPlugins: next };
+    }),
 
   setPluginSettings: (id: string, value: unknown) =>
     set((state) => ({

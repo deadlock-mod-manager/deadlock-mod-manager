@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { open } from "@tauri-apps/plugin-shell";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
@@ -244,18 +243,7 @@ const Render = () => {
   const isEnabled = usePersistedStore(
     (s) => s.enabledPlugins[manifest.id] ?? false,
   );
-  const setEnabledPlugin = usePersistedStore((s) => s.setEnabledPlugin);
   const current = settings ?? DEFAULT_SETTINGS;
-
-  useEffect(() => {
-    if (!isEnabled) return;
-
-    if (current.activeTheme) {
-      setEnabledPlugin("background", false);
-    }
-
-    return () => {};
-  }, [isEnabled, current.activeTheme, setEnabledPlugin]);
 
   if (!isEnabled || !current.activeTheme) return null;
 

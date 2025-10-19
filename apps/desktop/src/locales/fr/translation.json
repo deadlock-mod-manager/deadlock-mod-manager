@@ -651,8 +651,9 @@
     },
     "themes": {
       "title": "Thèmes",
-      "description": "Créez vos propres thèmes ou utilisez des préréglages comme Nightshift.",
-      "detailedDescription": "Changez le style visuel de l’application grâce à des préréglages comme Nightshift. Quand un thème est actif, le plugin Arrière‑plan est désactivé automatiquement pour éviter les conflits visuels.",
+      "description": "Créez vos propres thèmes ou utilisez des préréglages sélectionnés.",
+      "settingsDescription": "Ajustez l’apparence et choisissez entre préréglages sélectionnés ou styles personnalisés.",
+      "detailedDescription": "Changez le style visuel de l’application grâce à des préréglages sélectionnés. Quand un thème est actif, le plugin Arrière‑plan est désactivé automatiquement pour éviter les conflits visuels.",
       "usageInstructions": "Ouvrez le plugin, choisissez un préréglage dans 'Thèmes prédéfinis', puis cliquez sur Activer. Cliquez sur Désactiver pour revenir à l’apparence par défaut."
     },
     "nightshift": {
