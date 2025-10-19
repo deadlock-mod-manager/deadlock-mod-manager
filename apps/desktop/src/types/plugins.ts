@@ -11,6 +11,7 @@ export type PluginManifest = {
   icon: string; // relative path within the plugin folder to an svg/png
   tags?: PluginTag[];
   entry?: string; // module entry relative path (e.g., ./src/index.tsx)
+  disabledPlugins?: string[]; // plugin IDs to disable when this plugin is enabled
 };
 
 export type LoadedPlugin = {

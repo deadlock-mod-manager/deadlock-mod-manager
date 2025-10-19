@@ -821,8 +821,9 @@
     },
     "themes": {
       "title": "主題",
-      "description": "建立自訂主題或使用 Nightshift 等預設。",
-      "detailedDescription": "透過 Nightshift 等精選預設切換應用程式外觀。當主題啟用時，為避免視覺衝突，背景外掛會自動停用。",
+      "description": "建立自訂主題或使用精選預設。",
+      "settingsDescription": "調整外觀設定，於精選預設與自訂樣式之間選擇。",
+      "detailedDescription": "透過精選預設切換應用程式外觀。當主題啟用時，為避免視覺衝突，背景外掛會自動停用。",
       "usageInstructions": "開啟外掛，在『預設主題』中選擇預設並按下啟用。按下停用可回到預設外觀。"
     },
     "sudo": {

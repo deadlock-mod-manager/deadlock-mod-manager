@@ -579,8 +579,9 @@
     },
     "themes": {
       "title": "Motywy",
-      "description": "Twórz własne motywy lub użyj presetów jak Nightshift.",
-      "detailedDescription": "Zmieniaj wygląd aplikacji za pomocą gotowych presetów, np. Nightshift. Gdy motyw jest aktywny, wtyczka Tło jest automatycznie wyłączana, aby uniknąć konfliktów wizualnych.",
+      "description": "Twórz własne motywy lub używaj wyselekcjonowanych presetów.",
+      "settingsDescription": "Dostosuj wygląd i wybieraj między wyselekcjonowanymi presetami a własnymi stylami.",
+      "detailedDescription": "Zmieniaj wygląd aplikacji za pomocą wyselekcjonowanych presetów. Gdy motyw jest aktywny, wtyczka Tło jest automatycznie wyłączana, aby uniknąć konfliktów wizualnych.",
       "usageInstructions": "Otwórz wtyczkę, wybierz preset w 'Predefiniowane motywy', a następnie kliknij Aktywuj. Kliknij Dezaktywuj, aby wrócić do domyślnego wyglądu."
     },
     "sudo": {

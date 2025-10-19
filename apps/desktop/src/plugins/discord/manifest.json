@@ -11,5 +11,6 @@
   "homepageUrl": "https://docs.deadlockmods.app/plugins/discord",
   "icon": "public/icon.svg",
   "tags": ["official"],
-  "entry": "./index.tsx"
+  "entry": "./index.tsx",
+  "disabledPlugins": []
 }

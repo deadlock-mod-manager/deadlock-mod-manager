@@ -113,9 +113,12 @@ const PluginEntry = () => {
           <div className='px-4'>
             <Section
               title={t("common.settings")}
-              description={t(plugin.manifest.descriptionKey, {
-                defaultValue: t("plugins.background.description"),
-              })}>
+              description={t(
+                `plugins.${plugin.manifest.id}.settingsDescription`,
+                {
+                  defaultValue: t(plugin.manifest.descriptionKey),
+                },
+              )}>
               <ErrorBoundary>
                 <Suspense
                   fallback={
