@@ -148,6 +148,20 @@
       "when": 1760178534337,
       "tag": "0020_common_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1760882801118,
+      "tag": "0021_pale_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1760885401125,
+      "tag": "0022_equal_firebrand",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./custom-settings";
 export * from "./feature-flags";
 export * from "./job-locks";
+export * from "./mirrored-files";
 export * from "./mods";
 export * from "./profiles";
 export * from "./reports";
