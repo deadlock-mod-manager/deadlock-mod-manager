@@ -92,10 +92,6 @@
       "isDefault": false,
       "contributors": [
         {
-          "name": "kenanala",
-          "discord": "kenanala"
-        },
-        {
           "name": "degoods_deedos",
           "discord": "degoods_deedos"
         }
@@ -126,10 +122,6 @@
         {
           "name": "kenanala",
           "discord": "kenanala"
-        },
-        {
-          "name": "degoods_deedos",
-          "discord": "degoods_deedos"
         }
       ]
     },
@@ -158,6 +150,34 @@
         {
           "name": "白雲",
           "github": "phillychi3"
+        }
+      ]
+    },
+    {
+      "code": "es",
+      "name": "Spanish",
+      "nativeName": "Español",
+      "flag": "🇪🇸",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "chikencio",
+          "discord": "chikencio"
+        }
+      ]
+    },
+    {
+      "code": "pt-BR",
+      "name": "Portuguese (Brazil)",
+      "nativeName": "Português (Brasil)",
+      "flag": "🇧🇷",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "meneee",
+          "discord": "meneee"
         }
       ]
     }
