@@ -608,6 +608,17 @@
     }
   },
   "plugins": {
+    "sudo": {
+      "title": "Süper Kullanıcı",
+      "description": "Deneyimli kullanıcılar için gelişmiş mod yönetimi araçları.",
+      "detailedDescription": "Geliştirici odaklı kontroller ve deneysel özellikler açılır. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",
+      "usageInstructions": "Eklentiyi etkinleştirerek Süper Kullanıcı modunu açın. Gelişmiş seçenekler görünür olur. Gizlemek için eklentiyi devre dışı bırakın.",
+      "instructions": "Solda modları gez, birini seç ve indirmek/etkinleştirmek için sağ oku kullan. Sağda yüklü bir modu seç ve kaldırmak için sol oku kullan. Her iki liste de aranabilir.",
+      "openAddons": "Eklentileri aç",
+      "importMod": "Mod içe aktar",
+      "viewOriginalPost": "Orijinal forum gönderisini gör",
+      "removeMod": "Modu kaldır"
+    },
     "themes": {
       "title": "Temalar",
       "description": "Kendi temalarını oluştur veya özenle seçilmiş hazır ayarları kullan.",
@@ -615,7 +626,7 @@
       "detailedDescription": "Uygulamanın görünümünü özenle hazırlanmış temalarla değiştir. Bir tema etkin olduğunda, görsel çakışmaları önlemek için Arka Plan eklentisi otomatik olarak devre dışı bırakılır.",
       "usageInstructions": "Eklentiyi aç, 'Önceden Tanımlı Temalar' bölümünden bir tema seç ve Etkinleştir'e bas. Varsayılan görünüme dönmek için Devre Dışı Bırak'ı kullan."
     },
-    "sudo": {
+    "sudo-old": {
       "title": "Süper Kullanıcı Modu",
       "description": "Deneyimli kullanıcılar için gelişmiş mod yönetimi araçları.",
       "detailedDescription": "Geliştirici odaklı kontrolleri ve deneysel özellikleri açar. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",

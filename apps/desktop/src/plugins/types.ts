@@ -5,4 +5,5 @@ export type PluginModule = {
   manifest: PluginManifest;
   Render?: ComponentType;
   Settings?: ComponentType;
+  Page?: ComponentType; // Optional page rendered at /plugins/:id
 };

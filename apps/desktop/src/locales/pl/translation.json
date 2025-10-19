@@ -526,6 +526,17 @@
     }
   },
   "plugins": {
+    "sudo-new": {
+      "title": "Superuser",
+      "description": "Zaawansowane narzędzia do zarządzania modami dla doświadczonych użytkowników.",
+      "detailedDescription": "Odblokowuje opcje deweloperskie i eksperymentalne funkcje. Niektóre działania mogą modyfikować pliki lub omijać zabezpieczenia. Używaj ostrożnie.",
+      "usageInstructions": "Włącz wtyczkę, aby uruchomić tryb Superuser. Zaawansowane opcje staną się widoczne. Wyłącz wtyczkę, aby je ukryć.",
+      "instructions": "Przeglądaj mody po lewej, wybierz jeden i użyj strzałki w prawo, aby pobrać i włączyć. Po prawej wybierz zainstalowany mod i użyj strzałki w lewo, aby usunąć. Obie listy można przeszukiwać.",
+      "openAddons": "Otwórz dodatki",
+      "importMod": "Importuj mod",
+      "viewOriginalPost": "Zobacz oryginalny post na forum",
+      "removeMod": "Usuń mod"
+    },
     "discord": {
       "title": "Discord Rich Presence",
       "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie.",
@@ -584,7 +595,7 @@
       "detailedDescription": "Zmieniaj wygląd aplikacji za pomocą wyselekcjonowanych presetów. Gdy motyw jest aktywny, wtyczka Tło jest automatycznie wyłączana, aby uniknąć konfliktów wizualnych.",
       "usageInstructions": "Otwórz wtyczkę, wybierz preset w 'Predefiniowane motywy', a następnie kliknij Aktywuj. Kliknij Dezaktywuj, aby wrócić do domyślnego wyglądu."
     },
-    "sudo": {
+    "sudo-old": {
       "title": "Tryb Superuser",
       "description": "Zaawansowane narzędzia zarządzania modami dla doświadczonych użytkowników.",
       "detailedDescription": "Odblokowuje narzędzia deweloperskie i funkcje eksperymentalne. Niektóre działania mogą modyfikować pliki lub pomijać zabezpieczenia. Używaj ostrożnie.",

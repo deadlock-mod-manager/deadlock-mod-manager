@@ -619,6 +619,17 @@
     }
   },
   "plugins": {
+    "sudo": {
+      "title": "Superutilisateur",
+      "description": "Outils avancés de gestion des mods pour utilisateurs expérimentés.",
+      "detailedDescription": "Active des contrôles orientés développeur et des fonctionnalités expérimentales. Certaines actions peuvent modifier des fichiers ou contourner des protections. À utiliser avec précaution.",
+      "usageInstructions": "Activez le plugin pour passer en mode Superutilisateur. Les options avancées deviennent visibles. Désactivez‑le pour les masquer.",
+      "instructions": "Parcourez les mods à gauche, sélectionnez‑en un puis utilisez la flèche droite pour le télécharger et l’activer. À droite, sélectionnez un mod installé et utilisez la flèche gauche pour le supprimer. Les deux listes sont recherchables.",
+      "openAddons": "Ouvrir les add‑ons",
+      "importMod": "Importer un mod",
+      "viewOriginalPost": "Voir le message original du forum",
+      "removeMod": "Supprimer le mod"
+    },
     "discord": {
       "title": "Discord Rich Presence",
       "description": "Affiche votre activité Deadlock sur Discord.",
