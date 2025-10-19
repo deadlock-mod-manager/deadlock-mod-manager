@@ -103,16 +103,18 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | Language | Native Name | Status | Contributors |
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://discordapp.com/users/__skeptic__/) |
+| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://github.com/Skeptic-systems) |
 | 🇫🇷 **French** | Français | ✅ Complete | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
 | 🇵🇱 **Polish** | Polski | ✅ Complete | [_manio](https://discordapp.com/users/_manio/) |
-| 🇨🇭 **Swiss German** | Schwiizerdütsch | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇨🇭 **Swiss German** | Schwiizerdütsch | ✅ Complete | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | ✅ Complete | [altqx](https://github.com/altqx) |
-| 🇹🇷 **Turkish** | Türkçe | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/), [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇷 **Turkish** | Türkçe | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/) |
 | 🇨🇳 **Chinese (Simplified)** | 简体中文 | ✅ Complete | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
+| 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio) |
+| 🇧🇷 **Brazilian Portuguese** | Português Brasileiro | ✅ Complete | [meneee](https://discordapp.com/users/meneee) |
 
 <!-- LANGUAGE_TABLE_END -->
 
