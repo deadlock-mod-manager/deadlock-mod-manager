@@ -520,6 +520,17 @@
     }
   },
   "plugins": {
+    "sudo-new": {
+      "title": "Superuser",
+      "description": "Erwyterti Mod-Verwaltig für erfahrni Nutzer.",
+      "detailedDescription": "Schaltet Entwickler‑Tools und experimentelli Funktione frei. Einigi Aktione chönd Dateie ändere oder Schutz umgoh – drum mit Vorsicht.",
+      "usageInstructions": "Plugin aktiviere, zum Superuser‑Modus aaschalte. Erwyterti Optionä werde sichtbar. Zum Usschalte Plugin wieder deaktiviere.",
+      "instructions": "Links Mods dursueche, eis wybä und mit em rächte Pfiil abe‑ und aktivierä. Rechts e installierti Mod wybä und mit em linke Pfiil lösche. Bäidi Lischtä chönd dürsuächt wärde.",
+      "openAddons": "Addons öffne",
+      "importMod": "Mod importiere",
+      "viewOriginalPost": "Original Forumsbäitrag aaluege",
+      "removeMod": "Mod lösche"
+    },
     "flashbang": {
       "title": "Flashbang Modus",
       "description": "Erzwingt Helli Mod i de aagmässene Ziit.",
@@ -556,7 +567,7 @@
       "detailedDescription": "Wechsle s'Gsicht vo dr App mit vorbautä Presets. Wenn es Theme aktiv isch, wird s'Hintergrund‑Plugin automatisch deaktiviert, zum Konflikt verhinderä.",
       "usageInstructions": "Plugin öffne, unter 'Vordefiniert' es Preset uswähle und 'Aktiviere' drücke. Mit 'Deaktiviere' zum Standard zrugg."
     },
-    "sudo": {
+    "sudo-old": {
       "title": "Superuser‑Modus",
       "description": "Erwiiterti Mod‑Verwaltig für erfahrni Nutzer.",
       "detailedDescription": "Schaltet Entwickler‑Funktione und experimental Tools frei. Eini Aktione chönd Dateie ändere oder Schutze umgoh – mit Vorsicht bruche.",

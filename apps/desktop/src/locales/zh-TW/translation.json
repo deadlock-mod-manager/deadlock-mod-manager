@@ -787,6 +787,17 @@
     }
   },
   "plugins": {
+    "sudo": {
+      "title": "超級使用者",
+      "description": "提供進階使用者的模組管理工具。",
+      "detailedDescription": "解鎖開發者導向的控制與實驗性功能。部分操作可能會修改檔案或繞過保護，請小心使用。",
+      "usageInstructions": "啟用外掛以開啟超級使用者模式。進階選項會顯示；停用外掛即可隱藏。",
+      "instructions": "在左側瀏覽模組，選擇後按右箭頭下載並啟用。於右側選擇已安裝的模組並按左箭頭移除。兩側列表皆可搜尋。",
+      "openAddons": "開啟附加元件",
+      "importMod": "匯入模組",
+      "viewOriginalPost": "查看原始論壇貼文",
+      "removeMod": "移除模組"
+    },
     "nightshift": {
       "description": "具青色點綴的賽博龐克主題，專為清晰度與長時間遊戲而設計。",
       "visit": "造訪 Nightshift：",
@@ -825,12 +836,6 @@
       "settingsDescription": "調整外觀設定，於精選預設與自訂樣式之間選擇。",
       "detailedDescription": "透過精選預設切換應用程式外觀。當主題啟用時，為避免視覺衝突，背景外掛會自動停用。",
       "usageInstructions": "開啟外掛，在『預設主題』中選擇預設並按下啟用。按下停用可回到預設外觀。"
-    },
-    "sudo": {
-      "title": "超級使用者模式",
-      "description": "進階使用者的高階管理工具。",
-      "detailedDescription": "開啟面向開發者的控制與實驗功能。部分操作可能修改檔案或略過防護，請謹慎使用。",
-      "usageInstructions": "啟用外掛以開啟超級使用者模式。進階選項將出現在應用各處；停用外掛即可隱藏。"
     }
   }
 }
