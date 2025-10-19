@@ -5,6 +5,7 @@ export * from "./job-locks";
 export * from "./mirrored-files";
 export * from "./mods";
 export * from "./profiles";
+export * from "./relations";
 export * from "./reports";
 export * from "./rss-items";
 export * from "./segments";

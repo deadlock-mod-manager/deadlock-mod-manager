@@ -9,7 +9,7 @@ export const envSchema = z.object({
     .string()
     .url()
     .default(
-      "https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200",
+      "https://6a3fe299a5b74893055ba05145b62122@o84215.ingest.us.sentry.io/4510217497280512",
     ),
   POD_NAME: z.string().optional(),
   CORS_ORIGIN: z.array(z.string()).optional().default([

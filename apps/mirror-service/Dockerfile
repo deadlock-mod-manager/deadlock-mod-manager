@@ -82,13 +82,13 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/mirror-service ./apps/mirror-service
 
 # Install only production dependencies (as non-root user)
-RUN pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 EXPOSE 9001
 
 WORKDIR /usr/src/app/apps/mirror-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:9001 || exit 1
+  CMD curl -f http://localhost:9001/health || exit 1
 
 ENTRYPOINT [ "pnpm", "start" ]

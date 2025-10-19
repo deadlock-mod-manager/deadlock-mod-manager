@@ -137,7 +137,26 @@ export class S3Service {
   }
 
   async downloadFileStream(key: string) {
-    const s3File = this.client.file(key);
-    return ok(s3File.stream());
+    try {
+      const s3File = this.client.file(key);
+      const existsResult = await this.fileExists(key);
+
+      if (existsResult.isErr()) {
+        return err(
+          new RuntimeError(
+            "Failed to check file existence",
+            existsResult.error,
+          ),
+        );
+      }
+
+      if (!existsResult.value) {
+        return err(new RuntimeError(`File with key '${key}' does not exist`));
+      }
+
+      return ok(s3File.stream());
+    } catch (error) {
+      return err(new RuntimeError("Failed to create download stream", error));
+    }
   }
 }

@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -8,7 +7,6 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
-import { mirroredFiles } from "./mirrored-files";
 import { timestamps } from "./shared/timestamps";
 
 export const mods = pgTable("mod", {
@@ -60,17 +58,6 @@ export const modDownloads = pgTable(
       table.remoteId,
     ),
   ],
-);
-
-export const modDownloadsRelations = relations(
-  modDownloads,
-  ({ one, many }) => ({
-    mod: one(mods, {
-      fields: [modDownloads.modId],
-      references: [mods.id],
-    }),
-    mirroredFiles: many(mirroredFiles),
-  }),
 );
 
 export type Mod = typeof mods.$inferSelect;

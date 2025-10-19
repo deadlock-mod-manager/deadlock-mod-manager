@@ -37,36 +37,64 @@ export class MirrorService {
       fileId,
     );
 
-    if (mirroredFile.isOk()) {
-      // Update last downloaded at
-      await this.mirroredFileRepository.update(mirroredFile.value.id, {
-        lastDownloadedAt: new Date(),
-      });
-
-      // Track cache hit
-      await MetricsService.instance.incrementCacheHit();
-      await MetricsService.instance.incrementDownload(mirroredFile.value.id);
-
-      // Stream file directly from S3
-      const stream = await S3Service.instance.downloadFileStream(
+    if (mirroredFile.isOk() && !mirroredFile.value.isStale) {
+      // Check if the file exists in S3 before attempting to stream
+      const existsResult = await S3Service.instance.fileExists(
         mirroredFile.value.s3Key,
       );
-      if (stream.isErr()) {
+      if (existsResult.isErr()) {
         this.logger
-          .withMetadata({ modId, fileId })
-          .withError(stream.error)
-          .error("Failed to download file");
-        return err(stream.error);
+          .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
+          .withError(existsResult.error)
+          .error("Failed to check S3 file existence");
+        return err(existsResult.error);
       }
 
-      return ok({
-        outputStream: stream.value,
-        size: mirroredFile.value.fileSize,
-        file: mirroredFile.value.filename,
-      });
+      if (!existsResult.value) {
+        this.logger
+          .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
+          .info("File not found in S3, treating as cache miss");
+
+        // Track cache miss for missing S3 files
+        await MetricsService.instance.incrementCacheMiss();
+      } else {
+        // Update last downloaded at
+        await this.mirroredFileRepository.update(mirroredFile.value.id, {
+          lastDownloadedAt: new Date(),
+        });
+
+        // Track cache hit
+        await MetricsService.instance.incrementCacheHit();
+        await MetricsService.instance.incrementDownload(mirroredFile.value.id);
+
+        // Stream file directly from S3
+        const stream = await S3Service.instance.downloadFileStream(
+          mirroredFile.value.s3Key,
+        );
+        if (stream.isErr()) {
+          this.logger
+            .withMetadata({ modId, fileId })
+            .withError(stream.error)
+            .error("Failed to download file");
+          return err(stream.error);
+        }
+
+        return ok({
+          outputStream: stream.value,
+          size: mirroredFile.value.fileSize,
+          file: mirroredFile.value.filename,
+        });
+      }
     }
 
-    // Track cache miss
+    // Handle stale files or files not found in database
+    if (mirroredFile.isOk() && mirroredFile.value.isStale) {
+      this.logger
+        .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
+        .info("File marked as stale, treating as cache miss");
+    }
+
+    // Track cache miss (for files not found or stale files)
     await MetricsService.instance.incrementCacheMiss();
 
     const result = await this.modDownloadRepository.findByModIdAndFileId(
