@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@deadlock-mods/logging": "workspace:*",
+    "@deadlock-mods/common": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.42.0",
+    "neverthrow": "^8.2.0",
     "pg": "^8.16.3",
     "typeid-js": "^1.2.0"
   },

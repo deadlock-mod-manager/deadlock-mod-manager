@@ -1,4 +1,6 @@
-import { eq } from "drizzle-orm";
+import { EntityNotFoundError, mapDrizzleError } from "@deadlock-mods/common";
+import { and, eq } from "drizzle-orm";
+import { err, ok } from "neverthrow";
 import type { Database } from "../client";
 import type { ModDownload, NewModDownload } from "../schema/mods";
 import { modDownloads } from "../schema/mods";
@@ -17,6 +19,21 @@ export class ModDownloadRepository {
       .where(eq(modDownloads.id, id))
       .limit(1);
     return result.length > 0 ? result[0] : null;
+  }
+
+  async findByModIdAndFileId(modId: string, fileId: string) {
+    try {
+      const result = await this.db
+        .select()
+        .from(modDownloads)
+        .where(and(eq(modDownloads.modId, modId), eq(modDownloads.id, fileId)))
+        .limit(1);
+      return result.length > 0
+        ? ok(result[0])
+        : err(new EntityNotFoundError("File not found"));
+    } catch (error) {
+      return err(mapDrizzleError(error));
+    }
   }
 
   async findByModId(modId: string): Promise<ModDownload[]> {
