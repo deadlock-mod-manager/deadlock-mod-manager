@@ -10,6 +10,16 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
+import {
+  CustomTheme,
+  beginEditingUserTheme,
+  type CustomExportedTheme,
+  cancelEditingUserTheme,
+  deleteUserTheme,
+  ExportCustomThemeButton,
+  getUserThemes,
+  saveEditingUserTheme,
+} from "./custom";
 import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
 
@@ -26,9 +36,12 @@ type ThemeSettings = {
   activeSection: "pre-defined" | "custom";
   activeTheme?: string;
   customTheme?: {
-    primaryColor: string;
-    backgroundColor: string;
-    accentColor: string;
+    lineColor: string;
+    iconData?: string;
+    backgroundSource?: "url" | "local";
+    backgroundUrl?: string;
+    backgroundData?: string;
+    backgroundOpacity?: number;
   };
 };
 
@@ -36,9 +49,12 @@ const DEFAULT_SETTINGS: ThemeSettings = {
   activeSection: "pre-defined",
   activeTheme: undefined,
   customTheme: {
-    primaryColor: "#d4af37",
-    backgroundColor: "#1a1612",
-    accentColor: "#8b7355",
+    lineColor: "#6b7280",
+    iconData: "",
+    backgroundSource: "url",
+    backgroundUrl: "",
+    backgroundData: "",
+    backgroundOpacity: 30,
   },
 };
 
@@ -70,7 +86,7 @@ const Settings = () => {
   const current = settings ?? DEFAULT_SETTINGS;
 
   return (
-    <div className='flex flex-col gap-4 pl-4 pr-4'>
+    <div className='flex flex-col gap-4 pl-4 pr-4 pb-20'>
       <div className='flex gap-2 border-b pb-4'>
         <Button
           variant={
@@ -102,7 +118,7 @@ const Settings = () => {
           </p>
 
           <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-            {PRE_DEFINED_THEMES.map((theme) => (
+            {[...getUserThemes(current), ...PRE_DEFINED_THEMES].map((theme) => (
               <Card
                 key={theme.id}
                 className={
@@ -111,31 +127,57 @@ const Settings = () => {
                     : "border-border h-full flex flex-col"
                 }>
                 <CardHeader className='min-h-[120px]'>
-                  <CardTitle className='text-lg'>{theme.name}</CardTitle>
+                  <CardTitle className='text-lg'>
+                    {"userCreated" in theme && (theme as any).userCreated
+                      ? (theme as CustomExportedTheme).name
+                      : (theme as { name: string }).name}
+                  </CardTitle>
                   <CardDescription>
-                    {theme.id === "nightshift"
-                      ? t("plugins.nightshift.description")
-                      : theme.id === "bloodmoon"
-                        ? t("plugins.bloodmoon.description")
-                        : theme.description}
+                    {"userCreated" in theme && theme.userCreated
+                      ? ((theme as CustomExportedTheme).description ?? "")
+                      : theme.id === "nightshift"
+                        ? t("plugins.nightshift.description")
+                        : theme.id === "bloodmoon"
+                          ? t("plugins.bloodmoon.description")
+                          : theme.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='flex flex-col gap-4 flex-1'>
                   <div className='relative w-full aspect-[16/9] rounded-md border overflow-hidden bg-muted'>
-                    <img
-                      src={theme.previewImage}
-                      alt={theme.name}
-                      className='absolute inset-0 h-full w-full object-cover'
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                        e.currentTarget.parentElement!.innerHTML =
-                          '<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">Preview coming soon</span>';
-                      }}
-                    />
+                    {"userCreated" in theme && theme.userCreated ? (
+                      (theme as CustomExportedTheme).previewData ? (
+                        <img
+                          src={(theme as CustomExportedTheme).previewData!}
+                          alt={(theme as CustomExportedTheme).name}
+                          className='absolute inset-0 h-full w-full object-cover'
+                        />
+                      ) : (
+                        <span className='text-muted-foreground text-xs flex items-center justify-center h-full w-full'>
+                          {t("plugins.themes.noPreview")}
+                        </span>
+                      )
+                    ) : (
+                      <img
+                        src={(theme as { previewImage: string }).previewImage}
+                        alt={(theme as { name: string }).name}
+                        className='absolute inset-0 h-full w-full object-cover'
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          e.currentTarget.parentElement!.innerHTML =
+                            `<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">${t("plugins.themes.previewComingSoon")}</span>`;
+                        }}
+                      />
+                    )}
                   </div>
 
                   <div className='flex-1 flex flex-col justify-between'>
-                    {theme.id === "nightshift" && (
+                    {"userCreated" in theme && theme.userCreated ? (
+                      (theme as CustomExportedTheme).subDescription ? (
+                        <div className='text-sm text-muted-foreground mb-4'>
+                          {(theme as CustomExportedTheme).subDescription}
+                        </div>
+                      ) : null
+                    ) : theme.id === "nightshift" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
                         <span className='mr-2'>
                           {t("plugins.nightshift.visit")}
@@ -155,9 +197,7 @@ const Settings = () => {
                           {t("plugins.nightshift.discord")}
                         </a>
                       </div>
-                    )}
-
-                    {theme.id === "bloodmoon" && (
+                    ) : theme.id === "bloodmoon" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
                         <span className='mr-1'>
                           {t("plugins.bloodmoon.visit")
@@ -174,7 +214,7 @@ const Settings = () => {
                           Skeptic
                         </button>
                       </div>
-                    )}
+                    ) : null}
 
                     <div className='flex gap-2'>
                       {current.activeTheme === theme.id ? (
@@ -195,13 +235,33 @@ const Settings = () => {
                           onClick={() =>
                             setSettings(manifest.id, {
                               ...current,
-                              activeTheme: theme.id,
+                              activeTheme: (theme as any).id,
                             })
                           }
                           className='flex-1'>
                           {t("plugins.themes.activate")}
                         </Button>
                       )}
+                      {"userCreated" in theme && theme.userCreated ? (
+                        <>
+                          <Button
+                            variant='outline'
+                            onClick={() =>
+                              beginEditingUserTheme(
+                                (theme as CustomExportedTheme).id,
+                              )
+                            }>
+{t("plugins.themes.edit")}
+                          </Button>
+                          <Button
+                            variant='outline'
+                            onClick={() =>
+                              deleteUserTheme((theme as CustomExportedTheme).id)
+                            }>
+{t("plugins.themes.delete")}
+                          </Button>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 </CardContent>
@@ -223,15 +283,229 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className='text-sm text-muted-foreground text-center py-8'>
-                Custom theme builder coming soon...
-              </p>
+              <div className='grid gap-4 grid-cols-1 sm:grid-cols-2'>
+                <div className='flex items-center gap-4'>
+                  <label className='text-sm font-medium'>{t("plugins.themes.lineColor")}</label>
+                  <input
+                    type='color'
+                    value={current.customTheme?.lineColor ?? "#6b7280"}
+                    onChange={(e) =>
+                      setSettings(manifest.id, {
+                        ...current,
+                        customTheme: {
+                          ...current.customTheme!,
+                          lineColor: e.target.value,
+                        },
+                      })
+                    }
+                    className='h-9 w-20 rounded-md border border-input bg-transparent px-1 py-1'
+                  />
+                </div>
+
+                <div className='space-y-3'>
+                  <label className='text-sm font-medium'>{t("plugins.themes.themeIcon")}</label>
+                  <div className='flex items-center gap-3'>
+                    <input
+                      accept='image/*'
+                      id='custom-theme-icon-input'
+                      type='file'
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const dataUrl = reader.result as string;
+                          setSettings(manifest.id, {
+                            ...current,
+                            customTheme: {
+                              ...current.customTheme!,
+                              iconData: dataUrl,
+                            },
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <Button
+                      variant='outline'
+                      onClick={() =>
+                        document
+                          .getElementById("custom-theme-icon-input")
+                          ?.click()
+                      }>
+{t("plugins.themes.chooseIcon")}
+                    </Button>
+                    {current.customTheme?.iconData ? (
+                      <img
+                        alt='theme icon'
+                        src={current.customTheme.iconData}
+                        className='h-8 w-8 rounded'
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className='space-y-3 sm:col-span-2'>
+                  <label className='text-sm font-medium'>
+                    {t("plugins.themes.backgroundImage")}
+                  </label>
+                  <div className='flex flex-col gap-3'>
+                    <input
+                      placeholder={t("plugins.themes.backgroundUrlPlaceholder")}
+                      value={
+                        current.customTheme?.backgroundSource === "url"
+                          ? (current.customTheme?.backgroundUrl ?? "")
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setSettings(manifest.id, {
+                          ...current,
+                          customTheme: {
+                            ...current.customTheme!,
+                            backgroundSource: "url",
+                            backgroundUrl: e.target.value,
+                          },
+                        })
+                      }
+                      className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm'
+                    />
+                    <div className='flex items-center gap-3'>
+                      <input
+                        accept='image/*'
+                        id='custom-theme-bg-input'
+                        type='file'
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = reader.result as string;
+                            setSettings(manifest.id, {
+                              ...current,
+                              customTheme: {
+                                ...current.customTheme!,
+                                backgroundSource: "local",
+                                backgroundData: dataUrl,
+                                backgroundUrl: "",
+                              },
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      <Button
+                        variant='outline'
+                        onClick={() =>
+                          document
+                            .getElementById("custom-theme-bg-input")
+                            ?.click()
+                        }>
+{t("plugins.themes.chooseImage")}
+                      </Button>
+                      <div className='flex items-center gap-2'>
+                        <span className='text-sm'>{t("plugins.themes.opacity")}</span>
+                        <input
+                          type='range'
+                          min={0}
+                          max={100}
+                          value={current.customTheme?.backgroundOpacity ?? 30}
+                          onChange={(e) =>
+                            setSettings(manifest.id, {
+                              ...current,
+                              customTheme: {
+                                ...current.customTheme!,
+                                backgroundOpacity: Number(e.target.value),
+                              },
+                            })
+                          }
+                        />
+                        <span className='text-xs text-muted-foreground w-8'>
+                          {current.customTheme?.backgroundOpacity ?? 30}%
+                        </span>
+                      </div>
+                    </div>
+                    {(current.customTheme?.backgroundSource === "local" &&
+                      current.customTheme?.backgroundData) ||
+                    (current.customTheme?.backgroundSource === "url" &&
+                      current.customTheme?.backgroundUrl) ? (
+                      <div className='relative w-full aspect-[16/9] rounded-md border overflow-hidden bg-muted'>
+                        <img
+                          src={
+                            current.customTheme?.backgroundSource === "local"
+                              ? current.customTheme?.backgroundData
+                              : current.customTheme?.backgroundUrl
+                          }
+                          alt='custom background'
+                          className='absolute inset-0 h-full w-full object-cover'
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className='mt-6 flex gap-2'>
+                {current.activeTheme === "custom" ? (
+                  <Button
+                    variant='destructive'
+                    onClick={() =>
+                      setSettings(manifest.id, {
+                        ...current,
+                        activeTheme: undefined,
+                      })
+                    }
+                    className='flex-1'>
+                    {t("plugins.themes.deactivate")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant='default'
+                    onClick={() =>
+                      setSettings(manifest.id, {
+                        ...current,
+                        activeTheme: "custom",
+                      })
+                    }
+                    className='flex-1'>
+                    {t("plugins.themes.activate")}
+                  </Button>
+                )}
+                <ExportCustomThemeButton />
+                <Button
+                  variant='outline'
+                  onClick={() =>
+                    setSettings(manifest.id, {
+                      ...current,
+                      customTheme: DEFAULT_SETTINGS.customTheme,
+                    })
+                  }>
+{t("plugins.themes.clear")}
+                </Button>
+                {"editingThemeId" in current &&
+                (current as any).editingThemeId ? (
+                  <>
+                    <Button
+                      variant='default'
+                      onClick={() => saveEditingUserTheme()}>
+{t("plugins.themes.save")}
+                    </Button>
+                    <Button
+                      variant='outline'
+                      onClick={() => cancelEditingUserTheme()}>
+{t("plugins.themes.cancel")}
+                    </Button>
+                  </>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Footer indicator removed intentionally */}
+      {/* Spacer to avoid overlap with bottom status bar */}
+      <div className='h-12' />
     </div>
   );
 };
@@ -246,6 +520,18 @@ const Render = () => {
   const current = settings ?? DEFAULT_SETTINGS;
 
   if (!isEnabled || !current.activeTheme) return null;
+
+  // Render exported user-defined themes via CustomTheme override
+  const userTheme = getUserThemes(current).find(
+    (t) => t.id === current.activeTheme,
+  );
+  if (userTheme) {
+    return <CustomTheme theme={userTheme} />;
+  }
+
+  if (current.activeTheme === "custom") {
+    return <CustomTheme />;
+  }
 
   const activeTheme = PRE_DEFINED_THEMES.find(
     (theme) => theme.id === current.activeTheme,

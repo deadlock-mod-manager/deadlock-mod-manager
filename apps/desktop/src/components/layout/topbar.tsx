@@ -4,7 +4,16 @@ import { usePersistedStore } from "@/lib/store";
 import UserMenu from "../user-menu";
 import Logo from "./logo";
 
-type ThemesPluginSettings = { activeTheme?: string } | undefined;
+type ThemesPluginSettings =
+  | {
+      activeTheme?: string;
+      customTheme?: { iconData?: string };
+      userThemes?: Array<{
+        id: string;
+        iconData?: string;
+      }>;
+    }
+  | undefined;
 
 export const Topbar = () => {
   const { version } = useAbout();
@@ -20,7 +29,10 @@ export const Topbar = () => {
       ? "/src/plugins/themes/public/pre-defiend/nightshift/icon.png"
       : activeTheme === "bloodmoon"
         ? "/src/plugins/themes/public/pre-defiend/bloodmoon/icon.png"
-        : undefined;
+        : activeTheme === "custom"
+          ? themesSettings?.customTheme?.iconData || undefined
+          : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
+              ?.iconData || undefined;
 
   return (
     <div className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'>

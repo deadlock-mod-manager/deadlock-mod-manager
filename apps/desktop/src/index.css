@@ -429,3 +429,47 @@
   border-bottom: 2px solid;
   border-radius: 3px;
 }
+
+/* Custom Theme Styles */
+.custom-theme-active [data-sidebar="sidebar"] {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="sidebar"] * {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="content"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="footer"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="group"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="group-content"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="menu"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+.custom-theme-active [data-sidebar="menu-button"] {
+  background-color: transparent;
+}
+
+.custom-theme-active
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  background-color: transparent;
+  border-color: hsl(var(--border));
+}
