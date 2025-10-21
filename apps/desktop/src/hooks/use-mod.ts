@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useQuery } from "react-query";
 import { getMod } from "@/lib/api";
+import { usePersistedStore } from "@/lib/store";
 
 interface UseModOptions {
   enabled?: boolean;
@@ -11,6 +13,7 @@ export const useMod = (
   options: UseModOptions = {},
 ) => {
   const { enabled = true, retry = 1 } = options;
+  const upsertRemoteMod = usePersistedStore((state) => state.upsertRemoteMod);
 
   const query = useQuery({
     queryKey: ["mod", modId],
@@ -25,6 +28,12 @@ export const useMod = (
     retry,
     useErrorBoundary: false,
   });
+
+  useEffect(() => {
+    if (query.data) {
+      upsertRemoteMod(query.data);
+    }
+  }, [query.data, upsertRemoteMod]);
 
   return {
     ...query,

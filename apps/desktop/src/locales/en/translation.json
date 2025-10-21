@@ -392,6 +392,9 @@
     "error": "Error occurred",
     "disableMod": "Disable Mod?",
     "enableMod": "Enable Mod?",
+    "update": "Update",
+    "updating": "Updating...",
+    "updateTooltip": "Download and install the latest version of this mod",
     "installedTooltip": "Toggle to disable mod (will not delete, just disable it ingame)",
     "downloadedTooltip": "Toggle to enable mod"
   },

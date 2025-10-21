@@ -27,10 +27,12 @@ import {
   LayoutGrid,
   LayoutList,
   Loader2,
+  RefreshCw,
 } from "@deadlock-mods/ui/icons";
 import { Trash } from "@phosphor-icons/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "react-query";
 import { useNavigate } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
@@ -44,6 +46,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
+import { getMods } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -351,10 +354,25 @@ const MyMods = () => {
   const { t } = useTranslation();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
+  const syncRemoteMods = usePersistedStore((state) => state.syncRemoteMods);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
+
+  const {
+    data: remoteMods,
+    refetch: refetchRemoteMods,
+    isFetching: isCheckingUpdates,
+  } = useQuery("mods", getMods, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useLayoutEffect(() => {
+    if (remoteMods && remoteMods.length > 0) {
+      syncRemoteMods(remoteMods);
+    }
+  }, [remoteMods, syncRemoteMods]);
 
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -473,6 +491,21 @@ const MyMods = () => {
             </div>
 
             <div className='flex gap-2 items-center'>
+              <Button
+                disabled={isCheckingUpdates}
+                icon={<RefreshCw className='h-4 w-4' />}
+                isLoading={isCheckingUpdates}
+                onClick={() => void refetchRemoteMods()}
+                size='lg'
+                variant='outline'>
+                {isCheckingUpdates
+                  ? t("myMods.checkingForUpdates", {
+                      defaultValue: t("common.loading"),
+                    })
+                  : t("myMods.checkForUpdates", {
+                      defaultValue: t("about.checkForUpdates"),
+                    })}
+              </Button>
               <AnalyzeAddonsButton size='lg' />
               <ModOrderingDialog>
                 <Button

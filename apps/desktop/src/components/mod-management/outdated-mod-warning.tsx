@@ -17,7 +17,7 @@ export const OutdatedModWarning = ({
   className,
 }: OutdatedModWarningProps) => {
   const warningText =
-    "This mod hasn't been updated since August 19, 2025 and may not work properly";
+    "A newer version of this mod is available. Update it to ensure compatibility.";
 
   if (variant === "alert") {
     return (

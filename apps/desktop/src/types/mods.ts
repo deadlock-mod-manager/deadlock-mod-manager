@@ -26,12 +26,14 @@ export enum ModStatus {
 
 export interface LocalMod extends ModDto {
   status: ModStatus;
-  downloadedAt?: Date;
+  downloadedAt?: Date | string;
   downloads?: ModDownloadItem[];
   selectedDownload?: ModDownloadItem;
   installedVpks?: string[];
   installedFileTree?: ModFileTree;
   installOrder?: number; // Order in which the mod should be loaded (lower numbers load first)
+  installedRemoteUpdatedAt?: Date | string;
+  isUpdateAvailable?: boolean;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {

@@ -322,6 +322,9 @@
     "error": "",
     "disableMod": "",
     "enableMod": "",
+    "update": "",
+    "updating": "",
+    "updateTooltip": "",
     "installedTooltip": "",
     "downloadedTooltip": ""
   },

@@ -30,21 +30,22 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
-        // If migrating from version 1 to 2, preserve existing data and add profiles
+        let state = persistedState as Record<string, unknown>;
+
+        // Migration: v1 -> v2 (profile introduction)
         if (version === 1) {
           console.log("Migrating from version 1 to 2");
-          const state = persistedState as Record<string, unknown>;
           const now = new Date();
 
-          // Build enabledMods from currently installed mods
           const enabledMods: Record<
             string,
             { remoteId: string; enabled: boolean; lastModified: Date }
           > = {};
+
           if (Array.isArray(state.localMods)) {
             state.localMods.forEach((mod: unknown) => {
               const modObj = mod as Record<string, unknown>;
@@ -61,8 +62,8 @@ export const usePersistedStore = create<State>()(
             });
           }
 
-          return {
-            ...(persistedState as Record<string, unknown>),
+          state = {
+            ...state,
             profiles: {
               default: {
                 id: "default",
@@ -77,8 +78,106 @@ export const usePersistedStore = create<State>()(
             activeProfileId: "default",
             isSwitching: false,
           };
+
+          version = 2;
         }
-        return persistedState;
+
+        // Migration: ensure installedRemoteUpdatedAt & isUpdateAvailable fields exist (<= v2 -> v3)
+        if (version <= 2) {
+          const normalizeDateValue = (value: unknown): string | undefined => {
+            if (!value) {
+              return undefined;
+            }
+
+            if (value instanceof Date) {
+              const timestamp = value.getTime();
+              return Number.isNaN(timestamp) ? undefined : value.toISOString();
+            }
+
+            if (typeof value === "string") {
+              const parsed = new Date(value);
+              const timestamp = parsed.getTime();
+              return Number.isNaN(timestamp) ? undefined : parsed.toISOString();
+            }
+
+            return undefined;
+          };
+
+          const toTimestamp = (value: unknown): number | undefined => {
+            if (!value) {
+              return undefined;
+            }
+
+            if (value instanceof Date) {
+              const timestamp = value.getTime();
+              return Number.isNaN(timestamp) ? undefined : timestamp;
+            }
+
+            if (typeof value === "string") {
+              const parsed = new Date(value);
+              const timestamp = parsed.getTime();
+              return Number.isNaN(timestamp) ? undefined : timestamp;
+            }
+
+            return undefined;
+          };
+
+          const computeIsUpdateAvailable = (
+            remoteUpdatedAt: unknown,
+            installedRemoteUpdatedAt: string | undefined,
+          ) => {
+            const remoteTimestamp = toTimestamp(remoteUpdatedAt);
+            const installedTimestamp = toTimestamp(installedRemoteUpdatedAt);
+
+            return (
+              remoteTimestamp !== undefined &&
+              installedTimestamp !== undefined &&
+              remoteTimestamp > installedTimestamp
+            );
+          };
+
+          const currentLocalMods = state.localMods as unknown;
+          if (Array.isArray(currentLocalMods)) {
+            const migratedMods = currentLocalMods.map((mod) => {
+              if (!mod || typeof mod !== "object") {
+                return mod;
+              }
+
+              const modRecord = mod as Record<string, unknown>;
+              const normalizedInstalled = normalizeDateValue(
+                modRecord.installedRemoteUpdatedAt,
+              );
+              const isUpdateAvailable = computeIsUpdateAvailable(
+                modRecord.remoteUpdatedAt,
+                normalizedInstalled,
+              );
+
+              const currentInstalled =
+                modRecord.installedRemoteUpdatedAt as unknown;
+              const currentFlag = modRecord.isUpdateAvailable as unknown;
+
+              if (
+                currentInstalled === normalizedInstalled &&
+                currentFlag === isUpdateAvailable
+              ) {
+                return mod;
+              }
+
+              return {
+                ...modRecord,
+                installedRemoteUpdatedAt: normalizedInstalled,
+                isUpdateAvailable,
+              };
+            });
+
+            state = {
+              ...state,
+              localMods: migratedMods,
+            };
+          }
+        }
+
+        return state;
       },
       partialize: (state) => {
         // Only include stable state that should be persisted

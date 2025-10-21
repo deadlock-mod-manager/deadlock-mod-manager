@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Wrapper to route pnpm calls through corepack when pnpm is not installed globally.
+exec corepack pnpm "$@"

@@ -13,6 +13,63 @@ import {
 } from "@/types/mods";
 import type { State } from "..";
 
+const toTimestamp = (
+  value: Date | string | null | undefined,
+): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    const timestamp = value.getTime();
+    return Number.isNaN(timestamp) ? undefined : timestamp;
+  }
+
+  const parsed = new Date(value);
+  const timestamp = parsed.getTime();
+  return Number.isNaN(timestamp) ? undefined : timestamp;
+};
+
+const normalizeDateValue = (
+  value: Date | string | null | undefined,
+): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    const timestamp = value.getTime();
+    return Number.isNaN(timestamp) ? undefined : value.toISOString();
+  }
+
+  const parsed = new Date(value);
+  const timestamp = parsed.getTime();
+  return Number.isNaN(timestamp) ? undefined : parsed.toISOString();
+};
+
+const applyUpdateMetadata = (mod: LocalMod): LocalMod => {
+  const normalizedInstalled = normalizeDateValue(mod.installedRemoteUpdatedAt);
+  const remoteTimestamp = toTimestamp(mod.remoteUpdatedAt);
+  const installedTimestamp = toTimestamp(normalizedInstalled);
+  const isUpdateAvailable =
+    remoteTimestamp !== undefined &&
+    installedTimestamp !== undefined &&
+    remoteTimestamp > installedTimestamp;
+
+  if (
+    normalizedInstalled === mod.installedRemoteUpdatedAt &&
+    mod.isUpdateAvailable === isUpdateAvailable
+  ) {
+    return mod;
+  }
+
+  return {
+    ...mod,
+    installedRemoteUpdatedAt: normalizedInstalled,
+    isUpdateAvailable,
+  };
+};
+
 export type ModProgress = {
   percentage: number;
   speed?: number;
@@ -44,6 +101,7 @@ export type ModsState = {
     fileTree?: ModFileTree,
   ) => void;
   setSelectedDownload: (remoteId: string, download: ModDownloadItem) => void;
+  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
@@ -54,6 +112,8 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
+  syncRemoteMods: (remoteMods: ModDto[]) => void;
+  upsertRemoteMod: (remoteMod: ModDto) => void;
 };
 
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
@@ -78,17 +138,23 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
           : -1;
       const installOrder = additional?.installOrder ?? maxOrder + 1;
+      const installedTimestamp =
+        additional?.installedRemoteUpdatedAt ??
+        (additional?.status === ModStatus.Installed
+          ? mod.remoteUpdatedAt
+          : undefined);
+      const normalizedInstalled = normalizeDateValue(installedTimestamp);
+
+      const newMod: LocalMod = {
+        ...mod,
+        status: ModStatus.Downloading,
+        installOrder,
+        ...additional,
+        installedRemoteUpdatedAt: normalizedInstalled,
+      };
 
       return {
-        localMods: [
-          ...state.localMods,
-          {
-            ...mod,
-            status: ModStatus.Downloading,
-            installOrder,
-            ...additional,
-          },
-        ],
+        localMods: [...state.localMods, applyUpdateMetadata(newMod)],
       };
     }),
 
@@ -115,13 +181,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
           : -1;
 
-      const newMod = {
+      const baseMod: LocalMod = {
         ...mod,
         status: markAsInstalled ? ModStatus.Installed : ModStatus.Downloaded,
         downloadedAt: new Date(),
         installedVpks: markAsInstalled ? [filePath] : [],
         installOrder: markAsInstalled ? maxOrder + 1 : undefined,
+        installedRemoteUpdatedAt: markAsInstalled
+          ? normalizeDateValue(mod.remoteUpdatedAt)
+          : undefined,
       };
+
+      const newMod = applyUpdateMetadata(baseMod);
 
       logger.info("Adding new mod to store and enabling in current profile", {
         modId: newMod.id,
@@ -182,14 +253,31 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     }
 
     return set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        status: mod.remoteId === remoteId ? status : mod.status,
-        downloadedAt:
-          status === ModStatus.Downloaded && mod.status !== ModStatus.Installed
+      localMods: state.localMods.map((existing) => {
+        if (existing.remoteId !== remoteId) {
+          return applyUpdateMetadata(existing);
+        }
+
+        const downloadedAt =
+          status === ModStatus.Downloaded &&
+          existing.status !== ModStatus.Installed
             ? new Date()
-            : undefined,
-      })),
+            : existing.downloadedAt;
+
+        const installedRemoteUpdatedAt =
+          status === ModStatus.Installed
+            ? normalizeDateValue(existing.remoteUpdatedAt)
+            : existing.installedRemoteUpdatedAt;
+
+        const updatedMod: LocalMod = {
+          ...existing,
+          status,
+          downloadedAt,
+          installedRemoteUpdatedAt,
+        };
+
+        return applyUpdateMetadata(updatedMod);
+      }),
     }));
   },
 
@@ -203,7 +291,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     }),
 
-  setMods: (mods) => set({ localMods: mods }),
+  setMods: (mods) =>
+    set({ localMods: mods.map((mod) => applyUpdateMetadata(mod)) }),
 
   clearMods: () => set({ localMods: [], modProgress: {} }),
 
@@ -227,22 +316,54 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     fileTree?: ModFileTree,
   ) =>
     set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        status: mod.remoteId === remoteId ? ModStatus.Installed : mod.status,
-        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
-        installedFileTree:
-          mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
-      })),
+      localMods: state.localMods.map((existing) => {
+        if (existing.remoteId !== remoteId) {
+          return applyUpdateMetadata(existing);
+        }
+
+        const latestRemoteTimestamp = normalizeDateValue(
+          existing.remoteUpdatedAt,
+        );
+
+        const updatedMod: LocalMod = {
+          ...existing,
+          status: ModStatus.Installed,
+          installedVpks: vpks,
+          installedFileTree: fileTree,
+          installedRemoteUpdatedAt:
+            latestRemoteTimestamp ?? existing.installedRemoteUpdatedAt,
+        };
+
+        return applyUpdateMetadata(updatedMod);
+      }),
     })),
 
   setSelectedDownload: (remoteId: string, download: ModDownloadItem) =>
     set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        selectedDownload:
-          mod.remoteId === remoteId ? download : mod.selectedDownload,
-      })),
+      localMods: state.localMods.map((existing) => {
+        if (existing.remoteId !== remoteId) {
+          return applyUpdateMetadata(existing);
+        }
+
+        return applyUpdateMetadata({
+          ...existing,
+          selectedDownload: download,
+        });
+      }),
+    })),
+
+  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) =>
+    set((state) => ({
+      localMods: state.localMods.map((existing) => {
+        if (existing.remoteId !== remoteId) {
+          return applyUpdateMetadata(existing);
+        }
+
+        return applyUpdateMetadata({
+          ...existing,
+          downloads,
+        });
+      }),
     })),
 
   setAnalysisResult: (result) => set({ analysisResult: result }),
@@ -252,20 +373,34 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setModOrder: (remoteId: string, order: number) =>
     set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        installOrder: mod.remoteId === remoteId ? order : mod.installOrder,
-      })),
+      localMods: state.localMods.map((mod) => {
+        if (mod.remoteId !== remoteId) {
+          return mod;
+        }
+
+        if (mod.installOrder === order) {
+          return mod;
+        }
+
+        return applyUpdateMetadata({
+          ...mod,
+          installOrder: order,
+        });
+      }),
     })),
 
   reorderMods: (orderedRemoteIds: string[]) =>
     set((state) => ({
       localMods: state.localMods.map((mod) => {
         const newOrder = orderedRemoteIds.indexOf(mod.remoteId);
-        return {
+        if (newOrder < 0 || newOrder === mod.installOrder) {
+          return mod;
+        }
+
+        return applyUpdateMetadata({
           ...mod,
-          installOrder: newOrder >= 0 ? newOrder : mod.installOrder,
-        };
+          installOrder: newOrder,
+        });
       }),
     })),
 
@@ -283,18 +418,20 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         localMods: state.localMods.map((mod) => {
           const newVpks = vpkMap.get(mod.remoteId);
-          if (newVpks) {
-            logger.info("Updating VPKs for mod", {
-              remoteId: mod.remoteId,
-              oldVpks: mod.installedVpks,
-              newVpks,
-            });
-            return {
-              ...mod,
-              installedVpks: newVpks,
-            };
+          if (!newVpks) {
+            return mod;
           }
-          return mod;
+
+          logger.info("Updating VPKs for mod", {
+            remoteId: mod.remoteId,
+            oldVpks: mod.installedVpks,
+            newVpks,
+          });
+
+          return applyUpdateMetadata({
+            ...mod,
+            installedVpks: newVpks,
+          });
         }),
       };
     }),
@@ -374,10 +511,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
       const migratedMods = state.localMods.map((mod) => {
         const newOrder = modOrderUpdates.get(mod.remoteId);
-        return {
+        if (newOrder === undefined) {
+          return mod;
+        }
+
+        return applyUpdateMetadata({
           ...mod,
-          installOrder: newOrder !== undefined ? newOrder : mod.installOrder,
-        };
+          installOrder: newOrder,
+        });
       });
 
       logger.info("Legacy mod migration completed", {
@@ -390,4 +531,48 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     });
   },
+
+  syncRemoteMods: (remoteMods) =>
+    set((state) => {
+      if (!Array.isArray(remoteMods) || remoteMods.length === 0) {
+        return state;
+      }
+
+      const remoteById = new Map(remoteMods.map((mod) => [mod.remoteId, mod]));
+
+      const mergedMods = state.localMods.map((localMod) => {
+        const remote = remoteById.get(localMod.remoteId);
+        if (!remote) {
+          return applyUpdateMetadata(localMod);
+        }
+
+        const merged = {
+          ...localMod,
+          ...remote,
+        } as LocalMod;
+
+        return applyUpdateMetadata(merged);
+      });
+
+      return {
+        ...state,
+        localMods: mergedMods,
+      };
+    }),
+
+  upsertRemoteMod: (remoteMod) =>
+    set((state) => ({
+      localMods: state.localMods.map((localMod) => {
+        if (localMod.remoteId !== remoteMod.remoteId) {
+          return applyUpdateMetadata(localMod);
+        }
+
+        const merged = {
+          ...localMod,
+          ...remoteMod,
+        } as LocalMod;
+
+        return applyUpdateMetadata(merged);
+      }),
+    })),
 });
