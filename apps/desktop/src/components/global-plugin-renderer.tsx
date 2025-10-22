@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import logger from "@/lib/logger";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import type { PluginModule } from "@/plugins/types";
 
 const GlobalPluginRenderer = () => {
@@ -9,18 +10,36 @@ const GlobalPluginRenderer = () => {
     Record<string, PluginModule>
   >({});
   const enabledPlugins = usePersistedStore((s) => s.enabledPlugins);
+  const { data: featureFlags } = useFeatureFlags();
 
   // Memoize plugins to prevent infinite re-renders
   const plugins = useMemo(() => getPlugins(), []);
 
-  // Create a stable reference for enabled plugin IDs
-  const enabledPluginIds = useMemo(
-    () =>
-      Object.entries(enabledPlugins)
-        .filter(([, enabled]) => !!enabled)
-        .map(([id]) => id),
-    [enabledPlugins],
-  );
+  // Create a map of feature flags for quick lookup
+  const featureFlagMap = useMemo(() => {
+    const flagMap = new Map<string, boolean>();
+    if (featureFlags) {
+      for (const flag of featureFlags) {
+        flagMap.set(flag.name, flag.enabled);
+      }
+    }
+    return flagMap;
+  }, [featureFlags]);
+
+  // Check if a plugin is enabled considering both local and feature flag configuration
+  const isPluginEnabled = useMemo(() => {
+    return (pluginId: string) => {
+      // Check feature flag first (defaults to true if no flag exists)
+      const flagName = `plugin-${pluginId}`;
+      const flagEnabled = featureFlagMap.get(flagName) ?? true;
+      if (!flagEnabled) {
+        return false;
+      }
+      
+      // Then check local configuration
+      return enabledPlugins[pluginId] ?? false;
+    };
+  }, [enabledPlugins, featureFlagMap]);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +48,7 @@ const GlobalPluginRenderer = () => {
 
       for (const plugin of plugins) {
         if (
-          enabledPluginIds.includes(plugin.manifest.id) &&
+          isPluginEnabled(plugin.manifest.id) &&
           plugin.entryImporter
         ) {
           try {
@@ -73,7 +92,7 @@ const GlobalPluginRenderer = () => {
     return () => {
       cancelled = true;
     };
-  }, [enabledPluginIds, plugins]);
+  }, [plugins, isPluginEnabled]);
 
   return (
     <>
