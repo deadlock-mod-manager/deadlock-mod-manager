@@ -669,10 +669,14 @@
       "previewComingSoon": "Vorschau folgt bald",
       "pickColor": "Farbe wählen",
       "lineColorDialogTitle": "Linienfarbe",
-      "lineColorDialogDescription": "Farbe mit H, S, L anpassen oder Hex-Wert einfügen.",
+      "lineColorDialogDescription": "Farbe mit H, S, V anpassen oder Hex-Wert einfügen.",
       "hue": "Farbton",
       "saturation": "Sättigung",
       "lightness": "Helligkeit",
+      "eyedropper": "Pipette",
+      "r": "R",
+      "g": "G",
+      "b": "B",
       "apply": "Anwenden"
     },
     "nightshift": {
