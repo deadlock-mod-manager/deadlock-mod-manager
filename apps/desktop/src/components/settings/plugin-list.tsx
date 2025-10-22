@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import type { LoadedPlugin } from "@/types/plugins";
 
 export const PluginList = () => {
@@ -20,11 +21,32 @@ export const PluginList = () => {
   const plugins = getPlugins();
   const navigate = useNavigate();
   const { togglePlugin, isPluginEnabled } = usePersistedStore();
+  const { data: featureFlags } = useFeatureFlags();
   const [expandedPlugins, setExpandedPlugins] = useState<Set<string>>(
     new Set(),
   );
 
-  if (plugins.length === 0) {
+  // Create a map of feature flags for quick lookup
+  const featureFlagMap = new Map<string, boolean>();
+  if (featureFlags) {
+    for (const flag of featureFlags) {
+      featureFlagMap.set(flag.name, flag.enabled);
+    }
+  }
+
+  // Since plugins are already filtered by feature flags, we only need to check local configuration
+  const isPluginEnabledLocally = (pluginId: string) => {
+    return isPluginEnabled(pluginId);
+  };
+
+  // Filter plugins based on feature flags
+  const visiblePlugins = plugins.filter((plugin) => {
+    const flagName = `plugin-${plugin.manifest.id}`;
+    const flagEnabled = featureFlagMap.get(flagName) ?? true;
+    return flagEnabled;
+  });
+
+  if (visiblePlugins.length === 0) {
     return (
       <div className='text-muted-foreground text-sm'>
         {t("common.none") ?? ""}
@@ -47,7 +69,7 @@ export const PluginList = () => {
   return (
     <div className='rounded-md border'>
       <ul className='divide-y'>
-        {plugins.map((p: LoadedPlugin) => {
+        {visiblePlugins.map((p: LoadedPlugin) => {
           const isExpanded = expandedPlugins.has(p.manifest.id);
           return (
             <li key={p.manifest.id}>
@@ -87,7 +109,7 @@ export const PluginList = () => {
                 </div>
                 <div className='ml-4 flex items-center gap-2 flex-shrink-0'>
                   <Switch
-                    checked={isPluginEnabled(p.manifest.id)}
+                    checked={isPluginEnabledLocally(p.manifest.id)}
                     onCheckedChange={() => {
                       togglePlugin(p.manifest.id);
                     }}

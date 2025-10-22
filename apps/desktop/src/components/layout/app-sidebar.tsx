@@ -31,6 +31,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -221,9 +222,13 @@ export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
-  const sudoEnabled = usePersistedStore(
+  const localSudoEnabled = usePersistedStore(
     (state) => state.enabledPlugins.sudo ?? false,
   );
+  const { isEnabled: apiSudoEnabled } = useFeatureFlag("plugin-sudo");
+  
+  // Plugin is enabled only if both local and feature flag configuration allow it
+  const sudoEnabled = localSudoEnabled && apiSudoEnabled;
 
   let allItems = getSidebarItems(t, developerMode);
 
