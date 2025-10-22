@@ -1,0 +1,138 @@
+---
+title: Themes Plugin
+description: Pre-defined and custom themes with background and accent controls
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Themes Plugin
+
+The Themes plugin provides pre-defined visual themes and a comprehensive custom theme builder. It controls background imagery, accent lines, icons, and preview assets, and can disable conflicting plugins (e.g., Background) when active.
+
+## Quick Start
+
+1. Go to Settings → Plugins
+2. Enable "Themes"
+3. Click "Open" to configure
+4. Choose between Pre-defined or Custom themes
+
+## Pre-defined Themes
+
+![Themes Plugin – Pre-defined Section](/assets/plugins-themes-pre-1.png)
+
+The Pre-defined section includes official themes and your custom exported themes:
+
+### Official Themes
+
+- **Nightshift**: A teal-accented cyberpunk theme with elegant UI elements
+- **Bloodmoon**: A dark theme with black-red gradients and crimson accents
+
+### Using Pre-defined Themes
+
+![Themes Plugin – Active Pre-defined Theme](/assets/plugins-themes-pre-2.png)
+
+1. Select the Pre-defined tab
+2. Choose a theme from the grid
+3. Click "Activate" to apply the theme
+4. Click "Deactivate" to return to default
+
+### Custom Exported Themes
+
+![Themes Plugin – Custom Theme in Pre-defined](/assets/plugins-themes-pre-3.png)
+
+Custom themes you've exported appear in the Pre-defined section with additional options:
+
+- **Edit**: Modify the theme settings
+- **Delete**: Remove the custom theme (only for user-created themes)
+- **Activate/Deactivate**: Same as official themes
+
+**Note**: Official themes (Nightshift, Bloodmoon) cannot be deleted.
+
+## Custom Theme Builder
+
+![Themes Plugin – Custom Builder](/assets/plugins-themes-custom-1.png)
+
+Switch to the Custom tab to create your own themes:
+
+### Theme Components
+
+- **Accent Line Color**: Choose the color for UI accent lines
+- **Theme Icon**: Upload a custom icon displayed in the top-left corner
+- **Background Image**: Set via URL or upload local file
+- **Background Opacity**: Control transparency (0-100%)
+
+### Background Options
+
+- **URL Source**: Enter direct image URL
+- **Local Upload**: Choose image from your computer
+- **Opacity Control**: Adjust background transparency with slider
+
+### Export to Pre-defined
+
+![Themes Plugin – Export Dialog](/assets/plugins-themes-custom-2.png)
+
+Export your custom theme to make it permanent:
+
+1. Configure your theme settings
+2. Click "Export to Pre-defined"
+3. Fill in the export dialog:
+   - **Name**: Theme name
+   - **Description**: Theme description
+   - **Sub Description**: Additional details
+   - **Preview Image**: Upload preview image (optional)
+4. Click "Save" to add to Pre-defined themes
+
+## Theme Management
+
+### Editing Custom Themes
+
+- Custom themes in Pre-defined section can be edited
+- Click "Edit" to modify settings
+- Changes are applied immediately
+- Use "Save" or "Cancel" to confirm changes
+
+### Deleting Themes
+
+- Only user-created themes can be deleted
+- Official themes (Nightshift, Bloodmoon) are permanent
+- Deleted themes cannot be recovered
+
+## Tips
+
+- Background-heavy themes work best with lower opacity (20-40%)
+- Use high-resolution images for large displays
+- Optimize file sizes for better performance
+- Preview images help identify themes quickly
+- When Themes is active, Background plugin may be disabled
+
+## Troubleshooting
+
+<Callout type="warning">
+**Theme Not Applying**
+- Ensure plugin is enabled
+- Check if Background plugin conflicts
+- Verify theme settings are saved
+- Try switching between themes
+</Callout>
+
+<Callout type="warning">
+**Background Not Visible**
+- Check opacity settings
+- Verify image URL is accessible
+- Try uploading local image instead
+- Ensure image format is supported
+</Callout>
+
+<Callout type="warning">
+**Export Issues**
+- Verify theme name is not empty
+- Check image file size limits
+- Ensure all required fields are filled
+- Try different image formats
+</Callout>
+
+## Learn More
+
+- Developer documentation: [Click Here](/docs/developer-docs/plugins/themes)
+
+
