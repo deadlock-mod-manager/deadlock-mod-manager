@@ -22,7 +22,6 @@ type CheckState = "idle" | "checking" | "none" | "found" | "analyzing";
 export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
   const { t } = useTranslation();
   const [checkState, setCheckState] = useState<CheckState>("idle");
-  const [hasVpks, setHasVpks] = useState(false);
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeAddonsResult | null>(null);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
@@ -32,7 +31,6 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
     setCheckState("checking");
     try {
       const exists = await invoke<boolean>("check_addons_exist");
-      setHasVpks(exists);
       setCheckState(exists ? "found" : "none");
       logger.info("Checked for existing addons", { exists });
 

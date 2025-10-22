@@ -88,8 +88,6 @@ const Downloads = () => {
     [downloads],
   );
 
-  const handleOpenFolder = () => {};
-
   return (
     <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full overflow-y-auto pl-4 pr-2'>
       <div className='mb-6 flex items-center justify-between'>

@@ -243,6 +243,10 @@ export const useModProcessor = () => {
       updatedAt: new Date(modMetadata.createdAt),
       downloadCount: 0,
       likes: 0,
+      isBlacklisted: false,
+      blacklistReason: null,
+      blacklistedAt: null,
+      blacklistedBy: null,
       category,
     };
 
@@ -320,6 +324,10 @@ export const useModProcessor = () => {
       updatedAt: new Date(modMetadata.createdAt),
       downloadCount: 0,
       likes: 0,
+      isBlacklisted: false,
+      blacklistReason: null,
+      blacklistedAt: null,
+      blacklistedBy: null,
       category,
     };
 

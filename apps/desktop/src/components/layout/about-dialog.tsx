@@ -36,7 +36,7 @@ export const AboutDialog = () => {
   if (!data) {
     return null;
   }
-  const { version, name, tauriVersion } = data;
+  const { version, tauriVersion } = data;
 
   return (
     <DialogContent className='overflow-clip pb-2'>

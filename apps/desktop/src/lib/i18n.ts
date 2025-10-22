@@ -5,11 +5,15 @@ import { initReactI18next } from "react-i18next";
 import arTranslation from "@/locales/ar/translation.json" with { type: "json" };
 import deTranslation from "@/locales/de/translation.json" with { type: "json" };
 import enTranslation from "@/locales/en/translation.json" with { type: "json" };
+import esTranslation from "@/locales/es/translation.json" with { type: "json" };
 import frTranslation from "@/locales/fr/translation.json" with { type: "json" };
 import gswTranslation from "@/locales/gsw/translation.json" with {
   type: "json",
 };
 import plTranslation from "@/locales/pl/translation.json" with { type: "json" };
+import ptBRTranslation from "@/locales/pt-BR/translation.json" with {
+  type: "json",
+};
 import ruTranslation from "@/locales/ru/translation.json" with { type: "json" };
 import thTranslation from "@/locales/th/translation.json" with { type: "json" };
 import trTranslation from "@/locales/tr/translation.json" with { type: "json" };
@@ -54,6 +58,12 @@ const resources = {
   "zh-TW": {
     translation: zhTWTranslation,
   },
+  es: {
+    translation: esTranslation,
+  },
+  "pt-BR": {
+    translation: ptBRTranslation,
+  },
 };
 
 i18n
@@ -74,6 +84,8 @@ i18n
       "ru",
       "zh-CN",
       "zh-TW",
+      "es",
+      "pt-BR",
     ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default

@@ -21,6 +21,8 @@ const languages = [
   { code: "ru", name: "Русский", flag: "🇷🇺" },
   { code: "zh-CN", name: "简体中文", flag: "🇨🇳" },
   { code: "zh-TW", name: "繁體中文", flag: "🇹🇼" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷" },
 ];
 
 export const LanguageSettings = () => {

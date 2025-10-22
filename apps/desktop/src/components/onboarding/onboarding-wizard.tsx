@@ -23,6 +23,8 @@ type OnboardingWizardProps = {
   onSkip: () => void;
 };
 
+const TOTAL_STEPS = 3;
+
 export const OnboardingWizard = ({
   open,
   onComplete,
@@ -30,15 +32,13 @@ export const OnboardingWizard = ({
 }: OnboardingWizardProps) => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
-  const [step1Complete, setStep1Complete] = useState(false);
-  const [step2Complete, setStep2Complete] = useState(false);
-  const [step3Complete, setStep3Complete] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
-  const totalSteps = 3;
-  const progress = (currentStep / totalSteps) * 100;
+  const progress = (currentStep / TOTAL_STEPS) * 100;
+  const isCurrentStepComplete = completedSteps.has(currentStep);
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
+    if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
       onComplete();
@@ -51,27 +51,16 @@ export const OnboardingWizard = ({
     }
   };
 
-  const canProceed = () => {
-    if (currentStep === 1) return step1Complete;
-    if (currentStep === 2) return step2Complete;
-    if (currentStep === 3) return true;
-    return false;
+  const handleStepComplete = (step: number) => {
+    setCompletedSteps((prev) => new Set(prev).add(step));
   };
 
-  const handleStep1Complete = () => {
-    setStep1Complete(true);
-  };
-
-  const handleStep2Complete = () => {
-    setStep2Complete(true);
-  };
-
-  const handleStep2Error = () => {
-    setStep2Complete(false);
-  };
-
-  const handleStep3Complete = () => {
-    setStep3Complete(true);
+  const handleStepError = (step: number) => {
+    setCompletedSteps((prev) => {
+      const next = new Set(prev);
+      next.delete(step);
+      return next;
+    });
   };
 
   return (
@@ -84,7 +73,7 @@ export const OnboardingWizard = ({
             <Badge variant='secondary'>
               {t("onboarding.stepIndicator", {
                 current: currentStep,
-                total: totalSteps,
+                total: TOTAL_STEPS,
               })}
             </Badge>
           </div>
@@ -97,18 +86,18 @@ export const OnboardingWizard = ({
           <Progress value={progress} className='h-2 mb-6' />
 
           {currentStep === 1 && (
-            <OnboardingStepGamePath onComplete={handleStep1Complete} />
+            <OnboardingStepGamePath onComplete={() => handleStepComplete(1)} />
           )}
 
           {currentStep === 2 && (
             <OnboardingStepApi
-              onComplete={handleStep2Complete}
-              onError={handleStep2Error}
+              onComplete={() => handleStepComplete(2)}
+              onError={() => handleStepError(2)}
             />
           )}
 
           {currentStep === 3 && (
-            <OnboardingStepAddons onComplete={handleStep3Complete} />
+            <OnboardingStepAddons onComplete={() => handleStepComplete(3)} />
           )}
         </div>
 
@@ -127,8 +116,8 @@ export const OnboardingWizard = ({
             <Button
               variant='default'
               onClick={handleNext}
-              disabled={!canProceed()}>
-              {currentStep === totalSteps
+              disabled={!isCurrentStepComplete && currentStep !== 3}>
+              {currentStep === TOTAL_STEPS
                 ? t("onboarding.finish")
                 : t("onboarding.next")}
             </Button>

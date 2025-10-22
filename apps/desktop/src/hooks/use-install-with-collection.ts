@@ -69,7 +69,6 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         deadlockMod: {
           id: modData.remoteId,
           name: modData.name,
-          path: modData.path,
           file_tree: modData.file_tree,
         },
       })) as InstallableMod;

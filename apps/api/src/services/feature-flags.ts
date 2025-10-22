@@ -7,6 +7,7 @@ import {
   SegmentRepository,
   SegmentService,
 } from "@deadlock-mods/feature-flags";
+import { err, ok, ResultAsync } from "neverthrow";
 import { logger as mainLogger } from "../lib/logger";
 
 const logger = mainLogger.child().withContext({
@@ -45,36 +46,45 @@ export class FeatureFlagsServiceSingleton {
    *
    * @param featureFlagName - The name of the feature flag
    * @param userId - Optional user ID for segment-based overrides
-   * @returns True if the feature flag is enabled
+   * @returns Result with boolean indicating if the feature flag is enabled
    */
-  async isFeatureEnabled(
+  isFeatureEnabled(
     featureFlagName: string,
     userId?: string,
-  ): Promise<boolean> {
-    try {
-      return await this.featureFlagService.isFeatureFlagEnabled(
-        featureFlagName,
-        { shouldThrow: false, userId },
-      );
-    } catch (error) {
+  ): ResultAsync<boolean, Error> {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.isFeatureFlagEnabled(featureFlagName, {
+        shouldThrow: false,
+        userId,
+      }),
+      (error) => error as Error,
+    ).mapErr((error) => {
       logger
         .withError(error)
         .withMetadata({ featureFlagName, userId })
-        .warn("Failed to check feature flag, defaulting to false");
-      return false;
-    }
+        .warn("Failed to check feature flag");
+      return error;
+    });
   }
 
   /**
    * Get all feature flags
    */
-  async getAllFeatureFlags() {
-    try {
-      return await this.featureFlagService.getAllFeatureFlags();
-    } catch (error) {
-      logger.withError(error).warn("Failed to get all feature flags");
-      throw error;
-    }
+  getAllFeatureFlags() {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.getAllFeatureFlags(),
+      (error) => error as Error,
+    )
+      .andThen((result) => {
+        if (result.isErr()) {
+          return err(result.error);
+        }
+        return ok(result.value);
+      })
+      .mapErr((error) => {
+        logger.withError(error).warn("Failed to get all feature flags");
+        return error;
+      });
   }
 
   /**
@@ -95,10 +105,13 @@ export class FeatureFlagsServiceSingleton {
    * Bootstrap feature flags by registering definitions
    *
    * @param definitions - Array of feature flag definitions to register
-   * @returns Number of successfully registered flags
+   * @returns Result with number of successfully registered flags
    */
-  async bootstrap(definitions: FeatureFlagDefinition[]): Promise<number> {
-    return this.registry.bootstrap(definitions);
+  bootstrap(definitions: FeatureFlagDefinition[]): ResultAsync<number, Error> {
+    return ResultAsync.fromPromise(
+      this.registry.bootstrap(definitions),
+      (error) => error as Error,
+    );
   }
 
   /**
@@ -107,7 +120,7 @@ export class FeatureFlagsServiceSingleton {
    * @param segmentId - The ID of the segment
    * @param userId - The ID of the user
    */
-  async addUserToSegment(segmentId: string, userId: string) {
+  addUserToSegment(segmentId: string, userId: string) {
     return this.segmentService.addUserToSegment(segmentId, userId);
   }
 
@@ -117,7 +130,7 @@ export class FeatureFlagsServiceSingleton {
    * @param segmentId - The ID of the segment
    * @param userId - The ID of the user
    */
-  async removeUserFromSegment(segmentId: string, userId: string) {
+  removeUserFromSegment(segmentId: string, userId: string) {
     return this.segmentService.removeUserFromSegment(segmentId, userId);
   }
 
@@ -128,11 +141,7 @@ export class FeatureFlagsServiceSingleton {
    * @param featureFlagId - The ID of the feature flag
    * @param value - The override value
    */
-  async setSegmentOverride(
-    segmentId: string,
-    featureFlagId: string,
-    value: unknown,
-  ) {
+  setSegmentOverride(segmentId: string, featureFlagId: string, value: unknown) {
     return this.segmentService.createSegmentFeatureFlagOverride(
       segmentId,
       featureFlagId,
@@ -145,24 +154,26 @@ export class FeatureFlagsServiceSingleton {
    *
    * @param featureFlagName - The name of the feature flag
    * @param userId - Optional user ID for segment-based overrides
-   * @returns The feature flag value
+   * @returns Result with the feature flag value
    */
-  async getFeatureFlagValue<T = unknown>(
+  getFeatureFlagValue<T = unknown>(
     featureFlagName: string,
     userId?: string,
-  ): Promise<T> {
-    try {
-      return await this.featureFlagService.getFeatureFlagValue<T>(
-        featureFlagName,
-        { shouldThrow: false, userId },
-      );
-    } catch (error) {
+    shouldThrow?: boolean,
+  ): ResultAsync<T, Error> {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.getFeatureFlagValue<T>(featureFlagName, {
+        shouldThrow: shouldThrow ?? false,
+        userId,
+      }),
+      (error) => error as Error,
+    ).mapErr((error) => {
       logger
         .withError(error)
         .withMetadata({ featureFlagName, userId })
-        .warn("Failed to get feature flag value, returning null");
-      return null as T;
-    }
+        .warn("Failed to get feature flag value");
+      return error;
+    });
   }
 }
 
