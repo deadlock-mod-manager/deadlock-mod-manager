@@ -263,8 +263,6 @@ This project was only possible thanks to the amazing open source community, espe
 
 [downloads-status]: https://img.shields.io/github/downloads/stormix/deadlock-modmanager/latest/total
 [downloads-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
-[stars-status]: https://img.shields.io/github/stars/stormix/deadlock-modmanager
-[stars-url]: https://github.com/stormix/deadlock-modmanager/stargazers
 [release-status]: https://img.shields.io/github/v/release/stormix/deadlock-modmanager
 [release-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
 [issues-status]: https://img.shields.io/github/issues/stormix/deadlock-modmanager
@@ -275,18 +273,8 @@ This project was only possible thanks to the amazing open source community, espe
 [aur-url]: https://aur.archlinux.org/packages/deadlock-modmanager
 [tauri-status]: https://img.shields.io/badge/built_with-Tauri-24C8DB?logo=tauri
 [tauri-url]: https://tauri.app/
-[typescript-status]: https://img.shields.io/badge/typescript-007ACC?logo=typescript&logoColor=white
-[typescript-url]: https://www.typescriptlang.org/
-[rust-status]: https://img.shields.io/badge/rust-000000?logo=rust&logoColor=white
-[rust-url]: https://www.rust-lang.org/
-[commit-activity-status]: https://img.shields.io/github/commit-activity/m/stormix/deadlock-modmanager
-[commit-activity-url]: https://github.com/stormix/deadlock-modmanager/graphs/commit-activity
-[last-commit-status]: https://img.shields.io/github/last-commit/stormix/deadlock-modmanager
-[last-commit-url]: https://github.com/stormix/deadlock-modmanager/commits/main
 [contributors-status]: https://img.shields.io/github/contributors/stormix/deadlock-modmanager
 [contributors-url]: https://github.com/stormix/deadlock-modmanager/graphs/contributors
-[forks-status]: https://img.shields.io/github/forks/stormix/deadlock-modmanager
-[forks-url]: https://github.com/stormix/deadlock-modmanager/network/members
 [windows-status]: https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white
 [windows-url]: https://github.com/stormix/deadlock-modmanager/releases/latest
 [macos-status]: https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white

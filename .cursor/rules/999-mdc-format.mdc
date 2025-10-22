@@ -120,7 +120,7 @@ When working with files in Cursor, rules are automatically applied when:
 ## Creating/Renaming/Removing Rules
 
    - When a rule file is added/renamed/removed, update also the list under 010-workflow.mdc.
-   - When changs are made to multiple `mdc` files from a single request, review also [999-mdc-format](mdc:(mdc:.cursor/rules/999-mdc-format.mdc)) to consider whether to update it too.
+   - When changes are made to multiple `mdc` files from a single request, review also [999-mdc-format](mdc:.cursor/rules/999-mdc-format.mdc) to consider whether to update it too.
 
 ## Updating Rules
 

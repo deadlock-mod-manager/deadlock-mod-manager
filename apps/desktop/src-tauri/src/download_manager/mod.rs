@@ -309,7 +309,16 @@ impl DownloadManager {
     );
 
     // Extract archives and copy VPKs to addons with prefix
-    if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files).await {
+    let processing_result = tokio::task::spawn_blocking({
+      let task = task.clone();
+      let downloaded_files = downloaded_files.clone();
+
+      move || Self::process_downloaded_files(&task, &downloaded_files)
+    })
+    .await
+    .map_err(|join_err| Error::DownloadFailed(format!("Join error: {}", join_err)))?;
+
+    if let Err(e) = processing_result {
       log::error!(
         "Failed to process downloaded files for mod {}: {}",
         mod_id,
@@ -342,7 +351,7 @@ impl DownloadManager {
     Ok(())
   }
 
-  async fn process_downloaded_files(
+  fn process_downloaded_files(
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
   ) -> Result<(), Error> {

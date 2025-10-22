@@ -15,7 +15,7 @@ A package in this monorepo `@deadlock-mods/logging` provides structured logging 
 - Context support
 - Error handling
 - Request-scoped logging
-- Type-safe logthods
+- Type-safe methods
 - Environment-aware formatting
 
 The logging format depends on the `NODE_ENV` environment variable:

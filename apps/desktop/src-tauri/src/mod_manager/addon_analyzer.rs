@@ -579,8 +579,9 @@ impl AddonAnalyzer {
       .modified()
       .ok()
       .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-      .map(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0))
-      .flatten();
+      .and_then(|duration| {
+        chrono::DateTime::<chrono::Utc>::from_timestamp(duration.as_secs() as i64, 0)
+      });
 
     // Only read the file if it's reasonably sized (avoid huge files)
     let file_size = metadata.len();
