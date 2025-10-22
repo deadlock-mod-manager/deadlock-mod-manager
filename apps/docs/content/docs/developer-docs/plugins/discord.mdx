@@ -1,0 +1,128 @@
+---
+title: Discord Plugin
+description: Technical details for the Discord Rich Presence plugin
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Discord Plugin
+
+Technical reference for the Discord plugin that integrates Discord Rich Presence using Tauri commands.
+
+## Manifest
+
+```json
+{
+  "id": "discord",
+  "nameKey": "plugins.discord.title",
+  "descriptionKey": "plugins.discord.description",
+  "version": "0.0.1",
+  "author": "Skeptic",
+  "icon": "public/icon.svg",
+  "entry": "./index.tsx"
+}
+```
+
+## Settings Schema
+
+```typescript
+type DiscordSettings = {
+  details?: string;           // First line of Rich Presence
+  state?: string;             // Second line of Rich Presence
+  showElapsedTime?: boolean;  // Whether to show elapsed time
+};
+
+const DEFAULT_SETTINGS: DiscordSettings = {
+  details: "Managing Deadlock Mods",
+  state: "Using Deadlock Mod Manager",
+  showElapsedTime: true,
+};
+```
+
+## Implementation Details
+
+### Discord Application ID
+
+```typescript
+const DISCORD_APP_ID = "1425598471842562068" as const;
+```
+
+Uses the official Deadlock Mod Manager Discord application. No per-user setup required.
+
+### Tauri Commands
+
+The plugin uses two Tauri commands:
+
+- `set_discord_presence`: Sets Rich Presence with activity data
+- `clear_discord_presence`: Clears current presence
+
+### Activity Structure
+
+```typescript
+const activity = {
+  details: settings?.details || DEFAULT_SETTINGS.details,
+  state: settings?.state || DEFAULT_SETTINGS.state,
+  large_image_key: null,      // No custom images
+  large_image_text: null,
+  small_image_key: null,
+  small_image_text: null,
+  start_timestamp: settings?.showElapsedTime !== false ? startTimestamp : null,
+};
+```
+
+### Connection Strategy
+
+- **Delayed Connection**: 1-second timeout before attempting connection
+- **Retry Logic**: Up to 3 retry attempts with 2-second intervals
+- **Cleanup**: Properly clears presence on unmount/disable
+- **Cancellation**: Uses refs to prevent race conditions
+
+### Error Handling
+
+```typescript
+// Retry with exponential backoff
+const attemptConnection = async (retries = 3) => {
+  try {
+    await invoke("set_discord_presence", { applicationId, activity });
+  } catch (error) {
+    if (retries > 0) {
+      setTimeout(() => attemptConnection(retries - 1), 2000);
+    } else {
+      logger.warn("Failed to set Discord presence after all attempts");
+    }
+  }
+};
+```
+
+## Global Rendering
+
+The `Render` component returns `null` - this plugin doesn't render UI elements. It only manages Discord Rich Presence state.
+
+## State Management
+
+- Settings stored under `pluginSettings["discord"]`
+- Uses `usePersistedStore` for settings persistence
+- Start timestamp calculated once on mount for consistent elapsed time
+
+## Troubleshooting
+
+<Callout type="warning">
+**Connection Issues**
+- Ensure Discord client is running and logged in
+- Check Discord Rich Presence is enabled in Discord settings
+- Plugin waits 1 second before connecting to avoid rapid cycles
+</Callout>
+
+<Callout type="warning">
+**Presence Not Updating**
+- Verify settings are saved correctly
+- Check browser console for Tauri command errors
+- Try disabling and re-enabling the plugin
+</Callout>
+
+## Related Docs
+
+- User guide: [/docs/plugins/discord](/docs/plugins/discord)
+- Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)
+
+

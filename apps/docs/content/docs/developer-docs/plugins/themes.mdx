@@ -1,0 +1,353 @@
+---
+title: Themes Plugin
+description: Technical details for the Themes plugin with pre-defined and custom theme management
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Themes Plugin
+
+Technical reference for the Themes plugin which provides pre-defined themes, custom theme building, and comprehensive theme management with export/import capabilities.
+
+## Manifest
+
+```json
+{
+  "id": "themes",
+  "nameKey": "plugins.themes.title",
+  "descriptionKey": "plugins.themes.description",
+  "version": "0.0.1",
+  "author": "Skeptic",
+  "authorUrl": "https://github.com/Skeptic-systems",
+  "homepageUrl": "https://docs.deadlockmods.app/plugins/themes",
+  "icon": "public/icon.svg",
+  "tags": ["official"],
+  "entry": "./index.tsx",
+  "disabledPlugins": ["background"]
+}
+```
+
+## Settings Schema
+
+```typescript
+type ThemeSettings = {
+  activeSection: "pre-defined" | "custom";
+  activeTheme?: string;
+  customTheme?: {
+    lineColor: string;
+    iconData?: string;
+    backgroundSource?: "url" | "local";
+    backgroundUrl?: string;
+    backgroundData?: string;
+    backgroundOpacity?: number;
+  };
+  userThemes?: CustomExportedTheme[];
+  editingThemeId?: string;
+};
+
+type CustomExportedTheme = {
+  id: string;
+  name: string;
+  description?: string;
+  subDescription?: string;
+  previewData?: string;
+  lineColor: string;
+  iconData?: string;
+  backgroundSource?: "url" | "local";
+  backgroundUrl?: string;
+  backgroundData?: string;
+  backgroundOpacity?: number;
+  userCreated: true;
+};
+```
+
+## Architecture Overview
+
+### Pre-defined Themes
+
+```typescript
+const PRE_DEFINED_THEMES = [
+  {
+    id: "nightshift",
+    name: "Nightshift",
+    description: "A teal-accented cyberpunk theme with elegant UI elements",
+    component: NightshiftTheme,
+    previewImage: "/src/plugins/themes/public/pre-defiend/nightshift/preview.png",
+  },
+  {
+    id: "bloodmoon",
+    name: "Bloodmoon", 
+    description: "A dark theme with black-red gradients and crimson accents",
+    component: BloodmoonTheme,
+    previewImage: "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
+  },
+];
+```
+
+### Theme Rendering Logic
+
+```typescript
+const Render = () => {
+  const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]);
+  const isEnabled = usePersistedStore((s) => s.enabledPlugins[manifest.id]);
+  
+  if (!isEnabled || !settings.activeTheme) return null;
+
+  // Check for user-created themes first
+  const userTheme = getUserThemes(settings).find(
+    (t) => t.id === settings.activeTheme
+  );
+  if (userTheme) {
+    return <CustomTheme theme={userTheme} />;
+  }
+
+  // Handle custom theme
+  if (settings.activeTheme === "custom") {
+    return <CustomTheme />;
+  }
+
+  // Handle pre-defined themes
+  const activeTheme = PRE_DEFINED_THEMES.find(
+    (theme) => theme.id === settings.activeTheme
+  );
+  
+  if (activeTheme?.component) {
+    const ThemeComponent = activeTheme.component;
+    return <ThemeComponent />;
+  }
+
+  return null;
+};
+```
+
+## Custom Theme Management
+
+### Theme Export System
+
+```typescript
+export const ExportCustomThemeButton = () => {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [subDescription, setSubDescription] = useState("");
+  const [previewData, setPreviewData] = useState<string>("");
+
+  const handleExport = () => {
+    const newTheme: CustomExportedTheme = {
+      id: uuidv4(),
+      name: name.trim(),
+      description: description.trim() || undefined,
+      subDescription: subDescription.trim() || undefined,
+      previewData: previewData || undefined,
+      lineColor: current.customTheme?.lineColor ?? "#6b7280",
+      iconData: current.customTheme?.iconData,
+      backgroundSource: current.customTheme?.backgroundSource,
+      backgroundUrl: current.customTheme?.backgroundUrl,
+      backgroundData: current.customTheme?.backgroundData,
+      backgroundOpacity: current.customTheme?.backgroundOpacity,
+      userCreated: true,
+    };
+
+    const updatedThemes = [...(current.userThemes ?? []), newTheme];
+    setSettings("themes", {
+      ...current,
+      userThemes: updatedThemes,
+    });
+  };
+};
+```
+
+### Theme Editing System
+
+```typescript
+export const beginEditingUserTheme = (id: string) => {
+  const settings = getState().pluginSettings["themes"] as ThemeSettings;
+  const theme = settings.userThemes?.find((t) => t.id === id);
+  
+  if (theme) {
+    setSettings("themes", {
+      ...settings,
+      activeSection: "custom",
+      activeTheme: "custom",
+      customTheme: {
+        lineColor: theme.lineColor,
+        iconData: theme.iconData,
+        backgroundSource: theme.backgroundSource,
+        backgroundUrl: theme.backgroundUrl,
+        backgroundData: theme.backgroundData,
+        backgroundOpacity: theme.backgroundOpacity,
+      },
+      editingThemeId: id,
+    });
+  }
+};
+
+export const saveEditingUserTheme = () => {
+  const settings = getState().pluginSettings["themes"] as ThemeSettings;
+  const editingId = settings.editingThemeId;
+  
+  if (editingId && settings.customTheme) {
+    const updatedThemes = settings.userThemes?.map((theme) =>
+      theme.id === editingId
+        ? {
+            ...theme,
+            lineColor: settings.customTheme!.lineColor,
+            iconData: settings.customTheme!.iconData,
+            backgroundSource: settings.customTheme!.backgroundSource,
+            backgroundUrl: settings.customTheme!.backgroundUrl,
+            backgroundData: settings.customTheme!.backgroundData,
+            backgroundOpacity: settings.customTheme!.backgroundOpacity,
+          }
+        : theme
+    );
+    
+    setSettings("themes", {
+      ...settings,
+      userThemes: updatedThemes,
+      editingThemeId: undefined,
+    });
+  }
+};
+```
+
+## File Structure
+
+```
+src/plugins/themes/
+├── index.tsx                    # Main plugin entry
+├── manifest.json               # Plugin manifest
+├── public/icon.svg            # Plugin icon
+├── custom/
+│   ├── index.ts               # Re-exports
+│   ├── types.ts               # TypeScript definitions
+│   ├── utils.ts               # Theme management utilities
+│   ├── custom-theme.tsx       # Custom theme renderer
+│   ├── color-picker.tsx       # Color picker component
+│   ├── export-dialog.tsx      # Export dialog component
+│   └── custom.tsx             # Deprecated (re-exports)
+└── pre-defiend/
+    ├── nightshift/
+    │   ├── nightshift.tsx     # Nightshift theme component
+    │   ├── ui-elements.tsx    # UI elements
+    │   └── public/            # Assets
+    └── bloodmoon/
+        ├── bloodmoon.tsx      # Bloodmoon theme component
+        ├── ui-elements.tsx    # UI elements
+        └── public/            # Assets
+```
+
+## State Management
+
+### Settings Storage
+
+- Settings stored under `pluginSettings["themes"]`
+- Uses `usePersistedStore` for persistence
+- `userThemes` array stores exported custom themes
+- `editingThemeId` tracks theme being edited
+
+### Theme Activation
+
+```typescript
+// Activate theme
+setSettings(manifest.id, {
+  ...current,
+  activeTheme: themeId,
+});
+
+// Deactivate theme
+setSettings(manifest.id, {
+  ...current,
+  activeTheme: undefined,
+});
+```
+
+## Plugin Conflicts
+
+The Themes plugin automatically disables the Background plugin to prevent conflicts:
+
+```json
+{
+  "disabledPlugins": ["background"]
+}
+```
+
+## Image Handling
+
+### Background Images
+
+- **URL Source**: Direct image URLs
+- **Local Upload**: Base64 encoded images
+- **Opacity Control**: CSS opacity (0-100%)
+
+### Icon Images
+
+- **Upload**: Base64 encoded icons
+- **Display**: Top-left corner positioning
+- **Format**: Any image format supported
+
+### Preview Images
+
+- **Export**: Optional preview for custom themes
+- **Storage**: Base64 encoded in theme data
+- **Display**: Grid view in Pre-defined section
+
+## Error Handling
+
+### Image Loading
+
+```typescript
+<img
+  src={previewImage}
+  onError={(e) => {
+    e.currentTarget.style.display = "none";
+    e.currentTarget.parentElement!.innerHTML =
+      `<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">
+        ${t("plugins.themes.previewComingSoon")}
+      </span>`;
+  }}
+/>
+```
+
+### Validation
+
+- Theme names must be non-empty
+- Image file size limits
+- Supported image formats
+- URL accessibility checks
+
+## Performance Considerations
+
+- Large images should be optimized
+- Base64 encoding increases storage size
+- Preview images cached in memory
+- Theme switching is immediate
+
+## Troubleshooting
+
+<Callout type="warning">
+**Theme Not Rendering**
+- Check if Background plugin is conflicting
+- Verify theme component exists
+- Ensure settings are properly saved
+- Check console for rendering errors
+</Callout>
+
+<Callout type="warning">
+**Export Failures**
+- Verify all required fields are filled
+- Check image file size limits
+- Ensure unique theme names
+- Validate image formats
+</Callout>
+
+<Callout type="warning">
+**Editing Issues**
+- Check `editingThemeId` state
+- Verify theme exists in `userThemes`
+- Ensure proper state synchronization
+- Check for concurrent edits
+</Callout>
+
+## Related Docs
+
+- User guide: [/docs/plugins/themes](/docs/plugins/themes)
+- Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)

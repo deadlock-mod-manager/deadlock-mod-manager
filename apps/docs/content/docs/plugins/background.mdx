@@ -9,6 +9,8 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 The Background plugin allows you to set custom background images with opacity and blur effects.
 
+![Background Plugin – Overview](/assets/plugins-background-1.png)
+
 ## Features
 
 - **Custom Background Images**: Set any image as application background
@@ -25,6 +27,10 @@ The Background plugin allows you to set custom background images with opacity an
 2. Find "Background" plugin
 3. Click "Enable"
 4. Click "Open" to configure
+
+### Interface Overview
+
+![Background Plugin – Controls](/assets/plugins-background-2.png)
 
 ### Adding Background Images
 
@@ -75,33 +81,6 @@ Include Sidebar: On
 - Use smaller image dimensions
 </Callout>
 
-## Technical Details
+## Learn More
 
-### Settings Structure
-
-```typescript
-type BgSettings = {
-  imageUrl: string;           // Online image URL
-  imageData?: string;         // Base64 local image
-  sourceType?: "url" | "local";
-  opacity: number;            // 0-100
-  blur: number;               // 0-20px
-  includeSidebar?: boolean;
-};
-```
-
-### Global Rendering
-
-Uses React portals for global background rendering:
-
-```typescript
-const style = {
-  position: "fixed",
-  inset: 0,
-  backgroundImage: `url(${imageSource})`,
-  backgroundSize: "cover",
-  opacity: opacity / 100,
-  filter: blur ? `blur(${blur}px)` : undefined,
-  zIndex: 0,
-};
-```
+- For technical details (state shape, rendering, implementation), see the developer docs: [Click Here](/docs/developer-docs/plugins/background)
