@@ -760,10 +760,14 @@
       "previewComingSoon": "Preview coming soon",
       "pickColor": "Pick color",
       "lineColorDialogTitle": "Line color",
-      "lineColorDialogDescription": "Adjust color using H, S, L or paste a hex value.",
+      "lineColorDialogDescription": "Adjust color using H, S, V or paste a hex value.",
       "hue": "Hue",
       "saturation": "Saturation",
       "lightness": "Lightness",
+      "eyedropper": "Eyedropper",
+      "r": "R",
+      "g": "G",
+      "b": "B",
       "apply": "Apply"
     },
     "nightshift": {

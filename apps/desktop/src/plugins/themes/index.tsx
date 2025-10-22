@@ -19,6 +19,7 @@ import {
   ExportCustomThemeButton,
   getUserThemes,
   saveEditingUserTheme,
+  LineColorPicker,
 } from "./custom";
 import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
@@ -284,27 +285,22 @@ const Settings = () => {
             </CardHeader>
             <CardContent>
               <div className='grid gap-4 grid-cols-1 sm:grid-cols-2'>
-                <div className='flex items-center gap-4'>
-                  <label className='text-sm font-medium'>{t("plugins.themes.lineColor")}</label>
-                  <input
-                    type='color'
-                    value={current.customTheme?.lineColor ?? "#6b7280"}
-                    onChange={(e) =>
-                      setSettings(manifest.id, {
-                        ...current,
-                        customTheme: {
-                          ...current.customTheme!,
-                          lineColor: e.target.value,
-                        },
-                      })
-                    }
-                    className='h-9 w-20 rounded-md border border-input bg-transparent px-1 py-1'
-                  />
-                </div>
+                <LineColorPicker
+                  value={current.customTheme?.lineColor ?? "#6b7280"}
+                  onChange={(hex) =>
+                    setSettings(manifest.id, {
+                      ...current,
+                      customTheme: {
+                        ...current.customTheme!,
+                        lineColor: hex,
+                      },
+                    })
+                  }
+                />
 
                 <div className='space-y-3'>
-                  <label className='text-sm font-medium'>{t("plugins.themes.themeIcon")}</label>
                   <div className='flex items-center gap-3'>
+                    <label className='text-sm font-medium'>{t("plugins.themes.themeIcon")}</label>
                     <input
                       accept='image/*'
                       id='custom-theme-icon-input'
@@ -334,7 +330,7 @@ const Settings = () => {
                           .getElementById("custom-theme-icon-input")
                           ?.click()
                       }>
-{t("plugins.themes.chooseIcon")}
+                      {t("plugins.themes.chooseIcon")}
                     </Button>
                     {current.customTheme?.iconData ? (
                       <img
