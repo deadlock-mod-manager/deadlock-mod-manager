@@ -228,7 +228,7 @@ pub fn run() {
       commands::get_gameinfo_status,
       commands::open_gameinfo_editor,
       commands::set_language,
-    commands::get_api_url,
+      commands::get_api_url,
       commands::set_api_url,
       commands::extract_archive,
       commands::remove_mod_folder,
@@ -255,3 +255,4 @@ pub fn run() {
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
+

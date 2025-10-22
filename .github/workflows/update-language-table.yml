@@ -77,3 +77,4 @@ jobs:
           else
             echo "ℹ️ No changes were needed - language table is already up to date" >> $GITHUB_STEP_SUMMARY
           fi
+

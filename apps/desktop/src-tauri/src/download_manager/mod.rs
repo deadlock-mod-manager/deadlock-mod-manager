@@ -174,25 +174,24 @@ impl DownloadManager {
 
     let total_files = task.files.len();
     let mut downloaded_files = Vec::new();
-    let mut file_sizes = Vec::new();
-    let mut file_downloaded = Vec::new();
-
-    for file in &task.files {
-      file_sizes.push(file.size);
-      file_downloaded.push(0u64);
-    }
+    let total_download_size: u64 = task.files.iter().map(|f| f.size).sum();
+    let file_downloaded_shared = Arc::new(Mutex::new(vec![0u64; total_files]));
 
     let mut handles = Vec::new();
 
     for (file_index, file) in task.files.iter().enumerate() {
-      let target_path = task.target_dir.join(&file.name);
+      let safe_name = std::path::Path::new(&file.name)
+        .file_name()
+        .ok_or_else(|| Error::InvalidInput(format!("Invalid file name: {}", file.name)))?
+        .to_owned();
+
+      let target_path = task.target_dir.join(&safe_name);
       let url = file.url.clone();
       let mod_id_clone = mod_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
       let active_downloads_clone = Arc::clone(&active_downloads);
-      let file_sizes_clone = file_sizes.clone();
-      let file_downloaded_shared = Arc::new(Mutex::new(file_downloaded.clone()));
+      let file_downloaded_shared = Arc::clone(&file_downloaded_shared);
 
       let handle = tokio::spawn(async move {
         let result = download_file(
@@ -203,23 +202,23 @@ impl DownloadManager {
             let mod_id = mod_id_clone.clone();
             let active_downloads = Arc::clone(&active_downloads_clone);
             let file_downloaded = Arc::clone(&file_downloaded_shared);
-
+            let total_size = total_download_size;
             move |progress: FileProgress| {
               let app_handle = app_handle.clone();
               let mod_id = mod_id.clone();
               let active_downloads = Arc::clone(&active_downloads);
               let file_downloaded = Arc::clone(&file_downloaded);
-              let file_sizes = file_sizes_clone.clone();
 
               tokio::spawn(async move {
                 {
                   let mut downloaded = file_downloaded.lock().await;
-                  downloaded[file_index] = progress.downloaded;
+                  if file_index < downloaded.len() {
+                    downloaded[file_index] = progress.downloaded;
+                  }
                 }
 
                 let downloaded = file_downloaded.lock().await;
                 let total_downloaded: u64 = downloaded.iter().sum();
-                let total_size: u64 = file_sizes.iter().sum();
 
                 let overall_percentage = if total_size > 0 {
                   (total_downloaded as f64 / total_size as f64) * 100.0
@@ -487,3 +486,4 @@ impl DownloadManager {
     )
   }
 }
+

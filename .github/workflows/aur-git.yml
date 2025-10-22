@@ -47,3 +47,4 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: "Update to latest git commit: ${{ github.sha }}"
           updpkgsums: true
+

@@ -142,3 +142,4 @@ jobs:
           deployment-name: deadlock-mod-manager-lockdex
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+
