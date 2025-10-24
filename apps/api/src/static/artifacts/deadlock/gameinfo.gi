@@ -496,6 +496,10 @@
 			"max"		"2"
 		}
 
+		// On public, leave the old data interval for now until we get better numbers of memory usage
+		// This is intended to be removed later today, 10/23/2025
+		"citadel_match_data_interval" "10"
+
 		"cq_buffer_bloat_msecs_max" "120"
 
 		"snd_soundmixer"						"Default_Mix"
@@ -507,6 +511,8 @@
 		"snd_event_browser_focus_events" "true"
 
 		"cl_max_particle_pvs_aabb_edge_length" "100"
+		
+		// Allow aggregation of particles (for perf)
 		"cl_aggregate_particles" "true"
 		
 		"citadel_enable_vdata_sound_preload" "true"
