@@ -1,0 +1,117 @@
+---
+title: Flashbang Plugin
+description: Technical details for the Flashbang Light Mode scheduling plugin
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Flashbang Plugin
+
+Technical reference for the Flashbang plugin which forces Light Mode during a scheduled window by integrating with the theme provider.
+
+## Manifest
+
+```json
+{
+  "id": "flashbang",
+  "nameKey": "plugins.flashbang.title",
+  "descriptionKey": "plugins.flashbang.description",
+  "version": "0.0.2",
+  "author": "Skeptic",
+  "icon": "public/icon.png",
+  "entry": "./index.tsx"
+}
+```
+
+## Settings Schema
+
+```typescript
+type FlashbangSettings = {
+  enabled: boolean;
+  startHour?: number; // 0-23
+  endHour?: number;   // 0-23
+};
+
+const DEFAULTS: FlashbangSettings = {
+  enabled: false,
+  startHour: 20,
+  endHour: 8,
+};
+```
+
+## Implementation Details
+
+### Theme Provider Integration
+
+The plugin integrates with the theme provider via `useTheme()` hook:
+
+```typescript
+const { setFlashbangEnabled } = useTheme();
+
+useEffect(() => {
+  setFlashbangEnabled(isEnabled);
+}, [isEnabled, setFlashbangEnabled]);
+```
+
+### Local Storage Synchronization
+
+Settings are synchronized with localStorage for theme provider access:
+
+```typescript
+useEffect(() => {
+  localStorage.setItem("deadlock-flashbang-start", String(startHour));
+  localStorage.setItem("deadlock-flashbang-end", String(endHour));
+}, [startHour, endHour]);
+```
+
+### Input Validation
+
+Hour inputs are clamped to valid range (0-23):
+
+```typescript
+onChange={(e) =>
+  setSettings(manifest.id, {
+    ...settings,
+    startHour: Math.max(0, Math.min(23, Number(e.target.value))),
+  })
+}
+```
+
+## Global Rendering
+
+The `Render` component returns `null` - this plugin doesn't render UI elements. It only manages theme state and localStorage synchronization.
+
+## State Management
+
+- Settings stored under `pluginSettings["flashbang"]`
+- Uses `usePersistedStore` for settings persistence
+- Synchronizes with localStorage for theme provider access
+- Plugin enable state controls `setFlashbangEnabled()` in theme provider
+
+## Theme Provider Requirements
+
+The theme provider must:
+- Expose `setFlashbangEnabled(boolean)` method
+- Read `deadlock-flashbang-start` and `deadlock-flashbang-end` from localStorage
+- Apply Light Mode during scheduled hours when enabled
+
+## Troubleshooting
+
+<Callout type="warning">
+**Theme Not Switching**
+- Verify theme provider implements `setFlashbangEnabled`
+- Check localStorage values are being read correctly
+- Ensure plugin enable state is properly synchronized
+</Callout>
+
+<Callout type="warning">
+**Settings Not Persisting**
+- Check `usePersistedStore` integration
+- Verify localStorage synchronization in both Settings and Render components
+- Ensure input validation doesn't prevent valid values
+</Callout>
+
+## Related Docs
+
+- User guide: [/docs/plugins/flashbang](/docs/plugins/flashbang)
+- Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)

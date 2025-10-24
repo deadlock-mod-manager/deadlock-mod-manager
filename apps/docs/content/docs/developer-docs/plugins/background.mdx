@@ -1,0 +1,70 @@
+---
+title: Background Plugin
+description: Technical details, settings schema, and rendering strategy for the Background plugin
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Background Plugin
+
+This page documents the technical implementation of the Background plugin, including settings schema, global rendering, and integration points with the plugin system.
+
+## Manifest
+
+```json
+{
+  "id": "background",
+  "nameKey": "plugins.background.title",
+  "descriptionKey": "plugins.background.description",
+  "icon": "public/icon.svg",
+  "entry": "./index.tsx"
+}
+```
+
+## Settings Schema
+
+```typescript
+type BgSettings = {
+  imageUrl: string;           // Online image URL
+  imageData?: string;         // Base64 local image
+  sourceType?: "url" | "local";
+  opacity: number;            // 0-100
+  blur: number;               // 0-20px
+  includeSidebar?: boolean;
+};
+```
+
+Settings are stored under `pluginSettings["background"]` in the global persisted store. Read/write via `usePersistedStore` APIs.
+
+## Global Rendering Strategy
+
+```typescript
+const style = {
+  position: "fixed",
+  inset: 0,
+  backgroundImage: `url(${imageSource})`,
+  backgroundSize: "cover",
+  opacity: opacity / 100,
+  filter: blur ? `blur(${blur}px)` : undefined,
+  zIndex: 0,
+};
+```
+
+Rendering occurs in a top-level container via the Global Plugin Renderer. Sidebar inclusion is handled by either applying the background behind the app root or by excluding sidebar layouts.
+
+## Interactions and Conflicts
+
+- When the Themes plugin is active, it may disable Background to avoid overlapping visuals.
+- Ensure the z-index stays below main content and above app background.
+
+## Testing & Edge Cases
+
+- Validate remote URLs for CORS and existence; fallback gracefully when images fail to load
+- Large images: recommend optimizing file size
+- Blur performance: cap to a reasonable range (e.g., 0–20px)
+
+## Related Docs
+
+- User guide: [/docs/plugins/background](/docs/plugins/background)
+- Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)
+

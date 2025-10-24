@@ -37,12 +37,7 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
-  const [flashbangEnabled, setFlashbangEnabled] = useState<boolean>(() => {
-    if (typeof window !== "undefined" && window.localStorage) {
-      return localStorage.getItem("deadlock-flashbang") === "true";
-    }
-    return false;
-  });
+  const [flashbangEnabled, setFlashbangEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -52,8 +47,19 @@ export function ThemeProvider({
     if (flashbangEnabled) {
       const now = new Date();
       const currentHour = now.getHours();
+      // Read schedule from localStorage (defaults 20 -> 8)
+      const startHour = Number(
+        localStorage.getItem("deadlock-flashbang-start") ?? "20",
+      );
+      const endHour = Number(
+        localStorage.getItem("deadlock-flashbang-end") ?? "8",
+      );
+      const inWindow =
+        startHour <= endHour
+          ? currentHour >= startHour && currentHour < endHour
+          : currentHour >= startHour || currentHour < endHour; // overnight window
 
-      if (currentHour >= 20 || currentHour < 8) {
+      if (inWindow) {
         root.classList.add("light");
         return;
       }
@@ -82,8 +88,19 @@ export function ThemeProvider({
       const now = new Date();
       const currentHour = now.getHours();
 
-      // Zwischen 20:00 und 8:00 Uhr Light Mode erzwingen
-      if (currentHour >= 20 || currentHour < 8) {
+      // Read schedule from localStorage (defaults 20 -> 8)
+      const startHour = Number(
+        localStorage.getItem("deadlock-flashbang-start") ?? "20",
+      );
+      const endHour = Number(
+        localStorage.getItem("deadlock-flashbang-end") ?? "8",
+      );
+      const inWindow =
+        startHour <= endHour
+          ? currentHour >= startHour && currentHour < endHour
+          : currentHour >= startHour || currentHour < endHour; // overnight window
+
+      if (inWindow) {
         root.classList.remove("dark");
         root.classList.add("light");
       } else {
@@ -118,12 +135,7 @@ export function ThemeProvider({
       setTheme(theme);
     },
     flashbangEnabled,
-    setFlashbangEnabled: (enabled: boolean) => {
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("deadlock-flashbang", enabled.toString());
-      }
-      setFlashbangEnabled(enabled);
-    },
+    setFlashbangEnabled,
   };
 
   return (

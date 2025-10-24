@@ -31,6 +31,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -47,7 +48,8 @@ type SidebarItem = {
   }) => React.ReactNode;
   url: string;
   dialog?: React.ComponentType;
-  icon: Icon;
+  icon?: Icon;
+  iconUrl?: string;
   bottom?: boolean;
   group?: string;
 };
@@ -168,7 +170,11 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
           <SidebarMenuButton
             className='cursor-pointer'
             isActive={location.pathname === item.url}>
-            <item.icon weight='duotone' />
+            {item.icon ? (
+              <item.icon weight='duotone' />
+            ) : item.iconUrl ? (
+              <img alt='' className='h-5 w-5' src={item.iconUrl} />
+            ) : null}
             {item.title({
               isActive: location.pathname === item.url,
               count: item.id === "my-mods" ? mods.length : undefined,
@@ -190,7 +196,11 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
   return (
     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
       <Link to={item.url}>
-        <item.icon weight='duotone' />
+        {item.icon ? (
+          <item.icon weight='duotone' />
+        ) : item.iconUrl ? (
+          <img alt='' className='h-5 w-5' src={item.iconUrl} />
+        ) : null}
         {item.title({
           isActive: location.pathname === item.url,
           count: item.id === "my-mods" ? mods.length : undefined,
@@ -212,8 +222,34 @@ export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
+  const localSudoEnabled = usePersistedStore(
+    (state) => state.enabledPlugins.sudo ?? false,
+  );
+  const { isEnabled: apiSudoEnabled } = useFeatureFlag("plugin-sudo");
+  
+  // Plugin is enabled only if both local and feature flag configuration allow it
+  const sudoEnabled = localSudoEnabled && apiSudoEnabled;
 
-  const allItems = getSidebarItems(t, developerMode);
+  let allItems = getSidebarItems(t, developerMode);
+
+  if (sudoEnabled) {
+    // Hide Mods group entries: my-mods, get-mods, add-mods
+    allItems = allItems.filter(
+      (item) => !["my-mods", "get-mods", "add-mods"].includes(item.id),
+    );
+
+    // Add Superuser entry linking to the plugin route, with a standard icon
+    allItems = [
+      ...allItems,
+      {
+        id: "sudo",
+        title: () => <span>{t("plugins.sudo.title")}</span>,
+        url: "/sudo",
+        icon: Code,
+        group: "mods",
+      },
+    ];
+  }
 
   const topItems = allItems.filter((item) => !item.bottom);
   const bottomItems = allItems.filter((item) => item.bottom);

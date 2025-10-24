@@ -25,6 +25,7 @@ import {
   GamepadIcon,
   InfoIcon,
   MonitorIcon,
+  PlugIcon,
   PlusIcon,
   Settings,
   ShieldIcon,
@@ -36,14 +37,16 @@ import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "react-query";
+import { useLocation } from "react-router";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
-import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
+// Flashbang is now a plugin; legacy toggle removed
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { LanguageSettings } from "@/components/settings/language-settings";
+import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
@@ -55,6 +58,7 @@ import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
@@ -162,7 +166,12 @@ const CustomSettings = () => {
   const { clearMods, localMods: mods } = usePersistedStore();
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
-  const [activeTab, setActiveTab] = useState("launch-options");
+  const location = useLocation();
+  const initialTab =
+    (location.state as { activeTab?: string } | null)?.activeTab ??
+    "launch-options";
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const { isEnabled: showPlugins } = useFeatureFlag("show-plugins");
 
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
@@ -226,6 +235,14 @@ const CustomSettings = () => {
               <MonitorIcon className='h-5 w-5' />
               {t("settings.application")}
             </TabsTrigger>
+            {showPlugins && (
+              <TabsTrigger
+                className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+                value='plugin'>
+                <PlugIcon className='h-5 w-5' />
+                {t("settings.plugin")}
+              </TabsTrigger>
+            )}
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='tools'>
@@ -263,6 +280,16 @@ const CustomSettings = () => {
                 </ErrorBoundary>
               </Suspense>
             </TabsContent>
+
+            {showPlugins && (
+              <TabsContent className='mt-0 space-y-2' value='plugin'>
+                <Section
+                  description={t("settings.pluginDescription")}
+                  title={t("settings.plugin")}>
+                  <PluginList />
+                </Section>
+              </TabsContent>
+            )}
 
             <TabsContent className='mt-0 space-y-2' value='game'>
               <Section
@@ -304,7 +331,7 @@ const CustomSettings = () => {
                     <ThemeSwitcher />
                   </div>
 
-                  <FlashbangToggle />
+                  {null}
                   <VolumeControl />
                 </div>
               </Section>

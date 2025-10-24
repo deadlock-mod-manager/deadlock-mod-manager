@@ -525,6 +525,85 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "sudo-new": {
+      "title": "Superuser",
+      "description": "Zaawansowane narzędzia do zarządzania modami dla doświadczonych użytkowników.",
+      "detailedDescription": "Odblokowuje opcje deweloperskie i eksperymentalne funkcje. Niektóre działania mogą modyfikować pliki lub omijać zabezpieczenia. Używaj ostrożnie.",
+      "usageInstructions": "Włącz wtyczkę, aby uruchomić tryb Superuser. Zaawansowane opcje staną się widoczne. Wyłącz wtyczkę, aby je ukryć.",
+      "instructions": "Przeglądaj mody po lewej, wybierz jeden i użyj strzałki w prawo, aby pobrać i włączyć. Po prawej wybierz zainstalowany mod i użyj strzałki w lewo, aby usunąć. Obie listy można przeszukiwać.",
+      "openAddons": "Otwórz dodatki",
+      "importMod": "Importuj mod",
+      "viewOriginalPost": "Zobacz oryginalny post na forum",
+      "removeMod": "Usuń mod"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Pokazuje Twoją aktywność w Deadlock na Discordzie.",
+      "detailedDescription": "Wyświetla aktywność w Deadlock Mod Manager na profilu Discord przy użyciu Rich Presence. Wystarczy włączyć wtyczkę i opcjonalnie edytować teksty Szczegóły i Status.",
+      "usageInstructions": "Włącz wtyczkę, a następnie opcjonalnie edytuj teksty Szczegóły i Status.",
+      "applicationId": "ID aplikacji Discord",
+      "optional": "(opcjonalne)",
+      "applicationIdDescription": "Brak konfiguracji: wtyczka używa naszej oficjalnej aplikacji Discord.",
+      "details": "Tekst 'Szczegóły'",
+      "state": "Tekst 'Status'",
+      "largeImageKey": "Klucz dużego obrazu",
+      "largeImageText": "Tekst dużego obrazu",
+      "smallImageKey": "Klucz małego obrazu",
+      "smallImageText": "Tekst małego obrazu",
+      "showElapsedTime": "Pokaż czas trwania",
+      "showElapsedTimeDescription": "Pokazuje, jak długo używasz menedżera modów",
+      "setupGuide": "Instrukcja konfiguracji",
+      "setupStep1": "",
+      "setupStep2": "",
+      "setupStep3": "",
+      "setupStep4": ""
+    },
+    "flashbang": {
+      "title": "Tryb Flashbang",
+      "description": "Wymusza jasny motyw w wybranych godzinach.",
+      "detailedDescription": "Tryb Flashbang przełącza aplikację na jasny motyw w skonfigurowanych godzinach, niezależnie od wybranego motywu.",
+      "usageInstructions": "Włącz wtyczkę i ustaw godzinę rozpoczęcia i zakończenia (0–23).",
+      "startHour": "Godzina rozpoczęcia (0–23)",
+      "endHour": "Godzina zakończenia (0–23)"
+    },
+    "background": {
+      "title": "Tło",
+      "description": "Dostosuj tła aplikacji.",
+      "detailedDescription": "Ten plugin pozwala ustawić niestandardowe obrazy tła dla całej aplikacji. Możesz użyć URL do obrazu online lub przesłać lokalny plik obrazu. Plugin obsługuje efekty przezroczystości i rozmycia, aby dostosować wygląd. Możesz również wybrać, czy uwzględnić pasek boczny w efekcie tła.",
+      "usageInstructions": "Aby użyć tego pluginu: 1) Włącz plugin za pomocą przełącznika, 2) Wprowadź URL obrazu lub kliknij 'Wybierz obraz', aby przesłać lokalny plik, 3) Dostosuj ustawienia przezroczystości i rozmycia według potrzeb, 4) Opcjonalnie włącz 'Uwzględnij pasek boczny', aby zastosować tło również do paska bocznego.",
+      "imageUrl": "URL obrazu",
+      "opacity": "Przezroczystość",
+      "blur": "Rozmycie",
+      "includeSidebar": "Uwzględnij pasek boczny",
+      "chooseImage": "Wybierz obraz"
+    },
+    "nightshift": {
+      "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",
+      "visit": "Odwiedź Nightshift:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
+    "bloodmoon": {
+      "description": "Ciemny motyw z czarno-czerwonymi gradientami i karmazynowymi akcentami.",
+      "visit": "Motyw autorstwa Skeptic"
+    },
+    "themes": {
+      "title": "Motywy",
+      "description": "Twórz własne motywy lub używaj wyselekcjonowanych presetów.",
+      "settingsDescription": "Dostosuj wygląd i wybieraj między wyselekcjonowanymi presetami a własnymi stylami.",
+      "detailedDescription": "Zmieniaj wygląd aplikacji za pomocą wyselekcjonowanych presetów. Gdy motyw jest aktywny, wtyczka Tło jest automatycznie wyłączana, aby uniknąć konfliktów wizualnych.",
+      "usageInstructions": "Otwórz wtyczkę, wybierz preset w 'Predefiniowane motywy', a następnie kliknij Aktywuj. Kliknij Dezaktywuj, aby wrócić do domyślnego wyglądu."
+    },
+    "sudo-old": {
+      "title": "Tryb Superuser",
+      "description": "Zaawansowane narzędzia zarządzania modami dla doświadczonych użytkowników.",
+      "detailedDescription": "Odblokowuje narzędzia deweloperskie i funkcje eksperymentalne. Niektóre działania mogą modyfikować pliki lub pomijać zabezpieczenia. Używaj ostrożnie.",
+      "usageInstructions": "Włącz wtyczkę, aby uruchomić Tryb Superuser. Zaawansowane opcje staną się widoczne w całej aplikacji. Wyłącz wtyczkę, aby je ukryć."
+    },
+    "usageInstructions": "Instrukcje użytkowania",
+    "renderActive": "Plugin jest aktywny i działa w tle"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",

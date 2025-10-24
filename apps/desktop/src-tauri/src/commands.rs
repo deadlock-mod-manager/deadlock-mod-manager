@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
@@ -12,7 +13,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
@@ -795,5 +796,53 @@ pub async fn replace_mod_vpks(
   mod_manager.replace_mod_vpks(mod_id, source_paths, installed_vpks.unwrap_or_default())?;
 
   log::info!("VPK replacement command completed successfully");
+  Ok(())
+}
+
+// Discord RPC Commands
+
+#[tauri::command]
+pub async fn set_discord_presence(
+  state: State<'_, DiscordState>,
+  application_id: String,
+  activity: DiscordActivity,
+) -> Result<(), Error> {
+  discord_rpc::ensure_connection_and_set_presence(&state, &application_id, activity)
+    .await
+    .map_err(|e| Error::InvalidInput(e))
+}
+
+#[tauri::command]
+pub async fn clear_discord_presence(state: State<'_, DiscordState>) -> Result<(), Error> {
+  log::info!("Clearing Discord presence");
+
+  let mut client_lock = state
+    .client
+    .lock()
+    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
+
+  if let Some(client) = client_lock.as_mut() {
+    discord_rpc::clear_presence(client)
+      .map_err(|e| Error::InvalidInput(format!("Failed to clear presence: {}", e)))?;
+  }
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn disconnect_discord(state: State<'_, DiscordState>) -> Result<(), Error> {
+  log::info!("Disconnecting from Discord");
+
+  let mut client_lock = state
+    .client
+    .lock()
+    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
+
+  if let Some(client) = client_lock.as_mut() {
+    discord_rpc::disconnect_discord(client)
+      .map_err(|e| Error::InvalidInput(format!("Failed to disconnect: {}", e)))?;
+    *client_lock = None;
+  }
+
   Ok(())
 }
