@@ -25,7 +25,7 @@ jobs:
         with:
           ssh-key: ${{ secrets.SSH_KEY }}
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
@@ -48,7 +48,7 @@ jobs:
 
       - name: Create or get existing release
         id: create-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
@@ -135,6 +135,7 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: api
+          deployment-name: deadlock-mod-manager-web
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -162,6 +163,7 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: bot
+          deployment-name: deadlock-mod-manager-bot
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -189,6 +191,7 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: lockdex
+          deployment-name: deadlock-mod-manager-lockdex
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -200,7 +203,7 @@ jobs:
 
     steps:
       - name: Publish release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -243,7 +246,7 @@ jobs:
 
     steps:
       - name: Delete release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -253,3 +256,4 @@ jobs:
               repo: context.repo.repo,
               release_id: process.env.release_id
             })
+

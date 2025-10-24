@@ -13,6 +13,8 @@ const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
 #[derive(Clone, Debug)]
 pub struct DownloadProgress {
   pub downloaded: u64,
+  pub total: Option<u64>,
+  pub percentage: f64,
   pub speed: f64,
 }
 
@@ -62,6 +64,9 @@ where
   while let Some(chunk) = stream.next().await {
     if cancel_token.is_cancelled() {
       log::info!("Download cancelled");
+      let _ = file.flush().await;
+      drop(file);
+      let _ = tokio::fs::remove_file(target_path).await;
       return Err(Error::DownloadCancelled);
     }
 
@@ -86,8 +91,24 @@ where
       } else {
         0.0
       };
+      let total = if total_size > 0 { Some(total_size) } else { None };
+      let percentage = total
+        .map(|t| {
+          if t > 0 {
+            (downloaded as f64 / t as f64) * 100.0
+          } else {
+            0.0
+          }
+        })
+        .unwrap_or(0.0)
+        .min(100.0);
 
-      on_progress(DownloadProgress { downloaded, speed });
+      on_progress(DownloadProgress {
+        downloaded,
+        total,
+        percentage,
+        speed,
+      });
 
       last_progress_time = now;
     }
@@ -127,3 +148,4 @@ mod tests {
     assert!(file_path.exists());
   }
 }
+

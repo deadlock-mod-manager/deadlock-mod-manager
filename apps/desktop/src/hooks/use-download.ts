@@ -6,13 +6,23 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
+type UseDownloadOptions = {
+  onDownloadStart?: () => void;
+  onDownloadComplete?: (path: string) => void;
+  onDownloadError?: (error: Error) => void;
+};
+
 export const useDownload = (
   mod: Pick<ModDto, "remoteId" | "name"> | undefined,
   availableFiles: ModDownloadDto,
+  options?: UseDownloadOptions,
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addLocalMod, localMods, setModProgress, setModStatus } =
-    usePersistedStore();
+  const addLocalMod = usePersistedStore((state) => state.addLocalMod);
+  const localMods = usePersistedStore((state) => state.localMods);
+  const setModProgress = usePersistedStore((state) => state.setModProgress);
+  const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const setModDownloads = usePersistedStore((state) => state.setModDownloads);
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
@@ -21,7 +31,11 @@ export const useDownload = (
       return;
     }
 
-    addLocalMod(mod as unknown as ModDto, { downloads: selectedFiles });
+    if (localMod) {
+      setModDownloads(localMod.remoteId, selectedFiles);
+    } else {
+      addLocalMod(mod as unknown as ModDto, { downloads: selectedFiles });
+    }
 
     return downloadManager.addToQueue({
       ...(mod as unknown as ModDto),
@@ -29,6 +43,7 @@ export const useDownload = (
       onStart: () => {
         logger.info("Starting download", { mod: mod.remoteId });
         setModStatus(mod.remoteId, ModStatus.Downloading);
+        options?.onDownloadStart?.();
       },
       onProgress: (progress) => {
         setModProgress(mod.remoteId, progress);
@@ -38,8 +53,10 @@ export const useDownload = (
         setModStatus(mod.remoteId, ModStatus.Downloaded);
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
+        options?.onDownloadComplete?.(path);
       },
       onError: (error) => {
+        options?.onDownloadError?.(error);
         toast.error(`Failed to download ${mod.name}: ${error.message}`);
         setModStatus(mod.remoteId, ModStatus.FailedToDownload);
         setIsDialogOpen(false);

@@ -62,11 +62,40 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
   });
 };
 
-export const isModOutdated = (_mod: { remoteUpdatedAt: string | Date }) => {
-  // TODO: Implement this
+const toTimestamp = (
+  value: Date | string | null | undefined,
+): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
 
-  // const cutoffDate = new Date("2025-08-19");
-  // const modUpdatedDate = new Date(mod.remoteUpdatedAt);
-  // return modUpdatedDate < cutoffDate;
-  return false;
+  if (value instanceof Date) {
+    const timestamp = value.getTime();
+    return Number.isNaN(timestamp) ? undefined : timestamp;
+  }
+
+  const parsed = new Date(value);
+  const timestamp = parsed.getTime();
+  return Number.isNaN(timestamp) ? undefined : timestamp;
+};
+
+export const isModOutdated = (mod: {
+  remoteUpdatedAt?: Date | string | null;
+  installedRemoteUpdatedAt?: Date | string | null;
+  isUpdateAvailable?: boolean;
+}) => {
+  if (typeof mod.isUpdateAvailable === "boolean") {
+    return mod.isUpdateAvailable;
+  }
+
+  const remoteTimestamp = toTimestamp(mod.remoteUpdatedAt ?? undefined);
+  const installedTimestamp = toTimestamp(
+    mod.installedRemoteUpdatedAt ?? undefined,
+  );
+
+  if (remoteTimestamp === undefined || installedTimestamp === undefined) {
+    return false;
+  }
+
+  return remoteTimestamp > installedTimestamp;
 };

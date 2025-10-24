@@ -419,7 +419,21 @@ impl AddonsBackupManager {
     }
 
     let metadata = fs::metadata(&backup_path)?;
-    let file_size = metadata.len();
+    let mut file_size = 0u64;
+
+    if metadata.is_dir() {
+      if let Ok(entries) = fs::read_dir(&backup_path) {
+        for entry in entries.flatten() {
+          if let Ok(entry_metadata) = entry.metadata() {
+            if entry_metadata.is_file() {
+              file_size += entry_metadata.len();
+            }
+          }
+        }
+      }
+    } else {
+      file_size = metadata.len();
+    }
 
     let created_at = if let Some(timestamp) = self.parse_backup_filename(file_name) {
       timestamp

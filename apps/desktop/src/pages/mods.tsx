@@ -31,7 +31,12 @@ const GetModsData = () => {
     useErrorBoundary: false,
     retry: 3,
   });
-  const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
+  const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
+  const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const updateModsFilters = usePersistedStore(
+    (state) => state.updateModsFilters,
+  );
+  const syncRemoteMods = usePersistedStore((state) => state.syncRemoteMods);
   const {
     selectedCategories,
     selectedHeroes,
@@ -136,6 +141,12 @@ const GetModsData = () => {
       toast.error((error as Error)?.message ?? t("common.failedToFetchMods"));
     }
   }, [error, t]);
+
+  useEffect(() => {
+    if (data && data.length > 0) {
+      syncRemoteMods(data);
+    }
+  }, [data, syncRemoteMods]);
 
   return (
     <div className='flex flex-col gap-4'>

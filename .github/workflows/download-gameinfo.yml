@@ -66,3 +66,4 @@ jobs:
           git add apps/api/src/static/artifacts/deadlock/gameinfo.gi
           git commit -m "chore: update gameinfo.gi from depot"
           git push
+

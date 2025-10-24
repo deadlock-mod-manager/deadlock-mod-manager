@@ -1,6 +1,6 @@
 pre-commit:
   jobs:
-    - run: pnpm format:fix
+    - run: "corepack pnpm format:fix"
       glob:
         - "*.js"
         - "*.jsx"
@@ -10,7 +10,7 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: pnpm lint:fix
+    - run: "corepack pnpm lint:fix"
       glob:
         - "*.js"
         - "*.jsx"
