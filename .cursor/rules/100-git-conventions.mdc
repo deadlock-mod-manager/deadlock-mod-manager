@@ -1,0 +1,211 @@
+---
+description: Git Conventions: Guidelines for commit messages, branch naming, and version control practices
+alwaysApply: false
+---
+
+# Git Commit and Version Control Conventions
+
+## Commit Message Format
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. This format enables automatic changelog generation, version bumping, and better collaboration.
+
+### Structure
+
+```text
+<type>(<scope>): <subject>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Type
+
+The type must be one of the following:
+
+- `feat` - A new feature for the user
+- `fix` - A bug fix
+- `docs` - Documentation only changes
+- `style` - Changes that don't affect the meaning of code (white-space, formatting, etc.)
+- `refactor` - Code change that neither fixes a bug nor adds a feature
+- `perf` - Code change that improves performance
+- `test` - Adding missing tests or correcting existing tests
+- `build` - Changes that affect the build system or external dependencies
+- `ci` - Changes to CI configuration files and scripts
+- `chore` - Other changes that don't modify src or test files
+- `revert` - Reverts a previous commit
+
+### Scope
+
+The scope should be the name of the package or area affected. For this monorepo:
+
+**Apps:**
+
+- `api` - Backend API service
+- `bot` - Discord bot
+- `desktop` - Desktop application
+- `lockdex` - Lockdex service
+- `www` - Web application
+- `mirror-service` - Mirror service
+
+**Packages:**
+
+- `common` - Common utilities
+- `database` - Database schema and client
+- `logging` - Logging package
+- `shared` - Shared utilities
+- `vpk-parser` - VPK parser
+
+**Other:**
+
+- `deps` - Dependency updates
+- `repo` - Repository-wide changes
+- `release` - Release-related changes
+
+### Subject
+
+The subject contains a succinct description of the change:
+
+- Use the imperative, present tense: "change" not "changed" nor "changes"
+- Don't capitalize the first letter
+- No period (.) at the end
+- Keep it under 72 characters
+
+### Body (Optional)
+
+The body should include the motivation for the change and contrast this with previous behavior.
+
+- Use the imperative, present tense
+- Wrap at 72 characters
+- Separate from subject with a blank line
+
+### Footer (Optional)
+
+The footer should contain information about Breaking Changes and reference issues that this commit closes.
+
+**Breaking Changes** should start with `BREAKING CHANGE:` followed by a description.
+
+**Closes** references should be on a separate line and use the format: `Closes #123, #456`
+
+## Examples
+
+### Feature Addition
+
+```text
+feat(desktop): add mod conflict detection
+
+Implement visual indicators for mod conflicts and add conflict
+resolution suggestions to the UI.
+
+Closes #142
+```
+
+### Bug Fix
+
+```text
+fix(api): handle edge case in pagination
+
+Fix incorrect offset calculation when page size exceeds total items.
+This prevents API errors when requesting pages beyond available data.
+```
+
+### Breaking Change
+
+```text
+feat(api)!: remove deprecated v1 endpoints
+
+BREAKING CHANGE: The /v1/mods endpoint has been removed. All clients
+must migrate to the /v2/mods endpoint which provides better filtering
+and pagination support.
+
+Migration guide available at docs/migration/v1-to-v2.md
+```
+
+### Dependency Update
+
+```text
+chore(deps): update @tauri-apps/api to v2.1.0
+```
+
+### Documentation
+
+```text
+docs(readme): add installation instructions for Linux
+```
+
+### Multiple Scopes
+
+```text
+refactor(desktop,shared): extract mod validation logic to shared package
+```
+
+### Simple Fix
+
+```text
+fix(www): correct button alignment on mobile
+```
+
+## Branch Naming Conventions
+
+### Branch Format
+
+```text
+<type>/<ticket-or-description>
+```
+
+### Types
+
+- `feature/` - New features
+- `bugfix/` - Bug fixes
+- `hotfix/` - Critical fixes that need immediate deployment
+- `refactor/` - Code refactoring
+- `chore/` - Maintenance tasks
+- `docs/` - Documentation updates
+
+### Branch Naming Rules
+
+- Use kebab-case for descriptions
+- Include ticket/issue numbers when applicable
+- Keep names descriptive but concise
+- Use lowercase letters
+
+### Branch Examples
+
+```bash
+# With ticket number
+feature/KR-123-add-mod-collections
+bugfix/KR-456-fix-download-crash
+hotfix/KR-789-security-patch
+
+# Without ticket number
+feature/dark-mode-toggle
+bugfix/pagination-edge-case
+refactor/extract-validation-logic
+chore/update-dependencies
+docs/add-api-examples
+```
+
+## Gathering Git Context
+
+Run this single command to gather all necessary information:
+
+```bash
+echo "=== BRANCH ===" && git rev-parse --abbrev-ref HEAD && echo "=== STAGED FILES ===" && git diff --staged --stat && echo "=== STAGED CHANGES ===" && git diff --staged
+```
+
+This provides:
+
+- Current branch name
+- Staged files summary → determine scope (which workspace/package)
+- Actual changes → determine commit type and write description
+
+### Changesets Integration
+
+This project uses changesets for version management. See [090-changesets.mdc](mdc:.cursor/rules/090-changesets.mdc) for details on when and how to create changesets alongside commits.
+
+## References
+
+- [Conventional Commits Specification](https://www.conventionalcommits.org/)
+- [Semantic Versioning](https://semver.org/)
+- [Keep a Changelog](https://keepachangelog.com/)
+- [Project Changeset Guidelines](mdc:.cursor/rules/090-changesets.mdc)

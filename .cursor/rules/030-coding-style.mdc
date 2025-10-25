@@ -121,30 +121,12 @@ async function processLargeFile(filePath: string) {
 
 ## Git Commit Guidelines
 
-### Commit Messages
+For detailed git commit message format, branch naming conventions, and version control practices, see [100-git-conventions.mdc](mdc:.cursor/rules/100-git-conventions.mdc).
 
-- Use conventional commits format
-- Include ticket number when applicable
-- Keep messages clear and concise
-
-```bash
-# Format: <type>(<scope>): <description>
-feat(auth): add social login support
-fix(api): handle pagination edge cases
-chore(deps): update dependencies
-```
-
-### Branch Names
-
-- Use feature/, bugfix/, hotfix/ prefixes
-- Include ticket number when applicable
-- Use kebab-case
-
-```bash
-feature/KR-123-user-authentication
-bugfix/api-pagination
-hotfix/login-crash
-```
+**Quick Reference:**
+- Use conventional commits format: `<type>(<scope>): <description>`
+- Branch names: `<type>/<description>` in kebab-case
+- Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`
 
 ## Import and Module Guidelines
 

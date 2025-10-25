@@ -51,6 +51,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
 - **080-ai-interaction.mdc** - AI interaction guidelines and communication style rules
 - **090-changesets.mdc** - Changeset management for features and fixes
+- **100-git-conventions.mdc** - Git commit message format, branch naming, and version control practices
 
 ### Special Rules
 
