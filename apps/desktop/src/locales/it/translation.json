@@ -1,9 +1,9 @@
 {
   "navigation": {
-    "dashboard": "Pannello di Controllo",
+    "dashboard": "Dashboard",
     "myMods": "Libreria Mod",
     "getMods": "Scopri Mod",
-    "addMods": "Aggiungi Mod Locale",
+    "addMods": "Aggiungi Mod",
     "downloads": "Download",
     "settings": "Impostazioni",
     "developer": "Strumenti da Sviluppatore",
@@ -703,7 +703,7 @@
     "morePages": "Altre pagine"
   },
   "dashboard": {
-    "title": "Pannello di Controllo",
+    "title": "Dashboard",
     "subtitle": "Panoramica gestione mod",
     "announcements": "Annunci",
     "latestMods": "Ultime Mod",
