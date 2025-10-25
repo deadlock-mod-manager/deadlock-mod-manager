@@ -38,6 +38,10 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  OPENAI_API_KEY: z.string(),
+  LANGFUSE_SECRET_KEY: z.string(),
+  LANGFUSE_PUBLIC_KEY: z.string(),
+  LANGFUSE_BASE_URL: z.string().url().default("https://cloud.langfuse.com"),
 });
 
 export const env = envSchema.parse(process.env);
