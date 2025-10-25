@@ -52,6 +52,12 @@ export class MessageTriageListener extends Listener {
       return false;
     }
 
+    if (message.channel.isThread() && message.channel.parentId) {
+      if (this.excludedChannels.has(message.channel.parentId)) {
+        return false;
+      }
+    }
+
     if (message.reference?.messageId) {
       return false;
     }

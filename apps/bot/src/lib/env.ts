@@ -40,6 +40,10 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  CORE_CONTRIBUTOR_ROLES: z
+    .string()
+    .default("1322369692962390119")
+    .transform((val) => val.split(",").map((id) => id.trim())),
   OPENAI_API_KEY: z.string(),
   LANGFUSE_SECRET_KEY: z.string(),
   LANGFUSE_PUBLIC_KEY: z.string(),

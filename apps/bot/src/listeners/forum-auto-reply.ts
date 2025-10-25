@@ -1,13 +1,16 @@
 import { Listener } from "@sapphire/framework";
 import type { Message, TextChannel } from "discord.js";
 import { supportAgent } from "@/ai/agents/support";
+import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
 
 const logger = mainLogger.child().withContext({
-  service: "support-message-listener",
+  service: "forum-auto-reply-listener",
 });
 
-export class SupportMessageListener extends Listener {
+export class ForumAutoReplyListener extends Listener {
+  private readonly excludedRoleIds: Set<string>;
+
   public constructor(
     context: Listener.LoaderContext,
     options: Listener.Options,
@@ -16,9 +19,15 @@ export class SupportMessageListener extends Listener {
       ...options,
       event: "messageCreate",
     });
+
+    this.excludedRoleIds = new Set([
+      ...env.CORE_CONTRIBUTOR_ROLES,
+      ...env.REPORT_MODERATOR_ROLES,
+      ...env.BLACKLIST_MODERATOR_ROLES,
+    ]);
   }
 
-  public async shouldRespond(message: Message) {
+  private async shouldRespond(message: Message): Promise<boolean> {
     if (
       message.author.bot ||
       message.author.id === this.container.client.user?.id
@@ -26,11 +35,35 @@ export class SupportMessageListener extends Listener {
       return false;
     }
 
-    if (message.mentions.has(this.container.client.user?.id || "")) {
-      return true;
+    if (!message.channel.isThread()) {
+      return false;
     }
 
-    return false;
+    if (message.channel.parentId !== env.BUG_REPORT_CHANNEL_ID) {
+      return false;
+    }
+
+    if (!message.member) {
+      return false;
+    }
+
+    const userRoles = message.member.roles.cache;
+    const hasExcludedRole = userRoles.some((role) =>
+      this.excludedRoleIds.has(role.id),
+    );
+
+    if (hasExcludedRole) {
+      logger
+        .withMetadata({
+          userId: message.author.id,
+          messageId: message.id,
+          threadId: message.channel.id,
+        })
+        .debug("Skipping message from user with excluded role");
+      return false;
+    }
+
+    return true;
   }
 
   public async run(message: Message) {
@@ -55,14 +88,25 @@ export class SupportMessageListener extends Listener {
       .replace(/\s+/g, " ")
       .trim();
 
-    const sessionId = `${message.author.id}-${message.channelId}`;
+    const threadId = message.channel.id;
+    const sessionId = `${message.author.id}-${threadId}`;
     const userMention = `<@${message.author.id}>`;
+
+    logger
+      .withMetadata({
+        messageId: message.id,
+        userId: message.author.id,
+        threadId,
+        sessionId,
+      })
+      .info("Processing forum message for auto-reply");
+
     const response = await supportAgent.invoke(
       cleanedContent,
       sessionId,
       message.author.id,
-      ["support"],
-      message.channelId,
+      ["forum-auto-reply"],
+      threadId,
       userMention,
     );
 
@@ -75,14 +119,14 @@ export class SupportMessageListener extends Listener {
             .withMetadata({
               messageId: message.id,
               userId: message.author.id,
-              channelId: message.channelId,
+              threadId,
             })
-            .info("Successfully processed support message");
+            .info("Successfully sent forum auto-reply");
         } catch (replyError) {
           logger
             .withError(replyError)
-            .withMetadata({ messageId: message.id })
-            .error("Failed to send success reply to user");
+            .withMetadata({ messageId: message.id, threadId })
+            .error("Failed to send forum auto-reply");
         }
       },
       async (error) => {
@@ -91,9 +135,9 @@ export class SupportMessageListener extends Listener {
           .withMetadata({
             messageId: message.id,
             userId: message.author.id,
-            channelId: message.channelId,
+            threadId,
           })
-          .error("Support agent returned error");
+          .error("Support agent returned error for forum message");
 
         try {
           await message.reply({
@@ -103,8 +147,8 @@ export class SupportMessageListener extends Listener {
         } catch (replyError) {
           logger
             .withError(replyError)
-            .withMetadata({ messageId: message.id })
-            .error("Failed to send error reply to user");
+            .withMetadata({ messageId: message.id, threadId })
+            .error("Failed to send error reply in forum");
         }
       },
     );

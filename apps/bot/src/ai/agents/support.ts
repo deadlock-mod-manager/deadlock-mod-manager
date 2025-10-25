@@ -11,6 +11,7 @@ import { DocumentationRetriever } from "@/services/documentation-retriever";
 import { createSupportBotPrompt } from "../prompts/support-bot";
 import { createDocumentationSearchTool } from "../tools/search-documentation";
 import { Agent, type AgentConfig } from ".";
+
 export class SupportAgent extends Agent {
   private promptCache: Map<string, ChatPromptTemplate> = new Map();
   private documentationRetriever: DocumentationRetriever;
@@ -133,3 +134,5 @@ export class SupportAgent extends Agent {
     }
   }
 }
+
+export const supportAgent = new SupportAgent();
