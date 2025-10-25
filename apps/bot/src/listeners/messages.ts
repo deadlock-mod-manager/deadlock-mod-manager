@@ -48,46 +48,47 @@ export class MessageCreateListener extends Listener {
       ["support"],
     );
 
-    if (response.isErr()) {
-      logger
-        .withError(response.error)
-        .withMetadata({
-          messageId: message.id,
-          userId: message.author.id,
-          channelId: message.channelId,
-        })
-        .error("Support agent returned error");
+    await response.match(
+      async (responseText) => {
+        try {
+          await message.reply({ content: responseText });
 
-      return message.reply({
-        content:
-          "An error occurred while processing your request. Please try again later.",
-      });
-    }
+          logger
+            .withMetadata({
+              messageId: message.id,
+              userId: message.author.id,
+              channelId: message.channelId,
+            })
+            .info("Successfully processed support message");
+        } catch (replyError) {
+          logger
+            .withError(replyError)
+            .withMetadata({ messageId: message.id })
+            .error("Failed to send success reply to user");
+        }
+      },
+      async (error) => {
+        logger
+          .withError(error)
+          .withMetadata({
+            messageId: message.id,
+            userId: message.author.id,
+            channelId: message.channelId,
+          })
+          .error("Support agent returned error");
 
-    await message.reply({
-      content: response.value,
-    });
-
-    logger
-      .withMetadata({
-        messageId: message.id,
-        userId: message.author.id,
-        channelId: message.channelId,
-      })
-      .info("Successfully processed support message");
-
-    try {
-      await message.reply({
-        content:
-          "An error occurred while processing your request. Please try again later.",
-      });
-    } catch (replyError) {
-      logger
-        .withError(replyError)
-        .withMetadata({
-          messageId: message.id,
-        })
-        .error("Failed to send error reply to user");
-    }
+        try {
+          await message.reply({
+            content:
+              "An error occurred while processing your request. Please try again later.",
+          });
+        } catch (replyError) {
+          logger
+            .withError(replyError)
+            .withMetadata({ messageId: message.id })
+            .error("Failed to send error reply to user");
+        }
+      },
+    );
   }
 }

@@ -1,30 +1,62 @@
-import { setupInstrumentation } from "@deadlock-mods/instrumentation";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
-import type { NodeClient } from "@sentry/node";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import {
+  CompositePropagator,
+  W3CTraceContextPropagator,
+} from "@opentelemetry/core";
+import { NodeSDK } from "@opentelemetry/sdk-node";
 import * as Sentry from "@sentry/node";
-import { SENTRY_OPTIONS } from "./lib/constants";
+import {
+  SentryPropagator,
+  SentrySampler,
+  SentrySpanProcessor,
+} from "@sentry/opentelemetry";
 import { env } from "./lib/env";
+import { logger } from "./lib/logger";
+import { version } from "./version";
 
-Sentry.init({
-  ...SENTRY_OPTIONS,
-  skipOpenTelemetrySetup: true, // Skip OpenTelemetry setup, we'll use our own.
+const sentryClient = Sentry.init({
+  dsn: env.SENTRY_DSN,
+  environment: env.NODE_ENV,
+  release: `bot@${version}`,
+  skipOpenTelemetrySetup: true,
+  tracesSampleRate: 1,
+})!;
+
+const sdk = new NodeSDK({
+  serviceName: "bot",
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      "@opentelemetry/instrumentation-pg": {
+        enabled: true,
+        enhancedDatabaseReporting: true,
+      },
+      "@opentelemetry/instrumentation-http": {
+        enabled: false,
+      },
+    }),
+  ],
+  contextManager: new Sentry.SentryContextManager(),
+  textMapPropagator: new CompositePropagator({
+    propagators: [new W3CTraceContextPropagator(), new SentryPropagator()],
+  }),
+  sampler: sentryClient ? new SentrySampler(sentryClient) : undefined,
+  spanProcessors: [
+    new SentrySpanProcessor(),
+    new LangfuseSpanProcessor({
+      environment: env.NODE_ENV,
+      secretKey: env.LANGFUSE_SECRET_KEY,
+      publicKey: env.LANGFUSE_PUBLIC_KEY,
+      baseUrl: env.LANGFUSE_BASE_URL,
+      shouldExportSpan: ({ otelSpan }) => {
+        return ["langfuse-sdk", "ai", "langchain"].includes(
+          otelSpan.instrumentationScope.name,
+        );
+      },
+      exportMode: "immediate",
+    }),
+  ],
 });
 
-const sentryClient = Sentry.getClient<NodeClient>()!;
-
-const sdk = setupInstrumentation("bot", sentryClient, [
-  new LangfuseSpanProcessor({
-    environment: env.NODE_ENV,
-    secretKey: env.LANGFUSE_SECRET_KEY,
-    publicKey: env.LANGFUSE_PUBLIC_KEY,
-    baseUrl: env.LANGFUSE_BASE_URL,
-    shouldExportSpan: ({ otelSpan }) => {
-      return (
-        ["langfuse-sdk", "ai"].includes(otelSpan.instrumentationScope.name) ||
-        otelSpan.name.startsWith("langchain")
-      );
-    },
-    exportMode: "immediate",
-  }),
-]);
 sdk.start();
+logger.info("Instrumentation started");

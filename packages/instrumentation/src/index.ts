@@ -4,7 +4,6 @@ import {
   W3CTraceContextPropagator,
 } from "@opentelemetry/core";
 import { NodeSDK } from "@opentelemetry/sdk-node";
-import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import type { NodeClient } from "@sentry/node";
 import * as Sentry from "@sentry/node";
 import {
@@ -16,7 +15,6 @@ import {
 export const setupInstrumentation = (
   serviceName: string,
   sentryClient: NodeClient,
-  spanProcessors: SpanProcessor[] = [],
 ): NodeSDK => {
   const sdk = new NodeSDK({
     serviceName,
@@ -36,7 +34,7 @@ export const setupInstrumentation = (
       propagators: [new W3CTraceContextPropagator(), new SentryPropagator()],
     }),
     sampler: sentryClient ? new SentrySampler(sentryClient) : undefined,
-    spanProcessors: [new SentrySpanProcessor(), ...spanProcessors],
+    spanProcessors: [new SentrySpanProcessor()],
   });
 
   return sdk;

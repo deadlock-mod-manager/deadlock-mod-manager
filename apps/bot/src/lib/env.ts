@@ -42,6 +42,7 @@ export const envSchema = z.object({
   LANGFUSE_SECRET_KEY: z.string(),
   LANGFUSE_PUBLIC_KEY: z.string(),
   LANGFUSE_BASE_URL: z.string().url().default("https://cloud.langfuse.com"),
+  DEBUG: z.coerce.boolean().default(false),
 });
 
 export const env = envSchema.parse(process.env);
