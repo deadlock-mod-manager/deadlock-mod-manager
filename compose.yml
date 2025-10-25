@@ -45,6 +45,23 @@ services:
       - postgres
       - redis
 
+  mirror-service:
+    build:
+      context: .
+      dockerfile: apps/mirror-service/Dockerfile
+    container_name: deadlock_mirror_service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      REDIS_URL: redis://redis:6379
+      SENTRY_DSN: ""
+    depends_on:
+      - postgres
+      - redis
+
   bot:
     build:
       context: .

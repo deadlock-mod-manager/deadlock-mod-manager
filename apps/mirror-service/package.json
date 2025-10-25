@@ -20,7 +20,6 @@
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
-    "@deadlock-mods/vpk-parser": "workspace:*",
     "@hono/sentry": "^1.2.2",
     "@hono/zod-validator": "^0.7.4",
     "@sentry/node": "catalog:",
