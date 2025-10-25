@@ -16,4 +16,10 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "boolean",
     defaultValue: false,
   },
+  {
+    name: "mod-download-mirroring",
+    description: "Enable mod download mirroring functionality",
+    type: "boolean",
+    defaultValue: false,
+  },
 ];

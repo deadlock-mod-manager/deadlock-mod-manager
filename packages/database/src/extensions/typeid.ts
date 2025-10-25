@@ -16,7 +16,6 @@ export const typeId = <TPrefix extends string>(name: string, prefix: TPrefix) =>
       try {
         return TypeID.fromString(value, prefix).toString();
       } catch (error) {
-        console.warn("Old typeid value found", value);
         return value;
       }
     },

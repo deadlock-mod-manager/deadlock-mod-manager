@@ -26,6 +26,11 @@ export const envSchema = z.object({
   STEAM_API_KEY: z.string(),
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),
+  MIRROR_SERVICE_URL: z
+    .string()
+    .url("MIRROR_SERVICE_URL must be a valid URL")
+    .optional()
+    .default("https://mirror.deadlockmods.app"),
 });
 
 export const env = envSchema.parse(process.env);

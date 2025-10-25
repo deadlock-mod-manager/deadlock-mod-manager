@@ -13,6 +13,8 @@ import {
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { env } from "@/lib/env";
+import { featureFlagsService } from "@/services/feature-flags";
 import { publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../services/mod-sync";
 import { ForceSyncOutputSchema } from "../../validation/mods";
@@ -45,7 +47,14 @@ export const modsRouter = {
     .route({ method: "GET", path: "/v2/mods/{id}/downloads" })
     .input(ModIdParamSchema)
     .output(ModDownloadsV2ResponseSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      const isModDownloadMirroringEnabled =
+        await featureFlagsService.isFeatureEnabled(
+          "mod-download-mirroring",
+          userId,
+        );
+
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
         throw new ORPCError("NOT_FOUND");
@@ -56,8 +65,15 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      // V2: Return all downloads sorted by size (largest first)
-      const sortedDownloads = downloads.sort((a, b) => b.size - a.size);
+      const sortedDownloads = downloads
+        .sort((a, b) => b.size - a.size)
+        .map((download) => ({
+          ...download,
+          url: isModDownloadMirroringEnabled.unwrapOr(false)
+            ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
+            : download.url,
+        }));
+
       return {
         downloads: toModDownloadDto(sortedDownloads),
         count: sortedDownloads.length,
@@ -68,7 +84,14 @@ export const modsRouter = {
     .route({ method: "GET", path: "/v2/mods/{id}/download" })
     .input(ModIdParamSchema)
     .output(ModDownloadsResponseSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      const isModDownloadMirroringEnabled =
+        await featureFlagsService.isFeatureEnabled(
+          "mod-download-mirroring",
+          userId,
+        );
+
       const mod = await modRepository.findByRemoteId(input.id);
       if (!mod) {
         throw new ORPCError("NOT_FOUND");
@@ -80,7 +103,15 @@ export const modsRouter = {
       }
 
       // V2: Return all downloads even on the old endpoint
-      const sortedDownloads = downloads.sort((a, b) => b.size - a.size);
+      const sortedDownloads = downloads
+        .sort((a, b) => b.size - a.size)
+        .map((download) => ({
+          ...download,
+          url: isModDownloadMirroringEnabled.unwrapOr(false)
+            ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
+            : download.url,
+        }));
+
       return toModDownloadDto(sortedDownloads);
     }),
 
