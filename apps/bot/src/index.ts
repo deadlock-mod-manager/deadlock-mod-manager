@@ -1,6 +1,9 @@
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { StatusMonitorService } from "@/lib/status-monitor";
+import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
+import { cronService } from "@/services/cron";
+import { PromptSyncService } from "@/services/prompt-sync";
 import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
 
@@ -10,8 +13,23 @@ const main = async () => {
     return;
   }
 
+  const promptSync = new PromptSyncService();
+  await promptSync.syncPrompts();
+
   const statusMonitor = new StatusMonitorService();
   const redisSubscriber = RedisSubscriberService.getInstance();
+
+  if (env.DOCS_SYNC_ENABLED) {
+    logger.info("Defining documentation sync cron job");
+    await cronService.defineJob({
+      name: DocumentationSyncProcessor.name,
+      pattern: DocumentationSyncProcessor.cronPattern,
+      processor: DocumentationSyncProcessor.instance,
+      enabled: true,
+    });
+  } else {
+    logger.info("Documentation sync is disabled");
+  }
 
   client.once("clientReady", async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
@@ -27,6 +45,7 @@ const main = async () => {
     logger.info("Shutting down gracefully...");
     statusMonitor.stop();
     redisSubscriber.stop();
+    await cronService.shutdown();
     client.destroy();
     process.exit(0);
   };

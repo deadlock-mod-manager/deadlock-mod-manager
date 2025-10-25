@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./chat-messages";
 export * from "./chat-sessions";
 export * from "./custom-settings";
+export * from "./documentation";
 export * from "./feature-flags";
 export * from "./job-locks";
 export * from "./mirrored-files";

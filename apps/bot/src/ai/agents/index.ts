@@ -1,7 +1,7 @@
 import type { BaseError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
 import { ChatOpenAI } from "@langchain/openai";
-import type { ResultAsync } from "neverthrow";
+import type { Result } from "neverthrow";
 import { logger } from "@/lib/logger";
 
 export interface AgentConfig {
@@ -53,5 +53,5 @@ export abstract class Agent {
     tags: string[],
     channelId: string,
     userMention: string,
-  ): ResultAsync<string, BaseError>;
+  ): Promise<Result<string, BaseError>>;
 }

@@ -43,6 +43,12 @@ export const envSchema = z.object({
   LANGFUSE_PUBLIC_KEY: z.string(),
   LANGFUSE_BASE_URL: z.string().url().default("https://cloud.langfuse.com"),
   DEBUG: z.coerce.boolean().default(false),
+  DOCS_SYNC_ENABLED: z.coerce.boolean().default(true),
+  DOCS_SYNC_INTERVAL_HOURS: z.coerce.number().min(1).default(24),
+  DOCS_URL: z
+    .string()
+    .url()
+    .default("https://docs.deadlockmods.app/llms-full.txt"),
 });
 
 export const env = envSchema.parse(process.env);

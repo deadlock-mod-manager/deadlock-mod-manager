@@ -1,33 +1,37 @@
-import { RuntimeError } from "@deadlock-mods/common";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { MessageContent } from "@langchain/core/messages";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } from "@langchain/core/prompts";
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
-import { langfuse } from "@/lib/langfuse";
+import { ok, type Result } from "neverthrow";
 
-export const createSupportBotPrompt = (userMention: string) => {
-  return ResultAsync.fromPromise(
-    langfuse.prompt.get("support-bot"),
-    (error) =>
-      new RuntimeError("Failed to fetch prompt from Langfuse", {
-        cause: error,
-      }),
-  ).andThen((prompt) => {
-    if (!prompt) {
-      return errAsync(new RuntimeError("Prompt not found in Langfuse"));
-    }
+export const SUPPORT_BOT_PROMPT_NAME = "support-bot";
 
-    const compiledPrompt = prompt.compile({ userMention });
+let cachedPromptTemplate: string | null = null;
 
-    return okAsync({
-      metadata: { langfusePrompt: prompt },
-      prompt: ChatPromptTemplate.fromMessages([
-        ["system", compiledPrompt as MessageContent],
-        new MessagesPlaceholder("history"),
-        new MessagesPlaceholder("messages"),
-      ]),
-    });
-  });
+async function loadPromptTemplate(): Promise<string> {
+  if (cachedPromptTemplate) {
+    return cachedPromptTemplate;
+  }
+
+  const promptPath = join(__dirname, "support-bot.md");
+  cachedPromptTemplate = await readFile(promptPath, "utf-8");
+  return cachedPromptTemplate;
+}
+
+export const createSupportBotPrompt = async (
+  userMention: string,
+): Promise<Result<ChatPromptTemplate, never>> => {
+  const template = await loadPromptTemplate();
+  const compiledPrompt = template.replace("{{userMention}}", userMention);
+
+  return ok(
+    ChatPromptTemplate.fromMessages([
+      ["system", compiledPrompt as MessageContent],
+      new MessagesPlaceholder("history"),
+      new MessagesPlaceholder("messages"),
+    ]),
+  );
 };
