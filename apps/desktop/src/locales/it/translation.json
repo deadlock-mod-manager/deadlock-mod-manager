@@ -37,17 +37,17 @@
     "title": "Gestisci Ordine di Caricamento Mod",
     "description": "Trascina e rilascia per riordinare le tue mod. Le mod in alto si caricano per prime, quelle in basso per ultime.",
     "noMods": "Nessuna mod installata da ordinare",
-    "orderSaved": "Ordine mod salvato con successo",
+    "orderSaved": "Ordine delle mod salvato con successo",
     "orderSaveFailed": "Impossibile salvare l'ordine delle mod",
-    "manageOrder": "Cambia Ordine Mod"
+    "manageOrder": "Cambia Ordine delle Mod"
   },
   "mods": {
-    "manageOrder": "Cambia Ordine Mod",
+    "manageOrder": "Cambia Ordine delle Mod",
     "searchPlaceholder": "Cerca mod",
     "noPreviewAvailable": "Nessuna anteprima disponibile",
     "audio": "Audio",
     "by": "Di",
-    "audioMod": "Mod Audio",
+    "audioMod": "Mod Sonora",
     "installing": "Installazione...",
     "enable": "Abilita",
     "disable": "Disabilita",
@@ -166,7 +166,7 @@
     "tools": "Strumenti",
     "toolsDescription": "Funzioni di utilità per gestire le tue mod",
     "openGameFolder": "Apri Cartella Gioco",
-    "openModsFolder": "Apri Cartella Mod",
+    "openModsFolder": "Apri Cartella delle Mod",
     "clearAllMods": "Cancella Tutte le Mod",
     "confirmClearAllMods": "Sei sicuro di voler cancellare tutte le mod? Questa azione non può essere annullata.",
     "allModsCleared": "Tutte le mod sono state cancellate",
@@ -293,8 +293,8 @@
     "showOutdated": "Mostra Obsolete",
     "showNSFWContent": "Contenuti NSFW",
     "hideNSFWContent": "Contenuti NSFW",
-    "audioModsOnly": "Solo Mod Audio",
-    "excludeAudioMods": "Nascondi Mod Audio",
+    "audioModsOnly": "Solo Mod Sonore",
+    "excludeAudioMods": "Nascondi Mod Sonore",
     "searchCategories": "Cerca categorie...",
     "searchHeroes": "Cerca eroi...",
     "noCategoriesFound": "Nessuna categoria trovata.",
@@ -308,7 +308,7 @@
     "sortBy": "Ordina per",
     "showNSFW": "Mostra NSFW",
     "hideNSFW": "Nascondi NSFW",
-    "audioOnly": "Mod Audio",
+    "audioOnly": "Mod Sonore",
     "hideAudio": "Nascondi Audio",
     "hideOutdatedBadge": "Nascondi Obsolete",
     "showOutdatedBadge": "Mostra Obsolete",
@@ -322,8 +322,8 @@
     "releasedate": "Data di Rilascio"
   },
   "addMods": {
-    "title": "Aggiungi Mod",
-    "subtitle": "Carica file mod. Il trascinamento è supportato.",
+    "title": "Aggiungi Mod locale",
+    "subtitle": "Carica i file della mod. Il trascinamento è supportato.",
     "cardTitle": "Carica File",
     "cardDescription": "Rilascia un .vpk, o un archivio .zip/.rar/.7z.",
     "addFiles": "Aggiungi File",
@@ -338,15 +338,15 @@
     "cancel": "Annulla",
     "add": "Aggiungi",
     "processing": "Elaborazione...",
-    "validatingMetadata": "Validazione metadati mod...",
-    "creatingDirectories": "Creazione cartelle mod...",
+    "validatingMetadata": "Validazione metadati della mod...",
+    "creatingDirectories": "Creazione cartelle della mod...",
     "processingPreview": "Elaborazione immagine anteprima...",
-    "processingFiles": "Elaborazione file mod...",
+    "processingFiles": "Elaborazione file della mod...",
     "storingArchive": "Archiviazione archivio {{format}}...",
     "extractingArchive": "Estrazione archivio {{format}}...",
-    "validatingFiles": "Validazione file mod...",
-    "savingMetadata": "Salvataggio metadati mod...",
-    "processingImage": "Elaborazione immagine mod...",
+    "validatingFiles": "Validazione file della mod...",
+    "savingMetadata": "Salvataggio metadati della mod...",
+    "processingImage": "Elaborazione immagine della mod...",
     "addingToLibrary": "Aggiunta mod alla libreria...",
     "modAddedSuccess": "Mod aggiunta con successo!",
     "unsupportedSelection": "Selezione non supportata.",
@@ -517,7 +517,7 @@
     "removeMod": "Rimuovi mod"
   },
   "modForm": {
-    "title": "Metadati mod",
+    "title": "Metadati della Mod",
     "description": "Aggiungi dettagli opzionali. Solo il nome è obbligatorio.",
     "unknownAuthor": "Sconosciuto",
     "unknownMod": "Mod Sconosciuta",
@@ -550,110 +550,6 @@
           "🐧 Risolti build Linux e problemi di scorrimento con GLS pre-incluso",
           "✨ Miglioramenti vari di UI e UX",
           "🔍 Persistenza ricerca durante la navigazione"
-        ]
-      },
-      "0.8.2": {
-        "title": "Correzioni Bug e Miglioramenti",
-        "features": [
-          "🐛 Risolti vari bug e migliorata la stabilità",
-          "⚡ Miglioramenti prestazioni e ottimizzazioni"
-        ]
-      },
-      "0.8.1": {
-        "title": "Miglioramenti Tecnici",
-        "features": [
-          "🔧 Aggiornato per usare plugin HTTP per tutte le chiamate API per una maggiore affidabilità"
-        ]
-      },
-      "0.8.0": {
-        "title": "Funzionalità Principali e Aggiornamenti UI + Nuove Lingue",
-        "features": [
-          "📤 Il supporto per mod locali è qui!",
-          "🎵 Aggiunto cursore volume per anteprime mod audio",
-          "🌍 Aggiunte 7 nuove lingue: Arabo, Tedesco, Francese, Polacco, Russo, Turco e Tedesco Svizzero",
-          "🔽 Trascina e rilascia file mod direttamente nell'app",
-          "🌙 La modalità chiara ora segue automaticamente il tema di sistema",
-          "✨ Le impostazioni dei filtri ora persistono durante la navigazione tra pagine, abbiamo anche aggiunto la modalità filtro \"Escludi\"",
-          "📱 Aggiunta barra inferiore con indicatori di stato per mod e download"
-        ]
-      },
-      "0.7.0": {
-        "title": "Funzionalità Principali e Rinnovamento UI",
-        "features": [
-          "📦 Supporto download multi-file - scegli quali file installare quando le mod hanno più archivi",
-          "🔒 Filtro contenuti NSFW con controlli utente per una navigazione sicura",
-          "⚙️ Gestione avanzata gameinfo.gi per una migliore compatibilità mod",
-          "🎨 Design logo completamente nuovo e stile UI migliorato in tutta l'app",
-          "🚀 Animazioni pulsante di avvio migliorate e layout impostazioni potenziato",
-          "📍 Gestione intelligente posizione scorrimento - mantieni la posizione mentre esplori le mod",
-          "🔍 Rilevanza ricerca migliorata e capacità di ordinamento per una migliore scoperta mod"
-        ]
-      },
-      "0.6.1": {
-        "title": "Deep Link e Miglioramenti",
-        "features": [
-          "🔗 Aggiunto supporto per link installazione con 1 clic su GameBanana"
-        ]
-      },
-      "0.6.0": {
-        "title": "Supporto Mod Audio e Opzioni di Avvio",
-        "features": [
-          "🎵 Aggiunto supporto per mod audio - personalizza i suoni di Deadlock",
-          "🚀 Gestione opzioni di avvio migliorata - non presuppone più il requisito del prefisso \"+\"",
-          "🔧 Compatibilità mod e processo di installazione migliorati",
-          "⚡ Varie ottimizzazioni prestazioni e miglioramenti di stabilità"
-        ]
-      },
-      "0.5.1": {
-        "title": "Prestazioni e Correzioni Bug",
-        "features": [
-          "🚀 Aggiunta virtualizzazione alla pagina mod per prestazioni significativamente migliori",
-          "🔧 Risolto ordinamento \"ultimo aggiornamento\" che non rifletteva timestamp mod reali",
-          "🏷️ Aggiunti filtri categoria ed eroe per una migliore scoperta mod",
-          "❌ Aggiunto pulsante cancella all'input ricerca per reset rapido ricerca",
-          "🔍 Funzionalità di filtro e ricerca migliorate nella pagina mod",
-          "🐳 Risolti problemi compatibilità Docker",
-          "🎨 Layout e stile card mod migliorati",
-          "📖 Aggiornata UI per riconoscere GameBanana come fonte dati",
-          "⚡ Varie ottimizzazioni prestazioni e miglioramenti di stabilità"
-        ]
-      },
-      "0.5.0": {
-        "title": "Stabilità e Nuove Funzionalità",
-        "features": [
-          "🛡️ Risolto problema crash Windows con plugin istanza singola",
-          "✨ Aggiunta questa finestra \"Novità\" per mostrare aggiornamenti",
-          "⚠️ Nuovo sistema avviso mod obsolete per una migliore gestione mod",
-          "🎮 Aggiornato roster campioni con ultimi eroi Deadlock",
-          "🔧 Risolto Opzioni Avvio Personalizzate che non rispettavano stato abilitato/disabilitato",
-          "🎨 Componenti UI e miglioramenti layout potenziati",
-          "🔧 Vari miglioramenti stabilità e correzioni bug"
-        ]
-      },
-      "0.4.0": {
-        "title": "Migliore Gestione Download e Rinnovamento UI",
-        "features": [
-          "✨ Interfaccia utente rinnovata con navigazione migliorata",
-          "📥 Sistema gestione download potenziato",
-          "🐛 Risolti problemi eliminazione mod (grazie @Skeptic-systems)",
-          "🔧 Migliore gestione errori e feedback utente"
-        ]
-      },
-      "0.3.0": {
-        "title": "Refactoring UI e Miglioramenti Download",
-        "features": [
-          "🎨 Revisione completa UI per una migliore esperienza utente",
-          "📦 Gestione download migliorata",
-          "⚡ Ottimizzazioni prestazioni",
-          "🔄 Aggiornate dipendenze principali"
-        ]
-      },
-      "0.2.0": {
-        "title": "Tracciamento Errori e Correzione Permessi",
-        "features": [
-          "📊 Aggiunto tracciamento problemi Sentry per migliori segnalazioni bug",
-          "🔐 Risolti problemi permessi aggiornamento",
-          "🛡️ Segnalazione errori e diagnostica migliorate"
         ]
       }
     }
@@ -716,9 +612,9 @@
   "debug": {
     "title": "Debug",
     "description": "Strumenti e utilità di debug per sviluppo e risoluzione problemi.",
-    "clearModsState": "Cancella Stato Mod",
-    "confirmClearModsState": "Sei sicuro di voler cancellare lo stato delle mod? Questo rimuoverà tutte le mod dall'applicazione ma NON le eliminerà dalla cartella del gioco. Puoi riscansionare la cartella mod per ripristinarle.",
-    "modsStateCleared": "Stato mod cancellato con successo"
+    "clearModsState": "Cancella Stato delle Mod",
+    "confirmClearModsState": "Sei sicuro di voler cancellare lo stato delle mod? Questo rimuoverà tutte le mod dall'applicazione ma NON le eliminerà dalla cartella del gioco. Puoi riscansionare la cartella delle mod per ripristinarle.",
+    "modsStateCleared": "Stato delle mod cancellato con successo"
   },
   "developer": {
     "title": "Strumenti Sviluppatore",
@@ -780,7 +676,7 @@
     "shareError": "Impossibile condividere il profilo",
     "shareNoMods": "Impossibile condividere il profilo: nessuna mod è abilitata",
     "noHardwareIdOrVersion": "Impossibile condividere il profilo: mancano informazioni sull'ID hardware o versione",
-    "shareInstructions": "Condividi questo ID Profilo con i tuoi amici così possono importare il tuo profilo mod:",
+    "shareInstructions": "Condividi questo ID Profilo con i tuoi amici così possono importare il tuo profilo delle mod:",
     "profileId": "ID Profilo",
     "profileIdCopied": "ID Profilo copiato negli appunti!",
     "profileIdCopyError": "Impossibile copiare l'ID Profilo",
