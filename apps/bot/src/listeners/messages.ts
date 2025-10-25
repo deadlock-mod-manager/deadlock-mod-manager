@@ -1,6 +1,11 @@
 import { Listener } from "@sapphire/framework";
 import type { Message, TextChannel } from "discord.js";
 import { SupportAgent } from "@/ai/agents/support";
+import { logger as mainLogger } from "@/lib/logger";
+
+const logger = mainLogger.child().withContext({
+  service: "message-listener",
+});
 
 export class MessageCreateListener extends Listener {
   public constructor(
@@ -44,6 +49,15 @@ export class MessageCreateListener extends Listener {
     );
 
     if (response.isErr()) {
+      logger
+        .withError(response.error)
+        .withMetadata({
+          messageId: message.id,
+          userId: message.author.id,
+          channelId: message.channelId,
+        })
+        .error("Support agent returned error");
+
       return message.reply({
         content:
           "An error occurred while processing your request. Please try again later.",
@@ -53,5 +67,27 @@ export class MessageCreateListener extends Listener {
     await message.reply({
       content: response.value,
     });
+
+    logger
+      .withMetadata({
+        messageId: message.id,
+        userId: message.author.id,
+        channelId: message.channelId,
+      })
+      .info("Successfully processed support message");
+
+    try {
+      await message.reply({
+        content:
+          "An error occurred while processing your request. Please try again later.",
+      });
+    } catch (replyError) {
+      logger
+        .withError(replyError)
+        .withMetadata({
+          messageId: message.id,
+        })
+        .error("Failed to send error reply to user");
+    }
   }
 }

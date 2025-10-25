@@ -19,7 +19,6 @@ const sdk = setupInstrumentation("bot", sentryClient, [
     publicKey: env.LANGFUSE_PUBLIC_KEY,
     baseUrl: env.LANGFUSE_BASE_URL,
     shouldExportSpan: ({ otelSpan }) => {
-      console.log(otelSpan.instrumentationScope.name, otelSpan.name);
       return (
         ["langfuse-sdk", "ai"].includes(otelSpan.instrumentationScope.name) ||
         otelSpan.name.startsWith("langchain")

@@ -89,7 +89,6 @@ export class ForumPosterService {
           modLink: event.data.link,
         })
         .error("Failed to post new mod to forum channel");
-      console.error(error);
       throw error;
     }
   }
