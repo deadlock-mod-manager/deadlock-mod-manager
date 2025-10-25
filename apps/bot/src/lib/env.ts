@@ -22,6 +22,8 @@ export const envSchema = z.object({
   STATUS_ENABLED: z.coerce.boolean().default(true),
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
   REPORTS_CHANNEL_ID: z.string().default("1421566655338905620"),
+  SUPPORT_CHANNEL_ID: z.string().default("1431734280463188100"),
+  BUG_REPORT_CHANNEL_ID: z.string().default("1418618964925480990"),
   API_URL: z.string().url().default("https://api.deadlockmods.app"),
   REPORT_MODERATOR_ROLES: z
     .string()
@@ -42,8 +44,10 @@ export const envSchema = z.object({
   LANGFUSE_SECRET_KEY: z.string(),
   LANGFUSE_PUBLIC_KEY: z.string(),
   LANGFUSE_BASE_URL: z.string().url().default("https://cloud.langfuse.com"),
-  DEBUG: z.coerce.boolean().default(false),
-  DOCS_SYNC_ENABLED: z.coerce.boolean().default(true),
+  DEBUG: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
   DOCS_SYNC_INTERVAL_HOURS: z.coerce.number().min(1).default(24),
   DOCS_URL: z
     .string()

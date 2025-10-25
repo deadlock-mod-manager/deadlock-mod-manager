@@ -3,6 +3,7 @@ export * from "./chat-message.repository";
 export * from "./custom-settings.repository";
 export * from "./documentation-chunk.repository";
 export * from "./documentation-sync.repository";
+export * from "./message-pattern-embedding.repository";
 export * from "./mirrored-file.repository";
 export * from "./mod.repository";
 export * from "./mod-download.repository";

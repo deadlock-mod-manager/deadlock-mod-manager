@@ -4,10 +4,10 @@ import { SupportAgent } from "@/ai/agents/support";
 import { logger as mainLogger } from "@/lib/logger";
 
 const logger = mainLogger.child().withContext({
-  service: "message-listener",
+  service: "support-message-listener",
 });
 
-export class MessageCreateListener extends Listener {
+export class SupportMessageListener extends Listener {
   public constructor(
     context: Listener.LoaderContext,
     options: Listener.Options,

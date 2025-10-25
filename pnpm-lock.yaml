@@ -178,6 +178,9 @@ importers:
       '@deadlock-mods/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@deadlock-mods/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
       '@deadlock-mods/instrumentation':
         specifier: workspace:*
         version: link:../../packages/instrumentation

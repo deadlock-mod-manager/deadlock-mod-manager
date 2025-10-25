@@ -1,11 +1,14 @@
+import { featureFlagDefinitions } from "@/config/feature-flags";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { StatusMonitorService } from "@/lib/status-monitor";
 import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
 import { cronService } from "@/services/cron";
+import { PatternSyncService } from "@/services/pattern-sync";
 import { PromptSyncService } from "@/services/prompt-sync";
 import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
+import { FeatureFlagsService } from "./services/feature-flags";
 
 const main = async () => {
   if (!env.BOT_ENABLED) {
@@ -16,20 +19,24 @@ const main = async () => {
   const promptSync = new PromptSyncService();
   await promptSync.syncPrompts();
 
+  logger.info("Registering feature flags");
+  await FeatureFlagsService.instance.bootstrap(featureFlagDefinitions);
+
+  logger.info("Syncing triage patterns");
+  const patternSync = new PatternSyncService();
+  await patternSync.sync();
+  patternSync.syncPeriodically(6);
+
   const statusMonitor = new StatusMonitorService();
   const redisSubscriber = RedisSubscriberService.getInstance();
 
-  if (env.DOCS_SYNC_ENABLED) {
-    logger.info("Defining documentation sync cron job");
-    await cronService.defineJob({
-      name: DocumentationSyncProcessor.name,
-      pattern: DocumentationSyncProcessor.cronPattern,
-      processor: DocumentationSyncProcessor.instance,
-      enabled: true,
-    });
-  } else {
-    logger.info("Documentation sync is disabled");
-  }
+  logger.info("Defining documentation sync cron job");
+  await cronService.defineJob({
+    name: DocumentationSyncProcessor.name,
+    pattern: DocumentationSyncProcessor.cronPattern,
+    processor: DocumentationSyncProcessor.instance,
+    enabled: true,
+  });
 
   client.once("clientReady", async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
