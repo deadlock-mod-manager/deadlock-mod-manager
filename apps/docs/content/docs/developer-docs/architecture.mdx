@@ -23,6 +23,7 @@ graph TD
     B --> E[PostgreSQL]
     B --> F[Redis Cache]
     B --> G[GameBanana API]
+    B --> M[Mirror Service]
 
     H[Discord Bot] --> B
     I[Web App] --> B
@@ -33,6 +34,15 @@ graph TD
     K[External Services]
     B --> K
 
+    M --> E
+    M --> F
+    M --> N[S3 Storage]
+    M --> G
+
+    L[Mirror Workers] --> M
+    L --> E
+    L --> N
+
     subgraph "Client Layer"
         A
         H
@@ -42,6 +52,12 @@ graph TD
     subgraph "API Layer"
         B
         J
+    end
+
+    subgraph "Mirror Layer"
+        M
+        L
+        N
     end
 
     subgraph "Data Layer"
@@ -68,7 +84,16 @@ graph TD
 - **Database**: PostgreSQL for persistent storage
 - **Background Jobs**: Queue-based processing for heavy operations
 
-#### 3. Shared Packages
+#### 3. Mirror Service (Bun + Hono)
+
+- **File Caching**: S3-backed caching layer for mod downloads
+- **Performance Optimization**: Reduces load on GameBanana API
+- **Bandwidth Savings**: Serves frequently accessed files from cache
+- **Background Workers**: Automated validation and cleanup processes
+
+For detailed information, see the [Mirror Service Documentation](/developer-docs/mirror-service).
+
+#### 4. Shared Packages
 
 - **Database Schema**: Centralized data models using Drizzle ORM
 - **Logging**: Structured logging across all services
@@ -234,6 +259,61 @@ sequenceDiagram
         end
     end
 ```
+
+## Mirror Service Architecture
+
+The mirror service acts as a caching layer for mod file downloads, improving performance and reducing load on external APIs.
+
+### High-Level Architecture
+
+```mermaid
+graph TD
+    A[API Service] --> B[Mirror Service]
+    C[Desktop App] -.->|Direct Download| B
+
+    B --> D[MirrorService]
+    B --> E[S3Service]
+    B --> F[MetricsService]
+
+    D --> G[PostgreSQL]
+    D --> E
+    D --> H[GameBanana API]
+
+    E --> I[S3 Storage]
+    F --> J[Redis Cache]
+
+    K[Background Workers] --> D
+    K --> E
+    K --> G
+
+    subgraph "Mirror Service Components"
+        D
+        E
+        F
+    end
+
+    subgraph "Background Jobs"
+        K
+        L[Validation Worker]
+        M[Cleanup Worker]
+    end
+
+    subgraph "Storage Layer"
+        G
+        I
+        J
+    end
+```
+
+**Key Features:**
+
+- **Smart Caching**: Automatically caches mod files on first download
+- **Stream-Through Upload**: Files are streamed to client while uploading to S3
+- **Stale Detection**: Background workers validate file integrity
+- **Automatic Cleanup**: Removes unused files based on retention policy
+- **Metrics Tracking**: Cache hit rates, bandwidth savings, and download statistics
+
+For complete technical details and integration patterns, see the [Mirror Service Documentation](/developer-docs/mirror-service).
 
 ## Data Architecture
 

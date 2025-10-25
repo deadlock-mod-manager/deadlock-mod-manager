@@ -1,0 +1,651 @@
+---
+title: Mirror Service
+description: Technical documentation for the mod file caching and mirroring service
+---
+
+import { Card, Cards } from "fumadocs-ui/components/card";
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Mirror Service
+
+The mirror service is a dedicated caching layer for mod file downloads that improves performance, reduces load on external APIs, and provides bandwidth savings through intelligent file caching.
+
+## Service Overview
+
+### Purpose
+
+The mirror service acts as an intermediary between clients and the GameBanana API, caching frequently accessed mod files in S3 storage. This provides:
+
+- **Faster Downloads**: Cached files are served directly from S3 with lower latency
+- **Reduced API Load**: Minimizes requests to GameBanana API
+- **Bandwidth Savings**: Tracks and reports bandwidth saved through caching
+- **High Availability**: Files remain accessible even if upstream sources are temporarily unavailable
+
+### Technology Stack
+
+- **Runtime**: Bun (high-performance JavaScript runtime)
+- **Framework**: Hono (lightweight web framework)
+- **Storage**: S3-compatible object storage
+- **Cache**: Redis (for metrics and metadata)
+- **Database**: PostgreSQL (for file metadata tracking)
+- **Background Jobs**: Cron-based workers for validation and cleanup
+
+## Architecture
+
+### High-Level Architecture
+
+```mermaid
+graph TD
+    A[API Service] -->|Download Request| B[Mirror Service]
+    C[Desktop App] -.->|Direct Download| B
+
+    B --> D[Download Router]
+    D --> E[MirrorService]
+
+    E -->|Check Cache| F[MirroredFileRepository]
+    F --> G[PostgreSQL]
+
+    E -->|Stream File| H[S3Service]
+    H --> I[S3 Storage]
+
+    E -->|Fetch Upstream| J[ModDownloadRepository]
+    J --> K[GameBanana API]
+
+    E -->|Track Metrics| L[MetricsService]
+    L --> M[Redis]
+
+    N[Validation Worker] -->|Hourly| F
+    N -->|Validate Files| H
+
+    O[Cleanup Worker] -->|Daily| F
+    O -->|Remove Old Files| H
+
+    subgraph "HTTP Layer"
+        B
+        D
+    end
+
+    subgraph "Service Layer"
+        E
+        L
+    end
+
+    subgraph "Storage Layer"
+        F
+        J
+        H
+    end
+
+    subgraph "Background Workers"
+        N
+        O
+    end
+
+    subgraph "Data Stores"
+        G
+        I
+        M
+    end
+```
+
+### Component Architecture
+
+```mermaid
+graph LR
+    A[Hono App] --> B[Middleware Stack]
+    B --> C[Router Layer]
+
+    C --> D[Download Router]
+    C --> E[Health Router]
+    C --> F[Metrics Router]
+
+    D --> G[MirrorService]
+    F --> H[MetricsService]
+
+    G --> I[S3Service]
+    G --> J[Repositories]
+
+    H --> K[Redis Client]
+    J --> L[Database Client]
+
+    subgraph "HTTP Layer"
+        A
+        B
+        C
+    end
+
+    subgraph "Business Logic"
+        G
+        H
+    end
+
+    subgraph "Data Access"
+        I
+        J
+        K
+        L
+    end
+```
+
+## Data Flow
+
+### Cache Hit Flow
+
+When a file already exists in the cache:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Mirror as Mirror Service
+    participant DB as PostgreSQL
+    participant S3 as S3 Storage
+    participant Redis
+    participant Metrics as MetricsService
+
+    Client->>Mirror: GET /download/:modId/:fileId
+    Mirror->>DB: Check mirrored_files table
+    DB-->>Mirror: File metadata found
+
+    Mirror->>S3: Check file exists
+    S3-->>Mirror: File exists
+
+    Mirror->>Metrics: Increment cache hit
+    Metrics->>Redis: INCR cache_hits
+
+    Mirror->>DB: Update last_downloaded_at
+    Mirror->>S3: Stream file
+    S3-->>Mirror: File stream
+    Mirror-->>Client: Stream response (200 OK)
+
+    Note over Mirror,Client: File served from cache
+```
+
+### Cache Miss Flow
+
+When a file needs to be downloaded and cached:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Mirror as Mirror Service
+    participant DB as PostgreSQL
+    participant S3 as S3 Storage
+    participant GB as GameBanana
+    participant Redis
+    participant Metrics as MetricsService
+
+    Client->>Mirror: GET /download/:modId/:fileId
+    Mirror->>DB: Check mirrored_files table
+    DB-->>Mirror: File not found / stale
+
+    Mirror->>Metrics: Increment cache miss
+    Metrics->>Redis: INCR cache_misses
+
+    Mirror->>DB: Get download URL
+    DB-->>Mirror: GameBanana URL
+
+    Mirror->>GB: Fetch file
+    GB-->>Mirror: File stream
+
+    par Stream to client and S3
+        Mirror-->>Client: Stream response (200 OK)
+    and
+        Mirror->>S3: Upload stream
+        S3-->>Mirror: Upload complete
+        Mirror->>DB: Create mirrored_files entry
+    end
+
+    Note over Mirror,Client: File cached for future requests
+```
+
+### Validation Worker Flow
+
+Background worker that validates cached files:
+
+```mermaid
+sequenceDiagram
+    participant Cron as Cron Service
+    participant Worker as Validation Worker
+    participant DB as PostgreSQL
+    participant S3 as S3 Storage
+
+    Cron->>Worker: Trigger (every N hours)
+    Worker->>DB: Get all mirrored_files with mod_downloads
+
+    loop For each file
+        Worker->>DB: Check if mod_download exists
+
+        alt Mod download deleted
+            Worker->>S3: Delete file
+            Worker->>DB: Delete mirrored_file entry
+        else File size mismatch
+            Worker->>S3: Delete stale file
+            Worker->>DB: Mark as stale
+        else File valid
+            Worker->>DB: Update last_validated timestamp
+        end
+    end
+
+    Worker->>Cron: Job complete (metrics)
+```
+
+### Cleanup Worker Flow
+
+Background worker that removes unused files:
+
+```mermaid
+sequenceDiagram
+    participant Cron as Cron Service
+    participant Worker as Cleanup Worker
+    participant DB as PostgreSQL
+    participant S3 as S3 Storage
+
+    Cron->>Worker: Trigger (daily at 2 AM)
+    Worker->>DB: Find files not downloaded in N days
+
+    loop For each unused file
+        Worker->>S3: Delete file
+        Worker->>DB: Delete mirrored_file entry
+    end
+
+    Worker->>Cron: Job complete (files deleted, storage freed)
+```
+
+## Core Components
+
+### MirrorService
+
+The main service orchestrator that handles file mirroring logic.
+
+**Responsibilities:**
+
+- Check if file exists in cache and is not stale
+- Stream cached files from S3
+- Fetch files from GameBanana on cache miss
+- Upload files to S3 while streaming to client
+- Track cache hits and misses
+- Create mirrored file metadata entries
+
+**Key Methods:**
+
+- `mirrorFile(modId: string, fileId: string)` - Main entry point for file downloads
+
+```typescript
+// Simplified flow
+async mirrorFile(modId: string, fileId: string) {
+  // Check cache
+  const cached = await this.mirroredFileRepository.findByModIdAndFileId(modId, fileId);
+
+  if (cached.isOk() && !cached.value.isStale) {
+    // Verify S3 file exists
+    if (await S3Service.instance.fileExists(cached.value.s3Key)) {
+      // Cache hit - stream from S3
+      await MetricsService.instance.incrementCacheHit();
+      return S3Service.instance.downloadFileStream(cached.value.s3Key);
+    }
+  }
+
+  // Cache miss - fetch from upstream
+  await MetricsService.instance.incrementCacheMiss();
+  const file = await fetch(gamebananaUrl);
+
+  // Upload to S3 and stream to client simultaneously
+  const { outputStream, uploadPromise } =
+    S3Service.instance.uploadAndStreamThrough(key, file.body, onFileUploaded);
+
+  return outputStream;
+}
+```
+
+### S3Service
+
+Handles all S3 storage operations using Bun's built-in S3Client.
+
+**Responsibilities:**
+
+- Upload files to S3
+- Download files from S3
+- Check file existence
+- Delete files from S3
+- Stream-through uploads (upload while streaming to client)
+
+**Key Methods:**
+
+- `uploadFileStream(key, stream)` - Upload a file stream
+- `downloadFileStream(key)` - Download a file as a stream
+- `uploadAndStreamThrough(key, stream, onSuccess)` - Upload and stream simultaneously
+- `fileExists(key)` - Check if file exists in S3
+- `deleteFile(key)` - Remove file from S3
+
+**Stream-Through Pattern:**
+
+The service uses stream tee-ing to upload to S3 and stream to the client simultaneously:
+
+```typescript
+uploadAndStreamThrough(key: string, sourceStream: ReadableStream, onSuccess: (hash: string) => void) {
+  // Split stream into two
+  const [streamForS3, streamForResponse] = sourceStream.tee();
+
+  // Upload to S3 in background
+  const uploadPromise = uploadToS3(streamForS3);
+
+  // Return stream for immediate client response
+  return {
+    outputStream: streamForResponse,
+    uploadPromise
+  };
+}
+```
+
+### MetricsService
+
+Tracks cache performance and download statistics using Redis.
+
+**Responsibilities:**
+
+- Track cache hits and misses
+- Track download counts per file
+- Calculate cache hit rate
+- Calculate bandwidth savings
+- Provide top downloads statistics
+
+**Key Methods:**
+
+- `incrementCacheHit()` - Increment cache hit counter
+- `incrementCacheMiss()` - Increment cache miss counter
+- `incrementDownload(fileId)` - Track download for a specific file
+- `getCacheHitRate()` - Calculate percentage of cache hits
+- `calculateBandwidthSaved()` - Estimate bandwidth saved by caching
+- `getTopDownloads(limit)` - Get most downloaded files
+- `getMetrics()` - Get comprehensive metrics report
+
+**Redis Keys:**
+
+- `mirror:metrics:cache_hits` - Total cache hits
+- `mirror:metrics:cache_misses` - Total cache misses
+- `mirror:metrics:downloads:{fileId}` - Downloads per file
+
+### ValidationProcessor
+
+Background worker that validates cached files against upstream sources.
+
+**Responsibilities:**
+
+- Check if mod downloads still exist in database
+- Validate file sizes match upstream
+- Mark stale files for re-download
+- Delete orphaned files
+- Update validation timestamps
+
+**Configuration:**
+
+- Runs every N hours (configurable via `VALIDATION_WORKER_INTERVAL_HOURS`)
+- Default: Every hour
+
+**Process:**
+
+1. Fetch all mirrored files with their mod download relationships
+2. For each file:
+   - Check if mod download still exists
+   - Compare file sizes
+   - Delete files if mod download deleted
+   - Mark as stale if size mismatch
+   - Update last_validated timestamp if valid
+
+### CleanupProcessor
+
+Background worker that removes unused files based on retention policy.
+
+**Responsibilities:**
+
+- Find files not downloaded within retention period
+- Delete files from S3
+- Remove database entries
+- Track storage freed
+
+**Configuration:**
+
+- Runs daily at 2 AM
+- Retention period: N days (configurable via `CLEANUP_RETENTION_DAYS`)
+- Default: 14 days
+
+**Process:**
+
+1. Query files where `last_downloaded_at < NOW() - N days`
+2. For each file:
+   - Delete from S3
+   - Delete from database
+   - Track storage freed
+
+## API Endpoints
+
+### Download Endpoint
+
+```
+GET /download/:modId/:fileId
+```
+
+Downloads a mod file with automatic caching.
+
+**Parameters:**
+
+- `modId` (string) - The mod identifier
+- `fileId` (string) - The file download identifier
+
+**Response:**
+
+- `200 OK` - File stream with appropriate headers
+- `404 Not Found` - File not found in database
+- `500 Internal Server Error` - Server error
+
+**Response Headers:**
+
+- `Content-Type: application/octet-stream`
+- `Content-Disposition: attachment; filename="..."`
+- `Content-Length: {size}`
+
+**Example:**
+
+```bash
+curl https://mirror.deadlockmods.app/download/abc123/xyz789 -o mod.zip
+```
+
+### Health Check Endpoints
+
+```
+GET /
+GET /health
+```
+
+Returns service health status.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "service": "mirror-service",
+  "version": "1.0.0",
+  "uptime": 3600,
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### Metrics Endpoint
+
+```
+GET /metrics
+```
+
+Returns comprehensive service metrics.
+
+**Response:**
+
+```json
+{
+  "cacheHitRate": 85.5,
+  "totalStorageUsed": 1073741824,
+  "totalFiles": 150,
+  "bandwidthSaved": 5368709120,
+  "topDownloads": [
+    {
+      "fileId": "file_123",
+      "filename": "popular-mod.zip",
+      "downloads": 500
+    }
+  ],
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+## Integration with Main API
+
+The mirror service is integrated with the main API service through a feature flag system.
+
+### Feature Flag
+
+The `mod-download-mirroring` feature flag controls whether the API returns mirror URLs or direct GameBanana URLs.
+
+```typescript
+// In API service
+const isModDownloadMirroringEnabled =
+  await featureFlagsService.isFeatureEnabled("mod-download-mirroring", userId);
+
+const downloads = files.map((download) => ({
+  ...download,
+  url: isModDownloadMirroringEnabled.unwrapOr(false)
+    ? `${env.MIRROR_SERVICE_URL}/download/${modId}/${download.id}`
+    : download.url, // Direct GameBanana URL
+}));
+```
+
+### URL Generation
+
+When mirroring is enabled:
+
+- **Format**: `https://mirror.deadlockmods.app/download/{modId}/{fileId}`
+- **Example**: `https://mirror.deadlockmods.app/download/abc123/xyz789`
+
+When mirroring is disabled:
+
+- **Format**: Direct GameBanana URL
+- **Example**: `https://files.gamebanana.com/mods/abc123.zip`
+
+### Graceful Degradation
+
+If the mirror service is unavailable:
+
+1. Clients receive 404 or 500 errors from mirror service
+2. Clients can fall back to direct GameBanana URLs
+3. Feature flag can be disabled to bypass mirror service
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Server Configuration
+PORT=3002
+NODE_ENV=production
+TZ=Europe/Berlin
+
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/deadlock
+
+# S3 Storage
+S3_ACCESS_KEY_ID=your_access_key
+S3_SECRET_ACCESS_KEY=your_secret_key
+S3_BUCKET=deadlock-mod-manager-mirror
+S3_ENDPOINT=https://s3.amazonaws.com
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Background Workers
+VALIDATION_WORKER_INTERVAL_HOURS=1  # Validate every N hours
+CLEANUP_RETENTION_DAYS=14           # Keep files for N days
+
+# CORS
+CORS_ORIGIN=["https://deadlockmods.com","https://deadlockmods.app"]
+
+# Monitoring
+SENTRY_DSN=https://...
+POD_NAME=mirror-service-1  # For multi-pod deployments
+```
+
+### Worker Configuration
+
+**Validation Worker:**
+
+- Interval: 1-24 hours (configurable)
+- Default: 1 hour
+- Purpose: Detect stale files and maintain cache integrity
+
+**Cleanup Worker:**
+
+- Schedule: Daily at 2 AM (CronPatterns.MAINTENANCE_DAILY)
+- Retention: 1-365 days (configurable)
+- Default: 14 days
+- Purpose: Remove unused files to save storage costs
+
+### Database Schema
+
+The mirror service uses the `mirrored_files` table:
+
+```sql
+CREATE TABLE mirrored_files (
+  id TEXT PRIMARY KEY,
+  mod_id TEXT NOT NULL,
+  mod_download_id TEXT NOT NULL,
+  remote_id TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  s3_key TEXT NOT NULL,
+  s3_bucket TEXT NOT NULL,
+  file_hash TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  mirrored_at TIMESTAMP NOT NULL,
+  last_downloaded_at TIMESTAMP NOT NULL,
+  last_validated TIMESTAMP NOT NULL,
+  is_stale BOOLEAN NOT NULL DEFAULT false,
+  FOREIGN KEY (mod_download_id) REFERENCES mod_downloads(id)
+);
+```
+
+**Key Fields:**
+
+- `is_stale` - Marks files that need re-download (size mismatch)
+- `last_downloaded_at` - Used for cleanup retention policy
+- `last_validated` - Tracks validation worker progress
+- `file_hash` - SHA-256 hash for integrity verification
+
+<Callout type="info" title="Performance Considerations">
+  The mirror service is designed for high throughput with: - Stream-based
+  processing (no file buffering) - S3 multipart uploads (5 MB chunks) - Retry
+  logic for S3 operations - Connection pooling for database queries
+</Callout>
+
+<Cards>
+  <Card
+    title="Architecture Overview"
+    description="See how mirror service fits into the overall system"
+    href="/developer-docs/architecture"
+  />
+  <Card
+    title="API Reference"
+    description="Complete API documentation for all services"
+    href="/developer-docs/api-reference"
+  />
+  <Card
+    title="Development Setup"
+    description="Set up your development environment"
+    href="/developer-docs/development-setup"
+  />
+</Cards>
+
+<Callout type="warn" title="Production Deployment">
+  When deploying the mirror service: - Ensure S3 credentials have appropriate
+  permissions (read/write/delete) - Configure Redis for persistence if metrics
+  are critical - Set up monitoring for cache hit rates and storage usage -
+  Consider S3 lifecycle policies for additional cost optimization - Monitor
+  background worker execution and error rates
+</Callout>
