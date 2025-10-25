@@ -169,6 +169,41 @@
       "when": 1760897870830,
       "tag": "0023_massive_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1761415471883,
+      "tag": "0024_legal_stingray",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1761419485038,
+      "tag": "0025_dark_venus",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1761422578746,
+      "tag": "0026_previous_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1761425413263,
+      "tag": "0027_loving_blob",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1761425473948,
+      "tag": "0028_curvy_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

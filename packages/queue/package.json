@@ -11,7 +11,7 @@
   "dependencies": {
     "@deadlock-mods/logging": "workspace:*",
     "bullmq": "^5.28.2",
-    "ioredis": "^5.4.1"
+    "ioredis": "^5.8.0"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*"

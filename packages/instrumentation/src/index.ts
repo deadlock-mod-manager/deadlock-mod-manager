@@ -15,7 +15,7 @@ import {
 export const setupInstrumentation = (
   serviceName: string,
   sentryClient: NodeClient,
-) => {
+): NodeSDK => {
   const sdk = new NodeSDK({
     serviceName,
     instrumentations: [
