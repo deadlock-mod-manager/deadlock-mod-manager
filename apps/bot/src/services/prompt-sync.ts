@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SUPPORT_BOT_PROMPT_NAME } from "@/ai/prompts/support-bot";
+import { env } from "@/lib/env";
 import { langfuse } from "@/lib/langfuse";
 import { logger } from "@/lib/logger";
 
@@ -22,14 +23,29 @@ export class PromptSyncService {
     const promptPath = join(__dirname, "../ai/prompts/support-bot.md");
     const promptContent = await readFile(promptPath, "utf-8");
 
-    await langfuse.createPrompt({
+    try {
+      const currentPrompt = await langfuse.prompt.get(SUPPORT_BOT_PROMPT_NAME);
+
+      if (currentPrompt.prompt === promptContent) {
+        logger
+          .withMetadata({ promptName: SUPPORT_BOT_PROMPT_NAME })
+          .info("Prompt unchanged, skipping sync");
+        return;
+      }
+
+      logger
+        .withMetadata({ promptName: SUPPORT_BOT_PROMPT_NAME })
+        .info("Prompt changed, creating new version");
+    } catch (error) {
+      logger
+        .withMetadata({ promptName: SUPPORT_BOT_PROMPT_NAME })
+        .info("No existing prompt found, creating initial version");
+    }
+
+    await langfuse.prompt.create({
       name: SUPPORT_BOT_PROMPT_NAME,
       prompt: promptContent,
-      config: {
-        model: "gpt-4o",
-        temperature: 0.7,
-      },
-      labels: ["support", "bot"],
+      labels: ["support", "bot", env.NODE_ENV],
     });
 
     logger
