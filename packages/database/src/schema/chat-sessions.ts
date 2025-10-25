@@ -16,7 +16,9 @@ export const chatSessions = pgTable(
       .$defaultFn(() => generateId("chat_session").toString()),
     discordUserId: text("discord_user_id").notNull(),
     discordChannelId: text("discord_channel_id").notNull(),
-    lastMessageAt: timestamp("last_message_at", { mode: "date" }).notNull(),
+    lastMessageAt: timestamp("last_message_at", { mode: "date" })
+      .defaultNow()
+      .notNull(),
     ...timestamps,
   },
   (t) => [

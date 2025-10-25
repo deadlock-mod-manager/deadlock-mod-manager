@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -45,7 +46,7 @@ export const documentationSync = pgTable("documentation_sync", {
     .$defaultFn(() => generateId("documentation_sync").toString()),
   lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
   contentHash: text("content_hash").notNull(),
-  chunkCount: text("chunk_count").notNull(),
+  chunkCount: integer("chunk_count").notNull(),
   status: syncStatusEnum("status").notNull().default("idle"),
   errorMessage: text("error_message"),
   ...timestamps,

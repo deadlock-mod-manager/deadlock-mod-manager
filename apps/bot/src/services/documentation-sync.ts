@@ -95,7 +95,7 @@ export class DocumentationSyncService {
     return this.syncRepository.upsert({
       status,
       contentHash,
-      chunkCount: chunkCount.toString(),
+      chunkCount,
       lastSyncedAt: new Date(),
       errorMessage: errorMessage || null,
     });

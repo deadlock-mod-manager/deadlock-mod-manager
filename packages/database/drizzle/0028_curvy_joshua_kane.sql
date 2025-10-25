@@ -1,0 +1,1 @@
+ALTER TABLE "chat_session" ALTER COLUMN "last_message_at" SET DEFAULT now();

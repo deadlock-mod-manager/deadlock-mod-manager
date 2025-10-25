@@ -1,0 +1,1 @@
+ALTER TABLE "documentation_sync" ALTER COLUMN "chunk_count" TYPE integer USING ("chunk_count"::integer);
