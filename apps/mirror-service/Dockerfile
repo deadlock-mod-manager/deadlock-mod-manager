@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.38 AS builder
+FROM oven/bun:1.3.1 AS builder
 
 WORKDIR /usr/src/app
 
@@ -27,7 +27,7 @@ COPY apps/mirror-service ./apps/mirror-service
 RUN pnpm install --no-frozen-lockfile
 
 # Runtime stage - Minimal image with only runtime dependencies
-FROM oven/bun:1.1.38-slim AS runtime
+FROM oven/bun:1.3.1-slim AS runtime
 
 # Create non-root user first
 RUN groupadd -r appuser && useradd -r -g appuser appuser
