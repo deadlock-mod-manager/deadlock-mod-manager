@@ -225,7 +225,7 @@ jobs:
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
         with:
-          service-name: mirror
+          service-name: mirror-service
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
