@@ -496,10 +496,6 @@
 			"max"		"2"
 		}
 
-		// On public, leave the old data interval for now until we get better numbers of memory usage
-		// This is intended to be removed later today, 10/23/2025
-		"citadel_match_data_interval" "10"
-
 		"cq_buffer_bloat_msecs_max" "120"
 
 		"snd_soundmixer"						"Default_Mix"
