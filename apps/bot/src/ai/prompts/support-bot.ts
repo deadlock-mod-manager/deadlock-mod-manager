@@ -1,4 +1,5 @@
 import { RuntimeError } from "@deadlock-mods/common";
+import type { MessageContent } from "@langchain/core/messages";
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -6,9 +7,9 @@ import {
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { langfuse } from "@/lib/langfuse";
 
-export const createSupportBotPrompt = () => {
+export const createSupportBotPrompt = (userMention: string) => {
   return ResultAsync.fromPromise(
-    langfuse.prompt.get("support-bot", {}),
+    langfuse.prompt.get("support-bot"),
     (error) =>
       new RuntimeError("Failed to fetch prompt from Langfuse", {
         cause: error,
@@ -18,10 +19,13 @@ export const createSupportBotPrompt = () => {
       return errAsync(new RuntimeError("Prompt not found in Langfuse"));
     }
 
+    const compiledPrompt = prompt.compile({ userMention });
+
     return okAsync({
       metadata: { langfusePrompt: prompt },
       prompt: ChatPromptTemplate.fromMessages([
-        ["system", prompt.compile()],
+        ["system", compiledPrompt as MessageContent],
+        new MessagesPlaceholder("history"),
         new MessagesPlaceholder("messages"),
       ]),
     });

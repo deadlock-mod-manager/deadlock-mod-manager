@@ -19,15 +19,15 @@ export class MessageCreateListener extends Listener {
   }
 
   public async shouldRespond(message: Message) {
-    if (message.mentions.has(this.container.client.user?.id || "")) {
-      return true;
-    }
-
     if (
       message.author.bot ||
       message.author.id === this.container.client.user?.id
     ) {
       return false;
+    }
+
+    if (message.mentions.has(this.container.client.user?.id || "")) {
+      return true;
     }
 
     return false;
@@ -40,12 +40,31 @@ export class MessageCreateListener extends Listener {
 
     await (message.channel as TextChannel).sendTyping();
 
+    const botId = this.container.client.user?.id;
+    let cleanedContent = message.content;
+
+    if (botId) {
+      cleanedContent = cleanedContent
+        .replace(new RegExp(`<@!?${botId}>`, "g"), "")
+        .trim();
+    }
+
+    cleanedContent = cleanedContent
+      .replace(/<@&\d+>/g, "")
+      .replace(/<#\d+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const sessionId = `${message.author.id}-${message.channelId}`;
+    const userMention = `<@${message.author.id}>`;
     const supportAgent = new SupportAgent();
     const response = await supportAgent.invoke(
-      message.content,
-      message.id,
+      cleanedContent,
+      sessionId,
       message.author.id,
       ["support"],
+      message.channelId,
+      userMention,
     );
 
     await response.match(

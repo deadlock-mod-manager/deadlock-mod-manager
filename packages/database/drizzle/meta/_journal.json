@@ -169,6 +169,13 @@
       "when": 1760897870830,
       "tag": "0023_massive_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1761415471883,
+      "tag": "0024_legal_stingray",
+      "breakpoints": true
     }
   ]
 }

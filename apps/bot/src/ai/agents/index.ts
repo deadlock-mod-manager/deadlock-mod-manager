@@ -51,5 +51,7 @@ export abstract class Agent {
     sessionId: string,
     userId: string,
     tags: string[],
+    channelId: string,
+    userMention: string,
   ): ResultAsync<string, BaseError>;
 }

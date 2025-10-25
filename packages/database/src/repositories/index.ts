@@ -1,4 +1,5 @@
 export * from "./base";
+export * from "./chat-message.repository";
 export * from "./custom-settings.repository";
 export * from "./mirrored-file.repository";
 export * from "./mod.repository";

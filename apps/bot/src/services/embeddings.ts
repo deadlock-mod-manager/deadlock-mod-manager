@@ -14,6 +14,9 @@ export class EmbeddingsService {
     this.embeddings = new OpenAIEmbeddings({
       model: "text-embedding-3-large",
     });
+    // TODO: Use logger and embeddings in future implementations
+    void this.logger;
+    void this.embeddings;
   }
 
   static get instance(): EmbeddingsService {
