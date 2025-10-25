@@ -23,6 +23,7 @@ const languages = [
   { code: "zh-TW", name: "繁體中文", flag: "🇹🇼" },
   { code: "es", name: "Español", flag: "🇪🇸" },
   { code: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
 ];
 
 export const LanguageSettings = () => {

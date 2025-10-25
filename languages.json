@@ -180,6 +180,21 @@
           "discord": "meneee"
         }
       ]
+    },
+    {
+      "code": "it",
+      "name": "Italian",
+      "nativeName": "Italiano",
+      "flag": "🇮🇹",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "Constrat",
+          "discord": "constrat",
+          "github": "Constrat"
+        }
+      ]
     }
   ]
 }
