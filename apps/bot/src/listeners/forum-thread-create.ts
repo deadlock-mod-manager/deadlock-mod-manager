@@ -3,6 +3,7 @@ import type { AnyThreadChannel, GuildMember } from "discord.js";
 import { supportAgent } from "@/ai/agents/support";
 import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
+import { FeatureFlagsService } from "@/services/feature-flags";
 
 const logger = mainLogger.child().withContext({
   service: "forum-thread-create-listener",
@@ -28,6 +29,14 @@ export class ForumThreadCreateListener extends Listener {
   }
 
   private async shouldRespond(thread: AnyThreadChannel): Promise<boolean> {
+    const aiEnabled = await FeatureFlagsService.instance
+      .getService()
+      .isFeatureFlagEnabled("ai_replies_enabled");
+
+    if (!aiEnabled) {
+      return false;
+    }
+
     if (thread.parentId !== env.BUG_REPORT_CHANNEL_ID) {
       return false;
     }

@@ -7,4 +7,10 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "number",
     defaultValue: 0.75,
   },
+  {
+    name: "ai_replies_enabled",
+    description: "Enable or disable AI-powered reply functionality globally",
+    type: "boolean",
+    defaultValue: true,
+  },
 ];

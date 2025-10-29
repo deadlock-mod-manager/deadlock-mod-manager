@@ -3,6 +3,7 @@ import type { Message, TextChannel } from "discord.js";
 import { supportAgent } from "@/ai/agents/support";
 import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
+import { FeatureFlagsService } from "@/services/feature-flags";
 
 const logger = mainLogger.child().withContext({
   service: "forum-auto-reply-listener",
@@ -28,6 +29,14 @@ export class ForumAutoReplyListener extends Listener {
   }
 
   private async shouldRespond(message: Message): Promise<boolean> {
+    const aiEnabled = await FeatureFlagsService.instance
+      .getService()
+      .isFeatureFlagEnabled("ai_replies_enabled");
+
+    if (!aiEnabled) {
+      return false;
+    }
+
     if (
       message.author.bot ||
       message.author.id === this.container.client.user?.id

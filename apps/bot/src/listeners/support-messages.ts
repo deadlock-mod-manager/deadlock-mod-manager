@@ -2,6 +2,7 @@ import { Listener } from "@sapphire/framework";
 import type { Message, TextChannel } from "discord.js";
 import { supportAgent } from "@/ai/agents/support";
 import { logger as mainLogger } from "@/lib/logger";
+import { FeatureFlagsService } from "@/services/feature-flags";
 
 const logger = mainLogger.child().withContext({
   service: "support-message-listener",
@@ -19,6 +20,14 @@ export class SupportMessageListener extends Listener {
   }
 
   public async shouldRespond(message: Message) {
+    const aiEnabled = await FeatureFlagsService.instance
+      .getService()
+      .isFeatureFlagEnabled("ai_replies_enabled");
+
+    if (!aiEnabled) {
+      return false;
+    }
+
     if (
       message.author.bot ||
       message.author.id === this.container.client.user?.id
