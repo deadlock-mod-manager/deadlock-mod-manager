@@ -45,7 +45,6 @@ export const featureFlagsRouter = {
         .withMetadata({
           featureFlagsCount: featureFlagResults.length,
           userId: userId ?? "unauthenticated",
-          featureFlags: featureFlagResults,
         })
         .info("Retrieved all feature flags for client");
 

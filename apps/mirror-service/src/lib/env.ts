@@ -25,7 +25,7 @@ export const envSchema = z.object({
   S3_ENDPOINT: z.string(),
   REDIS_URL: z.string().url("REDIS_URL must be a valid URL"),
   VALIDATION_WORKER_INTERVAL_HOURS: z.coerce.number().min(1).max(24).default(1),
-  CLEANUP_RETENTION_DAYS: z.coerce.number().min(1).max(365).default(14),
+  CLEANUP_RETENTION_DAYS: z.coerce.number().min(1).max(365).default(90),
 });
 
 export const env = envSchema.parse(Bun.env);
