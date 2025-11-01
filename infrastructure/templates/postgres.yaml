@@ -46,7 +46,7 @@ spec:
   backup:
     retentionPolicy: 30d
     barmanObjectStore:
-      destinationPath: s3://db-backups
+      destinationPath: s3://db-backups/{{ .Chart.Name }}
       endpointURL: https://minio-api.k8s.stormix.dev
       s3Credentials:
         accessKeyId:
