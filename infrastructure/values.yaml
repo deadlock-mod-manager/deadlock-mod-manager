@@ -113,6 +113,41 @@ deployments:
     terminationGracePeriodSeconds: 30
     port: 3000
 
+    # Health check configuration
+    healthCheck:
+      # Readiness probe - determines if pod can receive traffic
+      readiness:
+        enabled: true
+        path: /health
+        port: 3001
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        timeoutSeconds: 5
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Liveness probe - determines if container should be restarted
+      liveness:
+        enabled: true
+        path: /health
+        port: 3001
+        initialDelaySeconds: 30
+        periodSeconds: 15
+        timeoutSeconds: 5
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Startup probe - protects slow-starting containers from being killed
+      startup:
+        enabled: true
+        path: /health
+        port: 3001
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 5
+        successThreshold: 1
+        failureThreshold: 24 # Allow up to 240 seconds (24 * 10s) for startup
+
   lockdex:
     image: stormix/deadlock-mods-lockdex:latest
     replicas: 1

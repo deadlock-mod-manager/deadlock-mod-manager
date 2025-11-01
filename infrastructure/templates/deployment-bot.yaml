@@ -41,6 +41,39 @@ spec:
             capabilities:
               add:
               - NET_BIND_SERVICE
+          {{- if .Values.deployments.bot.healthCheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployments.bot.healthCheck.startup.path }}
+              port: {{ .Values.deployments.bot.healthCheck.startup.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.bot.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.bot.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.bot.healthCheck.startup.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.bot.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.bot.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.bot.healthCheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployments.bot.healthCheck.readiness.path }}
+              port: {{ .Values.deployments.bot.healthCheck.readiness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.bot.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.bot.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.bot.healthCheck.readiness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.bot.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.bot.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.bot.healthCheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployments.bot.healthCheck.liveness.path }}
+              port: {{ .Values.deployments.bot.healthCheck.liveness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.bot.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.bot.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.bot.healthCheck.liveness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.bot.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.bot.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
           resources:
             requests:
               memory: {{ .Values.deployments.bot.memory }}

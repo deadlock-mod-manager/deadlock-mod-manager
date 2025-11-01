@@ -1,14 +1,26 @@
-import { featureFlagDefinitions } from "@/config/feature-flags";
+import "./instrument";
+
+import { Hono } from "hono";
+import { logger as loggerMiddleware } from "hono/logger";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { ProcessManager } from "@/lib/process-manager";
 import { StatusMonitorService } from "@/lib/status-monitor";
-import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
-import { cronService } from "@/services/cron";
-import { PatternSyncService } from "@/services/pattern-sync";
-import { PromptSyncService } from "@/services/prompt-sync";
+import healthRouter, { setHealthReady } from "@/routers/health";
+import { BotStartupService } from "@/services/bot-startup";
 import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
-import { FeatureFlagsService } from "./services/feature-flags";
+
+const app = new Hono();
+
+app.use(
+  "*",
+  loggerMiddleware((message: string, ...rest: string[]) => {
+    logger.info(message, ...rest);
+  }),
+);
+
+app.route("/", healthRouter);
 
 const main = async () => {
   if (!env.BOT_ENABLED) {
@@ -16,65 +28,36 @@ const main = async () => {
     return;
   }
 
-  const promptSync = new PromptSyncService();
-  await promptSync.syncPrompts();
-
-  logger.info("Registering feature flags");
-  await FeatureFlagsService.instance.bootstrap(featureFlagDefinitions);
-
-  logger.info("Syncing triage patterns");
-  const patternSync = new PatternSyncService();
-  await patternSync.sync();
-  patternSync.syncPeriodically(6);
+  const startupService = new BotStartupService();
+  await startupService.initialize(client);
 
   const statusMonitor = new StatusMonitorService();
   const redisSubscriber = RedisSubscriberService.getInstance();
 
-  logger.info("Defining documentation sync cron job");
-  await cronService.defineJob({
-    name: DocumentationSyncProcessor.name,
-    pattern: DocumentationSyncProcessor.cronPattern,
-    processor: DocumentationSyncProcessor.instance,
-    enabled: true,
-  });
+  const processManager = new ProcessManager();
+  processManager.setClient(client);
+  processManager.registerShutdownHandler(statusMonitor);
+  processManager.registerShutdownHandler(redisSubscriber);
+  processManager.setupSignalHandlers();
 
   client.once("clientReady", async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
     try {
       await Promise.all([statusMonitor.start(client), redisSubscriber.start()]);
+      setHealthReady(true);
+      logger.info("Bot is fully initialized and ready");
     } catch (error) {
       logger.withError(error).error("Failed to start services");
+      setHealthReady(false);
     }
   });
 
-  const shutdown = async () => {
-    logger.info("Shutting down gracefully...");
-    statusMonitor.stop();
-    redisSubscriber.stop();
-    await cronService.shutdown();
-    client.destroy();
-    process.exit(0);
-  };
-
-  process.on("SIGINT", shutdown);
-
-  process.on("SIGTERM", shutdown);
-
-  process.on("unhandledRejection", (reason) => {
-    logger
-      .withError(reason instanceof Error ? reason : new Error(String(reason)))
-      .error("Unhandled promise rejection");
-    shutdown();
+  logger.info("Health check server started on port 3001");
+  Bun.serve({
+    port: 3001,
+    fetch: app.fetch,
   });
-
-  process.on("uncaughtException", (error) => {
-    logger.withError(error).fatal("Uncaught exception");
-    shutdown();
-    process.exit(1);
-  });
-
-  await client.login(env.BOT_TOKEN);
 };
 
 if (import.meta.main) {
