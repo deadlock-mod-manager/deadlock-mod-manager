@@ -23,6 +23,12 @@ app.use(
 app.route("/", healthRouter);
 
 const main = async () => {
+  logger.info("Starting health check server on port 3001");
+  Bun.serve({
+    port: 3001,
+    fetch: app.fetch,
+  });
+
   if (!env.BOT_ENABLED) {
     logger.info("Bot is disabled");
     return;
@@ -51,12 +57,6 @@ const main = async () => {
       logger.withError(error).error("Failed to start services");
       setHealthReady(false);
     }
-  });
-
-  logger.info("Health check server started on port 3001");
-  Bun.serve({
-    port: 3001,
-    fetch: app.fetch,
   });
 };
 

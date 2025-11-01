@@ -1,5 +1,6 @@
 import type { SapphireClient } from "@sapphire/framework";
 import { featureFlagDefinitions } from "@/config/feature-flags";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
 import { cronService } from "@/services/cron";
@@ -64,6 +65,6 @@ export class BotStartupService {
   }
 
   private async loginToDiscord(client: SapphireClient): Promise<void> {
-    await client.login(process.env.BOT_TOKEN);
+    await client.login(env.BOT_TOKEN);
   }
 }
