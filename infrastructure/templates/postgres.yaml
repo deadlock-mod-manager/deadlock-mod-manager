@@ -1,0 +1,70 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.3
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: false
+  instances: {{ .Values.resources.postgres.replicas }}
+  resources:
+    requests:
+      memory: {{ .Values.resources.postgres.memory }}
+      cpu: {{ .Values.resources.postgres.cpu | quote }}
+    limits:
+      memory: {{ .Values.resources.postgres.memory }}
+      cpu: {{ .Values.resources.postgres.cpu | quote }}
+  storage:
+    size: {{ .Values.resources.postgres.disk }}
+    storageClass: hcloud-csi
+  bootstrap:
+    initdb:
+      database: {{ .Chart.Name }}
+      postInitSQL:
+        - GRANT pg_create_subscription TO "{{ .Chart.Name }}";
+        {{- if .Values.resources.postgres.extensions }}
+        {{- range .Values.resources.postgres.extensions }}
+        - CREATE EXTENSION IF NOT EXISTS {{ . }};
+        {{- end }}
+        {{- end }}
+  postgresql:
+    parameters:
+      {{ .Values.resources.postgres.config | toYaml | nindent 6 }}
+  monitoring:
+    enablePodMonitor: true
+  affinity:
+    tolerations:
+      - key: role
+        value: database
+        effect: NoSchedule
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/database
+                operator: Exists
+  backup:
+    retentionPolicy: 30d
+    barmanObjectStore:
+      destinationPath: s3://db-backups
+      endpointURL: https://minio-api.k8s.stormix.dev
+      s3Credentials:
+        accessKeyId:
+          name: cloudnativepg-s3-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cloudnativepg-s3-credentials
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 4
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  schedule: "0 0 * * * *" # Every hour
+  backupOwnerReference: self
+  cluster:
+    name: {{ .Chart.Name }}

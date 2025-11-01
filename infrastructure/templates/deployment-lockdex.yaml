@@ -1,0 +1,126 @@
+{{- $port := .Values.deployments.lockdex.port | default 80 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-lockdex
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.lockdex.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-lockdex
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-lockdex
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: lockdex
+    spec:
+      {{- if .Values.deployments.lockdex.restartPolicy }}
+      restartPolicy: {{ .Values.deployments.lockdex.restartPolicy }}
+      {{- end }}
+      {{- if .Values.deployments.lockdex.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployments.lockdex.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      {{- if .Values.deployments.lockdex.storage.enabled }}
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.35
+          command: ['sh', '-c', 'chown -R 999:999 /app/temp && chmod -R 755 /app/temp']
+          volumeMounts:
+            - name: lockdex-storage
+              mountPath: /app/temp
+          securityContext:
+            runAsUser: 0
+      {{- end }}
+      containers:
+        - name: lockdex
+          image: {{ .Values.deployments.lockdex.image }}
+          {{- if .Values.deployments.lockdex.command }}
+          command:
+            {{- range .Values.deployments.lockdex.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          {{- if .Values.deployments.lockdex.healthCheck.startup.enabled }}
+          startupProbe:
+            exec:
+              command: {{ .Values.deployments.lockdex.healthCheck.startup.command | toYaml | nindent 14 }}
+            initialDelaySeconds: {{ .Values.deployments.lockdex.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.lockdex.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.lockdex.healthCheck.startup.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.lockdex.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.lockdex.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.lockdex.healthCheck.readiness.enabled }}
+          readinessProbe:
+            exec:
+              command: {{ .Values.deployments.lockdex.healthCheck.readiness.command | toYaml | nindent 14 }}
+            initialDelaySeconds: {{ .Values.deployments.lockdex.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.lockdex.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.lockdex.healthCheck.readiness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.lockdex.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.lockdex.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.lockdex.healthCheck.liveness.enabled }}
+          livenessProbe:
+            exec:
+              command: {{ .Values.deployments.lockdex.healthCheck.liveness.command | toYaml | nindent 14 }}
+            initialDelaySeconds: {{ .Values.deployments.lockdex.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.lockdex.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.lockdex.healthCheck.liveness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.lockdex.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.lockdex.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.lockdex.storage.enabled }}
+          volumeMounts:
+            - name: lockdex-storage
+              mountPath: {{ .Values.deployments.lockdex.storage.mountPath }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.deployments.lockdex.memory.request | default .Values.deployments.lockdex.memory }}
+              cpu: {{ .Values.deployments.lockdex.cpu }}
+            limits:
+              memory: {{ .Values.deployments.lockdex.memory.limit | default .Values.deployments.lockdex.memory }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.lockdex.env }}
+            {{- .Values.deployments.lockdex.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+      {{- if .Values.deployments.lockdex.storage.enabled }}
+      volumes:
+        - name: lockdex-storage
+          persistentVolumeClaim:
+            claimName: {{ .Chart.Name }}-lockdex-pvc
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-lockdex
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $port }}
+      targetPort: {{ $port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-lockdex

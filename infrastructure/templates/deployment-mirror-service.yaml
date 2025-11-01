@@ -1,0 +1,116 @@
+{{- $deployment := index .Values.deployments "mirror-service" }}
+{{- $port := $deployment.port | default 80 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-mirror-service
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ $deployment.replicas }}
+  {{- if $deployment.strategy }}
+  strategy:
+    type: {{ $deployment.strategy.type | default "RollingUpdate" }}
+    {{- if eq ($deployment.strategy.type | default "RollingUpdate") "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ $deployment.strategy.maxUnavailable | default 1 }}
+      maxSurge: {{ $deployment.strategy.maxSurge | default 1 }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-mirror-service
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-mirror-service
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: mirror-service
+    spec:
+      {{- if $deployment.restartPolicy }}
+      restartPolicy: {{ $deployment.restartPolicy }}
+      {{- end }}
+      {{- if $deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $deployment.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: mirror-service
+          image: {{ $deployment.image }}
+          {{- if $deployment.command }}
+          command:
+            {{- range $deployment.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          {{- if $deployment.healthCheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ $deployment.healthCheck.startup.path }}
+              port: {{ $deployment.healthCheck.startup.port | default $port }}
+            initialDelaySeconds: {{ $deployment.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ $deployment.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ $deployment.healthCheck.startup.timeoutSeconds | default 1 }}
+            successThreshold: {{ $deployment.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ $deployment.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if $deployment.healthCheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ $deployment.healthCheck.readiness.path }}
+              port: {{ $deployment.healthCheck.readiness.port | default $port }}
+            initialDelaySeconds: {{ $deployment.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ $deployment.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ $deployment.healthCheck.readiness.timeoutSeconds | default 1 }}
+            successThreshold: {{ $deployment.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ $deployment.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if $deployment.healthCheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ $deployment.healthCheck.liveness.path }}
+              port: {{ $deployment.healthCheck.liveness.port | default $port }}
+            initialDelaySeconds: {{ $deployment.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ $deployment.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ $deployment.healthCheck.liveness.timeoutSeconds | default 1 }}
+            successThreshold: {{ $deployment.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ $deployment.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ $deployment.memory }}
+              cpu: {{ $deployment.cpu }}
+            limits:
+              memory: {{ $deployment.memory }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if $deployment.env }}
+            {{- $deployment.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-mirror-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $port }}
+      targetPort: {{ $port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-mirror-service
+

@@ -1,0 +1,73 @@
+{{- $port := .Values.deployments.bot.port | default 80 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-bot
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.bot.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-bot
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-bot
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: bot
+    spec:
+      {{- if .Values.deployments.bot.restartPolicy }}
+      restartPolicy: {{ .Values.deployments.bot.restartPolicy }}
+      {{- end }}
+      {{- if .Values.deployments.bot.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployments.bot.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: bot
+          image: {{ .Values.deployments.bot.image }}
+          {{- if .Values.deployments.bot.command }}
+          command:
+            {{- range .Values.deployments.bot.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          resources:
+            requests:
+              memory: {{ .Values.deployments.bot.memory }}
+              cpu: {{ .Values.deployments.bot.cpu }}
+            limits:
+              memory: {{ .Values.deployments.bot.memory }}
+              cpu: {{ .Values.deployments.bot.cpu }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.bot.env }}
+            {{- .Values.deployments.bot.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-bot
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $port }}
+      targetPort: {{ $port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-bot

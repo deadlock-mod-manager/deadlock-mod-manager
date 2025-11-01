@@ -1,3 +1,204 @@
-replicas: 2
-image: nginx:alpine
-port: 80
+deployments:
+  mirror-service:
+    image: stormix/deadlock-mods-mirror-service:latest
+    replicas: 3
+    memory: 1Gi
+    cpu: 150m
+
+    # Health check configuration
+    healthCheck:
+      # Readiness probe - determines if pod can receive traffic
+      readiness:
+        enabled: true
+        path: /
+        port: 3002
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Liveness probe - determines if container should be restarted
+      liveness:
+        enabled: true
+        path: /
+        port: 3002
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Startup probe - protects slow-starting containers from being killed
+      startup:
+        enabled: true
+        path: /
+        port: 3002
+        initialDelaySeconds: 15 # Allow Linkerd proxy time to initialize
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 12 # Allow up to 60 seconds for startup (12 * 5s)
+
+    # Fast recovery settings
+    strategy:
+      type: RollingUpdate
+      maxUnavailable: 1
+      maxSurge: 1
+
+    # Container restart policy
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 30
+
+    port: 3002
+  web:
+    image: stormix/deadlock-mods-api:latest
+    replicas: 3
+    memory: 1Gi
+    cpu: 750m
+
+    # Health check configuration
+    healthCheck:
+      # Readiness probe - determines if pod can receive traffic
+      readiness:
+        enabled: true
+        path: /
+        port: 9000
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Liveness probe - determines if container should be restarted
+      liveness:
+        enabled: true
+        path: /
+        port: 9000
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      # Startup probe - protects slow-starting containers from being killed
+      startup:
+        enabled: true
+        path: /
+        port: 9000
+        initialDelaySeconds: 0
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 12 # Allow up to 60 seconds for startup (12 * 5s)
+
+    # Fast recovery settings
+    strategy:
+      type: RollingUpdate
+      maxUnavailable: 1
+      maxSurge: 1
+
+    # Container restart policy
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 30
+
+    port: 9000
+
+  bot:
+    image: stormix/deadlock-mods-bot:latest
+    replicas: 1
+    memory: 500Mi
+    cpu: 150m
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 30
+    port: 3000
+
+  lockdex:
+    image: stormix/deadlock-mods-lockdex:latest
+    replicas: 1
+    memory:
+      request: 1Gi
+      limit: 3Gi
+    cpu: 500m
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 30
+
+    storage:
+      enabled: true
+      size: 15Gi
+      storageClass: hcloud-csi
+      mountPath: /app/temp
+      accessMode: ReadWriteOnce
+
+    healthCheck:
+      readiness:
+        enabled: true
+        command: ["pnpm", "health-check"]
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 10
+        successThreshold: 1
+        failureThreshold: 3
+
+      liveness:
+        enabled: true
+        command: ["pnpm", "health-check"]
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        timeoutSeconds: 10
+        successThreshold: 1
+        failureThreshold: 3
+
+      startup:
+        enabled: true
+        command: ["pnpm", "health-check"]
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        timeoutSeconds: 10
+        successThreshold: 1
+        failureThreshold: 12
+
+resources:
+  postgres:
+    replicas: 3
+    memory: 1Gi
+    cpu: 500m
+    disk: 10Gi
+    extensions:
+      - vector
+    config:
+      max_connections: "100"
+      shared_buffers: 256MB
+      effective_cache_size: 768MB
+      maintenance_work_mem: 64MB
+      checkpoint_completion_target: "0.9"
+      wal_buffers: 7864kB
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: 2427kB
+      min_wal_size: 1GB
+      max_wal_size: 4GB
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: top
+  redis:
+    sentinels: 1
+    replicas: 1
+    memory: 1Gi
+    cpu: 100m
+    disk: 1Gi
+    evictionPolicy: allkeys-lru
+
+env:
+  - {
+      name: DATABASE_URL,
+      valueFrom: { secretKeyRef: { name: deadlock-mod-manager-app, key: uri } },
+    }
+  - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
+  - {
+      name: REDIS_URL,
+      value: "redis://deadlock-mod-manager-redis-master.default.svc:6379",
+    }
+envFrom:
+  - secretRef:
+      name: deadlock-mod-manager # Create a dedicated application secret with k secrets:create deadlock-mod-manager

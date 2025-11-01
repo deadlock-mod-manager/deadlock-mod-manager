@@ -1,0 +1,16 @@
+{{- if .Values.deployments.lockdex.storage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-lockdex-pvc
+  annotations:
+    # Use Hetzner Cloud CSI for better reliability and isolation from node storage
+    volume.kubernetes.io/storage-provisioner: csi.hetzner.cloud
+spec:
+  accessModes:
+    - {{ .Values.deployments.lockdex.storage.accessMode }}
+  storageClassName: {{ .Values.deployments.lockdex.storage.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.deployments.lockdex.storage.size }}
+{{- end }}

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: deadlock-mod-manager-test
+name: deadlock-mod-manager
 type: application
 version: 1.0.0
 appVersion: 1.0.0
