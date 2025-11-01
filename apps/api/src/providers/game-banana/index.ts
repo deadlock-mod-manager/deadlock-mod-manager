@@ -281,10 +281,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     submission: GameBananaSubmission;
     source: GameBananaSubmissionSource;
   }> {
-    yield* this.getSoundSubmissions();
     yield* this.getAllMods();
     yield* this.getFeaturedMods(); // These two are most likely redundant, but I haven't checked
     yield* this.getTopMods(); // These two are most likely redundant, but I haven't checked
+    yield* this.getSoundSubmissions();
   }
 
   async getModDownload<D = GameBanana.GameBananaModDownload>(

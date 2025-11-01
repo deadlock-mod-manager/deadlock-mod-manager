@@ -47,7 +47,7 @@ export class DiskSpaceMonitor {
     if (!DiskSpaceMonitor.instance) {
       const defaultConfig: DiskSpaceConfig = {
         warningThreshold: 85,
-        criticalThreshold: 95,
+        criticalThreshold: 98,
         minFreeBytes: 1024 * 1024 * 1024, // 1GB
         ...config,
       };
