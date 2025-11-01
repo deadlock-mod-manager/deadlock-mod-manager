@@ -49,7 +49,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
     "typescript": "catalog:",
-    "vite": "^6.3.6",
+    "vite": "^5.4.21",
     "vite-plugin-sitemap": "^0.8.2"
   }
 }
