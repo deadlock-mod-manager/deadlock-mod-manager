@@ -46,7 +46,7 @@ spec:
   backup:
     retentionPolicy: 30d
     barmanObjectStore:
-      destinationPath: s3://db-backups/{{ .Chart.Name }}
+      destinationPath: s3://db-backups
       endpointURL: https://minio-api.k8s.stormix.dev
       s3Credentials:
         accessKeyId:
@@ -55,6 +55,9 @@ spec:
         secretAccessKey:
           name: cloudnativepg-s3-credentials
           key: SECRET_ACCESS_KEY
+      data:
+        compression: gzip
+        jobs: 2
       wal:
         compression: gzip
         maxParallel: 4
