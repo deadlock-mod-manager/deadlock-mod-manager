@@ -182,8 +182,8 @@ resources:
       pg_stat_statements.max: "10000"
       pg_stat_statements.track: top
   redis:
-    sentinels: 1
-    replicas: 1
+    sentinels: 3
+    replicas: 2
     memory: 1Gi
     cpu: 100m
     disk: 1Gi
