@@ -5,9 +5,7 @@ deployments:
     memory: 1Gi
     cpu: 150m
 
-    # Health check configuration
     healthCheck:
-      # Readiness probe - determines if pod can receive traffic
       readiness:
         enabled: true
         path: /
@@ -18,7 +16,6 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Liveness probe - determines if container should be restarted
       liveness:
         enabled: true
         path: /
@@ -29,24 +26,21 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe - protects slow-starting containers from being killed
       startup:
         enabled: true
         path: /
         port: 3002
-        initialDelaySeconds: 15 # Allow Linkerd proxy time to initialize
+        initialDelaySeconds: 15
         periodSeconds: 5
         timeoutSeconds: 15
         successThreshold: 1
-        failureThreshold: 12 # Allow up to 60 seconds for startup (12 * 5s)
+        failureThreshold: 12
 
-    # Fast recovery settings
     strategy:
       type: RollingUpdate
       maxUnavailable: 1
       maxSurge: 1
 
-    # Container restart policy
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
 
@@ -57,9 +51,7 @@ deployments:
     memory: 1Gi
     cpu: 750m
 
-    # Health check configuration
     healthCheck:
-      # Readiness probe - determines if pod can receive traffic
       readiness:
         enabled: true
         path: /
@@ -70,7 +62,6 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Liveness probe - determines if container should be restarted
       liveness:
         enabled: true
         path: /
@@ -81,7 +72,6 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe - protects slow-starting containers from being killed
       startup:
         enabled: true
         path: /
@@ -90,15 +80,13 @@ deployments:
         periodSeconds: 5
         timeoutSeconds: 15
         successThreshold: 1
-        failureThreshold: 12 # Allow up to 60 seconds for startup (12 * 5s)
+        failureThreshold: 12
 
-    # Fast recovery settings
     strategy:
       type: RollingUpdate
       maxUnavailable: 1
       maxSurge: 1
 
-    # Container restart policy
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
 
@@ -113,9 +101,7 @@ deployments:
     terminationGracePeriodSeconds: 30
     port: 3000
 
-    # Health check configuration
     healthCheck:
-      # Readiness probe - determines if pod can receive traffic
       readiness:
         enabled: true
         path: /health
@@ -126,7 +112,6 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Liveness probe - determines if container should be restarted
       liveness:
         enabled: true
         path: /health
@@ -137,7 +122,6 @@ deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe - protects slow-starting containers from being killed
       startup:
         enabled: true
         path: /health
@@ -146,7 +130,7 @@ deployments:
         periodSeconds: 10
         timeoutSeconds: 5
         successThreshold: 1
-        failureThreshold: 24 # Allow up to 240 seconds (24 * 10s) for startup
+        failureThreshold: 24
 
   lockdex:
     image: stormix/deadlock-mods-lockdex:latest
@@ -218,6 +202,9 @@ resources:
       pg_stat_statements.track: top
   redis:
     sentinels: 3
+    sentinel:
+      memory: 128Mi
+      cpu: 50m
     replicas: 2
     memory: 1Gi
     cpu: 100m
@@ -236,4 +223,4 @@ env:
     }
 envFrom:
   - secretRef:
-      name: deadlock-mod-manager # Create a dedicated application secret with k secrets:create deadlock-mod-manager
+      name: deadlock-mod-manager
