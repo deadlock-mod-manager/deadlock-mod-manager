@@ -1,1 +1,1 @@
--- DROP INDEX "mod_download_mod_id_idx";
+DROP INDEX "mod_download_mod_id_idx";

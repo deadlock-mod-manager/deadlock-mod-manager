@@ -1,2 +1,2 @@
--- ALTER TABLE "vpk" ADD COLUMN "mod_id" text NOT NULL;--> statement-breakpoint
--- ALTER TABLE "vpk" ADD CONSTRAINT "vpk_mod_id_mod_id_fk" FOREIGN KEY ("mod_id") REFERENCES "public"."mod"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "vpk" ADD COLUMN "mod_id" text NOT NULL;--> statement-breakpoint
+ALTER TABLE "vpk" ADD CONSTRAINT "vpk_mod_id_mod_id_fk" FOREIGN KEY ("mod_id") REFERENCES "public"."mod"("id") ON DELETE cascade ON UPDATE no action;
