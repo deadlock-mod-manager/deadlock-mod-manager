@@ -1,6 +1,5 @@
 import type { SapphireClient } from "@sapphire/framework";
 import { logger } from "@/lib/logger";
-import { setHealthReady } from "@/routers/health";
 import { cronService } from "@/services/cron";
 
 export interface ShutdownHandler {
@@ -22,7 +21,6 @@ export class ProcessManager {
   setupSignalHandlers(): void {
     const shutdown = async () => {
       logger.info("Shutting down gracefully...");
-      setHealthReady(false);
 
       for (const handler of this.shutdownHandlers) {
         handler.stop();

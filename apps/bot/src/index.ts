@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { ProcessManager } from "@/lib/process-manager";
 import { StatusMonitorService } from "@/lib/status-monitor";
-import healthRouter, { setHealthReady } from "@/routers/health";
+import healthRouter from "@/routers/health";
 import { BotStartupService } from "@/services/bot-startup";
 import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
@@ -51,11 +51,9 @@ const main = async () => {
 
     try {
       await Promise.all([statusMonitor.start(client), redisSubscriber.start()]);
-      setHealthReady(true);
       logger.info("Bot is fully initialized and ready");
     } catch (error) {
       logger.withError(error).error("Failed to start services");
-      setHealthReady(false);
     }
   });
 };

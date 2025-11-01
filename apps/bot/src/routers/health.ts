@@ -1,18 +1,12 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { HealthService } from "@/services/health";
 
 const healthRouter = new Hono();
 
-let isReady = false;
-
-export function setHealthReady(ready: boolean) {
-  isReady = ready;
-}
-
-healthRouter.get("/health", (c) => {
-  if (isReady) {
-    return c.text("OK", 200);
-  }
-  return c.text("Starting", 503);
+healthRouter.get("/health", async (c: Context) => {
+  const service = HealthService.getInstance();
+  const result = await service.check();
+  return c.json(result, result.status === "ok" ? 200 : 503);
 });
 
 export default healthRouter;
