@@ -26,6 +26,7 @@ export const envSchema = z.object({
   REDIS_URL: z.string().url("REDIS_URL must be a valid URL"),
   VALIDATION_WORKER_INTERVAL_HOURS: z.coerce.number().min(1).max(24).default(1),
   CLEANUP_RETENTION_DAYS: z.coerce.number().min(1).max(365).default(90),
+  CACHE_TTL_SECONDS: z.coerce.number().min(60).max(86400).default(3600),
 });
 
 export const env = envSchema.parse(Bun.env);

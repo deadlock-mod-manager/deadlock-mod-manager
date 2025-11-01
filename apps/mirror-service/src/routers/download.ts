@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { stream } from "hono/streaming";
 import { z } from "zod";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { MirrorService } from "@/services/mirror";
 
@@ -42,6 +43,12 @@ downloadRouter.get(
       c.header("Content-Type", "application/octet-stream");
       c.header("Content-Disposition", `attachment; filename="${file}"`);
       c.header("Content-Length", size.toString());
+      c.header(
+        "Cache-Control",
+        `public, max-age=${env.CACHE_TTL_SECONDS}, s-maxage=${env.CACHE_TTL_SECONDS}, immutable`,
+      );
+      c.header("CDN-Cache-Control", `max-age=${env.CACHE_TTL_SECONDS}`);
+      c.header("Vary", "Accept-Encoding");
 
       await stream.pipe(outputStream);
     });
