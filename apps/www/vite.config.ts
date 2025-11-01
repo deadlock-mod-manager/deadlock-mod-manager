@@ -13,6 +13,7 @@ export default defineConfig({
     sitemap({
       hostname: 'https://deadlockmods.app',
       dynamicRoutes: [
+        '/mods',
         '/download/windows',
         '/download/linux',
         '/download',
@@ -28,6 +29,7 @@ export default defineConfig({
       ],
       changefreq: {
         '/': 'weekly',
+        '/mods': 'hourly',
         '/download': 'weekly', 
         '/download/windows': 'weekly',
         '/download/linux': 'weekly',
@@ -41,6 +43,7 @@ export default defineConfig({
       },
       priority: {
         '/': 1.0,
+        '/mods': 0.9,
         '/download': 0.9,
         '/download/windows': 0.8,
         '/download/linux': 0.8,

@@ -10,6 +10,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import { useState } from "react";
 import Loader from "@/components/loader";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -144,24 +145,26 @@ function RootComponent() {
   return (
     <>
       <HeadContent />
-      <ThemeProvider
-        attribute='class'
-        defaultTheme='dark'
-        disableTransitionOnChange
-        storageKey='vite-ui-theme'>
-        <AnalyticsProvider>
-          {isFullscreenRoute ? (
-            isFetching ? (
-              <Loader />
+      <NuqsAdapter>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='dark'
+          disableTransitionOnChange
+          storageKey='vite-ui-theme'>
+          <AnalyticsProvider>
+            {isFullscreenRoute ? (
+              isFetching ? (
+                <Loader />
+              ) : (
+                <Outlet />
+              )
             ) : (
-              <Outlet />
-            )
-          ) : (
-            <MainLayout>{isFetching ? <Loader /> : <Outlet />}</MainLayout>
-          )}
-          <Toaster richColors />
-        </AnalyticsProvider>
-      </ThemeProvider>
+              <MainLayout>{isFetching ? <Loader /> : <Outlet />}</MainLayout>
+            )}
+            <Toaster richColors />
+          </AnalyticsProvider>
+        </ThemeProvider>
+      </NuqsAdapter>
       <TanStackRouterDevtools position='bottom-left' />
       <ReactQueryDevtools buttonPosition='bottom-right' position='bottom' />
     </>

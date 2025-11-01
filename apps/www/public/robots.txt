@@ -8,3 +8,4 @@ User-agent: Bingbot
 Allow: /
 
 Sitemap: https://deadlockmods.app/sitemap.xml
+Sitemap: https://deadlockmods.app/sitemap-mods.xml

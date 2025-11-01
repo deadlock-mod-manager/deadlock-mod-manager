@@ -20,7 +20,9 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ModsIndexRouteImport } from './routes/mods/index'
 import { Route as DownloadIndexRouteImport } from './routes/download/index'
+import { Route as ModIdRouteImport } from './routes/mod/$id'
 import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 import { Route as AuthDesktopCallbackRouteImport } from './routes/auth/desktop-callback'
@@ -80,10 +82,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModsIndexRoute = ModsIndexRouteImport.update({
+  id: '/mods/',
+  path: '/mods/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DownloadIndexRoute = DownloadIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DownloadRoute,
+} as any)
+const ModIdRoute = ModIdRouteImport.update({
+  id: '/mod/$id',
+  path: '/mod/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
   id: '/windows',
@@ -116,7 +128,9 @@ export interface FileRoutesByFullPath {
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
+  '/mod/$id': typeof ModIdRoute
   '/download/': typeof DownloadIndexRoute
+  '/mods': typeof ModsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,7 +146,9 @@ export interface FileRoutesByTo {
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
+  '/mod/$id': typeof ModIdRoute
   '/download': typeof DownloadIndexRoute
+  '/mods': typeof ModsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,7 +166,9 @@ export interface FileRoutesById {
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
+  '/mod/$id': typeof ModIdRoute
   '/download/': typeof DownloadIndexRoute
+  '/mods/': typeof ModsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,7 +187,9 @@ export interface FileRouteTypes {
     | '/auth/desktop-callback'
     | '/download/linux'
     | '/download/windows'
+    | '/mod/$id'
     | '/download/'
+    | '/mods'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -185,7 +205,9 @@ export interface FileRouteTypes {
     | '/auth/desktop-callback'
     | '/download/linux'
     | '/download/windows'
+    | '/mod/$id'
     | '/download'
+    | '/mods'
   id:
     | '__root__'
     | '/'
@@ -202,7 +224,9 @@ export interface FileRouteTypes {
     | '/auth/desktop-callback'
     | '/download/linux'
     | '/download/windows'
+    | '/mod/$id'
     | '/download/'
+    | '/mods/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +242,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthDesktopCallbackRoute: typeof AuthDesktopCallbackRoute
+  ModIdRoute: typeof ModIdRoute
+  ModsIndexRoute: typeof ModsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -299,12 +325,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mods/': {
+      id: '/mods/'
+      path: '/mods'
+      fullPath: '/mods'
+      preLoaderRoute: typeof ModsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/download/': {
       id: '/download/'
       path: '/'
       fullPath: '/download/'
       preLoaderRoute: typeof DownloadIndexRouteImport
       parentRoute: typeof DownloadRoute
+    }
+    '/mod/$id': {
+      id: '/mod/$id'
+      path: '/mod/$id'
+      fullPath: '/mod/$id'
+      preLoaderRoute: typeof ModIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/download/windows': {
       id: '/download/windows'
@@ -359,6 +399,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthDesktopCallbackRoute: AuthDesktopCallbackRoute,
+  ModIdRoute: ModIdRoute,
+  ModsIndexRoute: ModsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
