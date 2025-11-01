@@ -21,6 +21,7 @@ import {
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
 import {
+  FlagIcon,
   FolderOpen,
   GamepadIcon,
   InfoIcon,
@@ -40,6 +41,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
+import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
@@ -234,6 +236,12 @@ const CustomSettings = () => {
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='experimental'>
+              <FlagIcon className='h-5 w-5' />
+              {t("settings.experimental")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='privacy'>
               <ShieldIcon className='h-5 w-5' />
               {t("settings.privacy")}
@@ -383,6 +391,14 @@ const CustomSettings = () => {
                 description={t("settings.addonsBackupDescription")}
                 title={t("settings.addonsBackup")}>
                 <AddonsBackupManagement />
+              </Section>
+            </TabsContent>
+
+            <TabsContent className='mt-0 space-y-2' value='experimental'>
+              <Section
+                description={t("featureFlags.description")}
+                title={t("featureFlags.title")}>
+                <FeatureFlagsSettings />
               </Section>
             </TabsContent>
 

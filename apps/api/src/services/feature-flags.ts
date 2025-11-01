@@ -70,9 +70,9 @@ export class FeatureFlagsServiceSingleton {
   /**
    * Get all feature flags
    */
-  getAllFeatureFlags() {
+  getAllFeatureFlags(options?: { userId?: string }) {
     return ResultAsync.fromPromise(
-      this.featureFlagService.getAllFeatureFlags(),
+      this.featureFlagService.getAllFeatureFlags(options),
       (error) => error as Error,
     )
       .andThen((result) => {
@@ -83,6 +83,46 @@ export class FeatureFlagsServiceSingleton {
       })
       .mapErr((error) => {
         logger.withError(error).warn("Failed to get all feature flags");
+        return error;
+      });
+  }
+
+  /**
+   * Get all feature flags formatted for client consumption with user-specific overrides applied
+   */
+  getClientFeatureFlags(options?: { userId?: string }) {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.getClientFeatureFlags(options),
+      (error) => error as Error,
+    )
+      .andThen((result) => {
+        if (result.isErr()) {
+          return err(result.error);
+        }
+        return ok(result.value);
+      })
+      .mapErr((error) => {
+        logger.withError(error).warn("Failed to get client feature flags");
+        return error;
+      });
+  }
+
+  /**
+   * Get all exposed feature flags
+   */
+  getAllExposedFeatureFlags() {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.getAllExposedFeatureFlags(),
+      (error) => error as Error,
+    )
+      .andThen((result) => {
+        if (result.isErr()) {
+          return err(result.error);
+        }
+        return ok(result.value);
+      })
+      .mapErr((error) => {
+        logger.withError(error).warn("Failed to get all exposed feature flags");
         return error;
       });
   }
@@ -174,6 +214,53 @@ export class FeatureFlagsServiceSingleton {
         .warn("Failed to get feature flag value");
       return error;
     });
+  }
+
+  /**
+   * Set user override for a feature flag
+   *
+   * @param userId - The id of the user
+   * @param featureFlagId - The id of the feature flag
+   * @param value - The override value
+   */
+  setUserOverride(userId: string, featureFlagId: string, value: unknown) {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.setUserOverride(userId, featureFlagId, value),
+      (error) => error as Error,
+    )
+      .andThen((result) => {
+        if (result.isErr()) {
+          return err(result.error);
+        }
+        return ok(result.value);
+      })
+      .mapErr((error) => {
+        logger.withError(error).warn("Failed to set user override");
+        return error;
+      });
+  }
+
+  /**
+   * Delete user override for a feature flag
+   *
+   * @param userId - The id of the user
+   * @param featureFlagId - The id of the feature flag
+   */
+  deleteUserOverride(userId: string, featureFlagId: string) {
+    return ResultAsync.fromPromise(
+      this.featureFlagService.deleteUserOverride(userId, featureFlagId),
+      (error) => error as Error,
+    )
+      .andThen((result) => {
+        if (result.isErr()) {
+          return err(result.error);
+        }
+        return ok(result.value);
+      })
+      .mapErr((error) => {
+        logger.withError(error).warn("Failed to delete user override");
+        return error;
+      });
   }
 }
 

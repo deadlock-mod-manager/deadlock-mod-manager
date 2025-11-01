@@ -7,6 +7,7 @@ export * from "./events";
 export * from "./heroes";
 export * from "./nsfw-settings";
 export * from "./providers/index";
+export * from "./schemas/feature-flag.schemas";
 export * from "./schemas/mod.schemas";
 export * from "./schemas/profile.schemas";
 export * from "./schemas/report.schemas";

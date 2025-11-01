@@ -1,5 +1,6 @@
 import type {
   CustomSettingDto,
+  FeatureFlag,
   ModDownloadDto,
   ModDto,
   SharedProfile,
@@ -22,7 +23,11 @@ export const initializeApiUrl = async (): Promise<void> => {
   }
 };
 
-const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
+const apiRequest = async <T>(
+  endpoint: string,
+  body?: unknown,
+  method?: string,
+): Promise<T> => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -38,7 +43,7 @@ const apiRequest = async <T>(endpoint: string, body?: unknown): Promise<T> => {
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method: body ? "POST" : "GET",
+    method: method ?? (body ? "POST" : "GET"),
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -127,8 +132,25 @@ export const getProfile = async (profileId: string) => {
 };
 
 export const getFeatureFlags = async () => {
-  return await apiRequest<Array<{ name: string; enabled: boolean }>>(
-    "/api/v2/feature-flags",
+  return await apiRequest<FeatureFlag[]>("/api/v2/feature-flags");
+};
+
+export const setFeatureFlagUserOverride = async (
+  flagId: string,
+  value: unknown,
+) => {
+  return await apiRequest<{ success: boolean }>(
+    `/api/v2/feature-flags/${flagId}/user-override`,
+    { flagId, value },
+    "PUT",
+  );
+};
+
+export const deleteFeatureFlagUserOverride = async (flagId: string) => {
+  return await apiRequest<{ success: boolean }>(
+    `/api/v2/feature-flags/${flagId}/user-override`,
+    { flagId },
+    "DELETE",
   );
 };
 export const getApiHealth = async () => {

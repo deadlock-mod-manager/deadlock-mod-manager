@@ -1,6 +1,7 @@
 import type { NewFeatureFlag } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
 import { Cacheable } from "@type-cacheable/core";
+import { ok } from "neverthrow";
 import { cacheClient } from "../cache";
 import type { FeatureFlagRepository } from "../repositories/feature-flag";
 import type { SegmentService } from "./segment";
@@ -50,12 +51,79 @@ export class FeatureFlagService {
    * Get all feature flags, the result is cached for 15 minutes
    */
   @Cacheable({
-    cacheKey: () => "all-feature-flags",
+    cacheKey: (args) => {
+      const userId = args[0]?.userId ?? "";
+      return `all-feature-flags-${userId}`;
+    },
     ttlSeconds: 15 * 60, // 15 minutes
     client: cacheClient,
   })
-  async getAllFeatureFlags() {
-    return this.featureFlagRepository.findAll();
+  async getAllFeatureFlags(options?: { userId?: string }) {
+    return this.featureFlagRepository.findAll(options);
+  }
+
+  /**
+   * Get all exposed feature flags, the result is cached for 15 minutes
+   */
+  @Cacheable({
+    cacheKey: () => "all-exposed-feature-flags",
+    ttlSeconds: 15 * 60, // 15 minutes
+    client: cacheClient,
+  })
+  async getAllExposedFeatureFlags() {
+    return this.featureFlagRepository.findAllExposed();
+  }
+
+  /**
+   * Get all feature flags formatted for client consumption with user-specific overrides applied
+   * The result is cached for 15 minutes per user
+   *
+   * @param options - Options including userId for user-specific overrides
+   * @returns Array of feature flags with applied overrides ready for client
+   */
+  @Cacheable({
+    cacheKey: (args) => {
+      const userId = args[0]?.userId ?? "";
+      return `client-feature-flags-${userId}`;
+    },
+    ttlSeconds: 15 * 60, // 15 minutes
+    client: cacheClient,
+  })
+  async getClientFeatureFlags(options?: { userId?: string }) {
+    const allFlagsResult = await this.getAllFeatureFlags(options);
+
+    if (allFlagsResult.isErr()) {
+      return allFlagsResult;
+    }
+
+    const flags = allFlagsResult.value;
+    const userId = options?.userId;
+
+    const clientFlags = flags.map((flag) => {
+      let value = flag.value;
+
+      if (
+        userId &&
+        "userOverrides" in flag &&
+        flag.userOverrides &&
+        Array.isArray(flag.userOverrides) &&
+        flag.userOverrides.length > 0
+      ) {
+        value = flag.userOverrides[0].value;
+      }
+
+      return {
+        id: flag.id,
+        name: flag.name,
+        description: flag.description,
+        type: flag.type,
+        value,
+        enabled: value,
+        exposed: flag.exposed,
+      };
+    });
+
+    return ok(clientFlags);
   }
 
   /**
@@ -99,14 +167,25 @@ export class FeatureFlagService {
     }
     const featureFlag = featureFlagResult.value;
 
-    if (userId && this.segmentService) {
-      const override = await this.getFeatureFlagOverrides(
-        featureFlag.id,
+    if (userId) {
+      const userOverride = await this.getUserFeatureFlagOverride(
         userId,
+        featureFlag.id,
         shouldThrow,
       );
-      if (override !== null) {
-        return override as T;
+      if (userOverride !== null) {
+        return userOverride as T;
+      }
+
+      if (this.segmentService) {
+        const segmentOverride = await this.getFeatureFlagOverrides(
+          featureFlag.id,
+          userId,
+          shouldThrow,
+        );
+        if (segmentOverride !== null) {
+          return segmentOverride as T;
+        }
       }
     }
 
@@ -154,6 +233,68 @@ export class FeatureFlagService {
   async exists(name: string): Promise<boolean> {
     const result = await this.findByName(name);
     return result.isOk();
+  }
+
+  /**
+   * Set user override for a feature flag
+   *
+   * @param userId - The id of the user
+   * @param featureFlagId - The id of the feature flag
+   * @param value - The override value
+   * @returns The created/updated override
+   */
+  async setUserOverride(userId: string, featureFlagId: string, value: unknown) {
+    return this.featureFlagRepository.setUserOverride(
+      userId,
+      featureFlagId,
+      value,
+    );
+  }
+
+  /**
+   * Delete user override for a feature flag
+   *
+   * @param userId - The id of the user
+   * @param featureFlagId - The id of the feature flag
+   * @returns The deletion result
+   */
+  async deleteUserOverride(userId: string, featureFlagId: string) {
+    return this.featureFlagRepository.deleteUserOverride(userId, featureFlagId);
+  }
+
+  /**
+   * Get user feature flag override
+   *
+   * @param userId - The id of the user
+   * @param featureFlagId - The id of the feature flag
+   * @param shouldThrow - Whether to throw errors
+   * @returns The override value or null if no override exists
+   */
+  private async getUserFeatureFlagOverride(
+    userId: string,
+    featureFlagId: string,
+    shouldThrow: boolean,
+  ): Promise<unknown | null> {
+    try {
+      const overrideResult = await this.featureFlagRepository.getUserOverride(
+        userId,
+        featureFlagId,
+      );
+
+      if (overrideResult.isErr()) {
+        return null;
+      }
+
+      return overrideResult.value.value;
+    } catch (error) {
+      if (shouldThrow) {
+        throw error;
+      }
+      this.logger
+        .withError(error)
+        .warn("Unexpected error getting user feature flag override");
+      return null;
+    }
   }
 
   /**

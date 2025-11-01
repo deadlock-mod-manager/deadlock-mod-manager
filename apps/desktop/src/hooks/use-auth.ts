@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { fetch } from "@tauri-apps/plugin-http";
 import { open } from "@tauri-apps/plugin-shell";
 import { useEffect } from "react";
+import { useQueryClient } from "react-query";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { Session, User } from "@/lib/store/slices/auth";
@@ -12,6 +13,7 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3001";
 
 export const useAuth = () => {
+  const queryClient = useQueryClient();
   const {
     user,
     session,
@@ -51,6 +53,7 @@ export const useAuth = () => {
 
         logger.info("Session validated for user:", data.user.email);
         setAuth(data.user, { ...data.session, token });
+        queryClient.invalidateQueries(["feature-flags"]);
       } catch (error) {
         logger.error("Failed to validate session", error);
         await invoke("clear_auth_token");
@@ -102,7 +105,7 @@ export const useAuth = () => {
     return () => {
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [setAuth, clearAuth, setLoading]);
+  }, [setAuth, clearAuth, setLoading, queryClient.invalidateQueries]);
 
   const login = async () => {
     try {
@@ -129,6 +132,7 @@ export const useAuth = () => {
     } finally {
       await invoke("clear_auth_token");
       clearAuth();
+      queryClient.invalidateQueries(["feature-flags"]);
       toast.success("Logged out successfully");
     }
   };

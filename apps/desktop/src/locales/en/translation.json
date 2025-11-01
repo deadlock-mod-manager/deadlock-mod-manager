@@ -126,7 +126,14 @@
     "apiDegraded": "API Issues",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status Unknown",
-    "optional": "optional"
+    "optional": "optional",
+    "required": "Required",
+    "type": "Type",
+    "currentValue": "Current value",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "on": "on",
+    "off": "off"
   },
   "settings": {
     "language": "Language",
@@ -215,7 +222,18 @@
     "settingCreated": "Setting created",
     "information": "Information",
     "developerMode": "Developer Mode",
-    "developerModeDescription": "Enable developer mode to access advanced tools and debugging features"
+    "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "experimental": "Experimental"
+  },
+  "featureFlags": {
+    "title": "Experimental Features",
+    "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
+    "loginRequired": "You need to be logged in to manage feature flags",
+    "noExposedFlags": "No experimental features are currently available",
+    "onlyBooleanToggles": "Only boolean feature flags can be toggled",
+    "toggleSuccess": "{{name}} {{state}}",
+    "toggleError": "Failed to toggle feature flag",
+    "nonBooleanFlag": "Manual configuration required"
   },
   "game": {
     "createBackup": "Create Backup",

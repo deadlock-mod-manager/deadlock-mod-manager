@@ -1,11 +1,10 @@
-import { useQuery } from "react-query";
-import { getFeatureFlags } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  deleteFeatureFlagUserOverride,
+  getFeatureFlags,
+  setFeatureFlagUserOverride,
+} from "@/lib/api";
 import logger from "@/lib/logger";
-
-export interface FeatureFlag {
-  name: string;
-  enabled: boolean;
-}
 
 export const useFeatureFlags = () => {
   return useQuery({
@@ -30,5 +29,45 @@ export const useFeatureFlag = (flagName: string) => {
     isEnabled,
     flag,
     ...rest,
+  };
+};
+
+export const useFeatureFlagMutation = () => {
+  const queryClient = useQueryClient();
+
+  const setOverride = useMutation({
+    mutationFn: ({ flagId, value }: { flagId: string; value: unknown }) =>
+      setFeatureFlagUserOverride(flagId, value),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["feature-flags"]);
+    },
+    onError: (error) => {
+      logger.error("Failed to set feature flag override", error);
+    },
+  });
+
+  const deleteOverride = useMutation({
+    mutationFn: (flagId: string) => deleteFeatureFlagUserOverride(flagId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["feature-flags"]);
+    },
+    onError: (error) => {
+      logger.error("Failed to delete feature flag override", error);
+    },
+  });
+
+  const toggleFlag = async (flagId: string, currentValue: unknown) => {
+    if (typeof currentValue === "boolean") {
+      return setOverride.mutateAsync({ flagId, value: !currentValue });
+    }
+    throw new Error("Can only toggle boolean flags");
+  };
+
+  return {
+    setOverride: setOverride.mutateAsync,
+    deleteOverride: deleteOverride.mutateAsync,
+    toggleFlag,
+    isSettingOverride: setOverride.isLoading,
+    isDeletingOverride: deleteOverride.isLoading,
   };
 };
