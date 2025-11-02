@@ -55,24 +55,25 @@ export const seo = ({
       : []),
     { name: "og:site_name", content: "Deadlock Mod Manager" },
     { name: "og:locale", content: "en_US" },
+    {
+      name: "twitter:card",
+      content: image ? "summary_large_image" : "summary",
+    },
+    { name: "twitter:title", content: title },
+    ...(description
+      ? [{ name: "twitter:description", content: description }]
+      : []),
     ...(image
       ? [
-          { property: "twitter:card", content: "summary_large_image" },
-          { property: "twitter:image", content: image },
-          { property: "twitter:image:alt", content: title },
+          { name: "twitter:image", content: image },
+          { name: "twitter:image:alt", content: title },
         ]
       : []),
-    { property: "twitter:title", content: title },
-    ...(description
-      ? [{ property: "twitter:description", content: description }]
-      : []),
     ...(twitterCreator
-      ? [{ property: "twitter:creator", content: twitterCreator }]
+      ? [{ name: "twitter:creator", content: twitterCreator }]
       : []),
-    ...(twitterSite
-      ? [{ property: "twitter:site", content: twitterSite }]
-      : []),
-    ...(url ? [{ property: "twitter:url", content: url }] : []),
+    ...(twitterSite ? [{ name: "twitter:site", content: twitterSite }] : []),
+    ...(url ? [{ name: "twitter:url", content: url }] : []),
     { name: "application-name", content: "Deadlock Mod Manager" },
     { name: "apple-mobile-web-app-title", content: "Deadlock Mod Manager" },
     { name: "apple-mobile-web-app-capable", content: "yes" },

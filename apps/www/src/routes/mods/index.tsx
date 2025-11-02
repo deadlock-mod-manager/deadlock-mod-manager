@@ -21,6 +21,7 @@ export const Route = createFileRoute("/mods/")({
         "Browse and discover mods for Valve's Deadlock game. Updated hourly with new skins, gameplay modifications, HUD mods, and more from GameBanana.",
       keywords:
         "deadlock mods, deadlock skins, deadlock gameplay mods, valve deadlock mods, gamebanana deadlock, deadlock modding community",
+      image: "https://deadlockmods.app/og-image.png",
       url: "https://deadlockmods.app/mods",
       canonical: "https://deadlockmods.app/mods",
       type: "website",
