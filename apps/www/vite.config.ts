@@ -22,7 +22,9 @@ const config = defineConfig({
     viteReact(),
     sitemap({
       hostname: 'https://deadlockmods.app',
+      outDir: 'dist/client',
       dynamicRoutes: [
+        '/',
         '/mods',
         '/download/windows',
         '/download/linux',
