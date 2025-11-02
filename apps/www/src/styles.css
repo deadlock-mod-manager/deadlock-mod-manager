@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@source "../node_modules/@deadlock-mods/ui";
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Custom Fonts */
@@ -60,6 +61,7 @@ body {
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
   --radius: 0.5rem;
+  --toast-background: 15 10% 13%;
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 240 5.9% 10%;
@@ -96,6 +98,7 @@ body {
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
+  --toast-background: 15 10% 13%;
   --sidebar-background: 20 9% 6%;
   --sidebar-foreground: 38 65% 97%;
   --sidebar-primary: 42 60% 84%;
@@ -119,6 +122,7 @@ body {
   --color-background: hsl(var(--background));
   --color-background-dark: hsl(var(--background-dark));
   --color-foreground: hsl(var(--foreground));
+  --color-toast-background: hsl(var(--toast-background));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));

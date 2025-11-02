@@ -46,11 +46,11 @@ export class MirrorService {
         this.logger
           .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
           .withError(existsResult.error)
-          .error("Failed to check S3 file existence");
-        return err(existsResult.error);
-      }
+          .warn("Failed to check S3 file existence, proceeding to re-mirror");
 
-      if (!existsResult.value) {
+        // Track cache miss and proceed to re-mirror the file
+        await MetricsService.instance.incrementCacheMiss();
+      } else if (!existsResult.value) {
         this.logger
           .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
           .info("File not found in S3, treating as cache miss");

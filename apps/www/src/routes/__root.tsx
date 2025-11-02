@@ -1,169 +1,206 @@
-import { Toaster } from "@deadlock-mods/ui/components/sonner";
-import { createORPCClient } from "@orpc/client";
-import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
-  Outlet,
+  Scripts,
   useRouterState,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { useState } from "react";
-import Loader from "@/components/loader";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AnalyticsProvider } from "@/contexts/analytics-context";
-import { MainLayout } from "@/layouts/main-layout";
-import { link, type orpc } from "@/utils/orpc";
-import type { AppRouterClient } from "../../../api/src/routers";
-import "../index.css";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { FullscreenLayout } from "@/components/layouts/fullscreen-layout";
+import { MainLayout } from "@/components/layouts/main-layout";
+import { seo } from "@/utils/seo";
+import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import appCss from "../styles.css?url";
 
-export interface RouterAppContext {
-  orpc: typeof orpc;
+interface MyRouterContext {
   queryClient: QueryClient;
 }
 
-export const Route = createRootRouteWithContext<RouterAppContext>()({
-  component: RootComponent,
-  head: () => ({
-    meta: [
-      {
-        title:
-          "Deadlock Mod Manager - Download, Install & Manage Deadlock Mods",
-      },
-      {
-        name: "description",
-        content:
-          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
-      },
-      {
-        name: "keywords",
-        content:
-          "deadlock mod manager, deadlock mods, valve deadlock, game mod manager, gamebanana mods, deadlock modding, tauri app, deadlock tools, valve games, mods installer, deadlock community",
-      },
-      {
-        name: "author",
-        content: "Stormix",
-      },
-      {
-        name: "robots",
-        content: "index, follow",
-      },
-      {
-        name: "theme-color",
-        content: "#d4af37",
-      },
-      {
-        property: "og:type",
-        content: "website",
-      },
-      {
-        property: "og:title",
-        content:
-          "Deadlock Mod Manager - Download, Install & Manage Deadlock Mods",
-      },
-      {
-        property: "og:description",
-        content:
-          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
-      },
-      {
-        property: "og:image",
-        content: "/og-image.png",
-      },
-      {
-        property: "og:image:alt",
-        content:
-          "Deadlock Mod Manager - Interface showing mod browser and installation features",
-      },
-      {
-        property: "og:site_name",
-        content: "Deadlock Mod Manager",
-      },
-      {
-        property: "og:url",
-        content: "https://deadlockmods.app/",
-      },
-      {
-        property: "twitter:card",
-        content: "summary_large_image",
-      },
-      {
-        property: "twitter:title",
-        content:
-          "Deadlock Mod Manager - Download, Install & Manage Deadlock Mods",
-      },
-      {
-        property: "twitter:description",
-        content:
-          "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection.",
-      },
-      {
-        property: "twitter:image",
-        content: "/og-image.png",
-      },
-    ],
-    links: [
-      {
-        rel: "icon",
-        href: "/favicon.svg",
-      },
-      {
-        rel: "canonical",
-        href: "https://deadlockmods.app/",
-      },
-      {
-        rel: "apple-touch-icon",
-        sizes: "180x180",
-        href: "/apple-touch-icon.png",
-      },
-      {
-        rel: "sitemap",
-        type: "application/xml",
-        href: "/sitemap.xml",
-      },
-    ],
-  }),
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  head: () => {
+    const baseSeo = seo({
+      title: "Deadlock Mod Manager - Download, Install & Manage Deadlock Mods",
+      description:
+        "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
+      keywords:
+        "deadlock mod manager, deadlock mods, valve deadlock, game mod manager, gamebanana mods, deadlock modding, tauri app, deadlock tools, valve games, mods installer, deadlock community",
+      image: "/og-image.png",
+      url: "https://deadlockmods.app/",
+      canonical: "https://deadlockmods.app/",
+    });
+
+    return {
+      meta: [
+        ...baseSeo.meta,
+        {
+          property: "og:image:width",
+          content: "1200",
+        },
+        {
+          property: "og:image:height",
+          content: "630",
+        },
+        {
+          property: "og:image:alt",
+          content:
+            "Deadlock Mod Manager - Interface showing mod browser and installation features",
+        },
+      ],
+      links: [
+        ...baseSeo.links,
+        {
+          rel: "stylesheet",
+          href: appCss,
+        },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "Deadlock Mod Manager",
+            description:
+              "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection.",
+            url: "https://deadlockmods.app/",
+            downloadUrl:
+              "https://github.com/stormix/deadlock-modmanager/releases/latest",
+            author: {
+              "@type": "Person",
+              name: "Stormix",
+              url: "https://github.com/Stormix",
+            },
+            operatingSystem: ["Windows", "macOS", "Linux"],
+            applicationCategory: "GameApplication",
+            offers: {
+              "@type": "Offer",
+              price: "0",
+              priceCurrency: "USD",
+            },
+            screenshot: "/mods.png",
+            softwareVersion: "latest",
+            fileFormat: "application/x-executable",
+            installUrl:
+              "https://github.com/stormix/deadlock-modmanager/releases/latest",
+            softwareRequirements: "Valve Deadlock Game",
+            keywords: "deadlock, mod manager, valve, gaming, mods, gamebanana",
+            license: "https://www.gnu.org/licenses/gpl-3.0.html",
+            isAccessibleForFree: true,
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: "5",
+              ratingCount: "1",
+            },
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Deadlock Mod Manager",
+            url: "https://deadlockmods.app",
+            description: "The ultimate mod manager for Valve's Deadlock game",
+            publisher: {
+              "@type": "Organization",
+              name: "Deadlock Mod Manager",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://deadlockmods.app/og-image.png",
+              },
+              url: "https://deadlockmods.app",
+              sameAs: [
+                "https://github.com/Stormix/deadlock-modmanager",
+                "https://discord.gg/deadlockmods",
+              ],
+            },
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: "https://deadlockmods.app/",
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Download",
+                item: "https://deadlockmods.app/download",
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: "Docs",
+                item: "https://deadlockmods.app/docs",
+              },
+              {
+                "@type": "ListItem",
+                position: 4,
+                name: "Documentation",
+                item: "https://docs.deadlockmods.app/",
+              },
+              {
+                "@type": "ListItem",
+                position: 5,
+                name: "VPK Analyzer",
+                item: "https://deadlockmods.app/vpk-analyzer",
+              },
+              {
+                "@type": "ListItem",
+                position: 6,
+                name: "Status",
+                item: "https://deadlockmods.app/status",
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
+
+  shellComponent: RootDocument,
 });
 
-function RootComponent() {
-  const isFetching = useRouterState({
-    select: (s) => s.isLoading,
-  });
+function RootDocument({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   });
 
-  const [client] = useState<AppRouterClient>(() => createORPCClient(link));
-  const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
-
   const fullscreenRoutes = ["/login", "/auth/desktop-callback"];
   const isFullscreenRoute = fullscreenRoutes.includes(pathname);
-
   return (
-    <>
-      <HeadContent />
-      <ThemeProvider
-        attribute='class'
-        defaultTheme='dark'
-        disableTransitionOnChange
-        storageKey='vite-ui-theme'>
-        <AnalyticsProvider>
-          {isFullscreenRoute ? (
-            isFetching ? (
-              <Loader />
-            ) : (
-              <Outlet />
-            )
-          ) : (
-            <MainLayout>{isFetching ? <Loader /> : <Outlet />}</MainLayout>
-          )}
-          <Toaster richColors />
-        </AnalyticsProvider>
-      </ThemeProvider>
-      <TanStackRouterDevtools position='bottom-left' />
-      <ReactQueryDevtools buttonPosition='bottom-right' position='bottom' />
-    </>
+    <html lang='en' className='dark'>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {isFullscreenRoute ? (
+          <FullscreenLayout>{children}</FullscreenLayout>
+        ) : (
+          <MainLayout>{children}</MainLayout>
+        )}
+        <TanStackDevtools
+          config={{
+            position: "bottom-right",
+          }}
+          plugins={[
+            {
+              name: "Tanstack Router",
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            TanStackQueryDevtools,
+          ]}
+        />
+        <Scripts />
+      </body>
+    </html>
   );
 }

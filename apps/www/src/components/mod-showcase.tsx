@@ -1,6 +1,8 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import React, { useMemo } from "react";
 import { ModCard } from "@/components/mod-card";
 import { ModPreview } from "@/components/mod-preview";
@@ -12,7 +14,7 @@ export const ModShowcaseSection = () => {
   const mods = useMemo(
     () =>
       (modsQuery.data || [])
-        .sort((a: ModDto, b: ModDto) => b.downloadCount - a.downloadCount)
+        .sort((a, b) => b.downloadCount - a.downloadCount)
         .slice(0, 4),
     [modsQuery.data],
   );
@@ -26,7 +28,7 @@ export const ModShowcaseSection = () => {
 
   return (
     <section
-      className='gear-pattern relative overflow-hidden py-16 sm:py-24 lg:py-32'
+      className='gear-pattern relative overflow-hidden py-16 sm:py-24 lg:py-32 flex flex-col items-center justify-center'
       id='showcase'>
       {/* Decorative Cogs and Wrenches */}
       <div className='pointer-events-none absolute inset-0'>
@@ -73,19 +75,26 @@ export const ModShowcaseSection = () => {
               Popular Mods
             </h3>
 
-            {mods.map((mod: ModDto) => (
+            {mods.map((mod) => (
               <ModCard
                 isSelected={selectedMod === mod.id}
                 key={mod.id}
-                mod={mod}
+                mod={mod as ModDto}
                 onClick={() => setSelectedMod(mod.id)}
               />
             ))}
           </div>
 
           <div className='min-w-0 lg:sticky lg:top-8 lg:self-start'>
-            <ModPreview selectedMod={selectedModData || null} />
+            <ModPreview selectedMod={(selectedModData as ModDto) || null} />
           </div>
+        </div>
+        <div className='mt-8 mx-auto w-full flex justify-center'>
+          <Link to='/mods'>
+            <Button size='lg' className='px-8'>
+              Browse All Mods <span aria-hidden='true'>→</span>
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

@@ -65,7 +65,8 @@
       "**/target": true,
       "**/.turbo": true,
       "**/.tsbuildinfo": true,
-      "**/pnpm-lock.yaml": true
+      "**/pnpm-lock.yaml": true,
+      "**/routeTree.gen.ts": true
     },
     "files.watcherExclude": {
       "**/node_modules/**": true,
@@ -73,7 +74,11 @@
       "**/build/**": true,
       "**/target/**": true,
       "**/.turbo/**": true,
-      "**/.tsbuildinfo": true
+      "**/.tsbuildinfo": true,
+      "**/routeTree.gen.ts": true
+    },
+    "files.readonlyInclude": {
+      "**/routeTree.gen.ts": true
     },
     "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"],
     "[rust]": {

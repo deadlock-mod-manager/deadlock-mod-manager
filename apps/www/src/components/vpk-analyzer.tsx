@@ -11,7 +11,7 @@ import { Progress } from "@deadlock-mods/ui/components/progress";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useAnalyticsContext } from "@/components/analytics-provider";
 import { client } from "@/utils/orpc";
 
 type VpkAnalysisResult = Awaited<ReturnType<typeof client.analyseVPK>>;
@@ -383,7 +383,6 @@ export function VpkAnalyzer() {
                     </div>
                   </div>
 
-                  {/* Mod Match Information */}
                   {fileAnalysis.result.matchedVpk?.mod &&
                   fileAnalysis.result.match ? (
                     <div>

@@ -26,24 +26,17 @@ type RouteProps = {
 
 const routeList: RouteProps[] = [
   {
-    href: "/#features",
-    label: "Features",
+    href: "/",
+    label: "Home",
   },
   {
-    href: "/#stats",
-    label: "Stats",
-  },
-  {
-    href: "/#showcase",
-    label: "Showcase",
-  },
-  {
-    href: "/#faq",
-    label: "FAQ",
+    href: "/mods",
+    label: "Browse Mods",
   },
   {
     href: "/status",
     label: "Status",
+    external: true,
   },
   {
     href: "https://docs.deadlockmods.app/",
@@ -58,7 +51,7 @@ export const Navbar = () => {
     <header className='bg-background'>
       <nav
         aria-label='Global'
-        className='mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 lg:px-8'>
+        className='container mx-auto flex items-center justify-between gap-x-6 px-4 py-6'>
         <div className='flex lg:flex-1'>
           <Link className='flex items-center gap-2 -m-1.5 p-1.5' to='/'>
             <span className='sr-only'>{APP_NAME}</span>

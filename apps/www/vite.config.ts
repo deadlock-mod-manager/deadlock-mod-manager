@@ -1,18 +1,29 @@
-import path from 'node:path';
-import tailwindcss from '@tailwindcss/vite';
-import { tanstackRouter } from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import viteReact from '@vitejs/plugin-react'
+import viteTsConfigPaths from 'vite-tsconfig-paths'
+import tailwindcss from '@tailwindcss/vite'
+import netlify from '@netlify/vite-plugin-tanstack-start'
 import sitemap from 'vite-plugin-sitemap';
-import { defineConfig } from 'vite';
 
-export default defineConfig({
+const config = defineConfig({
   plugins: [
+    // this is the plugin that enables path aliases
+    viteTsConfigPaths({
+      projects: ['./tsconfig.json'],
+    }),
     tailwindcss(),
-    tanstackRouter({}),
-    react(),
+    tanstackStart({
+      prerender: {
+        routes: ['/sitemap-mods.xml'],
+      },
+    }),
+    netlify(),
+    viteReact(),
     sitemap({
       hostname: 'https://deadlockmods.app',
       dynamicRoutes: [
+        '/mods',
         '/download/windows',
         '/download/linux',
         '/download',
@@ -28,6 +39,7 @@ export default defineConfig({
       ],
       changefreq: {
         '/': 'weekly',
+        '/mods': 'hourly',
         '/download': 'weekly', 
         '/download/windows': 'weekly',
         '/download/linux': 'weekly',
@@ -41,6 +53,7 @@ export default defineConfig({
       },
       priority: {
         '/': 1.0,
+        '/mods': 0.9,
         '/download': 0.9,
         '/download/windows': 0.8,
         '/download/linux': 0.8,
@@ -55,9 +68,6 @@ export default defineConfig({
       generateRobotsTxt: false,
     }),
   ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-});
+})
+
+export default config
