@@ -95,7 +95,7 @@ deployments:
   bot:
     image: stormix/deadlock-mods-bot:latest
     replicas: 1
-    memory: 500Mi
+    memory: 1Gi
     cpu: 150m
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
@@ -108,7 +108,7 @@ deployments:
         port: 3001
         initialDelaySeconds: 10
         periodSeconds: 10
-        timeoutSeconds: 5
+        timeoutSeconds: 15
         successThreshold: 1
         failureThreshold: 3
 
@@ -116,21 +116,21 @@ deployments:
         enabled: true
         path: /health
         port: 3001
-        initialDelaySeconds: 30
-        periodSeconds: 15
-        timeoutSeconds: 5
+        initialDelaySeconds: 60
+        periodSeconds: 20
+        timeoutSeconds: 15
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 5
 
       startup:
         enabled: true
         path: /health
         port: 3001
-        initialDelaySeconds: 0
+        initialDelaySeconds: 5
         periodSeconds: 10
-        timeoutSeconds: 5
+        timeoutSeconds: 15
         successThreshold: 1
-        failureThreshold: 24
+        failureThreshold: 30
 
   lockdex:
     image: stormix/deadlock-mods-lockdex:latest
