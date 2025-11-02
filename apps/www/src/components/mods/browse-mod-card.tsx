@@ -4,6 +4,8 @@ import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { Link } from "@tanstack/react-router";
 import { LuDownload, LuHeart, LuSettings } from "react-icons/lu";
 import { ModDescription } from "@/components/mods/mod-description";
+import { NSFWBlur } from "@/components/mods/nsfw-blur";
+import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { formatDownloads } from "@/lib/utils";
 
@@ -13,6 +15,7 @@ interface BrowseModCardProps {
 
 export const BrowseModCard = ({ mod }: BrowseModCardProps) => {
   const { saveScrollPosition } = useScrollPosition("/mods");
+  const { shouldBlur, nsfwSettings } = useNSFWBlur(mod);
 
   return (
     <Link
@@ -30,7 +33,11 @@ export const BrowseModCard = ({ mod }: BrowseModCardProps) => {
       }}>
       <Card className='group h-full cursor-pointer overflow-hidden border-muted/50 bg-background/50 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 hover:bg-primary/5 hover:shadow-lg'>
         <CardContent className='relative p-0'>
-          <div className='relative aspect-video w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5'>
+          <NSFWBlur
+            isNSFW={shouldBlur}
+            blurStrength={nsfwSettings.blurStrength}
+            disableBlur={nsfwSettings.disableBlur}
+            className='relative aspect-video w-full overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5'>
             {mod.images && mod.images.length > 0 ? (
               <img
                 alt={`${mod.name} preview`}
@@ -43,7 +50,7 @@ export const BrowseModCard = ({ mod }: BrowseModCardProps) => {
               </div>
             )}
             <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent' />
-          </div>
+          </NSFWBlur>
 
           <div className='space-y-3 p-4'>
             <div className='space-y-1'>

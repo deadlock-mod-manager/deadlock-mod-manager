@@ -1,11 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@deadlock-mods/ui/components/card";
+import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   LuArrowLeft,
   LuCalendar,
@@ -22,39 +19,33 @@ import {
   LuHeart,
   LuUser,
 } from "react-icons/lu";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 import { ModDescription } from "@/components/mods/mod-description";
+import { NSFWBlur } from "@/components/mods/nsfw-blur";
+import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { generateDeepLink, isDeepLinkSupported } from "@/lib/deep-link";
 import { formatDownloads } from "@/lib/utils";
+import Logo from "@/logo.svg";
 import { orpc } from "@/utils/orpc";
+import { serverClient } from "@/utils/orpc.server";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/mod/$id")({
   component: ModDetailPage,
-  loader: async ({ params, context }) => {
-    const mod = await context.queryClient.ensureQueryData(
-      orpc.getModV2.queryOptions({ input: { id: params.id } }),
-    );
+  loader: async ({ params }) => {
+    const mod = await serverClient.getModV2({ id: params.id });
     return mod;
   },
   head: (ctx) => {
     const mod = ctx.loaderData;
     if (!mod) {
-      return {
-        meta: [
-          {
-            charSet: "utf-8",
-          },
-          {
-            name: "viewport",
-            content: "width=device-width, initial-scale=1",
-          },
-          {
-            title: "Mod Not Found - Deadlock Mod Manager",
-          },
-        ],
-      };
+      return seo({
+        title: "Mod Not Found - Deadlock Mod Manager",
+      });
     }
 
-    const title = `${mod.name} - Deadlock Mod Manager`;
+    const title = `${mod.name} by ${mod.author} - Deadlock Mod Manager`;
     const description =
       mod.description ||
       `Download ${mod.name} by ${mod.author} for Valve's Deadlock game. ${mod.downloadCount.toLocaleString()} downloads.`;
@@ -87,89 +78,19 @@ export const Route = createFileRoute("/mod/$id")({
           : mod.createdAt.toISOString()
         : new Date().toISOString();
 
+    const seoTags = seo({
+      title,
+      description,
+      keywords,
+      image,
+      url,
+      canonical: url,
+      type: "article",
+      author: mod.author,
+    });
+
     return {
-      meta: [
-        {
-          charSet: "utf-8",
-        },
-        {
-          name: "viewport",
-          content: "width=device-width, initial-scale=1",
-        },
-        {
-          title,
-        },
-        {
-          name: "description",
-          content: description,
-        },
-        {
-          name: "keywords",
-          content: keywords,
-        },
-        {
-          name: "author",
-          content: mod.author,
-        },
-        {
-          property: "og:title",
-          content: title,
-        },
-        {
-          property: "og:description",
-          content: description,
-        },
-        {
-          property: "og:type",
-          content: "article",
-        },
-        {
-          property: "og:url",
-          content: url,
-        },
-        {
-          property: "og:image",
-          content: image,
-        },
-        {
-          property: "og:image:alt",
-          content: `${mod.name} preview`,
-        },
-        {
-          property: "article:author",
-          content: mod.author,
-        },
-        {
-          property: "article:published_time",
-          content: publishedTime,
-        },
-        {
-          property: "article:modified_time",
-          content: modifiedTime,
-        },
-        {
-          property: "twitter:card",
-          content: "summary_large_image",
-        },
-        {
-          property: "twitter:title",
-          content: title,
-        },
-        {
-          property: "twitter:description",
-          content: description,
-        },
-        {
-          property: "twitter:image",
-          content: image,
-        },
-      ],
-      links: [
-        {
-          rel: "canonical",
-          href: url,
-        },
-      ],
+      ...seoTags,
       scripts: [
         {
           type: "application/ld+json",
@@ -205,6 +126,17 @@ export const Route = createFileRoute("/mod/$id")({
           }),
         },
       ],
+      meta: [
+        ...(seoTags.meta || []),
+        {
+          property: "article:published_time",
+          content: publishedTime,
+        },
+        {
+          property: "article:modified_time",
+          content: modifiedTime,
+        },
+      ],
     };
   },
 });
@@ -216,19 +148,20 @@ function ModDetailPage() {
     orpc.getModDownloadsV2.queryOptions({ input: { id } }),
   );
 
+  const [selectedDownloadIndex, setSelectedDownloadIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const deepLinkSupported = isDeepLinkSupported();
+  const { shouldBlur, nsfwSettings } = useNSFWBlur(mod);
 
   const handleDownload = () => {
     if (!mod || !downloads?.downloads || downloads.downloads.length === 0) {
       return;
     }
 
-    const largestDownload = downloads.downloads.reduce((prev, current) =>
-      current.size > prev.size ? current : prev,
-    );
-
+    const download = downloads.downloads[selectedDownloadIndex];
     const deepLink = generateDeepLink(
-      largestDownload.url,
+      download.url,
       mod.isAudio ?? false,
       mod.remoteId,
     );
@@ -267,20 +200,27 @@ function ModDetailPage() {
       </div>
 
       <div className='grid gap-8 lg:grid-cols-3'>
-        {/* Main Content */}
         <div className='space-y-6 lg:col-span-2'>
-          {/* Hero Image */}
           {mod.images && mod.images.length > 0 && (
-            <div className='aspect-video overflow-hidden rounded-lg'>
-              <img
-                src={mod.images[0]}
-                alt={mod.name}
-                className='h-full w-full object-cover'
-              />
-            </div>
+            <NSFWBlur
+              isNSFW={shouldBlur}
+              blurStrength={nsfwSettings.blurStrength}
+              disableBlur={nsfwSettings.disableBlur}>
+              <div
+                className='aspect-video overflow-hidden rounded-lg cursor-pointer'
+                onClick={() => {
+                  setLightboxIndex(0);
+                  setLightboxOpen(true);
+                }}>
+                <img
+                  src={mod.images[0]}
+                  alt={mod.name}
+                  className='h-full w-full object-cover transition-transform hover:scale-105'
+                />
+              </div>
+            </NSFWBlur>
           )}
 
-          {/* Title and Stats */}
           <div>
             <h1 className='mb-4 font-bold text-4xl'>{mod.name}</h1>
             <div className='flex flex-wrap items-center gap-4 text-muted-foreground'>
@@ -308,7 +248,6 @@ function ModDetailPage() {
             </div>
           </div>
 
-          {/* Badges */}
           <div className='flex flex-wrap gap-2'>
             <Badge variant='secondary'>{mod.category}</Badge>
             {mod.hero && <Badge variant='outline'>{mod.hero}</Badge>}
@@ -328,7 +267,6 @@ function ModDetailPage() {
             )}
           </div>
 
-          {/* Description */}
           {mod.description && (
             <Card>
               <CardContent className='pt-6'>
@@ -338,29 +276,36 @@ function ModDetailPage() {
             </Card>
           )}
 
-          {/* Gallery */}
           {mod.images && mod.images.length > 1 && (
             <Card>
               <CardContent className='pt-6'>
                 <h2 className='mb-4 font-semibold text-xl'>Gallery</h2>
                 <div className='grid grid-cols-2 gap-4'>
-                  {mod.images.slice(1).map((image: string) => (
-                    <div
+                  {mod.images.slice(1).map((image: string, index: number) => (
+                    <NSFWBlur
                       key={image}
-                      className='aspect-video overflow-hidden rounded-lg'>
-                      <img
-                        src={image}
-                        alt={`${mod.name} screenshot`}
-                        className='h-full w-full object-cover transition-transform hover:scale-105'
-                      />
-                    </div>
+                      isNSFW={shouldBlur}
+                      blurStrength={nsfwSettings.blurStrength}
+                      disableBlur={nsfwSettings.disableBlur}>
+                      <div
+                        className='aspect-video overflow-hidden rounded-lg cursor-pointer'
+                        onClick={() => {
+                          setLightboxIndex(index + 1);
+                          setLightboxOpen(true);
+                        }}>
+                        <img
+                          src={image}
+                          alt={`${mod.name} screenshot`}
+                          className='h-full w-full object-cover transition-transform hover:scale-105'
+                        />
+                      </div>
+                    </NSFWBlur>
                   ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Audio Preview */}
           {mod.audioUrl && (
             <Card>
               <CardContent className='pt-6'>
@@ -374,75 +319,103 @@ function ModDetailPage() {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className='space-y-6'>
-          {/* Download Card */}
           <Card>
             <CardContent className='pt-6'>
               <h2 className='mb-4 font-semibold text-xl'>Download</h2>
-              {deepLinkSupported ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        className='w-full'
-                        size='lg'
-                        onClick={handleDownload}
-                        disabled={
-                          !downloads?.downloads ||
-                          downloads.downloads.length === 0
-                        }>
-                        <LuDownload className='mr-2 h-4 w-4' />
-                        Download Mod
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className='max-w-xs text-sm'>
-                        This will open the Deadlock Mod Manager desktop app and
-                        start the download automatically.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <div className='space-y-3'>
-                  <p className='text-muted-foreground text-sm'>
-                    To download this mod, you need to have the Deadlock Mod
-                    Manager desktop app installed.
-                  </p>
-                  <Link to='/download'>
-                    <Button className='w-full' size='lg'>
-                      <LuDownload className='mr-2 h-4 w-4' />
-                      Get Desktop App
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-
-            {downloads?.downloads && downloads.downloads.length > 0 && (
-              <CardFooter className='flex-col items-start gap-2'>
-                <p className='text-muted-foreground text-sm'>
-                  {downloads.downloads.length} file
-                  {downloads.downloads.length > 1 ? "s" : ""} available
-                </p>
-                <div className='w-full space-y-2'>
-                  {downloads.downloads.map((download) => (
-                    <div
-                      key={download.url}
-                      className='flex items-center justify-between rounded-md border p-3 text-sm'>
-                      <span className='truncate'>{download.name}</span>
-                      <span className='text-muted-foreground text-xs'>
-                        {(download.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
+              <div className='space-y-3'>
+                {/* File Selection - Show when multiple files available */}
+                {downloads?.downloads && downloads.downloads.length > 1 && (
+                  <div className='space-y-2'>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Select file to download:
+                    </label>
+                    <div className='space-y-2'>
+                      {downloads.downloads.map((download, index) => (
+                        <button
+                          key={download.url}
+                          type='button'
+                          onClick={() => setSelectedDownloadIndex(index)}
+                          className={`flex w-full items-center justify-between rounded-md border p-3 text-left text-sm transition-colors ${
+                            selectedDownloadIndex === index
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:bg-muted"
+                          }`}>
+                          <span className='truncate font-medium'>
+                            {download.name}
+                          </span>
+                          <span className='ml-2 text-muted-foreground text-xs whitespace-nowrap'>
+                            {(download.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardFooter>
-            )}
+                  </div>
+                )}
+
+                {deepLinkSupported ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          className='w-full text-base'
+                          style={{ backgroundColor: "#EBDBC3", color: "#000" }}
+                          size='lg'
+                          onClick={() => handleDownload()}
+                          disabled={
+                            !downloads?.downloads ||
+                            downloads.downloads.length === 0
+                          }>
+                          <img
+                            src={Logo}
+                            alt='Mod Manager'
+                            className='mr-2 h-6 w-6'
+                          />
+                          Install with Deadlock Mod Manager
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className='max-w-xs text-sm'>
+                          This will open the Deadlock Mod Manager desktop app
+                          and start the download automatically.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <>
+                    <p className='text-muted-foreground text-sm'>
+                      To install this mod automatically, you need the Deadlock
+                      Mod Manager desktop app.
+                    </p>
+                    <Link to='/download'>
+                      <Button className='w-full' size='lg'>
+                        <LuDownload className='mr-2 h-4 w-4' />
+                        Get Desktop App
+                      </Button>
+                    </Link>
+                  </>
+                )}
+
+                {downloads?.downloads && downloads.downloads.length > 0 && (
+                  <Button
+                    variant='outline'
+                    className='w-full'
+                    size='lg'
+                    asChild>
+                    <a
+                      href={downloads.downloads[selectedDownloadIndex].url}
+                      target='_blank'
+                      rel='noopener noreferrer'>
+                      <LuDownload className='mr-2 h-4 w-4' />
+                      Download Manually
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
           </Card>
 
-          {/* External Links */}
           {mod.remoteUrl && (
             <Card>
               <CardContent className='pt-6'>
@@ -453,14 +426,13 @@ function ModDetailPage() {
                   rel='noopener noreferrer'>
                   <Button variant='outline' className='w-full justify-start'>
                     <LuExternalLink className='mr-2 h-4 w-4' />
-                    View on GameBanana
+                    View original post on GameBanana
                   </Button>
                 </a>
               </CardContent>
             </Card>
           )}
 
-          {/* Mod Info */}
           <Card>
             <CardContent className='pt-6'>
               <h2 className='mb-4 font-semibold text-xl'>Information</h2>
@@ -496,6 +468,15 @@ function ModDetailPage() {
           </Card>
         </div>
       </div>
+
+      {mod.images && mod.images.length > 0 && (
+        <Lightbox
+          open={lightboxOpen}
+          close={() => setLightboxOpen(false)}
+          index={lightboxIndex}
+          slides={mod.images.map((image) => ({ src: image }))}
+        />
+      )}
     </div>
   );
 }

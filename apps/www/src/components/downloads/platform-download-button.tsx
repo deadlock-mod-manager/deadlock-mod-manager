@@ -3,7 +3,7 @@ import { Download } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
-import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useAnalyticsContext } from "@/components/analytics-provider";
 import { DOWNLOAD_URL } from "@/lib/constants";
 import { detectOS } from "@/lib/os-detection";
 import type { OSInfo, PlatformDownload } from "@/types/releases";

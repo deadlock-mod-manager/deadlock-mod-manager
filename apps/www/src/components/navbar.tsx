@@ -34,12 +34,9 @@ const routeList: RouteProps[] = [
     label: "Browse Mods",
   },
   {
-    href: "/#faq",
-    label: "FAQ",
-  },
-  {
     href: "/status",
     label: "Status",
+    external: true,
   },
   {
     href: "https://docs.deadlockmods.app/",

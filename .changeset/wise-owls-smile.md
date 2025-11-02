@@ -3,4 +3,3 @@
 ---
 
 Add prompt syncing to Langfuse on bot startup
-

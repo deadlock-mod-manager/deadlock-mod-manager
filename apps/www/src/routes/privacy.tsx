@@ -59,7 +59,6 @@ function PrivacyComponent() {
         </div>
 
         <div className='grid gap-8 lg:grid-cols-4'>
-          {/* Table of Contents */}
           <aside className='lg:col-span-1'>
             <div className='sticky top-8 rounded-lg border bg-card p-6'>
               <h2 className='mb-4 font-semibold text-lg'>Table of Contents</h2>
@@ -97,7 +96,6 @@ function PrivacyComponent() {
             </div>
           </aside>
 
-          {/* Main Content */}
           <main className='lg:col-span-3'>
             <div className='space-y-8'>
               <section className='scroll-mt-8'>

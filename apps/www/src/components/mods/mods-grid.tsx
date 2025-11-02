@@ -13,12 +13,6 @@ export function ModsGrid({ mods }: ModsGridProps) {
   const { setScrollElement, scrollY, restoreScrollPosition } =
     useScrollPosition("/mods");
 
-  console.log("[ModsGrid] Render", {
-    modsCount: mods.length,
-    scrollY,
-    hasParentRef: !!parentRef.current,
-  });
-
   const COLUMNS = 4;
 
   const modRows = useMemo(() => {
@@ -26,7 +20,6 @@ export function ModsGrid({ mods }: ModsGridProps) {
     for (let i = 0; i < mods.length; i += COLUMNS) {
       rows.push(mods.slice(i, i + COLUMNS));
     }
-    console.log("[ModsGrid] modRows computed", { rowsCount: rows.length });
     return rows;
   }, [mods]);
 
@@ -38,23 +31,11 @@ export function ModsGrid({ mods }: ModsGridProps) {
     initialOffset: scrollY,
   });
 
-  console.log("[ModsGrid] Virtualizer state", {
-    totalSize: rowVirtualizer.getTotalSize(),
-    virtualItemsCount: rowVirtualizer.getVirtualItems().length,
-    scrollOffset: rowVirtualizer.scrollOffset,
-  });
-
   useEffect(() => {
-    console.log("[ModsGrid] setScrollElement effect", {
-      hasParentRef: !!parentRef.current,
-      scrollY,
-    });
-
     if (parentRef.current) {
       setScrollElement(parentRef.current);
 
       if (scrollY > 0) {
-        console.log("[ModsGrid] Scheduling scroll restoration", { scrollY });
         requestAnimationFrame(() => {
           restoreScrollPosition();
         });
