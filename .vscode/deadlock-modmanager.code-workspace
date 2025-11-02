@@ -52,7 +52,7 @@
     // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,
-      "**/dist": true,
+      "**/dist": false,
       "**/build": true,
       "**/target": true,
       "**/.turbo": true,
