@@ -947,8 +947,9 @@ pub async fn initialize_ingest_tool() -> Result<(), Error> {
   tokio::task::spawn(async move {
     if let Err(e) = ingest_tool::watch_cache_dir(&cache_dir, running.clone()).await {
       log::error!("Cache watcher error: {}", e);
-      running.store(false, Ordering::Relaxed);
     }
+    running.store(false, Ordering::Relaxed);
+    log::info!("Cache watcher stopped");
   });
 
   log::info!("Ingest tool initialized successfully");
