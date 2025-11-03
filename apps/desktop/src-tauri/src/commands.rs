@@ -838,18 +838,18 @@ pub async fn trigger_cache_scan() -> Result<(), Error> {
 pub async fn start_cache_watcher() -> Result<(), Error> {
   log::info!("Starting cache watcher");
 
-  // Check if already running
-  if INGEST_WATCHER_RUNNING.load(Ordering::Relaxed) {
+  let cache_dir = ingest_tool::get_cache_directory()
+    .ok_or_else(|| Error::InvalidInput("Could not find Steam cache directory".to_string()))?;
+
+  if INGEST_WATCHER_RUNNING
+    .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
+    .is_err()
+  {
     log::warn!("Cache watcher is already running");
     return Ok(());
   }
 
-  let cache_dir = ingest_tool::get_cache_directory()
-    .ok_or_else(|| Error::InvalidInput("Could not find Steam cache directory".to_string()))?;
-
-  // Mark as running
   let generation = INGEST_WATCHER_GEN.fetch_add(1, Ordering::Relaxed) + 1;
-  INGEST_WATCHER_RUNNING.store(true, Ordering::Relaxed);
   let running_flag = Arc::clone(&INGEST_WATCHER_RUNNING);
   let gen_counter = Arc::clone(&INGEST_WATCHER_GEN);
 

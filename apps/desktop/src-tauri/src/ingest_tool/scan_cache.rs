@@ -156,6 +156,8 @@ pub async fn watch_cache_dir(
         if event.kind != EventKind::Create(CreateKind::File) {
           continue;
         }
+        // Wait 200ms for the file to be fully written
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         for path in event.paths {
           if let Some(url) = scan_file(&path) {
             if let Some(salts) = Salts::from_url(&url) {
