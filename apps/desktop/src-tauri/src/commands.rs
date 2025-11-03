@@ -908,3 +908,44 @@ pub async fn get_ingest_status() -> Result<IngestStatus, Error> {
     cache_directory,
   })
 }
+
+/// Initialize the ingest tool on app startup (if enabled)
+#[tauri::command]
+pub async fn initialize_ingest_tool() -> Result<(), Error> {
+  log::info!("Initializing ingest tool on startup");
+
+  // Check if already running
+  if INGEST_WATCHER_RUNNING.load(Ordering::Relaxed) {
+    log::warn!("Cache watcher is already running, skipping initialization");
+    return Ok(());
+  }
+
+  let cache_dir = match ingest_tool::get_cache_directory() {
+    Some(dir) => dir,
+    None => {
+      log::warn!("Could not find Steam cache directory, ingest tool will not start");
+      return Ok(()); // Don't fail the app startup
+    }
+  };
+
+  log::info!("Found cache directory: {}", cache_dir.display());
+
+  // Run initial scan
+  log::info!("Running initial cache scan");
+  ingest_tool::initial_cache_dir_ingest(&cache_dir).await;
+
+  // Start the watcher
+  log::info!("Starting cache watcher");
+  INGEST_WATCHER_RUNNING.store(true, Ordering::Relaxed);
+
+  let running = INGEST_WATCHER_RUNNING.clone();
+  tokio::task::spawn(async move {
+    if let Err(e) = ingest_tool::watch_cache_dir(&cache_dir, running.clone()).await {
+      log::error!("Cache watcher error: {}", e);
+      running.store(false, Ordering::Relaxed);
+    }
+  });
+
+  log::info!("Ingest tool initialized successfully");
+  Ok(())
+}

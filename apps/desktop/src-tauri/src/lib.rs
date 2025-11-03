@@ -254,7 +254,8 @@ pub fn run() {
       commands::trigger_cache_scan,
       commands::start_cache_watcher,
       commands::stop_cache_watcher,
-      commands::get_ingest_status
+      commands::get_ingest_status,
+      commands::initialize_ingest_tool
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

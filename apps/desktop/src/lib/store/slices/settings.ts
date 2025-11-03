@@ -56,7 +56,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   telemetrySettings: DEFAULT_TELEMETRY_SETTINGS,
   perItemNSFWOverrides: {},
   developerMode: false,
-  ingestToolEnabled: false,
+  ingestToolEnabled: true,
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
