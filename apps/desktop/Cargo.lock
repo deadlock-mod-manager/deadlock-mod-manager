@@ -1024,7 +1024,6 @@ dependencies = [
  "tokio-util",
  "unrar",
  "vpk-parser",
- "winreg 0.52.0",
  "zip 5.1.1",
 ]
 

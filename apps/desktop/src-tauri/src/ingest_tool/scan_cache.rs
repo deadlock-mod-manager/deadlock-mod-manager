@@ -9,91 +9,23 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-#[cfg(target_os = "linux")]
+/// Get the Steam HTTP cache directory using steamlocate
 pub fn get_cache_directory() -> Option<PathBuf> {
-  // If run under sudo, prefer the original user's home (SUDO_USER) instead of root's HOME.
-  if let Ok(sudo_user) = std::env::var("SUDO_USER") {
-    if !sudo_user.is_empty() {
-      if let Ok(passwd) = fs::read_to_string("/etc/passwd") {
-        for line in passwd.lines() {
-          if !line.starts_with(&format!("{sudo_user}:")) {
-            continue;
-          }
+  let steam_dir = steamlocate::SteamDir::locate().ok()?;
+  let steam_path = steam_dir.path();
+  let cache_path = steam_path.join("appcache").join("httpcache");
 
-          let fields: Vec<&str> = line.split(':').collect();
-          if fields.len() <= 5 {
-            continue;
-          }
-
-          let home_dir = fields[5];
-          let path = PathBuf::from(format!("{home_dir}/.steam/steam/appcache/httpcache/"));
-          if path.exists() && path.is_dir() {
-            return Some(path);
-          }
-        }
-      }
-    }
+  if cache_path.exists() && cache_path.is_dir() {
+    log::info!("Found Steam cache directory: {}", cache_path.display());
+    Some(cache_path)
+  } else {
+    log::warn!(
+      "Steam directory found at {}, but cache directory does not exist at {}",
+      steam_path.display(),
+      cache_path.display()
+    );
+    None
   }
-
-  let home_dir = std::env::var("HOME").ok()?;
-  let path = PathBuf::from(format!("{home_dir}/.steam/steam/appcache/httpcache/"));
-  if path.exists() && path.is_dir() {
-    return Some(path);
-  }
-
-  None
-}
-
-#[cfg(target_os = "windows")]
-pub fn get_cache_directory() -> Option<PathBuf> {
-  use winreg::enums::HKEY_CURRENT_USER;
-  use winreg::RegKey;
-
-  if let Ok(program_files_x86) = std::env::var("ProgramFiles(x86)") {
-    let path = PathBuf::from(program_files_x86)
-      .join("Steam")
-      .join("appcache")
-      .join("httpcache");
-    if path.exists() && path.is_dir() {
-      return Some(path);
-    }
-  }
-
-  if let Ok(program_files) = std::env::var("ProgramFiles") {
-    let path = PathBuf::from(program_files)
-      .join("Steam")
-      .join("appcache")
-      .join("httpcache");
-    if path.exists() && path.is_dir() {
-      return Some(path);
-    }
-  }
-
-  let hkey_current_user = RegKey::predef(HKEY_CURRENT_USER);
-  if let Ok(steam_key) = hkey_current_user.open_subkey("Software\\Valve\\Steam") {
-    if let Ok(steam_path_str) = steam_key.get_value::<String, _>("SteamPath") {
-      let corrected_path: PathBuf = PathBuf::from(steam_path_str).components().collect();
-      let path = corrected_path.join("appcache").join("httpcache");
-      if path.exists() && path.is_dir() {
-        return Some(path);
-      }
-    }
-  }
-
-  None
-}
-
-#[cfg(target_os = "macos")]
-pub fn get_cache_directory() -> Option<PathBuf> {
-  let home_dir = std::env::var("HOME").ok()?;
-  let path = PathBuf::from(format!(
-    "{home_dir}/Library/Application Support/Steam/appcache/httpcache/"
-  ));
-  if path.exists() && path.is_dir() {
-    return Some(path);
-  }
-
-  None
 }
 
 fn scan_directory(dir: &Path, results: &mut Vec<(String, String)>) {

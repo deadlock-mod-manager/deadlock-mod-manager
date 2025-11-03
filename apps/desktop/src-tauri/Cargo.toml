@@ -72,6 +72,3 @@ debug = false
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.3.4", features = ["deep-link"] }
 tauri-plugin-updater = "2.9"
-
-[target.'cfg(windows)'.dependencies]
-winreg = "0.52"
