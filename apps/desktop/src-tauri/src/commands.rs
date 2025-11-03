@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -29,6 +29,8 @@ static DOWNLOAD_MANAGER: OnceCell<DownloadManager> = OnceCell::const_new();
 // Ingest tool state
 static INGEST_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
   LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+static INGEST_WATCHER_GEN: LazyLock<Arc<AtomicUsize>> =
+  LazyLock::new(|| Arc::new(AtomicUsize::new(0)));
 
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
@@ -846,8 +848,10 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
     .ok_or_else(|| Error::InvalidInput("Could not find Steam cache directory".to_string()))?;
 
   // Mark as running
+  let generation = INGEST_WATCHER_GEN.fetch_add(1, Ordering::Relaxed) + 1;
   INGEST_WATCHER_RUNNING.store(true, Ordering::Relaxed);
   let running_flag = Arc::clone(&INGEST_WATCHER_RUNNING);
+  let gen_counter = Arc::clone(&INGEST_WATCHER_GEN);
 
   // Spawn a background task to watch the cache directory
   tokio::task::spawn(async move {
@@ -885,7 +889,7 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
       }
     }
 
-    if !requested_stop {
+    if !requested_stop && gen_counter.load(Ordering::Relaxed) == generation {
       running_flag.store(false, Ordering::Relaxed);
     }
     log::info!("Cache watcher thread exited");
@@ -941,15 +945,22 @@ pub async fn initialize_ingest_tool() -> Result<(), Error> {
 
   // Start the watcher
   log::info!("Starting cache watcher");
+  let generation = INGEST_WATCHER_GEN.fetch_add(1, Ordering::Relaxed) + 1;
   INGEST_WATCHER_RUNNING.store(true, Ordering::Relaxed);
 
   let running = INGEST_WATCHER_RUNNING.clone();
+  let gen_counter = INGEST_WATCHER_GEN.clone();
   tokio::task::spawn(async move {
     if let Err(e) = ingest_tool::watch_cache_dir(&cache_dir, running.clone()).await {
       log::error!("Cache watcher error: {}", e);
     }
-    running.store(false, Ordering::Relaxed);
-    log::info!("Cache watcher stopped");
+    // Only clear the running flag if we're still the current generation
+    if gen_counter.load(Ordering::Relaxed) == generation {
+      running.store(false, Ordering::Relaxed);
+      log::info!("Cache watcher stopped");
+    } else {
+      log::info!("Cache watcher stopped but not clearing flag - newer generation exists");
+    }
   });
 
   log::info!("Ingest tool initialized successfully");
