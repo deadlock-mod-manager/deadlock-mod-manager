@@ -27,8 +27,7 @@ impl RestoreStrategy {
       "replace" => Ok(RestoreStrategy::Replace),
       "merge" => Ok(RestoreStrategy::Merge),
       _ => Err(Error::InvalidInput(format!(
-        "Invalid restore strategy: {}. Must be 'replace' or 'merge'",
-        s
+        "Invalid restore strategy: {s}. Must be 'replace' or 'merge'"
       ))),
     }
   }
@@ -90,25 +89,25 @@ impl AddonsBackupManager {
     );
 
     fs::create_dir_all(&backup_dir).map_err(|e| {
-      Error::BackupCreationFailed(format!("Failed to create backup directory: {}", e))
+      Error::BackupCreationFailed(format!("Failed to create backup directory: {e}"))
     })?;
 
     let backup_path = backup_dir.join(&filename);
 
     // Create backup directory
     fs::create_dir_all(&backup_path)
-      .map_err(|e| Error::BackupCreationFailed(format!("Failed to create backup folder: {}", e)))?;
+      .map_err(|e| Error::BackupCreationFailed(format!("Failed to create backup folder: {e}")))?;
 
     // Count VPK files
     let entries: Vec<_> = fs::read_dir(&addons_path)
-      .map_err(|e| Error::BackupCreationFailed(format!("Failed to read addons directory: {}", e)))?
+      .map_err(|e| Error::BackupCreationFailed(format!("Failed to read addons directory: {e}")))?
       .filter_map(|entry| entry.ok())
       .filter(|entry| entry.path().is_file())
       .collect();
 
     let vpk_count = entries
       .iter()
-      .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "vpk"))
+      .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
       .count();
 
     let total_files = entries.len();
@@ -119,16 +118,12 @@ impl AddonsBackupManager {
       serde_json::json!({
         "stage": "copying",
         "progress": 20,
-        "message": format!("Copying {} VPK files...", vpk_count)
+        "message": format!("Copying {vpk_count} VPK files...")
       }),
     );
 
     log::info!(
-      "Copying {} files ({} VPK files) from {:?} to {:?}",
-      total_files,
-      vpk_count,
-      addons_path,
-      backup_path
+      "Copying {total_files} files ({vpk_count} VPK files) from {addons_path:?} to {backup_path:?}"
     );
 
     // Copy all files
@@ -139,7 +134,7 @@ impl AddonsBackupManager {
         let dest_path = backup_path.join(file_name);
 
         fs::copy(&path, &dest_path)
-          .map_err(|e| Error::BackupCreationFailed(format!("Failed to copy file: {}", e)))?;
+          .map_err(|e| Error::BackupCreationFailed(format!("Failed to copy file: {e}")))?;
 
         if let Ok(metadata) = fs::metadata(&path) {
           total_size += metadata.len();
@@ -152,7 +147,7 @@ impl AddonsBackupManager {
           serde_json::json!({
             "stage": "copying",
             "progress": progress,
-            "message": format!("Copying files... ({}/{})", i + 1, total_files)
+            "message": format!("Copying files... ({}/{total_files})", i + 1)
           }),
         );
       }
@@ -179,16 +174,12 @@ impl AddonsBackupManager {
       serde_json::json!({
         "stage": "completed",
         "progress": 100,
-        "message": format!("Backup created successfully: {}", filename)
+        "message": format!("Backup created successfully: {filename}")
       }),
     );
 
     log::info!(
-      "Backup created successfully: {} ({} bytes, {} files, {} VPK files)",
-      filename,
-      total_size,
-      total_files,
-      vpk_count
+      "Backup created successfully: {filename} ({total_size} bytes, {total_files} files, {vpk_count} VPK files)"
     );
 
     Ok(AddonsBackup {
@@ -258,9 +249,9 @@ impl AddonsBackupManager {
   fn count_vpk_files_in_archive(&self, backup_path: &Path) -> Result<u32, Error> {
     // Count VPK files in backup directory
     let count = fs::read_dir(backup_path)
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {}", e)))?
+      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
       .filter_map(|entry| entry.ok())
-      .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "vpk"))
+      .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
       .count();
 
     Ok(count as u32)
@@ -281,45 +272,44 @@ impl AddonsBackupManager {
       let path = entry.path();
 
       // Look for directories (backups are now directories, not files)
-      if path.is_dir() {
-        if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-          if filename.starts_with("addons-backup-") {
-            // Calculate total size of all files in the backup directory
-            let mut file_size = 0u64;
-            if let Ok(entries) = fs::read_dir(&path) {
-              for entry in entries.flatten() {
-                if let Ok(metadata) = entry.metadata() {
-                  if metadata.is_file() {
-                    file_size += metadata.len();
-                  }
-                }
-              }
+      if path.is_dir()
+        && let Some(filename) = path.file_name().and_then(|n| n.to_str())
+        && filename.starts_with("addons-backup-")
+      {
+        // Calculate total size of all files in the backup directory
+        let mut file_size = 0u64;
+        if let Ok(entries) = fs::read_dir(&path) {
+          for entry in entries.flatten() {
+            if let Ok(metadata) = entry.metadata()
+              && metadata.is_file()
+            {
+              file_size += metadata.len();
             }
-
-            let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
-              timestamp
-            } else {
-              let metadata = fs::metadata(&path)?;
-              metadata
-                .created()
-                .or_else(|_| metadata.modified())
-                .unwrap_or(SystemTime::now())
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-            };
-
-            let addons_count = self.count_vpk_files_in_archive(&path).unwrap_or(0);
-
-            backups.push(AddonsBackup {
-              file_name: filename.to_string(),
-              file_path: path.to_string_lossy().to_string(),
-              created_at,
-              file_size,
-              addons_count,
-            });
           }
         }
+
+        let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
+          timestamp
+        } else {
+          let metadata = fs::metadata(&path)?;
+          metadata
+            .created()
+            .or_else(|_| metadata.modified())
+            .unwrap_or(SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+        };
+
+        let addons_count = self.count_vpk_files_in_archive(&path).unwrap_or(0);
+
+        backups.push(AddonsBackup {
+          file_name: filename.to_string(),
+          file_path: path.to_string_lossy().to_string(),
+          created_at,
+          file_size,
+          addons_count,
+        });
       }
     }
 
@@ -331,8 +321,7 @@ impl AddonsBackupManager {
 
   pub fn restore_backup(&self, file_name: &str, strategy: RestoreStrategy) -> Result<(), Error> {
     log::info!(
-      "Restoring backup: {} with strategy: {:?}",
-      file_name,
+      "Restoring backup: {file_name} with strategy: {:?}",
       match strategy {
         RestoreStrategy::Replace => "replace",
         RestoreStrategy::Merge => "merge",
@@ -351,39 +340,31 @@ impl AddonsBackupManager {
     if matches!(strategy, RestoreStrategy::Replace) {
       if addons_path.exists() {
         log::info!("Clearing addons folder before restore");
-        fs::remove_dir_all(&addons_path).map_err(|e| {
-          Error::BackupRestoreFailed(format!("Failed to clear addons folder: {}", e))
-        })?;
+        fs::remove_dir_all(&addons_path)
+          .map_err(|e| Error::BackupRestoreFailed(format!("Failed to clear addons folder: {e}")))?;
       }
-      fs::create_dir_all(&addons_path).map_err(|e| {
-        Error::BackupRestoreFailed(format!("Failed to create addons folder: {}", e))
-      })?;
+      fs::create_dir_all(&addons_path)
+        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
     } else {
-      fs::create_dir_all(&addons_path).map_err(|e| {
-        Error::BackupRestoreFailed(format!("Failed to create addons folder: {}", e))
-      })?;
+      fs::create_dir_all(&addons_path)
+        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
     }
 
-    log::info!(
-      "Restoring backup from {:?} to {:?}",
-      backup_path,
-      addons_path
-    );
+    log::info!("Restoring backup from {backup_path:?} to {addons_path:?}");
 
     for entry in fs::read_dir(&backup_path)
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {}", e)))?
+      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
     {
-      let entry = entry.map_err(|e| {
-        Error::BackupRestoreFailed(format!("Failed to read directory entry: {}", e))
-      })?;
+      let entry = entry
+        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read directory entry: {e}")))?;
       let path = entry.path();
 
-      if path.is_file() {
-        if let Some(file_name) = path.file_name() {
-          let dest_path = addons_path.join(file_name);
-          fs::copy(&path, &dest_path)
-            .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {}", e)))?;
-        }
+      if path.is_file()
+        && let Some(file_name) = path.file_name()
+      {
+        let dest_path = addons_path.join(file_name);
+        fs::copy(&path, &dest_path)
+          .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {e}")))?;
       }
     }
 
@@ -392,7 +373,7 @@ impl AddonsBackupManager {
   }
 
   pub fn delete_backup(&self, file_name: &str) -> Result<(), Error> {
-    log::info!("Deleting backup: {}", file_name);
+    log::info!("Deleting backup: {file_name}");
 
     let backup_dir = self.get_backup_directory()?;
     let backup_path = backup_dir.join(file_name);
@@ -402,9 +383,8 @@ impl AddonsBackupManager {
     }
 
     // Remove the entire backup directory
-    fs::remove_dir_all(&backup_path).map_err(|e| {
-      Error::BackupRestoreFailed(format!("Failed to delete backup directory: {}", e))
-    })?;
+    fs::remove_dir_all(&backup_path)
+      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to delete backup directory: {e}")))?;
 
     log::info!("Backup deleted successfully");
     Ok(())

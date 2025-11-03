@@ -14,15 +14,14 @@ impl ArchiveExtractor {
 
   /// Extract archive based on file extension
   pub fn extract_archive(&self, archive_path: &Path, output_dir: &Path) -> Result<(), Error> {
-    log::info!("Extracting archive: {:?} to {:?}", archive_path, output_dir);
+    log::info!("Extracting archive: {archive_path:?} to {output_dir:?}");
 
     match archive_path.extension().and_then(|e| e.to_str()) {
       Some("zip") => self.extract_zip(archive_path, output_dir),
       Some("rar") => self.extract_rar(archive_path, output_dir),
       Some("7z") => self.extract_7z(archive_path, output_dir),
       Some(ext) => Err(Error::ModExtractionFailed(format!(
-        "Unsupported archive format: {}",
-        ext
+        "Unsupported archive format: {ext}"
       ))),
       None => Err(Error::ModExtractionFailed(
         "Could not determine archive format".to_string(),
@@ -38,8 +37,7 @@ impl ArchiveExtractor {
     // Check for directory traversal attempts
     if path.contains("..") || path.contains("\\..") || path.contains("../") {
       return Err(Error::UnauthorizedPath(format!(
-        "Archive contains unsafe path: {}",
-        path
+        "Archive contains unsafe path: {path}"
       )));
     }
 
@@ -60,12 +58,11 @@ impl ArchiveExtractor {
     if check_path.exists() {
       let canonical_check = check_path
         .canonicalize()
-        .map_err(|_| Error::UnauthorizedPath(format!("Unable to resolve path: {}", path)))?;
+        .map_err(|_| Error::UnauthorizedPath(format!("Unable to resolve path: {path}")))?;
 
       if !canonical_check.starts_with(&canonical_output) {
         return Err(Error::UnauthorizedPath(format!(
-          "Archive path '{}' would extract outside target directory",
-          path
+          "Archive path '{path}' would extract outside target directory"
         )));
       }
     }
@@ -126,7 +123,9 @@ impl ArchiveExtractor {
     // As a safety measure, we validate that the output directory is properly sandboxed
     // by the calling code before extraction.
 
-    log::warn!("7Z extraction uses external library without path validation - ensure output directory is properly sandboxed");
+    log::warn!(
+      "7Z extraction uses external library without path validation - ensure output directory is properly sandboxed"
+    );
 
     sevenz_rust::decompress_file(
       archive_path.to_string_lossy().as_ref(),

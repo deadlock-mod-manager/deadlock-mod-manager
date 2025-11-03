@@ -132,7 +132,7 @@ impl AddonAnalyzer {
       };
 
       if let Err(e) = handle.emit("addon-analysis-progress", &progress) {
-        log::warn!("Failed to emit progress event: {}", e);
+        log::warn!("Failed to emit progress event: {e}");
       }
     }
   }
@@ -143,7 +143,7 @@ impl AddonAnalyzer {
     vpk_parsed: &VpkParsed,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
     let api_url = crate::commands::get_api_url();
-    let endpoint = format!("{}/api/v2/vpk-analyse-hashes", api_url);
+    let endpoint = format!("{api_url}/api/v2/vpk-analyse-hashes");
 
     let request = HashAnalysisRequest {
       sha256: Some(vpk_parsed.fingerprint.sha256.clone()),
@@ -155,7 +155,8 @@ impl AddonAnalyzer {
 
     let client = reqwest::Client::new();
 
-    log::debug!("Calling hash analysis API for file: {} with hashes: sha256={:?}, contentSig={}, fastHash={:?}", 
+    log::debug!(
+      "Calling hash analysis API for file: {} with hashes: sha256={:?}, contentSig={}, fastHash={:?}",
       vpk_parsed.fingerprint.file_path,
       request.sha256,
       request.content_signature,
@@ -197,7 +198,7 @@ impl AddonAnalyzer {
               }
             }
             Err(e) => {
-              log::warn!("Failed to parse hash analysis response: {}", e);
+              log::warn!("Failed to parse hash analysis response: {e}");
             }
           }
         } else {
@@ -205,7 +206,7 @@ impl AddonAnalyzer {
         }
       }
       Err(e) => {
-        log::warn!("Failed to call hash analysis API: {}", e);
+        log::warn!("Failed to call hash analysis API: {e}");
       }
     }
 
@@ -248,7 +249,7 @@ impl AddonAnalyzer {
       return Ok(AnalyzeAddonsResult {
         addons: Vec::new(),
         total_count: 0,
-        errors: vec![format!("Failed to scan addons directory: {}", e)],
+        errors: vec![format!("Failed to scan addons directory: {e}")],
       });
     }
 
@@ -345,7 +346,7 @@ impl AddonAnalyzer {
             );
           }
           Err(e) => {
-            errors.push(format!("Task failed: {}", e));
+            errors.push(format!("Task failed: {e}"));
             self.emit_progress(
               &app_handle,
               "parsing",
@@ -403,7 +404,7 @@ impl AddonAnalyzer {
             );
           }
           Err(e) => {
-            errors.push(format!("Task failed: {}", e));
+            errors.push(format!("Task failed: {e}"));
             // Still emit progress for failed files
             self.emit_progress(
               &app_handle,
@@ -483,9 +484,8 @@ impl AddonAnalyzer {
           addon.remote_id = Some(remote_id.clone());
           addon.match_info = Some(match_info);
           log::debug!(
-            "Identified addon: {} -> remote_id: {} (mod: {})",
+            "Identified addon: {} -> remote_id: {remote_id} (mod: {})",
             addon.file_name,
-            remote_id,
             addon
               .match_info
               .as_ref()
@@ -499,11 +499,8 @@ impl AddonAnalyzer {
           log::debug!("No match found for addon: {}", addon.file_name);
         }
         Err(e) => {
-          log::warn!("Failed to analyze hashes for {}: {}", addon.file_name, e);
-          errors.push(format!(
-            "Hash analysis failed for {}: {}",
-            addon.file_name, e
-          ));
+          log::warn!("Failed to analyze hashes for {}: {e}", addon.file_name);
+          errors.push(format!("Hash analysis failed for {}: {e}", addon.file_name));
         }
       }
       identified_addons.push(addon);
@@ -579,8 +576,7 @@ impl AddonAnalyzer {
       .modified()
       .ok()
       .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-      .map(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0))
-      .flatten();
+      .and_then(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0));
 
     // Only read the file if it's reasonably sized (avoid huge files)
     let file_size = metadata.len();

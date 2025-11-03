@@ -30,14 +30,13 @@ impl VpkManager {
       let entry = entry?;
       let path = entry.path();
 
-      if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
-        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-          if let Some(captures) = vpk_pattern.captures(name) {
-            if let Ok(num) = captures[1].parse::<u32>() {
-              highest = highest.max(num);
-            }
-          }
-        }
+      if path.is_file()
+        && path.extension().is_some_and(|ext| ext == "vpk")
+        && let Some(name) = path.file_name().and_then(|n| n.to_str())
+        && let Some(captures) = vpk_pattern.captures(name)
+        && let Ok(num) = captures[1].parse::<u32>()
+      {
+        highest = highest.max(num);
       }
     }
 
@@ -52,7 +51,7 @@ impl VpkManager {
     if !addons_path.exists() {
       return Err(Error::Io(std::io::Error::new(
         std::io::ErrorKind::NotFound,
-        format!("Addons path not found: {:?}", addons_path),
+        format!("Addons path not found: {addons_path:?}"),
       )));
     }
 
@@ -65,7 +64,7 @@ impl VpkManager {
     }
     std::fs::create_dir_all(&temp_dir)?;
 
-    log::info!("Created temporary directory: {:?}", temp_dir);
+    log::info!("Created temporary directory: {temp_dir:?}");
 
     let mut updated_mappings = Vec::new();
 
@@ -76,12 +75,13 @@ impl VpkManager {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
-          if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-            let temp_path = temp_dir.join(filename);
-            std::fs::rename(&path, &temp_path)?;
-            log::debug!("Moved {} to temporary directory", filename);
-          }
+        if path.is_file()
+          && path.extension().is_some_and(|ext| ext == "vpk")
+          && let Some(filename) = path.file_name().and_then(|n| n.to_str())
+        {
+          let temp_path = temp_dir.join(filename);
+          std::fs::rename(&path, &temp_path)?;
+          log::debug!("Moved {filename} to temporary directory");
         }
       }
     }
@@ -111,13 +111,9 @@ impl VpkManager {
           new_vpk_names.push(new_name.clone());
           current_number += 1;
 
-          log::info!("Reordered {} -> {} for mod {}", filename, new_name, mod_id);
+          log::info!("Reordered {filename} -> {new_name} for mod {mod_id}");
         } else {
-          log::warn!(
-            "VPK file {} not found in temp directory for mod {}",
-            filename,
-            mod_id
-          );
+          log::warn!("VPK file {filename} not found in temp directory for mod {mod_id}");
         }
       }
 
@@ -131,7 +127,7 @@ impl VpkManager {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
           // Find next available number for orphaned VPK
           let orphaned_name = format!("pak{:02}_dir.vpk", current_number);
           let orphaned_path = addons_path.join(&orphaned_name);
@@ -140,11 +136,7 @@ impl VpkManager {
           current_number += 1;
 
           if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-            log::info!(
-              "Restored orphaned VPK file: {} -> {}",
-              filename,
-              orphaned_name
-            );
+            log::info!("Restored orphaned VPK file: {filename} -> {orphaned_name}");
           }
         }
       }
@@ -158,7 +150,7 @@ impl VpkManager {
 
   pub fn remove_vpks(&self, vpk_names: &[String], addons_path: &Path) -> Result<(), Error> {
     if !addons_path.exists() {
-      log::warn!("Addons path does not exist: {:?}", addons_path);
+      log::warn!("Addons path does not exist: {addons_path:?}");
       return Ok(());
     }
 
@@ -166,9 +158,9 @@ impl VpkManager {
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists() {
         self.filesystem.remove_file(&vpk_path)?;
-        log::info!("Removed VPK: {}", vpk_name);
+        log::info!("Removed VPK: {vpk_name}");
       } else {
-        log::warn!("VPK not found for removal: {}", vpk_name);
+        log::warn!("VPK not found for removal: {vpk_name}");
       }
     }
 
@@ -186,7 +178,7 @@ impl VpkManager {
 
     for vpk_path in vpk_files {
       self.filesystem.remove_file(&vpk_path)?;
-      log::info!("Removed VPK: {:?}", vpk_path);
+      log::info!("Removed VPK: {vpk_path:?}");
     }
 
     Ok(())
@@ -208,16 +200,15 @@ impl VpkManager {
 
     for vpk_path in vpk_files {
       if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
-        let prefixed_name = format!("{}_{}", mod_id, file_name);
+        let prefixed_name = format!("{mod_id}_{file_name}");
         let dest_path = destination_dir.join(&prefixed_name);
 
         self.filesystem.copy_file(&vpk_path, &dest_path)?;
         prefixed_vpks.push(prefixed_name.clone());
 
         log::info!(
-          "Copied VPK with prefix: {} -> {}",
-          vpk_path.display(),
-          prefixed_name
+          "Copied VPK with prefix: {} -> {prefixed_name}",
+          vpk_path.display()
         );
       }
     }
@@ -237,7 +228,7 @@ impl VpkManager {
 
       if path.is_dir() {
         self.collect_vpks_from_dir(&path, vpk_files)?;
-      } else if path.extension().map_or(false, |ext| ext == "vpk") {
+      } else if path.extension().is_some_and(|ext| ext == "vpk") {
         vpk_files.push(path);
       }
     }
@@ -252,18 +243,18 @@ impl VpkManager {
       return Ok(prefixed_vpks);
     }
 
-    let prefix = format!("{}_", mod_id);
+    let prefix = format!("{mod_id}_");
 
     for entry in fs::read_dir(addons_path)? {
       let entry = entry?;
       let path = entry.path();
 
-      if path.is_file() && path.extension().map_or(false, |ext| ext == "vpk") {
-        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-          if file_name.starts_with(&prefix) {
-            prefixed_vpks.push(file_name.to_string());
-          }
-        }
+      if path.is_file()
+        && path.extension().is_some_and(|ext| ext == "vpk")
+        && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+        && file_name.starts_with(&prefix)
+      {
+        prefixed_vpks.push(file_name.to_string());
       }
     }
 
@@ -288,23 +279,18 @@ impl VpkManager {
     for prefixed_name in prefixed_vpks {
       let old_path = addons_path.join(prefixed_name);
       if !old_path.exists() {
-        log::warn!("Prefixed VPK not found: {}", prefixed_name);
+        log::warn!("Prefixed VPK not found: {prefixed_name}");
         continue;
       }
 
       current_number += 1;
-      let new_name = format!("pak{:02}_dir.vpk", current_number);
+      let new_name = format!("pak{current_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
       fs::rename(&old_path, &new_path)?;
       new_vpk_names.push(new_name.clone());
 
-      log::info!(
-        "Enabled VPK for mod {}: {} -> {}",
-        mod_id,
-        prefixed_name,
-        new_name
-      );
+      log::info!("Enabled VPK for mod {mod_id}: {prefixed_name} -> {new_name}");
     }
 
     Ok(new_vpk_names)
@@ -327,7 +313,7 @@ impl VpkManager {
     for (index, vpk_name) in installed_vpks.iter().enumerate() {
       let old_path = addons_path.join(vpk_name);
       if !old_path.exists() {
-        log::warn!("Installed VPK not found: {}", vpk_name);
+        log::warn!("Installed VPK not found: {vpk_name}");
         continue;
       }
 
@@ -336,18 +322,13 @@ impl VpkManager {
         .map(|s| s.as_str())
         .unwrap_or("addon.vpk");
 
-      let prefixed_name = format!("{}_{}", mod_id, original_name);
+      let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
 
       fs::rename(&old_path, &new_path)?;
       prefixed_vpks.push(prefixed_name.clone());
 
-      log::info!(
-        "Disabled VPK for mod {}: {} -> {}",
-        mod_id,
-        vpk_name,
-        prefixed_name
-      );
+      log::info!("Disabled VPK for mod {mod_id}: {vpk_name} -> {prefixed_name}");
     }
 
     Ok(prefixed_vpks)
@@ -361,7 +342,7 @@ impl VpkManager {
       let vpk_path = addons_path.join(&vpk_name);
       if vpk_path.exists() {
         self.filesystem.remove_file(&vpk_path)?;
-        log::info!("Removed prefixed VPK: {}", vpk_name);
+        log::info!("Removed prefixed VPK: {vpk_name}");
       }
     }
 
@@ -398,14 +379,13 @@ impl VpkManager {
     if !addons_path.exists() {
       return Err(Error::Io(std::io::Error::new(
         std::io::ErrorKind::NotFound,
-        format!("Addons path not found: {:?}", addons_path),
+        format!("Addons path not found: {addons_path:?}"),
       )));
     }
 
     log::info!(
-      "Replacing {} VPK file(s) for mod {}",
-      source_vpk_paths.len(),
-      mod_id
+      "Replacing {} VPK file(s) for mod {mod_id}",
+      source_vpk_paths.len()
     );
 
     // Determine if mod is enabled (has installed_vpks) or disabled (has prefixed VPKs)
@@ -425,42 +405,38 @@ impl VpkManager {
         let dest_path = addons_path.join(installed_vpk);
 
         if !dest_path.exists() {
-          log::warn!("Installed VPK not found: {}", installed_vpk);
+          log::warn!("Installed VPK not found: {installed_vpk}");
           continue;
         }
 
         self.filesystem.copy_file(source_path, &dest_path)?;
         log::info!(
-          "Replaced enabled VPK: {} with {:?}",
-          installed_vpk,
+          "Replaced enabled VPK: {installed_vpk} with {:?}",
           source_path.file_name().unwrap_or_default()
         );
       }
     } else {
       // Mod is disabled - replace prefixed VPKs
-      log::info!("Looking for prefixed VPKs with pattern: {}_*.vpk", mod_id);
+      log::info!("Looking for prefixed VPKs with pattern: {mod_id}_*.vpk");
       let prefixed_vpks = self.find_prefixed_vpks(addons_path, mod_id)?;
       log::info!(
-        "Found {} prefixed VPK(s): {:?}",
-        prefixed_vpks.len(),
-        prefixed_vpks
+        "Found {} prefixed VPK(s): {prefixed_vpks:?}",
+        prefixed_vpks.len()
       );
 
       if prefixed_vpks.is_empty() {
         // List all VPK files in addons to help debug
-        let all_vpks: Vec<String> = std::fs::read_dir(addons_path)
+        let all_vpks: Vec<String> = fs::read_dir(addons_path)
           .ok()
-          .and_then(|entries| {
-            Some(
-              entries
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().map_or(false, |ext| ext == "vpk"))
-                .filter_map(|e| e.file_name().to_str().map(String::from))
-                .collect(),
-            )
+          .map(|entries| {
+            entries
+              .filter_map(|e| e.ok())
+              .filter(|e| e.path().extension().is_some_and(|ext| ext == "vpk"))
+              .filter_map(|e| e.file_name().to_str().map(String::from))
+              .collect()
           })
           .unwrap_or_default();
-        log::warn!("No prefixed VPKs found. All VPKs in addons: {:?}", all_vpks);
+        log::warn!("No prefixed VPKs found. All VPKs in addons: {all_vpks:?}");
         return Err(Error::ModFileNotFound);
       }
 
@@ -476,20 +452,19 @@ impl VpkManager {
         let dest_path = addons_path.join(prefixed_vpk);
 
         if !dest_path.exists() {
-          log::warn!("Prefixed VPK not found: {}", prefixed_vpk);
+          log::warn!("Prefixed VPK not found: {prefixed_vpk}");
           continue;
         }
 
         self.filesystem.copy_file(source_path, &dest_path)?;
         log::info!(
-          "Replaced disabled VPK: {} with {:?}",
-          prefixed_vpk,
+          "Replaced disabled VPK: {prefixed_vpk} with {:?}",
           source_path.file_name().unwrap_or_default()
         );
       }
     }
 
-    log::info!("VPK replacement completed successfully for mod {}", mod_id);
+    log::info!("VPK replacement completed successfully for mod {mod_id}");
     Ok(())
   }
 }

@@ -81,7 +81,7 @@ impl FileSystemHelper {
       let entry = entry?;
       let path = entry.path();
 
-      if path.is_file() && path.extension().map_or(false, |ext| ext == extension) {
+      if path.is_file() && path.extension().is_some_and(|ext| ext == extension) {
         files.push(path);
       }
     }
@@ -114,7 +114,7 @@ impl FileSystemHelper {
 
       if path.is_dir() {
         self.find_files_recursive_internal(&path, extension, files)?;
-      } else if path.extension().map_or(false, |ext| ext == extension) {
+      } else if path.extension().is_some_and(|ext| ext == extension) {
         let metadata = fs::metadata(&path)?;
         files.push((path, metadata.len()));
       }

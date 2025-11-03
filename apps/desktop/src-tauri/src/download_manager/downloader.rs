@@ -25,14 +25,14 @@ pub async fn download_file<F>(
 where
   F: Fn(DownloadProgress) + Send + 'static,
 {
-  log::info!("Starting download from {} to {:?}", url, target_path);
+  log::info!("Starting download from {url} to {target_path:?}");
 
   let client = reqwest::Client::new();
   let response = client
     .get(url)
     .send()
     .await
-    .map_err(|e| Error::NetworkError(format!("Failed to send request: {}", e)))?;
+    .map_err(|e| Error::NetworkError(format!("Failed to send request: {e}")))?;
 
   if !response.status().is_success() {
     return Err(Error::NetworkError(format!(
@@ -42,17 +42,15 @@ where
   }
 
   let total_size = response.content_length().unwrap_or(0);
-  log::info!("Download size: {} bytes", total_size);
+  log::info!("Download size: {total_size} bytes");
 
   if let Some(parent) = target_path.parent() {
-    tokio::fs::create_dir_all(parent)
-      .await
-      .map_err(|e| Error::Io(e))?;
+    tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
   }
 
   let mut file = File::create(target_path)
     .await
-    .map_err(|e| Error::FileWriteFailed(format!("Failed to create file: {}", e)))?;
+    .map_err(|e| Error::FileWriteFailed(format!("Failed to create file: {e}")))?;
 
   let mut stream = response.bytes_stream();
   let mut downloaded: u64 = 0;
@@ -65,12 +63,12 @@ where
       return Err(Error::DownloadCancelled);
     }
 
-    let chunk = chunk.map_err(|e| Error::NetworkError(format!("Failed to read chunk: {}", e)))?;
+    let chunk = chunk.map_err(|e| Error::NetworkError(format!("Failed to read chunk: {e}")))?;
 
     file
       .write_all(&chunk)
       .await
-      .map_err(|e| Error::FileWriteFailed(format!("Failed to write to file: {}", e)))?;
+      .map_err(|e| Error::FileWriteFailed(format!("Failed to write to file: {e}")))?;
 
     downloaded += chunk.len() as u64;
 
@@ -96,9 +94,9 @@ where
   file
     .flush()
     .await
-    .map_err(|e| Error::FileWriteFailed(format!("Failed to flush file: {}", e)))?;
+    .map_err(|e| Error::FileWriteFailed(format!("Failed to flush file: {e}")))?;
 
-  log::info!("Download completed: {:?}", target_path);
+  log::info!("Download completed: {target_path:?}");
   Ok(())
 }
 
@@ -117,7 +115,7 @@ mod tests {
       "https://httpbin.org/bytes/1024",
       &file_path,
       |progress| {
-        println!("Progress: {}%", progress.percentage);
+        println!("Downloaded: {} bytes", progress.downloaded);
       },
       cancel_token,
     )

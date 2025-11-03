@@ -1,7 +1,7 @@
 [package]
 name = "vpk-parser"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Native VPK parser library for Bun FFI"
 
 [lib]
@@ -16,7 +16,7 @@ sha2 = "0.10"
 twox-hash = "2.1.2"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2.0"
-ts-rs = { version = "11.0.1", features = ["serde-compat", "chrono-impl"] }
+ts-rs = { version = "11.1.0", features = ["serde-compat", "chrono-impl"] }
 
 libc = "0.2"
 

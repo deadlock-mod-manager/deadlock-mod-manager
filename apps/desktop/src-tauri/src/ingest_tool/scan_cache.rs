@@ -6,8 +6,8 @@ use notify::{EventKind, RecursiveMode, Watcher};
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Get the Steam HTTP cache directory using steamlocate
 pub fn get_cache_directory() -> Option<PathBuf> {
@@ -35,12 +35,12 @@ fn scan_directory(dir: &Path, results: &mut Vec<(String, String)>) {
 
       if path.is_dir() {
         scan_directory(&path, results);
-      } else if path.is_file() {
-        if let Some(url) = scan_file(&path) {
-          let file_path = path.display().to_string();
-          log::info!("Found: {file_path} -> {url}");
-          results.push((file_path, url));
-        }
+      } else if path.is_file()
+        && let Some(url) = scan_file(&path)
+      {
+        let file_path = path.display().to_string();
+        log::info!("Found: {file_path} -> {url}");
+        results.push((file_path, url));
       }
     }
   }
@@ -74,33 +74,34 @@ fn extract_replay_url(data: &[u8]) -> Option<String> {
 
     // Extract host
     let host_end = i + b".valve.net".len();
-    if let Ok(host) = core::str::from_utf8(&data[host_start..host_end]) {
-      if host.starts_with("replay") && host.contains(".valve.net") {
-        let mut path_start = None;
+    if let Ok(host) = core::str::from_utf8(&data[host_start..host_end])
+      && host.starts_with("replay")
+      && host.contains(".valve.net")
+    {
+      let mut path_start = None;
 
-        if let Some(slash_pos) = memchr(b'/', &data[host_end..data.len().min(host_end + 200)]) {
-          path_start = Some(host_end + slash_pos);
+      if let Some(slash_pos) = memchr(b'/', &data[host_end..data.len().min(host_end + 200)]) {
+        path_start = Some(host_end + slash_pos);
+      }
+
+      if let Some(start) = path_start {
+        // Find the end of the path (null byte, newline, space, quote)
+        let search_slice = &data[start..data.len().min(start + 300)];
+
+        let end_markers = [b'\0', b'\n', b'\r', b' ', b'"', b'\''];
+        let mut min_end = search_slice.len();
+
+        for &marker in &end_markers {
+          if let Some(pos) = memchr(marker, search_slice) {
+            min_end = min_end.min(pos);
+          }
         }
 
-        if let Some(start) = path_start {
-          // Find the end of the path (null byte, newline, space, quote)
-          let search_slice = &data[start..data.len().min(start + 300)];
-
-          let end_markers = [b'\0', b'\n', b'\r', b' ', b'"', b'\''];
-          let mut min_end = search_slice.len();
-
-          for &marker in &end_markers {
-            if let Some(pos) = memchr(marker, search_slice) {
-              min_end = min_end.min(pos);
-            }
-          }
-
-          if let Ok(path) = core::str::from_utf8(&data[start..start + min_end]) {
-            let url = format!("http://{host}{path}");
-            // Check for Deadlock
-            if url.contains("1422450") {
-              return Some(url);
-            }
+        if let Ok(path) = core::str::from_utf8(&data[start..start + min_end]) {
+          let url = format!("http://{host}{path}");
+          // Check for Deadlock
+          if url.contains("1422450") {
+            return Some(url);
           }
         }
       }
@@ -159,25 +160,25 @@ pub async fn watch_cache_dir(
         // Wait 200ms for the file to be fully written
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         for path in event.paths {
-          if let Some(url) = scan_file(&path) {
-            if let Some(salts) = Salts::from_url(&url) {
-              // Check if we've already ingested this salt using the shared cache
-              let is_new_metadata = salts.metadata_salt.is_some()
-                && !ingestion_cache::is_ingested(salts.match_id, true);
-              let is_new_replay =
-                salts.replay_salt.is_some() && !ingestion_cache::is_ingested(salts.match_id, false);
+          if let Some(url) = scan_file(&path)
+            && let Some(salts) = Salts::from_url(&url)
+          {
+            // Check if we've already ingested this salt using the shared cache
+            let is_new_metadata =
+              salts.metadata_salt.is_some() && !ingestion_cache::is_ingested(salts.match_id, true);
+            let is_new_replay =
+              salts.replay_salt.is_some() && !ingestion_cache::is_ingested(salts.match_id, false);
 
-              if !is_new_metadata && !is_new_replay {
-                continue;
-              }
+            if !is_new_metadata && !is_new_replay {
+              continue;
+            }
 
-              match salts.ingest().await {
-                Ok(..) => {
-                  log::info!("Ingested salts: {salts:?}");
-                  ingestion_cache::mark_ingested(&salts);
-                }
-                Err(e) => log::error!("Failed to ingest salts: {e:?}"),
+            match salts.ingest().await {
+              Ok(..) => {
+                log::info!("Ingested salts: {salts:?}");
+                ingestion_cache::mark_ingested(&salts);
               }
+              Err(e) => log::error!("Failed to ingest salts: {e:?}"),
             }
           }
         }

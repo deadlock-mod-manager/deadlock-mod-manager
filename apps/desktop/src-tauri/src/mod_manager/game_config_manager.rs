@@ -165,7 +165,7 @@ impl GameConfigManager {
       if !content.contains(entry) {
         validation
           .warnings
-          .push(format!("Missing recommended entry: {}", entry));
+          .push(format!("Missing recommended entry: {entry}"));
       }
     }
 
@@ -197,14 +197,12 @@ impl GameConfigManager {
     let backup_exists = backup_path.exists();
     let mut backup_valid = false;
 
-    if backup_exists {
-      if let Ok(backup_hash) = self.calculate_file_hash(&backup_path) {
-        if let Some(backup_info) = self.backups.get(&gameinfo_path) {
-          backup_valid = backup_info.original_hash == backup_hash;
-        } else {
-          // Load backup info if not in memory
-          backup_valid = true; // Assume valid if we can read it
-        }
+    if backup_exists && let Ok(backup_hash) = self.calculate_file_hash(&backup_path) {
+      if let Some(backup_info) = self.backups.get(&gameinfo_path) {
+        backup_valid = backup_info.original_hash == backup_hash;
+      } else {
+        // Load backup info if not in memory
+        backup_valid = true; // Assume valid if we can read it
       }
     }
 
@@ -214,10 +212,11 @@ impl GameConfigManager {
 
     // Check if file was modified externally
     let mut is_modified_externally = false;
-    if let Some(backup_info) = self.backups.get(&gameinfo_path) {
-      if backup_info.original_hash != current_hash && !is_modified_by_mod_manager {
-        is_modified_externally = true;
-      }
+    if let Some(backup_info) = self.backups.get(&gameinfo_path)
+      && backup_info.original_hash != current_hash
+      && !is_modified_by_mod_manager
+    {
+      is_modified_externally = true;
     }
 
     // Validate syntax
@@ -247,7 +246,7 @@ impl GameConfigManager {
 
     // Don't overwrite existing backups
     if backup_path.exists() {
-      log::info!("Backup already exists at {:?}", backup_path);
+      log::info!("Backup already exists at {backup_path:?}");
       return Ok(());
     }
 
@@ -261,13 +260,12 @@ impl GameConfigManager {
     }
 
     // Create backup
-    log::info!("Creating backup: {:?}", backup_path);
+    log::info!("Creating backup: {backup_path:?}");
     fs::copy(&gameinfo_path, &backup_path)?;
 
     // Preserve file permissions and metadata
     #[cfg(unix)]
     {
-      use std::os::unix::fs::PermissionsExt;
       let metadata = fs::metadata(&gameinfo_path)?;
       let permissions = metadata.permissions();
       fs::set_permissions(&backup_path, permissions)?;
@@ -288,7 +286,7 @@ impl GameConfigManager {
     };
 
     self.backups.insert(gameinfo_path, backup_info);
-    log::info!("Backup created successfully with hash: {}", original_hash);
+    log::info!("Backup created successfully with hash: {original_hash}");
 
     Ok(())
   }
@@ -325,18 +323,18 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Restoring gameinfo.gi from backup: {:?}", backup_path);
+    log::info!("Restoring gameinfo.gi from backup: {backup_path:?}");
     fs::copy(&backup_path, &gameinfo_path)?;
 
     // Verify restoration
     let restored_hash = self.calculate_file_hash(&gameinfo_path)?;
-    if let Some(backup_info) = self.backups.get(&gameinfo_path) {
-      if restored_hash != backup_info.original_hash {
-        log::error!("Restoration failed. File hash doesn't match backup.");
-        return Err(Error::GameConfigParse(
-          "File restoration verification failed".to_string(),
-        ));
-      }
+    if let Some(backup_info) = self.backups.get(&gameinfo_path)
+      && restored_hash != backup_info.original_hash
+    {
+      log::error!("Restoration failed. File hash doesn't match backup.");
+      return Err(Error::GameConfigParse(
+        "File restoration verification failed".to_string(),
+      ));
     }
 
     log::info!("gameinfo.gi restored successfully from backup");
@@ -374,7 +372,7 @@ impl GameConfigManager {
       let backup_path = gameinfo_path.with_extension("gi.bak");
       if !backup_path.exists() {
         fs::copy(&gameinfo_path, &backup_path)?;
-        log::info!("Created backup before vanilla reset: {:?}", backup_path);
+        log::info!("Created backup before vanilla reset: {backup_path:?}");
       }
     }
 
@@ -404,7 +402,7 @@ impl GameConfigManager {
 
     // First try to restore from backup
     if let Err(e) = self.restore_gameinfo_backup(game_path) {
-      log::warn!("Failed to restore from backup: {}", e);
+      log::warn!("Failed to restore from backup: {e}");
       // If backup restore fails, try to clean current file
       self.toggle_mods(game_path, true)?;
     }
@@ -470,10 +468,7 @@ impl GameConfigManager {
       log::warn!("File is modded but missing mod manager tracking markers");
     }
 
-    log::info!(
-      "gameinfo.gi patch validation successful (vanilla: {})",
-      expected_vanilla
-    );
+    log::info!("gameinfo.gi patch validation successful (vanilla: {expected_vanilla})");
     Ok(())
   }
 
@@ -487,11 +482,8 @@ impl GameConfigManager {
       ));
     }
 
-    log::info!(
-      "Opening gameinfo.gi with system editor: {:?}",
-      gameinfo_path
-    );
-    utils::open_file_with_editor(&gameinfo_path.to_string_lossy().to_string())?;
+    log::info!("Opening gameinfo.gi with system editor: {gameinfo_path:?}");
+    utils::open_file_with_editor(gameinfo_path.to_string_lossy().as_ref())?;
 
     Ok(())
   }
@@ -503,21 +495,21 @@ impl GameConfigManager {
       return Ok(());
     }
 
-    log::info!("Setting up game for mods at: {:?}", game_path);
+    log::info!("Setting up game for mods at: {game_path:?}");
 
     // Validate game files first
     self.validate_game_files(game_path)?;
 
     // Create backup before any modifications
     if let Err(e) = self.backup_gameinfo(game_path) {
-      log::warn!("Failed to create backup: {}", e);
+      log::warn!("Failed to create backup: {e}");
       // Continue anyway, but log the warning
     }
 
     // Create mods directory: game_path/game/citadel/addons/
     let addons_path = game_path.join("game").join("citadel").join("addons");
     self.filesystem.create_directories(&addons_path)?;
-    log::info!("Created addons directory: {:?}", addons_path);
+    log::info!("Created addons directory: {addons_path:?}");
 
     // Modify gameinfo.gi to enable mod loading
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
@@ -525,13 +517,10 @@ impl GameConfigManager {
 
     // Validate the patch was applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, false) {
-      log::error!("Mod setup validation failed: {}", e);
+      log::error!("Mod setup validation failed: {e}");
       // Try to restore backup on failure
       if let Err(restore_err) = self.restore_gameinfo_backup(game_path) {
-        log::error!(
-          "Failed to restore backup after failed setup: {}",
-          restore_err
-        );
+        log::error!("Failed to restore backup after failed setup: {restore_err}");
       }
       return Err(e);
     }
@@ -545,7 +534,7 @@ impl GameConfigManager {
 
   /// Toggle between modded and vanilla game configuration
   pub fn toggle_mods(&self, game_path: &Path, vanilla: bool) -> Result<(), Error> {
-    log::info!("Toggling mods: vanilla={}", vanilla);
+    log::info!("Toggling mods: vanilla={vanilla}");
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
@@ -563,7 +552,7 @@ impl GameConfigManager {
 
     // Validate the changes were applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, vanilla) {
-      log::error!("Toggle validation failed: {}", e);
+      log::error!("Toggle validation failed: {e}");
       return Err(e);
     }
 
@@ -578,11 +567,7 @@ impl GameConfigManager {
 
   /// Modify the search paths in gameinfo.gi
   pub fn modify_search_paths(&self, gameinfo_path: &Path, vanilla: bool) -> Result<(), Error> {
-    log::info!(
-      "Modifying search paths for gameinfo.gi: {:?} (vanilla: {})",
-      gameinfo_path,
-      vanilla
-    );
+    log::info!("Modifying search paths for gameinfo.gi: {gameinfo_path:?} (vanilla: {vanilla})");
 
     if !gameinfo_path.exists() {
       return Err(Error::GameConfigParse(
@@ -604,7 +589,7 @@ impl GameConfigManager {
     // Create backup if it doesn't exist
     let backup_path = gameinfo_path.with_extension("gi.bak");
     if !backup_path.exists() {
-      log::info!("Creating backup: {:?}", backup_path);
+      log::info!("Creating backup: {backup_path:?}");
       fs::copy(gameinfo_path, &backup_path)?;
     }
 
@@ -674,10 +659,7 @@ impl GameConfigManager {
     let replacement_content = if vanilla {
       base_search_paths.to_string()
     } else {
-      format!(
-        "\n{}\n{}\n{}",
-        MOD_MANAGER_MARKER_START, base_search_paths, MOD_MANAGER_MARKER_END
-      )
+      format!("\n{MOD_MANAGER_MARKER_START}\n{base_search_paths}\n{MOD_MANAGER_MARKER_END}")
     };
 
     // Replace the identified section with the new content
@@ -699,8 +681,8 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Writing updated gameinfo.gi: {:?}", gameinfo_path);
-    log::debug!("Replacement content: {}", replacement_content);
+    log::info!("Writing updated gameinfo.gi: {gameinfo_path:?}");
+    log::debug!("Replacement content: {replacement_content}");
 
     // Write the new content
     fs::write(gameinfo_path, &new_gameinfo_content)?;
@@ -722,7 +704,7 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Successfully modified search paths (vanilla: {})", vanilla);
+    log::info!("Successfully modified search paths (vanilla: {vanilla})");
     Ok(())
   }
 

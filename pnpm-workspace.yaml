@@ -4,11 +4,11 @@ packages:
   - tools/*
 
 catalog:
-  "@isaacs/ttlcache": ^1.4.1
-  "@sentry/node": ^10.15.0
-  "@type-cacheable/cache-manager-adapter": ^17.0.2
-  "@type-cacheable/core": ^14.2.1
+  '@isaacs/ttlcache': ^1.4.1
+  '@sentry/node': ^10.15.0
+  '@type-cacheable/cache-manager-adapter': ^17.0.2
+  '@type-cacheable/core': ^14.2.1
   cache-manager: ^5.7.6
   cacheable: ^2.1.0
-  typescript: ^5.9.2
+  typescript: ^5.9.3
   zod: 4.1.9

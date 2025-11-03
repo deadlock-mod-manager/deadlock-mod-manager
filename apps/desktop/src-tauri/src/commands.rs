@@ -1,6 +1,6 @@
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
@@ -10,8 +10,6 @@ use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, Mod, ModFileTree, ModManager,
 };
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
-use log;
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -34,7 +32,7 @@ static INGEST_WATCHER_GEN: LazyLock<Arc<AtomicUsize>> =
 
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
-  log::info!("Setting API URL to: {}", api_url);
+  log::info!("Setting API URL to: {api_url}");
 
   if !api_url.starts_with("http://") && !api_url.starts_with("https://") {
     return Err(Error::InvalidInput(
@@ -65,15 +63,14 @@ pub fn get_api_url() -> String {
 
 #[tauri::command]
 pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(), Error> {
-  log::info!("Setting language to: {}", language);
+  log::info!("Setting language to: {language}");
 
   let supported_languages = [
     "en", "de", "fr", "ar", "pl", "gsw", "th", "tr", "ru", "zh-CN", "zh-TW",
   ];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(
-      "Unsupported language: {}",
-      language
+      "Unsupported language: {language}"
     )));
   }
 
@@ -93,7 +90,7 @@ pub struct DeepLinkData {
 
 #[tauri::command]
 pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
-  log::info!("Parsing deep link: {}", url);
+  log::info!("Parsing deep link: {url}");
 
   let url = url.trim();
 
@@ -131,12 +128,7 @@ pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
     return Err(Error::InvalidInput("Mod ID must be numeric".to_string()));
   }
 
-  log::info!(
-    "Parsed deep link - Download URL: {}, Type: {}, Mod ID: {}",
-    download_url,
-    mod_type,
-    mod_id
-  );
+  log::info!("Parsed deep link - Download URL: {download_url}, Type: {mod_type}, Mod ID: {mod_id}");
 
   Ok(DeepLinkData {
     download_url,
@@ -150,15 +142,15 @@ pub async fn find_game_path() -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   match (mod_manager.find_steam(), mod_manager.find_game()) {
     (Ok(_), Ok(game_path)) => {
-      log::info!("Found game at: {:?}", game_path);
+      log::info!("Found game at: {game_path:?}");
       Ok(game_path.to_string_lossy().to_string())
     }
     (Err(e), _) => {
-      log::error!("Failed to find Steam: {}", e);
+      log::error!("Failed to find Steam: {e}");
       Err(e)
     }
     (_, Err(e)) => {
-      log::error!("Failed to find game: {}", e);
+      log::error!("Failed to find game: {e}");
       Err(e)
     }
   }
@@ -169,7 +161,7 @@ pub async fn set_game_path(path: String) -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   let path_buf = PathBuf::from(&path);
   let game_path = mod_manager.set_game_path(path_buf)?;
-  log::info!("Game path manually set to: {:?}", game_path);
+  log::info!("Game path manually set to: {game_path:?}");
   Ok(game_path.to_string_lossy().to_string())
 }
 
@@ -208,11 +200,7 @@ pub async fn stop_game() -> Result<(), Error> {
 #[tauri::command]
 pub async fn start_game(vanilla: bool, additional_args: String) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  log::info!(
-    "Starting game with args: {:?} (vanilla: {:?})",
-    additional_args,
-    vanilla
-  );
+  log::info!("Starting game with args: {additional_args:?} (vanilla: {vanilla:?})");
   mod_manager.run_game(vanilla, additional_args)
 }
 
@@ -228,7 +216,7 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
   let mod_folder = mods_path.join(&mod_id);
 
   if mod_folder.exists() {
-    crate::utils::show_in_folder(&mod_folder.to_string_lossy().to_string())
+    crate::utils::show_in_folder(mod_folder.to_string_lossy().as_ref())
   } else {
     Err(Error::ModFileNotFound)
   }
@@ -251,12 +239,12 @@ pub async fn show_mod_in_game(vpk_files: Vec<String>) -> Result<(), Error> {
   if let Some(first_vpk) = vpk_files.first() {
     let vpk_path = addons_path.join(first_vpk);
     if vpk_path.exists() {
-      crate::utils::show_file_in_folder(&vpk_path.to_string_lossy().to_string())
+      crate::utils::show_file_in_folder(vpk_path.to_string_lossy().as_ref())
     } else {
-      crate::utils::show_in_folder(&addons_path.to_string_lossy().to_string())
+      crate::utils::show_in_folder(addons_path.to_string_lossy().as_ref())
     }
   } else {
-    crate::utils::show_in_folder(&addons_path.to_string_lossy().to_string())
+    crate::utils::show_in_folder(addons_path.to_string_lossy().as_ref())
   }
 }
 
@@ -350,14 +338,15 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
 
   // Download vanilla gameinfo.gi
   let vanilla_content = {
-    let url = format!("{}/artifacts/deadlock/gameinfo.gi", api_url);
-    log::info!("Downloading vanilla gameinfo.gi from: {}", url);
+    let url = format!("{api_url}/artifacts/deadlock/gameinfo.gi");
+    log::info!("Downloading vanilla gameinfo.gi from: {url}");
 
     let client = reqwest::Client::new();
-    let response =
-      client.get(&url).send().await.map_err(|e| {
-        Error::NetworkError(format!("Failed to download vanilla gameinfo.gi: {}", e))
-      })?;
+    let response = client
+      .get(&url)
+      .send()
+      .await
+      .map_err(|e| Error::NetworkError(format!("Failed to download vanilla gameinfo.gi: {e}")))?;
 
     if !response.status().is_success() {
       return Err(Error::NetworkError(format!(
@@ -369,7 +358,7 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
     response
       .text()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to read response: {}", e)))?
+      .map_err(|e| Error::NetworkError(format!("Failed to read response: {e}")))?
   };
 
   // Apply the vanilla content
@@ -395,8 +384,8 @@ pub async fn validate_gameinfo_patch(expected_vanilla: bool) -> Result<(), Error
 }
 
 #[tauri::command]
-pub async fn get_gameinfo_status(
-) -> Result<crate::mod_manager::game_config_manager::GameInfoStatus, Error> {
+pub async fn get_gameinfo_status()
+-> Result<crate::mod_manager::game_config_manager::GameInfoStatus, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   let game_path = match mod_manager.get_steam_manager().get_game_path() {
     Some(path) => path.clone(),
@@ -424,7 +413,7 @@ pub async fn extract_archive(
   archive_path: String,
   target_path: String,
 ) -> Result<Vec<String>, Error> {
-  log::info!("Extracting archive: {} to {}", archive_path, target_path);
+  log::info!("Extracting archive: {archive_path} to {target_path}");
 
   let archive_path = PathBuf::from(&archive_path);
   let target_path = PathBuf::from(&target_path);
@@ -471,7 +460,7 @@ fn find_vpk_files(dir: &PathBuf, vpk_files: &mut Vec<String>) -> Result<(), Erro
 
 #[tauri::command]
 pub async fn remove_mod_folder(mod_path: String) -> Result<(), Error> {
-  log::info!("Removing mod folder: {}", mod_path);
+  log::info!("Removing mod folder: {mod_path}");
   let mod_manager = MANAGER.lock().unwrap();
   let path = PathBuf::from(&mod_path);
 
@@ -486,19 +475,19 @@ pub fn parse_vpk_file(
   include_full_file_hash: Option<bool>,
   include_merkle: Option<bool>,
 ) -> Result<VpkParsed, Error> {
-  log::info!("Parsing VPK file: {}", file_path);
+  log::info!("Parsing VPK file: {file_path}");
 
   let path = PathBuf::from(&file_path);
 
   // Read the VPK file
   let vpk_data = std::fs::read(&path).map_err(|e| {
-    log::error!("Failed to read VPK file {}: {}", file_path, e);
+    log::error!("Failed to read VPK file {file_path}: {e}");
     e
   })?;
 
   // Get file metadata
   let metadata = std::fs::metadata(&path).map_err(|e| {
-    log::error!("Failed to get metadata for {}: {}", file_path, e);
+    log::error!("Failed to get metadata for {file_path}: {e}");
     e
   })?;
 
@@ -506,8 +495,7 @@ pub fn parse_vpk_file(
     .modified()
     .ok()
     .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-    .map(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0))
-    .flatten();
+    .and_then(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0));
 
   let options = VpkParseOptions {
     include_full_file_hash: include_full_file_hash.unwrap_or(false),
@@ -518,7 +506,7 @@ pub fn parse_vpk_file(
   };
 
   let parsed = VpkParser::parse(vpk_data, options)
-    .map_err(|e| Error::InvalidInput(format!("Failed to parse VPK file {}: {}", file_path, e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to parse VPK file {file_path}: {e}")))?;
 
   log::info!(
     "Successfully parsed VPK: {} entries, version {}, manifest hash: {}",
@@ -592,13 +580,13 @@ pub async fn store_auth_token(app_handle: AppHandle, token: String) -> Result<()
 
   let store = app_handle
     .store("state.json")
-    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   store.set("auth_token", serde_json::json!(token));
 
   store
     .save()
-    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {}", e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {e}")))?;
 
   Ok(())
 }
@@ -609,7 +597,7 @@ pub async fn get_auth_token(app_handle: AppHandle) -> Result<Option<String>, Err
 
   let store = app_handle
     .store("state.json")
-    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   let token = store.get("auth_token");
 
@@ -631,13 +619,13 @@ pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
 
   let store = app_handle
     .store("state.json")
-    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {}", e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   let _ = store.delete("auth_token");
 
   store
     .save()
-    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {}", e)))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to save store: {e}")))?;
 
   Ok(())
 }
@@ -669,7 +657,7 @@ pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup,
     )
   })
   .await
-  .map_err(|e| Error::BackupCreationFailed(format!("Task join error: {}", e)))?
+  .map_err(|e| Error::BackupCreationFailed(format!("Task join error: {e}")))?
 }
 
 #[tauri::command]
@@ -682,11 +670,7 @@ pub async fn list_addons_backups() -> Result<Vec<AddonsBackup>, Error> {
 
 #[tauri::command]
 pub async fn restore_addons_backup(file_name: String, strategy: String) -> Result<(), Error> {
-  log::info!(
-    "Restoring addons backup: {} with strategy: {}",
-    file_name,
-    strategy
-  );
+  log::info!("Restoring addons backup: {file_name} with strategy: {strategy}");
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();
   let restore_strategy =
@@ -696,7 +680,7 @@ pub async fn restore_addons_backup(file_name: String, strategy: String) -> Resul
 
 #[tauri::command]
 pub async fn delete_addons_backup(file_name: String) -> Result<(), Error> {
-  log::info!("Deleting addons backup: {}", file_name);
+  log::info!("Deleting addons backup: {file_name}");
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();
   backup_manager.delete_backup(&file_name)
@@ -711,7 +695,7 @@ pub async fn open_addons_backups_folder() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn get_addons_backup_info(file_name: String) -> Result<AddonsBackup, Error> {
-  log::info!("Getting addons backup info: {}", file_name);
+  log::info!("Getting addons backup info: {file_name}");
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();
   backup_manager.get_backup_info(&file_name)
@@ -730,15 +714,14 @@ pub async fn queue_download(
   files: Vec<DownloadFileDto>,
 ) -> Result<(), Error> {
   log::info!(
-    "Received download request for mod: {} with {} files",
-    mod_id,
+    "Received download request for mod: {mod_id} with {} files",
     files.len()
   );
 
   let app_local_data_dir = app_handle
     .path()
     .app_local_data_dir()
-    .map_err(|e| Error::Tauri(e))?;
+    .map_err(Error::Tauri)?;
 
   let target_dir = app_local_data_dir.join("mods").join(&mod_id);
 
@@ -780,12 +763,11 @@ pub async fn replace_mod_vpks(
   installed_vpks: Option<Vec<String>>,
 ) -> Result<(), Error> {
   log::info!(
-    "Replacing VPK files for mod {}: {} files",
-    mod_id,
+    "Replacing VPK files for mod {mod_id}: {} files",
     source_vpk_paths.len()
   );
 
-  let source_paths: Vec<PathBuf> = source_vpk_paths.iter().map(|s| PathBuf::from(s)).collect();
+  let source_paths: Vec<PathBuf> = source_vpk_paths.iter().map(PathBuf::from).collect();
 
   // Validate all source files exist and are VPK files
   for path in &source_paths {
@@ -875,7 +857,7 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
           break;
         }
         Err(e) => {
-          log::error!("Cache watcher error: {:?}", e);
+          log::error!("Cache watcher error: {e:?}");
           // Wait a bit before retrying
           tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
@@ -952,7 +934,7 @@ pub async fn initialize_ingest_tool() -> Result<(), Error> {
   let gen_counter = INGEST_WATCHER_GEN.clone();
   tokio::task::spawn(async move {
     if let Err(e) = ingest_tool::watch_cache_dir(&cache_dir, running.clone()).await {
-      log::error!("Cache watcher error: {}", e);
+      log::error!("Cache watcher error: {e}");
     }
     // Only clear the running flag if we're still the current generation
     if gen_counter.load(Ordering::Relaxed) == generation {

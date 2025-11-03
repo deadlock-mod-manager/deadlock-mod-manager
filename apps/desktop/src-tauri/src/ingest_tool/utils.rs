@@ -1,7 +1,7 @@
 use crate::ingest_tool::error::IngestError;
 use serde::Serialize;
 use std::sync::OnceLock;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
