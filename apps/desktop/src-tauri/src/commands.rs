@@ -852,6 +852,7 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
   // Spawn a background task to watch the cache directory
   tokio::task::spawn(async move {
     log::info!("Cache watcher task started");
+    let mut requested_stop = false;
 
     // Run initial scan
     ingest_tool::initial_cache_dir_ingest(&cache_dir).await;
@@ -860,6 +861,7 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
     loop {
       if !running_flag.load(Ordering::Relaxed) {
         log::info!("Cache watcher stopped by flag");
+        requested_stop = true;
         break;
       }
 
@@ -875,6 +877,7 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
 
           // Check if we should still be running
           if !running_flag.load(Ordering::Relaxed) {
+            requested_stop = true;
             break;
           }
           log::info!("Restarting cache watcher after error");
@@ -882,7 +885,9 @@ pub async fn start_cache_watcher() -> Result<(), Error> {
       }
     }
 
-    running_flag.store(false, Ordering::Relaxed);
+    if !requested_stop {
+      running_flag.store(false, Ordering::Relaxed);
+    }
     log::info!("Cache watcher thread exited");
   });
 
