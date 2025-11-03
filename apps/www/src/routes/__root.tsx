@@ -87,11 +87,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
             keywords: "deadlock, mod manager, valve, gaming, mods, gamebanana",
             license: "https://www.gnu.org/licenses/gpl-3.0.html",
             isAccessibleForFree: true,
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: "5",
-              ratingCount: "1",
-            },
           }),
         },
         {

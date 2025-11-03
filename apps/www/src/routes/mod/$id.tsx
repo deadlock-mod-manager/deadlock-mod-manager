@@ -111,11 +111,16 @@ export const Route = createFileRoute("/mod/$id")({
               price: "0",
               priceCurrency: "USD",
             },
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: mod.likes > 0 ? "5" : "0",
-              ratingCount: mod.likes,
-            },
+            ...(mod.likes > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue:
+                      mod.likes <= 20 ? "3" : mod.likes <= 50 ? "4" : "5",
+                    ratingCount: mod.likes,
+                  },
+                }
+              : {}),
             interactionStatistic: {
               "@type": "InteractionCounter",
               interactionType: "https://schema.org/DownloadAction",
