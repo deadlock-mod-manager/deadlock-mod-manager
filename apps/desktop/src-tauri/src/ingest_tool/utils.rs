@@ -61,7 +61,8 @@ impl Salts {
         .post("https://api.deadlock-api.com/v1/matches/salts")
         .json(&[self])
         .send()
-        .await;
+        .await
+        .and_then(|r| r.error_for_status());
 
       match response {
         Ok(r) if r.status().is_success() => return Ok(()),
@@ -94,7 +95,8 @@ impl Salts {
         .post("https://api.deadlock-api.com/v1/matches/salts")
         .json(&salts)
         .send()
-        .await;
+        .await
+        .and_then(|r| r.error_for_status());
 
       match response {
         Ok(r) if r.status().is_success() => return Ok(()),
