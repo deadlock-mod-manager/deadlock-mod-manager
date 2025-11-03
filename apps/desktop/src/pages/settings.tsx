@@ -45,6 +45,7 @@ import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settin
 import { FlashbangToggle } from "@/components/settings/flashbang-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
+import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -293,6 +294,7 @@ const CustomSettings = () => {
                 <div className='grid grid-cols-1 gap-4'>
                   <SystemSettings />
                   <DeveloperModeToggle />
+                  <IngestToolToggle />
                 </div>
               </Section>
 

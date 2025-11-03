@@ -7,6 +7,7 @@
 mod commands;
 mod download_manager;
 mod errors;
+mod ingest_tool;
 mod mod_manager;
 mod reports;
 mod utils;
@@ -249,7 +250,11 @@ pub fn run() {
       commands::cancel_download,
       commands::get_download_status,
       commands::get_all_downloads,
-      commands::replace_mod_vpks
+      commands::replace_mod_vpks,
+      commands::trigger_cache_scan,
+      commands::start_cache_watcher,
+      commands::stop_cache_watcher,
+      commands::get_ingest_status
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

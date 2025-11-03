@@ -223,7 +223,11 @@
     "information": "Information",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
-    "experimental": "Experimental"
+    "experimental": "Experimental",
+    "ingestTool": {
+      "title": "Matchdata Ingest Tool",
+      "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
+    }
   },
   "featureFlags": {
     "title": "Experimental Features",

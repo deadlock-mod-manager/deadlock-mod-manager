@@ -53,6 +53,9 @@ tokio-util = "0.7"
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures = "0.3"
 tauri-plugin-dialog = "2"
+memchr = "2.7.6"
+notify = "8.2.0"
+dashmap = "6.1.0"
 
 [dev-dependencies]
 tempfile = "3.22.0"
@@ -69,3 +72,6 @@ debug = false
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.3.4", features = ["deep-link"] }
 tauri-plugin-updater = "2.9"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
