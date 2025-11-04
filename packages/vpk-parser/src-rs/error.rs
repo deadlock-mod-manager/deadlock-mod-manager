@@ -8,7 +8,9 @@ pub enum VpkError {
     #[error("Invalid VPK signature: expected 0x{expected:08x}, got 0x{actual:08x}")]
     InvalidSignature { expected: u32, actual: u32 },
 
-    #[error("Cursor overrun: attempted to read {requested} bytes at position {cursor}, buffer size is {buffer_size}")]
+    #[error(
+        "Cursor overrun: attempted to read {requested} bytes at position {cursor}, buffer size is {buffer_size}"
+    )]
     CursorOverrun {
         cursor: usize,
         requested: usize,

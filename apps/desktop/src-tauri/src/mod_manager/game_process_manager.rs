@@ -29,7 +29,7 @@ impl GameProcessManager {
       .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref())
       .count();
 
-    log::debug!("Found {} game processes", process_count);
+    log::debug!("Found {process_count} game processes");
     Ok(process_count > 0)
   }
 
@@ -69,7 +69,7 @@ impl GameProcessManager {
     }
 
     if stopped_count > 0 {
-      log::info!("Stopped {} game process(es)", stopped_count);
+      log::info!("Stopped {stopped_count} game process(es)");
       Ok(())
     } else {
       Err(Error::GameNotRunning)

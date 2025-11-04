@@ -38,7 +38,7 @@ impl ModManager {
 
     // Try to find the game path on initialization
     if let Err(e) = manager.find_game() {
-      log::warn!("Failed to find game path during initialization: {:?}", e);
+      log::warn!("Failed to find game path during initialization: {e:?}");
     }
 
     manager
@@ -183,7 +183,7 @@ impl ModManager {
   }
 
   pub fn uninstall_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
-    log::info!("Uninstalling (disabling) mod: {}", mod_id);
+    log::info!("Uninstalling (disabling) mod: {mod_id}");
 
     let game_path = self
       .steam_manager
@@ -212,8 +212,7 @@ impl ModManager {
       self.mod_repository.add_mod(local_mod);
 
       log::info!(
-        "Disabled mod {} with {} prefixed VPKs",
-        mod_id,
+        "Disabled mod {mod_id} with {} prefixed VPKs",
         prefixed_vpks.len()
       );
     } else {
@@ -225,7 +224,7 @@ impl ModManager {
   }
 
   pub fn purge_mod(&mut self, mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
-    log::info!("Purging mod: {}", mod_id);
+    log::info!("Purging mod: {mod_id}");
 
     let game_path = self
       .steam_manager
@@ -265,10 +264,10 @@ impl ModManager {
     let user_mod_dir = mods_path.join(&mod_id);
 
     if user_mod_dir.exists() {
-      log::info!("Removing user-mod folder: {:?}", user_mod_dir);
+      log::info!("Removing user-mod folder: {user_mod_dir:?}");
       self.filesystem.remove_directory_recursive(&user_mod_dir)?;
     } else {
-      log::warn!("User-mod folder not found, skipping: {:?}", user_mod_dir);
+      log::warn!("User-mod folder not found, skipping: {user_mod_dir:?}");
     }
 
     Ok(())
@@ -327,12 +326,7 @@ impl ModManager {
 
     // Log the input data for debugging
     for (remote_id, vpks, order) in &mod_order_data {
-      log::info!(
-        "Input: mod {} has order {} with VPKs: {:?}",
-        remote_id,
-        order,
-        vpks
-      );
+      log::info!("Input: mod {remote_id} has order {order} with VPKs: {vpks:?}");
     }
 
     // Sort by order
@@ -342,13 +336,7 @@ impl ModManager {
     // Log the sorted data
     log::info!("Sorted order:");
     for (i, (remote_id, vpks, order)) in sorted_data.iter().enumerate() {
-      log::info!(
-        "Position {}: mod {} (order {}) with VPKs: {:?}",
-        i,
-        remote_id,
-        order,
-        vpks
-      );
+      log::info!("Position {i}: mod {remote_id} (order {order}) with VPKs: {vpks:?}");
     }
 
     // Create mapping for VPK reordering: (identifier, vpk_files)
@@ -393,7 +381,7 @@ impl ModManager {
         mod_vpk_mapping.push((mod_id.clone(), deadlock_mod.installed_vpks.clone()));
         updated_mods.push(deadlock_mod);
       } else {
-        log::warn!("Mod not found in repository: {}", mod_id);
+        log::warn!("Mod not found in repository: {mod_id}");
       }
     }
 
@@ -434,7 +422,7 @@ impl ModManager {
     let addons_path = game_path.join("game").join("citadel").join("addons");
     self
       .filesystem
-      .open_folder(&addons_path.to_string_lossy().to_string())
+      .open_folder(addons_path.to_string_lossy().as_ref())
   }
 
   pub fn open_game_folder(&self) -> Result<(), Error> {
@@ -444,7 +432,7 @@ impl ModManager {
       .ok_or(Error::GamePathNotSet)?;
     self
       .filesystem
-      .open_folder(&game_path.to_string_lossy().to_string())
+      .open_folder(game_path.to_string_lossy().as_ref())
   }
 
   /// Get a reference to the steam manager
@@ -474,11 +462,8 @@ impl ModManager {
     source_vpk_paths: Vec<std::path::PathBuf>,
     installed_vpks_from_frontend: Vec<String>,
   ) -> Result<(), Error> {
-    log::info!("Replacing VPK files for mod: {}", mod_id);
-    log::info!(
-      "Installed VPKs from frontend: {:?}",
-      installed_vpks_from_frontend
-    );
+    log::info!("Replacing VPK files for mod: {mod_id}");
+    log::info!("Installed VPKs from frontend: {installed_vpks_from_frontend:?}");
 
     let game_path = self
       .steam_manager
@@ -492,15 +477,14 @@ impl ModManager {
       log::info!("Using installed VPKs from frontend");
       (installed_vpks_from_frontend, Vec::new())
     } else if let Some(mod_info) = self.mod_repository.get_mod(&mod_id) {
-      log::info!("Found mod in repository: {}", mod_id);
+      log::info!("Found mod in repository: {mod_id}");
       (
         mod_info.installed_vpks.clone(),
         mod_info.original_vpk_names.clone(),
       )
     } else {
       log::info!(
-        "Mod not in repository and no installed VPKs provided, will find VPKs by prefix: {}",
-        mod_id
+        "Mod not in repository and no installed VPKs provided, will find VPKs by prefix: {mod_id}"
       );
       // Mod not in repository - it might be disabled or the repository wasn't loaded
       // We'll let replace_vpks find the prefixed VPKs directly
@@ -516,7 +500,7 @@ impl ModManager {
       &original_names,
     )?;
 
-    log::info!("Successfully replaced VPK files for mod: {}", mod_id);
+    log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())
   }
 
@@ -562,20 +546,20 @@ impl ModManager {
 
   /// Remove a mod folder from the filesystem
   pub fn remove_mod_folder(&self, mod_path: &PathBuf) -> Result<(), Error> {
-    log::info!("Removing mod folder: {:?}", mod_path);
+    log::info!("Removing mod folder: {mod_path:?}");
 
     // Validate and canonicalize the path to ensure it's within the mods directory
     let validated_path = self.validate_path_within_mods_root(mod_path)?;
 
     if !validated_path.exists() {
-      log::warn!("Mod folder does not exist: {:?}", validated_path);
+      log::warn!("Mod folder does not exist: {validated_path:?}");
       return Ok(());
     }
 
     self
       .filesystem
       .remove_directory_recursive(&validated_path)?;
-    log::info!("Successfully removed mod folder: {:?}", validated_path);
+    log::info!("Successfully removed mod folder: {validated_path:?}");
     Ok(())
   }
 
@@ -598,7 +582,7 @@ impl ModManager {
 
     self
       .filesystem
-      .open_folder(&backup_dir.to_string_lossy().to_string())
+      .open_folder(backup_dir.to_string_lossy().as_ref())
   }
 }
 

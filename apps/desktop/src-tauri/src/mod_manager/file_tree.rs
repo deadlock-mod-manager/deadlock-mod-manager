@@ -41,7 +41,7 @@ impl FileTreeAnalyzer {
 
   /// Gets the simple file structure from archive(s) in a directory
   pub fn get_mod_file_tree(&self, mod_path: &PathBuf) -> Result<ModFileTree, Error> {
-    log::info!("Getting file tree for mod path: {:?}", mod_path);
+    log::info!("Getting file tree for mod path: {mod_path:?}");
 
     let mut all_files = Vec::new();
 
@@ -61,7 +61,7 @@ impl FileTreeAnalyzer {
         .to_string();
 
       let temp_dir = tempfile::tempdir()?;
-      log::info!("Extracting archive for analysis: {:?}", archive_path);
+      log::info!("Extracting archive for analysis: {archive_path:?}");
 
       // Extract archive to temporary location
       self
@@ -74,9 +74,8 @@ impl FileTreeAnalyzer {
         .find_files_recursive(temp_dir.path(), "vpk")?;
 
       log::info!(
-        "Found {} VPK files in archive: {:?}",
-        vpk_files.len(),
-        archive_name
+        "Found {} VPK files in archive: {archive_name:?}",
+        vpk_files.len()
       );
 
       // Convert to ModFile objects
@@ -107,9 +106,7 @@ impl FileTreeAnalyzer {
     let has_multiple_files = total_files > 1;
 
     log::info!(
-      "File tree analysis complete: {} files, has_multiple: {}",
-      total_files,
-      has_multiple_files
+      "File tree analysis complete: {total_files} files, has_multiple: {has_multiple_files}"
     );
 
     Ok(ModFileTree {

@@ -25,7 +25,7 @@ fn handle_deep_link_url(
   app_handle: &tauri::AppHandle,
   url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-  log::info!("Processing deep link URL: {}", url);
+  log::info!("Processing deep link URL: {url}");
 
   // Parse the deep link manually here to avoid async issues
   let url = url.trim();
@@ -118,7 +118,7 @@ pub fn run() {
       if e.not_found() {
         log::debug!("No .env file found, continuing without it");
       } else {
-        log::warn!("Failed to load .env file: {}", e);
+        log::warn!("Failed to load .env file: {e}");
       }
     } else {
       log::info!("Loaded environment variables from .env file");
@@ -137,9 +137,9 @@ pub fn run() {
       // Handle deep links passed through single instance
       for arg in argv {
         if arg.starts_with("deadlock-mod-manager:") || arg.starts_with("deadlock-modmanager:") {
-          println!("Processing deep link from single instance: {}", arg);
-          if let Err(e) = handle_deep_link_url(&app, &arg) {
-            log::error!("Failed to handle deep link from single instance: {}", e);
+          println!("Processing deep link from single instance: {arg}");
+          if let Err(e) = handle_deep_link_url(app, &arg) {
+            log::error!("Failed to handle deep link from single instance: {e}");
           }
 
           // Bring window to focus when deep link is triggered
@@ -194,10 +194,10 @@ pub fn run() {
       let start_urls = app.deep_link().get_current()?;
       if let Some(urls) = start_urls {
         // app was likely started by a deep link
-        println!("App started with deep link URLs: {:?}", urls);
+        println!("App started with deep link URLs: {urls:?}");
         for url in urls {
-          if let Err(e) = handle_deep_link_url(&handle, &url.to_string()) {
-            log::error!("Failed to handle startup deep link: {}", e);
+          if let Err(e) = handle_deep_link_url(handle, url.as_ref()) {
+            log::error!("Failed to handle startup deep link: {e}");
           }
         }
       }

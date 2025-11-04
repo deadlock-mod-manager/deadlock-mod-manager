@@ -1,7 +1,7 @@
 mod downloader;
 
 use crate::errors::Error;
-use downloader::{download_file, DownloadProgress as FileProgress};
+use downloader::{DownloadProgress as FileProgress, download_file};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
@@ -128,7 +128,7 @@ impl DownloadManager {
             if let Err(e) =
               Self::download_mod(task, Arc::clone(&active_clone), app_handle.clone()).await
             {
-              log::error!("Failed to download mod: {}", e);
+              log::error!("Failed to download mod: {e}");
             }
           }
           None => break,
@@ -170,7 +170,7 @@ impl DownloadManager {
       )
       .ok();
 
-    log::info!("Starting download for mod: {}", mod_id);
+    log::info!("Starting download for mod: {mod_id}");
 
     let total_files = task.files.len();
     let mut downloaded_files = Vec::new();
@@ -275,7 +275,7 @@ impl DownloadManager {
           errors.push(e.to_string());
         }
         Err(e) => {
-          errors.push(format!("Task join error: {}", e));
+          errors.push(format!("Task join error: {e}"));
         }
       }
     }
@@ -287,7 +287,7 @@ impl DownloadManager {
 
     if !errors.is_empty() {
       let error_message = errors.join("; ");
-      log::error!("Download failed for mod {}: {}", mod_id, error_message);
+      log::error!("Download failed for mod {mod_id}: {error_message}");
 
       app_handle
         .emit(
@@ -303,25 +303,20 @@ impl DownloadManager {
     }
 
     log::info!(
-      "Download completed for mod: {} ({} files)",
-      mod_id,
+      "Download completed for mod: {mod_id} ({} files)",
       downloaded_files.len()
     );
 
     // Extract archives and copy VPKs to addons with prefix
     if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files).await {
-      log::error!(
-        "Failed to process downloaded files for mod {}: {}",
-        mod_id,
-        e
-      );
+      log::error!("Failed to process downloaded files for mod {mod_id}: {e}");
 
       app_handle
         .emit(
           "download-error",
           DownloadErrorEvent {
             mod_id: mod_id.clone(),
-            error: format!("Failed to process files: {}", e),
+            error: format!("Failed to process files: {e}"),
           },
         )
         .ok();
@@ -378,7 +373,7 @@ impl DownloadManager {
     // Extract archives to cache
     for file_path in downloaded_files {
       if extractor.is_supported_archive(file_path) {
-        log::info!("Extracting archive: {:?}", file_path);
+        log::info!("Extracting archive: {file_path:?}");
 
         let temp_dir = tempfile::tempdir()?;
         extractor.extract_archive(file_path, temp_dir.path())?;
@@ -389,12 +384,12 @@ impl DownloadManager {
           if let Some(file_name) = vpk_path.file_name() {
             let dest_path = mod_files_cache.join(file_name);
             std::fs::copy(&vpk_path, &dest_path)?;
-            log::info!("Copied VPK to cache: {:?}", file_name);
+            log::info!("Copied VPK to cache: {file_name:?}");
           }
         }
 
         // Clean up archive after extraction
-        log::info!("Removing archive: {:?}", file_path);
+        log::info!("Removing archive: {file_path:?}");
         std::fs::remove_file(file_path)?;
       }
     }
@@ -408,7 +403,7 @@ impl DownloadManager {
       vpk_manager.copy_vpks_with_prefix(&mod_files_cache, &addons_path, &task.mod_id)?;
 
       // Clean up the cache directory after successful copy
-      log::info!("Cleaning up mod files cache: {:?}", mod_files_cache);
+      log::info!("Cleaning up mod files cache: {mod_files_cache:?}");
       std::fs::remove_dir_all(&mod_files_cache)?;
     }
 
@@ -439,7 +434,7 @@ impl DownloadManager {
   }
 
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
-    log::info!("Cancelling download for mod: {}", mod_id);
+    log::info!("Cancelling download for mod: {mod_id}");
 
     let mut active = self.active_downloads.lock().await;
     if let Some(download) = active.remove(mod_id) {
@@ -447,8 +442,7 @@ impl DownloadManager {
       Ok(())
     } else {
       Err(Error::InvalidInput(format!(
-        "No active download found for mod: {}",
-        mod_id
+        "No active download found for mod: {mod_id}"
       )))
     }
   }

@@ -19,7 +19,7 @@ fn to_c_string(s: String) -> *mut c_char {
 }
 
 // Helper function to free C string
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn vpk_free_string(ptr: *mut c_char) {
     if !ptr.is_null() {
         unsafe {
@@ -29,7 +29,7 @@ pub extern "C" fn vpk_free_string(ptr: *mut c_char) {
 }
 
 // Parse VPK from buffer with options as JSON string
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn vpk_parse(
     buffer: *const u8,
     buffer_len: usize,
@@ -55,7 +55,7 @@ pub extern "C" fn vpk_parse(
 
         match serde_json::from_str::<VpkParseOptions>(options_str) {
             Ok(opts) => opts,
-            Err(e) => return to_c_string(format!(r#"{{"error": "Invalid options JSON: {}"}}"#, e)),
+            Err(e) => return to_c_string(format!(r#"{{"error": "Invalid options JSON: {e}"}}"#)),
         }
     };
 
@@ -63,14 +63,14 @@ pub extern "C" fn vpk_parse(
     match VpkParser::parse(buffer_vec, options) {
         Ok(parsed) => match serde_json::to_string(&parsed) {
             Ok(json) => to_c_string(json),
-            Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {}"}}"#, e)),
+            Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),
         },
-        Err(e) => to_c_string(format!(r#"{{"error": "{}"}}"#, e)),
+        Err(e) => to_c_string(format!(r#"{{"error": "{e}"}}"#)),
     }
 }
 
 // Get VPK hashes only (faster)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn vpk_get_hashes(
     buffer: *const u8,
     buffer_len: usize,
@@ -105,14 +105,14 @@ pub extern "C" fn vpk_get_hashes(
     match VpkParser::parse(buffer_vec, options) {
         Ok(parsed) => match serde_json::to_string(&parsed.fingerprint) {
             Ok(json) => to_c_string(json),
-            Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {}"}}"#, e)),
+            Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),
         },
-        Err(e) => to_c_string(format!(r#"{{"error": "{}"}}"#, e)),
+        Err(e) => to_c_string(format!(r#"{{"error": "{e}"}}"#)),
     }
 }
 
 // Get basic VPK info (fastest)
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_char {
     if buffer.is_null() || buffer_len == 0 {
         return to_c_string(r#"{"error": "Invalid buffer"}"#.to_string());
@@ -139,15 +139,15 @@ pub extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_c
             });
             match serde_json::to_string(&info) {
                 Ok(json) => to_c_string(json),
-                Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {}"}}"#, e)),
+                Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),
             }
         }
-        Err(e) => to_c_string(format!(r#"{{"error": "{}"}}"#, e)),
+        Err(e) => to_c_string(format!(r#"{{"error": "{e}"}}"#)),
     }
 }
 
 // Get library version
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn vpk_version() -> *mut c_char {
     to_c_string(env!("CARGO_PKG_VERSION").to_string())
 }

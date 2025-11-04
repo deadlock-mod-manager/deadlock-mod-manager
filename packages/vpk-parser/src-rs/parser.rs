@@ -177,7 +177,7 @@ impl VpkParser {
         let terminator = self.read_u16()?;
 
         let normalized_path = if path == " " { "" } else { path };
-        let filename_with_ext = format!("{}.{}", filename, ext);
+        let filename_with_ext = format!("{filename}.{ext}");
         let path_parts: Vec<&str> = [normalized_path, &filename_with_ext]
             .iter()
             .filter(|s| !s.is_empty())
@@ -291,8 +291,8 @@ impl VpkParser {
             .map(|entry| {
                 let normalized_path = entry.full_path.to_lowercase().replace('\\', "/");
                 format!(
-                    "{}\x00{}\x00{}",
-                    normalized_path, entry.entry_length, entry.crc32_hex
+                    "{normalized_path}\x00{}\x00{}",
+                    entry.entry_length, entry.crc32_hex
                 )
             })
             .collect();

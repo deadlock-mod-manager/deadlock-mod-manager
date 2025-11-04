@@ -74,56 +74,54 @@ impl ReportService {
 
     let response = self
       .client
-      .post(&format!("{}/api/v2/reports", self.api_url))
+      .post(format!("{}/api/v2/reports", self.api_url))
       .json(&request_body)
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to send report request: {}", e)))?;
+      .map_err(|e| Error::NetworkError(format!("Failed to send report request: {e}")))?;
 
     if !response.status().is_success() {
       let status = response.status();
       let error_text = response.text().await.unwrap_or_default();
       return Err(Error::NetworkError(format!(
-        "Report request failed with status {}: {}",
-        status, error_text
+        "Report request failed with status {status}: {error_text}"
       )));
     }
 
     let result: CreateReportResponse = response
       .json()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to parse report response: {}", e)))?;
+      .map_err(|e| Error::NetworkError(format!("Failed to parse report response: {e}")))?;
 
     log::info!("Report created successfully: {}", result.id);
     Ok(result)
   }
 
   pub async fn get_report_counts(&self, mod_id: &str) -> Result<ReportCounts, Error> {
-    log::debug!("Fetching report counts for mod: {}", mod_id);
+    log::debug!("Fetching report counts for mod: {mod_id}");
 
     let response = self
       .client
-      .get(&format!(
-        "{}/api/v2/reports/mod/{}/counts",
-        self.api_url, mod_id
+      .get(format!(
+        "{}/api/v2/reports/mod/{mod_id}/counts",
+        self.api_url
       ))
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to fetch report counts: {}", e)))?;
+      .map_err(|e| Error::NetworkError(format!("Failed to fetch report counts: {e}")))?;
 
     if !response.status().is_success() {
       let status = response.status();
       let error_text = response.text().await.unwrap_or_default();
       return Err(Error::NetworkError(format!(
-        "Report counts request failed with status {}: {}",
-        status, error_text
+        "Report counts request failed with status {status}: {error_text}"
       )));
     }
 
     let result: ReportCounts = response
       .json()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to parse report counts response: {}", e)))?;
+      .map_err(|e| Error::NetworkError(format!("Failed to parse report counts response: {e}")))?;
 
     Ok(result)
   }

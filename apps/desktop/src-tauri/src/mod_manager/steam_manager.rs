@@ -40,7 +40,7 @@ impl SteamManager {
 
       let game_path = library.resolve_app_dir(&game);
       if game_path.exists() {
-        log::info!("Game path found: {:?}", game_path);
+        log::info!("Game path found: {game_path:?}");
         self.game_path = Some(game_path);
       } else {
         return Err(Error::GameNotFound);
@@ -68,7 +68,7 @@ impl SteamManager {
       ));
     }
 
-    log::info!("Manually set game path to: {:?}", path);
+    log::info!("Manually set game path to: {path:?}");
     self.game_path = Some(path);
     Ok(())
   }
@@ -100,8 +100,8 @@ impl SteamManager {
 
   /// Launch Deadlock through Steam with optional arguments
   pub fn launch_game(&self, additional_args: &str) -> Result<(), Error> {
-    let steam_uri = format!("steam://run/{}//{}", DEADLOCK_APP_ID, additional_args);
-    log::info!("Launching game with URI: {}", steam_uri);
+    let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
+    log::info!("Launching game with URI: {steam_uri}");
 
     #[cfg(target_os = "windows")]
     {
