@@ -5,12 +5,13 @@ use tokio::time::{sleep, Duration};
 
 static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
-#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Salts {
   pub match_id: u64,
   pub cluster_id: u32,
   pub metadata_salt: Option<u32>,
   pub replay_salt: Option<u32>,
+  pub username: String,
 }
 
 impl Salts {
@@ -33,6 +34,7 @@ impl Salts {
         match_id: match_str.parse().ok()?,
         metadata_salt: salt_str.parse().ok(),
         replay_salt: None,
+        username: "Mod Manager".to_string(),
       })
     } else if name.ends_with(".dem.bz2") {
       let name = name.strip_suffix(".dem.bz2")?;
@@ -43,6 +45,7 @@ impl Salts {
         match_id: match_str.parse().ok()?,
         replay_salt: salt_str.parse().ok(),
         metadata_salt: None,
+        username: "Mod Manager".to_string(),
       })
     } else {
       None
