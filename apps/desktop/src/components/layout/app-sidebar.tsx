@@ -23,7 +23,6 @@ import {
   MagnifyingGlass,
   Package,
   Question,
-  UploadSimple,
 } from "@phosphor-icons/react";
 import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
@@ -90,13 +89,6 @@ const getSidebarItems = (
       title: () => <span>{t("navigation.getMods")}</span>,
       url: "/mods",
       icon: MagnifyingGlass,
-      group: "mods",
-    },
-    {
-      id: "add-mods",
-      title: () => <span>{t("navigation.addMods")}</span>,
-      url: "/add-mods",
-      icon: UploadSimple,
       group: "mods",
     },
     {
@@ -233,9 +225,8 @@ export const AppSidebar = () => {
   let allItems = getSidebarItems(t, developerMode);
 
   if (sudoEnabled) {
-    // Hide Mods group entries: my-mods, get-mods, add-mods
     allItems = allItems.filter(
-      (item) => !["my-mods", "get-mods", "add-mods"].includes(item.id),
+      (item) => !["my-mods", "get-mods"].includes(item.id),
     );
 
     // Add Superuser entry linking to the plugin route, with a standard icon

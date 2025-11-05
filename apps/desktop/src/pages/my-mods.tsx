@@ -28,7 +28,7 @@ import {
   LayoutList,
   Loader2,
 } from "@deadlock-mods/ui/icons";
-import { Trash } from "@phosphor-icons/react";
+import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -349,6 +349,7 @@ const ModsList = ({
 
 const MyMods = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
@@ -473,6 +474,13 @@ const MyMods = () => {
             </div>
 
             <div className='flex gap-2 items-center'>
+              <Button
+                size='lg'
+                variant='outline'
+                onClick={() => navigate("/add-mods")}
+                icon={<UploadSimple className='h-4 w-4' />}>
+                {t("navigation.addMods")}
+              </Button>
               <AnalyzeAddonsButton size='lg' />
               <ModOrderingDialog>
                 <Button
