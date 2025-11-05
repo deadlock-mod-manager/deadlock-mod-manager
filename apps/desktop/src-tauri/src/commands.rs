@@ -952,6 +952,43 @@ pub async fn switch_profile(profile_folder: Option<String>) -> Result<(), Error>
   Ok(())
 }
 
+#[tauri::command]
+pub async fn list_profile_folders() -> Result<Vec<String>, Error> {
+  log::info!("Listing profile folders in addons directory");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+
+  if !addons_path.exists() {
+    log::warn!("Addons path does not exist: {addons_path:?}");
+    return Ok(Vec::new());
+  }
+
+  let mut profile_folders = Vec::new();
+
+  for entry in std::fs::read_dir(&addons_path)? {
+    let entry = entry?;
+    let path = entry.path();
+
+    if path.is_dir() {
+      if let Some(folder_name) = path.file_name().and_then(|n| n.to_str()) {
+        if folder_name.starts_with("profile_") {
+          profile_folders.push(folder_name.to_string());
+          log::debug!("Found profile folder: {folder_name}");
+        }
+      }
+    }
+  }
+
+  log::info!("Found {} profile folders", profile_folders.len());
+  Ok(profile_folders)
+}
+
 // ============================================================================
 // Ingest Tool Commands
 // ============================================================================

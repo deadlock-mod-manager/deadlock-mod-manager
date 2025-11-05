@@ -27,6 +27,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useSyncProfiles } from "@/hooks/use-sync-profiles";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
@@ -62,6 +63,8 @@ export const ProfileManagerDialog = ({
     new Set(),
   );
 
+  useSyncProfiles(open);
+
   const { getAllProfiles, getActiveProfile, deleteProfile, switchToProfile } =
     usePersistedStore();
 
@@ -80,7 +83,7 @@ export const ProfileManagerDialog = ({
     });
 
     if (shouldDelete) {
-      const success = deleteProfile(profileId);
+      const success = await deleteProfile(profileId);
       if (success) {
         toast.success(t("profiles.deleteSuccess", { profileName }));
       } else {

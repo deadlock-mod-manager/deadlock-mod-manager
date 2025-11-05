@@ -42,6 +42,7 @@ export interface ProfilesState {
   getAllProfiles: () => ModProfile[];
   getProfilesCount: () => number;
   getEnabledModsCount: (profileId?: ProfileId) => number;
+  syncProfilesWithFilesystem: () => Promise<void>;
 }
 
 const createDefaultProfile = (): ModProfile => ({
@@ -320,5 +321,67 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   activeProfile: () => {
     const { activeProfileId, profiles } = get();
     return profiles[activeProfileId];
+  },
+
+  syncProfilesWithFilesystem: async () => {
+    try {
+      const filesystemFolders = await invoke<string[]>("list_profile_folders");
+      const { profiles } = get();
+
+      const knownFolders = new Set(
+        Object.values(profiles)
+          .map((p) => p.folderName)
+          .filter((name): name is string => name !== null),
+      );
+
+      const unknownFolders = filesystemFolders.filter(
+        (folder) => !knownFolders.has(folder),
+      );
+
+      if (unknownFolders.length > 0) {
+        logger.info("Syncing unknown profile folders to state", {
+          count: unknownFolders.length,
+          folders: unknownFolders,
+        });
+
+        const newProfiles: Record<ProfileId, ModProfile> = {};
+
+        for (const folderName of unknownFolders) {
+          const parts = folderName.split("_");
+          const profileIdPart = parts[0];
+          const namePart = parts.slice(1).join("_") || "Unknown Profile";
+
+          const displayName = namePart
+            .split(/[-_]/)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+
+          const profileId = createProfileId(profileIdPart);
+
+          newProfiles[profileId] = {
+            id: profileId,
+            name: displayName,
+            description: "Profile detected from filesystem",
+            createdAt: new Date(),
+            enabledMods: {},
+            isDefault: false,
+            folderName: folderName,
+          };
+        }
+
+        set((state) => ({
+          profiles: {
+            ...state.profiles,
+            ...newProfiles,
+          },
+        }));
+
+        logger.info("Added unknown profiles to state", {
+          count: Object.keys(newProfiles).length,
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to sync profiles with filesystem", { error });
+    }
   },
 });
