@@ -989,6 +989,54 @@ pub async fn list_profile_folders() -> Result<Vec<String>, Error> {
   Ok(profile_folders)
 }
 
+#[tauri::command]
+pub async fn get_profile_installed_vpks(
+  profile_folder: Option<String>,
+) -> Result<Vec<String>, Error> {
+  log::info!("Getting installed VPKs for profile: {profile_folder:?}");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let addons_path = if let Some(folder) = profile_folder {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(folder)
+  } else {
+    game_path.join("game").join("citadel").join("addons")
+  };
+
+  if !addons_path.exists() {
+    log::warn!("Addons path does not exist: {addons_path:?}");
+    return Ok(Vec::new());
+  }
+
+  let mut vpk_files = Vec::new();
+
+  for entry in std::fs::read_dir(&addons_path)? {
+    let entry = entry?;
+    let path = entry.path();
+
+    if path.is_file() {
+      if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+        // Return all .vpk files (both enabled pak##_dir.vpk and prefixed ones)
+        if file_name.ends_with(".vpk") {
+          vpk_files.push(file_name.to_string());
+          log::debug!("Found VPK file: {file_name}");
+        }
+      }
+    }
+  }
+
+  log::info!("Found {} VPK files in profile", vpk_files.len());
+  Ok(vpk_files)
+}
+
 // ============================================================================
 // Ingest Tool Commands
 // ============================================================================

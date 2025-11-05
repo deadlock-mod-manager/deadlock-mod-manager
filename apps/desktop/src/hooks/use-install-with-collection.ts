@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
   LocalMod,
@@ -39,6 +40,7 @@ export type UseInstallWithCollectionReturn = {
 };
 
 const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
+  const { getActiveProfile } = usePersistedStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFileTree, setCurrentFileTree] = useState<ModFileTree | null>(
     null,
@@ -60,6 +62,9 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         selectedFiles: fileTree?.files.filter((f) => f.is_selected).length,
       });
 
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       const modData: LocalModWithFiles = {
         ...mod,
         file_tree: fileTree,
@@ -71,6 +76,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           name: modData.name,
           file_tree: modData.file_tree,
         },
+        profileFolder,
       })) as InstallableMod;
 
       options.onComplete(mod, result);
@@ -106,10 +112,14 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         throw new Error("Mod is already installed!");
       }
 
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       // For the new prefix system, we just enable the mod by calling install_mod
       // which will rename the prefixed VPKs
       logger.info("Enabling mod by removing VPK prefix", {
         modId: mod.remoteId,
+        profileFolder,
       });
 
       const result = (await invoke("install_mod", {
@@ -117,6 +127,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           id: mod.remoteId,
           name: mod.name,
         },
+        profileFolder,
       })) as InstallableMod;
 
       options.onComplete(mod, result);

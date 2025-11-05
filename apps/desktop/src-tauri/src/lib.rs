@@ -264,7 +264,8 @@ pub fn run() {
       commands::create_profile_folder,
       commands::delete_profile_folder,
       commands::switch_profile,
-      commands::list_profile_folders
+      commands::list_profile_folders,
+      commands::get_profile_installed_vpks
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

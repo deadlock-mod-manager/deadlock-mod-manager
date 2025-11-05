@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { StateCreator } from "zustand";
 import logger from "@/lib/logger";
+import { type LocalMod, ModStatus } from "@/types/mods";
 import {
   createProfileId,
   DEFAULT_PROFILE_ID,
@@ -43,6 +44,9 @@ export interface ProfilesState {
   getProfilesCount: () => number;
   getEnabledModsCount: (profileId?: ProfileId) => number;
   syncProfilesWithFilesystem: () => Promise<void>;
+  syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
+  saveCurrentModsToProfile: () => void;
+  loadModsFromProfile: (profileId: ProfileId) => void;
 }
 
 const createDefaultProfile = (): ModProfile => ({
@@ -54,6 +58,7 @@ const createDefaultProfile = (): ModProfile => ({
   enabledMods: {},
   isDefault: true,
   folderName: null,
+  mods: [],
 });
 
 export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
@@ -87,6 +92,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         enabledMods: {},
         isDefault: false,
         folderName: folderName,
+        mods: [],
       };
 
       set((state) => ({
@@ -195,6 +201,8 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     };
 
     try {
+      get().saveCurrentModsToProfile();
+
       await invoke("switch_profile", {
         profileFolder: targetProfile.folderName,
       });
@@ -214,6 +222,10 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
           },
         },
       }));
+
+      get().loadModsFromProfile(profileId);
+
+      await get().syncProfileEnabledMods(profileId);
     } catch (error) {
       logger.error("Failed to switch profile", { profileId, error });
       result.errors.push(`Failed to switch profile: ${error}`);
@@ -323,6 +335,153 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     return profiles[activeProfileId];
   },
 
+  saveCurrentModsToProfile: () => {
+    const { activeProfileId, profiles, localMods } = get();
+    const profile = profiles[activeProfileId];
+
+    if (!profile) {
+      logger.error("Cannot save mods: active profile not found", {
+        activeProfileId,
+      });
+      return;
+    }
+
+    logger.info("Saving current mods to profile", {
+      profileId: activeProfileId,
+      modsCount: localMods.length,
+    });
+
+    set((state) => ({
+      profiles: {
+        ...state.profiles,
+        [activeProfileId]: {
+          ...profile,
+          mods: [...localMods],
+        },
+      },
+    }));
+  },
+
+  loadModsFromProfile: (profileId: ProfileId) => {
+    const { profiles } = get();
+    const profile = profiles[profileId];
+
+    if (!profile) {
+      logger.error("Cannot load mods: profile not found", { profileId });
+      return;
+    }
+
+    logger.info("Loading mods from profile", {
+      profileId,
+      modsCount: profile.mods.length,
+    });
+
+    set({ localMods: [...profile.mods] });
+  },
+
+  syncProfileEnabledMods: async (profileId: ProfileId) => {
+    try {
+      const { profiles, localMods } = get();
+      const profile = profiles[profileId];
+
+      if (!profile) {
+        logger.error("Profile not found for sync", { profileId });
+        return;
+      }
+
+      logger.info("Syncing profile enabled mods with filesystem", {
+        profileId,
+        folderName: profile.folderName,
+      });
+
+      const allVpks = await invoke<string[]>("get_profile_installed_vpks", {
+        profileFolder: profile.folderName,
+      });
+
+      logger.info("Found VPKs in profile folder", {
+        profileId,
+        count: allVpks.length,
+        vpks: allVpks,
+      });
+
+      // Enabled VPKs follow the pattern pak##_dir.vpk
+      // Disabled (prefixed) VPKs follow the pattern {modid}_*.vpk
+      const enabledVpkPattern = /^pak\d+_dir\.vpk$/i;
+      const enabledVpkSet = new Set(
+        allVpks.filter((vpk) => enabledVpkPattern.test(vpk)),
+      );
+
+      const updatedEnabledMods: Record<string, ModProfileEntry> = {};
+      const updatedLocalMods: LocalMod[] = [];
+
+      for (const mod of localMods) {
+        // Check if this mod has any VPKs in the profile folder (enabled or disabled)
+        const hasVpksInProfile = allVpks.some(
+          (vpk) => vpk.startsWith(`${mod.remoteId}_`) || enabledVpkSet.has(vpk),
+        );
+
+        if (!hasVpksInProfile) {
+          // Mod doesn't have any VPKs in this profile
+          updatedLocalMods.push(mod);
+          continue;
+        }
+
+        // Check if the mod has enabled VPKs
+        const hasEnabledVpks =
+          mod.installedVpks?.some((installedVpk) => {
+            const filename = installedVpk.split(/[\\/]/).pop() || "";
+            return enabledVpkSet.has(filename);
+          }) ?? false;
+
+        if (hasEnabledVpks) {
+          // Mod is enabled in this profile
+          updatedEnabledMods[mod.remoteId] = {
+            remoteId: mod.remoteId,
+            enabled: true,
+            lastModified: new Date(),
+          };
+
+          if (mod.status === ModStatus.Downloaded) {
+            updatedLocalMods.push({
+              ...mod,
+              status: ModStatus.Installed,
+            });
+          } else {
+            updatedLocalMods.push(mod);
+          }
+        } else {
+          // Mod has VPKs but they're disabled (prefixed)
+          if (mod.status === ModStatus.Installed) {
+            updatedLocalMods.push({
+              ...mod,
+              status: ModStatus.Downloaded,
+            });
+          } else {
+            updatedLocalMods.push(mod);
+          }
+        }
+      }
+
+      logger.info("Synced profile enabled mods", {
+        profileId,
+        enabledCount: Object.keys(updatedEnabledMods).length,
+      });
+
+      set((state) => ({
+        localMods: updatedLocalMods,
+        profiles: {
+          ...state.profiles,
+          [profileId]: {
+            ...profile,
+            enabledMods: updatedEnabledMods,
+          },
+        },
+      }));
+    } catch (error) {
+      logger.error("Failed to sync profile enabled mods", { profileId, error });
+    }
+  },
+
   syncProfilesWithFilesystem: async () => {
     try {
       const filesystemFolders = await invoke<string[]>("list_profile_folders");
@@ -366,6 +525,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             enabledMods: {},
             isDefault: false,
             folderName: folderName,
+            mods: [],
           };
         }
 

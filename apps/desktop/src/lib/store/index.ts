@@ -30,7 +30,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -106,6 +106,32 @@ export const usePersistedStore = create<State>()(
                   .replace(/^-+|-+$/g, "");
 
                 profileObj.folderName = `${profileId}_${sanitizedName}`;
+              }
+            }
+          }
+        }
+
+        // Migration from version 3 to 4: Add mods array to each profile
+        if (version <= 3) {
+          console.log(
+            "Migrating from version 3 to 4: Adding mods array to profiles",
+          );
+          const profiles = state.profiles as Record<string, unknown>;
+          const activeProfileId = state.activeProfileId as string;
+          const localMods = state.localMods as unknown[];
+
+          if (profiles && typeof profiles === "object") {
+            for (const [profileId, profile] of Object.entries(profiles)) {
+              const profileObj = profile as Record<string, unknown>;
+
+              // Active profile gets the current localMods
+              if (profileId === activeProfileId) {
+                profileObj.mods = Array.isArray(localMods)
+                  ? [...localMods]
+                  : [];
+              } else {
+                // Non-active profiles start with empty mods array
+                profileObj.mods = [];
               }
             }
           }
