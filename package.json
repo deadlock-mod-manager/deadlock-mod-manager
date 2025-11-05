@@ -7,6 +7,8 @@
     "api:dev": "pnpm --filter api dev",
     "dev": "turbo run dev",
     "desktop:dev": "pnpm --filter desktop tauri dev",
+    "docs:dev": "pnpm --filter docs dev",
+    "vpk-parser:build": "pnpm --filter vpk-parser build",
     "docker:api:build": "docker build -f apps/api/Dockerfile -t deadlock-api .",
     "docker:api:run": "docker run --rm -p 9000:9000 --env-file .env deadlock-api",
     "docker:api:dev": "docker compose up api --build",
@@ -29,13 +31,18 @@
     "upgrade-dependencies": "pnpm dlx taze -r",
     "version:generate": "turbo run version:generate",
     "version:nightly": "bun run scripts/update-nightly-version.ts",
-    "release-notes": "bun run scripts/generate-release-notes.ts"
+    "release-notes": "bun run scripts/generate-release-notes.ts",
+    "db:studio": "pnpm --filter database db:studio",
+    "db:migrate": "pnpm --filter database db:migrate",
+    "db:generate": "pnpm --filter database db:generate",
+    "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "cross-env": "^10.1.0",
     "dotenv-cli": "^7.4.4",
     "lefthook": "^1.13.6",
+    "rimraf": "^6.1.0",
     "turbo": "^2.6.0",
     "typescript": "catalog:"
   },

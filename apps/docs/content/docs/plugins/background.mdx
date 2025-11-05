@@ -1,0 +1,86 @@
+---
+title: Background Plugin
+description: Guide to the Background plugin for customizing application backgrounds
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Background Plugin
+
+The Background plugin allows you to set custom background images with opacity and blur effects.
+
+![Background Plugin – Overview](/assets/plugins-background-1.png)
+
+## Features
+
+- **Custom Background Images**: Set any image as application background
+- **Multiple Sources**: Use online URLs or upload local files
+- **Opacity Control**: Adjust transparency (0-100%)
+- **Blur Effects**: Apply blur effects (0-20px)
+- **Sidebar Toggle**: Include/exclude sidebar from background
+
+## Usage
+
+### Enabling the Plugin
+
+1. Go to Settings → Plugins
+2. Find "Background" plugin
+3. Click "Enable"
+4. Click "Open" to configure
+
+### Interface Overview
+
+![Background Plugin – Controls](/assets/plugins-background-2.png)
+
+### Adding Background Images
+
+#### Online Image URL
+1. Enter direct image URL in "Image URL" field
+2. Supported formats: JPG, PNG, GIF, WebP, SVG
+
+#### Local Image File
+1. Click "Choose Image"
+2. Select image from your computer
+3. Image is automatically processed
+
+### Adjusting Effects
+
+- **Opacity**: 0% (invisible) to 100% (opaque)
+- **Blur**: 0px (sharp) to 20px (blurred)
+- **Sidebar**: Toggle to include/exclude sidebar
+
+## Recommended Settings
+
+### Subtle Background
+```
+Opacity: 15-25%
+Blur: 3-5px
+Include Sidebar: Off
+```
+
+### Artistic Background
+```
+Opacity: 30-50%
+Blur: 8-15px
+Include Sidebar: On
+```
+
+## Troubleshooting
+
+<Callout type="warning">
+**Background Not Appearing**
+- Verify plugin is enabled
+- Check image URL is valid
+- Try different image source
+</Callout>
+
+<Callout type="warning">
+**Performance Issues**
+- Optimize image file size
+- Reduce opacity settings
+- Use smaller image dimensions
+</Callout>
+
+## Learn More
+
+- For technical details (state shape, rendering, implementation), see the developer docs: [Click Here](/docs/developer-docs/plugins/background)

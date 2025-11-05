@@ -6,6 +6,7 @@
 
 mod commands;
 mod download_manager;
+mod discord_rpc;
 mod errors;
 mod ingest_tool;
 mod mod_manager;
@@ -180,6 +181,7 @@ pub fn run() {
     .plugin(tauri_plugin_machine_uid::init());
 
   builder
+    .manage(discord_rpc::DiscordState::new())
     .setup(|app| {
       let handle = app.app_handle();
 
@@ -255,7 +257,10 @@ pub fn run() {
       commands::start_cache_watcher,
       commands::stop_cache_watcher,
       commands::get_ingest_status,
-      commands::initialize_ingest_tool
+      commands::initialize_ingest_tool,
+      commands::set_discord_presence,
+      commands::clear_discord_presence,
+      commands::disconnect_discord
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

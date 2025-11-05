@@ -1,0 +1,16 @@
+{
+  "id": "discord",
+  "nameKey": "plugins.discord.title",
+  "descriptionKey": "plugins.discord.description",
+  "version": "0.0.1",
+  "author": ["Skeptic", "Stormix"],
+  "authorUrl": [
+    "https://github.com/Skeptic-systems",
+    "https://github.com/Stormix"
+  ],
+  "homepageUrl": "https://docs.deadlockmods.app/plugins/discord",
+  "icon": "public/icon.svg",
+  "tags": ["official"],
+  "entry": "./index.tsx",
+  "disabledPlugins": []
+}

@@ -208,7 +208,7 @@ pnpm db:seed
 
 ```bash
 # Analyzer is needed for local API
-cargo build
+pnpm vpk-parser:build
 ```
 
 ### 6. Verify Installation
@@ -258,12 +258,12 @@ pnpm build
 
 ### Build Commands
 
-| Command                       | Description                         |
-| ----------------------------- | ----------------------------------- |
-| `pnpm build`                  | Build all packages and applications |
-| `pnpm --filter desktop build` | Build only desktop application      |
-| `pnpm --filter api build`     | Build only API server               |
-| `cargo build`                 | Build VPK analyzer                  |
+| Command                          | Description                         |
+| -------------------------------- | ----------------------------------- |
+| `pnpm build`                     | Build all packages and applications |
+| `pnpm --filter desktop build`    | Build only desktop application      |
+| `pnpm --filter api build`        | Build only API server               |
+| `pnpm --filter vpk-parser build` | Build VPK analyzer                  |
 
 ## Development Workflow
 

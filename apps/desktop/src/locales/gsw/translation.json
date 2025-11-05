@@ -519,6 +519,85 @@
       "shortDescription": "Short description (optional)"
     }
   },
+  "plugins": {
+    "sudo-new": {
+      "title": "Superuser",
+      "description": "Erwyterti Mod-Verwaltig für erfahrni Nutzer.",
+      "detailedDescription": "Schaltet Entwickler‑Tools und experimentelli Funktione frei. Einigi Aktione chönd Dateie ändere oder Schutz umgoh – drum mit Vorsicht.",
+      "usageInstructions": "Plugin aktiviere, zum Superuser‑Modus aaschalte. Erwyterti Optionä werde sichtbar. Zum Usschalte Plugin wieder deaktiviere.",
+      "instructions": "Links Mods dursueche, eis wybä und mit em rächte Pfiil abe‑ und aktivierä. Rechts e installierti Mod wybä und mit em linke Pfiil lösche. Bäidi Lischtä chönd dürsuächt wärde.",
+      "openAddons": "Addons öffne",
+      "importMod": "Mod importiere",
+      "viewOriginalPost": "Original Forumsbäitrag aaluege",
+      "removeMod": "Mod lösche"
+    },
+    "flashbang": {
+      "title": "Flashbang Modus",
+      "description": "Erzwingt Helli Mod i de aagmässene Ziit.",
+      "detailedDescription": "Dr Flashbang-Modus schaltet d App i de definierte Stunde uf Hell – unabhängig vom Theme.",
+      "usageInstructions": "Plug-in aktivierä und Start-/Endstund (0–23) iistellä.",
+      "startHour": "Startstund (0–23)",
+      "endHour": "Endstund (0–23)"
+    },
+    "background": {
+      "title": "Hintergrund",
+      "description": "Anwendigshintergründ aapasse.",
+      "detailedDescription": "Das Plugin erlaubt dir, benutzerdefinierti Hintergrundbilder für d'ganz Aawendig z'definiere. Du chasch entweder e URL zu meim Online-Bild verwände oder e lokali Bilddatei ufelade. S'Plugin unterstützt Deckkraft- und Unschärfe-Effekt zum Aapasse vom Erscheinigbild. Du chasch au wähle, ob d'Siteleiste im Hintergrund-Effekt iibezoge söll wärde.",
+      "usageInstructions": "So verwändsch das Plugin: 1) Aktiviere s'Plugin mit em Schalter, 2) Gib e Bild-URL ii oder klick uf 'Bild uswähle', zum e lokali Datei ufezlade, 3) Pass d'Deckkraft- und Unschärfe-Iistellige nach Wunsch aa, 4) Aktiviere optional 'Siteleiste iibeziehe', zum de Hintergrund au uf d'Siteleiste aazwände.",
+      "imageUrl": "Bild-URL",
+      "opacity": "Deckkraft",
+      "blur": "Unschärfe",
+      "includeSidebar": "Siteleiste iibeziehe",
+      "chooseImage": "Bild uswähle"
+    },
+    "nightshift": {
+      "description": "Es cyberpunk‑Theme mit türkisfarbige Akzänte für Uebersicht und lengeri Gaming‑Sessione.",
+      "visit": "Nightshift bsueche:",
+      "twitter": "Twitter",
+      "discord": "Discord"
+    },
+    "bloodmoon": {
+      "description": "Es dunkels Theme mit schwarz‑rote Gradiente und karmesinrote Akzänte.",
+      "visit": "Theme vo Skeptic"
+    },
+    "themes": {
+      "title": "Themes",
+      "description": "Eigene Themes erstelle oder kuratiereti Presets verwände.",
+      "settingsDescription": "Usseh verwalte und zwüsche kuratierete Presets oder eigete Stile wähle.",
+      "detailedDescription": "Wechsle s'Gsicht vo dr App mit vorbautä Presets. Wenn es Theme aktiv isch, wird s'Hintergrund‑Plugin automatisch deaktiviert, zum Konflikt verhinderä.",
+      "usageInstructions": "Plugin öffne, unter 'Vordefiniert' es Preset uswähle und 'Aktiviere' drücke. Mit 'Deaktiviere' zum Standard zrugg."
+    },
+    "sudo-old": {
+      "title": "Superuser‑Modus",
+      "description": "Erwiiterti Mod‑Verwaltig für erfahrni Nutzer.",
+      "detailedDescription": "Schaltet Entwickler‑Funktione und experimental Tools frei. Eini Aktione chönd Dateie ändere oder Schutze umgoh – mit Vorsicht bruche.",
+      "usageInstructions": "Plugin aktiviere, zum dr Superuser‑Modus aaschalte. D'Erweitertigä Optionä erscheine in dr App. Zum Usschalte s'Plugin wieder deaktivierä."
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "description": "Zeigt dini Deadlock‑Aktivität uf Discord.",
+      "detailedDescription": "Zeigt dini Aktivität im Deadlock Mod Manager als Rich Presence uf dim Discord‑Profil. Einfach aktiviere und optional Details‑ und Status‑Text apasse.",
+      "usageInstructions": "Plugin aktiviere, denn optional Details‑ und Status‑Text bearbeite.",
+      "applicationId": "Discord Application ID",
+      "optional": "(optional)",
+      "applicationIdDescription": "Kei Iirichtig nötig: Das Plugin brucht unseri offizielli Discord‑Aawendig.",
+      "details": "Details‑Text",
+      "state": "Status‑Text",
+      "largeImageKey": "Grosses Bild‑Schlüssel",
+      "largeImageText": "Grosses Bild‑Text",
+      "smallImageKey": "Chliines Bild‑Schlüssel",
+      "smallImageText": "Chliines Bild‑Text",
+      "showElapsedTime": "Verstricheni Ziit azeige",
+      "showElapsedTimeDescription": "Zeig a, wie lang du de Mod Manager scho bruchsch",
+      "setupGuide": "Iirichtigs‑Aaleitig",
+      "setupStep1": "Bsuech s Discord Developer Portal und erstelle e nöii Aawendig",
+      "setupStep2": "Kopier dini Application ID vo de Site 'General Information'",
+      "setupStep3": "Lade Bilder als Rich Presence Assets mit passende Schlüsselname ufe",
+      "setupStep4": "Füeg dini Application ID obe i und aktiviere s Plugin"
+    },
+    "usageInstructions": "Aaleitig zur Verwendig",
+    "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund"
+  },
   "accessibility": {
     "close": "Close",
     "previousSlide": "Previous slide",
