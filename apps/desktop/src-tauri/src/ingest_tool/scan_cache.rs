@@ -1,7 +1,7 @@
 use crate::ingest_tool::ingestion_cache;
 use crate::ingest_tool::utils::Salts;
 use memchr::{memchr, memmem};
-use notify::event::CreateKind;
+use notify::event::{CreateKind, ModifyKind};
 use notify::{EventKind, RecursiveMode, Watcher};
 use std::fs;
 use std::io::Read;
@@ -154,7 +154,10 @@ pub async fn watch_cache_dir(
     // Use recv_timeout to periodically check the running flag
     match rx.recv_timeout(std::time::Duration::from_secs(10)) {
       Ok(Ok(event)) => {
-        if event.kind != EventKind::Create(CreateKind::File) {
+        if !matches!(
+          event.kind,
+          EventKind::Modify(ModifyKind::Data(_)) | EventKind::Create(CreateKind::File)
+        ) {
           continue;
         }
         // Wait 200ms for the file to be fully written
