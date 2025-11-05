@@ -29,9 +29,9 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -226,7 +226,7 @@ export const AppSidebar = () => {
     (state) => state.enabledPlugins.sudo ?? false,
   );
   const { isEnabled: apiSudoEnabled } = useFeatureFlag("plugin-sudo");
-  
+
   // Plugin is enabled only if both local and feature flag configuration allow it
   const sudoEnabled = localSudoEnabled && apiSudoEnabled;
 

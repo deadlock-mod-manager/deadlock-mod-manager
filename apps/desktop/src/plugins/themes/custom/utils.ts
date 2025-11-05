@@ -28,7 +28,7 @@ export const getUserThemes = (settings: ThemeSettings | undefined) => {
 };
 
 export const deleteUserTheme = (id: string) => {
-  const settings = usePersistedStore.getState().pluginSettings["themes"] as
+  const settings = usePersistedStore.getState().pluginSettings.themes as
     | ThemeSettings
     | undefined;
   const setSettings = usePersistedStore.getState().setPluginSettings;
@@ -40,7 +40,7 @@ export const deleteUserTheme = (id: string) => {
 export const beginEditingUserTheme = (id: string) => {
   const getState = usePersistedStore.getState;
   const setSettings = getState().setPluginSettings;
-  const settings = (getState().pluginSettings["themes"] ?? {}) as ThemeSettings;
+  const settings = (getState().pluginSettings.themes ?? {}) as ThemeSettings;
   const list = Array.isArray(settings.userThemes) ? settings.userThemes : [];
   const theme = list.find((t) => t.id === id);
   if (!theme) return;
@@ -63,7 +63,7 @@ export const beginEditingUserTheme = (id: string) => {
 export const saveEditingUserTheme = () => {
   const getState = usePersistedStore.getState;
   const setSettings = getState().setPluginSettings;
-  const settings = (getState().pluginSettings["themes"] ?? {}) as ThemeSettings;
+  const settings = (getState().pluginSettings.themes ?? {}) as ThemeSettings;
   const id = settings.editingThemeId;
   if (!id) return;
   const list = Array.isArray(settings.userThemes) ? settings.userThemes : [];
@@ -92,6 +92,6 @@ export const saveEditingUserTheme = () => {
 export const cancelEditingUserTheme = () => {
   const getState = usePersistedStore.getState;
   const setSettings = getState().setPluginSettings;
-  const settings = (getState().pluginSettings["themes"] ?? {}) as ThemeSettings;
+  const settings = (getState().pluginSettings.themes ?? {}) as ThemeSettings;
   setSettings("themes", { ...settings, editingThemeId: undefined });
 };

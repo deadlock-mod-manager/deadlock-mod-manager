@@ -19,7 +19,7 @@ import type { CustomExportedTheme, ThemeSettings } from "./types";
 export const ExportCustomThemeButton = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const settings = usePersistedStore((s) => s.pluginSettings["themes"]) as
+  const settings = usePersistedStore((s) => s.pluginSettings.themes) as
     | ThemeSettings
     | undefined;
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
@@ -113,7 +113,9 @@ export const ExportCustomThemeButton = () => {
             </div>
 
             <div className='flex flex-col gap-2'>
-              <Label htmlFor='theme-description'>{t("plugins.themes.description")}</Label>
+              <Label htmlFor='theme-description'>
+                {t("plugins.themes.description")}
+              </Label>
               <Textarea
                 id='theme-description'
                 value={description}
@@ -124,7 +126,9 @@ export const ExportCustomThemeButton = () => {
             </div>
 
             <div className='flex flex-col gap-2'>
-              <Label htmlFor='theme-sub-description'>{t("plugins.themes.subDescription")}</Label>
+              <Label htmlFor='theme-sub-description'>
+                {t("plugins.themes.subDescription")}
+              </Label>
               <Input
                 id='theme-sub-description'
                 value={subDescription}

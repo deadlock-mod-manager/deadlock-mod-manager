@@ -11,15 +11,15 @@ import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
 import {
-  CustomTheme,
   beginEditingUserTheme,
   type CustomExportedTheme,
+  CustomTheme,
   cancelEditingUserTheme,
   deleteUserTheme,
   ExportCustomThemeButton,
   getUserThemes,
-  saveEditingUserTheme,
   LineColorPicker,
+  saveEditingUserTheme,
 } from "./custom";
 import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
@@ -27,7 +27,7 @@ import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
 export const manifest = {
   id: "themes",
   nameKey: "plugins.themes.title",
-  descriptionKey: "plugins.themes.description",
+  descriptionKey: "plugins.themes.themeDescription",
   version: "0.0.1",
   author: "Skeptic",
   icon: "public/icon.png",
@@ -129,7 +129,7 @@ const Settings = () => {
                 }>
                 <CardHeader className='min-h-[120px]'>
                   <CardTitle className='text-lg'>
-                    {"userCreated" in theme && (theme as any).userCreated
+                    {"userCreated" in theme && theme.userCreated
                       ? (theme as CustomExportedTheme).name
                       : (theme as { name: string }).name}
                   </CardTitle>
@@ -236,7 +236,7 @@ const Settings = () => {
                           onClick={() =>
                             setSettings(manifest.id, {
                               ...current,
-                              activeTheme: (theme as any).id,
+                              activeTheme: theme.id,
                             })
                           }
                           className='flex-1'>
@@ -252,14 +252,14 @@ const Settings = () => {
                                 (theme as CustomExportedTheme).id,
                               )
                             }>
-{t("plugins.themes.edit")}
+                            {t("plugins.themes.edit")}
                           </Button>
                           <Button
                             variant='outline'
                             onClick={() =>
                               deleteUserTheme((theme as CustomExportedTheme).id)
                             }>
-{t("plugins.themes.delete")}
+                            {t("plugins.themes.delete")}
                           </Button>
                         </>
                       ) : null}
@@ -300,7 +300,9 @@ const Settings = () => {
 
                 <div className='space-y-3'>
                   <div className='flex items-center gap-3'>
-                    <label className='text-sm font-medium'>{t("plugins.themes.themeIcon")}</label>
+                    <label className='text-sm font-medium'>
+                      {t("plugins.themes.themeIcon")}
+                    </label>
                     <input
                       accept='image/*'
                       id='custom-theme-icon-input'
@@ -398,10 +400,12 @@ const Settings = () => {
                             .getElementById("custom-theme-bg-input")
                             ?.click()
                         }>
-{t("plugins.themes.chooseImage")}
+                        {t("plugins.themes.chooseImage")}
                       </Button>
                       <div className='flex items-center gap-2'>
-                        <span className='text-sm'>{t("plugins.themes.opacity")}</span>
+                        <span className='text-sm'>
+                          {t("plugins.themes.opacity")}
+                        </span>
                         <input
                           type='range'
                           min={0}
@@ -477,20 +481,19 @@ const Settings = () => {
                       customTheme: DEFAULT_SETTINGS.customTheme,
                     })
                   }>
-{t("plugins.themes.clear")}
+                  {t("plugins.themes.clear")}
                 </Button>
-                {"editingThemeId" in current &&
-                (current as any).editingThemeId ? (
+                {"editingThemeId" in current && current.editingThemeId ? (
                   <>
                     <Button
                       variant='default'
                       onClick={() => saveEditingUserTheme()}>
-{t("plugins.themes.save")}
+                      {t("plugins.themes.save")}
                     </Button>
                     <Button
                       variant='outline'
                       onClick={() => cancelEditingUserTheme()}>
-{t("plugins.themes.cancel")}
+                      {t("plugins.themes.cancel")}
                     </Button>
                   </>
                 ) : null}

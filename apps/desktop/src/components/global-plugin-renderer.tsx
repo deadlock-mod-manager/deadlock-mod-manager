@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import logger from "@/lib/logger";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
-import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import type { PluginModule } from "@/plugins/types";
 
 const GlobalPluginRenderer = () => {
@@ -35,7 +35,7 @@ const GlobalPluginRenderer = () => {
       if (!flagEnabled) {
         return false;
       }
-      
+
       // Then check local configuration
       return enabledPlugins[pluginId] ?? false;
     };
@@ -47,10 +47,7 @@ const GlobalPluginRenderer = () => {
       const newLoadedPlugins: Record<string, PluginModule> = {};
 
       for (const plugin of plugins) {
-        if (
-          isPluginEnabled(plugin.manifest.id) &&
-          plugin.entryImporter
-        ) {
+        if (isPluginEnabled(plugin.manifest.id) && plugin.entryImporter) {
           try {
             const mod: unknown = await plugin.entryImporter();
 

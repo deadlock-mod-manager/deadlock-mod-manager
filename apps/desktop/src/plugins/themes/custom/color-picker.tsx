@@ -9,9 +9,9 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
+import { Eyedropper } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Eyedropper } from "@phosphor-icons/react";
 
 export const LineColorPicker = ({
   value,
@@ -32,7 +32,13 @@ export const LineColorPicker = ({
 
   const hexToRgb = useCallback((hexStr: string) => {
     const m = hexStr.replace("#", "");
-    const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
+    const full =
+      m.length === 3
+        ? m
+            .split("")
+            .map((c) => c + c)
+            .join("")
+        : m;
     const bigint = parseInt(full, 16);
     const rr = (bigint >> 16) & 255;
     const gg = (bigint >> 8) & 255;
@@ -41,9 +47,10 @@ export const LineColorPicker = ({
   }, []);
 
   const rgbToHex = useCallback((rr: number, gg: number, bb: number) => {
-    const toHex = (v: number) => Math.max(0, Math.min(255, Math.round(v)))
-      .toString(16)
-      .padStart(2, "0");
+    const toHex = (v: number) =>
+      Math.max(0, Math.min(255, Math.round(v)))
+        .toString(16)
+        .padStart(2, "0");
     return `#${toHex(rr)}${toHex(gg)}${toHex(bb)}`.toLowerCase();
   }, []);
 
@@ -78,21 +85,41 @@ export const LineColorPicker = ({
     const c = vN * sN;
     const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
     const m2 = vN - c;
-    let r1 = 0, g1 = 0, b1 = 0;
+    let r1 = 0,
+      g1 = 0,
+      b1 = 0;
     const hSeg = Math.floor((hh % 360) / 60);
     switch (hSeg) {
       case 0:
-        r1 = c; g1 = x; b1 = 0; break;
+        r1 = c;
+        g1 = x;
+        b1 = 0;
+        break;
       case 1:
-        r1 = x; g1 = c; b1 = 0; break;
+        r1 = x;
+        g1 = c;
+        b1 = 0;
+        break;
       case 2:
-        r1 = 0; g1 = c; b1 = x; break;
+        r1 = 0;
+        g1 = c;
+        b1 = x;
+        break;
       case 3:
-        r1 = 0; g1 = x; b1 = c; break;
+        r1 = 0;
+        g1 = x;
+        b1 = c;
+        break;
       case 4:
-        r1 = x; g1 = 0; b1 = c; break;
+        r1 = x;
+        g1 = 0;
+        b1 = c;
+        break;
       default:
-        r1 = c; g1 = 0; b1 = x; break;
+        r1 = c;
+        g1 = 0;
+        b1 = x;
+        break;
     }
     return {
       r: Math.round((r1 + m2) * 255),
@@ -135,7 +162,9 @@ export const LineColorPicker = ({
 
   return (
     <div className='flex items-center gap-3'>
-      <label className='text-sm font-medium'>{t("plugins.themes.lineColor")}</label>
+      <label className='text-sm font-medium'>
+        {t("plugins.themes.lineColor")}
+      </label>
       <div className='inline-flex items-center justify-center rounded-md border border-input/70 p-1 leading-none'>
         <button
           type='button'
@@ -149,7 +178,9 @@ export const LineColorPicker = ({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className='sm:max-w-[500px]'>
           <DialogHeader>
-            <DialogTitle>{t("plugins.themes.lineColorDialogTitle")}</DialogTitle>
+            <DialogTitle>
+              {t("plugins.themes.lineColorDialogTitle")}
+            </DialogTitle>
             <DialogDescription>
               {t("plugins.themes.lineColorDialogDescription")}
             </DialogDescription>
@@ -187,9 +218,21 @@ export const LineColorPicker = ({
                 ref={svRef}
                 onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
                   const move = (ev: MouseEvent) => {
-                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                    const x = ev.clientX - rect.left < 0 ? 0 : ev.clientX - rect.left > rect.width ? rect.width : ev.clientX - rect.left;
-                    const y = ev.clientY - rect.top < 0 ? 0 : ev.clientY - rect.top > rect.height ? rect.height : ev.clientY - rect.top;
+                    const rect = (
+                      e.currentTarget as HTMLDivElement
+                    ).getBoundingClientRect();
+                    const x =
+                      ev.clientX - rect.left < 0
+                        ? 0
+                        : ev.clientX - rect.left > rect.width
+                          ? rect.width
+                          : ev.clientX - rect.left;
+                    const y =
+                      ev.clientY - rect.top < 0
+                        ? 0
+                        : ev.clientY - rect.top > rect.height
+                          ? rect.height
+                          : ev.clientY - rect.top;
                     const sN = Math.round((x / rect.width) * 100);
                     const vN = Math.round(100 - (y / rect.height) * 100);
                     setS(sN);
@@ -204,20 +247,44 @@ export const LineColorPicker = ({
                   window.addEventListener("mouseup", up);
                 }}
                 onTouchStart={(e) => {
-                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                  const rect = (
+                    e.currentTarget as HTMLDivElement
+                  ).getBoundingClientRect();
                   const touch = e.touches[0];
-                  const x = touch.clientX - rect.left < 0 ? 0 : touch.clientX - rect.left > rect.width ? rect.width : touch.clientX - rect.left;
-                  const y = touch.clientY - rect.top < 0 ? 0 : touch.clientY - rect.top > rect.height ? rect.height : touch.clientY - rect.top;
+                  const x =
+                    touch.clientX - rect.left < 0
+                      ? 0
+                      : touch.clientX - rect.left > rect.width
+                        ? rect.width
+                        : touch.clientX - rect.left;
+                  const y =
+                    touch.clientY - rect.top < 0
+                      ? 0
+                      : touch.clientY - rect.top > rect.height
+                        ? rect.height
+                        : touch.clientY - rect.top;
                   const sN = Math.round((x / rect.width) * 100);
                   const vN = Math.round(100 - (y / rect.height) * 100);
                   setS(sN);
                   setV(vN);
                 }}
                 onTouchMove={(e) => {
-                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                  const rect = (
+                    e.currentTarget as HTMLDivElement
+                  ).getBoundingClientRect();
                   const touch = e.touches[0];
-                  const x = touch.clientX - rect.left < 0 ? 0 : touch.clientX - rect.left > rect.width ? rect.width : touch.clientX - rect.left;
-                  const y = touch.clientY - rect.top < 0 ? 0 : touch.clientY - rect.top > rect.height ? rect.height : touch.clientY - rect.top;
+                  const x =
+                    touch.clientX - rect.left < 0
+                      ? 0
+                      : touch.clientX - rect.left > rect.width
+                        ? rect.width
+                        : touch.clientX - rect.left;
+                  const y =
+                    touch.clientY - rect.top < 0
+                      ? 0
+                      : touch.clientY - rect.top > rect.height
+                        ? rect.height
+                        : touch.clientY - rect.top;
                   const sN = Math.round((x / rect.width) * 100);
                   const vN = Math.round(100 - (y / rect.height) * 100);
                   setS(sN);
@@ -238,9 +305,16 @@ export const LineColorPicker = ({
               <div
                 className='h-3 w-full rounded-md border relative cursor-pointer'
                 onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
-                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                  const rect = (
+                    e.currentTarget as HTMLDivElement
+                  ).getBoundingClientRect();
                   const move = (ev: MouseEvent) => {
-                    const x = ev.clientX - rect.left < 0 ? 0 : ev.clientX - rect.left > rect.width ? rect.width : ev.clientX - rect.left;
+                    const x =
+                      ev.clientX - rect.left < 0
+                        ? 0
+                        : ev.clientX - rect.left > rect.width
+                          ? rect.width
+                          : ev.clientX - rect.left;
                     const hh = Math.round((x / rect.width) * 360);
                     setH(hh);
                   };
@@ -270,10 +344,15 @@ export const LineColorPicker = ({
                   inputMode='numeric'
                   value={r}
                   onChange={(e) => {
-                    const n = Math.max(0, Math.min(255, Number(e.target.value || 0)));
+                    const n = Math.max(
+                      0,
+                      Math.min(255, Number(e.target.value || 0)),
+                    );
                     setR(n);
                     const { h: hh, s: ss, v: vv } = rgbToHsv(n, g, b);
-                    setH(hh); setS(ss); setV(vv);
+                    setH(hh);
+                    setS(ss);
+                    setV(vv);
                   }}
                 />
               </div>
@@ -283,10 +362,15 @@ export const LineColorPicker = ({
                   inputMode='numeric'
                   value={g}
                   onChange={(e) => {
-                    const n = Math.max(0, Math.min(255, Number(e.target.value || 0)));
+                    const n = Math.max(
+                      0,
+                      Math.min(255, Number(e.target.value || 0)),
+                    );
                     setG(n);
                     const { h: hh, s: ss, v: vv } = rgbToHsv(r, n, b);
-                    setH(hh); setS(ss); setV(vv);
+                    setH(hh);
+                    setS(ss);
+                    setV(vv);
                   }}
                 />
               </div>
@@ -296,10 +380,15 @@ export const LineColorPicker = ({
                   inputMode='numeric'
                   value={b}
                   onChange={(e) => {
-                    const n = Math.max(0, Math.min(255, Number(e.target.value || 0)));
+                    const n = Math.max(
+                      0,
+                      Math.min(255, Number(e.target.value || 0)),
+                    );
                     setB(n);
                     const { h: hh, s: ss, v: vv } = rgbToHsv(r, g, n);
-                    setH(hh); setS(ss); setV(vv);
+                    setH(hh);
+                    setS(ss);
+                    setV(vv);
                   }}
                 />
               </div>

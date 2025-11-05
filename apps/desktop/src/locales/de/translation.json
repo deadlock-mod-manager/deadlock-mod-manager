@@ -629,7 +629,7 @@
   "plugins": {
     "themes": {
       "title": "Themes",
-      "description": "Erstelle eigene Themes oder nutze kuratierte Presets.",
+      "themeDescription": "Erstelle eigene Themes oder nutze kuratierte Presets.",
       "settingsDescription": "Passe das Erscheinungsbild an und wähle zwischen kuratierten Presets oder eigenen Stilen.",
       "detailedDescription": "Wechsle den Look der App mit kuratierten Presets. Während ein Theme aktiv ist, wird das Hintergrund‑Plugin automatisch deaktiviert, um visuelle Konflikte zu vermeiden.",
       "usageInstructions": "Plugin öffnen, unter 'Vordefinierte Themes' ein Preset wählen und Aktivieren drücken. Mit Deaktivieren zum Standard‑Look zurückkehren.",

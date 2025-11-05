@@ -6,12 +6,10 @@ import type { CustomThemeProps, ThemeSettings } from "./types";
 import { getActiveThemeConfig } from "./utils";
 
 const CustomTheme = ({ theme }: CustomThemeProps) => {
-  const settings = usePersistedStore((s) => s.pluginSettings["themes"]) as
+  const settings = usePersistedStore((s) => s.pluginSettings.themes) as
     | ThemeSettings
     | undefined;
-  const isEnabled = usePersistedStore(
-    (s) => s.enabledPlugins["themes"] ?? false,
-  );
+  const isEnabled = usePersistedStore((s) => s.enabledPlugins.themes ?? false);
   const current: ThemeSettings = settings ?? {
     activeSection: "custom",
     activeTheme: "custom",

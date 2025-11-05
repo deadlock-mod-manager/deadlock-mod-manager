@@ -1,6 +1,11 @@
+export { LineColorPicker } from "./color-picker";
 export { default as CustomTheme } from "./custom-theme";
 export { ExportCustomThemeButton } from "./export-dialog";
-export { LineColorPicker } from "./color-picker";
+export type {
+  CustomExportedTheme,
+  CustomThemeProps,
+  ThemeSettings,
+} from "./types";
 export {
   beginEditingUserTheme,
   cancelEditingUserTheme,
@@ -8,4 +13,3 @@ export {
   getUserThemes,
   saveEditingUserTheme,
 } from "./utils";
-export type { CustomExportedTheme, CustomThemeProps, ThemeSettings } from "./types";

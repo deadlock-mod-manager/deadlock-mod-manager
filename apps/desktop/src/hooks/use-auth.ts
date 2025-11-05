@@ -10,7 +10,7 @@ import { usePersistedStore } from "@/lib/store";
 import type { Session, User } from "@/lib/store/slices/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
-const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3001";
+const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3003";
 
 export const useAuth = () => {
   const queryClient = useQueryClient();

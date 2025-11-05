@@ -1,7 +1,7 @@
 {
   "id": "themes",
   "nameKey": "plugins.themes.title",
-  "descriptionKey": "plugins.themes.description",
+  "descriptionKey": "plugins.themes.themeDescription",
   "version": "0.0.1",
   "author": "Skeptic",
   "authorUrl": "https://github.com/Skeptic-systems",

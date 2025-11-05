@@ -720,7 +720,7 @@
   "plugins": {
     "themes": {
       "title": "Themes",
-      "description": "Create your own themes or use curated presets.",
+      "themeDescription": "Create your own themes or use curated presets.",
       "settingsDescription": "Adjust appearance options and choose between curated presets or custom styles.",
       "detailedDescription": "Switch the app's visual style using curated presets. While a theme is active, the Background plugin is automatically disabled to avoid visual conflicts.",
       "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look.",

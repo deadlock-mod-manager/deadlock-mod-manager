@@ -11,9 +11,9 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
-import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import type { LoadedPlugin } from "@/types/plugins";
 
 export const PluginList = () => {
