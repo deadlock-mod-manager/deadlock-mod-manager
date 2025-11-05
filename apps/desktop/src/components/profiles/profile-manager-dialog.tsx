@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
@@ -172,7 +173,7 @@ export const ProfileManagerDialog = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-          <div className='flex items-center py-4 gap-4'>
+          <div className='flex items-center  gap-4'>
             <DialogHeader className='flex-1'>
               <DialogTitle className='flex items-center space-x-2'>
                 <Users className='w-5 h-5' />
@@ -182,26 +183,11 @@ export const ProfileManagerDialog = ({
                 {t("profiles.manageDescription")}
               </DialogDescription>
             </DialogHeader>
-            <div className='flex items-center gap-2'>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                icon={<Plus className='w-4 h-4' />}>
-                {t("profiles.createNew")}
-              </Button>
-              <ProfileImportDialog />
-            </div>
           </div>
-
           <div className='flex-1 overflow-auto'>
             <div className='grid gap-4 pb-4'>
               {profiles.map((profile) => (
-                <Card
-                  key={profile.id}
-                  className={`transition-all duration-200 hover:shadow-md ${
-                    profile.id === activeProfile?.id
-                      ? "ring-2 ring-primary/50 shadow-sm"
-                      : ""
-                  }`}>
+                <Card key={profile.id}>
                   <CardHeader className='pb-3'>
                     <div className='flex items-start justify-between'>
                       <div className='flex-1 min-w-0'>
@@ -219,6 +205,12 @@ export const ProfileManagerDialog = ({
                               {t("profiles.default")}
                             </Badge>
                           )}
+                          <Button
+                            variant='transparent'
+                            size='sm'
+                            onClick={() => setEditingProfile(profile.id)}>
+                            <Edit className='w-4 h-4' />
+                          </Button>
                         </div>
                         {profile.description && (
                           <p className='text-sm text-muted-foreground line-clamp-2'>
@@ -243,12 +235,6 @@ export const ProfileManagerDialog = ({
                               : "Inactive"}
                           </span>
                         </div>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => setEditingProfile(profile.id)}>
-                          <Edit className='w-4 h-4' />
-                        </Button>
                         {!profile.isDefault && (
                           <Button
                             variant='outline'
@@ -337,6 +323,14 @@ export const ProfileManagerDialog = ({
               ))}
             </div>
           </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              icon={<Plus className='w-4 h-4' />}>
+              {t("profiles.createNew")}
+            </Button>
+            <ProfileImportDialog />
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

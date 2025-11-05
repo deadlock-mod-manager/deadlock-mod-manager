@@ -164,8 +164,10 @@ export const getApiHealth = async () => {
 };
 
 // Local addon analysis functions
-export const analyzeLocalAddons = async (): Promise<AnalyzeAddonsResult> => {
-  return await invoke("analyze_local_addons");
+export const analyzeLocalAddons = async (
+  profileFolder: string | null = null,
+): Promise<AnalyzeAddonsResult> => {
+  return await invoke("analyze_local_addons", { profileFolder });
 };
 
 // Hash analysis for mod identification

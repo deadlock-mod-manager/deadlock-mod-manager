@@ -9,8 +9,12 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const useUninstall = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const { removeMod, setModStatus, setModEnabledInCurrentProfile } =
-    usePersistedStore();
+  const {
+    removeMod,
+    setModStatus,
+    setModEnabledInCurrentProfile,
+    getActiveProfile,
+  } = usePersistedStore();
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {
@@ -48,20 +52,26 @@ const useUninstall = () => {
         return;
       }
 
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       if (mod.status === ModStatus.Installed) {
         logger.info("Uninstalling mod", {
           modId: mod.remoteId,
           vpks: mod.installedVpks,
+          profileFolder,
         });
         if (remove) {
           await invoke("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
+            profileFolder,
           });
         } else {
           await invoke("uninstall_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
+            profileFolder,
           });
         }
         setModStatus(mod.remoteId, ModStatus.Downloaded);

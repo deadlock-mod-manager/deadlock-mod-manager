@@ -14,6 +14,7 @@ export interface ModProfile {
   lastUsed?: Date;
   enabledMods: Record<string, ModProfileEntry>;
   isDefault: boolean;
+  folderName: string | null;
 }
 
 export interface ProfileSwitchResult {

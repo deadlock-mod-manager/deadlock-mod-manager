@@ -30,14 +30,15 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
-        // If migrating from version 1 to 2, preserve existing data and add profiles
+        const state = persistedState as Record<string, unknown>;
+
+        // Migration from version 1 to 2: Add profiles system
         if (version === 1) {
           console.log("Migrating from version 1 to 2");
-          const state = persistedState as Record<string, unknown>;
           const now = new Date();
 
           // Build enabledMods from currently installed mods
@@ -61,24 +62,56 @@ export const usePersistedStore = create<State>()(
             });
           }
 
-          return {
-            ...(persistedState as Record<string, unknown>),
-            profiles: {
-              default: {
-                id: "default",
-                name: "Default Profile",
-                description: "The default mod profile",
-                createdAt: now,
-                lastUsed: now,
-                enabledMods,
-                isDefault: true,
-              },
+          state.profiles = {
+            default: {
+              id: "default",
+              name: "Default Profile",
+              description: "The default mod profile",
+              createdAt: now,
+              lastUsed: now,
+              enabledMods,
+              isDefault: true,
             },
-            activeProfileId: "default",
-            isSwitching: false,
           };
+          state.activeProfileId = "default";
+          state.isSwitching = false;
         }
-        return persistedState;
+
+        // Migration from version 2 to 3: Add folderName to profiles
+        if (version <= 2) {
+          console.log(
+            "Migrating from version 2 to 3: Adding folderName to profiles",
+          );
+          const profiles = state.profiles as Record<string, unknown>;
+
+          if (profiles && typeof profiles === "object") {
+            for (const [profileId, profile] of Object.entries(profiles)) {
+              const profileObj = profile as Record<string, unknown>;
+
+              // Default profile gets null folderName (uses root addons)
+              if (profileId === "default" || profileObj.isDefault === true) {
+                profileObj.folderName = null;
+              } else {
+                // Non-default profiles: generate folder name from profile ID and name
+                // Use existing profile ID as-is (it should already be formatted correctly)
+                const profileName =
+                  typeof profileObj.name === "string"
+                    ? profileObj.name
+                    : "profile";
+
+                // Sanitize name for folder
+                const sanitizedName = profileName
+                  .toLowerCase()
+                  .replace(/[^a-z0-9-_]/g, "-")
+                  .replace(/^-+|-+$/g, "");
+
+                profileObj.folderName = `${profileId}_${sanitizedName}`;
+              }
+            }
+          }
+        }
+
+        return state;
       },
       partialize: (state) => {
         // Only include stable state that should be persisted

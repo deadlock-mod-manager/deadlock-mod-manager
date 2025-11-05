@@ -10,6 +10,7 @@ import { FolderOpen } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
+import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 interface ModContextMenuProps {
@@ -19,6 +20,7 @@ interface ModContextMenuProps {
 
 export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
   const { t } = useTranslation();
+  const { getActiveProfile } = usePersistedStore();
 
   const handleShareMod = async () => {
     if (mod.remoteUrl) {
@@ -35,8 +37,14 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
 
   const handleOpenInGame = async () => {
     try {
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       if (mod.installedVpks && mod.installedVpks.length > 0) {
-        await invoke("show_mod_in_game", { vpkFiles: mod.installedVpks });
+        await invoke("show_mod_in_game", {
+          vpkFiles: mod.installedVpks,
+          profileFolder,
+        });
         toast.success(t("contextMenu.openedModInGame"));
       } else {
         await invoke("open_game_folder");

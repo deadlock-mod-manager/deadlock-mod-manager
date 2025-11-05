@@ -22,6 +22,7 @@ pub struct DownloadTask {
   pub mod_id: String,
   pub files: Vec<DownloadFileDto>,
   pub target_dir: PathBuf,
+  pub profile_folder: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -360,7 +361,26 @@ impl DownloadManager {
       (game_path, mod_files_cache)
     };
 
-    let addons_path = game_path.join("game").join("citadel").join("addons");
+    let addons_path = if let Some(ref profile_folder) = task.profile_folder {
+      game_path
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .join(profile_folder)
+    } else {
+      game_path.join("game").join("citadel").join("addons")
+    };
+
+    log::info!(
+      "Using addons path for profile: {addons_path:?} (profile_folder: {:?})",
+      task.profile_folder
+    );
+
+    // Create addons directory if it doesn't exist (for profile folders)
+    if !addons_path.exists() {
+      log::info!("Creating addons directory: {addons_path:?}");
+      std::fs::create_dir_all(&addons_path)?;
+    }
 
     // Create cache directory
     if !mod_files_cache.exists() {

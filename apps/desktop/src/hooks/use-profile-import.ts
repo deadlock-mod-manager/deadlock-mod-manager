@@ -208,10 +208,16 @@ export const useProfileImport = () => {
     });
 
     // Create new profile
-    const newProfileId = createProfile(
+    const newProfileId = await createProfile(
       `Imported Profile - ${new Date().toLocaleDateString()}`,
       "Profile imported from shared profile ID",
     );
+
+    if (!newProfileId) {
+      logger.error("Failed to create profile for import");
+      setImportProgress(null);
+      throw new Error("Failed to create profile");
+    }
 
     logger.info("Created new profile for import", {
       profileId: newProfileId,

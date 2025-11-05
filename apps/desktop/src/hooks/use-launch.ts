@@ -6,7 +6,7 @@ import { getAdditionalArgs } from "@/lib/utils";
 import type { ErrorKind } from "@/types/tauri";
 
 export const useLaunch = () => {
-  const { settings } = usePersistedStore();
+  const { settings, getActiveProfile } = usePersistedStore();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -15,12 +15,18 @@ export const useLaunch = () => {
    */
   const launch = async (vanilla = false) => {
     try {
+      const activeProfile = getActiveProfile();
+      const profileFolder = vanilla
+        ? null
+        : (activeProfile?.folderName ?? null);
+
       await invoke("start_game", {
         vanilla,
         additionalArgs:
           vanilla && launchVanillaNoArgs
             ? ""
             : getAdditionalArgs(Object.values(settings)),
+        profileFolder,
       });
     } catch (error) {
       logger.error(error);

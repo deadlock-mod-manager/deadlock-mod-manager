@@ -133,6 +133,11 @@ class DownloadManager {
       files: mod.downloads.length,
     });
 
+    // Get active profile folder
+    const { usePersistedStore } = await import("../store");
+    const activeProfile = usePersistedStore.getState().getActiveProfile();
+    const profileFolder = activeProfile?.folderName ?? null;
+
     await invoke("queue_download", {
       modId: mod.remoteId,
       files: mod.downloads.map((d) => ({
@@ -140,6 +145,7 @@ class DownloadManager {
         name: d.name,
         size: d.size || 0,
       })),
+      profileFolder,
     });
   }
 

@@ -178,9 +178,13 @@ const SudoPage = () => {
     const s = usePersistedStore.getState();
     try {
       if (selectedLocal.status === ModStatus.Installed) {
+        const activeProfile = s.getActiveProfile();
+        const profileFolder = activeProfile?.folderName ?? null;
+
         await (await import("@tauri-apps/api/core")).invoke("purge_mod", {
           modId: selectedLocal.remoteId,
           vpks: selectedLocal.installedVpks ?? [],
+          profileFolder,
         });
       }
     } catch {}
@@ -202,7 +206,12 @@ const SudoPage = () => {
           onClick={async () => {
             try {
               const { invoke } = await import("@tauri-apps/api/core");
-              await invoke("open_mods_folder");
+              const { usePersistedStore } = await import("@/lib/store");
+              const activeProfile = usePersistedStore
+                .getState()
+                .getActiveProfile();
+              const profileFolder = activeProfile?.folderName ?? null;
+              await invoke("open_mods_folder", { profileFolder });
             } catch {}
           }}>
           {t("plugins.sudo.openAddons")}

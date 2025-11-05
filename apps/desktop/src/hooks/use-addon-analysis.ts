@@ -12,6 +12,7 @@ import type { AddonAnalysisProgress } from "@/types/mods";
 export const useAddonAnalysis = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
+  const { getActiveProfile } = usePersistedStore();
   const [progress, setProgress] = useState<AddonAnalysisProgress | null>(null);
   const [showProgressToast, setShowProgressToast] = useState(false);
   const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(
@@ -180,7 +181,10 @@ export const useAddonAnalysis = () => {
 
     analytics.trackAddonAnalysisStarted(0);
 
-    analyzeAddons();
+    const activeProfile = getActiveProfile();
+    const profileFolder = activeProfile?.folderName ?? null;
+
+    analyzeAddons(profileFolder);
   };
 
   const dismissProgressToast = () => {

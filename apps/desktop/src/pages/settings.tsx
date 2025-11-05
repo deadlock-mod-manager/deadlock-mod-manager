@@ -165,7 +165,7 @@ const CustomSettingsData = () => {
 
 const CustomSettings = () => {
   const { t } = useTranslation();
-  const { clearMods, localMods: mods } = usePersistedStore();
+  const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
@@ -174,7 +174,6 @@ const CustomSettings = () => {
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
   const { isEnabled: showPlugins } = useFeatureFlag("show-plugins");
-
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
@@ -192,11 +191,15 @@ const CustomSettings = () => {
       return;
     }
     try {
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       await Promise.all(
         mods.map((mod) =>
           invoke("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
+            profileFolder,
           }),
         ),
       );
@@ -401,7 +404,11 @@ const CustomSettings = () => {
                   </Button>
                   <Button
                     className='w-fit'
-                    onClick={() => invoke("open_mods_folder")}
+                    onClick={async () => {
+                      const activeProfile = getActiveProfile();
+                      const profileFolder = activeProfile?.folderName ?? null;
+                      await invoke("open_mods_folder", { profileFolder });
+                    }}
                     variant='outline'>
                     <FolderOpen className='h-4 w-4' />
                     {t("settings.openModsFolder")}

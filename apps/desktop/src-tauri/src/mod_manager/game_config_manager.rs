@@ -713,6 +713,140 @@ impl GameConfigManager {
     self.game_setup
   }
 
+  /// Generate modded search paths with a custom profile folder
+  fn generate_modded_search_paths(profile_folder: Option<String>) -> String {
+    let addons_path = if let Some(folder) = profile_folder {
+      format!("citadel/addons/{}", folder)
+    } else {
+      "citadel/addons".to_string()
+    };
+
+    format!(
+      r#"
+		SearchPaths
+        {{  
+            Game                {}
+            Mod                 citadel
+            Write               citadel          
+            Game                citadel
+            Mod                 core
+            Write               core
+            Game                core        
+        }}"#,
+      addons_path
+    )
+  }
+
+  /// Update the mod path in gameinfo.gi for profile switching
+  pub fn update_mod_path(
+    &mut self,
+    game_path: &Path,
+    profile_folder: Option<String>,
+  ) -> Result<(), Error> {
+    log::info!("Updating mod path for profile folder: {profile_folder:?}");
+
+    if !self.game_setup {
+      log::info!("Game not setup yet, setting up for mods...");
+      self.setup_game_for_mods(game_path)?;
+    }
+
+    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+    // Validate file exists and syntax before modification
+    let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
+    if !validation.is_valid {
+      log::error!("Cannot modify invalid gameinfo.gi: {:?}", validation.errors);
+      return Err(Error::GameConfigParse(format!(
+        "gameinfo.gi validation failed: {}",
+        validation.errors.join(", ")
+      )));
+    }
+
+    // Read current content
+    let gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+
+    // Create backup if it doesn't exist
+    let backup_path = gameinfo_path.with_extension("gi.bak");
+    if !backup_path.exists() {
+      log::info!("Creating backup: {backup_path:?}");
+      fs::copy(&gameinfo_path, &backup_path)?;
+    }
+
+    // Find the mod manager section to replace
+    let (section_start, section_end, _section_content) =
+      if let Some(start_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
+        if let Some(end_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_END) {
+          let end_pos = end_pos + MOD_MANAGER_MARKER_END.len();
+          (start_pos, end_pos, &gameinfo_content[start_pos..end_pos])
+        } else {
+          log::warn!(
+            "Found start marker but not end marker, replacing from marker to end of SearchPaths"
+          );
+          let search_paths_end = gameinfo_content[start_pos..]
+            .find("}")
+            .map(|pos| start_pos + pos + 1)
+            .unwrap_or(gameinfo_content.len());
+          (
+            start_pos,
+            search_paths_end,
+            &gameinfo_content[start_pos..search_paths_end],
+          )
+        }
+      } else {
+        return Err(Error::GameConfigParse(
+          "Mod manager markers not found in gameinfo.gi. Game may not be set up for mods yet."
+            .to_string(),
+        ));
+      };
+
+    // Generate the replacement content with the new path
+    let modded_search_paths = Self::generate_modded_search_paths(profile_folder.clone());
+    let replacement_content =
+      format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
+
+    // Replace the section
+    let mut new_gameinfo_content = gameinfo_content.clone();
+    new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+
+    // Validate the new content before writing
+    let temp_path = gameinfo_path.with_extension("gi.tmp");
+    fs::write(&temp_path, &new_gameinfo_content)?;
+
+    let temp_validation = self.validate_gameinfo_syntax(&temp_path)?;
+    fs::remove_file(&temp_path)?;
+
+    if !temp_validation.is_valid {
+      log::error!("Generated content is invalid: {:?}", temp_validation.errors);
+      return Err(Error::GameConfigParse(format!(
+        "Generated gameinfo.gi would be invalid: {}",
+        temp_validation.errors.join(", ")
+      )));
+    }
+
+    log::info!("Writing updated gameinfo.gi with profile path");
+    fs::write(&gameinfo_path, &new_gameinfo_content)?;
+
+    // Final validation
+    let final_validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
+    if !final_validation.is_valid {
+      log::error!("Final validation failed: {:?}", final_validation.errors);
+
+      // Try to restore backup
+      if backup_path.exists() {
+        log::info!("Restoring backup due to validation failure");
+        fs::copy(&backup_path, &gameinfo_path)?;
+      }
+
+      return Err(Error::GameConfigParse(format!(
+        "Final validation failed: {}",
+        final_validation.errors.join(", ")
+      )));
+    }
+
+    log::info!("Successfully updated mod path to profile: {profile_folder:?}");
+    Ok(())
+  }
+
   /// Get the paths for game configuration files
   /// Validate that all required game files exist for mod installation
   pub fn validate_game_files(&self, game_path: &Path) -> Result<(), Error> {

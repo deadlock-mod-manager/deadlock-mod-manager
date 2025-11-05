@@ -187,9 +187,9 @@ pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
 }
 
 #[tauri::command]
-pub async fn install_mod(deadlock_mod: Mod) -> Result<Mod, Error> {
+pub async fn install_mod(deadlock_mod: Mod, profile_folder: Option<String>) -> Result<Mod, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.install_mod(deadlock_mod)
+  mod_manager.install_mod(deadlock_mod, profile_folder)
 }
 
 #[tauri::command]
@@ -199,10 +199,19 @@ pub async fn stop_game() -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn start_game(vanilla: bool, additional_args: String) -> Result<(), Error> {
+pub async fn start_game(
+  vanilla: bool,
+  additional_args: String,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  log::info!("Starting game with args: {additional_args:?} (vanilla: {vanilla:?})");
-  mod_manager.run_game(vanilla, additional_args)
+  log::info!(
+    "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
+    additional_args,
+    vanilla,
+    profile_folder
+  );
+  mod_manager.run_game(vanilla, additional_args, profile_folder)
 }
 
 #[tauri::command]
@@ -224,13 +233,25 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn show_mod_in_game(vpk_files: Vec<String>) -> Result<(), Error> {
+pub async fn show_mod_in_game(
+  vpk_files: Vec<String>,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
     .get_steam_manager()
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
-  let addons_path = game_path.join("game").join("citadel").join("addons");
+
+  let addons_path = if let Some(ref folder) = profile_folder {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(folder)
+  } else {
+    game_path.join("game").join("citadel").join("addons")
+  };
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);
@@ -250,15 +271,15 @@ pub async fn show_mod_in_game(vpk_files: Vec<String>) -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn clear_mods() -> Result<(), Error> {
+pub async fn clear_mods(profile_folder: Option<String>) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.clear_mods()
+  mod_manager.clear_mods(profile_folder)
 }
 
 #[tauri::command]
-pub async fn open_mods_folder() -> Result<(), Error> {
+pub async fn open_mods_folder(profile_folder: Option<String>) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  mod_manager.open_mods_folder()
+  mod_manager.open_mods_folder(profile_folder)
 }
 
 #[tauri::command]
@@ -268,29 +289,41 @@ pub async fn open_game_folder() -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn uninstall_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+pub async fn uninstall_mod(
+  mod_id: String,
+  vpks: Vec<String>,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.uninstall_mod(mod_id, vpks)
+  mod_manager.uninstall_mod(mod_id, vpks, profile_folder)
 }
 
 #[tauri::command]
-pub async fn purge_mod(mod_id: String, vpks: Vec<String>) -> Result<(), Error> {
+pub async fn purge_mod(
+  mod_id: String,
+  vpks: Vec<String>,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.purge_mod(mod_id, vpks)
+  mod_manager.purge_mod(mod_id, vpks, profile_folder)
 }
 
 #[tauri::command]
-pub async fn reorder_mods(mod_order_data: Vec<(String, u32)>) -> Result<Vec<Mod>, Error> {
+pub async fn reorder_mods(
+  mod_order_data: Vec<(String, u32)>,
+  profile_folder: Option<String>,
+) -> Result<Vec<Mod>, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.reorder_mods(mod_order_data)
+  mod_manager.reorder_mods(mod_order_data, profile_folder)
 }
 
 #[tauri::command]
 pub async fn reorder_mods_by_remote_id(
   mod_order_data: Vec<(String, Vec<String>, u32)>,
+  profile_folder: Option<String>,
 ) -> Result<Vec<(String, Vec<String>)>, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.reorder_mods_by_remote_id(mod_order_data)
+  mod_manager.reorder_mods_by_remote_id(mod_order_data, profile_folder)
 }
 
 #[tauri::command]
@@ -520,7 +553,7 @@ pub fn parse_vpk_file(
 }
 
 #[tauri::command]
-pub async fn check_addons_exist() -> Result<bool, Error> {
+pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = match mod_manager.get_steam_manager().get_game_path() {
     Some(path) => path.clone(),
@@ -528,7 +561,15 @@ pub async fn check_addons_exist() -> Result<bool, Error> {
   };
   drop(mod_manager);
 
-  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let addons_path = if let Some(ref folder) = profile_folder {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(folder)
+  } else {
+    game_path.join("game").join("citadel").join("addons")
+  };
 
   if !addons_path.exists() {
     return Ok(false);
@@ -546,7 +587,10 @@ pub async fn check_addons_exist() -> Result<bool, Error> {
 }
 
 #[tauri::command]
-pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddonsResult, Error> {
+pub async fn analyze_local_addons(
+  app_handle: AppHandle,
+  profile_folder: Option<String>,
+) -> Result<AnalyzeAddonsResult, Error> {
   // Get the game path first, then release the lock
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
@@ -558,7 +602,7 @@ pub async fn analyze_local_addons(app_handle: AppHandle) -> Result<AnalyzeAddons
 
   let analyzer = AddonAnalyzer::new();
   let result = analyzer
-    .analyze_local_addons(game_path, Some(app_handle))
+    .analyze_local_addons(game_path, profile_folder, Some(app_handle))
     .await?;
   Ok(result)
 }
@@ -713,9 +757,10 @@ pub async fn queue_download(
   app_handle: AppHandle,
   mod_id: String,
   files: Vec<DownloadFileDto>,
+  profile_folder: Option<String>,
 ) -> Result<(), Error> {
   log::info!(
-    "Received download request for mod: {mod_id} with {} files",
+    "Received download request for mod: {mod_id} with {} files (profile: {profile_folder:?})",
     files.len()
   );
 
@@ -730,6 +775,7 @@ pub async fn queue_download(
     mod_id,
     files,
     target_dir,
+    profile_folder,
   };
 
   let manager = get_download_manager(app_handle).await;
@@ -762,9 +808,10 @@ pub async fn replace_mod_vpks(
   mod_id: String,
   source_vpk_paths: Vec<String>,
   installed_vpks: Option<Vec<String>>,
+  profile_folder: Option<String>,
 ) -> Result<(), Error> {
   log::info!(
-    "Replacing VPK files for mod {mod_id}: {} files",
+    "Replacing VPK files for mod {mod_id}: {} files (profile: {profile_folder:?})",
     source_vpk_paths.len()
   );
 
@@ -784,9 +831,124 @@ pub async fn replace_mod_vpks(
   }
 
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.replace_mod_vpks(mod_id, source_paths, installed_vpks.unwrap_or_default())?;
+  mod_manager.replace_mod_vpks(
+    mod_id,
+    source_paths,
+    installed_vpks.unwrap_or_default(),
+    profile_folder,
+  )?;
 
   log::info!("VPK replacement command completed successfully");
+  Ok(())
+}
+
+// ============================================================================
+// Profile Management Commands
+// ============================================================================
+
+#[tauri::command]
+pub async fn create_profile_folder(
+  profile_id: String,
+  profile_name: String,
+) -> Result<String, Error> {
+  log::info!("Creating profile folder for: {profile_id} - {profile_name}");
+
+  let sanitized_name = profile_name
+    .to_lowercase()
+    .chars()
+    .map(|c| {
+      if c.is_alphanumeric() || c == '-' || c == '_' {
+        c
+      } else if c.is_whitespace() {
+        '-'
+      } else {
+        '_'
+      }
+    })
+    .collect::<String>()
+    .trim_matches(|c| c == '-' || c == '_')
+    .to_string();
+
+  let folder_name = format!("{}_{}", profile_id, sanitized_name);
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let profile_folder = addons_path.join(&folder_name);
+
+  if profile_folder.exists() {
+    log::warn!("Profile folder already exists: {profile_folder:?}");
+    return Ok(folder_name);
+  }
+
+  std::fs::create_dir_all(&profile_folder)?;
+  log::info!("Created profile folder: {profile_folder:?}");
+
+  Ok(folder_name)
+}
+
+#[tauri::command]
+pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> {
+  log::info!("Deleting profile folder: {profile_folder}");
+
+  if profile_folder.is_empty() || profile_folder == "." || profile_folder == ".." {
+    return Err(Error::InvalidInput(
+      "Invalid profile folder name".to_string(),
+    ));
+  }
+
+  if !profile_folder.starts_with("profile_") {
+    return Err(Error::InvalidInput(
+      "Profile folder must start with 'profile_'".to_string(),
+    ));
+  }
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let profile_path = addons_path.join(&profile_folder);
+
+  if !profile_path.exists() {
+    log::warn!("Profile folder does not exist: {profile_path:?}");
+    return Ok(());
+  }
+
+  if !profile_path.starts_with(&addons_path) {
+    return Err(Error::InvalidInput(
+      "Profile folder must be within addons directory".to_string(),
+    ));
+  }
+
+  std::fs::remove_dir_all(&profile_path)?;
+  log::info!("Deleted profile folder: {profile_path:?}");
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn switch_profile(profile_folder: Option<String>) -> Result<(), Error> {
+  log::info!("Switching to profile folder: {profile_folder:?}");
+
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+
+  mod_manager
+    .get_config_manager_mut()
+    .update_mod_path(&game_path, profile_folder)?;
+
+  log::info!("Successfully switched profile");
   Ok(())
 }
 

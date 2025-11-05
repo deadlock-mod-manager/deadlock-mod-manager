@@ -217,9 +217,13 @@ impl AddonAnalyzer {
   pub async fn analyze_local_addons(
     &self,
     game_path: PathBuf,
+    profile_folder: Option<String>,
     app_handle: Option<AppHandle>,
   ) -> Result<AnalyzeAddonsResult, Error> {
-    log::info!("Starting fast parallel analysis of local addons");
+    log::info!(
+      "Starting fast parallel analysis of local addons for profile: {:?}",
+      profile_folder
+    );
 
     // Emit scanning progress
     self.emit_progress(
@@ -232,7 +236,15 @@ impl AddonAnalyzer {
       5,
     );
 
-    let addons_path = game_path.join("game").join("citadel").join("addons");
+    let addons_path = if let Some(ref folder) = profile_folder {
+      game_path
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .join(folder)
+    } else {
+      game_path.join("game").join("citadel").join("addons")
+    };
 
     if !addons_path.exists() {
       log::warn!("Addons folder does not exist: {:?}", addons_path);

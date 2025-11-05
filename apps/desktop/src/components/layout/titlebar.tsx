@@ -21,6 +21,7 @@ import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import { AboutDialog } from "./about-dialog";
 import Logo from "./logo";
 
@@ -43,6 +44,7 @@ export const Titlebar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
+  const { getActiveProfile } = usePersistedStore();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [currentWindow, setCurrentWindow] = useState<ReturnType<
     typeof getCurrentWindow
@@ -54,7 +56,9 @@ export const Titlebar = () => {
 
   const handleOpenModsFolder = async () => {
     try {
-      await invoke("open_mods_folder");
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+      await invoke("open_mods_folder", { profileFolder });
     } catch (error) {
       logger.error("Failed to open mods folder", { error });
       toast.error(t("common.failedToOpenFolder"));
