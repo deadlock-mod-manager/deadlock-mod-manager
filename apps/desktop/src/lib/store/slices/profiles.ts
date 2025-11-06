@@ -301,14 +301,33 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       if (a.isDefault) return -1;
       if (b.isDefault) return 1;
 
-      const aLastUsed = a.lastUsed?.getTime() ?? 0;
-      const bLastUsed = b.lastUsed?.getTime() ?? 0;
+      // Handle lastUsed being a Date or string (from deserialization)
+      const aLastUsed = a.lastUsed
+        ? typeof a.lastUsed === "string"
+          ? new Date(a.lastUsed).getTime()
+          : a.lastUsed.getTime()
+        : 0;
+      const bLastUsed = b.lastUsed
+        ? typeof b.lastUsed === "string"
+          ? new Date(b.lastUsed).getTime()
+          : b.lastUsed.getTime()
+        : 0;
 
       if (aLastUsed !== bLastUsed) {
         return bLastUsed - aLastUsed; // Most recently used first
       }
 
-      return b.createdAt.getTime() - a.createdAt.getTime(); // Most recently created first
+      // Handle createdAt being a Date or string (from deserialization)
+      const aCreated =
+        typeof a.createdAt === "string"
+          ? new Date(a.createdAt).getTime()
+          : a.createdAt.getTime();
+      const bCreated =
+        typeof b.createdAt === "string"
+          ? new Date(b.createdAt).getTime()
+          : b.createdAt.getTime();
+
+      return bCreated - aCreated; // Most recently created first
     });
   },
 
@@ -522,6 +541,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             name: displayName,
             description: "Profile detected from filesystem",
             createdAt: new Date(),
+            lastUsed: new Date(), // Set lastUsed when syncing from filesystem
             enabledMods: {},
             isDefault: false,
             folderName: folderName,

@@ -11,8 +11,13 @@ export const useDownload = (
   availableFiles: ModDownloadDto,
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { addLocalMod, localMods, setModProgress, setModStatus } =
-    usePersistedStore();
+  const {
+    addLocalMod,
+    localMods,
+    setModProgress,
+    setModStatus,
+    getActiveProfile,
+  } = usePersistedStore();
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
@@ -23,9 +28,13 @@ export const useDownload = (
 
     addLocalMod(mod as unknown as ModDto, { downloads: selectedFiles });
 
+    const activeProfile = getActiveProfile();
+    const profileFolder = activeProfile?.folderName ?? null;
+
     return downloadManager.addToQueue({
       ...(mod as unknown as ModDto),
       downloads: selectedFiles,
+      profileFolder,
       onStart: () => {
         logger.info("Starting download", { mod: mod.remoteId });
         setModStatus(mod.remoteId, ModStatus.Downloading);

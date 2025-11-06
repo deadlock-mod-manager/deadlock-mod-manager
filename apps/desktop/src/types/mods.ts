@@ -39,6 +39,7 @@ export interface DownloadableMod extends Omit<LocalMod, "status"> {
   onProgress: (progress: Progress) => void;
   onComplete: (path: string) => void;
   onError: (error: Error) => void;
+  profileFolder?: string | null;
 }
 
 export type InstallableMod = {
@@ -110,9 +111,35 @@ export interface ModIdentificationRequest {
   fileName: string;
 }
 
-export interface ModIdentificationResponse {
-  remoteId?: string;
-  confidence?: number;
-  modName?: string;
-  modAuthor?: string;
+export interface ProfileImportMod {
+  modId: string;
+  modName: string;
+  downloadFiles: Array<{
+    url: string;
+    name: string;
+    size: number;
+  }>;
+  fileTree?: ModFileTree;
+}
+
+export interface ProfileImportProgressEvent {
+  currentStep: string; // "downloading" | "installing" | "complete"
+  currentModIndex: number;
+  totalMods: number;
+  currentModName: string;
+  overallProgress: number; // 0-100
+}
+
+export interface InstalledModInfo {
+  modId: string;
+  modName: string;
+  installedVpks: string[];
+  fileTree?: ModFileTree;
+}
+
+export interface ProfileImportResult {
+  profileFolder: string;
+  succeeded: string[];
+  failed: Array<[string, string]>; // [mod_id, error_message]
+  installedMods: InstalledModInfo[]; // Mods that were successfully installed
 }

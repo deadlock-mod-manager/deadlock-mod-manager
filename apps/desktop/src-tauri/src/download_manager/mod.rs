@@ -44,14 +44,14 @@ pub struct DownloadProgressEvent {
   pub percentage: f64,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadCompletedEvent {
   pub mod_id: String,
   pub path: String,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
   pub mod_id: String,
@@ -348,17 +348,14 @@ impl DownloadManager {
 
     log::info!("Processing downloaded files for mod: {}", task.mod_id);
 
-    // Get game path and addons path
-    let (game_path, mod_files_cache) = {
+    // Get game path
+    let game_path = {
       let manager = MANAGER.lock().unwrap();
-      let game_path = manager
+      manager
         .get_steam_manager()
         .get_game_path()
         .ok_or(Error::GamePathNotSet)?
-        .clone();
-
-      let mod_files_cache = task.target_dir.join("files");
-      (game_path, mod_files_cache)
+        .clone()
     };
 
     let addons_path = if let Some(ref profile_folder) = task.profile_folder {
@@ -382,15 +379,10 @@ impl DownloadManager {
       std::fs::create_dir_all(&addons_path)?;
     }
 
-    // Create cache directory
-    if !mod_files_cache.exists() {
-      std::fs::create_dir_all(&mod_files_cache)?;
-    }
-
     let extractor = ArchiveExtractor::new();
     let vpk_manager = VpkManager::new();
 
-    // Extract archives to cache
+    // Extract archives and copy VPKs directly to addons with prefix
     for file_path in downloaded_files {
       if extractor.is_supported_archive(file_path) {
         log::info!("Extracting archive: {file_path:?}");
@@ -398,33 +390,17 @@ impl DownloadManager {
         let temp_dir = tempfile::tempdir()?;
         extractor.extract_archive(file_path, temp_dir.path())?;
 
-        // Copy VPK files from temp to cache
-        let vpk_files = Self::find_vpk_files_recursive(temp_dir.path())?;
-        for vpk_path in vpk_files {
-          if let Some(file_name) = vpk_path.file_name() {
-            let dest_path = mod_files_cache.join(file_name);
-            std::fs::copy(&vpk_path, &dest_path)?;
-            log::info!("Copied VPK to cache: {file_name:?}");
-          }
-        }
+        // Copy VPK files directly from temp to addons with prefix
+        log::info!(
+          "Copying VPKs to addons with prefix for mod: {}",
+          task.mod_id
+        );
+        vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
 
         // Clean up archive after extraction
         log::info!("Removing archive: {file_path:?}");
         std::fs::remove_file(file_path)?;
       }
-    }
-
-    // Copy VPKs from cache to addons with prefix
-    if mod_files_cache.exists() {
-      log::info!(
-        "Copying VPKs to addons with prefix for mod: {}",
-        task.mod_id
-      );
-      vpk_manager.copy_vpks_with_prefix(&mod_files_cache, &addons_path, &task.mod_id)?;
-
-      // Clean up the cache directory after successful copy
-      log::info!("Cleaning up mod files cache: {mod_files_cache:?}");
-      std::fs::remove_dir_all(&mod_files_cache)?;
     }
 
     log::info!(

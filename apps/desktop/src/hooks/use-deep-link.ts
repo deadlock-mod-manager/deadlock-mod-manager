@@ -102,6 +102,7 @@ export const useDeepLink = () => {
     setModStatus,
     setModProgress,
     setInstalledVpks,
+    getActiveProfile,
   } = usePersistedStore();
   const { install } = useInstall();
   const processingRef = useRef<Set<string>>(new Set());
@@ -173,9 +174,13 @@ export const useDeepLink = () => {
               // Start direct download and installation using the provided URL
               toast.success("Starting 1-click mod install...");
 
+              const activeProfile = getActiveProfile();
+              const profileFolder = activeProfile?.folderName ?? null;
+
               downloadManager.addToQueue({
                 ...modData,
                 downloads: downloadFiles,
+                profileFolder,
                 onStart: () => {
                   setModStatus(modData.remoteId, ModStatus.Downloading);
                   logger.info(
