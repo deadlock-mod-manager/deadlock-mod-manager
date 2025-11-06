@@ -1315,14 +1315,19 @@ pub async fn import_profile_batch(
 
   // Step 1: Create/validate profile folder
   let final_profile_folder = if import_type == "create" {
-    // Generate a profile ID (simple timestamp-based)
-    let profile_id = format!(
-      "{}",
-      std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-    );
+    // Generate a profile ID matching the pattern used by createProfile (profile_timestamp_random)
+    // Use milliseconds timestamp + nanoseconds for uniqueness (similar to TypeScript's Date.now() + random)
+    let now = std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .unwrap();
+    let timestamp_ms = now.as_millis();
+    let nanos = now.subsec_nanos();
+
+    // Create a simple "random" part from nanoseconds (base36-like encoding)
+    // This mimics TypeScript's Math.random().toString(36).substr(2, 9)
+    let random_part = format!("{:x}", nanos).chars().take(9).collect::<String>();
+
+    let profile_id = format!("profile_{}_{}", timestamp_ms, random_part);
 
     create_profile_folder(profile_id, profile_name.clone()).await?
   } else {

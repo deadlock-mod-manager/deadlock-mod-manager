@@ -20,6 +20,7 @@ import {
   ChevronUp,
   Edit,
   Plus,
+  RefreshCw,
   Trash2,
   Users,
 } from "@deadlock-mods/ui/icons";
@@ -28,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useSyncProfiles } from "@/hooks/use-sync-profiles";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
@@ -62,11 +64,17 @@ export const ProfileManagerDialog = ({
   const [expandedProfiles, setExpandedProfiles] = useState<Set<ProfileId>>(
     new Set(),
   );
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useSyncProfiles(open);
 
-  const { getAllProfiles, getActiveProfile, deleteProfile, switchToProfile } =
-    usePersistedStore();
+  const {
+    getAllProfiles,
+    getActiveProfile,
+    deleteProfile,
+    switchToProfile,
+    syncProfilesWithFilesystem,
+  } = usePersistedStore();
 
   const profiles = getAllProfiles();
   const activeProfile = getActiveProfile();
@@ -170,6 +178,19 @@ export const ProfileManagerDialog = ({
       count: enabledEntries.length,
       mods: enabledMods,
     };
+  };
+
+  const handleSyncProfiles = async () => {
+    setIsSyncing(true);
+    try {
+      await syncProfilesWithFilesystem();
+      toast.success(t("profiles.syncSuccess"));
+    } catch (error) {
+      logger.error("Failed to sync profiles", { error });
+      toast.error(t("profiles.syncError"));
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -327,6 +348,17 @@ export const ProfileManagerDialog = ({
             </div>
           </div>
           <DialogFooter>
+            <Button
+              onClick={handleSyncProfiles}
+              disabled={isSyncing}
+              variant='outline'
+              icon={
+                <RefreshCw
+                  className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
+                />
+              }>
+              {t("profiles.sync")}
+            </Button>
             <Button
               onClick={() => setShowCreateDialog(true)}
               icon={<Plus className='w-4 h-4' />}>

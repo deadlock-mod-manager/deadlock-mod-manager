@@ -504,8 +504,9 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   syncProfilesWithFilesystem: async () => {
     try {
       const filesystemFolders = await invoke<string[]>("list_profile_folders");
-      const { profiles } = get();
+      const { profiles, activeProfileId } = get();
 
+      const filesystemFoldersSet = new Set(filesystemFolders);
       const knownFolders = new Set(
         Object.values(profiles)
           .map((p) => p.folderName)
@@ -515,6 +516,47 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       const unknownFolders = filesystemFolders.filter(
         (folder) => !knownFolders.has(folder),
       );
+
+      const profilesToRemove: ProfileId[] = [];
+      let shouldSwitchToDefault = false;
+
+      for (const [profileId, profile] of Object.entries(profiles)) {
+        if (profile.isDefault) {
+          continue;
+        }
+
+        if (
+          profile.folderName &&
+          !filesystemFoldersSet.has(profile.folderName)
+        ) {
+          profilesToRemove.push(profile.id as ProfileId);
+          if (profile.id === activeProfileId) {
+            shouldSwitchToDefault = true;
+          }
+        }
+      }
+
+      if (shouldSwitchToDefault) {
+        logger.info(
+          "Active profile no longer exists in filesystem, switching to default",
+        );
+        await get().switchToProfile(DEFAULT_PROFILE_ID);
+      }
+
+      if (profilesToRemove.length > 0) {
+        logger.info("Removing profiles that no longer exist in filesystem", {
+          count: profilesToRemove.length,
+          profileIds: profilesToRemove,
+        });
+
+        set((state) => {
+          const newProfiles = { ...state.profiles };
+          for (const profileId of profilesToRemove) {
+            delete newProfiles[profileId];
+          }
+          return { profiles: newProfiles };
+        });
+      }
 
       if (unknownFolders.length > 0) {
         logger.info("Syncing unknown profile folders to state", {
@@ -541,7 +583,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             name: displayName,
             description: "Profile detected from filesystem",
             createdAt: new Date(),
-            lastUsed: new Date(), // Set lastUsed when syncing from filesystem
+            lastUsed: new Date(),
             enabledMods: {},
             isDefault: false,
             folderName: folderName,

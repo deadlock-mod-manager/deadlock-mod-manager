@@ -64,7 +64,13 @@ export const OnboardingWizard = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onSkip();
+        }
+      }}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <div className='flex items-center gap-2'>
