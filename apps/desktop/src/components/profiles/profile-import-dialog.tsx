@@ -27,12 +27,8 @@ export const ProfileImportDialog = () => {
     null,
   );
   const [isImporting, setIsImporting] = useState(false);
-  const [selectedAction, setSelectedAction] = useState<
-    "create" | "override" | null
-  >(null);
   const { t } = useTranslation();
-  const { createProfileFromImport, addToCurrentProfile, importProgress } =
-    useProfileImport();
+  const { createProfileFromImport, importProgress } = useProfileImport();
 
   const { isLoading, mutate } = useMutation(
     (profileId: string) => getProfile(profileId.trim()),
@@ -72,14 +68,12 @@ export const ProfileImportDialog = () => {
 
   const handleCancel = () => {
     setImportedProfile(null);
-    setSelectedAction(null);
     setOpen(false);
   };
 
   const handleCreateNewProfile = async () => {
     if (!importedProfile) return;
 
-    setSelectedAction("create");
     setIsImporting(true);
 
     try {
@@ -89,24 +83,6 @@ export const ProfileImportDialog = () => {
       toast.error(t("profiles.createError"));
     } finally {
       setIsImporting(false);
-      setSelectedAction(null);
-    }
-  };
-
-  const handleOverrideProfile = async () => {
-    if (!importedProfile) return;
-
-    setSelectedAction("override");
-    setIsImporting(true);
-
-    try {
-      await addToCurrentProfile(importedProfile.payload.mods, modsData);
-      handleCancel();
-    } catch (error) {
-      toast.error(t("profiles.updateError"));
-    } finally {
-      setIsImporting(false);
-      setSelectedAction(null);
     }
   };
 
@@ -137,11 +113,9 @@ export const ProfileImportDialog = () => {
             modsLoading={modsLoading}
             modsData={modsData}
             onCreateNew={handleCreateNewProfile}
-            onOverride={handleOverrideProfile}
             onCancel={handleCancel}
             isImporting={isImporting}
             importProgress={importProgress}
-            selectedAction={selectedAction}
           />
         ) : (
           <ProfileImportForm
