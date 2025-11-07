@@ -10,6 +10,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
+  isAdmin: boolean("is_admin").notNull().default(false),
   ...timestamps,
 });
 

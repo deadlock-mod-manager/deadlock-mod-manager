@@ -1,3 +1,4 @@
+export * from "./announcement-repository";
 export * from "./base";
 export * from "./chat-message.repository";
 export * from "./custom-settings.repository";

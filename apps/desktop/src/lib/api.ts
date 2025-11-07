@@ -1,4 +1,5 @@
 import type {
+  AnnouncementDto,
   CustomSettingDto,
   FeatureFlag,
   ModDownloadDto,
@@ -49,6 +50,10 @@ const apiRequest = async <T>(
   }
 
   return response.json();
+};
+
+export const getAnnouncements = async () => {
+  return await apiRequest<AnnouncementDto[]>("/api/v2/announcements");
 };
 
 export const getMods = async () => {

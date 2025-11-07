@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { DashboardLayout } from "@/components/layouts/dashboard-layout";
 import { FullscreenLayout } from "@/components/layouts/fullscreen-layout";
 import { MainLayout } from "@/components/layouts/main-layout";
 import { seo } from "@/utils/seo";
@@ -171,6 +172,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
   const fullscreenRoutes = ["/login", "/auth/desktop-callback"];
   const isFullscreenRoute = fullscreenRoutes.includes(pathname);
+  const isDashboardRoute = pathname.startsWith("/dashboard");
+
   return (
     <html lang='en' className='dark'>
       <head>
@@ -179,6 +182,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         {isFullscreenRoute ? (
           <FullscreenLayout>{children}</FullscreenLayout>
+        ) : isDashboardRoute ? (
+          <DashboardLayout>{children}</DashboardLayout>
         ) : (
           <MainLayout>{children}</MainLayout>
         )}
