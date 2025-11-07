@@ -102,15 +102,6 @@ export interface AddonAnalysisProgress {
   totalProgress: number; // 0-100
 }
 
-// Type for mod identification API response (stub for now)
-export interface ModIdentificationRequest {
-  vpkHash: string;
-  contentSignature: string;
-  merkleRoot?: string;
-  fileCount: number;
-  fileName: string;
-}
-
 export interface ProfileImportMod {
   modId: string;
   modName: string;

@@ -4,8 +4,8 @@ import {
   PlugsConnected,
   WarningCircle,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "react-query";
 import { getApiHealth } from "@/lib/api";
 import logger from "@/lib/logger";
 
@@ -14,34 +14,30 @@ type ApiStepProps = {
   onError: () => void;
 };
 
-type CheckState = "idle" | "checking" | "success" | "error";
-
 export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
   const { t } = useTranslation();
-  const [checkState, setCheckState] = useState<CheckState>("idle");
-  const [apiVersion, setApiVersion] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const checkApiConnection = useCallback(async () => {
-    setCheckState("checking");
-    setErrorMessage("");
-    try {
-      const health = await getApiHealth();
-      setApiVersion(health.version);
-      setCheckState("success");
-      logger.info("API connection successful", { version: health.version });
+  const {
+    data: health,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery("api-health", getApiHealth, {
+    retry: 3,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    onSuccess: (data) => {
+      logger.info("API connection successful", { version: data.version });
       onComplete();
-    } catch (error) {
-      logger.error("Failed to connect to API", { error });
-      setErrorMessage(error instanceof Error ? error.message : "Unknown error");
-      setCheckState("error");
+    },
+    onError: (err) => {
+      logger.error("Failed to connect to API", { error: err });
       onError();
-    }
-  }, [onComplete, onError]);
+    },
+  });
 
-  useEffect(() => {
-    checkApiConnection();
-  }, [checkApiConnection]);
+  const checkState = isLoading ? "checking" : error ? "error" : "success";
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
   return (
     <div className='space-y-6'>
@@ -60,7 +56,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
           </div>
         )}
 
-        {checkState === "success" && (
+        {checkState === "success" && health && (
           <div className='flex items-start gap-3 p-4 border rounded-lg bg-green-500/10 border-green-500/20'>
             <CheckCircle className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
             <div className='flex-1'>
@@ -68,7 +64,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
                 {t("onboarding.api.success")}
               </p>
               <p className='text-xs text-muted-foreground mt-1'>
-                {t("onboarding.api.version")}: {apiVersion}
+                {t("onboarding.api.version")}: {health.version}
               </p>
             </div>
           </div>
@@ -95,7 +91,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
             <Button
               variant='default'
               size='sm'
-              onClick={checkApiConnection}
+              onClick={() => refetch()}
               className='w-full'>
               {t("onboarding.api.retry")}
             </Button>

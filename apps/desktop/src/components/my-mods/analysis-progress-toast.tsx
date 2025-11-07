@@ -20,7 +20,7 @@ export const AnalysisProgressToast = ({
   if (!isVisible) return null;
 
   return (
-    <div className='fixed bottom-10 right-16 z-50 w-80 bg-background border border-border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 fade-in-0 duration-300'>
+    <div className='fixed bottom-10 text-foreground right-16 z-50 w-80 bg-background border border-border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 fade-in-0 duration-300'>
       <div className='p-4'>
         <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center gap-2'>
