@@ -260,7 +260,13 @@ pub fn run() {
       commands::initialize_ingest_tool,
       commands::set_discord_presence,
       commands::clear_discord_presence,
-      commands::disconnect_discord
+      commands::disconnect_discord,
+      commands::create_profile_folder,
+      commands::delete_profile_folder,
+      commands::switch_profile,
+      commands::list_profile_folders,
+      commands::get_profile_installed_vpks,
+      commands::import_profile_batch
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

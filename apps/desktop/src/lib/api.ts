@@ -7,11 +7,7 @@ import type {
 } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
-import type {
-  AnalyzeAddonsResult,
-  ModIdentificationRequest,
-  ModIdentificationResponse,
-} from "@/types/mods";
+import type { AnalyzeAddonsResult } from "@/types/mods";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
@@ -164,8 +160,16 @@ export const getApiHealth = async () => {
 };
 
 // Local addon analysis functions
-export const analyzeLocalAddons = async (): Promise<AnalyzeAddonsResult> => {
-  return await invoke("analyze_local_addons");
+export const analyzeLocalAddons = async (
+  profileFolder: string | null = null,
+): Promise<AnalyzeAddonsResult> => {
+  return await invoke("analyze_local_addons", { profileFolder });
+};
+
+export const getProfileInstalledVpks = async (
+  profileFolder: string | null = null,
+): Promise<string[]> => {
+  return await invoke("get_profile_installed_vpks", { profileFolder });
 };
 
 // Hash analysis for mod identification
@@ -204,24 +208,4 @@ export const analyzeHashes = async (hashes: {
       };
     }>
   >("/api/v2/vpk-analyse-hashes", hashes);
-};
-
-// Stub for mod identification endpoint (to be implemented later)
-export const identifyMod = async (
-  request: ModIdentificationRequest,
-): Promise<ModIdentificationResponse> => {
-  // TODO: Implement the actual API endpoint
-  // For now, return a stub response
-  console.log("Identifying mod with request:", request);
-
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Return stub response
-  return {
-    remoteId: undefined,
-    confidence: 0,
-    modName: "Unknown Mod",
-    modAuthor: "Unknown Author",
-  };
 };

@@ -122,6 +122,7 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
     reorderMods,
     updateModVpksAfterReorder,
     migrateLegacyMods,
+    getActiveProfile,
   } = usePersistedStore();
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -160,6 +161,9 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
     try {
       setIsLoading(true);
 
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       const modOrderData = orderedMods.map((mod, index) => [
         mod.remoteId,
         mod.installedVpks || [],
@@ -169,7 +173,7 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
       // Call the backend to reorder VPKs and get updated mappings
       const updatedVpkMappings = await invoke<Array<[string, string[]]>>(
         "reorder_mods_by_remote_id",
-        { modOrderData },
+        { modOrderData, profileFolder },
       );
 
       // Update the frontend store with the new install order

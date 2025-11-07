@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { analyzeLocalAddons } from "@/lib/api";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 
 type AddonsStepProps = {
@@ -21,6 +22,7 @@ type CheckState = "idle" | "checking" | "none" | "found" | "analyzing";
 
 export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
   const { t } = useTranslation();
+  const { getActiveProfile } = usePersistedStore();
   const [checkState, setCheckState] = useState<CheckState>("idle");
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeAddonsResult | null>(null);
@@ -30,7 +32,11 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
   const checkForAddons = useCallback(async () => {
     setCheckState("checking");
     try {
-      const exists = await invoke<boolean>("check_addons_exist");
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+      const exists = await invoke<boolean>("check_addons_exist", {
+        profileFolder,
+      });
       setCheckState(exists ? "found" : "none");
       logger.info("Checked for existing addons", { exists });
 
@@ -42,13 +48,15 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
       setCheckState("none");
       onComplete();
     }
-  }, [onComplete]);
+  }, [onComplete, getActiveProfile]);
 
   const handleAnalyze = async () => {
     setCheckState("analyzing");
     setIsAnalyzing(true);
     try {
-      const result = await analyzeLocalAddons();
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+      const result = await analyzeLocalAddons(profileFolder);
       setAnalysisResult(result);
       setShowAnalysisDialog(true);
       logger.info("Local addons analyzed", {

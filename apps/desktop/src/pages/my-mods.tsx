@@ -24,11 +24,13 @@ import {
   ArrowUpDown,
   Check,
   Download,
+  FolderOpen,
   LayoutGrid,
   LayoutList,
   Loader2,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -37,6 +39,7 @@ import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalyzeAddonsButton } from "@/components/my-mods/analyze-addons-button";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
@@ -44,6 +47,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
+import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -352,6 +356,13 @@ const MyMods = () => {
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const {
+    unmatchedVpkCount,
+    unmatchedVpks,
+    isLoading: isVpkScanLoading,
+    refetch: refetchVpkScan,
+  } = useVpkScan();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -467,6 +478,23 @@ const MyMods = () => {
                     </TooltipContent>
                   </Tooltip>
                 )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onClick={async () => {
+                        const activeProfile = getActiveProfile();
+                        const profileFolder = activeProfile?.folderName ?? null;
+                        await invoke("open_mods_folder", { profileFolder });
+                      }}
+                      icon={<FolderOpen className='h-4 w-4' />}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("settings.openModsFolder")}
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <p className='text-muted-foreground mt-2'>
                 {t("myMods.subtitle")}
@@ -493,6 +521,12 @@ const MyMods = () => {
               </ModOrderingDialog>
             </div>
           </div>
+          <VpkScanAlert
+            unmatchedVpkCount={unmatchedVpkCount}
+            unmatchedVpks={unmatchedVpks}
+            isLoading={isVpkScanLoading}
+            refetch={refetchVpkScan}
+          />
           {mods.length === 0 && <MyModsEmptyState />}
           {mods.length > 0 && (
             <div className='flex flex-col gap-4'>

@@ -15,6 +15,7 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fileToBytes, writeFileBytes } from "@/lib/file-utils";
+import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 interface VpkReplacementSectionProps {
@@ -27,6 +28,7 @@ export const VpkReplacementSection = ({
   onSuccess,
 }: VpkReplacementSectionProps) => {
   const { t } = useTranslation();
+  const { getActiveProfile } = usePersistedStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -131,10 +133,14 @@ export const VpkReplacementSection = ({
     setIsReplacing(true);
 
     try {
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
       await invoke("replace_mod_vpks", {
         modId: modIdentifier,
         sourceVpkPaths: paths,
         installedVpks: mod.installedVpks || null,
+        profileFolder,
       });
 
       toast.success(t("modDetail.vpkReplacement.success"));

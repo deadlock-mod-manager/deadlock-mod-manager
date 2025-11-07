@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
 
 export const manifest = {
@@ -13,15 +11,6 @@ export const manifest = {
 } as const;
 
 const Render = () => {
-  const isEnabled = usePersistedStore(
-    (s) => s.enabledPlugins[manifest.id] ?? false,
-  );
-
-  // No DOM changes required other than feature enablement; placeholder for future
-  useEffect(() => {
-    return () => {};
-  }, []);
-
   return null;
 };
 

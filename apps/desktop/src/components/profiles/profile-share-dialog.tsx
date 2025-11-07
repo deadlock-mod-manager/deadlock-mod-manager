@@ -72,13 +72,6 @@ export const ProfileShareDialog = () => {
       return baseModData;
     });
 
-  const mutationKey = [
-    "shareProfile",
-    hardwareId,
-    version,
-    JSON.stringify(enabledMods),
-  ];
-
   const { mutate, isLoading } = useMutation(
     async (params: {
       hardwareId: string;
@@ -97,7 +90,6 @@ export const ProfileShareDialog = () => {
       );
     },
     {
-      mutationKey,
       onMutate() {
         setProfileId(null);
       },

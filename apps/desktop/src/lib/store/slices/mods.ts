@@ -79,16 +79,33 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           : -1;
       const installOrder = additional?.installOrder ?? maxOrder + 1;
 
-      return {
-        localMods: [
-          ...state.localMods,
-          {
-            ...mod,
-            status: ModStatus.Downloading,
-            installOrder,
-            ...additional,
+      const newMod = {
+        ...mod,
+        status: ModStatus.Downloading,
+        installOrder,
+        ...additional,
+      };
+
+      const { activeProfileId, profiles } = state;
+      const currentProfile = profiles[activeProfileId];
+
+      if (currentProfile) {
+        const updatedProfile = {
+          ...currentProfile,
+          mods: [...currentProfile.mods, newMod],
+        };
+
+        return {
+          localMods: [...state.localMods, newMod],
+          profiles: {
+            ...state.profiles,
+            [activeProfileId]: updatedProfile,
           },
-        ],
+        };
+      }
+
+      return {
+        localMods: [...state.localMods, newMod],
       };
     }),
 
@@ -145,6 +162,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             ...currentProfile.enabledMods,
             [mod.remoteId]: profileEntry,
           },
+          mods: [...currentProfile.mods, newMod],
         };
 
         return {
@@ -197,6 +215,26 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
+
+      const { activeProfileId, profiles } = state;
+      const currentProfile = profiles[activeProfileId];
+
+      if (currentProfile) {
+        const updatedProfile = {
+          ...currentProfile,
+          mods: currentProfile.mods.filter((mod) => mod.remoteId !== remoteId),
+        };
+
+        return {
+          localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
+          modProgress: newProgress,
+          profiles: {
+            ...state.profiles,
+            [activeProfileId]: updatedProfile,
+          },
+        };
+      }
+
       return {
         localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
         modProgress: newProgress,

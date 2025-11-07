@@ -19,9 +19,13 @@ export const ActiveRow = ({ mod, isSelected, onSelect }: ActiveRowProps) => {
   const removeWithoutDialog = async () => {
     try {
       if (mod.status === ModStatus.Installed) {
+        const activeProfile = usePersistedStore.getState().getActiveProfile();
+        const profileFolder = activeProfile?.folderName ?? null;
+
         await invoke("purge_mod", {
           modId: mod.remoteId,
           vpks: mod.installedVpks ?? [],
+          profileFolder,
         });
       }
       usePersistedStore.getState().removeMod(mod.remoteId);

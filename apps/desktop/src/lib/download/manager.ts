@@ -133,6 +133,8 @@ class DownloadManager {
       files: mod.downloads.length,
     });
 
+    const profileFolder = mod.profileFolder ?? null;
+
     await invoke("queue_download", {
       modId: mod.remoteId,
       files: mod.downloads.map((d) => ({
@@ -140,6 +142,7 @@ class DownloadManager {
         name: d.name,
         size: d.size || 0,
       })),
+      profileFolder,
     });
   }
 

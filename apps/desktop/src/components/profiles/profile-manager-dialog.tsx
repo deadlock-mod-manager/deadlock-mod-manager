@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
@@ -19,6 +20,7 @@ import {
   ChevronUp,
   Edit,
   Plus,
+  RefreshCw,
   Trash2,
   Users,
 } from "@deadlock-mods/ui/icons";
@@ -26,6 +28,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { useSyncProfiles } from "@/hooks/use-sync-profiles";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
@@ -60,9 +64,17 @@ export const ProfileManagerDialog = ({
   const [expandedProfiles, setExpandedProfiles] = useState<Set<ProfileId>>(
     new Set(),
   );
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const { getAllProfiles, getActiveProfile, deleteProfile, switchToProfile } =
-    usePersistedStore();
+  useSyncProfiles(open);
+
+  const {
+    getAllProfiles,
+    getActiveProfile,
+    deleteProfile,
+    switchToProfile,
+    syncProfilesWithFilesystem,
+  } = usePersistedStore();
 
   const profiles = getAllProfiles();
   const activeProfile = getActiveProfile();
@@ -79,7 +91,7 @@ export const ProfileManagerDialog = ({
     });
 
     if (shouldDelete) {
-      const success = deleteProfile(profileId);
+      const success = await deleteProfile(profileId);
       if (success) {
         toast.success(t("profiles.deleteSuccess", { profileName }));
       } else {
@@ -168,11 +180,24 @@ export const ProfileManagerDialog = ({
     };
   };
 
+  const handleSyncProfiles = async () => {
+    setIsSyncing(true);
+    try {
+      await syncProfilesWithFilesystem();
+      toast.success(t("profiles.syncSuccess"));
+    } catch (error) {
+      logger.error("Failed to sync profiles", { error });
+      toast.error(t("profiles.syncError"));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-          <div className='flex items-center py-4 gap-4'>
+          <div className='flex items-center  gap-4'>
             <DialogHeader className='flex-1'>
               <DialogTitle className='flex items-center space-x-2'>
                 <Users className='w-5 h-5' />
@@ -182,26 +207,11 @@ export const ProfileManagerDialog = ({
                 {t("profiles.manageDescription")}
               </DialogDescription>
             </DialogHeader>
-            <div className='flex items-center gap-2'>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                icon={<Plus className='w-4 h-4' />}>
-                {t("profiles.createNew")}
-              </Button>
-              <ProfileImportDialog />
-            </div>
           </div>
-
           <div className='flex-1 overflow-auto'>
             <div className='grid gap-4 pb-4'>
               {profiles.map((profile) => (
-                <Card
-                  key={profile.id}
-                  className={`transition-all duration-200 hover:shadow-md ${
-                    profile.id === activeProfile?.id
-                      ? "ring-2 ring-primary/50 shadow-sm"
-                      : ""
-                  }`}>
+                <Card key={profile.id}>
                   <CardHeader className='pb-3'>
                     <div className='flex items-start justify-between'>
                       <div className='flex-1 min-w-0'>
@@ -219,6 +229,12 @@ export const ProfileManagerDialog = ({
                               {t("profiles.default")}
                             </Badge>
                           )}
+                          <Button
+                            variant='transparent'
+                            size='sm'
+                            onClick={() => setEditingProfile(profile.id)}>
+                            <Edit className='w-4 h-4' />
+                          </Button>
                         </div>
                         {profile.description && (
                           <p className='text-sm text-muted-foreground line-clamp-2'>
@@ -243,12 +259,6 @@ export const ProfileManagerDialog = ({
                               : "Inactive"}
                           </span>
                         </div>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => setEditingProfile(profile.id)}>
-                          <Edit className='w-4 h-4' />
-                        </Button>
                         {!profile.isDefault && (
                           <Button
                             variant='outline'
@@ -337,6 +347,25 @@ export const ProfileManagerDialog = ({
               ))}
             </div>
           </div>
+          <DialogFooter>
+            <Button
+              onClick={handleSyncProfiles}
+              disabled={isSyncing}
+              variant='outline'
+              icon={
+                <RefreshCw
+                  className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
+                />
+              }>
+              {t("profiles.sync")}
+            </Button>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              icon={<Plus className='w-4 h-4' />}>
+              {t("profiles.createNew")}
+            </Button>
+            <ProfileImportDialog />
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

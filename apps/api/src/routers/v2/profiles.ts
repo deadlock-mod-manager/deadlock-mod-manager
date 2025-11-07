@@ -18,9 +18,12 @@ export const profilesRouter = {
     .route({ method: "GET", path: "/v2/profiles/{id}" })
     .input(GetProfileInputSchema)
     .output(profileSchema)
-    .handler(async ({ input }) => {
-      const featureEnabledResult =
-        await featureFlagsService.isFeatureEnabled("profile-sharing");
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      const featureEnabledResult = await featureFlagsService.isFeatureEnabled(
+        "profile-sharing",
+        userId,
+      );
 
       if (featureEnabledResult.isErr()) {
         logger
@@ -48,9 +51,12 @@ export const profilesRouter = {
     .route({ method: "POST", path: "/v2/profiles" })
     .input(ShareProfileInputSchema)
     .output(ShareProfileOutputSchema)
-    .handler(async ({ input }) => {
-      const featureEnabledResult =
-        await featureFlagsService.isFeatureEnabled("profile-sharing");
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      const featureEnabledResult = await featureFlagsService.isFeatureEnabled(
+        "profile-sharing",
+        userId,
+      );
 
       if (featureEnabledResult.isErr()) {
         logger

@@ -1,3 +1,5 @@
+import type { LocalMod } from "@/types/mods";
+
 export type ProfileId = string & { readonly __brand: unique symbol };
 
 export interface ModProfileEntry {
@@ -14,6 +16,8 @@ export interface ModProfile {
   lastUsed?: Date;
   enabledMods: Record<string, ModProfileEntry>;
   isDefault: boolean;
+  folderName: string | null;
+  mods: LocalMod[];
 }
 
 export interface ProfileSwitchResult {
