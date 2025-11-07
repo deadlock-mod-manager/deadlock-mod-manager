@@ -24,11 +24,13 @@ import {
   ArrowUpDown,
   Check,
   Download,
+  FolderOpen,
   LayoutGrid,
   LayoutList,
   Loader2,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -354,6 +356,7 @@ const MyMods = () => {
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const {
     unmatchedVpkCount,
     unmatchedVpks,
@@ -475,6 +478,23 @@ const MyMods = () => {
                     </TooltipContent>
                   </Tooltip>
                 )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onClick={async () => {
+                        const activeProfile = getActiveProfile();
+                        const profileFolder = activeProfile?.folderName ?? null;
+                        await invoke("open_mods_folder", { profileFolder });
+                      }}
+                      icon={<FolderOpen className='h-4 w-4' />}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("settings.openModsFolder")}
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <p className='text-muted-foreground mt-2'>
                 {t("myMods.subtitle")}
