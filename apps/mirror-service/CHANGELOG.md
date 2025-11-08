@@ -1,5 +1,17 @@
 # @deadlock-mods/mirror-service
 
+## 1.1.1
+
+### Patch Changes
+
+- eb3b7c7: Extend file retention period from 14 to 90 days to provide more stable mirror fallback during GameBanana outages
+- Updated dependencies [3127b8d]
+  - @deadlock-mods/database@1.6.0
+  - @deadlock-mods/shared@1.6.0
+  - @deadlock-mods/distributed-lock@1.0.3
+  - @deadlock-mods/feature-flags@0.2.1
+  - @deadlock-mods/instrumentation@0.1.3
+
 ## 1.1.0
 
 ### Minor Changes

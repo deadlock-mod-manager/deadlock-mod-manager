@@ -1,5 +1,11 @@
 # @deadlock-mods/shared
 
+## 1.6.0
+
+### Minor Changes
+
+- 3127b8d: Annoucements and admin dashboard
+
 ## 1.5.0
 
 ### Minor Changes

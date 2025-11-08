@@ -20,7 +20,7 @@ const GlobalPluginRenderer = () => {
     const flagMap = new Map<string, boolean>();
     if (featureFlags) {
       for (const flag of featureFlags) {
-        flagMap.set(flag.name, flag.enabled);
+        flagMap.set(flag.name, flag.value as boolean);
       }
     }
     return flagMap;

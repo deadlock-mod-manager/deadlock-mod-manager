@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import ReactGA from "react-ga4";
+import useAbout from "@/hooks/use-about";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
@@ -39,6 +40,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   const telemetrySettings = usePersistedStore(
     (state) => state.telemetrySettings,
   );
+  const { version } = useAbout();
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -67,7 +69,10 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     }
 
     try {
-      ReactGA.event(event, properties);
+      ReactGA.event(event, {
+        app_version: version || "unknown",
+        ...properties,
+      });
     } catch (error) {
       logger.warn("Analytics capture failed:", error);
     }

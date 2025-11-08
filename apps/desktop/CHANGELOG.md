@@ -4,6 +4,7 @@
 
 ### Minor Changes
 
+- 3127b8d: Annoucements and admin dashboard
 - 6d48f52: Add developer mode toggle and dedicated developer tools page
 - f02f058: Add user-specific feature flag overrides with experimental features UI
 - bca1b80: Add comprehensive plugin system with dynamic loading, global rendering, and extensibility. Includes official plugins: Background (custom backgrounds with opacity/blur), Discord (Rich Presence integration), Flashbang (scheduled light mode), Themes (UI theming including Nightshift), and Sudo (mod conflict detection). Plugin system is hidden behind show-plugins feature flag for controlled rollout.
@@ -22,7 +23,10 @@
 - Updated dependencies [82aad00]
   - @deadlock-mods/shared@1.5.0
   - @deadlock-mods/ui@0.2.0
-
+- Updated dependencies [3127b8d]
+  - @deadlock-mods/shared@1.6.0
+  - @deadlock-mods/ui@0.3.0
+  
 ## 0.9.2
 
 ### Minor Changes
