@@ -787,6 +787,12 @@
       "b": "B",
       "apply": "Apply"
     },
+    "tea": {
+      "description": "A cozy beige theme created for the YouTuber and Twitch streamer Snipztea.",
+      "visit": "Support Snipztea:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    },
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
       "visit": "Visit Nightshift:",

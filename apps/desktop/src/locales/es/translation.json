@@ -560,6 +560,14 @@
       "shortDescription": "Descripción corta (opcional)"
     }
   },
+  "plugins": {
+    "tea": {
+      "description": "Un tema beige acogedor creado para el YouTuber y streamer de Twitch Snipztea.",
+      "visit": "Apoya a Snipztea:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    }
+  },
   "accessibility": {
     "close": "Cerrar",
     "previousSlide": "Diapositiva anterior",

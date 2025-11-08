@@ -23,6 +23,7 @@ import {
 } from "./custom";
 import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
+import TeaTheme from "./pre-defiend/tea/tea.tsx";
 
 export const manifest = {
   id: "themes",
@@ -33,7 +34,7 @@ export const manifest = {
   icon: "public/icon.png",
 } as const;
 
-type ThemeSettings = {
+export type ThemeSettings = {
   activeSection: "pre-defined" | "custom";
   activeTheme?: string;
   customTheme?: {
@@ -75,6 +76,13 @@ const PRE_DEFINED_THEMES = [
     component: BloodmoonTheme,
     previewImage:
       "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
+  },
+  {
+    id: "tea",
+    name: "Tea",
+    description: "A cozy beige theme celebrating Snipztea.",
+    component: TeaTheme,
+    previewImage: "/src/plugins/themes/public/pre-defiend/tea/preview.png",
   },
 ];
 
@@ -136,11 +144,13 @@ const Settings = () => {
                   <CardDescription>
                     {"userCreated" in theme && theme.userCreated
                       ? ((theme as CustomExportedTheme).description ?? "")
-                      : theme.id === "nightshift"
-                        ? t("plugins.nightshift.description")
-                        : theme.id === "bloodmoon"
-                          ? t("plugins.bloodmoon.description")
-                          : theme.description}
+                      : theme.id === "tea"
+                        ? t("plugins.tea.description")
+                        : theme.id === "nightshift"
+                          ? t("plugins.nightshift.description")
+                          : theme.id === "bloodmoon"
+                            ? t("plugins.bloodmoon.description")
+                            : theme.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='flex flex-col gap-4 flex-1'>
@@ -178,6 +188,28 @@ const Settings = () => {
                           {(theme as CustomExportedTheme).subDescription}
                         </div>
                       ) : null
+                    ) : theme.id === "tea" ? (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-3'>{t("plugins.tea.visit")}</span>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center mr-3'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void open("https://www.twitch.tv/snipztea");
+                          }}
+                          type='button'>
+                          {t("plugins.tea.twitch")}
+                        </button>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void open("https://snipztea.carrd.co/");
+                          }}
+                          type='button'>
+                          {t("plugins.tea.carrd")}
+                        </button>
+                      </div>
                     ) : theme.id === "nightshift" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
                         <span className='mr-2'>

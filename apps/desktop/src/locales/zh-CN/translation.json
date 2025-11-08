@@ -614,6 +614,12 @@
       "viewOriginalPost": "查看原始论坛帖子",
       "removeMod": "移除模组"
     },
+    "tea": {
+      "description": "为 YouTuber 与 Twitch 主播 Snipztea 打造的温暖米色主题。",
+      "visit": "支持 Snipztea：",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    },
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
       "visit": "访问 Nightshift：",

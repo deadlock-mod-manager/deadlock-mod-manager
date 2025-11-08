@@ -226,6 +226,88 @@
   border-color: transparent;
 }
 
+/* Tea Theme Styles */
+.tea-theme-active [data-sidebar="sidebar"] {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="sidebar"] * {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="content"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="footer"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="group"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="group-content"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="menu"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+.tea-theme-active [data-sidebar="menu-button"] {
+  background-color: transparent;
+}
+
+.tea-theme-active
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  background-color: transparent;
+  border-color: hsl(var(--border));
+}
+
+.tea-theme-active {
+  --background: 282 45% 12% / 0.72;
+  --foreground: 42 65% 94%;
+  --card: 282 45% 14% / 0.8;
+  --card-foreground: 42 65% 94%;
+  --popover: 282 45% 14% / 0.8;
+  --popover-foreground: 42 65% 94%;
+  --secondary: 282 35% 22% / 0.75;
+  --secondary-foreground: 42 65% 90%;
+  --muted: 282 30% 20% / 0.75;
+  --muted-foreground: 42 35% 70%;
+  --accent: 42 58% 78%;
+  --accent-foreground: 20 9% 6%;
+  --border: 42 62% 46%;
+  --input: 42 58% 46% / 0.45;
+  --ring: 42 55% 60%;
+  --sidebar-background: 282 52% 12% / 0.88;
+  --sidebar-foreground: 42 65% 94%;
+  --sidebar-accent: 42 58% 78%;
+  --sidebar-accent-foreground: 20 9% 6%;
+  --sidebar-border: 42 62% 44%;
+  --sidebar-primary: 42 58% 78%;
+  --sidebar-primary-foreground: 20 9% 6%;
+}
+
+.tea-theme-active body,
+.tea-theme-active main,
+.tea-theme-active .group\/sidebar-wrapper,
+.tea-theme-active .group\/sidebar-wrapper > div,
+.tea-theme-active [data-topbar='true'],
+.tea-theme-active [data-titlebar='true'] {
+  background-color: transparent !important;
+}
+
+.tea-theme-active .ns-corners {
+  background-color: rgba(40, 18, 58, 0.32) !important;
+}
+
 /* Nightshift Theme Styles */
 .nightshift-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;

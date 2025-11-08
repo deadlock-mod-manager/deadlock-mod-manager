@@ -708,6 +708,12 @@
       "lightness": "Luminosité",
       "apply": "Appliquer"
     },
+    "tea": {
+      "description": "Un thème beige chaleureux créé pour le youtubeur et streamer Twitch Snipztea.",
+      "visit": "Soutenez Snipztea :",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    },
     "nightshift": {
       "description": "Un thème cyberpunk avec des accents turquoise conçu pour la clarté et les longues sessions de jeu.",
       "visit": "Visiter Nightshift :",

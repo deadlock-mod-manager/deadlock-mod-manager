@@ -565,6 +565,14 @@
       "shortDescription": "Descrição curta (opcional)"
     }
   },
+  "plugins": {
+    "tea": {
+      "description": "Um tema bege acolhedor criado para o youtuber e streamer da Twitch Snipztea.",
+      "visit": "Apoie Snipztea:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    }
+  },
   "accessibility": {
     "close": "Fechar",
     "previousSlide": "Slide anterior",

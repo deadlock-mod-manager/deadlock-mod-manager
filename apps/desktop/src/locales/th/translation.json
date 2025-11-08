@@ -688,6 +688,14 @@
       "shortDescription": "คำอธิบายสั้นๆ (ไม่บังคับ)"
     }
   },
+  "plugins": {
+    "tea": {
+      "description": "ธีมสีเบจอบอุ่นที่สร้างเพื่อยูทูบเบอร์และสตรีมเมอร์ Twitch ชื่อ Snipztea",
+      "visit": "สนับสนุน Snipztea:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    }
+  },
   "accessibility": {
     "close": "ปิด",
     "previousSlide": "สไลด์ก่อนหน้า",

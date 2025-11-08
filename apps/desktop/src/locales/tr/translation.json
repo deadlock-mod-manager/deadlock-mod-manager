@@ -632,6 +632,12 @@
       "detailedDescription": "Geliştirici odaklı kontrolleri ve deneysel özellikleri açar. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",
       "usageInstructions": "Süper Kullanıcı Modunu açmak için eklentiyi etkinleştirin. Geliştirici seçenekleri ve gelişmiş araçlar uygulama genelinde görünür olur. Tekrar gizlemek için eklentiyi devre dışı bırakın."
     },
+    "tea": {
+      "description": "YouTube ve Twitch yayıncısı Snipztea için oluşturulmuş sıcak bej bir tema.",
+      "visit": "Snipztea'yi destekle:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    },
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
       "visit": "Nightshift'i ziyaret et:",

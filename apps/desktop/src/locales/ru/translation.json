@@ -620,6 +620,12 @@
       "startHour": "Час начала (0–23)",
       "endHour": "Час окончания (0–23)"
     },
+    "tea": {
+      "description": "Уютная бежевая тема, созданная для ютубера и стримера Twitch Snipztea.",
+      "visit": "Поддержите Snipztea:",
+      "twitch": "Twitch",
+      "carrd": "Carrd"
+    },
     "nightshift": {
       "description": "Киберпанк‑тема с бирюзовыми акцентами для ясности и длительных игровых сессий.",
       "visit": "Посетить Nightshift:",
