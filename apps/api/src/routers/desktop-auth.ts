@@ -33,7 +33,8 @@ desktopAuthRouter.get("/validate", async (c) => {
   }
 
   const headers = new Headers();
-  headers.set("Cookie", `better-auth.session_token=${token}`);
+  // Try both with and without __Secure- prefix to handle different environments
+  headers.set("Cookie", `__Secure-better-auth.session_token=${token}`);
 
   const session = await auth.api.getSession({
     headers,
