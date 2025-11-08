@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   pgTable,
   text,
@@ -9,33 +10,40 @@ import {
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
-export const mods = pgTable("mod", {
-  id: typeId("id", "mod")
-    .primaryKey()
-    .$defaultFn(() => generateId("mod").toString()),
-  remoteId: text("remote_id").notNull().unique(),
-  name: text("name").notNull(),
-  description: text("description"),
-  remoteUrl: text("remote_url").notNull(),
-  category: text("category").notNull(),
-  likes: integer("likes").notNull().default(0),
-  author: text("author").notNull(),
-  downloadable: boolean("downloadable").notNull().default(false),
-  remoteAddedAt: timestamp("remote_added_at", { mode: "date" }).notNull(),
-  remoteUpdatedAt: timestamp("remote_updated_at", { mode: "date" }).notNull(),
-  tags: text("tags").array().notNull(),
-  images: text("images").array().notNull(),
-  hero: text("hero"),
-  isAudio: boolean("is_audio").notNull().default(false),
-  audioUrl: text("audio_url"),
-  downloadCount: integer("download_count").notNull().default(0),
-  isNSFW: boolean("is_nsfw").notNull().default(false),
-  isBlacklisted: boolean("is_blacklisted").notNull().default(false),
-  blacklistReason: text("blacklist_reason"),
-  blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
-  blacklistedBy: text("blacklisted_by"),
-  ...timestamps,
-});
+export const mods = pgTable(
+  "mod",
+  {
+    id: typeId("id", "mod")
+      .primaryKey()
+      .$defaultFn(() => generateId("mod").toString()),
+    remoteId: text("remote_id").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description"),
+    remoteUrl: text("remote_url").notNull(),
+    category: text("category").notNull(),
+    likes: integer("likes").notNull().default(0),
+    author: text("author").notNull(),
+    downloadable: boolean("downloadable").notNull().default(false),
+    remoteAddedAt: timestamp("remote_added_at", { mode: "date" }).notNull(),
+    remoteUpdatedAt: timestamp("remote_updated_at", { mode: "date" }).notNull(),
+    tags: text("tags").array().notNull(),
+    images: text("images").array().notNull(),
+    hero: text("hero"),
+    isAudio: boolean("is_audio").notNull().default(false),
+    audioUrl: text("audio_url"),
+    downloadCount: integer("download_count").notNull().default(0),
+    isNSFW: boolean("is_nsfw").notNull().default(false),
+    isBlacklisted: boolean("is_blacklisted").notNull().default(false),
+    blacklistReason: text("blacklist_reason"),
+    blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
+    blacklistedBy: text("blacklisted_by"),
+    ...timestamps,
+  },
+  (table) => [
+    index("idx_mod_created_at").on(table.createdAt),
+    index("idx_mod_updated_at").on(table.updatedAt),
+  ],
+);
 
 export const modDownloads = pgTable(
   "mod_download",
@@ -57,6 +65,7 @@ export const modDownloads = pgTable(
       table.modId,
       table.remoteId,
     ),
+    index("idx_mod_download_created_at").on(table.createdAt),
   ],
 );
 

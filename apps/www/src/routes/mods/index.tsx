@@ -14,21 +14,16 @@ export const Route = createFileRoute("/mods/")({
     const mods = await serverClient.listModsV2();
     return mods;
   },
-  head: () => {
-    const seoTags = seo({
-      title: "Browse Deadlock Mods - Deadlock Mod Manager",
+  head: () =>
+    seo({
+      title: "Browse Deadlock Mods | Deadlock Mod Manager",
       description:
         "Browse and discover mods for Valve's Deadlock game. Updated hourly with new skins, gameplay modifications, HUD mods, and more from GameBanana.",
       keywords:
         "deadlock mods, deadlock skins, deadlock gameplay mods, valve deadlock mods, gamebanana deadlock, deadlock modding community",
-      image: "https://deadlockmods.app/og-image.png",
       url: "https://deadlockmods.app/mods",
       canonical: "https://deadlockmods.app/mods",
-      type: "website",
-    });
-
-    return seoTags;
-  },
+    }),
 });
 
 function ModsPage() {

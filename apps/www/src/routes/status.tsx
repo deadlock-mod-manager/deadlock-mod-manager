@@ -1,21 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { STATUS_URL } from "@/lib/constants";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/status")({
   component: StatusComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Status | Deadlock Mod Manager",
-      },
-      {
-        name: "description",
-        content:
-          "Check the status of Deadlock Mod Manager services and infrastructure.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Status | Deadlock Mod Manager",
+      description:
+        "Check the status of Deadlock Mod Manager services and infrastructure.",
+    }),
 });
 
 function StatusComponent() {

@@ -6,9 +6,14 @@ import { HeroSection } from "@/components/hero";
 import { ModShowcaseSection } from "@/components/mod-showcase";
 import { StatsSection } from "@/components/stats";
 import { orpc } from "@/utils/orpc";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
+  head: () =>
+    seo({
+      title: "Deadlock Mod Manager | Download, Install & Manage Deadlock Mods",
+    }),
 });
 
 function HomeComponent() {

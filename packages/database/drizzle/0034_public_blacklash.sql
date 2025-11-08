@@ -1,0 +1,2 @@
+CREATE TYPE "public"."announcement_category" AS ENUM('maintenance', 'downtime', 'info');--> statement-breakpoint
+ALTER TABLE "announcement" ADD COLUMN "category" "announcement_category" DEFAULT 'info' NOT NULL;

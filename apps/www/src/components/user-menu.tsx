@@ -13,7 +13,8 @@ import {
 } from "@deadlock-mods/ui/components/dropdown-menu";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { LogInIcon, PhosphorIcons } from "@deadlock-mods/ui/icons";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
 
 export default function UserMenu() {
@@ -47,6 +48,8 @@ export default function UserMenu() {
       .join("")
       .toUpperCase()
       .slice(0, 2) || "U";
+
+  const isAdmin = session.user.isAdmin === true;
 
   return (
     <DropdownMenu>
@@ -88,6 +91,17 @@ export default function UserMenu() {
           </div>
         </div>
         <DropdownMenuSeparator />
+        {isAdmin && (
+          <>
+            <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+              <Link to='/dashboard'>
+                <LayoutDashboard className='size-4' />
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           className='cursor-pointer gap-2 py-2.5'
           onClick={() => {
