@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import Loader from "@/components/loader";
-import { authClient } from "@/lib/auth/client";
 
 export const Route = createFileRoute("/auth/desktop-callback")({
   component: RouteComponent,
@@ -17,16 +16,6 @@ function RouteComponent() {
   useEffect(() => {
     const handleDesktopCallback = async () => {
       try {
-        const session = await authClient.getSession();
-
-        if (!session.data) {
-          setStatus("error");
-          setErrorMessage(
-            "No active session found. Please try logging in again.",
-          );
-          return;
-        }
-
         const response = await fetch(
           `${import.meta.env.VITE_SERVER_URL || "http://localhost:9000"}/auth/desktop/session`,
           {
@@ -38,9 +27,8 @@ function RouteComponent() {
           throw new Error("Failed to get session token");
         }
 
-        const data = (await response.json()) as { token: string };
-
-        const deepLink = `deadlock-mod-manager://auth-callback?token=${encodeURIComponent(data.token)}`;
+        const data = (await response.json()) as { cookieValue: string };
+        const deepLink = `deadlock-mod-manager://auth-callback?token=${data.cookieValue}`;
 
         window.location.href = deepLink;
 

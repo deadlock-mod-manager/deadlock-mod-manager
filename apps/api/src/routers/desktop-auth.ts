@@ -1,3 +1,4 @@
+import { getSessionCookie } from "better-auth/cookies";
 import { Hono } from "hono";
 import { auth } from "../lib/auth";
 
@@ -13,6 +14,7 @@ desktopAuthRouter.get("/session", async (c) => {
   }
 
   return c.json({
+    cookieValue: getSessionCookie(c.req.raw.headers),
     token: session.session.token,
     user: session.user,
     session: session.session,
