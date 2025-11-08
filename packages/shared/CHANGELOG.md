@@ -1,5 +1,11 @@
 # @deadlock-mods/shared
 
+## 1.5.0
+
+### Minor Changes
+
+- f02f058: Add user-specific feature flag overrides with experimental features UI
+
 ## 1.4.0
 
 ### Minor Changes

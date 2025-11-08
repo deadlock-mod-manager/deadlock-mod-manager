@@ -567,6 +567,21 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.10.0": {
+        "title": "Profile Management, Developer Tools, Plugins & Enhanced Features",
+        "features": [
+          "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
+          "🔌 Comprehensive plugin system - Background customization, Discord Rich Presence, Flashbang (scheduled light mode), Themes (including Nightshift), and Sudo (mod conflict detection)",
+          "🎨 New Bloodmoon theme with black-red gradients and crimson accents",
+          "📁 Folder-based profile management for better organization",
+          "🔄 VPK file replacement feature for rapid mod development iteration",
+          "📥 Overhauled download system for better performance and reliability",
+          "⚙️ Experimental features UI with user-specific feature flag overrides",
+          "🛠️ Ingest Tool to add your matchdata to the Deadlock API",
+          "🐛 Fixed download total size displaying as 0.00 B",
+          "📦 Mods no longer removed from addons folder in vanilla mode"
+        ]
+      },
       "0.9.2": {
         "title": "Settings & Configuration",
         "features": [

@@ -1,5 +1,31 @@
 # api
 
+## 2.2.0
+
+### Minor Changes
+
+- 20e7f42: Add artifacts route to serve game files like gameinfo.gi. Includes new endpoint `/artifacts/deadlock/gameinfo.gi` and GitHub workflow for automatically downloading and updating game files from Steam depot.
+- f02f058: Add user-specific feature flag overrides with experimental features UI
+- bca1b80: Add feature flag to show plugins functionality and implement it in settings page
+- 82aad00: Folder based profile management
+- 51c1afb: Add mod blacklist system with Discord admin commands
+
+### Patch Changes
+
+- 23e1528: Add user segmentation and priority-based overrides to feature flags system with automatic registration helper
+- Updated dependencies [f02f058]
+- Updated dependencies [921a7a8]
+- Updated dependencies [921a7a8]
+- Updated dependencies [921a7a8]
+- Updated dependencies [0a2b9f4]
+- Updated dependencies [23e1528]
+- Updated dependencies [51c1afb]
+  - @deadlock-mods/feature-flags@0.2.0
+  - @deadlock-mods/database@1.5.0
+  - @deadlock-mods/shared@1.5.0
+  - @deadlock-mods/distributed-lock@1.0.2
+  - @deadlock-mods/instrumentation@0.1.2
+
 ## 2.1.0
 
 ### Minor Changes

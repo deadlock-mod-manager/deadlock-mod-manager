@@ -1,5 +1,28 @@
 # desktop
 
+## 0.10.0
+
+### Minor Changes
+
+- 6d48f52: Add developer mode toggle and dedicated developer tools page
+- f02f058: Add user-specific feature flag overrides with experimental features UI
+- bca1b80: Add comprehensive plugin system with dynamic loading, global rendering, and extensibility. Includes official plugins: Background (custom backgrounds with opacity/blur), Discord (Rich Presence integration), Flashbang (scheduled light mode), Themes (UI theming including Nightshift), and Sudo (mod conflict detection). Plugin system is hidden behind show-plugins feature flag for controlled rollout.
+- bca1b80: Add feature flag to show plugins functionality and implement it in settings page
+- a15e7ca: Add VPK file replacement feature for mod developers. Mod creators can now replace VPK files directly from the mod detail page when developer mode is enabled, allowing for rapid iteration during mod development without full reinstallation.
+- 82aad00: Folder based profile management
+- bca1b80: Add Bloodmoon theme with black-red gradients and crimson accents
+- 56686c9: Add Ingest Tool
+- 6d48f52: Overhauled download system with Rust-based implementation that downloads mods directly to the addons folder
+
+### Patch Changes
+
+- 6d48f52: Fix download total size displaying as 0.00 B by properly storing download file information
+- 8f80182: Don't remove mods from addons folder in vanilla mode
+- Updated dependencies [f02f058]
+- Updated dependencies [82aad00]
+  - @deadlock-mods/shared@1.5.0
+  - @deadlock-mods/ui@0.2.0
+
 ## 0.9.2
 
 ### Minor Changes

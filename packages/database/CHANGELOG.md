@@ -1,5 +1,28 @@
 # @deadlock-mods/database
 
+## 1.5.0
+
+### Minor Changes
+
+- f02f058: Add user-specific feature flag overrides with experimental features UI
+- 921a7a8: Add background workers for mirror service validation and cleanup
+
+  - Validation worker runs every hour (configurable) to check for stale files by comparing mirroredFiles with modDownloads
+  - Cleanup worker runs daily to remove unused files older than 14 days (configurable)
+  - Added Redis configuration and cron job scheduling using @deadlock-mods/queue
+  - Enhanced MirroredFileRepository with new query methods for validation and cleanup
+  - Added lastValidated and isStale fields to mirroredFiles schema
+  - Implemented graceful shutdown handling for background workers
+
+- 0a2b9f4: Add message triage system to automatically detect and redirect bug reports and help requests to appropriate channels
+- 23e1528: Add user segmentation and priority-based overrides to feature flags system with automatic registration helper
+- 51c1afb: Add mod blacklist system with Discord admin commands
+
+### Patch Changes
+
+- 921a7a8: Add metrics endpoint to mirror service with cache hit rate, storage usage, download counts, and bandwidth savings tracking
+- 921a7a8: Rename gameBananaLastChecked to lastValidated for clarity
+
 ## 1.4.0
 
 ### Minor Changes
