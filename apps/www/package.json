@@ -45,6 +45,7 @@
     "react-ga4": "^2.1.0",
     "react-hook-form": "^7.63.0",
     "react-icons": "^5.5.0",
+    "recharts": "^2.15.4",
     "shiki": "^3.13.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
