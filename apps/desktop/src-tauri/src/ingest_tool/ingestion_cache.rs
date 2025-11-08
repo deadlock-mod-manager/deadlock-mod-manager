@@ -1,6 +1,5 @@
 use crate::ingest_tool::utils::Salts;
 use std::collections::HashMap;
-use std::io::Write;
 use std::sync::{OnceLock, RwLock};
 
 /// Global cache to track successfully ingested salts.

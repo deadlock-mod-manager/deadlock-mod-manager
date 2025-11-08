@@ -410,25 +410,6 @@ impl DownloadManager {
     Ok(())
   }
 
-  fn find_vpk_files_recursive(dir: &std::path::Path) -> Result<Vec<PathBuf>, Error> {
-    let mut vpk_files = Vec::new();
-
-    if dir.is_dir() {
-      for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-          vpk_files.extend(Self::find_vpk_files_recursive(&path)?);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-          vpk_files.push(path);
-        }
-      }
-    }
-
-    Ok(vpk_files)
-  }
-
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
     log::info!("Cancelling download for mod: {mod_id}");
 

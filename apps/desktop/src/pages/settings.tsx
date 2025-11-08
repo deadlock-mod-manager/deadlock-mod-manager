@@ -173,7 +173,7 @@ const CustomSettings = () => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
-  const { isEnabled: showPlugins } = useFeatureFlag("show-plugins");
+  const { isEnabled: showPlugins } = useFeatureFlag("show-plugins", true);
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);

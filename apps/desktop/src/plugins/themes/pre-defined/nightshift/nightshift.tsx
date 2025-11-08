@@ -1,10 +1,25 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import bloodmoonBg from "../../public/pre-defiend/bloodmoon/background/background.png";
+import nightshiftBg1080 from "../../public/pre-defined/nightshift/backgrounds/nightshift_bg_1080p.png";
+import nightshiftBg4k from "../../public/pre-defined/nightshift/backgrounds/nightshift_teal_4k.png";
 
-const BloodmoonTheme = () => {
+// Corner UI removed per design request
+
+const NightshiftTheme = () => {
   const [mounted, setMounted] = useState(false);
+
+  const backgroundUrl = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      if (width >= 3840 || height >= 2160) {
+        return nightshiftBg4k;
+      }
+    }
+    return nightshiftBg1080;
+  }, []);
 
   const backgroundStyle = useMemo<CSSProperties>(() => {
     return {
@@ -13,22 +28,22 @@ const BloodmoonTheme = () => {
       right: 0,
       bottom: 0,
       left: 0,
-      backgroundImage: `url(${bloodmoonBg})`,
+      backgroundImage: `url(${backgroundUrl})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
       pointerEvents: "none",
-      opacity: 0.4,
+      opacity: 0.3,
       zIndex: 0,
     };
-  }, []);
+  }, [backgroundUrl]);
 
   useEffect(() => {
     if (!mounted) return;
 
     const root = document.documentElement;
-    root.classList.add("bloodmoon-theme-active");
+    root.classList.add("nightshift-theme-active");
     return () => {
-      root.classList.remove("bloodmoon-theme-active");
+      root.classList.remove("nightshift-theme-active");
     };
   }, [mounted]);
 
@@ -40,4 +55,4 @@ const BloodmoonTheme = () => {
   return createPortal(backgroundNode, document.body);
 };
 
-export default BloodmoonTheme;
+export default NightshiftTheme;

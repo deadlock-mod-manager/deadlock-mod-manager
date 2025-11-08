@@ -20,9 +20,11 @@ import {
   getUserThemes,
   LineColorPicker,
   saveEditingUserTheme,
+  type ThemeSettings,
 } from "./custom";
-import BloodmoonTheme from "./pre-defiend/bloodmoon/bloodmoon.tsx";
-import NightshiftTheme from "./pre-defiend/nightshift/nightshift.tsx";
+import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
+import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
+import TeaTheme from "./pre-defined/tea/tea.tsx";
 
 export const manifest = {
   id: "themes",
@@ -33,18 +35,7 @@ export const manifest = {
   icon: "public/icon.png",
 } as const;
 
-type ThemeSettings = {
-  activeSection: "pre-defined" | "custom";
-  activeTheme?: string;
-  customTheme?: {
-    lineColor: string;
-    iconData?: string;
-    backgroundSource?: "url" | "local";
-    backgroundUrl?: string;
-    backgroundData?: string;
-    backgroundOpacity?: number;
-  };
-};
+export type { ThemeSettings };
 
 const DEFAULT_SETTINGS: ThemeSettings = {
   activeSection: "pre-defined",
@@ -64,19 +55,29 @@ const PRE_DEFINED_THEMES = [
     id: "nightshift",
     name: "Nightshift",
     description: "A teal-accented cyberpunk theme with elegant UI elements",
+    descriptionKey: "plugins.nightshift.description",
     component: NightshiftTheme,
     previewImage:
-      "/src/plugins/themes/public/pre-defiend/nightshift/preview.png",
+      "/src/plugins/themes/public/pre-defined/nightshift/preview.png",
   },
   {
     id: "bloodmoon",
     name: "Bloodmoon",
     description: "A dark theme with black-red gradients and crimson accents",
+    descriptionKey: "plugins.bloodmoon.description",
     component: BloodmoonTheme,
     previewImage:
-      "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
+      "/src/plugins/themes/public/pre-defined/bloodmoon/preview.png",
   },
-];
+  {
+    id: "tea",
+    name: "Tea",
+    description: "A cozy beige theme celebrating Snipztea.",
+    descriptionKey: "plugins.tea.description",
+    component: TeaTheme,
+    previewImage: "/src/plugins/themes/public/pre-defined/tea/preview.png",
+  },
+] as const;
 
 const Settings = () => {
   const { t } = useTranslation();
@@ -136,11 +137,9 @@ const Settings = () => {
                   <CardDescription>
                     {"userCreated" in theme && theme.userCreated
                       ? ((theme as CustomExportedTheme).description ?? "")
-                      : theme.id === "nightshift"
-                        ? t("plugins.nightshift.description")
-                        : theme.id === "bloodmoon"
-                          ? t("plugins.bloodmoon.description")
-                          : theme.description}
+                      : "descriptionKey" in theme && theme.descriptionKey
+                        ? t(theme.descriptionKey)
+                        : theme.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='flex flex-col gap-4 flex-1'>
@@ -178,6 +177,28 @@ const Settings = () => {
                           {(theme as CustomExportedTheme).subDescription}
                         </div>
                       ) : null
+                    ) : theme.id === "tea" ? (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-3'>{t("plugins.tea.visit")}</span>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center mr-3'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void open("https://www.twitch.tv/snipztea");
+                          }}
+                          type='button'>
+                          {t("plugins.tea.twitch")}
+                        </button>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void open("https://snipztea.carrd.co/");
+                          }}
+                          type='button'>
+                          {t("plugins.tea.carrd")}
+                        </button>
+                      </div>
                     ) : theme.id === "nightshift" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
                         <span className='mr-2'>
@@ -483,7 +504,7 @@ const Settings = () => {
                   }>
                   {t("plugins.themes.clear")}
                 </Button>
-                {"editingThemeId" in current && current.editingThemeId ? (
+                {current.editingThemeId ? (
                   <>
                     <Button
                       variant='default'

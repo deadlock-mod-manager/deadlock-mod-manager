@@ -26,16 +26,20 @@ export const Topbar = () => {
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
   const themedIconSrc =
     activeTheme === "nightshift"
-      ? "/src/plugins/themes/public/pre-defiend/nightshift/icon.png"
+      ? "/src/plugins/themes/public/pre-defined/nightshift/icon.png"
       : activeTheme === "bloodmoon"
-        ? "/src/plugins/themes/public/pre-defiend/bloodmoon/icon.png"
-        : activeTheme === "custom"
-          ? themesSettings?.customTheme?.iconData || undefined
-          : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
-              ?.iconData || undefined;
+        ? "/src/plugins/themes/public/pre-defined/bloodmoon/icon.png"
+        : activeTheme === "tea"
+          ? "/src/plugins/themes/public/pre-defined/tea/logo.png"
+          : activeTheme === "custom"
+            ? themesSettings?.customTheme?.iconData || undefined
+            : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
+                ?.iconData || undefined;
 
   return (
-    <div className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'>
+    <div
+      className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'
+      data-topbar='true'>
       <div className='flex items-center gap-2'>
         {themedIconSrc ? (
           <img

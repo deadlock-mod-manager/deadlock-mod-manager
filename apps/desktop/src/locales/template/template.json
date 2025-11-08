@@ -504,6 +504,14 @@
       "shortDescription": ""
     }
   },
+  "plugins": {
+    "tea": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "carrd": ""
+    }
+  },
   "accessibility": {
     "close": "",
     "previousSlide": "",

@@ -31,6 +31,7 @@ import { Link, useLocation } from "react-router";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import type { ThemeSettings } from "@/plugins/themes";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -218,9 +219,16 @@ export const AppSidebar = () => {
     (state) => state.enabledPlugins.sudo ?? false,
   );
   const { isEnabled: apiSudoEnabled } = useFeatureFlag("plugin-sudo");
+  const themesEnabled = usePersistedStore(
+    (state) => state.enabledPlugins.themes ?? false,
+  );
+  const themeSettings = usePersistedStore((state) => {
+    return state.pluginSettings.themes as ThemeSettings | undefined;
+  });
 
   // Plugin is enabled only if both local and feature flag configuration allow it
   const sudoEnabled = localSudoEnabled && apiSudoEnabled;
+  const showTeaMascot = themesEnabled && themeSettings?.activeTheme === "tea";
 
   let allItems = getSidebarItems(t, developerMode);
 
@@ -286,6 +294,15 @@ export const AppSidebar = () => {
             </SidebarGroup>
           );
         })}
+        {showTeaMascot ? (
+          <div className='group-data-[collapsible=icon]:hidden mt-auto flex justify-center px-3 pb-4'>
+            <img
+              alt='Snipztea mascot'
+              className='max-w-[160px] w-full rounded-md object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]'
+              src='/src/plugins/themes/public/pre-defined/tea/fumo_dog.png'
+            />
+          </div>
+        ) : null}
       </SidebarContent>
       <SidebarFooter>
         {bottomGroups.map((group) => {

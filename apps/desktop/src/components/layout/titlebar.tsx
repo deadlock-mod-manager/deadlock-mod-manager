@@ -309,7 +309,7 @@ export const Titlebar = () => {
 
   return (
     <>
-      <WindowTitlebar className='z-20 bg-background'>
+      <WindowTitlebar className='z-20 bg-background' data-titlebar='true'>
         <div className='inline-flex h-fit w-fit items-center gap-2 px-2 py-1'>
           <Logo className='size-5' />
           <Menubar className='border-none bg-transparent shadow-none h-auto p-0'>

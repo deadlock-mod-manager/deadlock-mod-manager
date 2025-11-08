@@ -26,7 +26,7 @@ export const NightshiftUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defiend/nightshift/svg/corner_top_left.svg'
+          src='/src/plugins/themes/public/pre-defined/nightshift/svg/corner_top_left.svg'
           alt=''
           style={{
             width: "100%",
@@ -48,7 +48,7 @@ export const NightshiftUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defiend/nightshift/svg/corner_top_right.svg'
+          src='/src/plugins/themes/public/pre-defined/nightshift/svg/corner_top_right.svg'
           alt=''
           style={{
             width: "100%",
@@ -70,7 +70,7 @@ export const NightshiftUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defiend/nightshift/svg/corner_bottom_left.svg'
+          src='/src/plugins/themes/public/pre-defined/nightshift/svg/corner_bottom_left.svg'
           alt=''
           style={{
             width: "100%",
@@ -92,7 +92,7 @@ export const NightshiftUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defiend/nightshift/svg/corner_bottom_right.svg'
+          src='/src/plugins/themes/public/pre-defined/nightshift/svg/corner_bottom_right.svg'
           alt=''
           style={{
             width: "100%",
