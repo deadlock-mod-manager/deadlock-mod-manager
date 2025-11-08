@@ -1,6 +1,7 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { Hono } from "hono";
 import { auth } from "../lib/auth";
+import { env } from "../lib/env";
 
 const desktopAuthRouter = new Hono();
 
@@ -33,8 +34,11 @@ desktopAuthRouter.get("/validate", async (c) => {
   }
 
   const headers = new Headers();
-  // Try both with and without __Secure- prefix to handle different environments
-  headers.set("Cookie", `__Secure-better-auth.session_token=${token}`);
+  const cookieName =
+    env.NODE_ENV === "production"
+      ? "__Secure-better-auth.session_token"
+      : "better-auth.session_token";
+  headers.set("Cookie", `${cookieName}=${token}`);
 
   const session = await auth.api.getSession({
     headers,
