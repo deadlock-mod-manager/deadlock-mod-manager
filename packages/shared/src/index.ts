@@ -1,4 +1,5 @@
 export * from "./constants";
+export * from "./dto/announcement.dto";
 export * from "./dto/custom-settings.dto";
 export * from "./dto/mod.dto";
 export * from "./dto/profile.dto";
@@ -7,6 +8,7 @@ export * from "./events";
 export * from "./heroes";
 export * from "./nsfw-settings";
 export * from "./providers/index";
+export * from "./schemas/announcement.schemas";
 export * from "./schemas/feature-flag.schemas";
 export * from "./schemas/mod.schemas";
 export * from "./schemas/profile.schemas";

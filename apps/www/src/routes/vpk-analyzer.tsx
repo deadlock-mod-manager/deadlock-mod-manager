@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { VpkAnalyzer } from "@/components/vpk-analyzer";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/vpk-analyzer")({
   component: VpkAnalyzerComponent,
+  head: () =>
+    seo({
+      title: "VPK Analyzer | Deadlock Mod Manager",
+      description: "Upload a VPK file to analyze which mod it belongs to",
+    }),
 });
 
 function VpkAnalyzerComponent() {

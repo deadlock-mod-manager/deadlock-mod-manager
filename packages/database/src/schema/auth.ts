@@ -1,17 +1,22 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
-export const user = pgTable("user", {
-  id: typeId("id", "user")
-    .primaryKey()
-    .$defaultFn(() => generateId("user").toString()),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull(),
-  image: text("image"),
-  ...timestamps,
-});
+export const user = pgTable(
+  "user",
+  {
+    id: typeId("id", "user")
+      .primaryKey()
+      .$defaultFn(() => generateId("user").toString()),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull(),
+    image: text("image"),
+    isAdmin: boolean("is_admin").notNull().default(false),
+    ...timestamps,
+  },
+  (table) => [index("idx_user_created_at").on(table.createdAt)],
+);
 
 export const session = pgTable("session", {
   id: typeId("id", "session")

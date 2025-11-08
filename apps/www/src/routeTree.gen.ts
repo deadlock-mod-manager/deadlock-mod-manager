@@ -19,13 +19,17 @@ import { Route as KvParserRouteImport } from './routes/kv-parser'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as R403RouteImport } from './routes/403'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModsIndexRouteImport } from './routes/mods/index'
 import { Route as DownloadIndexRouteImport } from './routes/download/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ModIdRouteImport } from './routes/mod/$id'
 import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
+import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
 import { Route as AuthDesktopCallbackRouteImport } from './routes/auth/desktop-callback'
 
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
@@ -78,6 +82,16 @@ const DiscordRoute = DiscordRouteImport.update({
   path: '/discord',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R403Route = R403RouteImport.update({
+  id: '/403',
+  path: '/403',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -98,6 +112,11 @@ const DownloadIndexRoute = DownloadIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DownloadRoute,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ModIdRoute = ModIdRouteImport.update({
   id: '/mod/$id',
   path: '/mod/$id',
@@ -113,6 +132,11 @@ const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
   path: '/linux',
   getParentRoute: () => DownloadRoute,
 } as any)
+const DashboardAnnouncementsRoute = DashboardAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const AuthDesktopCallbackRoute = AuthDesktopCallbackRouteImport.update({
   id: '/auth/desktop-callback',
   path: '/auth/desktop-callback',
@@ -122,6 +146,8 @@ const AuthDesktopCallbackRoute = AuthDesktopCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
+  '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
@@ -133,15 +159,18 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
+  '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
   '/mods': typeof ModsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/kv-parser': typeof KvParserRoute
@@ -152,9 +181,11 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
+  '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/download': typeof DownloadIndexRoute
   '/mods': typeof ModsIndexRoute
 }
@@ -162,6 +193,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
+  '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
@@ -173,9 +206,11 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
+  '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
   '/mods/': typeof ModsIndexRoute
 }
@@ -184,6 +219,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/403'
+    | '/dashboard'
     | '/discord'
     | '/docs'
     | '/download'
@@ -195,15 +232,18 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/desktop-callback'
+    | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/dashboard/'
     | '/download/'
     | '/mods'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$'
+    | '/403'
     | '/discord'
     | '/docs'
     | '/kv-parser'
@@ -214,15 +254,19 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/desktop-callback'
+    | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/dashboard'
     | '/download'
     | '/mods'
   id:
     | '__root__'
     | '/'
     | '/$'
+    | '/403'
+    | '/dashboard'
     | '/discord'
     | '/docs'
     | '/download'
@@ -234,9 +278,11 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/desktop-callback'
+    | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/dashboard/'
     | '/download/'
     | '/mods/'
   fileRoutesById: FileRoutesById
@@ -244,6 +290,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  R403Route: typeof R403Route
+  DashboardRoute: typeof DashboardRouteWithChildren
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
   DownloadRoute: typeof DownloadRouteWithChildren
@@ -331,6 +379,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/403': {
+      id: '/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof R403RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$': {
       id: '/$'
       path: '/$'
@@ -359,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DownloadIndexRouteImport
       parentRoute: typeof DownloadRoute
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/mod/$id': {
       id: '/mod/$id'
       path: '/mod/$id'
@@ -380,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DownloadLinuxRouteImport
       parentRoute: typeof DownloadRoute
     }
+    '/dashboard/announcements': {
+      id: '/dashboard/announcements'
+      path: '/announcements'
+      fullPath: '/dashboard/announcements'
+      preLoaderRoute: typeof DashboardAnnouncementsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/auth/desktop-callback': {
       id: '/auth/desktop-callback'
       path: '/auth/desktop-callback'
@@ -389,6 +465,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface DashboardRouteChildren {
+  DashboardAnnouncementsRoute: typeof DashboardAnnouncementsRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAnnouncementsRoute: DashboardAnnouncementsRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
 
 interface DownloadRouteChildren {
   DownloadLinuxRoute: typeof DownloadLinuxRoute
@@ -409,6 +499,8 @@ const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  R403Route: R403Route,
+  DashboardRoute: DashboardRouteWithChildren,
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,
   DownloadRoute: DownloadRouteWithChildren,

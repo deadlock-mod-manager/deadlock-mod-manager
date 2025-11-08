@@ -9,6 +9,16 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  user: {
+    additionalFields: {
+      isAdmin: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false, // don't allow user to set isAdmin during signup
+      },
+    },
+  },
   account: {
     accountLinking: {
       enabled: true,

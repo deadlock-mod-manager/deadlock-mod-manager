@@ -211,6 +211,41 @@
       "when": 1762002399531,
       "tag": "0029_warm_karen_page",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1762551157352,
+      "tag": "0030_bizarre_spot",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1762551304970,
+      "tag": "0031_cuddly_night_thrasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1762553118233,
+      "tag": "0032_complex_skullbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1762608956647,
+      "tag": "0033_salty_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1762609350184,
+      "tag": "0034_public_blacklash",
+      "breakpoints": true
     }
   ]
 }
