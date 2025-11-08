@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import useAbout from "@/hooks/use-about";
 import logger from "@/lib/logger";
 import { useAnalytics } from "./use-analytics";
 
@@ -62,6 +63,7 @@ interface FeatureProperties extends BaseAnalyticsProperties {
  */
 export const useAnalyticsEvents = () => {
   const { capture, identify, isEnabled } = useAnalytics();
+  const { version } = useAbout();
 
   // User identification and properties
   const identifyUser = useCallback(
@@ -71,7 +73,7 @@ export const useAnalyticsEvents = () => {
       try {
         await identify(hardwareId, {
           platform: "desktop",
-          app_version: import.meta.env.VITE_APP_VERSION || "unknown",
+          app_version: version || "unknown",
           ...properties,
         });
         logger.info("User identified for analytics", {
@@ -81,7 +83,7 @@ export const useAnalyticsEvents = () => {
         logger.warn("Failed to identify user for analytics", error);
       }
     },
-    [identify, isEnabled],
+    [identify, isEnabled, version],
   );
 
   // App lifecycle events
