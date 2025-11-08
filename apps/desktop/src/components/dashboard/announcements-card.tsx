@@ -33,7 +33,6 @@ const getCategoryIcon = (category: string) => {
       return Wrench;
     case "downtime":
       return Warning;
-    case "info":
     default:
       return Info;
   }

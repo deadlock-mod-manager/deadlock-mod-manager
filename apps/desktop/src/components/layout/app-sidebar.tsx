@@ -31,9 +31,9 @@ import { Link, useLocation } from "react-router";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import type { ThemeSettings } from "@/plugins/themes";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
-import type { ThemeSettings } from "@/plugins/themes";
 
 type SidebarItem = {
   id: string;
@@ -299,7 +299,7 @@ export const AppSidebar = () => {
             <img
               alt='Snipztea mascot'
               className='max-w-[160px] w-full rounded-md object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]'
-              src='/src/plugins/themes/public/pre-defiend/tea/fumo_dog.png'
+              src='/src/plugins/themes/public/pre-defined/tea/fumo_dog.png'
             />
           </div>
         ) : null}

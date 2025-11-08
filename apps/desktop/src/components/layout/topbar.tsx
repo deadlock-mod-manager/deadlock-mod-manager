@@ -26,15 +26,15 @@ export const Topbar = () => {
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
   const themedIconSrc =
     activeTheme === "nightshift"
-      ? "/src/plugins/themes/public/pre-defiend/nightshift/icon.png"
+      ? "/src/plugins/themes/public/pre-defined/nightshift/icon.png"
       : activeTheme === "bloodmoon"
-        ? "/src/plugins/themes/public/pre-defiend/bloodmoon/icon.png"
+        ? "/src/plugins/themes/public/pre-defined/bloodmoon/icon.png"
         : activeTheme === "tea"
-          ? "/src/plugins/themes/public/pre-defiend/tea/logo.png"
-        : activeTheme === "custom"
-          ? themesSettings?.customTheme?.iconData || undefined
-          : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
-              ?.iconData || undefined;
+          ? "/src/plugins/themes/public/pre-defined/tea/logo.png"
+          : activeTheme === "custom"
+            ? themesSettings?.customTheme?.iconData || undefined
+            : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
+                ?.iconData || undefined;
 
   return (
     <div

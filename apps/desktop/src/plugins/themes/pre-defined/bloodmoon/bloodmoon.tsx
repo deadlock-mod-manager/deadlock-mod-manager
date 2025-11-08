@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import teaBackground from "../../public/pre-defiend/tea/background/chowder_pattern.png";
+import bloodmoonBg from "../../public/pre-defined/bloodmoon/background/background.png";
 
-const TeaTheme = () => {
+const BloodmoonTheme = () => {
   const [mounted, setMounted] = useState(false);
 
   const backgroundStyle = useMemo<CSSProperties>(() => {
@@ -13,12 +13,12 @@ const TeaTheme = () => {
       right: 0,
       bottom: 0,
       left: 0,
-      backgroundImage: `linear-gradient(rgba(26, 18, 34, 0.35), rgba(26, 18, 34, 0.6)), url(${teaBackground})`,
-      backgroundSize: "auto",
+      backgroundImage: `url(${bloodmoonBg})`,
+      backgroundSize: "cover",
       backgroundPosition: "center",
-      backgroundRepeat: "repeat",
       pointerEvents: "none",
-      zIndex: -1,
+      opacity: 0.4,
+      zIndex: 0,
     };
   }, []);
 
@@ -26,9 +26,9 @@ const TeaTheme = () => {
     if (!mounted) return;
 
     const root = document.documentElement;
-    root.classList.add("tea-theme-active");
+    root.classList.add("bloodmoon-theme-active");
     return () => {
-      root.classList.remove("tea-theme-active");
+      root.classList.remove("bloodmoon-theme-active");
     };
   }, [mounted]);
 
@@ -40,5 +40,4 @@ const TeaTheme = () => {
   return createPortal(backgroundNode, document.body);
 };
 
-export default TeaTheme;
-
+export default BloodmoonTheme;

@@ -299,13 +299,13 @@
 .tea-theme-active main,
 .tea-theme-active .group\/sidebar-wrapper,
 .tea-theme-active .group\/sidebar-wrapper > div,
-.tea-theme-active [data-topbar='true'],
-.tea-theme-active [data-titlebar='true'] {
-  background-color: transparent !important;
+.tea-theme-active [data-topbar="true"],
+.tea-theme-active [data-titlebar="true"] {
+  background-color: transparent;
 }
 
 .tea-theme-active .ns-corners {
-  background-color: rgba(40, 18, 58, 0.32) !important;
+  background-color: rgba(40, 18, 58, 0.32);
 }
 
 /* Nightshift Theme Styles */

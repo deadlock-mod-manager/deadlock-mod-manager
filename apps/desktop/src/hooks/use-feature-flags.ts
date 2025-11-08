@@ -19,11 +19,14 @@ export const useFeatureFlags = () => {
   });
 };
 
-export const useFeatureFlag = (flagName: string) => {
+export const useFeatureFlag = (
+  flagName: string,
+  defaultValue: boolean = false,
+) => {
   const { data: featureFlags, ...rest } = useFeatureFlags();
 
   const flag = featureFlags?.find((flag) => flag.name === flagName);
-  const isEnabled = flag?.enabled ?? false;
+  const isEnabled = flag?.enabled ?? defaultValue;
 
   return {
     isEnabled,
