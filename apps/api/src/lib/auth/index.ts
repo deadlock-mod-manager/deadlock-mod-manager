@@ -9,6 +9,8 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
   user: {
     additionalFields: {
       isAdmin: {

@@ -23,7 +23,10 @@ desktopAuthRouter.get("/session", async (c) => {
 
 desktopAuthRouter.get("/validate", async (c) => {
   const authHeader = c.req.header("Authorization");
-  const token = authHeader?.replace("Bearer ", "");
+  const rawToken = authHeader?.replace("Bearer ", "");
+
+  // URL decode the token in case it comes URL-encoded
+  const token = rawToken ? decodeURIComponent(rawToken) : undefined;
 
   if (!token) {
     return c.json({ error: "No token provided" }, 401);
