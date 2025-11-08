@@ -18,18 +18,12 @@ export const WhatsNewCard = () => {
     {
       version: "0.9.2",
       title: t("whatsNew.versions.0.9.2.title"),
-      features: t("whatsNew.versions.0.9.2.features", {
-        returnObjects: true,
-      }) as string[],
+      features: [],
     },
     {
       version: "0.9.0",
       title: t("whatsNew.versions.0.9.0.title"),
-      features: (
-        t("whatsNew.versions.0.9.0.features", {
-          returnObjects: true,
-        }) as string[]
-      ).slice(0, 2),
+      features: [],
     },
   ];
 
@@ -46,7 +40,7 @@ export const WhatsNewCard = () => {
             </span>
             <span className='font-medium text-sm'>{update.title}</span>
           </div>
-          <ul className='space-y-1 pl-4'>
+          <ul className='space-y-1 pl-4 overflow-y-scroll max-h-40 scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin custom-scrollbar'>
             {update.features.map((feature) => (
               <li key={feature} className='text-muted-foreground text-sm'>
                 {feature}
