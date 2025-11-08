@@ -13,12 +13,14 @@ interface VpkScanAlertProps {
   unmatchedVpkCount: number;
   unmatchedVpks: string[];
   isLoading?: boolean;
-  refetch: () => void;
+  isRefetching?: boolean;
+  refetch: () => Promise<unknown>;
 }
 
 export const VpkScanAlert = ({
   unmatchedVpkCount,
   unmatchedVpks,
+  isRefetching = false,
   refetch,
 }: VpkScanAlertProps) => {
   const { t } = useTranslation();
@@ -31,6 +33,10 @@ export const VpkScanAlert = ({
 
   const toggleList = () => {
     setIsListVisible(!isListVisible);
+  };
+
+  const handleRefetch = async () => {
+    await refetch();
   };
 
   return (
@@ -84,9 +90,10 @@ export const VpkScanAlert = ({
       <div className='flex flex-col gap-2'>
         <AnalyzeAddonsButton />
         <Button
-          onClick={refetch}
+          onClick={handleRefetch}
           size='sm'
           variant='ghost'
+          isLoading={isRefetching}
           icon={<PhosphorIcons.ArrowClockwiseIcon className='h-4 w-4' />}>
           {t("mods.vpkScanAlert.refresh")}
         </Button>

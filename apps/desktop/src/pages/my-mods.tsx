@@ -361,6 +361,7 @@ const MyMods = () => {
     unmatchedVpkCount,
     unmatchedVpks,
     isLoading: isVpkScanLoading,
+    isRefetching: isVpkScanRefetching,
     refetch: refetchVpkScan,
   } = useVpkScan();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
@@ -525,6 +526,7 @@ const MyMods = () => {
             unmatchedVpkCount={unmatchedVpkCount}
             unmatchedVpks={unmatchedVpks}
             isLoading={isVpkScanLoading}
+            isRefetching={isVpkScanRefetching}
             refetch={refetchVpkScan}
           />
           {mods.length === 0 && <MyModsEmptyState />}

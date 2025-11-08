@@ -6,8 +6,9 @@ import {
   Package,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation, useQuery } from "react-query";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { analyzeLocalAddons } from "@/lib/api";
 import logger from "@/lib/logger";
@@ -22,58 +23,56 @@ type CheckState = "idle" | "checking" | "none" | "found" | "analyzing";
 
 export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
   const { t } = useTranslation();
-  const { getActiveProfile } = usePersistedStore();
-  const [checkState, setCheckState] = useState<CheckState>("idle");
+  const activeProfile = usePersistedStore((state) => {
+    const { activeProfileId, profiles } = state;
+    return profiles[activeProfileId];
+  });
   const [analysisResult, setAnalysisResult] =
     useState<AnalyzeAddonsResult | null>(null);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const checkForAddons = useCallback(async () => {
-    setCheckState("checking");
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-      const exists = await invoke<boolean>("check_addons_exist", {
-        profileFolder,
-      });
-      setCheckState(exists ? "found" : "none");
-      logger.info("Checked for existing addons", { exists });
+  const profileFolder = activeProfile?.folderName ?? null;
 
-      if (!exists) {
-        onComplete();
-      }
-    } catch (error) {
-      logger.error("Failed to check for addons", { error });
-      setCheckState("none");
-      onComplete();
-    }
-  }, [onComplete, getActiveProfile]);
+  const {
+    data: addonsExist,
+    isLoading: isChecking,
+    error: checkError,
+  } = useQuery(["check-addons-exist", profileFolder], async () => {
+    const exists = await invoke<boolean>("check_addons_exist", {
+      profileFolder,
+    });
+    return exists;
+  });
 
-  const handleAnalyze = async () => {
-    setCheckState("analyzing");
-    setIsAnalyzing(true);
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-      const result = await analyzeLocalAddons(profileFolder);
+  const analyzeMutation = useMutation(analyzeLocalAddons, {
+    onSuccess: (result) => {
       setAnalysisResult(result);
       setShowAnalysisDialog(true);
       logger.info("Local addons analyzed", {
         count: result.addons.length,
         errors: result.errors.length,
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       logger.error("Failed to analyze addons", { error });
-    } finally {
-      setIsAnalyzing(false);
-      setCheckState("found");
-    }
-  };
+    },
+  });
 
-  useEffect(() => {
-    checkForAddons();
-  }, [checkForAddons]);
+  const checkState: CheckState = isChecking
+    ? "checking"
+    : typeof addonsExist === "boolean"
+      ? addonsExist
+        ? "found"
+        : "none"
+      : checkError
+        ? "none"
+        : !profileFolder
+          ? "idle"
+          : "idle";
+
+  const handleAnalyze = () => {
+    analyzeMutation.mutate(profileFolder);
+  };
 
   return (
     <>
@@ -109,7 +108,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
             </div>
           )}
 
-          {(checkState === "found" || checkState === "analyzing") && (
+          {(checkState === "found" || analyzeMutation.isLoading) && (
             <div className='space-y-3'>
               <div className='flex items-start gap-3 p-4 border rounded-lg bg-blue-500/10 border-blue-500/20'>
                 <Package className='h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5' />
@@ -126,10 +125,10 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
                 variant='default'
                 size='sm'
                 onClick={handleAnalyze}
-                disabled={isAnalyzing}
+                disabled={analyzeMutation.isLoading}
                 className='w-full'>
                 <FolderOpen className='h-4 w-4 mr-2' />
-                {isAnalyzing
+                {analyzeMutation.isLoading
                   ? t("onboarding.addons.analyzing")
                   : t("onboarding.addons.analyze")}
               </Button>
@@ -137,7 +136,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
                 variant='outline'
                 size='sm'
                 onClick={onComplete}
-                disabled={isAnalyzing}
+                disabled={analyzeMutation.isLoading}
                 className='w-full'>
                 {t("onboarding.addons.skipAnalysis")}
               </Button>

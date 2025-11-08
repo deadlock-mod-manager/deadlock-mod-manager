@@ -29,7 +29,8 @@ export const useGlobalShortcuts = (shortcuts: GlobalShortcut[]) => {
       if (event.shiftKey) modifiers.push("Shift");
       if (event.metaKey) modifiers.push("Meta");
 
-      const key = event.key;
+      // Normalize key to uppercase to match shortcut registration format
+      const key = event.key.toUpperCase();
       const shortcutString = [...modifiers, key].join("+");
 
       // Find matching shortcut

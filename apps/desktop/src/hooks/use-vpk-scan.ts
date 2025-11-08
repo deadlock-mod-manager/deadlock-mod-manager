@@ -13,6 +13,7 @@ export const useVpkScan = () => {
   const {
     data: vpkFiles,
     isLoading,
+    isRefetching,
     error,
     refetch,
   } = useQuery(
@@ -56,6 +57,7 @@ export const useVpkScan = () => {
     unmatchedVpkCount: unmatchedVpkData.count,
     unmatchedVpks: unmatchedVpkData.files,
     isLoading,
+    isRefetching,
     error,
     hasUnmatchedVpks: unmatchedVpkData.count > 0,
     refetch,
