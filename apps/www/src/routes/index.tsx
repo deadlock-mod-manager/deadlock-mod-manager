@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FAQSection } from "@/components/faq";
 import { FeaturesSection } from "@/components/features";
 import { HeroSection } from "@/components/hero";
+import { LatestUpdateVideoSection } from "@/components/latest-update-video";
 import { ModShowcaseSection } from "@/components/mod-showcase";
 import { StatsSection } from "@/components/stats";
 import { orpc } from "@/utils/orpc";
@@ -23,6 +24,7 @@ function HomeComponent() {
   return (
     <>
       <HeroSection version={version} />
+      <LatestUpdateVideoSection videoId='I6qBxyum8QY' />
       <FeaturesSection />
       <StatsSection />
       <ModShowcaseSection />
