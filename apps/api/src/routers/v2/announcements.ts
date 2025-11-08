@@ -56,6 +56,9 @@ export const announcementsRouter = {
         title: input.title,
         content: input.content,
         iconUrl: input.iconUrl || null,
+        linkUrl: input.linkUrl || null,
+        linkLabel: input.linkLabel || null,
+        category: input.category,
         status: input.status,
         authorId: context.session.user.id,
       });
@@ -70,6 +73,9 @@ export const announcementsRouter = {
         title: CreateAnnouncementSchema.shape.title.optional(),
         content: CreateAnnouncementSchema.shape.content.optional(),
         iconUrl: CreateAnnouncementSchema.shape.iconUrl.optional(),
+        linkUrl: CreateAnnouncementSchema.shape.linkUrl.optional(),
+        linkLabel: CreateAnnouncementSchema.shape.linkLabel.optional(),
+        category: CreateAnnouncementSchema.shape.category.optional(),
         status: CreateAnnouncementSchema.shape.status.optional(),
       }),
     )
@@ -87,12 +93,21 @@ export const announcementsRouter = {
         title?: string;
         content?: string;
         iconUrl?: string | null;
+        linkUrl?: string | null;
+        linkLabel?: string | null;
+        category?: "maintenance" | "downtime" | "info";
         status?: "draft" | "published" | "archived";
       } = {};
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.content !== undefined) updateData.content = updates.content;
       if (updates.iconUrl !== undefined)
         updateData.iconUrl = updates.iconUrl || null;
+      if (updates.linkUrl !== undefined)
+        updateData.linkUrl = updates.linkUrl || null;
+      if (updates.linkLabel !== undefined)
+        updateData.linkLabel = updates.linkLabel || null;
+      if (updates.category !== undefined)
+        updateData.category = updates.category;
       if (updates.status !== undefined) updateData.status = updates.status;
 
       const announcement = await announcementRepository.update(id, updateData);

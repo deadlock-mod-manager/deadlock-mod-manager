@@ -6,11 +6,20 @@ export const AnnouncementStatusSchema = z.enum([
   "archived",
 ]);
 
+export const AnnouncementCategorySchema = z.enum([
+  "maintenance",
+  "downtime",
+  "info",
+]);
+
 export const AnnouncementDtoSchema = z.object({
   id: z.string(),
   title: z.string(),
   content: z.string(),
   iconUrl: z.string().nullable(),
+  linkUrl: z.string().nullable(),
+  linkLabel: z.string().nullable(),
+  category: AnnouncementCategorySchema,
   status: AnnouncementStatusSchema,
   authorId: z.string(),
   publishedAt: z.date().nullable(),
@@ -30,6 +39,14 @@ export const CreateAnnouncementSchema = z.object({
   iconUrl: z
     .union([z.string().url("Icon URL must be a valid URL"), z.literal("")])
     .optional(),
+  linkUrl: z
+    .union([z.string().url("Link URL must be a valid URL"), z.literal("")])
+    .optional(),
+  linkLabel: z
+    .string()
+    .max(50, "Link label must be less than 50 characters")
+    .optional(),
+  category: AnnouncementCategorySchema.default("info"),
   status: AnnouncementStatusSchema.default("draft"),
 });
 
@@ -41,6 +58,17 @@ export const UpdateAnnouncementSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val === "" ? null : val)),
+  linkUrl: z
+    .union([z.string().url("Link URL must be a valid URL"), z.literal("")])
+    .optional()
+    .nullable()
+    .transform((val) => (val === "" ? null : val)),
+  linkLabel: z
+    .string()
+    .max(50, "Link label must be less than 50 characters")
+    .optional()
+    .nullable(),
+  category: AnnouncementCategorySchema.optional(),
   status: AnnouncementStatusSchema.optional(),
 });
 

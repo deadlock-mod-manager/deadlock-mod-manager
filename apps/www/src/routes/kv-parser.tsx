@@ -11,9 +11,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { KvViewer } from "@/components/kv-parser/kv-viewer";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/kv-parser")({
   component: KvParserComponent,
+  head: () =>
+    seo({
+      title: "KeyValues Parser | Deadlock Mod Manager",
+      description:
+        "Parse and visualize Valve KeyValues (VDF) files like gameinfo.gi",
+    }),
 });
 
 const DEFAULT_CONTENT = `"GameInfo"

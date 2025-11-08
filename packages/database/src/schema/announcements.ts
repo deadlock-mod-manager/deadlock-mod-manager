@@ -9,6 +9,12 @@ export const announcementStatusEnum = pgEnum("announcement_status", [
   "archived",
 ]);
 
+export const announcementCategoryEnum = pgEnum("announcement_category", [
+  "maintenance",
+  "downtime",
+  "info",
+]);
+
 export const announcements = pgTable("announcement", {
   id: typeId("id", "announcement")
     .primaryKey()
@@ -16,6 +22,9 @@ export const announcements = pgTable("announcement", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   iconUrl: text("icon_url"),
+  linkUrl: text("link_url"),
+  linkLabel: text("link_label"),
+  category: announcementCategoryEnum("category").notNull().default("info"),
   status: announcementStatusEnum("status").notNull().default("draft"),
   authorId: text("author_id")
     .notNull()

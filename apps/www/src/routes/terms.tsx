@@ -1,21 +1,16 @@
 import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/terms")({
   component: TermsComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Terms of Service | Deadlock Mod Manager",
-      },
-      {
-        name: "description",
-        content:
-          "Terms of Service for Deadlock Mod Manager - Understand your rights and responsibilities when using our software.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Terms of Service | Deadlock Mod Manager",
+      description:
+        "Terms of Service for Deadlock Mod Manager - Understand your rights and responsibilities when using our software.",
+    }),
 });
 
 function TermsComponent() {

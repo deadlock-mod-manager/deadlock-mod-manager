@@ -232,6 +232,20 @@
       "when": 1762553118233,
       "tag": "0032_complex_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1762608956647,
+      "tag": "0033_salty_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1762609350184,
+      "tag": "0034_public_blacklash",
+      "breakpoints": true
     }
   ]
 }

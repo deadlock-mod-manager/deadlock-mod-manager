@@ -11,13 +11,7 @@ import {
 } from "@deadlock-mods/ui/components/alert-dialog";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@deadlock-mods/ui/components/card";
+import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +47,9 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { orpc } from "@/utils/orpc";
+import { seo } from "@/utils/seo";
 
 const announcementFormSchema = z.object({
   title: z
@@ -65,10 +61,17 @@ const announcementFormSchema = z.object({
     .min(1, "Content is required")
     .max(10000, "Content must be less than 10000 characters"),
   iconUrl: z
+    .union([z.string().url("Icon URL must be a valid URL"), z.literal("")])
+    .optional(),
+  linkUrl: z
+    .union([z.string().url("Link URL must be a valid URL"), z.literal("")])
+    .optional(),
+  linkLabel: z
     .string()
-    .url("Icon URL must be a valid URL")
+    .max(50, "Link label must be less than 50 characters")
     .optional()
     .or(z.literal("")),
+  category: z.enum(["maintenance", "downtime", "info"]),
   status: z.enum(["draft", "published", "archived"]),
 });
 
@@ -76,6 +79,11 @@ type AnnouncementFormData = z.infer<typeof announcementFormSchema>;
 
 export const Route = createFileRoute("/dashboard/announcements")({
   component: DashboardAnnouncementsPage,
+  head: () =>
+    seo({
+      title: "Announcements Management | Deadlock Mod Manager",
+      noindex: true,
+    }),
 });
 
 function DashboardAnnouncementsPage() {
@@ -114,17 +122,24 @@ function DashboardAnnouncementsPage() {
       title: "",
       content: "",
       iconUrl: "",
+      linkUrl: "",
+      linkLabel: "",
+      category: "info",
       status: "draft",
     },
   });
 
   const status = watch("status");
+  const category = watch("category");
 
   const openCreateDialog = () => {
     reset({
       title: "",
       content: "",
       iconUrl: "",
+      linkUrl: "",
+      linkLabel: "",
+      category: "info",
       status: "draft",
     });
     setEditingAnnouncement(null);
@@ -136,6 +151,9 @@ function DashboardAnnouncementsPage() {
       title: announcement.title,
       content: announcement.content,
       iconUrl: announcement.iconUrl || "",
+      linkUrl: announcement.linkUrl || "",
+      linkLabel: announcement.linkLabel || "",
+      category: announcement.category,
       status: announcement.status,
     });
     setEditingAnnouncement(announcement);
@@ -150,6 +168,14 @@ function DashboardAnnouncementsPage() {
           data.iconUrl === "" || data.iconUrl === null
             ? undefined
             : data.iconUrl,
+        linkUrl:
+          data.linkUrl === "" || data.linkUrl === null
+            ? undefined
+            : data.linkUrl,
+        linkLabel:
+          data.linkLabel === "" || data.linkLabel === null
+            ? undefined
+            : data.linkLabel,
       };
       if (editingAnnouncement) {
         await updateMutation.mutateAsync({
@@ -229,20 +255,29 @@ function DashboardAnnouncementsPage() {
     }
   };
 
+  const getCategoryBadgeVariant = (category: string) => {
+    switch (category) {
+      case "maintenance":
+        return "default";
+      case "downtime":
+        return "destructive";
+      case "info":
+        return "secondary";
+      default:
+        return "secondary";
+    }
+  };
+
   return (
-    <div className='container mx-auto px-4 py-8'>
+    <>
+      <div className='flex items-center justify-between'>
+        <PageHeader
+          title='Announcements Management'
+          description='Create and manage announcements for the mod manager homepage'
+        />
+        <Button onClick={openCreateDialog}>Create Announcement</Button>
+      </div>
       <Card>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <div>
-              <CardTitle>Announcements Management</CardTitle>
-              <CardDescription>
-                Create and manage announcements for the mod manager homepage
-              </CardDescription>
-            </div>
-            <Button onClick={openCreateDialog}>Create Announcement</Button>
-          </div>
-        </CardHeader>
         <CardContent>
           {announcements && announcements.length === 0 ? (
             <div className='py-8 text-center text-muted-foreground'>
@@ -254,6 +289,7 @@ function DashboardAnnouncementsPage() {
                 <TableRow>
                   <TableHead>Icon</TableHead>
                   <TableHead>Title</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Updated</TableHead>
@@ -281,6 +317,18 @@ function DashboardAnnouncementsPage() {
                     </TableCell>
                     <TableCell className='font-medium'>
                       {announcement.title}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          getCategoryBadgeVariant(announcement.category) as
+                            | "default"
+                            | "secondary"
+                            | "destructive"
+                            | "outline"
+                        }>
+                        {announcement.category}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -390,6 +438,38 @@ function DashboardAnnouncementsPage() {
                 )}
               </div>
               <div className='space-y-2'>
+                <Label htmlFor='linkUrl'>Link URL (optional)</Label>
+                <Input
+                  id='linkUrl'
+                  {...register("linkUrl")}
+                  placeholder='https://example.com'
+                  type='url'
+                />
+                {errors.linkUrl && (
+                  <p className='text-destructive text-sm'>
+                    {errors.linkUrl.message}
+                  </p>
+                )}
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='linkLabel'>Link Label (optional)</Label>
+                <Input
+                  id='linkLabel'
+                  {...register("linkLabel")}
+                  placeholder='Learn More'
+                  maxLength={50}
+                />
+                {errors.linkLabel && (
+                  <p className='text-destructive text-sm'>
+                    {errors.linkLabel.message}
+                  </p>
+                )}
+                <p className='text-muted-foreground text-xs'>
+                  Text to display on the link button. If left empty, "Learn
+                  More" will be used.
+                </p>
+              </div>
+              <div className='space-y-2'>
                 <Label htmlFor='content'>Content</Label>
                 <Controller
                   control={control}
@@ -412,6 +492,26 @@ function DashboardAnnouncementsPage() {
                   Use the toolbar to format your text with bold, italic, lists,
                   headings, and more.
                 </p>
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='category'>Category</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setValue(
+                      "category",
+                      value as "maintenance" | "downtime" | "info",
+                    )
+                  }
+                  value={category}>
+                  <SelectTrigger id='category'>
+                    <SelectValue placeholder='Select category' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='info'>Info</SelectItem>
+                    <SelectItem value='maintenance'>Maintenance</SelectItem>
+                    <SelectItem value='downtime'>Downtime</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className='space-y-2'>
                 <Label htmlFor='status'>Status</Label>
@@ -470,6 +570,6 @@ function DashboardAnnouncementsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

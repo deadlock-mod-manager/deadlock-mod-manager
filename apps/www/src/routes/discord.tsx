@@ -1,21 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { DISCORD_URL } from "@/lib/constants";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/discord")({
   component: DiscordComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Discord | Deadlock Mod Manager",
-      },
-      {
-        name: "description",
-        content:
-          "Join the Deadlock Mod Manager Discord community for support, discussions, and updates.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Discord | Deadlock Mod Manager",
+      description:
+        "Join the Deadlock Mod Manager Discord community for support, discussions, and updates.",
+    }),
 });
 
 function DiscordComponent() {

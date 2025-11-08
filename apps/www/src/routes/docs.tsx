@@ -1,21 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { DOCS_URL } from "@/lib/constants";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/docs")({
   component: DocsComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Documentation | Deadlock Mod Manager",
-      },
-      {
-        name: "description",
-        content:
-          "Access the full documentation for Deadlock Mod Manager including installation guides, usage instructions, troubleshooting tips, and developer resources.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Documentation | Deadlock Mod Manager",
+      description:
+        "Access the full documentation for Deadlock Mod Manager including installation guides, usage instructions, troubleshooting tips, and developer resources.",
+    }),
 });
 
 function DocsComponent() {

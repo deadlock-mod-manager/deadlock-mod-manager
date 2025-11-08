@@ -20,6 +20,7 @@ import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as R403RouteImport } from './routes/403'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModsIndexRouteImport } from './routes/mods/index'
@@ -86,6 +87,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R403Route = R403RouteImport.update({
+  id: '/403',
+  path: '/403',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -140,6 +146,7 @@ const AuthDesktopCallbackRoute = AuthDesktopCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
   '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/kv-parser': typeof KvParserRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/403': typeof R403Route
   '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/403'
     | '/dashboard'
     | '/discord'
     | '/docs'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/403'
     | '/discord'
     | '/docs'
     | '/kv-parser'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/403'
     | '/dashboard'
     | '/discord'
     | '/docs'
@@ -278,6 +290,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  R403Route: typeof R403Route
   DashboardRoute: typeof DashboardRouteWithChildren
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
@@ -371,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/403': {
+      id: '/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof R403RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -479,6 +499,7 @@ const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  R403Route: R403Route,
   DashboardRoute: DashboardRouteWithChildren,
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,

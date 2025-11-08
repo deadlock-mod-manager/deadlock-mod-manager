@@ -38,18 +38,17 @@ export const Route = createFileRoute("/mod/$id")({
     return mod;
   },
   head: (ctx) => {
-    const mod = ctx.loaderData;
+    const mod = ctx.loaderData as ModDto;
     if (!mod) {
       return seo({
-        title: "Mod Not Found - Deadlock Mod Manager",
+        title: "Mod Not Found | Deadlock Mod Manager",
       });
     }
 
-    const title = `${mod.name} by ${mod.author} - Deadlock Mod Manager`;
+    const title = `${mod.name} by ${mod.author} | Deadlock Mod Manager`;
     const description =
       mod.description ||
       `Download ${mod.name} by ${mod.author} for Valve's Deadlock game. ${mod.downloadCount.toLocaleString()} downloads.`;
-    const image = mod.images?.[0] || "/og-image.png";
     const url = `https://deadlockmods.app/mod/${mod.remoteId}`;
 
     const keywords = [
@@ -78,11 +77,12 @@ export const Route = createFileRoute("/mod/$id")({
           : mod.createdAt.toISOString()
         : new Date().toISOString();
 
+    const image = mod.images?.[0];
     const seoTags = seo({
       title,
       description,
       keywords,
-      image,
+      ...(image && { image }),
       url,
       canonical: url,
       type: "article",
@@ -99,7 +99,7 @@ export const Route = createFileRoute("/mod/$id")({
             "@type": "SoftwareApplication",
             name: mod.name,
             description: description,
-            image: image,
+            ...(image && { image }),
             author: {
               "@type": "Person",
               name: mod.author,

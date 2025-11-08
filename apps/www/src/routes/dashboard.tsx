@@ -1,29 +1,30 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { checkIsAdmin } from "@/lib/auth/admin";
-import { authClient } from "@/lib/auth/client";
+import { checkAuth } from "@/lib/guards/auth";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
-  beforeLoad: async () => {
-    const session = await authClient.getSession();
-    if (!session?.data?.session) {
+  beforeLoad: async ({ location }) => {
+    const { isLoggedIn, isAdmin } = await checkAuth();
+    if (!isLoggedIn) {
       throw redirect({
         to: "/login",
         search: {
-          redirect: "/dashboard",
+          redirect: location.href,
         },
       });
     }
-
-    const isAdmin = await checkIsAdmin();
     if (!isAdmin) {
       throw redirect({
-        to: "/",
+        to: "/403",
       });
     }
   },
 });
 
 function DashboardLayout() {
-  return <Outlet />;
+  return (
+    <div className='flex flex-col gap-8 px-4'>
+      <Outlet />
+    </div>
+  );
 }

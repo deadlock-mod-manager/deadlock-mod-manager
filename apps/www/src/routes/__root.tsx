@@ -21,14 +21,7 @@ interface MyRouterContext {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => {
     const baseSeo = seo({
-      title: "Deadlock Mod Manager - Download, Install & Manage Deadlock Mods",
-      description:
-        "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
-      keywords:
-        "deadlock mod manager, deadlock mods, valve deadlock, game mod manager, gamebanana mods, deadlock modding, tauri app, deadlock tools, valve games, mods installer, deadlock community",
-      image: "/og-image.png",
-      url: "https://deadlockmods.app/",
-      canonical: "https://deadlockmods.app/",
+      title: "Deadlock Mod Manager | Download, Install & Manage Deadlock Mods",
     });
 
     return {
@@ -175,11 +168,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const isDashboardRoute = pathname.startsWith("/dashboard");
 
   return (
-    <html lang='en' className='dark'>
+    <html
+      lang='en'
+      className='dark'
+      style={{ colorScheme: "dark" }}
+      suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {isFullscreenRoute ? (
           <FullscreenLayout>{children}</FullscreenLayout>
         ) : isDashboardRoute ? (

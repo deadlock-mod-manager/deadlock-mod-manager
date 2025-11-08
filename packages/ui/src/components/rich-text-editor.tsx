@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import * as React from "react";
 import { cn } from "../lib/utils";
@@ -97,17 +97,25 @@ export const RichTextEditor = React.forwardRef<
         <div className='mx-1 h-4 w-px bg-border' />
         <Button
           type='button'
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           size='sm'
-          variant={editor.isActive("heading", { level: 2 }) ? "default" : "ghost"}
+          variant={
+            editor.isActive("heading", { level: 2 }) ? "default" : "ghost"
+          }
           className='h-7 w-7 p-0'>
           <span className='text-xs font-bold'>H2</span>
         </Button>
         <Button
           type='button'
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
           size='sm'
-          variant={editor.isActive("heading", { level: 3 }) ? "default" : "ghost"}
+          variant={
+            editor.isActive("heading", { level: 3 }) ? "default" : "ghost"
+          }
           className='h-7 w-7 p-0'>
           <span className='text-xs font-bold'>H3</span>
         </Button>
@@ -142,4 +150,3 @@ export const RichTextEditor = React.forwardRef<
 });
 
 RichTextEditor.displayName = "RichTextEditor";
-

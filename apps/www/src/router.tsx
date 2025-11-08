@@ -20,6 +20,7 @@ export const getRouter = () => {
           attribute='class'
           defaultTheme='dark'
           disableTransitionOnChange
+          enableSystem={false}
           storageKey='vite-ui-theme'>
           <AnalyticsProvider>
             <TanstackQuery.Provider {...rqContext}>

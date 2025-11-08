@@ -1,21 +1,16 @@
 import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Privacy Policy | Deadlock Mod Manager",
-      },
-      {
-        name: "description",
-        content:
-          "Privacy Policy for Deadlock Mod Manager - Learn how we handle your data and protect your privacy.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Privacy Policy | Deadlock Mod Manager",
+      description:
+        "Privacy Policy for Deadlock Mod Manager - Learn how we handle your data and protect your privacy.",
+    }),
 });
 
 function PrivacyComponent() {
