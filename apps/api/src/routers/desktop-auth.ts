@@ -1,16 +1,9 @@
 import { Hono } from "hono";
-import { getCookie } from "hono/cookie";
 import { auth } from "../lib/auth";
 
 const desktopAuthRouter = new Hono();
 
 desktopAuthRouter.get("/session", async (c) => {
-  const sessionToken = getCookie(c, "better-auth.session_token");
-
-  if (!sessionToken) {
-    return c.json({ error: "No active session" }, 401);
-  }
-
   const session = await auth.api.getSession({
     headers: c.req.raw.headers,
   });
@@ -20,7 +13,7 @@ desktopAuthRouter.get("/session", async (c) => {
   }
 
   return c.json({
-    token: sessionToken,
+    token: session.session.token,
     user: session.user,
     session: session.session,
   });
