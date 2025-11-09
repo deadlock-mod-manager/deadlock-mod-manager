@@ -904,6 +904,14 @@
     "gotIt": "知道了！",
     "title": "更新日誌",
     "versions": {
+      "0.10.1": {
+        "title": "VPK 和設定檔匯入修復",
+        "features": [
+          "🔧 修復了 VPK 編號，按順序填充空白而不是追加到末尾",
+          "📁 修復了設定檔匯入未跳過多檔案模組的檔案樹對話框",
+          "🔄 修復了重新啟用多檔案模組時出現的 VPK 檔案選擇對話框"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",

@@ -903,6 +903,14 @@
     "gotIt": "¡Entendido!",
     "title": "Novedades",
     "versions": {
+      "0.10.1": {
+        "title": "Correcciones de VPK e Importación de Perfiles",
+        "features": [
+          "🔧 Corregida la numeración de VPK para llenar espacios secuencialmente en lugar de agregar al final",
+          "📁 Corregida la importación de perfiles que no omitía el diálogo de árbol de archivos para mods multiarchivo",
+          "🔄 Corregido el diálogo de selección de archivos VPK que aparecía al volver a habilitar mods con múltiples archivos"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",

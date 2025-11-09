@@ -937,6 +937,14 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
+      "0.10.1": {
+        "title": "VPK & Profil Import Korrekture",
+        "features": [
+          "🔧 VPK-Nummerierig korrigiert, um Lücke sequenziell z fülle statt am Ändi aazhängä",
+          "📁 Profil-Import korrigiert, wo s Dateibaum-Dialog für Multi-Datei-Mods nöd übersprunge worde isch",
+          "🔄 VPK-Datei-Auswahl-Dialog korrigiert, wo bi dr Wiedereaktivierig vo Mods mit mehrere Dateie erschine isch"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",

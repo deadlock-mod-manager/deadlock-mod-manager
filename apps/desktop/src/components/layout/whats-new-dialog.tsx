@@ -22,7 +22,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { data } = useAbout();
 
   // Use a fallback version if data is not yet available
-  const version = data?.version || "0.9.0";
+  const version = data?.version || "0.10.0";
 
   const currentUpdate = t(`whatsNew.versions.${version}`, {
     returnObjects: true,

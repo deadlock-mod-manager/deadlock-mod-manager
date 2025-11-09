@@ -1,5 +1,13 @@
 # desktop
 
+## 0.10.1
+
+### Patch Changes
+
+- 4812ebe: Fix VPK numbering to fill gaps sequentially instead of appending to the end
+- 4812ebe: Fix profile import not skipping file-tree dialog for multi-file mods
+- 3118884: Fix VPK file selection dialog appearing when re-enabling mods with multiple files
+
 ## 0.10.0
 
 ### Minor Changes
@@ -26,7 +34,7 @@
 - Updated dependencies [3127b8d]
   - @deadlock-mods/shared@1.6.0
   - @deadlock-mods/ui@0.3.0
-  
+
 ## 0.9.2
 
 ### Minor Changes

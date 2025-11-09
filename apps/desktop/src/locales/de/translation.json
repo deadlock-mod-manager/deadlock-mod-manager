@@ -904,6 +904,14 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
+      "0.10.1": {
+        "title": "VPK & Profile Import Fixes",
+        "features": [
+          "🔧 Fixed VPK numbering to fill gaps sequentially instead of appending to the end",
+          "📁 Fixed profile import not skipping file-tree dialog for multi-file mods",
+          "🔄 Fixed VPK file selection dialog appearing when re-enabling mods with multiple files"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",

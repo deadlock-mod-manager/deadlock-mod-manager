@@ -916,6 +916,14 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
+      "0.10.1": {
+        "title": "Poprawki VPK i Importu Profili",
+        "features": [
+          "🔧 Naprawiono numerację VPK, aby wypełniała luki sekwencyjnie zamiast dodawać na końcu",
+          "📁 Naprawiono import profilu, który nie pomijał okna dialogowego drzewa plików dla modów wieloplikowych",
+          "🔄 Naprawiono okno dialogowe wyboru pliku VPK, które pojawiało się przy ponownym włączaniu modów z wieloma plikami"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",

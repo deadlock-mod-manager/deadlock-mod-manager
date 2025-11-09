@@ -910,6 +910,14 @@
     "gotIt": "知道了！",
     "title": "更新日志",
     "versions": {
+      "0.10.1": {
+        "title": "VPK 和配置文件导入修复",
+        "features": [
+          "🔧 修复了 VPK 编号，按顺序填充空白而不是追加到末尾",
+          "📁 修复了配置文件导入未跳过多文件模组的文件树对话框",
+          "🔄 修复了重新启用多文件模组时出现的 VPK 文件选择对话框"
+        ]
+      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
