@@ -10,6 +10,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
+import { getPluginAssetUrl } from "@/lib/plugins";
 import {
   beginEditingUserTheme,
   type CustomExportedTheme,
@@ -25,6 +26,19 @@ import {
 import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
+
+const nightshiftPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/nightshift/preview.png",
+);
+const bloodmoonPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/preview.png",
+);
+const teaPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/tea/preview.png",
+);
 
 export const manifest = {
   id: "themes",
@@ -57,8 +71,7 @@ const PRE_DEFINED_THEMES = [
     description: "A teal-accented cyberpunk theme with elegant UI elements",
     descriptionKey: "plugins.nightshift.description",
     component: NightshiftTheme,
-    previewImage:
-      "/src/plugins/themes/public/pre-defined/nightshift/preview.png",
+    previewImage: nightshiftPreview,
   },
   {
     id: "bloodmoon",
@@ -66,8 +79,7 @@ const PRE_DEFINED_THEMES = [
     description: "A dark theme with black-red gradients and crimson accents",
     descriptionKey: "plugins.bloodmoon.description",
     component: BloodmoonTheme,
-    previewImage:
-      "/src/plugins/themes/public/pre-defined/bloodmoon/preview.png",
+    previewImage: bloodmoonPreview,
   },
   {
     id: "tea",
@@ -75,7 +87,7 @@ const PRE_DEFINED_THEMES = [
     description: "A cozy beige theme celebrating Snipztea.",
     descriptionKey: "plugins.tea.description",
     component: TeaTheme,
-    previewImage: "/src/plugins/themes/public/pre-defined/tea/preview.png",
+    previewImage: teaPreview,
   },
 ] as const;
 

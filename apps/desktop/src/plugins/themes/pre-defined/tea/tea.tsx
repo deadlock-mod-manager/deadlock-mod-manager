@@ -1,7 +1,12 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import teaBackground from "../../public/pre-defined/tea/background/chowder_pattern.png";
+import { getPluginAssetUrl } from "@/lib/plugins";
+
+const teaBackground = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/tea/background/chowder_pattern.png",
+);
 
 const TeaTheme = () => {
   const [mounted, setMounted] = useState(false);

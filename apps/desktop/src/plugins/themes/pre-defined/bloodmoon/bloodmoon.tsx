@@ -1,7 +1,12 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import bloodmoonBg from "../../public/pre-defined/bloodmoon/background/background.png";
+import { getPluginAssetUrl } from "@/lib/plugins";
+
+const bloodmoonBg = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/background/background.png",
+);
 
 const BloodmoonTheme = () => {
   const [mounted, setMounted] = useState(false);
