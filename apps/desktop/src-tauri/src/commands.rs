@@ -804,6 +804,85 @@ pub async fn get_all_downloads(app_handle: AppHandle) -> Result<Vec<DownloadStat
 }
 
 #[tauri::command]
+pub async fn copy_selected_vpks_from_archive(
+  mod_id: String,
+  file_tree: crate::mod_manager::file_tree::ModFileTree,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
+  use crate::mod_manager::archive_extractor::ArchiveExtractor;
+  use crate::mod_manager::vpk_manager::VpkManager;
+
+  log::info!(
+    "Copying selected VPKs from archive for mod: {} (profile: {profile_folder:?})",
+    mod_id
+  );
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  let mod_dir = mods_path.join(&mod_id);
+
+  // Find archive in mod directory
+  let extractor = ArchiveExtractor::new();
+  let mut archive_path: Option<PathBuf> = None;
+
+  for entry in std::fs::read_dir(&mod_dir)? {
+    let entry = entry?;
+    let path = entry.path();
+    if extractor.is_supported_archive(&path) {
+      archive_path = Some(path);
+      break;
+    }
+  }
+
+  let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
+
+  // Get game path and addons path
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+
+  let addons_path = if let Some(ref folder) = profile_folder {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(folder)
+  } else {
+    game_path.join("game").join("citadel").join("addons")
+  };
+
+  // Create addons directory if it doesn't exist
+  if !addons_path.exists() {
+    std::fs::create_dir_all(&addons_path)?;
+  }
+
+  drop(mod_manager); // Release lock before extraction
+
+  // Extract archive to temp directory
+  let temp_dir = tempfile::tempdir()?;
+  log::info!("Extracting archive: {archive_path:?}");
+  extractor.extract_archive(&archive_path, temp_dir.path())?;
+
+  // Copy selected VPKs
+  let vpk_manager = VpkManager::new();
+  vpk_manager.copy_selected_vpks_with_prefix(
+    temp_dir.path(),
+    &addons_path,
+    &mod_id,
+    &file_tree,
+  )?;
+
+  // Delete archive after copying
+  log::info!("Removing archive: {archive_path:?}");
+  std::fs::remove_file(&archive_path)?;
+
+  log::info!("Successfully copied selected VPKs for mod: {}", mod_id);
+  Ok(())
+}
+
+#[tauri::command]
 pub async fn replace_mod_vpks(
   mod_id: String,
   source_vpk_paths: Vec<String>,
@@ -1294,7 +1373,7 @@ pub struct ProfileImportResult {
 pub async fn import_profile_batch(
   app_handle: AppHandle,
   profile_name: String,
-  profile_description: String,
+  _profile_description: String,
   profile_folder: String,
   mods: Vec<ProfileImportMod>,
   import_type: String, // "create" | "override"
@@ -1529,6 +1608,36 @@ pub async fn import_profile_batch(
         download_result.as_ref().unwrap_err().clone(),
       ));
       continue;
+    }
+
+    // If mod has file tree with multiple files, copy selected VPKs from archive first
+    if let Some(ref file_tree) = mod_data.file_tree {
+      if file_tree.has_multiple_files {
+        log::info!(
+          "Mod {} has multiple files, copying selected VPKs from archive",
+          mod_data.mod_id
+        );
+
+        // Copy selected VPKs from archive
+        if let Err(e) = copy_selected_vpks_from_archive(
+          mod_data.mod_id.clone(),
+          file_tree.clone(),
+          Some(final_profile_folder.clone()),
+        )
+        .await
+        {
+          log::error!(
+            "Failed to copy selected VPKs for mod {}: {:?}",
+            mod_data.mod_id,
+            e
+          );
+          failed.push((
+            mod_data.mod_id.clone(),
+            format!("Failed to copy selected VPKs: {:?}", e),
+          ));
+          continue;
+        }
+      }
     }
 
     // Install the mod

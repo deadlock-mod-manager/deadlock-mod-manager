@@ -4,7 +4,7 @@ use crate::mod_manager::{
 };
 use log;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile;
 
 /// Represents a single file in a mod archive
@@ -37,6 +37,65 @@ impl FileTreeAnalyzer {
       archive_extractor: ArchiveExtractor::new(),
       filesystem: FileSystemHelper::new(),
     }
+  }
+
+  /// Gets the simple file structure from an already-extracted directory
+  pub fn get_file_tree_from_extracted(
+    &self,
+    extracted_path: &Path,
+    archive_name: &str,
+  ) -> Result<ModFileTree, Error> {
+    log::info!(
+      "Getting file tree from extracted path: {extracted_path:?} (archive: {archive_name})"
+    );
+
+    // Find all VPK files recursively
+    let vpk_files = self
+      .filesystem
+      .find_files_recursive(extracted_path, "vpk")?;
+
+    log::info!(
+      "Found {} VPK files in extracted archive: {archive_name:?}",
+      vpk_files.len()
+    );
+
+    let mut all_files = Vec::new();
+
+    // Convert to ModFile objects
+    for (path, size) in vpk_files {
+      let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown.vpk")
+        .to_string();
+
+      let relative_path = path
+        .strip_prefix(extracted_path)
+        .unwrap_or(&path)
+        .to_string_lossy()
+        .to_string();
+
+      all_files.push(ModFile {
+        name: file_name,
+        path: relative_path,
+        size,
+        is_selected: true, // Default to selected
+        archive_name: archive_name.to_string(),
+      });
+    }
+
+    let total_files = all_files.len();
+    let has_multiple_files = total_files > 1;
+
+    log::info!(
+      "File tree analysis complete: {total_files} files, has_multiple: {has_multiple_files}"
+    );
+
+    Ok(ModFileTree {
+      files: all_files,
+      total_files,
+      has_multiple_files,
+    })
   }
 
   /// Gets the simple file structure from archive(s) in a directory

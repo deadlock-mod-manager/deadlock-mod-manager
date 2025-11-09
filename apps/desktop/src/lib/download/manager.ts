@@ -1,8 +1,9 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { DownloadableMod, Progress } from "@/types/mods";
+import type { DownloadableMod, ModFileTree, Progress } from "@/types/mods";
 import { createLogger } from "../logger";
+import { usePersistedStore } from "../store";
 
 const logger = createLogger("download-manager");
 
@@ -24,6 +25,11 @@ interface DownloadProgressEvent {
 interface DownloadCompletedEvent {
   modId: string;
   path: string;
+}
+
+interface DownloadFileTreeEvent {
+  modId: string;
+  fileTree: ModFileTree;
 }
 
 interface DownloadErrorEvent {
@@ -95,10 +101,39 @@ class DownloadManager {
       },
     );
 
+    const unlistenFileTree = await listen<DownloadFileTreeEvent>(
+      "download-file-tree",
+      (event) => {
+        const mod = this.pendingDownloads.get(event.payload.modId);
+        if (mod) {
+          logger.info("File tree received for mod", {
+            mod: event.payload.modId,
+            totalFiles: event.payload.fileTree.total_files,
+            hasMultiple: event.payload.fileTree.has_multiple_files,
+          });
+
+          // Store file tree in mod metadata
+          const store = usePersistedStore.getState();
+          const localMod = store.localMods.find(
+            (m) => m.remoteId === event.payload.modId,
+          );
+          if (localMod) {
+            // Store file tree in mod - we'll use it during installation
+            store.setInstalledVpks(
+              event.payload.modId,
+              localMod.installedVpks || [],
+              event.payload.fileTree,
+            );
+          }
+        }
+      },
+    );
+
     this.unlistenFns.push(
       unlistenStarted,
       unlistenProgress,
       unlistenCompleted,
+      unlistenFileTree,
       unlistenError,
     );
 

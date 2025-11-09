@@ -184,6 +184,62 @@ impl VpkManager {
     Ok(())
   }
 
+  /// Copy selected VPK files from extracted directory based on file tree selection
+  pub fn copy_selected_vpks_with_prefix(
+    &self,
+    source_dir: &Path,
+    destination_dir: &Path,
+    mod_id: &str,
+    file_tree: &crate::mod_manager::file_tree::ModFileTree,
+  ) -> Result<Vec<String>, Error> {
+    let mut prefixed_vpks = Vec::new();
+
+    // Get all VPK files from source directory with their relative paths
+    let mut all_vpk_files = Vec::new();
+    self.collect_vpks_from_dir(source_dir, &mut all_vpk_files)?;
+
+    // Create a map of relative paths to full paths
+    let mut vpk_map: std::collections::HashMap<String, std::path::PathBuf> =
+      std::collections::HashMap::new();
+    for vpk_path in all_vpk_files {
+      if let Ok(relative_path) = vpk_path.strip_prefix(source_dir) {
+        let relative_str = relative_path.to_string_lossy().replace('\\', "/");
+        vpk_map.insert(relative_str, vpk_path);
+      }
+    }
+
+    // Copy only selected files
+    for file in &file_tree.files {
+      if !file.is_selected {
+        continue;
+      }
+
+      // Match file path (normalize separators)
+      let normalized_path = file.path.replace('\\', "/");
+      if let Some(vpk_path) = vpk_map.get(&normalized_path) {
+        if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
+          let prefixed_name = format!("{mod_id}_{file_name}");
+          let dest_path = destination_dir.join(&prefixed_name);
+
+          self.filesystem.copy_file(vpk_path, &dest_path)?;
+          prefixed_vpks.push(prefixed_name.clone());
+
+          log::info!(
+            "Copied selected VPK with prefix: {} -> {prefixed_name}",
+            vpk_path.display()
+          );
+        }
+      } else {
+        log::warn!(
+          "Selected VPK file not found in extracted directory: {}",
+          file.path
+        );
+      }
+    }
+
+    Ok(prefixed_vpks)
+  }
+
   /// Copy VPK files from source directory to addons with mod ID prefix
   pub fn copy_vpks_with_prefix(
     &self,

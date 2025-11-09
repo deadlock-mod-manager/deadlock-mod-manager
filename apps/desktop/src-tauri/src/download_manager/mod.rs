@@ -53,6 +53,13 @@ pub struct DownloadCompletedEvent {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DownloadFileTreeEvent {
+  pub mod_id: String,
+  pub file_tree: crate::mod_manager::file_tree::ModFileTree,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
   pub mod_id: String,
   pub error: String,
@@ -309,7 +316,7 @@ impl DownloadManager {
     );
 
     // Extract archives and copy VPKs to addons with prefix
-    if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files).await {
+    if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await {
       log::error!("Failed to process downloaded files for mod {mod_id}: {e}");
 
       app_handle
@@ -341,6 +348,7 @@ impl DownloadManager {
   async fn process_downloaded_files(
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
+    app_handle: &AppHandle,
   ) -> Result<(), Error> {
     use crate::commands::MANAGER;
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
@@ -379,10 +387,13 @@ impl DownloadManager {
       std::fs::create_dir_all(&addons_path)?;
     }
 
+    use crate::mod_manager::file_tree::FileTreeAnalyzer;
+
     let extractor = ArchiveExtractor::new();
     let vpk_manager = VpkManager::new();
+    let file_tree_analyzer = FileTreeAnalyzer::new();
 
-    // Extract archives and copy VPKs directly to addons with prefix
+    // Extract archives and analyze file tree
     for file_path in downloaded_files {
       if extractor.is_supported_archive(file_path) {
         log::info!("Extracting archive: {file_path:?}");
@@ -390,16 +401,67 @@ impl DownloadManager {
         let temp_dir = tempfile::tempdir()?;
         extractor.extract_archive(file_path, temp_dir.path())?;
 
-        // Copy VPK files directly from temp to addons with prefix
-        log::info!(
-          "Copying VPKs to addons with prefix for mod: {}",
-          task.mod_id
-        );
-        vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
+        // Analyze file tree from extracted directory
+        let archive_name = file_path
+          .file_name()
+          .and_then(|n| n.to_str())
+          .unwrap_or("unknown")
+          .to_string();
 
-        // Clean up archive after extraction
-        log::info!("Removing archive: {file_path:?}");
-        std::fs::remove_file(file_path)?;
+        match file_tree_analyzer.get_file_tree_from_extracted(temp_dir.path(), &archive_name) {
+          Ok(file_tree) => {
+            log::info!(
+              "Analyzed file tree: {} files, has_multiple: {}",
+              file_tree.total_files,
+              file_tree.has_multiple_files
+            );
+
+            // If multiple files, emit event and keep archive for user selection
+            if file_tree.has_multiple_files {
+              log::info!(
+                "Mod has multiple VPK files, emitting file tree event for mod: {}",
+                task.mod_id
+              );
+
+              // Emit file tree event - frontend will show dialog
+              app_handle
+                .emit(
+                  "download-file-tree",
+                  DownloadFileTreeEvent {
+                    mod_id: task.mod_id.clone(),
+                    file_tree: file_tree.clone(),
+                  },
+                )
+                .ok();
+
+              // Archive will be kept until user selects files during installation
+              // We'll handle copying selected VPKs during installation
+              // download-completed will be emitted by the caller
+              return Ok(()); // Don't copy VPKs yet, don't delete archive
+            }
+
+            // Single file - proceed with normal copy
+            log::info!(
+              "Mod has single VPK file, copying directly for mod: {}",
+              task.mod_id
+            );
+            vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
+
+            // Clean up archive after extraction
+            log::info!("Removing archive: {file_path:?}");
+            std::fs::remove_file(file_path)?;
+          }
+          Err(e) => {
+            log::warn!(
+              "Failed to analyze file tree for mod {}: {}. Proceeding with normal copy.",
+              task.mod_id,
+              e
+            );
+            // Fallback to normal copy if analysis fails
+            vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
+            std::fs::remove_file(file_path)?;
+          }
+        }
       }
     }
 
