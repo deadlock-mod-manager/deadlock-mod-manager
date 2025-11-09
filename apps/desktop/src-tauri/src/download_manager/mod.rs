@@ -23,6 +23,7 @@ pub struct DownloadTask {
   pub files: Vec<DownloadFileDto>,
   pub target_dir: PathBuf,
   pub profile_folder: Option<String>,
+  pub is_profile_import: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -418,6 +419,18 @@ impl DownloadManager {
 
             // If multiple files, emit event and keep archive for user selection
             if file_tree.has_multiple_files {
+              // During profile imports, skip file tree dialog - frontend will handle selection
+              if task.is_profile_import {
+                log::info!(
+                  "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
+                  task.mod_id
+                );
+
+                // Don't copy VPKs yet, don't delete archive
+                // Profile import flow will handle VPK selection and copying later
+                return Ok(());
+              }
+
               log::info!(
                 "Mod has multiple VPK files, emitting file tree event for mod: {}",
                 task.mod_id

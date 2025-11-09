@@ -776,6 +776,7 @@ pub async fn queue_download(
     files,
     target_dir,
     profile_folder,
+    is_profile_import: false,
   };
 
   let manager = get_download_manager(app_handle).await;
@@ -867,12 +868,7 @@ pub async fn copy_selected_vpks_from_archive(
 
   // Copy selected VPKs
   let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(
-    temp_dir.path(),
-    &addons_path,
-    &mod_id,
-    &file_tree,
-  )?;
+  vpk_manager.copy_selected_vpks_with_prefix(temp_dir.path(), &addons_path, &mod_id, &file_tree)?;
 
   // Delete archive after copying
   log::info!("Removing archive: {archive_path:?}");
@@ -1458,6 +1454,7 @@ pub async fn import_profile_batch(
       files: mod_data.download_files.clone(),
       target_dir,
       profile_folder: Some(final_profile_folder.clone()),
+      is_profile_import: true,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
