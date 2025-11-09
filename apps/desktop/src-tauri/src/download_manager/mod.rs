@@ -24,6 +24,7 @@ pub struct DownloadTask {
   pub target_dir: PathBuf,
   pub profile_folder: Option<String>,
   pub is_profile_import: bool,
+  pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -399,8 +400,16 @@ impl DownloadManager {
       if extractor.is_supported_archive(file_path) {
         log::info!("Extracting archive: {file_path:?}");
 
-        let temp_dir = tempfile::tempdir()?;
-        extractor.extract_archive(file_path, temp_dir.path())?;
+        // Extract to a persistent directory within the mod folder instead of temp
+        // This allows us to reuse the extracted files later without re-extracting
+        let extracted_dir = task.target_dir.join("extracted");
+        if extracted_dir.exists() {
+          log::warn!("Extracted directory already exists, removing: {extracted_dir:?}");
+          std::fs::remove_dir_all(&extracted_dir)?;
+        }
+        std::fs::create_dir_all(&extracted_dir)?;
+
+        extractor.extract_archive(file_path, &extracted_dir)?;
 
         // Analyze file tree from extracted directory
         let archive_name = file_path
@@ -409,7 +418,7 @@ impl DownloadManager {
           .unwrap_or("unknown")
           .to_string();
 
-        match file_tree_analyzer.get_file_tree_from_extracted(temp_dir.path(), &archive_name) {
+        match file_tree_analyzer.get_file_tree_from_extracted(&extracted_dir, &archive_name) {
           Ok(file_tree) => {
             log::info!(
               "Analyzed file tree: {} files, has_multiple: {}",
@@ -417,18 +426,61 @@ impl DownloadManager {
               file_tree.has_multiple_files
             );
 
-            // If multiple files, emit event and keep archive for user selection
+            // If multiple files, emit event and keep extracted files for user selection
             if file_tree.has_multiple_files {
-              // During profile imports, skip file tree dialog - frontend will handle selection
+              // During profile imports, check if file_tree with selections is already provided
               if task.is_profile_import {
-                log::info!(
-                  "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
-                  task.mod_id
-                );
+                if let Some(ref provided_file_tree) = task.file_tree {
+                  // File selection already made - copy selected VPKs immediately
+                  log::info!(
+                    "Profile import: File tree provided with selections, copying selected VPKs for mod: {}",
+                    task.mod_id
+                  );
 
-                // Don't copy VPKs yet, don't delete archive
-                // Profile import flow will handle VPK selection and copying later
-                return Ok(());
+                  let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
+                    &extracted_dir,
+                    &addons_path,
+                    &task.mod_id,
+                    provided_file_tree,
+                  )?;
+
+                  log::info!(
+                    "Copied {} VPKs for mod {}: {:?}",
+                    copied_vpks.len(),
+                    task.mod_id,
+                    copied_vpks
+                  );
+
+                  if copied_vpks.is_empty() {
+                    log::error!("No VPKs were copied for mod: {}", task.mod_id);
+                    return Err(Error::InvalidInput(
+                      "No VPKs matched the file tree selection".to_string(),
+                    ));
+                  }
+
+                  // Clean up extracted directory and archive after successful copy
+                  log::info!("Removing extracted directory: {extracted_dir:?}");
+                  std::fs::remove_dir_all(&extracted_dir)?;
+                  log::info!("Removing archive: {file_path:?}");
+                  std::fs::remove_file(file_path)?;
+
+                  log::info!(
+                    "Successfully copied {} selected VPKs for profile import mod: {}",
+                    copied_vpks.len(),
+                    task.mod_id
+                  );
+                  return Ok(());
+                } else {
+                  // No file selection provided - skip for now, frontend will handle selection
+                  log::info!(
+                    "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
+                    task.mod_id
+                  );
+
+                  // Don't copy VPKs yet, keep extracted directory and archive
+                  // Profile import flow will handle VPK selection and copying later
+                  return Ok(());
+                }
               }
 
               log::info!(
@@ -447,10 +499,10 @@ impl DownloadManager {
                 )
                 .ok();
 
-              // Archive will be kept until user selects files during installation
-              // We'll handle copying selected VPKs during installation
+              // Keep extracted directory for later use, keep archive for reference
+              // We'll copy selected VPKs from the extracted directory during installation
               // download-completed will be emitted by the caller
-              return Ok(()); // Don't copy VPKs yet, don't delete archive
+              return Ok(());
             }
 
             // Single file - proceed with normal copy
@@ -458,9 +510,11 @@ impl DownloadManager {
               "Mod has single VPK file, copying directly for mod: {}",
               task.mod_id
             );
-            vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &addons_path, &task.mod_id)?;
 
-            // Clean up archive after extraction
+            // Clean up extracted directory and archive after successful copy
+            log::info!("Removing extracted directory: {extracted_dir:?}");
+            std::fs::remove_dir_all(&extracted_dir)?;
             log::info!("Removing archive: {file_path:?}");
             std::fs::remove_file(file_path)?;
           }
@@ -471,7 +525,8 @@ impl DownloadManager {
               e
             );
             // Fallback to normal copy if analysis fails
-            vpk_manager.copy_vpks_with_prefix(temp_dir.path(), &addons_path, &task.mod_id)?;
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &addons_path, &task.mod_id)?;
+            std::fs::remove_dir_all(&extracted_dir)?;
             std::fs::remove_file(file_path)?;
           }
         }

@@ -51,7 +51,21 @@ export const ProfileShareDialog = () => {
 
       // Add file tree information if available (for any mod that has file tree data)
       if (localMod?.installedFileTree) {
-        baseModData.fileTree = localMod.installedFileTree;
+        // Ensure at least one file is selected in the file tree
+        // (fix for older mods that may not have proper selection info)
+        const hasAnySelected = localMod.installedFileTree.files.some(
+          (f) => f.is_selected,
+        );
+
+        baseModData.fileTree = hasAnySelected
+          ? localMod.installedFileTree
+          : {
+              ...localMod.installedFileTree,
+              files: localMod.installedFileTree.files.map((f) => ({
+                ...f,
+                is_selected: true, // Select all if none selected
+              })),
+            };
       }
 
       // Add selected download information if available

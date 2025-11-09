@@ -203,18 +203,42 @@ impl VpkManager {
     let mut all_vpk_files = Vec::new();
     self.collect_vpks_from_dir(source_dir, &mut all_vpk_files)?;
 
+    log::info!(
+      "Found {} VPK files in source directory for mod {}",
+      all_vpk_files.len(),
+      mod_id
+    );
+
     // Create a map of relative paths to full paths
     let mut vpk_map: std::collections::HashMap<String, std::path::PathBuf> =
       std::collections::HashMap::new();
     for vpk_path in all_vpk_files {
       if let Ok(relative_path) = vpk_path.strip_prefix(source_dir) {
         let relative_str = relative_path.to_string_lossy().replace('\\', "/");
+        log::debug!(
+          "Mapping VPK path: {} -> {}",
+          relative_str,
+          vpk_path.display()
+        );
         vpk_map.insert(relative_str, vpk_path);
       }
     }
 
+    log::info!(
+      "File tree has {} files, {} are selected",
+      file_tree.files.len(),
+      file_tree.files.iter().filter(|f| f.is_selected).count()
+    );
+
     // Copy only selected files
     for file in &file_tree.files {
+      log::debug!(
+        "Processing file: {} (selected: {}, path: {})",
+        file.name,
+        file.is_selected,
+        file.path
+      );
+
       if !file.is_selected {
         continue;
       }

@@ -142,7 +142,19 @@ export const useProfileImport = () => {
             name: d.name,
             size: d.size || 0,
           })),
-          fileTree: importedMod.fileTree,
+          // If fileTree exists, ensure at least one file is selected
+          // (fallback for older profiles that may not have selection info)
+          fileTree: importedMod.fileTree
+            ? {
+                ...importedMod.fileTree,
+                files: importedMod.fileTree.files.some((f) => f.is_selected)
+                  ? importedMod.fileTree.files // Use existing selections if any
+                  : importedMod.fileTree.files.map((f) => ({
+                      ...f,
+                      is_selected: true, // Select all if none selected
+                    })),
+              }
+            : undefined,
         };
       }),
     );
@@ -326,7 +338,19 @@ export const useProfileImport = () => {
             name: d.name,
             size: d.size || 0,
           })),
-          fileTree: importedMod.fileTree,
+          // If fileTree exists, ensure at least one file is selected
+          // (fallback for older profiles that may not have selection info)
+          fileTree: importedMod.fileTree
+            ? {
+                ...importedMod.fileTree,
+                files: importedMod.fileTree.files.some((f) => f.is_selected)
+                  ? importedMod.fileTree.files // Use existing selections if any
+                  : importedMod.fileTree.files.map((f) => ({
+                      ...f,
+                      is_selected: true, // Select all if none selected
+                    })),
+              }
+            : undefined,
         };
       }),
     );

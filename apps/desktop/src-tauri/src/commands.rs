@@ -777,6 +777,7 @@ pub async fn queue_download(
     target_dir,
     profile_folder,
     is_profile_import: false,
+    file_tree: None,
   };
 
   let manager = get_download_manager(app_handle).await;
@@ -814,7 +815,7 @@ pub async fn copy_selected_vpks_from_archive(
   use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
-    "Copying selected VPKs from archive for mod: {} (profile: {profile_folder:?})",
+    "Copying selected VPKs from extracted directory for mod: {} (profile: {profile_folder:?})",
     mod_id
   );
 
@@ -822,20 +823,34 @@ pub async fn copy_selected_vpks_from_archive(
   let mods_path = mod_manager.get_mods_store_path()?;
   let mod_dir = mods_path.join(&mod_id);
 
-  // Find archive in mod directory
-  let extractor = ArchiveExtractor::new();
-  let mut archive_path: Option<PathBuf> = None;
+  // Check if we have an already-extracted directory
+  let extracted_dir = mod_dir.join("extracted");
 
-  for entry in std::fs::read_dir(&mod_dir)? {
-    let entry = entry?;
-    let path = entry.path();
-    if extractor.is_supported_archive(&path) {
-      archive_path = Some(path);
-      break;
+  if !extracted_dir.exists() {
+    // Fallback: extract from archive if extracted directory doesn't exist
+    log::warn!("Extracted directory not found, falling back to archive extraction");
+
+    let extractor = ArchiveExtractor::new();
+    let mut archive_path: Option<PathBuf> = None;
+
+    for entry in std::fs::read_dir(&mod_dir)? {
+      let entry = entry?;
+      let path = entry.path();
+      if extractor.is_supported_archive(&path) {
+        archive_path = Some(path);
+        break;
+      }
     }
-  }
 
-  let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
+    let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
+
+    // Extract to the persistent extracted directory
+    std::fs::create_dir_all(&extracted_dir)?;
+    log::info!("Extracting archive: {archive_path:?}");
+    extractor.extract_archive(&archive_path, &extracted_dir)?;
+  } else {
+    log::info!("Using already-extracted directory: {extracted_dir:?}");
+  }
 
   // Get game path and addons path
   let game_path = mod_manager
@@ -859,20 +874,27 @@ pub async fn copy_selected_vpks_from_archive(
     std::fs::create_dir_all(&addons_path)?;
   }
 
-  drop(mod_manager); // Release lock before extraction
+  drop(mod_manager); // Release lock before file operations
 
-  // Extract archive to temp directory
-  let temp_dir = tempfile::tempdir()?;
-  log::info!("Extracting archive: {archive_path:?}");
-  extractor.extract_archive(&archive_path, temp_dir.path())?;
-
-  // Copy selected VPKs
+  // Copy selected VPKs from the already-extracted directory
   let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(temp_dir.path(), &addons_path, &mod_id, &file_tree)?;
+  vpk_manager.copy_selected_vpks_with_prefix(&extracted_dir, &addons_path, &mod_id, &file_tree)?;
+
+  // Clean up extracted directory after copying
+  log::info!("Removing extracted directory: {extracted_dir:?}");
+  std::fs::remove_dir_all(&extracted_dir)?;
 
   // Delete archive after copying
-  log::info!("Removing archive: {archive_path:?}");
-  std::fs::remove_file(&archive_path)?;
+  let extractor = ArchiveExtractor::new();
+  for entry in std::fs::read_dir(&mod_dir)? {
+    let entry = entry?;
+    let path = entry.path();
+    if extractor.is_supported_archive(&path) {
+      log::info!("Removing archive: {path:?}");
+      std::fs::remove_file(&path)?;
+      break;
+    }
+  }
 
   log::info!("Successfully copied selected VPKs for mod: {}", mod_id);
   Ok(())
@@ -1455,6 +1477,7 @@ pub async fn import_profile_batch(
       target_dir,
       profile_folder: Some(final_profile_folder.clone()),
       is_profile_import: true,
+      file_tree: mod_data.file_tree.clone(),
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
@@ -1605,36 +1628,6 @@ pub async fn import_profile_batch(
         download_result.as_ref().unwrap_err().clone(),
       ));
       continue;
-    }
-
-    // If mod has file tree with multiple files, copy selected VPKs from archive first
-    if let Some(ref file_tree) = mod_data.file_tree {
-      if file_tree.has_multiple_files {
-        log::info!(
-          "Mod {} has multiple files, copying selected VPKs from archive",
-          mod_data.mod_id
-        );
-
-        // Copy selected VPKs from archive
-        if let Err(e) = copy_selected_vpks_from_archive(
-          mod_data.mod_id.clone(),
-          file_tree.clone(),
-          Some(final_profile_folder.clone()),
-        )
-        .await
-        {
-          log::error!(
-            "Failed to copy selected VPKs for mod {}: {:?}",
-            mod_data.mod_id,
-            e
-          );
-          failed.push((
-            mod_data.mod_id.clone(),
-            format!("Failed to copy selected VPKs: {:?}", e),
-          ));
-          continue;
-        }
-      }
     }
 
     // Install the mod
