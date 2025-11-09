@@ -17,14 +17,13 @@ impl VpkManager {
     }
   }
 
-  pub fn find_highest_vpk_number(&self, addons_path: &Path) -> Result<u32, Error> {
-    let mut highest = 0;
-
+  pub fn find_next_available_vpk_number(&self, addons_path: &Path) -> Result<u32, Error> {
     if !addons_path.exists() {
-      return Ok(highest);
+      return Ok(1);
     }
 
     let vpk_pattern = Regex::new(r"pak(\d+)_dir\.vpk").unwrap();
+    let mut used_numbers = std::collections::HashSet::new();
 
     for entry in fs::read_dir(addons_path)? {
       let entry = entry?;
@@ -36,11 +35,17 @@ impl VpkManager {
         && let Some(captures) = vpk_pattern.captures(name)
         && let Ok(num) = captures[1].parse::<u32>()
       {
-        highest = highest.max(num);
+        used_numbers.insert(num);
       }
     }
 
-    Ok(highest)
+    // Find first available number starting from 1
+    let mut next_number = 1u32;
+    while used_numbers.contains(&next_number) {
+      next_number += 1;
+    }
+
+    Ok(next_number)
   }
 
   pub fn reorder_vpks(
@@ -329,7 +334,6 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
-    let mut current_number = self.find_highest_vpk_number(addons_path)?;
     let mut new_vpk_names = Vec::new();
 
     for prefixed_name in prefixed_vpks {
@@ -339,8 +343,9 @@ impl VpkManager {
         continue;
       }
 
-      current_number += 1;
-      let new_name = format!("pak{current_number:02}_dir.vpk");
+      // Find next available number (fills gaps)
+      let next_number = self.find_next_available_vpk_number(addons_path)?;
+      let new_name = format!("pak{next_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
       fs::rename(&old_path, &new_path)?;
