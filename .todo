@@ -1,2 +1,7 @@
-- Instrumentation with opt-out possibility
-- Report mods
+dmodpkg:
+- FFI bindings for TypeScript (Bun FFI)
+- CLI command implementation
+- Bundle format (.dmodbundle)
+- Transformer plugin system
+- Signature/verification system
+- Migration tool from legacy formats

@@ -1,16 +1,36 @@
+mod checksum;
+mod compressor;
 mod config;
 mod error;
+mod extract;
 mod format;
+mod info;
+mod pack;
+mod reader;
 mod types;
+mod validator;
+mod writer;
 
 pub use config::{BundleConfig, ModConfig};
 pub use error::{DmodpkgError, Result};
 pub use format::{
-    BundleHeader, PackageHeader, MetadataSection,
-    DMODPKG_MAGIC, DMODBUNDLE_MAGIC, FORMAT_VERSION,
-    DEFAULT_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
+    BundleHeader, MetadataSection, PackageHeader, DEFAULT_CHUNK_SIZE, DMODBUNDLE_MAGIC,
+    DMODPKG_MAGIC, FORMAT_VERSION, MAX_CHUNK_SIZE, MIN_CHUNK_SIZE,
 };
 pub use types::*;
+
+// High-level API exports
+pub use extract::{extract_files, extract_layer, extract_mod, ExtractOptions, ExtractResult};
+pub use info::{
+    format_package_info, list_files, list_layer_files, read_mod_config, read_package_info,
+    FileInfo, LayerInfo, PackageInfo, PackageStats,
+};
+pub use pack::{pack_mod, PackOptions, PackResult};
+
+// Low-level API exports (for advanced usage)
+pub use reader::{PackageReader, ReaderOptions};
+pub use validator::{validate_project, ValidationOptions, ValidationResult, ValidationWarning};
+pub use writer::{InputFile, PackageWriter, WriterOptions};
 
 /// Get library version
 pub fn version() -> &'static str {

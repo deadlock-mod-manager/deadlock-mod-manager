@@ -22,6 +22,7 @@ pub const MIN_CHUNK_SIZE: usize = 256 * 1024;
 pub const MAX_CHUNK_SIZE: usize = 16 * 1024 * 1024;
 
 /// Header offsets
+#[allow(dead_code)]
 pub mod offsets {
     pub const MAGIC: usize = 0x00;
     pub const VERSION: usize = 0x08;
@@ -40,6 +41,7 @@ pub mod offsets {
 }
 
 /// Bundle header offsets
+#[allow(dead_code)]
 pub mod bundle_offsets {
     pub const MAGIC: usize = 0x00;
     pub const VERSION: usize = 0x08;
