@@ -2,7 +2,8 @@
 
 **Status:** Draft
 **Created:** 2025-11-10
-**Version:** 0.1.0
+**Updated:** 2025-11-10
+**Version:** 0.3.0
 
 ---
 
@@ -15,11 +16,12 @@
 5. [Binary Format Specification](#binary-format-specification)
 6. [Layer System](#layer-system)
 7. [Variant Groups](#variant-groups)
-8. [Dependency Management](#dependency-management)
-9. [File Transformers](#file-transformers)
+8. [File Transformers](#file-transformers)
+9. [Mod Bundles](#mod-bundles)
 10. [CLI Tooling](#cli-tooling)
 11. [Migration Path](#migration-path)
 12. [Examples](#examples)
+13. [Future Considerations](#future-considerations)
 
 ---
 
@@ -94,19 +96,10 @@ Mods are defined by a `mod.config.json` file in the project root.
   "readme": "README.md",
   "homepage": "https://github.com/author/my-awesome-mod",
   "repository": "https://github.com/author/my-awesome-mod",
-  "icon": "icon.png",
-
-  "dependencies": [
-    {
-      "name": "core-framework",
-      "version": "^2.0.0",
-      "optional": false
-    },
-    {
-      "name": "hud-enhancer",
-      "version": "~1.5.0",
-      "optional": true
-    }
+  "screenshots": [
+    "previews/mod/screenshot_1.png",
+    "previews/mod/screenshot_2.png",
+    "https://example.com/external_screenshot.jpg"
   ],
 
   "variant_groups": [
@@ -126,12 +119,22 @@ Mods are defined by a `mod.config.json` file in the project root.
           "id": "dark",
           "name": "Dark Theme",
           "description": "Darker, moodier character visuals",
+          "preview_image": "previews/character_skin/dark/main.png",
+          "screenshots": [
+            "previews/character_skin/dark/screenshot_1.png",
+            "https://example.com/dark_variant_ingame.jpg"
+          ],
           "layers": ["base", "dark_skin"]
         },
         {
           "id": "neon",
           "name": "Neon Theme",
           "description": "Bright neon-colored characters",
+          "preview_image": "previews/character_skin/neon/main.png",
+          "screenshots": [
+            "previews/character_skin/neon/screenshot_1.png",
+            "previews/character_skin/neon/screenshot_2.png"
+          ],
           "layers": ["base", "neon_skin"]
         }
       ]
@@ -199,16 +202,7 @@ Mods are defined by a `mod.config.json` file in the project root.
 | `readme` | string | No | Path to README file |
 | `homepage` | string | No | Project homepage URL |
 | `repository` | string | No | Source code repository URL |
-| `icon` | string | No | Path to icon image (256x256 recommended) |
-
-#### Dependencies
-
-Dependencies use semantic versioning constraints:
-
-- `^1.2.3` - Compatible with 1.x.x (>= 1.2.3, < 2.0.0)
-- `~1.2.3` - Patch updates (>= 1.2.3, < 1.3.0)
-- `>=1.0.0 <2.0.0` - Range
-- `1.2.3` - Exact version
+| `screenshots` | array | No | Mod-level screenshots (paths or URLs) |
 
 #### Variant Groups
 
@@ -222,7 +216,18 @@ Variant groups define mutually exclusive options (user picks one):
 | `default` | string | Yes | Default variant ID |
 | `variants` | array | Yes | List of variant options |
 
-Each variant specifies which layers to enable.
+Each variant specifies which layers to enable and can include preview images.
+
+##### Variant Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | Yes | Unique variant identifier |
+| `name` | string | Yes | Display name |
+| `description` | string | No | Variant description |
+| `layers` | array | Yes | Which layers to enable for this variant |
+| `preview_image` | string | No | Main preview image (path or URL) |
+| `screenshots` | array | No | Additional screenshots (paths or URLs) |
 
 #### Layers
 
@@ -256,7 +261,21 @@ my-awesome-mod/
 ├── mod.config.json              # Project configuration
 ├── README.md                    # Mod documentation
 ├── LICENSE                      # License file
-├── icon.png                     # Mod icon (256x256)
+│
+├── previews/                    # Preview images and screenshots
+│   ├── mod/                     # Mod-level screenshots
+│   │   ├── screenshot_1.png    # General mod screenshot
+│   │   └── screenshot_2.png    # Additional screenshot
+│   │
+│   └── character_skin/          # Variant group directory
+│       ├── dark/                # Dark variant previews
+│       │   ├── main.png        # Main preview image
+│       │   └── screenshot_1.png # Additional screenshot
+│       │
+│       └── neon/                # Neon variant previews
+│           ├── main.png        # Main preview image
+│           ├── screenshot_1.png
+│           └── screenshot_2.png
 │
 ├── content/                     # Mod content organized by layers
 │   ├── base/                    # Base layer (priority 0)
@@ -290,8 +309,38 @@ my-awesome-mod/
 
 - `README.md` - Displayed in mod manager and web listings
 - `LICENSE` - License text (if not using SPDX identifier)
-- `icon.png` - Mod icon for visual identification
 - `CHANGELOG.md` - Version history (recommended)
+
+### Preview Images Directory
+
+The `previews/` directory contains all visual assets for showcasing the mod and its variants:
+
+#### Structure Rules
+
+1. **Mod-level screenshots**: Stored in `previews/mod/`
+   - General screenshots showcasing the mod
+   - Numbered sequentially: `screenshot_1.png`, `screenshot_2.png`, etc.
+
+2. **Variant previews**: Stored in `previews/<variant_group_id>/<variant_id>/`
+   - `main.png` - Primary preview image for the variant (required if variant has preview)
+   - `screenshot_N.png` - Additional screenshots (optional)
+   - Each variant can have its own dedicated preview images
+
+3. **Supported formats**: PNG, JPEG/JPG, WebP
+   - PNG recommended for UI elements and high-quality previews
+   - JPEG for detailed screenshots with smaller file sizes
+   - WebP for modern compression and smaller package sizes
+
+4. **External URLs**: Both embedded paths and external URLs are supported
+   - Embedded: `"previews/mod/screenshot_1.png"`
+   - External: `"https://example.com/screenshot.jpg"`
+   - Embedded images are included in the package; external images reduce package size
+
+#### Image Recommendations
+
+- **Preview images** (variant main images): 1920x1080 or 1280x720 recommended
+- **Screenshots**: 1920x1080 or higher recommended
+- **File size**: Keep individual images under 2MB for optimal loading
 
 ---
 
@@ -357,6 +406,19 @@ Zstd-compressed JSON containing the full `mod.config.json` plus:
   }
 }
 ```
+
+#### Preview Image Handling
+
+Preview images and screenshots can be stored in two ways:
+
+1. **Embedded images**: Image files referenced by relative paths (e.g., `"previews/mod/screenshot_1.png"`) are included in the File Index Section and Data Chunks, similar to VPK files.
+
+2. **External URLs**: Images referenced by full URLs (e.g., `"https://example.com/screenshot.jpg"`) are stored only as metadata; the actual image is fetched at display time.
+
+**Benefits of each approach:**
+
+- **Embedded**: Always available offline, guaranteed availability, faster display
+- **External**: Smaller package size, can be updated independently, reduced bandwidth for distribution
 
 ### File Index Section
 
@@ -608,98 +670,6 @@ User can:
 
 ---
 
-## Dependency Management
-
-Dependencies allow mods to require other mods for functionality.
-
-### Dependency Declaration
-
-```json
-{
-  "dependencies": [
-    {
-      "name": "framework-mod",
-      "version": "^2.1.0",
-      "optional": false
-    },
-    {
-      "name": "hud-library",
-      "version": ">=1.5.0 <3.0.0",
-      "optional": true
-    }
-  ]
-}
-```
-
-### Version Constraints
-
-Following npm-style semantic versioning:
-
-| Constraint | Meaning | Example Match |
-|------------|---------|---------------|
-| `1.2.3` | Exact version | 1.2.3 only |
-| `^1.2.3` | Compatible (minor updates) | 1.2.3, 1.5.0, 1.9.9 (not 2.0.0) |
-| `~1.2.3` | Patch updates only | 1.2.3, 1.2.9 (not 1.3.0) |
-| `>=1.0.0` | Minimum version | 1.0.0, 2.5.1, 99.0.0 |
-| `>=1.0.0 <2.0.0` | Range | 1.0.0 to 1.9.9 |
-| `*` | Any version | All versions |
-
-### Dependency Resolution
-
-The mod manager resolves dependencies using a topological sort algorithm:
-
-1. **Parse all dependencies**: Build a dependency graph
-2. **Check for cycles**: Reject circular dependencies
-3. **Resolve versions**: Find compatible versions for all dependencies
-4. **Determine install order**: Install dependencies before dependents
-5. **Validate conflicts**: Check for incompatible version requirements
-
-### Optional Dependencies
-
-Optional dependencies (`optional: true`):
-
-- Not required for mod to function
-- Install if available and compatible
-- Provide enhanced features when present
-- User can choose to skip optional dependencies
-
-### Dependency Metadata
-
-The mod manager tracks:
-
-```json
-{
-  "installed": {
-    "my-mod": {
-      "version": "1.2.3",
-      "dependencies": {
-        "framework-mod": {
-          "required_version": "^2.1.0",
-          "installed_version": "2.5.1",
-          "satisfied": true
-        }
-      }
-    }
-  }
-}
-```
-
-### Conflict Detection
-
-Conflicts occur when:
-
-1. **Version mismatch**: Mod A requires framework ^1.0.0, Mod B requires framework ^2.0.0
-2. **Missing dependency**: Required dependency not installed
-3. **Circular dependency**: A depends on B, B depends on A
-
-The mod manager should:
-
-- Display clear error messages
-- Suggest resolution steps
-- Allow manual override with warnings
-
----
-
 ## File Transformers
 
 Transformers are plugins that preprocess files during the packing process.
@@ -878,9 +848,351 @@ Error handling configuration:
 
 ---
 
+## Mod Bundles
+
+Mod bundles (`.dmodbundle`) allow creators to package multiple mods together as a curated collection.
+
+### Bundle Overview
+
+A mod bundle is a container format that packages multiple `.dmodpkg` files together with shared metadata, preview images, and optional configuration presets. Bundles enable:
+
+- **Themed collections**: Curated sets of mods that work well together
+- **Author compilations**: All mods from a creator in one package
+- **Modpacks**: Complete gameplay overhauls with multiple components
+- **Convenience**: One-click installation of related mods
+
+### Key Features
+
+1. **Independent mods**: Each mod in the bundle remains a separate `.dmodpkg` with its own metadata and dependencies
+2. **Selective installation**: Users can choose which mods from the bundle to install
+3. **Variant presets**: Bundle can define themed configurations that set variants across multiple mods
+4. **Bundle-level previews**: Screenshots and metadata for the entire collection
+
+### Bundle Configuration Format
+
+Bundles are defined by a `bundle.config.json` file:
+
+```json
+{
+  "$schema": "https://deadlock-modding.com/schemas/bundle-config-v1.json",
+  "name": "ultimate-visual-pack",
+  "display_name": "Ultimate Visual Pack",
+  "version": "2.1.0",
+  "description": "Complete visual overhaul with character skins, UI improvements, and effects",
+  "authors": ["BundleCreator"],
+  "homepage": "https://github.com/creator/ultimate-visual-pack",
+
+  "screenshots": [
+    "previews/bundle_showcase_1.png",
+    "previews/bundle_showcase_2.png",
+    "https://example.com/bundle_video_thumbnail.jpg"
+  ],
+
+  "mods": [
+    {
+      "package": "character-skins-2.0.0.dmodpkg",
+      "required": true,
+      "description": "Core character visual improvements"
+    },
+    {
+      "package": "enhanced-ui-1.5.0.dmodpkg",
+      "required": false,
+      "description": "Optional UI modernization"
+    },
+    {
+      "package": "particle-effects-3.1.0.dmodpkg",
+      "required": false,
+      "description": "Enhanced visual effects"
+    }
+  ],
+
+  "presets": [
+    {
+      "id": "dark_theme",
+      "name": "Dark Theme",
+      "description": "Dark color scheme across all mods",
+      "default": true,
+      "mods": [
+        {
+          "package": "character-skins-2.0.0.dmodpkg",
+          "variants": {
+            "skin_style": "dark"
+          }
+        },
+        {
+          "package": "enhanced-ui-1.5.0.dmodpkg",
+          "variants": {
+            "ui_theme": "dark"
+          }
+        }
+      ]
+    },
+    {
+      "id": "light_theme",
+      "name": "Light Theme",
+      "description": "Light color scheme across all mods",
+      "mods": [
+        {
+          "package": "character-skins-2.0.0.dmodpkg",
+          "variants": {
+            "skin_style": "light"
+          }
+        },
+        {
+          "package": "enhanced-ui-1.5.0.dmodpkg",
+          "variants": {
+            "ui_theme": "light"
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "Performance Mode",
+      "description": "Optimized settings for lower-end systems",
+      "mods": [
+        {
+          "package": "character-skins-2.0.0.dmodpkg",
+          "variants": {
+            "quality": "low"
+          }
+        },
+        {
+          "package": "particle-effects-3.1.0.dmodpkg",
+          "variants": {
+            "effect_quality": "minimal"
+          }
+        }
+      ]
+    }
+  ],
+
+  "metadata": {
+    "tags": ["visual", "bundle", "complete-pack"],
+    "category": "modpack"
+  }
+}
+```
+
+### Bundle Configuration Schema
+
+#### Core Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique bundle identifier (kebab-case) |
+| `display_name` | string | Yes | Human-readable bundle name |
+| `version` | string | Yes | Bundle version (semver) |
+| `description` | string | Yes | Bundle description (max 1000 chars) |
+| `authors` | array | Yes | Bundle authors (not individual mod authors) |
+| `homepage` | string | No | Bundle homepage URL |
+| `screenshots` | array | No | Bundle-level screenshots (paths or URLs) |
+| `mods` | array | Yes | List of included mod packages |
+| `presets` | array | No | Variant configuration presets |
+| `metadata` | object | No | Additional metadata (tags, category) |
+
+#### Mod Entry Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `package` | string | Yes | Filename of the .dmodpkg file |
+| `required` | boolean | No | Whether mod is required (default: true) |
+| `description` | string | No | Brief description of this mod's role in bundle |
+
+#### Preset Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | Yes | Unique preset identifier |
+| `name` | string | Yes | Display name |
+| `description` | string | No | Preset description |
+| `default` | boolean | No | Whether this is the default preset |
+| `mods` | array | Yes | Variant configurations for each mod |
+
+Each preset mod entry contains:
+
+- `package`: Which mod package this configuration applies to
+- `variants`: Object mapping variant group IDs to variant IDs
+
+### Bundle Project Structure
+
+```text
+ultimate-visual-pack-bundle/
+├── bundle.config.json           # Bundle configuration
+├── README.md                    # Bundle documentation
+├── previews/                    # Bundle-level screenshots
+│   ├── bundle_showcase_1.png
+│   └── bundle_showcase_2.png
+│
+├── mods/                        # Included mod packages
+│   ├── character-skins-2.0.0.dmodpkg
+│   ├── enhanced-ui-1.5.0.dmodpkg
+│   └── particle-effects-3.1.0.dmodpkg
+│
+└── build/                       # Output directory
+    └── ultimate-visual-pack-2.1.0.dmodbundle
+```
+
+### Bundle Binary Format
+
+The `.dmodbundle` file structure:
+
+```text
+┌─────────────────────────────────────────┐
+│ Header                                   │ 64 bytes
+├─────────────────────────────────────────┤
+│ Bundle Metadata Section                  │ Variable (Zstd compressed JSON)
+├─────────────────────────────────────────┤
+│ Mod Package Index                        │ Variable
+├─────────────────────────────────────────┤
+│ Bundle Resources (screenshots, etc.)     │ Variable (Zstd compressed)
+├─────────────────────────────────────────┤
+│ Embedded Mod Packages                    │ Variable
+│  ├─ Mod Package 0 (.dmodpkg)           │
+│  ├─ Mod Package 1 (.dmodpkg)           │
+│  └─ ...                                 │
+└─────────────────────────────────────────┘
+```
+
+#### Bundle Header Format (64 bytes)
+
+| Offset | Size | Type | Description |
+|--------|------|------|-------------|
+| 0x00 | 8 | ASCII | Magic bytes: "DMODBNDL" |
+| 0x08 | 2 | uint16 | Format version (current: 1) |
+| 0x0A | 2 | uint16 | Flags (reserved) |
+| 0x0C | 4 | uint32 | Bundle metadata offset |
+| 0x10 | 4 | uint32 | Bundle metadata compressed size |
+| 0x14 | 4 | uint32 | Bundle metadata uncompressed size |
+| 0x18 | 4 | uint32 | Package index offset |
+| 0x1C | 4 | uint32 | Package index size |
+| 0x20 | 4 | uint32 | Resources offset |
+| 0x24 | 4 | uint32 | Resources compressed size |
+| 0x28 | 4 | uint32 | Resources uncompressed size |
+| 0x2C | 4 | uint32 | Packages section offset |
+| 0x30 | 8 | uint64 | Total bundle size |
+| 0x38 | 8 | uint64 | Bundle CRC64 |
+
+#### Bundle Metadata Section
+
+Zstd-compressed JSON containing `bundle.config.json` plus build info:
+
+```json
+{
+  "config": { /* bundle.config.json contents */ },
+  "build_info": {
+    "builder_version": "1.0.0",
+    "build_timestamp": "2025-11-10T15:30:00Z",
+    "included_mods": [
+      {
+        "filename": "character-skins-2.0.0.dmodpkg",
+        "name": "character-skins",
+        "version": "2.0.0",
+        "size_bytes": 45000000,
+        "checksum": "sha256:abc123..."
+      }
+    ]
+  }
+}
+```
+
+#### Mod Package Index
+
+Binary structure listing each embedded mod package:
+
+```text
+┌──────────────────────────────┐
+│ Package Count (uint32)       │
+├──────────────────────────────┤
+│ Package Entry 0              │
+│  ├─ Filename Len (uint16)   │
+│  ├─ Filename (UTF-8)        │
+│  ├─ Offset (uint64)         │
+│  ├─ Size (uint64)           │
+│  └─ SHA256 (32 bytes)       │
+├──────────────────────────────┤
+│ Package Entry 1              │
+│ ...                          │
+└──────────────────────────────┘
+```
+
+### Bundle Use Cases
+
+#### Use Case 1: Themed Collection
+
+A creator makes several mods that share a visual style:
+
+```json
+{
+  "name": "neon-nights-collection",
+  "display_name": "Neon Nights Collection",
+  "mods": [
+    { "package": "neon-characters.dmodpkg", "required": true },
+    { "package": "neon-ui.dmodpkg", "required": true },
+    { "package": "neon-effects.dmodpkg", "required": false }
+  ],
+  "presets": [
+    {
+      "id": "full_neon",
+      "name": "Full Neon Experience",
+      "default": true,
+      "mods": [
+        {
+          "package": "neon-characters.dmodpkg",
+          "variants": { "intensity": "high" }
+        },
+        {
+          "package": "neon-effects.dmodpkg",
+          "variants": { "glow": "maximum" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Use Case 2: Complete Overhaul
+
+A modpack that replaces most game systems:
+
+```json
+{
+  "name": "total-conversion-pack",
+  "display_name": "Total Conversion Modpack",
+  "description": "Complete gameplay and visual overhaul",
+  "mods": [
+    { "package": "core-framework.dmodpkg", "required": true },
+    { "package": "gameplay-changes.dmodpkg", "required": true },
+    { "package": "visual-overhaul.dmodpkg", "required": true },
+    { "package": "audio-replacement.dmodpkg", "required": false },
+    { "package": "bonus-content.dmodpkg", "required": false }
+  ]
+}
+```
+
+#### Use Case 3: Author Collection
+
+All mods by a single creator:
+
+```json
+{
+  "name": "artist-complete-works",
+  "display_name": "ArtistName: Complete Works",
+  "description": "All visual mods by ArtistName in one bundle",
+  "mods": [
+    { "package": "hero-skins-pack.dmodpkg", "required": false },
+    { "package": "map-retextures.dmodpkg", "required": false },
+    { "package": "ui-redesign.dmodpkg", "required": false },
+    { "package": "particle-enhancements.dmodpkg", "required": false }
+  ]
+}
+```
+
+---
+
 ## CLI Tooling
 
-The `dmodpkg` CLI tool manages mod projects and packages.
+The `dmodpkg` CLI tool manages mod projects, packages, and bundles.
 
 ### Installation
 
@@ -1032,10 +1344,6 @@ Variant Groups:
     • dark - Darker, moodier character visuals
     • neon - Bright neon-colored characters
 
-Dependencies:
-  • core-framework ^2.0.0
-  • hud-enhancer ~1.5.0 (optional)
-
 Package Info:
   Files: 12
   Compressed Size: 18.7 MB
@@ -1067,104 +1375,163 @@ Validating mod project...
 ✓ All VPK files exist
 ✓ No circular dependencies
 ✓ Version constraints are valid
+✓ All preview images exist and are valid
+✓ Image formats are supported (PNG, JPEG, WebP)
+✓ Image sizes are within recommendations
 ✗ Warning: Layer 'optional_sounds' is empty
+✗ Warning: Variant 'default' has no preview image
 
-Validation passed with 1 warning.
+Validation passed with 2 warnings.
 ```
 
-#### `dmodpkg install`
+##### Image Validation Rules
 
-Install a package to the Deadlock mod directory:
+The validation process checks preview images and screenshots for:
+
+1. **File existence**: All paths must reference existing files
+2. **Format validation**: Only PNG, JPEG/JPG, and WebP are supported
+3. **File size warnings**:
+   - Warning if any image exceeds 2MB (may impact load times)
+   - Error if any image exceeds 10MB (too large for package)
+4. **Dimension recommendations**:
+   - Preview images: 1280x720 or 1920x1080 recommended
+   - Screenshots: 1920x1080 or higher recommended
+5. **URL validation**: External URLs must use HTTPS protocol
+6. **Path structure**: Embedded images should follow `previews/` directory structure
+
+### Bundle Commands
+
+#### `dmodpkg bundle pack`
+
+Create a bundle from multiple mod packages:
 
 ```bash
-dmodpkg install <package> [options]
+dmodpkg bundle pack [options]
 
 Options:
-  --profile <name>     Install to specific profile
-  --layers <names>     Install specific layers only
-  --variant <group:id> Select variant (can specify multiple)
-  --no-deps            Skip dependency installation
-  --dry-run            Show what would be installed
+  --config <path>      Path to bundle.config.json (default: ./bundle.config.json)
+  --output <path>      Output directory (default: ./build)
+  --no-validate        Skip validation checks
 ```
 
 Example:
 
 ```bash
-$ dmodpkg install my-awesome-mod-1.2.3.dmodpkg \
-    --variant character_skin:dark \
-    --variant ui_theme:light
+$ dmodpkg bundle pack
 
-Installing: My Awesome Mod v1.2.3
+Packing bundle: Ultimate Visual Pack v2.1.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
 
-✓ Resolved dependencies
-  ↳ Installing core-framework 2.5.1
-  ↳ Installing hud-enhancer 1.5.2 (optional)
-✓ Selected variants:
-  character_skin: dark
-  ui_theme: light
-✓ Enabled layers: base, dark_skin, ui_light
-✓ Installed to profile: default
+✓ Validated bundle configuration
+✓ Validated 3 mod packages
+✓ Processed bundle resources (2 screenshots)
+✓ Embedded 3 mod packages (total: 125 MB)
+✓ Generated bundle checksums
 
-Mod installed successfully!
+Bundle created: ./build/ultimate-visual-pack-2.1.0.dmodbundle
 ```
 
-#### `dmodpkg uninstall`
+#### `dmodpkg bundle info`
 
-Uninstall a mod:
-
-```bash
-dmodpkg uninstall <mod-name> [options]
-
-Options:
-  --profile <name>     Uninstall from specific profile
-  --keep-deps          Don't remove dependencies
-```
-
-#### `dmodpkg list`
-
-List installed mods:
+Display bundle information:
 
 ```bash
-dmodpkg list [options]
+dmodpkg bundle info <bundle> [options]
 
 Options:
-  --profile <name>     List mods in specific profile
   --json               Output as JSON
+  --verbose, -v        Show detailed information
 ```
 
 Example:
 
 ```bash
-$ dmodpkg list
+$ dmodpkg bundle info ultimate-visual-pack-2.1.0.dmodbundle
 
-Installed Mods (profile: default)
+Ultimate Visual Pack v2.1.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-my-awesome-mod v1.2.3
-  ├─ Layers: base, dark_skin, ui_light
-  └─ Dependencies: core-framework, hud-enhancer
+Description: Complete visual overhaul with character skins, UI improvements, and effects
+Author: BundleCreator
 
-core-framework v2.5.1
-  └─ Required by: my-awesome-mod, another-mod
+Included Mods (3):
+  ✓ character-skins v2.0.0 [required]
+    Core character visual improvements
 
-hud-enhancer v1.5.2 (optional)
-  └─ Required by: my-awesome-mod
+  ○ enhanced-ui v1.5.0 [optional]
+    Optional UI modernization
 
-3 mods installed
+  ○ particle-effects v3.1.0 [optional]
+    Enhanced visual effects
+
+Presets (3):
+  • Dark Theme (default)
+    Dark color scheme across all mods
+
+  • Light Theme
+    Light color scheme across all mods
+
+  • Performance Mode
+    Optimized settings for lower-end systems
+
+Bundle Size: 125 MB
+Screenshots: 2
 ```
 
-#### `dmodpkg upgrade`
+#### `dmodpkg bundle extract`
 
-Upgrade installed mods:
+Extract individual mod packages from a bundle:
 
 ```bash
-dmodpkg upgrade [mod-name] [options]
+dmodpkg bundle extract <bundle> [options]
 
 Options:
-  --profile <name>     Upgrade in specific profile
-  --all                Upgrade all mods
-  --check              Check for updates without installing
+  --output <path>      Output directory (default: ./<bundle-name>)
+  --packages <names>   Extract specific packages (comma-separated)
+  --all                Extract all packages (default)
+```
+
+Example:
+
+```bash
+$ dmodpkg bundle extract ultimate-visual-pack-2.1.0.dmodbundle --output ./extracted
+
+Extracting bundle packages...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+
+✓ Extracted character-skins-2.0.0.dmodpkg
+✓ Extracted enhanced-ui-1.5.0.dmodpkg
+✓ Extracted particle-effects-3.1.0.dmodpkg
+
+Extracted 3 packages to: ./extracted/
+```
+
+#### `dmodpkg bundle validate`
+
+Validate a bundle project or package:
+
+```bash
+dmodpkg bundle validate [target] [options]
+
+Options:
+  --strict             Enable strict validation mode
+```
+
+Example:
+
+```bash
+$ dmodpkg bundle validate ./ultimate-visual-pack-bundle
+
+Validating bundle project...
+
+✓ Bundle configuration is valid
+✓ All mod packages exist
+✓ All mod packages are valid .dmodpkg files
+✓ Preset configurations reference valid packages and variants
+✓ Bundle resources (screenshots) exist
+✗ Warning: Mod 'particle-effects' has no variants but is referenced in preset 'performance'
+
+Validation passed with 1 warning.
 ```
 
 ---
@@ -1351,6 +1718,10 @@ Multiple skin variants, user picks one.
   "version": "2.0.0",
   "description": "Multiple hero skin options",
   "authors": ["ArtistName"],
+  "screenshots": [
+    "previews/mod/overview.png",
+    "previews/mod/ingame.png"
+  ],
   "variant_groups": [
     {
       "id": "hero_skin",
@@ -1365,11 +1736,15 @@ Multiple skin variants, user picks one.
         {
           "id": "futuristic",
           "name": "Futuristic",
+          "preview_image": "previews/hero_skin/futuristic/main.png",
+          "screenshots": ["previews/hero_skin/futuristic/screenshot_1.png"],
           "layers": ["base", "futuristic_skin"]
         },
         {
           "id": "medieval",
           "name": "Medieval",
+          "preview_image": "previews/hero_skin/medieval/main.png",
+          "screenshots": ["previews/hero_skin/medieval/screenshot_1.png"],
           "layers": ["base", "medieval_skin"]
         }
       ]
@@ -1388,6 +1763,17 @@ Multiple skin variants, user picks one.
 ```text
 hero-skins/
 ├── mod.config.json
+├── previews/
+│   ├── mod/
+│   │   ├── overview.png
+│   │   └── ingame.png
+│   └── hero_skin/
+│       ├── futuristic/
+│       │   ├── main.png
+│       │   └── screenshot_1.png
+│       └── medieval/
+│           ├── main.png
+│           └── screenshot_1.png
 └── content/
     ├── base/
     │   ├── core.vpk
@@ -1398,38 +1784,43 @@ hero-skins/
         └── characters.vpk
 ```
 
-### Example 3: Mod with Dependencies
+### Example 3: Mod with Optional Layers
 
-Requires framework mod to function.
+Mod with a base layer and optional enhancement layers.
 
 **mod.config.json:**
 
 ```json
 {
-  "name": "advanced-features",
-  "display_name": "Advanced Features",
+  "name": "environment-pack",
+  "display_name": "Environment Enhancement Pack",
   "version": "1.5.0",
-  "description": "Advanced gameplay features requiring framework",
+  "description": "Enhanced environmental effects and textures",
   "authors": ["DevName"],
-  "dependencies": [
+  "layers": [
     {
-      "name": "gameplay-framework",
-      "version": "^3.0.0",
-      "optional": false
+      "name": "base",
+      "priority": 0,
+      "description": "Core environmental improvements",
+      "required": true
     },
     {
-      "name": "enhanced-audio",
-      "version": ">=1.0.0",
-      "optional": true
+      "name": "hd_textures",
+      "priority": 10,
+      "description": "High-resolution texture pack",
+      "required": false
+    },
+    {
+      "name": "particle_effects",
+      "priority": 5,
+      "description": "Enhanced particle effects",
+      "required": false
     }
-  ],
-  "layers": [
-    { "name": "base", "priority": 0, "required": true }
   ]
 }
 ```
 
-### Example 4: Complex Mod (Variants + Layers + Dependencies)
+### Example 4: Complex Mod (Variants + Layers)
 
 Full-featured mod using all systems.
 
@@ -1448,12 +1839,10 @@ Full-featured mod using all systems.
   ],
   "license": "CC-BY-NC-SA-4.0",
   "homepage": "https://github.com/author/total-overhaul",
-  "dependencies": [
-    {
-      "name": "framework-mod",
-      "version": "^4.0.0",
-      "optional": false
-    }
+  "screenshots": [
+    "previews/mod/main_menu.png",
+    "previews/mod/gameplay_1.png",
+    "https://example.com/external_comparison.jpg"
   ],
   "variant_groups": [
     {
@@ -1465,12 +1854,22 @@ Full-featured mod using all systems.
           "id": "realistic",
           "name": "Realistic",
           "description": "Photorealistic graphics",
+          "preview_image": "previews/visual_style/realistic/main.png",
+          "screenshots": [
+            "previews/visual_style/realistic/characters.png",
+            "previews/visual_style/realistic/environments.png"
+          ],
           "layers": ["base", "realistic_visuals"]
         },
         {
           "id": "stylized",
           "name": "Stylized",
           "description": "Artistic style",
+          "preview_image": "previews/visual_style/stylized/main.png",
+          "screenshots": [
+            "previews/visual_style/stylized/characters.png",
+            "previews/visual_style/stylized/environments.png"
+          ],
           "layers": ["base", "stylized_visuals"]
         }
       ]
@@ -1528,7 +1927,19 @@ total-overhaul/
 ├── mod.config.json
 ├── README.md
 ├── LICENSE
-├── icon.png
+├── previews/
+│   ├── mod/
+│   │   ├── main_menu.png
+│   │   └── gameplay_1.png
+│   └── visual_style/
+│       ├── realistic/
+│       │   ├── main.png
+│       │   ├── characters.png
+│       │   └── environments.png
+│       └── stylized/
+│           ├── main.png
+│           ├── characters.png
+│           └── environments.png
 └── content/
     ├── base/
     │   ├── core.vpk
@@ -1569,6 +1980,53 @@ total-overhaul/
 
 ## Future Considerations
 
+### Dependency Management System
+
+Mod dependencies are not currently common in the Deadlock modding ecosystem, so this feature is reserved for future exploration. If the modding community develops a need for mods that require other mods to function, the following system could be implemented:
+
+#### Potential Dependency Declaration
+
+```json
+{
+  "dependencies": [
+    {
+      "name": "framework-mod",
+      "version": "^2.1.0",
+      "optional": false
+    },
+    {
+      "name": "hud-library",
+      "version": ">=1.5.0 <3.0.0",
+      "optional": true
+    }
+  ]
+}
+```
+
+#### Version Constraint Syntax
+
+Following npm-style semantic versioning:
+
+| Constraint | Meaning | Example Match |
+|------------|---------|---------------|
+| `1.2.3` | Exact version | 1.2.3 only |
+| `^1.2.3` | Compatible (minor updates) | 1.2.3, 1.5.0, 1.9.9 (not 2.0.0) |
+| `~1.2.3` | Patch updates only | 1.2.3, 1.2.9 (not 1.3.0) |
+| `>=1.0.0` | Minimum version | 1.0.0, 2.5.1, 99.0.0 |
+| `>=1.0.0 <2.0.0` | Range | 1.0.0 to 1.9.9 |
+
+#### Dependency Resolution Considerations
+
+A potential dependency system would need to handle:
+
+- Topological sort for install order
+- Circular dependency detection
+- Version conflict resolution
+- Optional vs required dependencies
+- Dependency metadata tracking
+
+This feature would add complexity to mod managers and may not be necessary unless framework-style mods become common in the Deadlock modding community.
+
 ### Schema Versioning
 
 Format version in header allows future evolution:
@@ -1583,10 +2041,10 @@ This RFC is open for community discussion. Key areas for feedback:
 
 1. Configuration format (JSON vs TOML vs YAML)
 2. Binary format efficiency (compression, chunk size)
-3. Dependency resolution complexity
-4. Transformer plugin system design
-5. CLI command ergonomics
-6. Migration tooling requirements
+3. Transformer plugin system design
+4. CLI command ergonomics
+5. Migration tooling requirements
+6. Bundle preset system design
 
 ---
 
@@ -1601,6 +2059,38 @@ This RFC is open for community discussion. Key areas for feedback:
 ---
 
 ## Changelog
+
+### Version 0.3.0 (2025-11-10)
+
+- **Added mod bundle support**:
+  - New `.dmodbundle` file format for packaging multiple mods
+  - `bundle.config.json` schema with bundle metadata
+  - Bundle-level screenshots and previews
+  - Variant preset system for themed configurations across mods
+  - Selective installation (required vs optional mods)
+  - Binary format specification for bundles
+  - Bundle version independent from individual mod versions
+  - CLI commands: `bundle pack`, `bundle info`, `bundle extract`, `bundle validate`
+  - Use cases and examples for themed collections, modpacks, and author compilations
+- **Removed installation commands from CLI specification**:
+  - Installation is handled by mod managers, not the packaging CLI tool
+  - Removed `install`, `uninstall`, `list`, and `upgrade` commands
+  - Focus on package creation, validation, and extraction
+- **Moved dependency management to Future Considerations**:
+  - Dependencies are not common in Deadlock modding currently
+  - Full dependency system reserved for future implementation if needed
+  - Removed dependency examples and references from main specification
+
+### Version 0.2.0 (2025-11-10)
+
+- **Added preview image support**:
+  - Mod-level `screenshots` array field in root configuration
+  - Per-variant `preview_image` and `screenshots` fields
+  - `previews/` directory structure specification
+  - Support for both embedded images (PNG, JPEG, WebP) and external URLs
+  - Image validation rules and recommendations
+  - Binary format documentation for image storage
+- **Removed icon requirement**: Mods no longer require 256x256 icon images
 
 ### Version 0.1.0 (2025-11-10)
 
@@ -1619,4 +2109,3 @@ This RFC is open for community discussion. Key areas for feedback:
 ## License
 
 This specification is released under the MIT License.
-
