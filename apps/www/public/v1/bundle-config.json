@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://deadlockmods.app/v1/bundle-config.json",
+  "title": "Deadlock Mod Bundle Configuration",
+  "description": "Configuration schema for Deadlock mod bundles (.dmodbundle)",
+  "type": "object",
+  "required": [
+    "name",
+    "display_name",
+    "version",
+    "description",
+    "authors",
+    "mods"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique bundle identifier in kebab-case"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable bundle name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Bundle version (semver)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Bundle description (max 1000 chars)"
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Author name as string"
+          },
+          {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Author name"
+              },
+              "role": {
+                "type": "string",
+                "description": "Author role"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Author URL"
+              }
+            }
+          }
+        ]
+      },
+      "description": "Bundle authors (not individual mod authors)"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Bundle homepage URL"
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Screenshot path or URL"
+      },
+      "description": "Bundle-level screenshots (paths or URLs)"
+    },
+    "mods": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["package"],
+        "properties": {
+          "package": {
+            "type": "string",
+            "pattern": ".*\\.dmodpkg$",
+            "description": "Filename of the .dmodpkg file"
+          },
+          "required": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether mod is required"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of this mod's role in bundle"
+          }
+        }
+      },
+      "description": "List of included mod packages"
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "mods"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Unique preset identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Preset description"
+          },
+          "default": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the default preset"
+          },
+          "mods": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["package", "variants"],
+              "properties": {
+                "package": {
+                  "type": "string",
+                  "pattern": ".*\\.dmodpkg$",
+                  "description": "Which mod package this configuration applies to"
+                },
+                "variants": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Object mapping variant group IDs to variant IDs"
+                }
+              }
+            },
+            "description": "Variant configurations for each mod"
+          }
+        }
+      },
+      "description": "Variant configuration presets"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Bundle tags for categorization"
+        },
+        "category": {
+          "type": "string",
+          "description": "Primary bundle category"
+        }
+      },
+      "description": "Additional metadata"
+    }
+  }
+}

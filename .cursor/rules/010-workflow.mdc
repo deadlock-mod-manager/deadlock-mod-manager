@@ -47,6 +47,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **030-coding-style.mdc** - Coding standards and style guidelines for all technologies
 - **040-logging.mdc** - Logging guidelines for implementing structured logging
 - **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
+- **055-rust-edition.mdc** - Rust edition 2024 enforcement for all Rust code
 - **060-tailwind-v4.mdc** - Guidelines for using Tailwind CSS v4
 - **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
 - **080-ai-interaction.mdc** - AI interaction guidelines and communication style rules

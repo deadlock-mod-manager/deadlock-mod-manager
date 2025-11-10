@@ -76,7 +76,7 @@ Mods are defined by a `mod.config.json` file in the project root.
 
 ```json
 {
-  "$schema": "https://deadlock-modding.com/schemas/mod-config-v1.json",
+  "$schema": "https://deadlockmods.app/schemas/mod-config-v1.json",
   "name": "my-awesome-mod",
   "display_name": "My Awesome Mod",
   "version": "1.2.3",
@@ -874,7 +874,7 @@ Bundles are defined by a `bundle.config.json` file:
 
 ```json
 {
-  "$schema": "https://deadlock-modding.com/schemas/bundle-config-v1.json",
+  "$schema": "https://deadlockmods.app/schemas/bundle-config-v1.json",
   "name": "ultimate-visual-pack",
   "display_name": "Ultimate Visual Pack",
   "version": "2.1.0",
@@ -1199,9 +1199,6 @@ The `dmodpkg` CLI tool manages mod projects, packages, and bundles.
 ```bash
 # npm
 npm install -g dmodpkg-cli
-
-# cargo
-cargo install dmodpkg-cli
 
 # Binary download
 # Download from releases page
@@ -2108,4 +2105,4 @@ This RFC is open for community discussion. Key areas for feedback:
 
 ## License
 
-This specification is released under the MIT License.
+This specification is released under GPL-3.0 - See LICENSE file for details.

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://deadlockmods.app/v1/mod-config.json",
+  "name": "{{name}}",
+  "display_name": "{{display_name}}",
+  "version": "1.0.0",
+  "description": "{{description}}",
+  "authors": ["{{author}}"],
+  "license": "{{license}}",
+  "layers": [
+    {
+      "name": "base",
+      "priority": 0,
+      "description": "Core mod files",
+      "required": true
+    }
+  ],
+  "metadata": {
+    "tags": [],
+    "category": "other"
+  }
+}

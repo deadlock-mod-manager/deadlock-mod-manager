@@ -1,0 +1,68 @@
+---
+description: Rust Edition: Enforce Rust edition 2024 for all Rust code in the project
+globs: **/*.rs, **/Cargo.toml
+alwaysApply: false
+---
+# Rust Edition 2024
+
+## Overview
+
+This project uses **Rust Edition 2024** across all Rust code. All Rust files and Cargo.toml configurations must be compatible with edition 2024 features and idioms.
+
+## Requirements
+
+### Cargo.toml Configuration
+
+All `Cargo.toml` files in the project MUST specify edition 2024:
+
+```toml
+[package]
+name = "your-package"
+version = "0.1.0"
+edition = "2024"
+```
+
+### Writing Rust Code
+
+When writing or modifying Rust code:
+
+1. **Use edition 2024 features** - Take advantage of the latest Rust language features available in edition 2024
+2. **Follow edition 2024 idioms** - Use modern Rust patterns and conventions
+3. **Avoid deprecated patterns** - Don't use patterns that were deprecated or superseded in edition 2024
+
+## Project Structure
+
+The project contains Rust code in the following locations:
+
+- `apps/desktop/src-tauri/` - Tauri desktop application backend
+- `packages/vpk-parser/` - VPK file parsing library
+
+Both locations use edition 2024 and all new Rust code should maintain this standard.
+
+## Key Edition 2024 Features
+
+When writing Rust code, leverage these edition 2024 capabilities:
+
+- Modern pattern matching syntax
+- Latest async/await improvements
+- Updated module system conventions
+- Improved error handling patterns
+- Latest macro system features
+
+## Verification
+
+When creating or modifying Rust packages:
+
+1. Ensure `Cargo.toml` includes `edition = "2024"`
+2. Verify code compiles with Rust edition 2024
+3. Use `cargo check` and `cargo clippy` to validate code quality
+4. Follow Rust 2024 edition style guidelines
+
+## Why Edition 2024?
+
+Using a consistent edition across the project:
+
+- Ensures compatibility across all Rust modules
+- Allows use of the latest language features
+- Maintains consistency with modern Rust best practices
+- Simplifies dependency management and integration

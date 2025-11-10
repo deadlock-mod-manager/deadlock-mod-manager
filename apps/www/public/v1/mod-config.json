@@ -1,0 +1,247 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://deadlockmods.app/v1/mod-config.json",
+  "title": "Deadlock Mod Configuration",
+  "description": "Configuration schema for Deadlock mod packages (.dmodpkg)",
+  "type": "object",
+  "required": [
+    "name",
+    "display_name",
+    "version",
+    "description",
+    "authors",
+    "layers"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique identifier in kebab-case (a-z0-9-)"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version (semver)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Short description (max 500 chars)"
+    },
+    "game_version": {
+      "type": "string",
+      "description": "Compatible Deadlock version constraint"
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Author name as string"
+          },
+          {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Author name"
+              },
+              "role": {
+                "type": "string",
+                "description": "Author role (e.g., Contributor, Artist)"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Author URL"
+              }
+            }
+          }
+        ]
+      },
+      "description": "List of authors (string or object)"
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier"
+    },
+    "readme": {
+      "type": "string",
+      "description": "Path to README file"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Project homepage URL"
+    },
+    "repository": {
+      "type": "string",
+      "format": "uri",
+      "description": "Source code repository URL"
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Screenshot path or URL"
+      },
+      "description": "Mod-level screenshots (paths or URLs)"
+    },
+    "variant_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "default", "variants"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Unique group identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Group description"
+          },
+          "default": {
+            "type": "string",
+            "description": "Default variant ID"
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "layers"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_]+$",
+                  "description": "Unique variant identifier"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Display name"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Variant description"
+                },
+                "layers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Which layers to enable for this variant"
+                },
+                "preview_image": {
+                  "type": "string",
+                  "description": "Main preview image (path or URL)"
+                },
+                "screenshots": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Additional screenshots (paths or URLs)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Variant groups define mutually exclusive options"
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "priority"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Unique layer name"
+          },
+          "priority": {
+            "type": "number",
+            "description": "Override priority (higher = wins)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Layer description"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Must be installed"
+          }
+        }
+      },
+      "description": "Layers are additive content modules with priority-based overrides"
+    },
+    "transformers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "patterns"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Transformer plugin name"
+          },
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Glob patterns for matching files"
+          },
+          "config": {
+            "type": "object",
+            "description": "Transformer-specific configuration"
+          }
+        }
+      },
+      "description": "Transformers are plugins that preprocess files during packing"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Mod tags for categorization"
+        },
+        "category": {
+          "type": "string",
+          "description": "Primary mod category"
+        },
+        "nsfw": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether mod contains NSFW content"
+        }
+      },
+      "description": "Additional metadata"
+    }
+  }
+}

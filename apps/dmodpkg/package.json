@@ -1,0 +1,48 @@
+{
+  "name": "dmodpkg-cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for creating and managing Deadlock mod packages (.dmodpkg)",
+  "type": "module",
+  "bin": {
+    "dmodpkg": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "deadlock",
+    "mod",
+    "package",
+    "cli",
+    "modding",
+    "dmodpkg"
+  ],
+  "author": "stormix <contact@stormix.co>",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
+    "directory": "apps/dmodpkg"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
+  "dependencies": {
+    "@deadlock-mods/dmodpkg": "workspace:*",
+    "@deadlock-mods/logging": "workspace:*",
+    "commander": "^12.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.1.1",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/bun": "^1.3.0",
+    "@types/node": "^24.5.2",
+    "@types/prompts": "^2.4.9",
+    "bun-types": "^1.3.0"
+  }
+}
