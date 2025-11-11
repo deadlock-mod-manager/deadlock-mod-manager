@@ -300,7 +300,7 @@ function logVerboseFileInfo(
           ? "filtered"
           : "preloaded";
     const route =
-      file.route.length > 30 ? file.route.substring(0, 27) + "..." : file.route;
+      file.route.length > 30 ? `${file.route.substring(0, 27)}...` : file.route;
     console.log(
       `${status.padEnd(12)} │ ${route.padEnd(30)} │ ${file.type.padEnd(28)} │ ${reason.padEnd(10)}`,
     );

@@ -23,6 +23,16 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/www ./apps/www
 
+# Build arguments for Vite environment variables
+ARG VITE_SERVER_URL=https://api.deadlockmods.app
+ARG VITE_GA_MEASUREMENT_ID=G-EN5J1SBZ10
+ARG VITE_SENTRY_DSN=
+
+# Set environment variables for Vite build
+ENV VITE_SERVER_URL=${VITE_SERVER_URL}
+ENV VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID}
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+
 # Install dependencies (handle lockfile config mismatch)
 RUN pnpm install --no-frozen-lockfile
 
@@ -73,10 +83,6 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/www ./apps/www
 # Install only production dependencies (as non-root user)
 RUN pnpm install --prod
 
-# Environment variables for Vite
-ENV VITE_SERVER_URL="https://api.deadlockmods.app"
-ENV VITE_GA_MEASUREMENT_ID="G-EN5J1SBZ10"
-ENV VITE_SENTRY_DSN=""
 ENV PORT=3000
 
 EXPOSE 3000

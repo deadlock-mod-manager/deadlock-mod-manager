@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import Loader from "@/components/loader";
+import { SERVER_URL } from "@/lib/config";
 
 export const Route = createFileRoute("/auth/desktop-callback")({
   component: RouteComponent,
@@ -16,12 +17,9 @@ function RouteComponent() {
   useEffect(() => {
     const handleDesktopCallback = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_URL || "http://localhost:9000"}/auth/desktop/session`,
-          {
-            credentials: "include",
-          },
-        );
+        const response = await fetch(`${SERVER_URL}/auth/desktop/session`, {
+          credentials: "include",
+        });
 
         if (!response.ok) {
           throw new Error("Failed to get session token");

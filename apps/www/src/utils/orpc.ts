@@ -3,6 +3,7 @@ import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { SERVER_URL } from "@/lib/config";
 import type { AppRouterClient } from "../../../api/src/routers/index";
 
 export const queryClient = new QueryClient({
@@ -21,7 +22,7 @@ export const queryClient = new QueryClient({
 });
 
 export const link = new RPCLink({
-  url: `${import.meta.env.VITE_SERVER_URL || "http://localhost:9000"}/rpc`,
+  url: `${SERVER_URL}/rpc`,
   fetch(url, options) {
     return fetch(url, {
       ...options,
