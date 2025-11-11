@@ -25,6 +25,7 @@ jobs:
       bot: ${{ steps.filter.outputs.bot }}
       lockdex: ${{ steps.filter.outputs.lockdex }}
       mirror: ${{ steps.filter.outputs.mirror }}
+      www: ${{ steps.filter.outputs.www }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,6 +47,8 @@ jobs:
             mirror:
               - 'apps/mirror-service/**'
               - 'packages/**'
+            www:
+              - 'apps/www/**'
 
   deploy-api:
     environment:
@@ -179,3 +182,38 @@ jobs:
           deployment-name: deadlock-mod-manager-mirror
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+
+  deploy-www:
+    environment:
+      name: production
+      url: https://deadlockmods.app
+    name: Deploy WWW
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.www == 'true' || github.event.inputs.force-deploy == 'true' }}
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        id: docker-build
+        uses: ./.github/actions/docker-build-push
+        with:
+          service-name: www
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: www
+          deployment-name: deadlock-mod-manager-www
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+

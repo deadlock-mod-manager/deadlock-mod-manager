@@ -177,6 +177,53 @@ deployments:
         successThreshold: 1
         failureThreshold: 12
 
+  www:
+    image: stormix/deadlock-mods-www:latest
+    replicas: 3
+    memory: 256Mi
+    cpu: 150m
+
+    healthCheck:
+      readiness:
+        enabled: true
+        path: /
+        port: 3000
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      liveness:
+        enabled: true
+        path: /
+        port: 3000
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 3
+
+      startup:
+        enabled: true
+        path: /
+        port: 3000
+        initialDelaySeconds: 15
+        periodSeconds: 5
+        timeoutSeconds: 15
+        successThreshold: 1
+        failureThreshold: 12
+
+    strategy:
+      type: RollingUpdate
+      maxUnavailable: 1
+      maxSurge: 1
+
+    restartPolicy: Always
+    terminationGracePeriodSeconds: 30
+
+    port: 3000
+
 resources:
   postgres:
     replicas: 3

@@ -1,0 +1,115 @@
+{{- $port := .Values.deployments.www.port | default 3000 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-www
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.www.replicas }}
+  {{- if .Values.deployments.www.strategy }}
+  strategy:
+    type: {{ .Values.deployments.www.strategy.type | default "RollingUpdate" }}
+    {{- if eq (.Values.deployments.www.strategy.type | default "RollingUpdate") "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.deployments.www.strategy.maxUnavailable | default 1 }}
+      maxSurge: {{ .Values.deployments.www.strategy.maxSurge | default 1 }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-www
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-www
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: www
+    spec:
+      {{- if .Values.deployments.www.restartPolicy }}
+      restartPolicy: {{ .Values.deployments.www.restartPolicy }}
+      {{- end }}
+      {{- if .Values.deployments.www.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployments.www.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: www
+          image: {{ .Values.deployments.www.image }}
+          {{- if .Values.deployments.www.command }}
+          command:
+            {{- range .Values.deployments.www.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          {{- if .Values.deployments.www.healthCheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployments.www.healthCheck.startup.path }}
+              port: {{ .Values.deployments.www.healthCheck.startup.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.www.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.www.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.startup.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.www.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.www.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.www.healthCheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployments.www.healthCheck.readiness.path }}
+              port: {{ .Values.deployments.www.healthCheck.readiness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.www.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.www.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.readiness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.www.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.www.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.www.healthCheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployments.www.healthCheck.liveness.path }}
+              port: {{ .Values.deployments.www.healthCheck.liveness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.www.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.www.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.liveness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.www.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.www.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.deployments.www.memory }}
+              cpu: {{ .Values.deployments.www.cpu }}
+            limits:
+              memory: {{ .Values.deployments.www.memory }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.www.env }}
+            {{- .Values.deployments.www.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-www
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $port }}
+      targetPort: {{ $port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-www
+
