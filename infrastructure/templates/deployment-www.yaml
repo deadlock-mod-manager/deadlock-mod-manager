@@ -57,7 +57,7 @@ spec:
               port: {{ .Values.deployments.www.healthCheck.startup.port | default $port }}
             initialDelaySeconds: {{ .Values.deployments.www.healthCheck.startup.initialDelaySeconds | default 0 }}
             periodSeconds: {{ .Values.deployments.www.healthCheck.startup.periodSeconds | default 10 }}
-            timeoutSeconds: {{ .Values.deployments.www.healthCheck.startup.timeoutSeconds | default 1 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.startup.timeoutSeconds | default 15 }}
             successThreshold: {{ .Values.deployments.www.healthCheck.startup.successThreshold | default 1 }}
             failureThreshold: {{ .Values.deployments.www.healthCheck.startup.failureThreshold | default 3 }}
           {{- end }}
@@ -68,7 +68,7 @@ spec:
               port: {{ .Values.deployments.www.healthCheck.readiness.port | default $port }}
             initialDelaySeconds: {{ .Values.deployments.www.healthCheck.readiness.initialDelaySeconds | default 0 }}
             periodSeconds: {{ .Values.deployments.www.healthCheck.readiness.periodSeconds | default 10 }}
-            timeoutSeconds: {{ .Values.deployments.www.healthCheck.readiness.timeoutSeconds | default 1 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.readiness.timeoutSeconds | default 15 }}
             successThreshold: {{ .Values.deployments.www.healthCheck.readiness.successThreshold | default 1 }}
             failureThreshold: {{ .Values.deployments.www.healthCheck.readiness.failureThreshold | default 3 }}
           {{- end }}
@@ -79,7 +79,7 @@ spec:
               port: {{ .Values.deployments.www.healthCheck.liveness.port | default $port }}
             initialDelaySeconds: {{ .Values.deployments.www.healthCheck.liveness.initialDelaySeconds | default 0 }}
             periodSeconds: {{ .Values.deployments.www.healthCheck.liveness.periodSeconds | default 10 }}
-            timeoutSeconds: {{ .Values.deployments.www.healthCheck.liveness.timeoutSeconds | default 1 }}
+            timeoutSeconds: {{ .Values.deployments.www.healthCheck.liveness.timeoutSeconds | default 15 }}
             successThreshold: {{ .Values.deployments.www.healthCheck.liveness.successThreshold | default 1 }}
             failureThreshold: {{ .Values.deployments.www.healthCheck.liveness.failureThreshold | default 3 }}
           {{- end }}
@@ -99,6 +99,8 @@ spec:
             {{- end }}
             - name: PORT
               value: "{{ $port }}"
+            - name: NODE_ENV
+              value: "production"
 ---
 apiVersion: v1
 kind: Service
