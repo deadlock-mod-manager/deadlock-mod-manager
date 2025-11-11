@@ -3,22 +3,15 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
-import netlify from '@netlify/vite-plugin-tanstack-start'
 import sitemap from 'vite-plugin-sitemap';
 
 const config = defineConfig({
   plugins: [
-    // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
-    tanstackStart({
-      prerender: {
-        routes: ['/sitemap-mods.xml'],
-      },
-    }),
-    netlify(),
+    tanstackStart(),
     viteReact(),
     sitemap({
       hostname: 'https://deadlockmods.app',
