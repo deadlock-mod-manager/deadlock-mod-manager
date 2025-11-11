@@ -179,38 +179,38 @@ deployments:
 
   www:
     image: stormix/deadlock-mods-www:latest
-    replicas: 3
+    replicas: 1
     memory: 256Mi
     cpu: 150m
 
     healthCheck:
       readiness:
         enabled: true
-        path: /
+        path: /ready
         port: 3000
-        initialDelaySeconds: 10
+        initialDelaySeconds: 15
         periodSeconds: 5
-        timeoutSeconds: 15
+        timeoutSeconds: 10
         successThreshold: 1
         failureThreshold: 3
 
       liveness:
         enabled: true
-        path: /
+        path: /health
         port: 3000
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 10
-        timeoutSeconds: 15
+        timeoutSeconds: 10
         successThreshold: 1
         failureThreshold: 3
 
       startup:
         enabled: true
-        path: /
+        path: /health
         port: 3000
-        initialDelaySeconds: 5
+        initialDelaySeconds: 10
         periodSeconds: 5
-        timeoutSeconds: 15
+        timeoutSeconds: 10
         successThreshold: 1
         failureThreshold: 12
 

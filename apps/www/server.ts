@@ -12,6 +12,8 @@ const EXCLUDE_PATTERNS = env.ASSET_PRELOAD_EXCLUDE_PATTERNS.map((pattern) =>
   convertGlobToRegExp(pattern),
 );
 
+let isReady = false;
+
 async function initializeServer() {
   logger.info("Starting Production Server");
 
@@ -30,6 +32,11 @@ async function initializeServer() {
   const server = Bun.serve({
     port: env.PORT,
     routes: {
+      "/health": () => new Response("OK", { status: 200 }),
+      "/ready": () =>
+        isReady
+          ? new Response("OK", { status: 200 })
+          : new Response("Not Ready", { status: 503 }),
       ...routes,
       "/*": (req: Request) => {
         try {
@@ -49,6 +56,7 @@ async function initializeServer() {
   });
 
   logger.info(`Server listening on http://localhost:${String(server.port)}`);
+  isReady = true;
 }
 
 initializeServer().catch((error: unknown) => {
