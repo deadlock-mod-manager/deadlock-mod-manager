@@ -3,6 +3,8 @@ mod compressor;
 mod config;
 mod error;
 mod extract;
+mod ffi;
+mod ffi_types;
 mod format;
 mod info;
 mod pack;
@@ -37,8 +39,8 @@ pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-// FFI interface will be implemented later when needed
-// For now, this module provides the Rust library foundation
+// Re-export FFI types for use in TypeScript
+pub use ffi_types::*;
 
 #[cfg(test)]
 mod tests {
@@ -53,7 +55,7 @@ mod tests {
     fn test_mod_config_parse() {
         let json = r#"{
             "name": "test-mod",
-            "display_name": "Test Mod",
+            "displayName": "Test Mod",
             "version": "1.0.0",
             "description": "A test mod",
             "authors": ["TestAuthor"],
@@ -76,7 +78,7 @@ mod tests {
     fn test_bundle_config_parse() {
         let json = r#"{
             "name": "test-bundle",
-            "display_name": "Test Bundle",
+            "displayName": "Test Bundle",
             "version": "1.0.0",
             "description": "A test bundle",
             "authors": ["TestAuthor"],

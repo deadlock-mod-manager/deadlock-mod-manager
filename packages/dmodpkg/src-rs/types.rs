@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use ts_rs::TS;
 
 /// Author information (can be a string or a detailed object)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/")]
 #[serde(untagged)]
 pub enum Author {
     /// Simple string author name
@@ -18,7 +20,9 @@ pub enum Author {
 }
 
 /// Layer configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Layer {
     /// Unique layer name (e.g., "base", "hd_textures")
     pub name: String,
@@ -33,7 +37,9 @@ pub struct Layer {
 }
 
 /// Variant within a variant group
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Variant {
     /// Unique variant identifier
     pub id: String,
@@ -53,7 +59,9 @@ pub struct Variant {
 }
 
 /// Variant group (mutually exclusive options)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct VariantGroup {
     /// Unique group identifier
     pub id: String,
@@ -69,19 +77,24 @@ pub struct VariantGroup {
 }
 
 /// Transformer configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Transformer {
     /// Transformer plugin name
     pub name: String,
     /// Glob patterns for matching files
     pub patterns: Vec<String>,
-    /// Transformer-specific configuration
+    /// Transformer-specific configuration (JSON object as string for TS compatibility)
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(type = "Record<string, any> | undefined")]
     pub config: Option<HashMap<String, serde_json::Value>>,
 }
 
 /// Additional metadata
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Metadata {
     /// Mod tags for categorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -95,7 +108,9 @@ pub struct Metadata {
 }
 
 /// Build information (added during packaging)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct BuildInfo {
     /// Version of the builder tool
     pub builder_version: String,
@@ -108,7 +123,9 @@ pub struct BuildInfo {
 }
 
 /// Package signature (optional)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct Signature {
     /// Signature algorithm (e.g., "ed25519")
     pub algorithm: String,
@@ -119,7 +136,9 @@ pub struct Signature {
 }
 
 /// File entry in the package index
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct FileEntry {
     /// File path within the layer
     pub path: String,
@@ -134,7 +153,9 @@ pub struct FileEntry {
 }
 
 /// Chunk metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct ChunkMetadata {
     /// Offset in the data section
     pub offset: u64,
@@ -147,7 +168,9 @@ pub struct ChunkMetadata {
 }
 
 /// Mod entry in a bundle
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct BundleModEntry {
     /// Filename of the .dmodpkg file
     pub package: String,
@@ -164,7 +187,9 @@ fn default_true() -> bool {
 }
 
 /// Preset mod configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PresetModConfig {
     /// Which mod package this applies to
     pub package: String,
@@ -173,7 +198,9 @@ pub struct PresetModConfig {
 }
 
 /// Bundle preset
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct BundlePreset {
     /// Unique preset identifier
     pub id: String,
@@ -190,7 +217,9 @@ pub struct BundlePreset {
 }
 
 /// Bundle metadata (additional metadata for bundles)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct BundleMetadata {
     /// Bundle tags for categorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

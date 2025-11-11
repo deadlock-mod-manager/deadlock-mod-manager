@@ -1,0 +1,7 @@
+# Build artifacts
+*/build/
+*.dmodpkg
+
+# Extracted test directories
+extracted-*/
+

@@ -2,6 +2,12 @@
 
 import { VERSION } from "@deadlock-mods/dmodpkg";
 import { Command } from "commander";
+import { extractCommand } from "./commands/extract";
+import { infoCommand } from "./commands/info";
+import { initCommand } from "./commands/init";
+import { packCommand } from "./commands/pack";
+import { validateCommand } from "./commands/validate";
+import { logger } from "./utils/logger";
 
 const program = new Command();
 
@@ -10,15 +16,6 @@ program
   .description("CLI tool for creating and managing Deadlock mod packages")
   .version(VERSION);
 
-// TODO: Import and register commands
-// import { initCommand } from "./commands/init";
-// import { packCommand } from "./commands/pack";
-// import { extractCommand } from "./commands/extract";
-// import { infoCommand } from "./commands/info";
-// import { validateCommand } from "./commands/validate";
-// import { migrateCommand } from "./commands/migrate";
-
-// Placeholder commands - to be implemented
 program
   .command("init [project-name]")
   .description("Initialize a new mod project")
@@ -29,8 +26,13 @@ program
   .option("--author <name>", "Set author name")
   .option("--license <spdx>", "Set license (default: MIT)")
   .option("-i, --interactive", "Interactive project setup")
-  .action(() => {
-    console.log("init command - not yet implemented");
+  .action(async (projectName, options) => {
+    try {
+      await initCommand(projectName, options);
+    } catch (error) {
+      logger.withError(error as Error).error("Init command failed");
+      process.exit(1);
+    }
   });
 
 program
@@ -42,8 +44,13 @@ program
   .option("--chunk-size <size>", "Chunk size", "1MB")
   .option("--no-validate", "Skip validation checks")
   .option("--sign <key>", "Sign package with private key")
-  .action(() => {
-    console.log("pack command - not yet implemented");
+  .action(async (options) => {
+    try {
+      await packCommand(options);
+    } catch (error) {
+      logger.withError(error as Error).error("Pack command failed");
+      process.exit(1);
+    }
   });
 
 program
@@ -53,8 +60,13 @@ program
   .option("--layers <names>", "Extract specific layers (comma-separated)")
   .option("--verify", "Verify checksums during extraction")
   .option("--no-decompress", "Extract without decompressing")
-  .action(() => {
-    console.log("extract command - not yet implemented");
+  .action(async (packagePath, options) => {
+    try {
+      await extractCommand(packagePath, options);
+    } catch (error) {
+      logger.withError(error as Error).error("Extract command failed");
+      process.exit(1);
+    }
   });
 
 program
@@ -62,8 +74,13 @@ program
   .description("Display package information")
   .option("--json", "Output as JSON")
   .option("-v, --verbose", "Show detailed information")
-  .action(() => {
-    console.log("info command - not yet implemented");
+  .action(async (packagePath, options) => {
+    try {
+      await infoCommand(packagePath, options);
+    } catch (error) {
+      logger.withError(error as Error).error("Info command failed");
+      process.exit(1);
+    }
   });
 
 program
@@ -71,8 +88,13 @@ program
   .description("Validate a mod project or package")
   .option("--strict", "Enable strict validation mode")
   .option("--schema <version>", "Schema version to validate against")
-  .action(() => {
-    console.log("validate command - not yet implemented");
+  .action(async (target, options) => {
+    try {
+      await validateCommand(target, options);
+    } catch (error) {
+      logger.withError(error as Error).error("Validate command failed");
+      process.exit(1);
+    }
   });
 
 program

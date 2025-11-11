@@ -16,8 +16,9 @@ zstd = "0.13"
 sha2 = "0.10"
 crc = "3.0"
 thiserror = "2.0"
-ts-rs = { version = "11.1.0", features = ["serde-compat"] }
+ts-rs = { version = "11.1.0", features = ["serde-compat", "chrono-impl"] }
 chrono = "0.4"
+libc = "0.2"
 
 [dev-dependencies]
 tempfile = "3.0"

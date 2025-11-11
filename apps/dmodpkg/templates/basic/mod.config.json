@@ -1,7 +1,7 @@
 {
   "$schema": "https://deadlockmods.app/v1/mod-config.json",
   "name": "{{name}}",
-  "display_name": "{{display_name}}",
+  "displayName": "{{display_name}}",
   "version": "1.0.0",
   "description": "{{description}}",
   "authors": ["{{author}}"],

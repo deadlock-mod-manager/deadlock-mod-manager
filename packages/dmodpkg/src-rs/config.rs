@@ -3,7 +3,9 @@ use crate::types::*;
 use crate::error::{DmodpkgError, Result};
 
 /// Mod configuration (mod.config.json)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct ModConfig {
     /// JSON Schema reference
     #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
@@ -168,7 +170,9 @@ impl ModConfig {
 }
 
 /// Bundle configuration (bundle.config.json)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct BundleConfig {
     /// JSON Schema reference
     #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
