@@ -199,7 +199,7 @@ export const Titlebar = () => {
       description: "Toggle Fullscreen",
     },
     {
-      key: "Ctrl++",
+      key: "Ctrl+=",
       handler: handleZoomIn,
       description: "Zoom In",
     },
@@ -269,7 +269,7 @@ export const Titlebar = () => {
         {
           label: "Zoom In",
           action: handleZoomIn,
-          shortcut: "Ctrl++",
+          shortcut: "Ctrl+=",
         },
         {
           label: "Zoom Out",
@@ -335,8 +335,24 @@ export const Titlebar = () => {
                         onClick={item.action}>
                         {item.label}
                         {item.shortcut && (
-                          <div className='ml-auto'>
-                            <Kbd>{item.shortcut}</Kbd>
+                          <div className='ml-auto flex items-center gap-1'>
+                            {item.shortcut
+                              .split("+")
+                              .filter(Boolean)
+                              .map((shortcutKey, idx, keys) => (
+                                <span
+                                  key={shortcutKey}
+                                  className='flex items-center gap-1'>
+                                  <Kbd>
+                                    {shortcutKey === "=" ? "+" : shortcutKey}
+                                  </Kbd>
+                                  {idx < keys.length - 1 && (
+                                    <span className='text-muted-foreground'>
+                                      +
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
                           </div>
                         )}
                       </MenubarItem>
