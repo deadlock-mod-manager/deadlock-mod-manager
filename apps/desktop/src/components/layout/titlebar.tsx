@@ -344,11 +344,11 @@ export const Titlebar = () => {
                                   key={shortcutKey}
                                   className='flex items-center gap-1'>
                                   <Kbd>
-                                    {shortcutKey === "=" ? "+" : shortcutKey}
+                                    {shortcutKey === "=" && item.label === "Zoom In" ? "+" : shortcutKey}
                                   </Kbd>
                                   {idx < keys.length - 1 && (
                                     <span className='text-muted-foreground'>
-                                      +
+                                      
                                     </span>
                                   )}
                                 </span>
