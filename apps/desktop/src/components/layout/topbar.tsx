@@ -1,6 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import useAbout from "@/hooks/use-about";
 import { usePersistedStore } from "@/lib/store";
+import { getPluginAssetUrl } from "@/lib/plugins";
 import UserMenu from "../user-menu";
 import Logo from "./logo";
 
@@ -15,6 +16,26 @@ type ThemesPluginSettings =
     }
   | undefined;
 
+const predefinedThemeIcons = {
+  nightshift: getPluginAssetUrl(
+    "themes",
+    "public/pre-defined/nightshift/icon.png",
+  ),
+  bloodmoon: getPluginAssetUrl(
+    "themes",
+    "public/pre-defined/bloodmoon/icon.png",
+  ),
+  tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
+} as const;
+
+type PredefinedThemeId = keyof typeof predefinedThemeIcons;
+
+const isPredefinedTheme = (
+  theme: string | undefined,
+): theme is PredefinedThemeId => {
+  return theme !== undefined && theme in predefinedThemeIcons;
+};
+
 export const Topbar = () => {
   const { version } = useAbout();
   const themesEnabled = usePersistedStore(
@@ -25,16 +46,12 @@ export const Topbar = () => {
   ) as ThemesPluginSettings;
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
   const themedIconSrc =
-    activeTheme === "nightshift"
-      ? "/src/plugins/themes/public/pre-defined/nightshift/icon.png"
-      : activeTheme === "bloodmoon"
-        ? "/src/plugins/themes/public/pre-defined/bloodmoon/icon.png"
-        : activeTheme === "tea"
-          ? "/src/plugins/themes/public/pre-defined/tea/logo.png"
-          : activeTheme === "custom"
-            ? themesSettings?.customTheme?.iconData || undefined
-            : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
-                ?.iconData || undefined;
+    isPredefinedTheme(activeTheme)
+      ? predefinedThemeIcons[activeTheme]
+      : activeTheme === "custom"
+        ? themesSettings?.customTheme?.iconData || undefined
+        : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
+            ?.iconData || undefined;
 
   return (
     <div

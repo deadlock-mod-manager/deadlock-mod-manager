@@ -1,25 +1,19 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import nightshiftBg1080 from "../../public/pre-defined/nightshift/backgrounds/nightshift_bg_1080p.png";
-import nightshiftBg4k from "../../public/pre-defined/nightshift/backgrounds/nightshift_teal_4k.png";
+import { getPluginAssetUrl } from "@/lib/plugins";
+
+const nightshiftBg = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/nightshift/background/nightshift_bg_1080p.png",
+);
 
 // Corner UI removed per design request
 
 const NightshiftTheme = () => {
   const [mounted, setMounted] = useState(false);
 
-  const backgroundUrl = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      if (width >= 3840 || height >= 2160) {
-        return nightshiftBg4k;
-      }
-    }
-    return nightshiftBg1080;
-  }, []);
+  const backgroundUrl = useMemo(() => nightshiftBg, []);
 
   const backgroundStyle = useMemo<CSSProperties>(() => {
     return {

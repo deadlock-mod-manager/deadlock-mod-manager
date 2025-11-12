@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
+import { getPluginAssetUrl } from "@/lib/plugins";
 
 const cornerDecorationStyle: CSSProperties = {
   position: "fixed",
@@ -7,6 +8,23 @@ const cornerDecorationStyle: CSSProperties = {
   zIndex: 1,
   opacity: 0.7,
 };
+
+const cornerTopLeft = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/svg/corner_top_left.svg",
+);
+const cornerTopRight = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/svg/corner_top_right.svg",
+);
+const cornerBottomLeft = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/svg/corner_bottom_left.svg",
+);
+const cornerBottomRight = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/bloodmoon/svg/corner_bottom_right.svg",
+);
 
 export const BloodmoonUI = () => {
   const [mounted, setMounted] = useState(false);
@@ -26,7 +44,7 @@ export const BloodmoonUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defined/bloodmoon/svg/corner_top_left.svg'
+          src={cornerTopLeft}
           alt=''
           style={{
             width: "100%",
@@ -48,7 +66,7 @@ export const BloodmoonUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defined/bloodmoon/svg/corner_top_right.svg'
+          src={cornerTopRight}
           alt=''
           style={{
             width: "100%",
@@ -70,7 +88,7 @@ export const BloodmoonUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defined/bloodmoon/svg/corner_bottom_left.svg'
+          src={cornerBottomLeft}
           alt=''
           style={{
             width: "100%",
@@ -92,7 +110,7 @@ export const BloodmoonUI = () => {
           height: "200px",
         }}>
         <img
-          src='/src/plugins/themes/public/pre-defined/bloodmoon/svg/corner_bottom_right.svg'
+          src={cornerBottomRight}
           alt=''
           style={{
             width: "100%",

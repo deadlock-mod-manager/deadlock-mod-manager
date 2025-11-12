@@ -10,9 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "dev": "pnpm tauri dev",
-    "desktop:dev": "pnpm tauri dev",
-    "desktop:build": "pnpm tauri build",
     "build": "pnpm tauri build",
+    "build:dev": "pnpm tauri build --no-bundle",
     "format:rust": "cd src-tauri && rustfmt"
   },
   "dependencies": {
