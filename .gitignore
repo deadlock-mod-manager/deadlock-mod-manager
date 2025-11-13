@@ -41,3 +41,5 @@ yarn-error.log*
 .tauri/updater.key
 
 .claude
+
+.idea/

@@ -78,12 +78,12 @@ impl ReportService {
       .json(&request_body)
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to send report request: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to send report request: {e}")))?;
 
     if !response.status().is_success() {
       let status = response.status();
       let error_text = response.text().await.unwrap_or_default();
-      return Err(Error::NetworkError(format!(
+      return Err(Error::Network(format!(
         "Report request failed with status {status}: {error_text}"
       )));
     }
@@ -91,7 +91,7 @@ impl ReportService {
     let result: CreateReportResponse = response
       .json()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to parse report response: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to parse report response: {e}")))?;
 
     log::info!("Report created successfully: {}", result.id);
     Ok(result)
@@ -108,12 +108,12 @@ impl ReportService {
       ))
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to fetch report counts: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to fetch report counts: {e}")))?;
 
     if !response.status().is_success() {
       let status = response.status();
       let error_text = response.text().await.unwrap_or_default();
-      return Err(Error::NetworkError(format!(
+      return Err(Error::Network(format!(
         "Report counts request failed with status {status}: {error_text}"
       )));
     }
@@ -121,7 +121,7 @@ impl ReportService {
     let result: ReportCounts = response
       .json()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to parse report counts response: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to parse report counts response: {e}")))?;
 
     Ok(result)
   }

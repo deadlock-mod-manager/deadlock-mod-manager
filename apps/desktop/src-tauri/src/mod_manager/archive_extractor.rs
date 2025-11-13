@@ -176,10 +176,10 @@ impl ArchiveExtractor {
 
   /// Check if a file is a supported archive format
   pub fn is_supported_archive(&self, path: &Path) -> bool {
-    match path.extension().and_then(|e| e.to_str()) {
-      Some("zip") | Some("rar") | Some("7z") => true,
-      _ => false,
-    }
+    matches!(
+      path.extension().and_then(|e| e.to_str()),
+      Some("zip") | Some("rar") | Some("7z")
+    )
   }
 }
 

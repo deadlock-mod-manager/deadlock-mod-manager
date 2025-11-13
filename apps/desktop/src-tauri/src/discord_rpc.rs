@@ -1,4 +1,4 @@
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
 use std::sync::Mutex;
 
 pub struct DiscordState {
@@ -78,38 +78,38 @@ pub fn set_presence(
   let has_large = activity_data
     .large_image_key
     .as_ref()
-    .map_or(false, |k| !k.is_empty());
+    .is_some_and(|k| !k.is_empty());
   let has_small = activity_data
     .small_image_key
     .as_ref()
-    .map_or(false, |k| !k.is_empty());
+    .is_some_and(|k| !k.is_empty());
 
   if has_large || has_small {
     let mut assets = activity::Assets::new();
 
-    if let Some(ref large_key) = activity_data.large_image_key {
-      if !large_key.is_empty() {
-        assets = assets.large_image(large_key);
-        log::debug!("Set large image: {}", large_key);
-        if let Some(ref large_text) = activity_data.large_image_text {
-          if !large_text.is_empty() {
-            assets = assets.large_text(large_text);
-            log::debug!("Set large image text: {}", large_text);
-          }
-        }
+    if let Some(ref large_key) = activity_data.large_image_key
+      && !large_key.is_empty()
+    {
+      assets = assets.large_image(large_key);
+      log::debug!("Set large image: {}", large_key);
+      if let Some(ref large_text) = activity_data.large_image_text
+        && !large_text.is_empty()
+      {
+        assets = assets.large_text(large_text);
+        log::debug!("Set large image text: {}", large_text);
       }
     }
 
-    if let Some(ref small_key) = activity_data.small_image_key {
-      if !small_key.is_empty() {
-        assets = assets.small_image(small_key);
-        log::debug!("Set small image: {}", small_key);
-        if let Some(ref small_text) = activity_data.small_image_text {
-          if !small_text.is_empty() {
-            assets = assets.small_text(small_text);
-            log::debug!("Set small image text: {}", small_text);
-          }
-        }
+    if let Some(ref small_key) = activity_data.small_image_key
+      && !small_key.is_empty()
+    {
+      assets = assets.small_image(small_key);
+      log::debug!("Set small image: {}", small_key);
+      if let Some(ref small_text) = activity_data.small_image_text
+        && !small_text.is_empty()
+      {
+        assets = assets.small_text(small_text);
+        log::debug!("Set small image text: {}", small_text);
       }
     }
 

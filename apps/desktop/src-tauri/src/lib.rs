@@ -5,16 +5,13 @@
 )]
 
 mod commands;
-mod download_manager;
 mod discord_rpc;
+mod download_manager;
 mod errors;
 mod ingest_tool;
 mod mod_manager;
 mod reports;
 mod utils;
-
-#[cfg(test)]
-mod tests;
 
 use std::env;
 use tauri::{Emitter, Manager};

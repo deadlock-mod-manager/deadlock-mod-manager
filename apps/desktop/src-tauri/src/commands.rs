@@ -380,10 +380,10 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
       .get(&url)
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to download vanilla gameinfo.gi: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to download vanilla gameinfo.gi: {e}")))?;
 
     if !response.status().is_success() {
-      return Err(Error::NetworkError(format!(
+      return Err(Error::Network(format!(
         "Server returned error status: {}",
         response.status()
       )));
@@ -392,7 +392,7 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
     response
       .text()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to read response: {e}")))?
+      .map_err(|e| Error::Network(format!("Failed to read response: {e}")))?
   };
 
   // Apply the vanilla content
@@ -1072,13 +1072,12 @@ pub async fn list_profile_folders() -> Result<Vec<String>, Error> {
     let entry = entry?;
     let path = entry.path();
 
-    if path.is_dir() {
-      if let Some(folder_name) = path.file_name().and_then(|n| n.to_str()) {
-        if folder_name.starts_with("profile_") {
-          profile_folders.push(folder_name.to_string());
-          log::debug!("Found profile folder: {folder_name}");
-        }
-      }
+    if path.is_dir()
+      && let Some(folder_name) = path.file_name().and_then(|n| n.to_str())
+      && folder_name.starts_with("profile_")
+    {
+      profile_folders.push(folder_name.to_string());
+      log::debug!("Found profile folder: {folder_name}");
     }
   }
 
@@ -1116,17 +1115,14 @@ pub async fn get_profile_installed_vpks(
   let mut vpk_files = Vec::new();
 
   for entry in std::fs::read_dir(&addons_path)? {
-    let entry = entry?;
-    let path = entry.path();
+    let path = entry?.path();
 
-    if path.is_file() {
-      if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-        // Return all .vpk files (both enabled pak##_dir.vpk and prefixed ones)
-        if file_name.ends_with(".vpk") {
-          vpk_files.push(file_name.to_string());
-          log::debug!("Found VPK file: {file_name}");
-        }
-      }
+    if path.is_file()
+      && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+      && file_name.ends_with(".vpk")
+    {
+      vpk_files.push(file_name.to_string());
+      log::debug!("Found VPK file: {file_name}");
     }
   }
 
@@ -1306,7 +1302,7 @@ pub async fn set_discord_presence(
 ) -> Result<(), Error> {
   discord_rpc::ensure_connection_and_set_presence(&state, &application_id, activity)
     .await
-    .map_err(|e| Error::InvalidInput(e))
+    .map_err(Error::InvalidInput)
 }
 
 #[tauri::command]
@@ -1516,27 +1512,16 @@ pub async fn import_profile_batch(
     // Add retry logic to wait for file processing to complete
     if download_complete && download_error.is_none() {
       // Get game path and addons path (drop lock before await)
-      let addons_path = {
-        let mod_manager = MANAGER.lock().unwrap();
-        let game_path = mod_manager
-          .get_steam_manager()
-          .get_game_path()
-          .ok_or(Error::GamePathNotSet)?;
-
-        if import_type == "create" {
-          game_path
-            .join("game")
-            .join("citadel")
-            .join("addons")
-            .join(&final_profile_folder)
-        } else {
-          game_path
-            .join("game")
-            .join("citadel")
-            .join("addons")
-            .join(&final_profile_folder)
-        }
-      };
+      let addons_path = MANAGER
+        .lock()
+        .unwrap()
+        .get_steam_manager()
+        .get_game_path()
+        .ok_or(Error::GamePathNotSet)?
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .join(&final_profile_folder);
 
       // Retry logic to wait for VPKs to appear (file processing happens asynchronously)
       let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();

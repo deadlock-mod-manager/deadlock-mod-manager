@@ -15,7 +15,7 @@ pub enum Error {
   #[error("Mod file not found at path")]
   ModFileNotFound,
   #[error(transparent)]
-  KeyValues(#[from] keyvalues_serde::Error),
+  KeyValues(#[from] Box<keyvalues_serde::Error>),
   #[error(transparent)]
   Rar(#[from] unrar::error::UnrarError),
   #[error(transparent)]
@@ -35,7 +35,7 @@ pub enum Error {
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
   #[error("Network error: {0}")]
-  NetworkError(String),
+  Network(String),
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -79,7 +79,7 @@ impl serde::Serialize for Error {
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
-      Error::NetworkError(_) => "networkError",
+      Error::Network(_) => "networkError",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
