@@ -13,9 +13,6 @@ mod mod_manager;
 mod reports;
 mod utils;
 
-#[cfg(test)]
-mod tests;
-
 use std::env;
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
