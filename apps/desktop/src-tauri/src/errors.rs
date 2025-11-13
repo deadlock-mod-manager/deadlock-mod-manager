@@ -15,7 +15,7 @@ pub enum Error {
   #[error("Mod file not found at path")]
   ModFileNotFound,
   #[error(transparent)]
-  KeyValues(#[from] keyvalues_serde::Error),
+  KeyValues(#[from] Box<keyvalues_serde::Error>),
   #[error(transparent)]
   Rar(#[from] unrar::error::UnrarError),
   #[error(transparent)]
