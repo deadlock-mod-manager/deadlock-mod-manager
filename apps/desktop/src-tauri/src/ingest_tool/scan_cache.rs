@@ -9,6 +9,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+const DEADLOCK_APP_ID: &str = "1422450";
+const MAX_BYTES_TO_READ: usize = 200;
+const SEARCH_SEQUENCE: &[u8; 10] = b".valve.net";
+const PATH_END_MARKERS: [u8; 6] = [b' ', b'\'', b'\0', b'\n', b'\r', b'"'];
+
 /// Get the Steam HTTP cache directory using steamlocate
 pub fn get_cache_directory() -> Option<PathBuf> {
   let steam_dir = steamlocate::SteamDir::locate().ok()?;
@@ -28,7 +33,7 @@ pub fn get_cache_directory() -> Option<PathBuf> {
   }
 }
 
-fn scan_directory(dir: &Path, results: &mut Vec<(String, String)>) {
+fn scan_directory(dir: &Path, results: &mut Vec<String>) {
   if let Ok(entries) = fs::read_dir(dir) {
     for entry in entries.flatten() {
       let path = entry.path();
@@ -36,76 +41,63 @@ fn scan_directory(dir: &Path, results: &mut Vec<(String, String)>) {
       if path.is_dir() {
         scan_directory(&path, results);
       } else if path.is_file()
-        && let Some(url) = scan_file(&path)
+        && let Some(url) = extract_replay_url(&path)
       {
         let file_path = path.display().to_string();
         log::info!("Found: {file_path} -> {url}");
-        results.push((file_path, url));
+        results.push(url);
       }
     }
   }
 }
 
-fn scan_file(path: &Path) -> Option<String> {
-  if let Ok(mut file) = fs::File::open(path) {
-    let mut buffer = Vec::new();
-    if file.read_to_end(&mut buffer).is_ok() {
-      return extract_replay_url(&buffer);
-    }
-  }
-  None
-}
+fn extract_replay_url(path: &Path) -> Option<String> {
+  let Ok(mut file) = fs::File::open(path) else {
+    return None;
+  };
+  let mut data = vec![0u8; MAX_BYTES_TO_READ];
+  let bytes_read = file.read(&mut data).ok()?;
+  let data = &data[..bytes_read];
 
-fn extract_replay_url(data: &[u8]) -> Option<String> {
-  let finder = memmem::Finder::new(b".valve.net");
+  let finder = memmem::Finder::new(SEARCH_SEQUENCE);
 
   // Find all occurrences of .valve.net
-  for i in finder.find_iter(data) {
-    // Look backwards to find the start of the host (replayXXX)
-    let mut host_start = i;
-    while host_start > 0 {
-      let c = data[host_start - 1];
-      if c.is_ascii_alphanumeric() || c == b'.' {
-        host_start -= 1;
-      } else {
-        break;
-      }
+  for i in finder.find_iter(&data) {
+    // Extract Host
+    let host_start = (0..i)
+      .rev()
+      .find(|&pos| !data[pos].is_ascii_alphanumeric() && data[pos] != b'.')
+      .map_or(0, |pos| pos + 1);
+    let host_end = i + SEARCH_SEQUENCE.len();
+    let host_slice = &data[host_start..host_end];
+
+    let Ok(host) = core::str::from_utf8(host_slice) else {
+      continue;
+    };
+    if !host.starts_with("replay") || !host.contains(".valve.net") {
+      continue;
     }
 
-    // Extract host
-    let host_end = i + b".valve.net".len();
-    if let Ok(host) = core::str::from_utf8(&data[host_start..host_end])
-      && host.starts_with("replay")
-      && host.contains(".valve.net")
-    {
-      let mut path_start = None;
+    // Extract Path
+    let path_start = match memchr(b'/', &data[host_end..]) {
+      Some(slash_pos) => host_end + slash_pos,
+      None => continue,
+    };
+    let path_slice = &data[path_start..];
+    let path_end = PATH_END_MARKERS
+      .into_iter()
+      .filter_map(|marker| memchr(marker, path_slice))
+      .min()?;
 
-      if let Some(slash_pos) = memchr(b'/', &data[host_end..data.len().min(host_end + 200)]) {
-        path_start = Some(host_end + slash_pos);
-      }
-
-      if let Some(start) = path_start {
-        // Find the end of the path (null byte, newline, space, quote)
-        let search_slice = &data[start..data.len().min(start + 300)];
-
-        let end_markers = [b'\0', b'\n', b'\r', b' ', b'"', b'\''];
-        let mut min_end = search_slice.len();
-
-        for &marker in &end_markers {
-          if let Some(pos) = memchr(marker, search_slice) {
-            min_end = min_end.min(pos);
-          }
-        }
-
-        if let Ok(path) = core::str::from_utf8(&data[start..start + min_end]) {
-          let url = format!("http://{host}{path}");
-          // Check for Deadlock
-          if url.contains("1422450") {
-            return Some(url);
-          }
-        }
-      }
+    let Ok(path) = core::str::from_utf8(&path_slice[..path_end]) else {
+      continue;
+    };
+    if !path.contains(DEADLOCK_APP_ID) {
+      continue;
     }
+
+    // Construct full URL
+    return Some(format!("http://{host}{path}"));
   }
 
   None
@@ -117,7 +109,7 @@ pub async fn initial_cache_dir_ingest(cache_dir: &Path) {
   scan_directory(cache_dir, &mut results);
   let salts = results
     .into_iter()
-    .filter_map(|(_, url)| Salts::from_url(&url))
+    .filter_map(|url| Salts::from_url(&url))
     .collect::<Vec<_>>();
 
   if salts.is_empty() {
@@ -154,16 +146,18 @@ pub async fn watch_cache_dir(
     // Use recv_timeout to periodically check the running flag
     match rx.recv_timeout(std::time::Duration::from_secs(10)) {
       Ok(Ok(event)) => {
-        if !matches!(
+        let is_data_modify = matches!(event.kind, EventKind::Modify(ModifyKind::Data(_)));
+        let is_file_create = matches!(
           event.kind,
-          EventKind::Modify(ModifyKind::Data(_)) | EventKind::Create(CreateKind::File)
-        ) {
+          EventKind::Create(CreateKind::Any | CreateKind::File)
+        );
+        if !is_data_modify && !is_file_create {
           continue;
         }
         // Wait 200ms for the file to be fully written
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         for path in event.paths {
-          if let Some(url) = scan_file(&path)
+          if let Some(url) = extract_replay_url(&path)
             && let Some(salts) = Salts::from_url(&url)
           {
             // Check if we've already ingested this salt using the shared cache
