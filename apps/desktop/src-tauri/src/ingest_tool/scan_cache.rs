@@ -56,7 +56,8 @@ fn extract_replay_url(path: &Path) -> Option<String> {
     return None;
   };
   let mut data = vec![0u8; MAX_BYTES_TO_READ];
-  file.read_exact(&mut data).ok()?;
+  let bytes_read = file.read(&mut data).ok()?;
+  let data = &data[..bytes_read];
 
   let finder = memmem::Finder::new(SEARCH_SEQUENCE);
 
