@@ -4,6 +4,7 @@
   windows_subsystem = "windows"
 )]
 
+pub mod cli;
 mod commands;
 mod discord_rpc;
 mod download_manager;
@@ -229,6 +230,7 @@ pub fn run() {
       commands::open_gameinfo_editor,
       commands::set_language,
       commands::set_api_url,
+      commands::is_auto_update_disabled,
       commands::extract_archive,
       commands::remove_mod_folder,
       commands::parse_vpk_file,

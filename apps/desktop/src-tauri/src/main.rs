@@ -2,5 +2,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+  desktop_lib::cli::get_cli_args();
   desktop_lib::run()
 }

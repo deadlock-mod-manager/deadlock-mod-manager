@@ -110,6 +110,11 @@ export const openGameInfoEditor = async () => {
   return await invoke("open_gameinfo_editor");
 };
 
+// Auto-update management functions
+export const isAutoUpdateDisabled = async (): Promise<boolean> => {
+  return await invoke("is_auto_update_disabled");
+};
+
 export const shareProfile = async (
   hardwareId: string,
   name: string,
