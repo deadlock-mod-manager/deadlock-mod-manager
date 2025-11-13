@@ -32,10 +32,10 @@ where
     .get(url)
     .send()
     .await
-    .map_err(|e| Error::NetworkError(format!("Failed to send request: {e}")))?;
+    .map_err(|e| Error::Network(format!("Failed to send request: {e}")))?;
 
   if !response.status().is_success() {
-    return Err(Error::NetworkError(format!(
+    return Err(Error::Network(format!(
       "Server returned error status: {}",
       response.status()
     )));
@@ -63,7 +63,7 @@ where
       return Err(Error::DownloadCancelled);
     }
 
-    let chunk = chunk.map_err(|e| Error::NetworkError(format!("Failed to read chunk: {e}")))?;
+    let chunk = chunk.map_err(|e| Error::Network(format!("Failed to read chunk: {e}")))?;
 
     file
       .write_all(&chunk)

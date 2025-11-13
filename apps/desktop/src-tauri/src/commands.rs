@@ -380,10 +380,10 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
       .get(&url)
       .send()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to download vanilla gameinfo.gi: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to download vanilla gameinfo.gi: {e}")))?;
 
     if !response.status().is_success() {
-      return Err(Error::NetworkError(format!(
+      return Err(Error::Network(format!(
         "Server returned error status: {}",
         response.status()
       )));
@@ -392,7 +392,7 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
     response
       .text()
       .await
-      .map_err(|e| Error::NetworkError(format!("Failed to read response: {e}")))?
+      .map_err(|e| Error::Network(format!("Failed to read response: {e}")))?
   };
 
   // Apply the vanilla content
