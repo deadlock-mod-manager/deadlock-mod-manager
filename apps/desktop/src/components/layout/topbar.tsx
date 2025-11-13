@@ -1,7 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import useAbout from "@/hooks/use-about";
-import { usePersistedStore } from "@/lib/store";
 import { getPluginAssetUrl } from "@/lib/plugins";
+import { usePersistedStore } from "@/lib/store";
 import UserMenu from "../user-menu";
 import Logo from "./logo";
 
@@ -45,13 +45,12 @@ export const Topbar = () => {
     (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
-  const themedIconSrc =
-    isPredefinedTheme(activeTheme)
-      ? predefinedThemeIcons[activeTheme]
-      : activeTheme === "custom"
-        ? themesSettings?.customTheme?.iconData || undefined
-        : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
-            ?.iconData || undefined;
+  const themedIconSrc = isPredefinedTheme(activeTheme)
+    ? predefinedThemeIcons[activeTheme]
+    : activeTheme === "custom"
+      ? themesSettings?.customTheme?.iconData || undefined
+      : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
+          ?.iconData || undefined;
 
   return (
     <div
