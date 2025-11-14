@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { isAutoUpdateDisabled } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import useUpdateManager from "./use-update-manager";
 
 const logger = createLogger("auto-update");
@@ -8,17 +9,26 @@ const logger = createLogger("auto-update");
 export const useAutoUpdate = () => {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
+  const autoUpdateEnabled = usePersistedStore(
+    (state) => state.autoUpdateEnabled,
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: auto update hook
   useEffect(() => {
     const checkForUpdatesOnLaunch = async () => {
       try {
         // Check if auto-update is disabled via CLI flag
-        const disabled = await isAutoUpdateDisabled();
-        if (disabled) {
+        const disabledViaCli = await isAutoUpdateDisabled();
+        if (disabledViaCli) {
           logger.info(
             "Auto-update is disabled via --disable-auto-update CLI flag",
           );
+          return;
+        }
+
+        // Check if auto-update is disabled via GUI setting
+        if (!autoUpdateEnabled) {
+          logger.info("Auto-update is disabled via GUI setting");
           return;
         }
 
@@ -38,7 +48,7 @@ export const useAutoUpdate = () => {
     const timeout = setTimeout(checkForUpdatesOnLaunch, 2000);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [autoUpdateEnabled]);
 
   const handleUpdate = async () => {
     try {

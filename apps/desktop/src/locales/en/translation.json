@@ -243,7 +243,9 @@
     "ingestTool": {
       "title": "Matchdata Ingest Tool",
       "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
-    }
+    },
+    "autoUpdate": "Automatic Updates",
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup."
   },
   "featureFlags": {
     "title": "Experimental Features",
