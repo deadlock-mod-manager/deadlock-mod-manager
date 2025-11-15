@@ -152,14 +152,13 @@ pub fn validate_project(
     }
 
     // Validate README exists if specified
-    if let Some(readme) = &config.readme {
-        if options.check_files_exist {
+    if let Some(readme) = &config.readme
+        && options.check_files_exist {
             let readme_path = project_path.join(readme);
             if !readme_path.exists() {
                 result.add_warning(format!("README file not found: {}", readme));
             }
         }
-    }
 
     // Check for duplicate layer priorities (not an error, but worth warning)
     let mut priority_map: std::collections::HashMap<i32, Vec<String>> =
@@ -264,6 +263,7 @@ fn validate_image_reference(
 }
 
 /// Validate file paths don't have conflicts
+#[allow(dead_code)]
 pub fn validate_no_path_conflicts(files: &[(String, String)]) -> Result<()> {
     let mut seen = HashSet::new();
 

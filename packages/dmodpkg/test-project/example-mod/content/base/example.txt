@@ -1,0 +1,2 @@
+This is an example mod file.
+It demonstrates the dmodpkg package format.

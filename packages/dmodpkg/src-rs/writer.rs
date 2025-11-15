@@ -10,6 +10,9 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
+/// Result of processing files into chunks
+type ProcessedFiles = (Vec<FileEntry>, Vec<ChunkMetadata>, Vec<u8>, u64);
+
 /// Options for package writing
 #[derive(Debug, Clone)]
 pub struct WriterOptions {
@@ -101,7 +104,7 @@ impl PackageWriter {
     /// Write the package to disk
     pub fn write(self) -> Result<PackageStats> {
         let mut output = File::create(&self.output_path)
-            .map_err(|e| DmodpkgError::Io(e))?;
+            .map_err(DmodpkgError::Io)?;
 
         // Write placeholder header (we'll update it later)
         let header = PackageHeader::new();
@@ -122,7 +125,7 @@ impl PackageWriter {
         };
 
         let metadata_json = serde_json::to_vec(&metadata_section)
-            .map_err(|e| DmodpkgError::Json(e))?;
+            .map_err(DmodpkgError::Json)?;
         let metadata_compressed = compress(&metadata_json, self.options.compression_level)?;
 
         let metadata_offset = output.stream_position()? as u32;
@@ -198,7 +201,7 @@ impl PackageWriter {
     fn process_files(
         &self,
         stats: &mut PackageStats,
-    ) -> Result<(Vec<FileEntry>, Vec<ChunkMetadata>, Vec<u8>, u64)> {
+    ) -> Result<ProcessedFiles> {
         let mut file_entries = Vec::new();
         let mut all_chunks = Vec::new();
         let mut chunk_data = Vec::new();

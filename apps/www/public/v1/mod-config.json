@@ -6,7 +6,7 @@
   "type": "object",
   "required": [
     "name",
-    "display_name",
+    "displayName",
     "version",
     "description",
     "authors",
@@ -22,7 +22,7 @@
       "pattern": "^[a-z0-9-]+$",
       "description": "Unique identifier in kebab-case (a-z0-9-)"
     },
-    "display_name": {
+    "displayName": {
       "type": "string",
       "minLength": 1,
       "description": "Human-readable name"

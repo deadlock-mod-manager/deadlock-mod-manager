@@ -158,7 +158,7 @@ pub fn pack_mod(
     };
 
     // Serialize config to JSON value
-    let config_json = serde_json::to_value(&config).map_err(|e| DmodpkgError::Json(e))?;
+    let config_json = serde_json::to_value(&config).map_err(DmodpkgError::Json)?;
 
     // Create writer
     let writer_options = WriterOptions {
@@ -229,7 +229,7 @@ fn format_timestamp(time: SystemTime) -> String {
 
     let secs = duration.as_secs();
     let datetime = chrono::DateTime::<chrono::Utc>::from_timestamp(secs as i64, 0)
-        .unwrap_or_else(|| chrono::Utc::now());
+        .unwrap_or_else(chrono::Utc::now);
 
     datetime.to_rfc3339()
 }

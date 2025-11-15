@@ -47,7 +47,7 @@ impl PackageReader {
     /// Open a package file
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let mut file = File::open(path.as_ref())
-            .map_err(|e| DmodpkgError::Io(e))?;
+            .map_err(DmodpkgError::Io)?;
 
         // Read and parse header
         let mut header_bytes = [0u8; HEADER_SIZE];
@@ -98,7 +98,7 @@ impl PackageReader {
 
         // Parse JSON
         let metadata: MetadataSection = serde_json::from_slice(&decompressed)
-            .map_err(|e| DmodpkgError::Json(e))?;
+            .map_err(DmodpkgError::Json)?;
 
         self.metadata = Some(metadata);
         Ok(self.metadata.as_ref().unwrap())

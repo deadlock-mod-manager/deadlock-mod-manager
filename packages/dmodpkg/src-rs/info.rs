@@ -86,7 +86,7 @@ pub fn read_package_info(package_path: impl AsRef<Path>) -> Result<PackageInfo> 
     
     // Parse config from metadata
     let config: ModConfig = serde_json::from_value(info.metadata.config.clone())
-        .map_err(|e| DmodpkgError::Json(e))?;
+        .map_err(DmodpkgError::Json)?;
 
     // Calculate statistics
     let file_metadata = std::fs::metadata(package_path)?;
@@ -195,7 +195,7 @@ pub fn read_mod_config(package_path: impl AsRef<Path>) -> Result<ModConfig> {
     let metadata = reader.read_metadata()?;
 
     let config: ModConfig = serde_json::from_value(metadata.config.clone())
-        .map_err(|e| DmodpkgError::Json(e))?;
+        .map_err(DmodpkgError::Json)?;
 
     Ok(config)
 }

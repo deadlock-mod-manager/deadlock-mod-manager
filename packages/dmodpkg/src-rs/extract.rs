@@ -68,7 +68,7 @@ pub fn extract_mod(
     // Read metadata
     let metadata = reader.read_metadata()?;
     let config: ModConfig = serde_json::from_value(metadata.config.clone())
-        .map_err(|e| DmodpkgError::Json(e))?;
+        .map_err(DmodpkgError::Json)?;
 
     // Determine output directory
     let output_dir = if let Some(path) = output_path {
@@ -93,7 +93,7 @@ pub fn extract_mod(
 
     // Write mod.config.json
     let config_json = serde_json::to_string_pretty(&config)
-        .map_err(|e| DmodpkgError::Json(e))?;
+        .map_err(DmodpkgError::Json)?;
     fs::write(output_dir.join("mod.config.json"), config_json)?;
 
     // Extract files with options

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://deadlockmods.app/v1/mod-config.json",
+  "name": "example-mod",
+  "displayName": "example-mod",
+  "version": "1.0.0",
+  "description": "",
+  "authors": ["Deadlock Mods Team"],
+  "license": "MIT",
+  "layers": [
+    {
+      "name": "base",
+      "priority": 0,
+      "description": "Core mod files",
+      "required": true
+    }
+  ],
+  "metadata": {
+    "tags": [],
+    "category": "other"
+  }
+}
