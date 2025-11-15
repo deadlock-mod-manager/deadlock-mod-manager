@@ -158,4 +158,3 @@ export function getPlugins(): LoadedPlugin[] {
 
   return plugins;
 }
-

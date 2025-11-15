@@ -82,6 +82,15 @@ pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(),
   Ok(())
 }
 
+#[tauri::command]
+pub async fn is_auto_update_disabled() -> Result<bool, Error> {
+  let cli_args = crate::cli::get_cli_args();
+  let disabled = cli_args.disable_auto_update;
+
+  log::info!("Auto-update disabled via CLI flag: {disabled}");
+  Ok(disabled)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeepLinkData {
   pub download_url: String,

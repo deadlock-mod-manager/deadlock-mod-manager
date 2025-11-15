@@ -22,6 +22,7 @@ export type SettingsState = {
   perItemNSFWOverrides: Record<string, boolean>; // modId -> isVisible
   developerMode: boolean;
   ingestToolEnabled: boolean;
+  autoUpdateEnabled: boolean;
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
 
   addSetting: (setting: LocalSetting) => void;
@@ -48,6 +49,9 @@ export type SettingsState = {
   // Ingest tool management
   setIngestToolEnabled: (enabled: boolean) => void;
 
+  // Auto-update management
+  setAutoUpdateEnabled: (enabled: boolean) => void;
+
   // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
@@ -63,6 +67,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   perItemNSFWOverrides: {},
   developerMode: false,
   ingestToolEnabled: true,
+  autoUpdateEnabled: true,
   enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -163,6 +168,12 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setIngestToolEnabled: (enabled: boolean) =>
     set(() => ({
       ingestToolEnabled: enabled,
+    })),
+
+  // Auto-update management
+  setAutoUpdateEnabled: (enabled: boolean) =>
+    set(() => ({
+      autoUpdateEnabled: enabled,
     })),
 
   // Plugin management
