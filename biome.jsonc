@@ -75,6 +75,7 @@
         "noImgElement": "off"
       },
       "suspicious": {
+        "noArrayIndexKey": "off",
         "useAwait": "off",
         "noDocumentCookie": "off",
         "noUnknownAtRules": "off"

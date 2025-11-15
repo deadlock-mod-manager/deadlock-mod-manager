@@ -10,7 +10,8 @@
     "whatsNew": "What's New",
     "needHelp": "Need Help ?",
     "collapseMenu": "Collapse menu",
-    "about": "About"
+    "about": "About",
+    "packager": "Mod Packager"
   },
   "menu": {
     "about": "About",
@@ -1041,5 +1042,9 @@
       "reasonMaxLength": "Reason must be less than 500 characters",
       "descriptionMaxLength": "Description must be less than 2000 characters"
     }
+  },
+  "packager": {
+    "title": "Mod Packager",
+    "description": "Package mods for distribution"
   }
 }

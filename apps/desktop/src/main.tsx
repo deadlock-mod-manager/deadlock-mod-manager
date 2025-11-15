@@ -10,6 +10,7 @@ import Debug from "./pages/debug";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Mod from "./pages/mod";
+import Packager from "./pages/modding/packager";
 import GetMods from "./pages/mods";
 import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Developer />} path='/developer' />
+              <Route element={<Packager />} path='/packager' />
               <Route element={<PluginEntry />} path='/plugins/:id' />
               <Route element={<SudoPage />} path='/sudo' />
               <Route element={<Debug />} path='/debug' />

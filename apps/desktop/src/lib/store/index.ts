@@ -3,6 +3,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { type AuthState, createAuthSlice } from "./slices/auth";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
+import {
+  createPackagingWizardSlice,
+  type PackagingWizardState,
+} from "./slices/packaging-wizard";
 import { createProfilesSlice, type ProfilesState } from "./slices/profiles";
 import { createScrollSlice, type ScrollState } from "./slices/scroll";
 import { createSettingsSlice, type SettingsState } from "./slices/settings";
@@ -15,7 +19,8 @@ export type State = ModsState &
   SettingsState &
   UIState &
   ScrollState &
-  AuthState;
+  AuthState &
+  PackagingWizardState;
 
 export const usePersistedStore = create<State>()(
   persist(
@@ -27,6 +32,7 @@ export const usePersistedStore = create<State>()(
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createAuthSlice(...a),
+      ...createPackagingWizardSlice(...a),
     }),
     {
       name: "local-config",

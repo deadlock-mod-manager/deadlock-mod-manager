@@ -23,6 +23,7 @@ import {
   MagnifyingGlass,
   Package,
   Question,
+  SquaresFour,
 } from "@phosphor-icons/react";
 import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
@@ -82,7 +83,7 @@ const getSidebarItems = (
         </div>
       ),
       url: "/my-mods",
-      icon: Package,
+      icon: SquaresFour,
       group: "mods",
     },
     {
@@ -112,6 +113,13 @@ const getSidebarItems = (
       url: "/settings",
       icon: Gear,
       group: "general",
+    },
+    {
+      id: "packager",
+      title: () => <span>Mod Packager</span>,
+      url: "/packager",
+      icon: Package,
+      group: "Modding",
     },
     ...(developerMode
       ? [
