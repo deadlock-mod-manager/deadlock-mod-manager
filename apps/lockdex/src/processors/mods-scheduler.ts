@@ -2,6 +2,7 @@ import { db, ModRepository } from "@deadlock-mods/database";
 import { BaseProcessor } from "@deadlock-mods/queue";
 import { logger } from "@/lib/logger";
 import { modsQueue } from "@/services/queue";
+import { tempCleanupService } from "@/services/temp-cleanup";
 import type { CronJobData } from "@/types/jobs";
 
 const modRepository = new ModRepository(db);
@@ -23,6 +24,20 @@ export class ModsSchedulerProcessor extends BaseProcessor<CronJobData> {
   async process(jobData: CronJobData) {
     try {
       logger.info(`Processing mods scheduler job: ${JSON.stringify(jobData)}`);
+
+      try {
+        const cleanupResult =
+          await tempCleanupService.cleanupAllTempDirectories();
+        logger.info(
+          `Temp cleanup completed before mod indexing: ${cleanupResult.cleanedDirectories} directories cleaned, ` +
+            `${(cleanupResult.freedBytes / 1024 / 1024).toFixed(2)} MB freed`,
+        );
+      } catch (error) {
+        logger
+          .withError(error)
+          .warn("Temp cleanup failed before mod indexing, continuing anyway");
+      }
+
       const mods = await modRepository.findAll();
       logger.info(`Found ${mods.length} mods, scheduling them for processing`);
 

@@ -65,10 +65,7 @@ pub fn open_file_with_editor(file_path: &str) -> Result<(), Error> {
       .spawn()
     {
       Ok(_) => Ok(()),
-      Err(e) => Err(Error::InvalidInput(format!(
-        "Failed to open file: {}",
-        e.to_string()
-      ))),
+      Err(e) => Err(Error::InvalidInput(format!("Failed to open file: {}", e))),
     }
   }
   #[cfg(target_os = "linux")]
