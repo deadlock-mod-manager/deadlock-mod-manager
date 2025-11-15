@@ -30,12 +30,7 @@ export const useGlobalShortcuts = (shortcuts: GlobalShortcut[]) => {
       if (event.metaKey) modifiers.push("Meta");
 
       // Normalize key to uppercase to match shortcut registration format
-      let key = event.key.toUpperCase();
-
-      // Handle special case for zoom in
-      if (key === "ADD" || key === "+") {
-        key = "=";
-      }
+      const key = event.key.toUpperCase();
 
       const shortcutString = [...modifiers, key].join("+");
 
