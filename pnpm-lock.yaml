@@ -314,6 +314,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@deadlock-mods/crosshair':
+        specifier: workspace:*
+        version: link:../../packages/crosshair
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -984,6 +987,9 @@ importers:
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../shared
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.9
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*

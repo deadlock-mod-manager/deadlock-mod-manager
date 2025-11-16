@@ -43,5 +43,5 @@ export const CANVAS_CONSTANTS = {
   DOT_WIDTH: 2,
   DOT_HEIGHT: 2,
   CIRCLE_STROKE_WIDTH: 1.5,
-  ASPECT_RATIO: 16 / 9,
+  ASPECT_RATIO: 1,
 } as const;

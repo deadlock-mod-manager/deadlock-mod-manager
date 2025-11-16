@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    ".": "./src/index.ts",
     "./types": "./src/types.ts",
     "./calculator": "./src/calculator.ts",
     "./renderer": "./src/renderer.ts",
@@ -16,7 +17,8 @@
     "check-types": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "@deadlock-mods/shared": "workspace:*"
+    "@deadlock-mods/shared": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",

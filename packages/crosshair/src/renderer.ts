@@ -120,7 +120,27 @@ export const renderCrosshair = (
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (backgroundImage) {
-    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    const imageAspect = backgroundImage.width / backgroundImage.height;
+    const canvasAspect = canvas.width / canvas.height;
+
+    let drawWidth: number;
+    let drawHeight: number;
+    let drawX: number;
+    let drawY: number;
+
+    if (imageAspect > canvasAspect) {
+      drawHeight = canvas.height;
+      drawWidth = drawHeight * imageAspect;
+      drawX = (canvas.width - drawWidth) / 2;
+      drawY = 0;
+    } else {
+      drawWidth = canvas.width;
+      drawHeight = drawWidth / imageAspect;
+      drawX = 0;
+      drawY = (canvas.height - drawHeight) / 2;
+    }
+
+    ctx.drawImage(backgroundImage, drawX, drawY, drawWidth, drawHeight);
   }
 
   ctx.beginPath();

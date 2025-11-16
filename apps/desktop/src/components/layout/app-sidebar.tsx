@@ -15,6 +15,7 @@ import {
 import {
   BugBeetleIcon,
   Code,
+  Crosshair,
   DiscordLogo,
   Download,
   Gear,
@@ -111,6 +112,13 @@ const getSidebarItems = (
       url: "/downloads",
       icon: Download,
       group: "general",
+    },
+    {
+      id: "crosshairs",
+      title: () => <span>{t("navigation.crosshairs")}</span>,
+      url: "/crosshairs",
+      icon: Crosshair,
+      group: t("navigation.customization"),
     },
     {
       id: "settings",

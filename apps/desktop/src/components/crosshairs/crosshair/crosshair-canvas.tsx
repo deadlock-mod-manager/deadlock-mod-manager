@@ -38,20 +38,44 @@ export function CrosshairCanvas({
     if (!canvas || !container) return;
 
     const containerWidth = container.offsetWidth;
-    const containerHeight = containerWidth / CANVAS_CONSTANTS.ASPECT_RATIO;
-
+    const containerHeight =
+      height ?? containerWidth / CANVAS_CONSTANTS.ASPECT_RATIO;
     container.style.height = `${containerHeight}px`;
 
     canvas.width = containerWidth * window.devicePixelRatio;
     canvas.height = containerHeight * window.devicePixelRatio;
     canvas.style.width = `${containerWidth}px`;
     canvas.style.height = `${containerHeight}px`;
-  }, []);
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      renderCrosshair(
+        ctx,
+        canvas,
+        config,
+        mousePos?.x,
+        mousePos?.y,
+        backgroundImage ?? undefined,
+      );
+    }
+  }, [height, config, mousePos, backgroundImage]);
 
   useEffect(() => {
     updateCanvasSize();
     window.addEventListener("resize", updateCanvasSize);
-    return () => window.removeEventListener("resize", updateCanvasSize);
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize();
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      window.removeEventListener("resize", updateCanvasSize);
+      resizeObserver.disconnect();
+    };
   }, [updateCanvasSize]);
 
   useEffect(() => {
