@@ -245,7 +245,11 @@
       "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
     },
     "autoUpdate": "Automatic Updates",
-    "autoUpdateDescription": "Automatically check for and notify about application updates on startup."
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "confirmClearModsState": "Clear Mods State?",
+    "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "confirmClearModsStateAction": "Clear State",
+    "modsStateCleared": "Mods state cleared successfully"
   },
   "featureFlags": {
     "title": "Experimental Features",

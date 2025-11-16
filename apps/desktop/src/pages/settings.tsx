@@ -167,6 +167,21 @@ const CustomSettingsData = () => {
 const CustomSettings = () => {
   const { t } = useTranslation();
   const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
+
+  const clearModsState = async () => {
+    if (
+      !(await confirm({
+        title: t("settings.confirmClearModsState"),
+        body: t("settings.confirmClearModsStateBody"),
+        actionButton: t("settings.confirmClearModsStateAction"),
+        cancelButton: t("common.cancel"),
+      }))
+    ) {
+      return;
+    }
+    clearMods();
+    toast.success(t("settings.modsStateCleared"));
+  };
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
@@ -414,6 +429,10 @@ const CustomSettings = () => {
                     variant='outline'>
                     <FolderOpen className='h-4 w-4' />
                     {t("settings.openModsFolder")}
+                  </Button>
+                  <Button onClick={clearModsState} variant='destructive'>
+                    <TrashIcon className='h-4 w-4 mr-2' />
+                    {t("debug.clearModsState")}
                   </Button>
                   <Button
                     className='w-fit'
