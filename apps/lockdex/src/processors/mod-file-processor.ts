@@ -95,31 +95,38 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         }
       }
 
-      await using downloadResult = await downloadService.downloadFile(
-        jobData.url,
-        {
-          filename: jobData.file,
-          timeout: 10 * 60 * 1000,
-          maxFileSize: 256 * 1024 * 1024,
-          progressInterval: 5 * 1024 * 1024,
-          retryAttempts: 3,
-          retryDelay: 2000,
-        },
-      );
+      const downloadResult = await downloadService.downloadFile(jobData.url, {
+        filename: jobData.file,
+        timeout: 10 * 60 * 1000,
+        maxFileSize: 256 * 1024 * 1024,
+        progressInterval: 5 * 1024 * 1024,
+        retryAttempts: 3,
+        retryDelay: 2000,
+      });
 
       this.logger.info(`Downloaded file to: ${downloadResult.filePath}`);
 
-      await using extractionResult = await this.extractArchive(
-        downloadResult.filePath,
-        jobData.file,
-      );
-      this.logger.info(`Extracted archive to: ${extractionResult.path}`);
+      try {
+        const extractionResult = await this.extractArchive(
+          downloadResult.filePath,
+          jobData.file,
+        );
+        this.logger.info(`Extracted archive to: ${extractionResult.path}`);
 
-      await this.listExtractedFiles(extractionResult.path);
+        try {
+          await this.listExtractedFiles(extractionResult.path);
+          await this.parseVpkFiles(extractionResult.path, modDownload);
 
-      await this.parseVpkFiles(extractionResult.path, modDownload);
-
-      return this.handleSuccess(jobData);
+          return this.handleSuccess(jobData);
+        } finally {
+          // Clean up extracted files first
+          await extractionResult.cleanup();
+        }
+      } finally {
+        // Clean up download directory AFTER extraction and processing is complete
+        // This ensures 7z child processes have released file handles
+        await downloadResult.cleanup();
+      }
     } catch (error) {
       this.logger.withError(error).error("Error processing mod file");
 
