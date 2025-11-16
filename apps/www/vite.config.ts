@@ -4,9 +4,11 @@ import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
 import sitemap from 'vite-plugin-sitemap';
+import { copyCrosshairBackgrounds } from './tools/vite-plugin-copy-backgrounds';
 
 const config = defineConfig({
   plugins: [
+    copyCrosshairBackgrounds(),
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
@@ -28,6 +30,7 @@ const config = defineConfig({
         '/terms',
         '/discord',
         '/docs',
+        '/crosshair-generator', 
       ],
       exclude: [
         '/login',
@@ -44,6 +47,7 @@ const config = defineConfig({
         '/terms': 'monthly',
         '/discord': 'monthly',
         '/docs': 'weekly',
+        '/crosshair-generator': 'weekly',
         '*': 'weekly',
       },
       priority: {
@@ -58,6 +62,7 @@ const config = defineConfig({
         '/privacy': 0.5,
         '/terms': 0.5,
         '/discord': 0.7,
+        '/crosshair-generator': 0.7,
         '*': 0.6,
       },
       generateRobotsTxt: false,

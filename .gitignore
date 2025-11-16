@@ -43,3 +43,5 @@ yarn-error.log*
 .claude
 
 .idea/
+
+temp

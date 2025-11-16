@@ -1,0 +1,26 @@
+{
+  "name": "@deadlock-mods/crosshair",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/types.ts",
+    "./calculator": "./src/calculator.ts",
+    "./renderer": "./src/renderer.ts",
+    "./config-generator": "./src/config-generator.ts",
+    "./url-encoder": "./src/url-encoder.ts",
+    "./constants": "./src/constants.ts",
+    "./backgrounds": "./src/backgrounds.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@deadlock-mods/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/node": "^22.18.6",
+    "typescript": "catalog:"
+  }
+}
