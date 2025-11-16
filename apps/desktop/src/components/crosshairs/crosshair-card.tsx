@@ -15,32 +15,57 @@ import {
   Heart,
   PencilIcon,
 } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { useHover } from "@uidotdev/usehooks";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { toggleCrosshairLike } from "@/lib/api";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
-import { CrosshairPreviewDialog } from "./crosshair-preview-dialog";
 
 export interface CrosshairCardProps {
   crosshair?: PublishedCrosshairDto;
   config?: CrosshairConfig;
   isActive?: boolean;
+  onPreviewOpen?: () => void;
 }
 
 export const CrosshairCard = ({
   crosshair,
   config,
   isActive = false,
+  onPreviewOpen,
 }: CrosshairCardProps) => {
   const { t } = useTranslation();
   const [ref, hovering] = useHover();
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
   const queryClient = useQueryClient();
   const { setActiveCrosshair } = usePersistedStore();
+
+  const applyCrosshairMutation = useMutation({
+    mutationFn: (crosshairConfig: CrosshairConfig) =>
+      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
+    onSuccess: () => {
+      toast.success(t("crosshairs.appliedRestart"));
+      queryClient.invalidateQueries("autoexec-config");
+    },
+    onError: (error) => {
+      logger.error(error);
+      toast.error(t("crosshairs.form.applyError"));
+    },
+  });
+
+  const likeCrosshairMutation = useMutation({
+    mutationFn: (crosshairId: string) => toggleCrosshairLike(crosshairId),
+    onSuccess: () => {
+      queryClient.invalidateQueries("crosshairs");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : t("crosshairs.form.likeError"),
+      );
+    },
+  });
 
   const crosshairConfig = crosshair?.config ?? config;
   if (!crosshairConfig) {
@@ -49,37 +74,26 @@ export const CrosshairCard = ({
 
   const handleApply = () => {
     setActiveCrosshair(crosshairConfig);
-    toast.success(t("crosshairs.form.applied"));
+    applyCrosshairMutation.mutate(crosshairConfig);
   };
 
-  const handlePreview = () => {
-    setPreviewOpen(true);
-  };
-
-  const handleLike = async (e: React.MouseEvent) => {
-    if (!crosshair || isLiking) return;
+  const handleLike = (e: React.MouseEvent) => {
+    if (!crosshair || likeCrosshairMutation.isLoading) return;
     e.stopPropagation();
-
-    setIsLiking(true);
-    try {
-      await toggleCrosshairLike(crosshair.id);
-      await queryClient.invalidateQueries("crosshairs");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("crosshairs.form.publishError"),
-      );
-    } finally {
-      setIsLiking(false);
-    }
+    likeCrosshairMutation.mutate(crosshair.id);
   };
 
   const displayTags = crosshair?.tags?.slice(0, 3) ?? [];
   const remainingTags = crosshair?.tags?.length ? crosshair.tags.length - 3 : 0;
 
+  const handlePreviewOpen = () => {
+    onPreviewOpen?.();
+  };
+
   return (
-    <Card className={`border ${isActive ? "border-2 border-primary" : ""}`}>
+    <Card
+      className={`border cursor-pointer ${isActive ? "border-2 border-primary" : ""}`}
+      onClick={handlePreviewOpen}>
       <CardContent className='p-4 relative flex flex-col gap-3'>
         {isActive && (
           <Badge variant='default' className='absolute top-2 right-2 z-10'>
@@ -94,15 +108,25 @@ export const CrosshairCard = ({
                   variant='text'
                   icon={<EyeIcon className='h-4 w-4' />}
                   className='text-white hover:text-primary'
-                  onClick={handlePreview}>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePreviewOpen();
+                  }}>
                   {t("crosshairs.preview")}
                 </Button>
                 <Button
+                  disabled={applyCrosshairMutation.isLoading}
                   variant='text'
+                  isLoading={applyCrosshairMutation.isLoading}
                   icon={<PencilIcon className='h-4 w-4' />}
                   className='text-white hover:text-primary'
-                  onClick={handleApply}>
-                  {t("crosshairs.form.apply")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApply();
+                  }}>
+                  {applyCrosshairMutation.isLoading
+                    ? t("common.loading")
+                    : t("crosshairs.form.apply")}
                 </Button>
               </div>
             </div>
@@ -137,7 +161,7 @@ export const CrosshairCard = ({
             <div className='flex items-center gap-3 text-xs'>
               <button
                 onClick={handleLike}
-                disabled={isLiking}
+                disabled={likeCrosshairMutation.isLoading}
                 className='flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50 cursor-pointer'>
                 <Heart
                   className={`h-4 w-4 ${
@@ -182,12 +206,6 @@ export const CrosshairCard = ({
           </div>
         )}
       </CardContent>
-      <CrosshairPreviewDialog
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        crosshair={crosshair}
-        config={config}
-      />
     </Card>
   );
 };

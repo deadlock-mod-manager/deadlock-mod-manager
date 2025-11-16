@@ -50,6 +50,12 @@ pub enum Error {
   DownloadCancelled,
   #[error("File write failed: {0}")]
   FileWriteFailed(String),
+  #[error("Failed to read autoexec config: {0}")]
+  AutoexecReadFailed(String),
+  #[error("Failed to write autoexec config: {0}")]
+  AutoexecWriteFailed(String),
+  #[error("Failed to parse autoexec config: {0}")]
+  AutoexecParseFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -87,6 +93,9 @@ impl serde::Serialize for Error {
       Error::DownloadFailed(_) => "downloadFailed",
       Error::DownloadCancelled => "downloadCancelled",
       Error::FileWriteFailed(_) => "fileWriteFailed",
+      Error::AutoexecReadFailed(_) => "autoexecReadFailed",
+      Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
+      Error::AutoexecParseFailed(_) => "autoexecParseFailed",
     };
 
     state.serialize_field("kind", kind)?;

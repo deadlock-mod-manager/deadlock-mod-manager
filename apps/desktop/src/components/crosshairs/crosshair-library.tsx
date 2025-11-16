@@ -9,28 +9,57 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useCrosshairSearch } from "@/hooks/use-crosshair-search";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { getCrosshairs } from "@/lib/api";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCard } from "./crosshair-card";
+import { CrosshairPreviewDialog } from "./crosshair-preview-dialog";
 import CrosshairSearchBar from "./crosshair-search-bar";
 
 const CrosshairLibraryData = () => {
   const { t } = useTranslation();
   const { setScrollElement, scrollY } = useScrollPosition("/crosshairs");
-  const { activeCrosshair, crosshairFilters, updateCrosshairFilters } =
-    usePersistedStore();
+  const {
+    activeCrosshair,
+    crosshairFilters,
+    updateCrosshairFilters,
+    setActiveCrosshair,
+  } = usePersistedStore();
+  const [previewCrosshair, setPreviewCrosshair] =
+    useState<PublishedCrosshairDto | null>(null);
+  const queryClient = useQueryClient();
   const { data, error } = useQuery("crosshairs", getCrosshairs, {
     suspense: true,
     useErrorBoundary: false,
     retry: 3,
   });
+
+  const applyCrosshairMutation = useMutation({
+    mutationFn: (crosshairConfig: PublishedCrosshairDto["config"]) =>
+      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
+    onSuccess: () => {
+      toast.success(t("crosshairs.appliedRestart"));
+      queryClient.invalidateQueries("autoexec-config");
+    },
+    onError: (error) => {
+      logger.error(error);
+      toast.error(t("crosshairs.form.applyError"));
+    },
+  });
+
+  const handleApply = () => {
+    if (!previewCrosshair?.config) return;
+    setActiveCrosshair(previewCrosshair.config);
+    applyCrosshairMutation.mutate(previewCrosshair.config);
+  };
 
   useEffect(() => {
     if (error) {
@@ -164,6 +193,7 @@ const CrosshairLibraryData = () => {
                             JSON.stringify(crosshair.config)
                           : false
                       }
+                      onPreviewOpen={() => setPreviewCrosshair(crosshair)}
                     />
                   ))}
                 </div>
@@ -171,6 +201,17 @@ const CrosshairLibraryData = () => {
             ))}
           </div>
         </div>
+      )}
+      {previewCrosshair && (
+        <CrosshairPreviewDialog
+          open={!!previewCrosshair}
+          onOpenChange={(open) => {
+            if (!open) setPreviewCrosshair(null);
+          }}
+          crosshair={previewCrosshair}
+          onApply={handleApply}
+          isApplying={applyCrosshairMutation.isLoading}
+        />
       )}
     </div>
   );

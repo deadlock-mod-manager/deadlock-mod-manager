@@ -8,9 +8,12 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation, useQueryClient } from "react-query";
 import { publishCrosshair } from "@/lib/api";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 import { CrosshairControls } from "./crosshair/crosshair-controls";
@@ -19,6 +22,7 @@ const ALL_HEROES = Object.values(DeadlockHeroes);
 
 export const CrosshairForm = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { isAuthenticated, setActiveCrosshair } = usePersistedStore();
   const [config, setConfig] = useState<CrosshairConfig>(
     DEFAULT_CROSSHAIR_CONFIG,
@@ -49,9 +53,22 @@ export const CrosshairForm = () => {
     }
   };
 
+  const applyCrosshairMutation = useMutation({
+    mutationFn: (crosshairConfig: CrosshairConfig) =>
+      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
+    onSuccess: () => {
+      toast.success(t("crosshairs.appliedRestart"));
+      queryClient.invalidateQueries("autoexec-config");
+    },
+    onError: (error) => {
+      logger.error(error);
+      toast.error(t("crosshairs.form.applyError"));
+    },
+  });
+
   const handleApply = () => {
     setActiveCrosshair(config);
-    toast.success(t("crosshairs.form.applied"));
+    applyCrosshairMutation.mutate(config);
   };
 
   const handlePublish = async () => {
@@ -261,8 +278,15 @@ export const CrosshairForm = () => {
       </div>
 
       <div className='flex gap-2'>
-        <Button onClick={handleApply} variant='outline' className='flex-1'>
-          {t("crosshairs.form.apply")}
+        <Button
+          disabled={applyCrosshairMutation.isLoading}
+          onClick={handleApply}
+          isLoading={applyCrosshairMutation.isLoading}
+          variant='outline'
+          className='flex-1'>
+          {applyCrosshairMutation.isLoading
+            ? t("common.loading")
+            : t("crosshairs.form.apply")}
         </Button>
         <Button
           onClick={handlePublish}

@@ -62,7 +62,7 @@ fn extract_replay_url(path: &Path) -> Option<String> {
   let finder = memmem::Finder::new(SEARCH_SEQUENCE);
 
   // Find all occurrences of .valve.net
-  for i in finder.find_iter(&data) {
+  for i in finder.find_iter(data) {
     // Extract Host
     let host_start = (0..i)
       .rev()

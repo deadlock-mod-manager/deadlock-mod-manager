@@ -1,6 +1,7 @@
 use crate::errors::Error;
 use crate::mod_manager::{
   addons_backup_manager::AddonsBackupManager,
+  autoexec_manager::AutoexecManager,
   file_tree::{FileTreeAnalyzer, ModFileTree},
   filesystem_helper::FileSystemHelper,
   game_config_manager::GameConfigManager,
@@ -21,6 +22,7 @@ pub struct ModManager {
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
   addons_backup_manager: AddonsBackupManager,
+  autoexec_manager: AutoexecManager,
 }
 
 impl ModManager {
@@ -34,6 +36,7 @@ impl ModManager {
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
       addons_backup_manager: AddonsBackupManager::new(),
+      autoexec_manager: AutoexecManager::new(),
     };
 
     // Try to find the game path on initialization
@@ -696,6 +699,10 @@ impl ModManager {
     self
       .filesystem
       .open_folder(backup_dir.to_string_lossy().as_ref())
+  }
+
+  pub fn get_autoexec_manager(&self) -> &AutoexecManager {
+    &self.autoexec_manager
   }
 }
 

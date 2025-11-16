@@ -251,7 +251,22 @@
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "confirmClearModsStateAction": "Clear State",
-    "modsStateCleared": "Mods state cleared successfully"
+    "modsStateCleared": "Mods state cleared successfully",
+    "autoexec": "Autoexec Config",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecContent": "Config File Content",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "openInFolder": "Open in Folder",
+    "openInEditor": "Open in Editor",
+    "saveChanges": "Save Changes",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save."
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -1058,6 +1073,7 @@
     "activeCrosshairs": "Active Crosshairs",
     "noActiveCrosshair": "No active crosshair",
     "currentlyActive": "Currently Active",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
     "form": {
       "metadata": "Metadata",
       "name": "Name",
@@ -1073,12 +1089,14 @@
       "publish": "Publish",
       "publishing": "Publishing...",
       "applied": "Crosshair applied successfully",
+      "applyError": "Failed to apply crosshair",
       "published": "Crosshair published successfully",
       "loginRequired": "You must be logged in to publish crosshairs",
       "nameValidation": "Name must be between 3 and 50 characters",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "publishError": "Failed to publish crosshair"
+      "publishError": "Failed to publish crosshair",
+      "likeError": "Failed to toggle crosshair like"
     },
     "loadError": "Failed to load crosshairs",
     "noCrosshairs": "No crosshairs available",
@@ -1096,7 +1114,20 @@
     "previewDialog": {
       "title": "Preview",
       "noBackground": "None",
-      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game."
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "configValues": "Configuration Values",
+      "gap": "Gap",
+      "width": "Width",
+      "height": "Height",
+      "pipOpacity": "Pip Opacity",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "color": "Color",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "hero": "Hero",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command"
     }
   }
 }

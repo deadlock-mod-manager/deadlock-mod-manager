@@ -33,6 +33,7 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
+import { FileText } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -43,6 +44,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
 import { AutoUpdateToggle } from "@/components/settings/auto-update-toggle";
+import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
@@ -68,12 +70,38 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
+const getAutoexecConfig = async () => {
+  try {
+    return await invoke<{
+      full_content: string;
+      editable_content: string;
+      readonly_sections: Array<{
+        start_line: number;
+        end_line: number;
+        content: string;
+      }>;
+    }>("get_autoexec_config");
+  } catch {
+    return null;
+  }
+};
+
+const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
+
 const CustomSettingsData = () => {
   const { t } = useTranslation();
   const { data, error } = useQuery("custom-settings", getCustomSettings, {
     suspense: true,
     useErrorBoundary: false,
   });
+  const { data: autoexecConfig } = useQuery(
+    "autoexec-config",
+    getAutoexecConfig,
+    {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  );
   const { settings, toggleSetting } = usePersistedStore();
 
   useEffect(() => {
@@ -113,53 +141,91 @@ const CustomSettingsData = () => {
     );
   }, [settings]);
 
+  const hasAutoexecConfig = useMemo(() => {
+    return (
+      autoexecConfig?.full_content &&
+      autoexecConfig.full_content.trim().length > 0
+    );
+  }, [autoexecConfig]);
+
+  const autoexecLaunchOption: LocalSetting | null = useMemo(() => {
+    if (!hasAutoexecConfig) return null;
+
+    return {
+      id: AUTOEXEC_LAUNCH_OPTION_ID,
+      key: "-exec",
+      value: "deadlock-mod-manager",
+      type: CustomSettingType.LAUNCH_OPTION,
+      description: t("settings.autoexecLaunchOption"),
+      enabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }, [hasAutoexecConfig, t]);
+
   return (
     <>
-      {Object.values(CustomSettingType).map((type: CustomSettingType) => (
-        <Section
-          action={
-            <AddSettingDialog>
-              <Button variant='outline'>
-                <PlusIcon className='h-4 w-4' /> {t("common.create")}
-              </Button>
-            </AddSettingDialog>
-          }
-          description={
-            type === CustomSettingType.LAUNCH_OPTION
-              ? t("settings.launchOptionsDescription")
-              : customSettingTypeHuman[
-                  type as keyof typeof customSettingTypeHuman
-                ]?.description || ""
-          }
-          key={type}
-          title={
-            type === CustomSettingType.LAUNCH_OPTION
-              ? t("settings.launchOptions")
-              : customSettingTypeHuman[
-                  type as keyof typeof customSettingTypeHuman
-                ]?.title || ""
-          }>
-          <div className='grid grid-cols-1 gap-4'>
-            {(settingByType?.[type] ?? []).map((setting) => (
-              <SettingCard
-                key={setting.id}
-                onChange={() => toggleSetting(setting.id, setting)}
-                setting={{
-                  ...setting,
-                  enabled: settingStatusById?.[setting.id] ?? false,
-                }}
-              />
-            ))}
-            {(customLocalSettingsByType?.[type] ?? []).map((setting) => (
-              <SettingCard
-                key={setting.id}
-                onChange={() => toggleSetting(setting.id, setting)}
-                setting={setting}
-              />
-            ))}
-          </div>
-        </Section>
-      ))}
+      {Object.values(CustomSettingType).map((type: CustomSettingType) => {
+        const isLaunchOption = type === CustomSettingType.LAUNCH_OPTION;
+        const settingsForType = [
+          ...(settingByType?.[type] ?? []),
+          ...(customLocalSettingsByType?.[type] ?? []),
+          ...(isLaunchOption && autoexecLaunchOption
+            ? [autoexecLaunchOption]
+            : []),
+        ];
+
+        return (
+          <Section
+            action={
+              <AddSettingDialog>
+                <Button variant='outline'>
+                  <PlusIcon className='h-4 w-4' /> {t("common.create")}
+                </Button>
+              </AddSettingDialog>
+            }
+            description={
+              type === CustomSettingType.LAUNCH_OPTION
+                ? t("settings.launchOptionsDescription")
+                : customSettingTypeHuman[
+                    type as keyof typeof customSettingTypeHuman
+                  ]?.description || ""
+            }
+            key={type}
+            title={
+              type === CustomSettingType.LAUNCH_OPTION
+                ? t("settings.launchOptions")
+                : customSettingTypeHuman[
+                    type as keyof typeof customSettingTypeHuman
+                  ]?.title || ""
+            }>
+            <div className='grid grid-cols-1 gap-4'>
+              {settingsForType.map((setting) => {
+                const isAutoexecOption =
+                  setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
+                return (
+                  <SettingCard
+                    key={setting.id}
+                    onChange={
+                      isAutoexecOption
+                        ? () => {}
+                        : () => toggleSetting(setting.id, setting)
+                    }
+                    setting={{
+                      ...setting,
+                      enabled: isAutoexecOption
+                        ? true
+                        : (settingStatusById?.[setting.id] ??
+                          setting.enabled ??
+                          false),
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </Section>
+        );
+      })}
     </>
   );
 };
@@ -287,6 +353,12 @@ const CustomSettings = () => {
               value='about'>
               <InfoIcon className='h-5 w-5' />
               {t("settings.information")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='autoexec'>
+              <FileText className='h-5 w-5' />
+              {t("settings.autoexec")}
             </TabsTrigger>
           </TabsList>
 
@@ -551,6 +623,11 @@ const CustomSettings = () => {
                   </div>
                 </div>
               </Section>
+            </TabsContent>
+            <TabsContent className='mt-0 space-y-2' value='autoexec'>
+              <ErrorBoundary>
+                <AutoexecSettings />
+              </ErrorBoundary>
             </TabsContent>
           </div>
         </Tabs>
