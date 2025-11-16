@@ -34,6 +34,10 @@ const routeList: RouteProps[] = [
     label: "Browse Mods",
   },
   {
+    href: "/crosshair-generator",
+    label: "Crosshair Generator",
+  },
+  {
     href: "/status",
     label: "Status",
     external: true,

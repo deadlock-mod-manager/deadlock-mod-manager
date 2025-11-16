@@ -20,6 +20,7 @@ import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
 import { Route as R403RouteImport } from './routes/403'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
@@ -87,6 +88,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrosshairGeneratorRoute = CrosshairGeneratorRouteImport.update({
+  id: '/crosshair-generator',
+  path: '/crosshair-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const R403Route = R403RouteImport.update({
   id: '/403',
   path: '/403',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/kv-parser': typeof KvParserRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/crosshair-generator'
     | '/dashboard'
     | '/discord'
     | '/docs'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/crosshair-generator'
     | '/discord'
     | '/docs'
     | '/kv-parser'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/crosshair-generator'
     | '/dashboard'
     | '/discord'
     | '/docs'
@@ -291,6 +303,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   R403Route: typeof R403Route
+  CrosshairGeneratorRoute: typeof CrosshairGeneratorRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crosshair-generator': {
+      id: '/crosshair-generator'
+      path: '/crosshair-generator'
+      fullPath: '/crosshair-generator'
+      preLoaderRoute: typeof CrosshairGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/403': {
@@ -500,6 +520,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   R403Route: R403Route,
+  CrosshairGeneratorRoute: CrosshairGeneratorRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,
