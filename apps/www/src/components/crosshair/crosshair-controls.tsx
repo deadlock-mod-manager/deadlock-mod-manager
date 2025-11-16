@@ -2,7 +2,7 @@ import type {
   CrosshairConfig,
   HerosWithCrosshairOverrides,
 } from "@deadlock-mods/crosshair/types";
-import { DeadlockHeroes } from "@deadlock-mods/shared/constants";
+import { DeadlockHeroes } from "@deadlock-mods/shared";
 import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
