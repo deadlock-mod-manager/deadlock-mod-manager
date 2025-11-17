@@ -13,8 +13,8 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Copy, UserPlus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, Check, Copy, UserPlus, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth/client";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -33,6 +33,12 @@ function FriendsPage() {
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
   const [friendCodeInput, setFriendCodeInput] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | null>(
+    null,
+  );
+  const copyFeedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -83,6 +89,24 @@ function FriendsPage() {
 
   const isLoading = isSessionPending || isUserIdLoading || isFriendsLoading;
 
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimeout.current) {
+        clearTimeout(copyFeedbackTimeout.current);
+      }
+    };
+  }, []);
+
+  const showCopyFeedback = (state: "copied" | "error") => {
+    if (copyFeedbackTimeout.current) {
+      clearTimeout(copyFeedbackTimeout.current);
+    }
+    setCopyFeedback(state);
+    copyFeedbackTimeout.current = setTimeout(() => {
+      setCopyFeedback(null);
+    }, 2200);
+  };
+
   const getDisplayName = (entry: FriendEntryDto) => {
     if (entry.displayName && entry.displayName.length > 0) {
       return entry.displayName;
@@ -97,12 +121,15 @@ function FriendsPage() {
     }
     if (typeof navigator === "undefined" || !navigator.clipboard) {
       toast.error("Clipboard access is not available.");
+      showCopyFeedback("error");
       return;
     }
     try {
       await navigator.clipboard.writeText(friendCode);
       toast.success("Friend code copied to clipboard.");
+      showCopyFeedback("copied");
     } catch (error) {
+      showCopyFeedback("error");
       toast.error(
         error instanceof Error ? error.message : "Failed to copy friend code.",
       );
@@ -217,21 +244,36 @@ function FriendsPage() {
             <Users className='size-6 text-muted-foreground' />
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-4 py-3'>
-              <div>
+            <div className='flex flex-wrap items-start justify-between gap-3 rounded-lg border border-dashed border-border/60 bg-muted/40 px-4 py-3'>
+              <div className='min-w-0 flex-1'>
                 <p className='text-xs uppercase text-muted-foreground'>Code</p>
-                <p className='font-mono text-lg font-semibold tracking-wide'>
+                <p className='break-all font-mono text-lg font-semibold tracking-wide'>
                   {friendCode}
                 </p>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleCopyFriendCode}
-                disabled={friendCode.length === 0}>
-                <Copy className='mr-2 size-4' />
-                Copy
-              </Button>
+              <div className='flex flex-col items-start gap-1 sm:items-end'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleCopyFriendCode}
+                  disabled={friendCode.length === 0}
+                  className='shrink-0'>
+                  <Copy className='mr-2 size-4' />
+                  Copy
+                </Button>
+                {copyFeedback === "copied" && (
+                  <span className='flex items-center gap-1 text-xs font-medium text-primary'>
+                    <Check className='size-3.5' />
+                    Copied to clipboard
+                  </span>
+                )}
+                {copyFeedback === "error" && (
+                  <span className='flex items-center gap-1 text-xs font-medium text-destructive'>
+                    <AlertCircle className='size-3.5' />
+                    Copy failed
+                  </span>
+                )}
+              </div>
             </div>
             <p className='text-xs text-muted-foreground'>
               Share this securely. Only give it to people you want to add.

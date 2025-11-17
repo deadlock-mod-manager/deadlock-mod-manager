@@ -13,6 +13,7 @@ import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KvParserRouteImport } from './routes/kv-parser'
@@ -52,6 +53,11 @@ const StatusRoute = StatusRouteImport.update({
 const SitemapModsDotxmlRoute = SitemapModsDotxmlRouteImport.update({
   id: '/sitemap-mods.xml',
   path: '/sitemap-mods.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -324,6 +336,7 @@ export interface RootRouteChildren {
   KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  RegisterRoute: typeof RegisterRoute
   SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
@@ -361,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap-mods.xml'
       fullPath: '/sitemap-mods.xml'
       preLoaderRoute: typeof SitemapModsDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -549,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  RegisterRoute: RegisterRoute,
   SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
