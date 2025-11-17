@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
@@ -13,6 +14,15 @@ export const user = pgTable(
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     isAdmin: boolean("is_admin").notNull().default(false),
+    friends: text("friends").array().notNull().default(sql`ARRAY[]::text[]`),
+    incomingFriendRequests: text("incoming_friend_requests")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    outgoingFriendRequests: text("outgoing_friend_requests")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     ...timestamps,
   },
   (table) => [index("idx_user_created_at").on(table.createdAt)],

@@ -102,6 +102,13 @@ export default function UserMenu() {
             <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+          <Link to='/friends'>
+            <PhosphorIcons.UsersThree className='size-4' />
+            <span>Friends</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           className='cursor-pointer gap-2 py-2.5'
           onClick={() => {

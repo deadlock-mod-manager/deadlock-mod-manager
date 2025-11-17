@@ -246,6 +246,13 @@
       "when": 1762609350184,
       "tag": "0034_public_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1763400000000,
+      "tag": "0035_loyal_friend_archer",
+      "breakpoints": true
     }
   ]
 }
