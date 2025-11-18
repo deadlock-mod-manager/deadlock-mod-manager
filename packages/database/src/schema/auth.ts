@@ -1,5 +1,12 @@
-import { sql } from "drizzle-orm";
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
@@ -14,19 +21,39 @@ export const user = pgTable(
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     isAdmin: boolean("is_admin").notNull().default(false),
-    friends: text("friends").array().notNull().default(sql`ARRAY[]::text[]`),
-    incomingFriendRequests: text("incoming_friend_requests")
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::text[]`),
-    outgoingFriendRequests: text("outgoing_friend_requests")
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::text[]`),
     ...timestamps,
   },
   (table) => [index("idx_user_created_at").on(table.createdAt)],
 );
+
+export const friendshipStatusEnum = pgEnum("friendship_status", [
+  "pending",
+  "accepted",
+]);
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    friendId: text("friend_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: friendshipStatusEnum("status").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    primaryKey(table.userId, table.friendId),
+    index("idx_friendships_user_id_status").on(table.userId, table.status),
+    index("idx_friendships_friend_id_status").on(table.friendId, table.status),
+  ],
+);
+
+export type Friendship = typeof friendships.$inferSelect;
+export type NewFriendship = typeof friendships.$inferInsert;
+export type FriendshipStatus =
+  (typeof friendshipStatusEnum.enumValues)[number];
 
 export const session = pgTable("session", {
   id: typeId("id", "session")

@@ -1,8 +1,4 @@
-import {
-  db,
-  type UserFriendState,
-  UserRepository,
-} from "@deadlock-mods/database";
+import { db, UserRepository } from "@deadlock-mods/database";
 import {
   type FriendEntryDto,
   type FriendListDto,
@@ -20,34 +16,6 @@ import {
 
 const userRepository = new UserRepository(db);
 
-const uniqueList = (ids: readonly string[]): string[] => {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const id of ids) {
-    if (!id) {
-      continue;
-    }
-    if (!seen.has(id)) {
-      seen.add(id);
-      result.push(id);
-    }
-  }
-  return result;
-};
-
-const addUnique = (ids: readonly string[], id: string): string[] => {
-  if (!id) {
-    return [...ids];
-  }
-  if (ids.includes(id)) {
-    return [...ids];
-  }
-  return [...ids, id];
-};
-
-const removeId = (ids: readonly string[], id: string): string[] =>
-  ids.filter((value) => value !== id);
-
 const toFriendDtoList = async (userId: string): Promise<FriendListDto> => {
   const state = await userRepository.getFriendState(userId);
   if (!state) {
@@ -56,12 +24,14 @@ const toFriendDtoList = async (userId: string): Promise<FriendListDto> => {
     });
   }
 
-  const friends = uniqueList(state.friends);
-  const incoming = uniqueList(state.incomingFriendRequests);
-  const outgoing = uniqueList(state.outgoingFriendRequests);
-  const lookupIds = uniqueList([...friends, ...incoming, ...outgoing]);
+  const { friends, incomingFriendRequests, outgoingFriendRequests } = state;
+  const lookupIds = new Set([
+    ...friends,
+    ...incomingFriendRequests,
+    ...outgoingFriendRequests,
+  ]);
 
-  const users = await userRepository.getUsersByIds(lookupIds);
+  const users = await userRepository.getUsersByIds(Array.from(lookupIds));
   const userMap = new Map(users.map((user) => [user.id, user]));
 
   const mapEntries = (ids: readonly string[]): FriendEntryDto[] =>
@@ -72,8 +42,8 @@ const toFriendDtoList = async (userId: string): Promise<FriendListDto> => {
 
   return {
     friends: mapEntries(friends),
-    incomingRequests: mapEntries(incoming),
-    outgoingRequests: mapEntries(outgoing),
+    incomingRequests: mapEntries(incomingFriendRequests),
+    outgoingRequests: mapEntries(outgoingFriendRequests),
   };
 };
 
@@ -146,36 +116,9 @@ export const friendsRouter = {
           return;
         }
 
-        const nextCurrentState: UserFriendState = {
-          friends: uniqueList(currentState.friends),
-          incomingFriendRequests: removeId(
-            currentState.incomingFriendRequests,
-            targetUserId,
-          ),
-          outgoingFriendRequests: addUnique(
-            currentState.outgoingFriendRequests,
-            targetUserId,
-          ),
-        };
-        const nextTargetState: UserFriendState = {
-          friends: uniqueList(targetState.friends),
-          incomingFriendRequests: addUnique(
-            targetState.incomingFriendRequests,
-            sessionUserId,
-          ),
-          outgoingFriendRequests: removeId(
-            targetState.outgoingFriendRequests,
-            sessionUserId,
-          ),
-        };
-
-        await transactionalRepo.updateFriendState(
+        await transactionalRepo.createFriendRequest(
           sessionUserId,
-          nextCurrentState,
-        );
-        await transactionalRepo.updateFriendState(
           targetUserId,
-          nextTargetState,
         );
       });
 
@@ -225,37 +168,9 @@ export const friendsRouter = {
           });
         }
 
-        const nextCurrentState: UserFriendState = {
-          friends: addUnique(currentState.friends, requesterUserId),
-          incomingFriendRequests: removeId(
-            currentState.incomingFriendRequests,
-            requesterUserId,
-          ),
-          outgoingFriendRequests: removeId(
-            currentState.outgoingFriendRequests,
-            requesterUserId,
-          ),
-        };
-
-        const nextRequesterState: UserFriendState = {
-          friends: addUnique(requesterState.friends, sessionUserId),
-          incomingFriendRequests: removeId(
-            requesterState.incomingFriendRequests,
-            sessionUserId,
-          ),
-          outgoingFriendRequests: removeId(
-            requesterState.outgoingFriendRequests,
-            sessionUserId,
-          ),
-        };
-
-        await transactionalRepo.updateFriendState(
+        await transactionalRepo.acceptFriendRequest(
           sessionUserId,
-          nextCurrentState,
-        );
-        await transactionalRepo.updateFriendState(
           requesterUserId,
-          nextRequesterState,
         );
       });
 
@@ -305,35 +220,9 @@ export const friendsRouter = {
           });
         }
 
-        const nextCurrentState: UserFriendState = {
-          friends: uniqueList(currentState.friends),
-          incomingFriendRequests: removeId(
-            currentState.incomingFriendRequests,
-            requesterUserId,
-          ),
-          outgoingFriendRequests: uniqueList(
-            currentState.outgoingFriendRequests,
-          ),
-        };
-
-        const nextRequesterState: UserFriendState = {
-          friends: uniqueList(requesterState.friends),
-          incomingFriendRequests: uniqueList(
-            requesterState.incomingFriendRequests,
-          ),
-          outgoingFriendRequests: removeId(
-            requesterState.outgoingFriendRequests,
-            sessionUserId,
-          ),
-        };
-
-        await transactionalRepo.updateFriendState(
+        await transactionalRepo.declineFriendRequest(
           sessionUserId,
-          nextCurrentState,
-        );
-        await transactionalRepo.updateFriendState(
           requesterUserId,
-          nextRequesterState,
         );
       });
 
@@ -383,35 +272,9 @@ export const friendsRouter = {
           });
         }
 
-        const nextCurrentState: UserFriendState = {
-          friends: uniqueList(currentState.friends),
-          incomingFriendRequests: uniqueList(
-            currentState.incomingFriendRequests,
-          ),
-          outgoingFriendRequests: removeId(
-            currentState.outgoingFriendRequests,
-            targetUserId,
-          ),
-        };
-
-        const nextTargetState: UserFriendState = {
-          friends: uniqueList(targetState.friends),
-          incomingFriendRequests: removeId(
-            targetState.incomingFriendRequests,
-            sessionUserId,
-          ),
-          outgoingFriendRequests: uniqueList(
-            targetState.outgoingFriendRequests,
-          ),
-        };
-
-        await transactionalRepo.updateFriendState(
+        await transactionalRepo.cancelFriendRequest(
           sessionUserId,
-          nextCurrentState,
-        );
-        await transactionalRepo.updateFriendState(
           targetUserId,
-          nextTargetState,
         );
       });
 
@@ -461,37 +324,9 @@ export const friendsRouter = {
           });
         }
 
-        const nextCurrentState: UserFriendState = {
-          friends: removeId(currentState.friends, friendUserId),
-          incomingFriendRequests: removeId(
-            currentState.incomingFriendRequests,
-            friendUserId,
-          ),
-          outgoingFriendRequests: removeId(
-            currentState.outgoingFriendRequests,
-            friendUserId,
-          ),
-        };
-
-        const nextFriendState: UserFriendState = {
-          friends: removeId(friendState.friends, sessionUserId),
-          incomingFriendRequests: removeId(
-            friendState.incomingFriendRequests,
-            sessionUserId,
-          ),
-          outgoingFriendRequests: removeId(
-            friendState.outgoingFriendRequests,
-            sessionUserId,
-          ),
-        };
-
-        await transactionalRepo.updateFriendState(
+        await transactionalRepo.removeFriendship(
           sessionUserId,
-          nextCurrentState,
-        );
-        await transactionalRepo.updateFriendState(
           friendUserId,
-          nextFriendState,
         );
       });
 

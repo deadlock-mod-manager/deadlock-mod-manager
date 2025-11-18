@@ -1,6 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Database } from "../client";
-import { user } from "../schema/auth";
+import { friendships, user, type FriendshipStatus } from "../schema/auth";
 
 export interface UserFriendState {
   readonly friends: string[];
@@ -19,57 +19,179 @@ export class UserRepository {
   constructor(private readonly db: Database) {}
 
   async getFriendState(userId: string): Promise<UserFriendState | null> {
-    const result = await this.db
-      .select({
-        friends: user.friends,
-        incomingFriendRequests: user.incomingFriendRequests,
-        outgoingFriendRequests: user.outgoingFriendRequests,
-      })
+    const exists = await this.db
+      .select({ id: user.id })
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
 
-    if (result.length === 0) {
+    if (exists.length === 0) {
       return null;
     }
 
-    const [state] = result;
+    const [outgoingRows, incomingRows] = await Promise.all([
+      this.db
+        .select({
+          friendId: friendships.friendId,
+          status: friendships.status,
+        })
+        .from(friendships)
+        .where(eq(friendships.userId, userId)),
+      this.db
+        .select({
+          requesterId: friendships.userId,
+          status: friendships.status,
+        })
+        .from(friendships)
+        .where(eq(friendships.friendId, userId)),
+    ]);
+
+    const friends = new Set<string>();
+    const incomingFriendRequests = new Set<string>();
+    const outgoingFriendRequests = new Set<string>();
+
+    const handleStatus = (status: FriendshipStatus, targetId: string, set: Set<string>) => {
+      if (status === "pending") {
+        set.add(targetId);
+      } else if (status === "accepted") {
+        friends.add(targetId);
+      }
+    };
+
+    for (const row of outgoingRows) {
+      handleStatus(row.status, row.friendId, outgoingFriendRequests);
+    }
+
+    for (const row of incomingRows) {
+      handleStatus(row.status, row.requesterId, incomingFriendRequests);
+    }
+
     return {
-      friends: [...state.friends],
-      incomingFriendRequests: [...state.incomingFriendRequests],
-      outgoingFriendRequests: [...state.outgoingFriendRequests],
+      friends: Array.from(friends),
+      incomingFriendRequests: Array.from(incomingFriendRequests),
+      outgoingFriendRequests: Array.from(outgoingFriendRequests),
     };
   }
 
-  async updateFriendState(
-    userId: string,
-    state: UserFriendState,
-  ): Promise<UserFriendState> {
-    const updated = await this.db
-      .update(user)
-      .set({
-        friends: state.friends,
-        incomingFriendRequests: state.incomingFriendRequests,
-        outgoingFriendRequests: state.outgoingFriendRequests,
-        updatedAt: new Date(),
+  async createFriendRequest(
+    requesterUserId: string,
+    targetUserId: string,
+  ): Promise<void> {
+    await this.db
+      .insert(friendships)
+      .values({
+        userId: requesterUserId,
+        friendId: targetUserId,
+        status: "pending",
+        createdAt: new Date(),
       })
-      .where(eq(user.id, userId))
-      .returning({
-        friends: user.friends,
-        incomingFriendRequests: user.incomingFriendRequests,
-        outgoingFriendRequests: user.outgoingFriendRequests,
-      });
+      .onConflictDoNothing();
+  }
+
+  async acceptFriendRequest(
+    accepterUserId: string,
+    requesterUserId: string,
+  ): Promise<void> {
+    const now = new Date();
+    const updated = await this.db
+      .update(friendships)
+      .set({
+        status: "accepted",
+        createdAt: now,
+      })
+      .where(
+        and(
+          eq(friendships.userId, requesterUserId),
+          eq(friendships.friendId, accepterUserId),
+          eq(friendships.status, "pending"),
+        ),
+      )
+      .returning({ userId: friendships.userId });
 
     if (updated.length === 0) {
-      throw new Error(`User not found for id ${userId}`);
+      throw new Error("Pending friend request not found");
     }
 
-    const [nextState] = updated;
-    return {
-      friends: [...nextState.friends],
-      incomingFriendRequests: [...nextState.incomingFriendRequests],
-      outgoingFriendRequests: [...nextState.outgoingFriendRequests],
-    };
+    await this.db
+      .insert(friendships)
+      .values({
+        userId: accepterUserId,
+        friendId: requesterUserId,
+        status: "accepted",
+        createdAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [friendships.userId, friendships.friendId],
+        set: {
+          status: "accepted",
+          createdAt: now,
+        },
+      });
+
+    await this.db
+      .delete(friendships)
+      .where(
+        and(
+          eq(friendships.userId, accepterUserId),
+          eq(friendships.friendId, requesterUserId),
+          eq(friendships.status, "pending"),
+        ),
+      );
+  }
+
+  async declineFriendRequest(
+    declinerUserId: string,
+    requesterUserId: string,
+  ): Promise<void> {
+    await this.db
+      .delete(friendships)
+      .where(
+        and(
+          eq(friendships.userId, requesterUserId),
+          eq(friendships.friendId, declinerUserId),
+          eq(friendships.status, "pending"),
+        ),
+      );
+  }
+
+  async cancelFriendRequest(
+    requesterUserId: string,
+    targetUserId: string,
+  ): Promise<void> {
+    await this.db
+      .delete(friendships)
+      .where(
+        and(
+          eq(friendships.userId, requesterUserId),
+          eq(friendships.friendId, targetUserId),
+          eq(friendships.status, "pending"),
+        ),
+      );
+  }
+
+  async removeFriendship(
+    userId: string,
+    friendUserId: string,
+  ): Promise<void> {
+    await this.db
+      .delete(friendships)
+      .where(
+        and(
+          eq(friendships.userId, userId),
+          eq(friendships.friendId, friendUserId),
+          eq(friendships.status, "accepted"),
+        ),
+      );
+
+    await this.db
+      .delete(friendships)
+      .where(
+        and(
+          eq(friendships.userId, friendUserId),
+          eq(friendships.friendId, userId),
+          eq(friendships.status, "accepted"),
+        ),
+      );
   }
 
   async getUsersByIds(

@@ -253,6 +253,13 @@
       "when": 1763400000000,
       "tag": "0035_loyal_friend_archer",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1763403600000,
+      "tag": "0036_friendships_table",
+      "breakpoints": true
     }
   ]
 }

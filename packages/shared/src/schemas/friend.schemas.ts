@@ -4,7 +4,6 @@ export const FriendEntrySchema = z.object({
   userId: z.string(),
   displayName: z.string().optional(),
   avatarUrl: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
 });
 
 export const FriendListSchema = z.object({

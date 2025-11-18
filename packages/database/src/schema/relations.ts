@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { user } from "./auth";
+import { friendships, user } from "./auth";
 import { featureFlags, userFeatureFlagOverrides } from "./feature-flags";
 import { mirroredFiles } from "./mirrored-files";
 import { modDownloads, mods } from "./mods";
@@ -44,6 +44,23 @@ export const featureFlagsRelations = relations(featureFlags, ({ many }) => ({
   userOverrides: many(userFeatureFlagOverrides),
 }));
 
+export const friendshipsRelations = relations(friendships, ({ one }) => ({
+  owner: one(user, {
+    fields: [friendships.userId],
+    references: [user.id],
+  }),
+  friend: one(user, {
+    fields: [friendships.friendId],
+    references: [user.id],
+  }),
+}));
+
 export const userRelations = relations(user, ({ many }) => ({
   featureFlagOverrides: many(userFeatureFlagOverrides),
+  friendships: many(friendships, {
+    relationName: "owner",
+  }),
+  inverseFriendships: many(friendships, {
+    relationName: "friend",
+  }),
 }));
