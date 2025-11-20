@@ -8,20 +8,11 @@ spec:
   enableSuperuserAccess: false
   instances: {{ .Values.resources.postgres.replicas }}
 
-  # Automatic failover configuration
-  failoverDelay: 30
-  startDelay: 300
-  stopDelay: 300
-  switchoverDelay: 60
-  maxSyncReplicas: 1
-  minSyncReplicas: 0
-
-  # Smart shutdown for faster failover
-  smartShutdownTimeout: 180
-
-  # Health check settings
-  livenessProbeTimeout: 30
-  maxStartupDelay: 300
+  # Faster failure detection and recovery
+  startDelay: 300        # 5 min instead of default 1h - detect startup failures faster
+  stopDelay: 300         # 5 min instead of default 30m - faster graceful shutdown
+  switchoverDelay: 60    # 1 min instead of default 1h - faster manual switchovers
+  maxStartupDelay: 300   # 5 min instead of default 1h - faster startup failure detection
 
   resources:
     requests:
