@@ -4,9 +4,9 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { FaGithub, FaSteam } from "react-icons/fa";
 import { z } from "zod";
 import { authClient } from "@/lib/auth/client";
@@ -42,6 +42,7 @@ export default function LoginForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
@@ -69,6 +70,7 @@ export default function LoginForm() {
       {
         email: data.email,
         password: data.password,
+        rememberMe: data.rememberMe === true,
       },
       {
         onSuccess: () => {
@@ -190,14 +192,26 @@ export default function LoginForm() {
         </div>
 
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <Checkbox id='rememberMe' {...register("rememberMe")} />
-            <Label
-              htmlFor='rememberMe'
-              className='cursor-pointer font-normal text-sm'>
-              Remember me
-            </Label>
-          </div>
+          <Controller
+            control={control}
+            name='rememberMe'
+            render={({ field }) => (
+              <div className='flex items-center gap-2'>
+                <Checkbox
+                  id='rememberMe'
+                  checked={field.value ?? false}
+                  onCheckedChange={(value) => field.onChange(value === true)}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
+                <Label
+                  htmlFor='rememberMe'
+                  className='cursor-pointer font-normal text-sm'>
+                  Remember me
+                </Label>
+              </div>
+            )}
+          />
 
           <div className='text-sm/6'>
             <a
@@ -243,6 +257,15 @@ export default function LoginForm() {
             <FaGithub />
             <span className='text-sm/6 font-semibold'>GitHub</span>
           </Button>
+        </div>
+
+        <div className='mt-6 text-center text-sm text-muted-foreground'>
+          Do not have an account?{" "}
+          <Link
+            to='/register'
+            className='font-semibold text-primary hover:text-primary/80'>
+            Create one
+          </Link>
         </div>
       </div>
     </div>

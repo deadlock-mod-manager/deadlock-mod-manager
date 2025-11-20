@@ -1,16 +1,19 @@
 {
   "private": true,
   "scripts": {
+    "// dev": "Dev and build",
     "build": "turbo run build",
-    "db:push": "turbo run db:push",
-    "db:seed": "turbo run db:seed",
-    "api:dev": "pnpm --filter api dev",
     "dev": "turbo run dev",
+    "api:dev": "pnpm --filter api dev",
     "desktop:dev": "pnpm --filter desktop tauri dev",
     "desktop:build": "pnpm --filter desktop tauri build",
     "desktop:build:dev": "pnpm --filter desktop build:dev",
     "docs:dev": "pnpm --filter docs dev",
+    "www:dev": "pnpm --filter www dev",
     "vpk-parser:build": "pnpm --filter vpk-parser build",
+
+    "// docker": "Docker and compose",
+    "docker": "docker compose up -d",
     "docker:api:build": "docker build -f apps/api/Dockerfile -t deadlock-api .",
     "docker:api:run": "docker run --rm -p 9000:9000 --env-file .env deadlock-api",
     "docker:api:dev": "docker compose up api --build",
@@ -26,23 +29,32 @@
     "docker:www:dev": "docker compose up www --build",
     "docker:www:stop": "docker compose down",
     "docker:www:logs": "docker compose logs -f www",
-    "docker": "docker compose up -d",
+
+    "// db": "Database and migrations",
+    "db:push": "turbo run db:push",
+    "db:seed": "turbo run db:seed",
+    "db:studio": "pnpm --filter database db:studio",
+    "db:migrate": "pnpm --filter database db:migrate",
+    "db:generate": "pnpm --filter database db:generate",
+    "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle",
+
+    "// lint": "Format and lint",
     "format": "biome format .",
     "lint": "biome check .",
     "format:fix": "biome format . --write",
     "lint:fix": "biome check . --write",
+
+    "// quality": "Tests and type checks",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
+
+    "// release": "Versioning and release",
     "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
     "upgrade-dependencies": "pnpm dlx taze -r",
     "version:generate": "turbo run version:generate",
     "version:nightly": "bun run scripts/update-nightly-version.ts",
-    "release-notes": "bun run scripts/generate-release-notes.ts",
-    "db:studio": "pnpm --filter database db:studio",
-    "db:migrate": "pnpm --filter database db:migrate",
-    "db:generate": "pnpm --filter database db:generate",
-    "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle"
+    "release-notes": "bun run scripts/generate-release-notes.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",

@@ -13,9 +13,11 @@ import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KvParserRouteImport } from './routes/kv-parser'
+import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiscordRouteImport } from './routes/discord'
@@ -53,6 +55,11 @@ const SitemapModsDotxmlRoute = SitemapModsDotxmlRouteImport.update({
   path: '/sitemap-mods.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -66,6 +73,11 @@ const LoginRoute = LoginRouteImport.update({
 const KvParserRoute = KvParserRouteImport.update({
   id: '/kv-parser',
   path: '/kv-parser',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadRoute = DownloadRouteImport.update({
@@ -158,9 +170,11 @@ export interface FileRoutesByFullPath {
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/friends': typeof FriendsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -181,9 +195,11 @@ export interface FileRoutesByTo {
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
+  '/friends': typeof FriendsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -207,9 +223,11 @@ export interface FileRoutesById {
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/friends': typeof FriendsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -234,9 +252,11 @@ export interface FileRouteTypes {
     | '/discord'
     | '/docs'
     | '/download'
+    | '/friends'
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -257,9 +277,11 @@ export interface FileRouteTypes {
     | '/crosshair-generator'
     | '/discord'
     | '/docs'
+    | '/friends'
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -282,9 +304,11 @@ export interface FileRouteTypes {
     | '/discord'
     | '/docs'
     | '/download'
+    | '/friends'
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/register'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -308,9 +332,11 @@ export interface RootRouteChildren {
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
   DownloadRoute: typeof DownloadRouteWithChildren
+  FriendsRoute: typeof FriendsRoute
   KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  RegisterRoute: typeof RegisterRoute
   SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
@@ -350,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapModsDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -369,6 +402,13 @@ declare module '@tanstack/react-router' {
       path: '/kv-parser'
       fullPath: '/kv-parser'
       preLoaderRoute: typeof KvParserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download': {
@@ -525,9 +565,11 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,
   DownloadRoute: DownloadRouteWithChildren,
+  FriendsRoute: FriendsRoute,
   KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  RegisterRoute: RegisterRoute,
   SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
