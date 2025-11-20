@@ -7,6 +7,22 @@ spec:
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: false
   instances: {{ .Values.resources.postgres.replicas }}
+
+  # Automatic failover configuration
+  failoverDelay: 30
+  startDelay: 300
+  stopDelay: 300
+  switchoverDelay: 60
+  maxSyncReplicas: 1
+  minSyncReplicas: 0
+
+  # Smart shutdown for faster failover
+  smartShutdownTimeout: 180
+
+  # Health check settings
+  livenessProbeTimeout: 30
+  maxStartupDelay: 300
+
   resources:
     requests:
       memory: {{ .Values.resources.postgres.memory }}
@@ -44,7 +60,7 @@ spec:
               - key: node-role.kubernetes.io/database
                 operator: Exists
   backup:
-    retentionPolicy: 30d
+    retentionPolicy: 10d
     barmanObjectStore:
       destinationPath: s3://db-backups
       endpointURL: https://minio-api.k8s.stormix.dev
@@ -58,9 +74,6 @@ spec:
       data:
         compression: gzip
         jobs: 2
-      wal:
-        compression: gzip
-        maxParallel: 4
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
