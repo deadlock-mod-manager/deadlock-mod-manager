@@ -260,6 +260,24 @@ sequenceDiagram
     end
 ```
 
+### Friendship State Management
+
+The friendship system was refactored to use a normalized `friendships` table instead of array columns on `auth.user`. Each row represents a directed relationship with a `status` of `pending` or `accepted`, and composite primary keys ensure uniqueness.
+
+**Repository responsibilities:**
+
+- `getFriendState(userId)`: Collects outgoing and incoming relationship rows, classifies them into accepted friends or pending requests, and resolves user summaries.
+- `createFriendRequest()`: Inserts a `pending` row while ignoring duplicates through `ON CONFLICT DO NOTHING`.
+- `acceptFriendRequest()`: Runs in a transaction, promoting the pending row to `accepted`, ensures reciprocity by inserting the reverse row, and removes any redundant pending record for the accepting user.
+- `declineFriendRequest()` and `cancelFriendRequest()`: Remove targeted pending rows.
+- `removeFriendship()`: Deletes both directions of an `accepted` relationship.
+
+**API handlers:**
+
+- Wrap mutating operations in transactions to keep both sides of the friendship consistent.
+- Validate request ownership and existence of the related accounts before mutating data.
+- Return the complete friend state snapshot after every mutation to keep clients synchronized.
+
 ## Mirror Service Architecture
 
 The mirror service acts as a caching layer for mod file downloads, improving performance and reducing load on external APIs.

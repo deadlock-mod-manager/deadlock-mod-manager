@@ -315,6 +315,122 @@ GET /v1/stats/downloads
 }
 ```
 
+### Friendships
+
+Manage player relationships and pending friend requests. All friendship endpoints require an authenticated session; unauthenticated requests receive `401 Unauthorized`.
+
+#### Get Friend State
+
+Fetch the current user's friendship state including accepted friends and pending requests.
+
+```http
+GET /v2/friends
+```
+
+**Response:**
+
+```json
+{
+  "friends": [
+    {
+      "userId": "usr_8n42p3aw",
+      "displayName": "Nova",
+      "avatarUrl": "https://cdn.deadlockmods.app/avatars/nova.png"
+    }
+  ],
+  "incomingRequests": [
+    {
+      "userId": "usr_4kd10m3t",
+      "displayName": "Sentinel",
+      "avatarUrl": null
+    }
+  ],
+  "outgoingRequests": []
+}
+```
+
+#### Send Friend Request
+
+Create a pending friendship request for another user.
+
+```http
+POST /v2/friends/requests
+```
+
+**Request Body:**
+
+| Field          | Type   | Description                                |
+| -------------- | ------ | ------------------------------------------ |
+| `targetUserId` | string | User identifier to receive the friend request |
+
+**Example Request:**
+
+```typescript
+await fetch("/v2/friends/requests", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ targetUserId: "usr_4kd10m3t" }),
+});
+```
+
+**Response:** Returns the updated friend state (same shape as `GET /v2/friends`).
+
+#### Accept Friend Request
+
+Converts a pending request into a mutual friendship.
+
+```http
+POST /v2/friends/requests/accept
+```
+
+**Request Body:**
+
+| Field             | Type   | Description                            |
+| ----------------- | ------ | -------------------------------------- |
+| `requesterUserId` | string | User that initiated the original request |
+
+**Response:** Updated friend state.
+
+#### Decline Friend Request
+
+Removes a pending incoming request without creating a friendship.
+
+```http
+POST /v2/friends/requests/decline
+```
+
+**Request Body:** Same structure as `POST /v2/friends/requests/accept`.
+
+**Response:** Updated friend state.
+
+#### Cancel Friend Request
+
+Withdraw a pending outgoing friend request.
+
+```http
+POST /v2/friends/requests/cancel
+```
+
+**Request Body:** Matches `POST /v2/friends/requests` (`targetUserId`).
+
+**Response:** Updated friend state.
+
+#### Remove Friend
+
+Deletes an existing friendship in both directions.
+
+```http
+DELETE /v2/friends/{friendUserId}
+```
+
+**Path Parameters:**
+
+| Parameter      | Type   | Description                  |
+| -------------- | ------ | ---------------------------- |
+| `friendUserId` | string | Identifier of the friend to remove |
+
+**Response:** Updated friend state.
+
 ## Desktop Integration API
 
 ### Tauri Commands
