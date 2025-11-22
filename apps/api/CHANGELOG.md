@@ -1,5 +1,20 @@
 # api
 
+## 2.4.0
+
+### Minor Changes
+
+- f48352c: Add crosshair publishing feature with database schema, API endpoints, and desktop UI for creating, publishing, and applying crosshairs
+
+### Patch Changes
+
+- Updated dependencies [f48352c]
+  - @deadlock-mods/database@1.7.0
+  - @deadlock-mods/shared@1.7.0
+  - @deadlock-mods/distributed-lock@1.0.4
+  - @deadlock-mods/feature-flags@0.2.2
+  - @deadlock-mods/instrumentation@0.1.4
+
 ## 2.3.0
 
 ### Minor Changes

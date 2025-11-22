@@ -1,5 +1,20 @@
 # desktop
 
+## 0.11.0
+
+### Minor Changes
+
+- f48352c: Add crosshair publishing feature with database schema, API endpoints, and desktop UI for creating, publishing, and applying crosshairs
+
+### Patch Changes
+
+- 1f3ef82: Fix plugin asset import handling in the desktop app.
+- f92b2fd: Improve Cache Ingestion to be more efficient
+- f381901: fix(desktop): update zoom shortcut key and improve shortcut display formatting
+- Updated dependencies [f48352c]
+  - @deadlock-mods/crosshair@0.2.0
+  - @deadlock-mods/shared@1.7.0
+
 ## 0.10.1
 
 ### Patch Changes

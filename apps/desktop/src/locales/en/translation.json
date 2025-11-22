@@ -591,6 +591,14 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.11.0": {
+        "title": "Crosshairs & Autoexec Support",
+        "features": [
+          "🎯 Crosshair library and crosshair generator",
+          "⚙️ Autoexec configuration editor",
+          "🔧 Minor fixes and improvements"
+        ]
+      },
       "0.10.1": {
         "title": "VPK & Profile Import Fixes",
         "features": [
