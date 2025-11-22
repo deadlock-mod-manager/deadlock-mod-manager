@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./app";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
+import Crosshairs from "./pages/crosshairs";
 import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
 import Developer from "./pages/developer";
@@ -38,6 +39,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<PluginEntry />} path='/plugins/:id' />
               <Route element={<SudoPage />} path='/sudo' />
               <Route element={<Debug />} path='/debug' />
+              <Route element={<Crosshairs />} path='/crosshairs' />
+              <Route
+                element={<CustomSettings value='autoexec' />}
+                path='/settings/autoexec'
+              />
             </Route>
           </Routes>
         </BrowserRouter>

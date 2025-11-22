@@ -15,11 +15,20 @@ export type ModsFilters = {
   searchQuery: string;
 };
 
+export type CrosshairFilters = {
+  selectedHeroes: string[];
+  selectedTags: string[];
+  currentSort: SortType;
+  filterMode: FilterMode;
+  searchQuery: string;
+};
+
 export type UIState = {
   showWhatsNew: boolean;
   lastSeenVersion: string | null;
   audioVolume: number; // Volume as percentage (0-100)
   modsFilters: ModsFilters;
+  crosshairFilters: CrosshairFilters;
   hasCompletedOnboarding: boolean;
 
   // Plugins
@@ -32,6 +41,8 @@ export type UIState = {
   setAudioVolume: (volume: number) => void;
   updateModsFilters: (filters: Partial<ModsFilters>) => void;
   resetModsFilters: () => void;
+  updateCrosshairFilters: (filters: Partial<CrosshairFilters>) => void;
+  resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
@@ -47,11 +58,20 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   searchQuery: "",
 };
 
+const DEFAULT_CROSSHAIR_FILTERS: CrosshairFilters = {
+  selectedHeroes: [],
+  selectedTags: [],
+  currentSort: SortType.LAST_UPDATED,
+  filterMode: "include",
+  searchQuery: "",
+};
+
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   showWhatsNew: false,
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%
   modsFilters: DEFAULT_MODS_FILTERS,
+  crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
   enabledPlugins: {},
   pluginSettings: {},
@@ -85,6 +105,16 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   resetModsFilters: () =>
     set(() => ({
       modsFilters: DEFAULT_MODS_FILTERS,
+    })),
+
+  updateCrosshairFilters: (filters: Partial<CrosshairFilters>) =>
+    set((state) => ({
+      crosshairFilters: { ...state.crosshairFilters, ...filters },
+    })),
+
+  resetCrosshairFilters: () =>
+    set(() => ({
+      crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
     })),
 
   setHasCompletedOnboarding: (completed: boolean) =>

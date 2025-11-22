@@ -10,7 +10,10 @@
     "whatsNew": "What's New",
     "needHelp": "Need Help ?",
     "collapseMenu": "Collapse menu",
-    "about": "About"
+    "about": "About",
+    "crosshairs": "Crosshairs",
+    "customization": "Customization",
+    "autoexec": "Autoexec Config"
   },
   "menu": {
     "about": "About",
@@ -249,7 +252,22 @@
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "confirmClearModsStateAction": "Clear State",
-    "modsStateCleared": "Mods state cleared successfully"
+    "modsStateCleared": "Mods state cleared successfully",
+    "autoexec": "Autoexec.cfg",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecContent": "Config File Content",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "openInFolder": "Open in Folder",
+    "openInEditor": "Open in Editor",
+    "saveChanges": "Save Changes",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save."
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -1046,6 +1064,89 @@
       "reasonMinLength": "Reason must be at least 5 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
       "descriptionMaxLength": "Description must be less than 2000 characters"
+    }
+  },
+  "crosshairs": {
+    "title": "Crosshairs",
+    "subtitle": "Create and customize your crosshairs",
+    "generate": "Generate Crosshair",
+    "preview": "Preview",
+    "dialog": {
+      "title": "Generate Crosshair",
+      "description": "Create and customize your crosshairs"
+    },
+    "close": "Go back",
+    "activeCrosshairs": "Active Crosshairs",
+    "noActiveCrosshair": "No custom crosshair is currently active",
+    "currentlyActive": "Currently Active",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "form": {
+      "metadata": "Metadata",
+      "name": "Name",
+      "namePlaceholder": "My Awesome Crosshair",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tag and press Enter",
+      "addTag": "Add",
+      "heroes": "Heroes",
+      "selectHeroes": "Select heroes...",
+      "heroesSelected": "selected",
+      "searchHeroes": "Search heroes...",
+      "noHeroesFound": "No heroes found.",
+      "preview": "Preview",
+      "apply": "Apply",
+      "publish": "Publish",
+      "publishing": "Publishing...",
+      "applied": "Crosshair applied successfully",
+      "applyError": "Failed to apply crosshair",
+      "published": "Crosshair published successfully",
+      "loginRequired": "You must be logged in to publish crosshairs",
+      "nameValidation": "Name must be between 3 and 50 characters",
+      "descriptionValidation": "Description must be less than 500 characters",
+      "heroesValidation": "Please select at least one hero (max 5)",
+      "publishError": "Failed to publish crosshair",
+      "likeError": "Failed to toggle crosshair like",
+      "import": {
+        "button": "Import",
+        "title": "Import Crosshair Settings",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again."
+      }
+    },
+    "loadError": "Failed to load crosshairs",
+    "noCrosshairs": "No crosshairs available",
+    "noCrosshairsFound": "No crosshairs found",
+    "noCrosshairsMatchFilters": "No crosshairs match your search or filters",
+    "tryClearingFilters": "Try clearing some filters to see more results",
+    "filters": {
+      "searchPlaceholder": "Search crosshairs...",
+      "tags": "Tags",
+      "allTags": "All Tags",
+      "searchTags": "Search tags...",
+      "noTagsFound": "No tags found.",
+      "tagLabel": "Tag:"
+    },
+    "previewDialog": {
+      "title": "Preview",
+      "noBackground": "None",
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "configValues": "Configuration Values",
+      "gap": "Gap",
+      "width": "Width",
+      "height": "Height",
+      "pipOpacity": "Pip Opacity",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "color": "Color",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "hero": "Hero",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command"
     }
   }
 }

@@ -13,8 +13,10 @@ import {
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
+  Article,
   BugBeetleIcon,
   Code,
+  Crosshair,
   DiscordLogo,
   Download,
   Gear,
@@ -111,6 +113,20 @@ const getSidebarItems = (
       url: "/downloads",
       icon: Download,
       group: "general",
+    },
+    {
+      id: "crosshairs",
+      title: () => <span>{t("navigation.crosshairs")}</span>,
+      url: "/crosshairs",
+      icon: Crosshair,
+      group: t("navigation.customization"),
+    },
+    {
+      id: "autoexec",
+      title: () => <span>{t("navigation.autoexec")}</span>,
+      url: "/settings/autoexec",
+      icon: Article,
+      group: t("navigation.customization"),
     },
     {
       id: "settings",

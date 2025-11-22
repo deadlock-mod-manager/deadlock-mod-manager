@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
+import { crosshairLikes, crosshairs } from "./crosshairs";
 import { featureFlags, userFeatureFlagOverrides } from "./feature-flags";
 import { mirroredFiles } from "./mirrored-files";
 import { modDownloads, mods } from "./mods";
@@ -46,4 +47,25 @@ export const featureFlagsRelations = relations(featureFlags, ({ many }) => ({
 
 export const userRelations = relations(user, ({ many }) => ({
   featureFlagOverrides: many(userFeatureFlagOverrides),
+  crosshairs: many(crosshairs),
+  crosshairLikes: many(crosshairLikes),
+}));
+
+export const crosshairsRelations = relations(crosshairs, ({ one, many }) => ({
+  user: one(user, {
+    fields: [crosshairs.userId],
+    references: [user.id],
+  }),
+  likes: many(crosshairLikes),
+}));
+
+export const crosshairLikesRelations = relations(crosshairLikes, ({ one }) => ({
+  crosshair: one(crosshairs, {
+    fields: [crosshairLikes.crosshairId],
+    references: [crosshairs.id],
+  }),
+  user: one(user, {
+    fields: [crosshairLikes.userId],
+    references: [user.id],
+  }),
 }));

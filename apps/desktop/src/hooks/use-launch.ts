@@ -25,7 +25,7 @@ export const useLaunch = () => {
         additionalArgs:
           vanilla && launchVanillaNoArgs
             ? ""
-            : getAdditionalArgs(Object.values(settings)),
+            : await getAdditionalArgs(Object.values(settings)),
         profileFolder,
       });
     } catch (error) {

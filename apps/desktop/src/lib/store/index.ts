@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { type AuthState, createAuthSlice } from "./slices/auth";
+import { type CrosshairState, createCrosshairSlice } from "./slices/crosshair";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
 import { createProfilesSlice, type ProfilesState } from "./slices/profiles";
@@ -15,7 +16,8 @@ export type State = ModsState &
   SettingsState &
   UIState &
   ScrollState &
-  AuthState;
+  AuthState &
+  CrosshairState;
 
 export const usePersistedStore = create<State>()(
   persist(
@@ -27,10 +29,11 @@ export const usePersistedStore = create<State>()(
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createAuthSlice(...a),
+      ...createCrosshairSlice(...a),
     }),
     {
       name: "local-config",
-      version: 4,
+      version: 7,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -135,6 +138,38 @@ export const usePersistedStore = create<State>()(
               }
             }
           }
+        }
+
+        // Migration from version 4 to 5: Add crosshair history
+        if (version <= 4) {
+          console.log(
+            "Migrating from version 4 to 5: Adding crosshair history",
+          );
+          state.activeCrosshairHistory = [];
+        }
+
+        // Migration from version 5 to 6: Add activeCrosshair field
+        if (version <= 5) {
+          console.log(
+            "Migrating from version 5 to 6: Adding activeCrosshair field",
+          );
+          const history = state.activeCrosshairHistory as unknown[];
+          state.activeCrosshair =
+            Array.isArray(history) && history.length > 0 ? history[0] : null;
+        }
+
+        // Migration from version 6 to 7: Add crosshairFilters field
+        if (version <= 6) {
+          console.log(
+            "Migrating from version 6 to 7: Adding crosshairFilters field",
+          );
+          state.crosshairFilters = {
+            selectedHeroes: [],
+            selectedTags: [],
+            currentSort: "last updated",
+            filterMode: "include",
+            searchQuery: "",
+          };
         }
 
         return state;

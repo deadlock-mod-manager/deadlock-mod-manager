@@ -189,6 +189,12 @@ pub fn run() {
       #[cfg(desktop)]
       app.deep_link().register("deadlock-mod-manager")?;
 
+      #[cfg(any(windows, target_os = "linux"))]
+      {
+        use tauri_plugin_deep_link::DeepLinkExt;
+        app.deep_link().register_all()?;
+      }
+
       // Handle deep links only for app startup (when launched by deep link)
       // The single instance handler will take care of deep links when app is already running
       let start_urls = app.deep_link().get_current()?;
@@ -266,7 +272,12 @@ pub fn run() {
       commands::switch_profile,
       commands::list_profile_folders,
       commands::get_profile_installed_vpks,
-      commands::import_profile_batch
+      commands::import_profile_batch,
+      commands::get_autoexec_config,
+      commands::update_autoexec_config,
+      commands::open_autoexec_folder,
+      commands::open_autoexec_editor,
+      commands::apply_crosshair_to_autoexec
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

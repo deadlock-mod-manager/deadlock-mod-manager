@@ -2,6 +2,7 @@ export * from "./announcements";
 export * from "./auth";
 export * from "./chat-messages";
 export * from "./chat-sessions";
+export * from "./crosshairs";
 export * from "./custom-settings";
 export * from "./documentation";
 export * from "./feature-flags";

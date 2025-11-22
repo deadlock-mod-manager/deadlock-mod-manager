@@ -1,4 +1,8 @@
-import type { DeadlockHeroes } from "@deadlock-mods/shared";
+import type {
+  crosshairConfigSchema,
+  DeadlockHeroes,
+} from "@deadlock-mods/shared";
+import type { z } from "zod";
 
 export type HerosWithCrosshairOverrides =
   | DeadlockHeroes.Abrams
@@ -7,34 +11,9 @@ export type HerosWithCrosshairOverrides =
   | DeadlockHeroes.MoKrill
   | "Default";
 
-export interface CrosshairConfig {
-  gap: number; // -20 to 50
-  width: number; // 0 to 100 (step 0.1)
-  height: number; // 0 to 100 (step 0.1)
-  pipOpacity: number; // 0 to 1 (step 0.1)
-  dotOpacity: number; // 0 to 1 (step 0.1)
-  dotOutlineOpacity: number; // 0 to 1 (step 0.1)
-  color: { r: number; g: number; b: number }; // 0-255
-  pipBorder: boolean;
-  pipGapStatic: boolean;
-  hero: HerosWithCrosshairOverrides;
-}
-
-export interface CrosshairMetadata {
-  id: string;
-  name: string;
-  description?: string;
-  author?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  tags?: string[];
-  hero?: HerosWithCrosshairOverrides;
-  favorites?: number; // For web gallery
-  downloads?: number; // For web gallery
-}
+export type CrosshairConfig = z.infer<typeof crosshairConfigSchema>;
 
 export interface Crosshair {
-  metadata: CrosshairMetadata;
   config: CrosshairConfig;
 }
 

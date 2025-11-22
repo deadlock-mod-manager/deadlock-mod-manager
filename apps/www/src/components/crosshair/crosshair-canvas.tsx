@@ -20,7 +20,7 @@ export function CrosshairCanvas({
   config,
   interactive = true,
   width,
-  height,
+  _height,
   className,
   background,
 }: CrosshairCanvasProps) {
@@ -116,7 +116,7 @@ export function CrosshairCanvas({
         ref={canvasRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className='w-full h-full'
+        className='w-full h-full cursor-none'
       />
     </div>
   );

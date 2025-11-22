@@ -1,5 +1,6 @@
 import { announcementsRouter } from "./announcements";
 import { authRouter } from "./auth";
+import { crosshairsRouter } from "./crosshairs";
 import { dashboardRouter } from "./dashboard";
 import { featureFlagsRouter } from "./feature-flags";
 import { modsRouter } from "./mods";
@@ -10,6 +11,7 @@ import { vpkRouter } from "./vpk";
 export const v2Router = {
   ...announcementsRouter,
   ...authRouter,
+  ...crosshairsRouter,
   ...dashboardRouter,
   ...modsRouter,
   ...vpkRouter,

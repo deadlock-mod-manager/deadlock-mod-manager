@@ -1,9 +1,11 @@
 import type {
   AnnouncementDto,
+  CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
   ModDownloadDto,
   ModDto,
+  PublishedCrosshairDto,
   SharedProfile,
 } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
@@ -167,6 +169,34 @@ export const getApiHealth = async () => {
     version: string;
     spec: string;
   }>("/");
+};
+
+export const getCrosshairs = async () => {
+  return await apiRequest<PublishedCrosshairDto[]>("/api/v2/crosshairs");
+};
+
+export const getCrosshair = async (id: string) => {
+  return await apiRequest<PublishedCrosshairDto>(`/api/v2/crosshairs/${id}`);
+};
+
+export const publishCrosshair = async (data: CreateCrosshairDto) => {
+  return await apiRequest<PublishedCrosshairDto>("/api/v2/crosshairs", data);
+};
+
+export const incrementCrosshairDownload = async (id: string) => {
+  return await apiRequest<PublishedCrosshairDto>(
+    `/api/v2/crosshairs/${id}/download`,
+    {},
+    "POST",
+  );
+};
+
+export const toggleCrosshairLike = async (id: string) => {
+  return await apiRequest<{ likes: number; hasLiked: boolean }>(
+    `/api/v2/crosshairs/${id}/like`,
+    {},
+    "POST",
+  );
 };
 
 // Local addon analysis functions

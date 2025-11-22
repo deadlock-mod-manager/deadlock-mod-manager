@@ -1,4 +1,5 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
+import { invoke } from "@tauri-apps/api/core";
 
 import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
@@ -21,13 +22,27 @@ export const formatSpeed = (speed: number) => {
   return `${formatSize(speed)}/s`;
 };
 
-export const getAdditionalArgs = (settings: LocalSetting[]) => {
+export const getAdditionalArgs = async (settings: LocalSetting[]) => {
   const additionalArgs: string[] = [];
 
   for (const setting of settings.filter(
     (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled,
   )) {
     additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
+  }
+
+  try {
+    const autoexecConfig = await invoke<{
+      full_content: string;
+    }>("get_autoexec_config");
+    if (
+      autoexecConfig?.full_content &&
+      autoexecConfig.full_content.trim().length > 0
+    ) {
+      additionalArgs.push("-exec autoexec");
+    }
+  } catch {
+    // Autoexec config doesn't exist or failed to load, skip
   }
 
   return additionalArgs.join(" ");

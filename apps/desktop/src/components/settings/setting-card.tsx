@@ -112,6 +112,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
     return <SettingCardSkeleton />;
   }
   const custom = setting.id.startsWith("local_setting_");
+  const isAutoexecOption = setting.id === "autoexec-launch-option";
 
   const openEdit = () => {
     setEditName(setting.description ?? "");
@@ -167,7 +168,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
         </div>
 
         <div className='flex items-center space-x-2'>
-          {custom && (
+          {custom && !isAutoexecOption && (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -202,6 +203,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
 
           <Switch
             checked={setting.enabled}
+            disabled={isAutoexecOption}
             id={`toggle-setting-${setting.id}`}
             onCheckedChange={onChange}
           />

@@ -15,6 +15,7 @@
     "format:rust": "cd src-tauri && rustfmt"
   },
   "dependencies": {
+    "@deadlock-mods/crosshair": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",
