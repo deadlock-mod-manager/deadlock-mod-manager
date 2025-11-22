@@ -319,6 +319,16 @@ GET /v1/stats/downloads
 
 Manage player relationships and pending friend requests. All friendship endpoints require an authenticated session; unauthenticated requests receive `401 Unauthorized`.
 
+#### Friendship-Specific Error Codes
+
+| Code               | HTTP Status | Description                                                     |
+| ------------------ | ----------- | --------------------------------------------------------------- |
+| `SELF_FRIEND`      | 400         | Requester attempted to send a friend request to themselves.     |
+| `ALREADY_FRIENDS`  | 409         | Users already share an accepted friendship.                     |
+| `DUPLICATE_REQUEST`| 409         | A pending outgoing request already exists for the same target.  |
+| `USER_NOT_FOUND`   | 404         | Either the requester or target account could not be located.    |
+| `REQUEST_NOT_FOUND`| 404         | No pending friendship request matched the supplied parameters.  |
+
 #### Get Friend State
 
 Fetch the current user's friendship state including accepted friends and pending requests.
@@ -375,6 +385,8 @@ await fetch("/v2/friends/requests", {
 
 **Response:** Returns the updated friend state (same shape as `GET /v2/friends`).
 
+**Error Codes:** `SELF_FRIEND`, `USER_NOT_FOUND`, `ALREADY_FRIENDS`, `DUPLICATE_REQUEST`
+
 #### Accept Friend Request
 
 Converts a pending request into a mutual friendship.
@@ -391,6 +403,8 @@ POST /v2/friends/requests/accept
 
 **Response:** Updated friend state.
 
+**Error Codes:** `REQUEST_NOT_FOUND`, `USER_NOT_FOUND`
+
 #### Decline Friend Request
 
 Removes a pending incoming request without creating a friendship.
@@ -403,6 +417,8 @@ POST /v2/friends/requests/decline
 
 **Response:** Updated friend state.
 
+**Error Codes:** `REQUEST_NOT_FOUND`, `USER_NOT_FOUND`
+
 #### Cancel Friend Request
 
 Withdraw a pending outgoing friend request.
@@ -414,6 +430,8 @@ POST /v2/friends/requests/cancel
 **Request Body:** Matches `POST /v2/friends/requests` (`targetUserId`).
 
 **Response:** Updated friend state.
+
+**Error Codes:** `REQUEST_NOT_FOUND`, `USER_NOT_FOUND`
 
 #### Remove Friend
 
@@ -430,6 +448,8 @@ DELETE /v2/friends/{friendUserId}
 | `friendUserId` | string | Identifier of the friend to remove |
 
 **Response:** Updated friend state.
+
+**Error Codes:** `REQUEST_NOT_FOUND`, `USER_NOT_FOUND`
 
 ## Desktop Integration API
 
