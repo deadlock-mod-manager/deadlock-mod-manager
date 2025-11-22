@@ -17,34 +17,9 @@ export const crosshairsRouter = {
   listCrosshairs: publicProcedure
     .route({ method: "GET", path: "/v2/crosshairs" })
     .output(CrosshairsListResponseSchema)
-    .handler(async ({ context }) => {
+    .handler(async () => {
       const allCrosshairs = await crosshairRepository.findAll();
-      const userId = context.session?.user?.id;
-
-      const crosshairsWithUser = await Promise.all(
-        allCrosshairs.map(async (crosshair) => {
-          const userData = await db
-            .select({
-              name: user.name,
-              image: user.image,
-            })
-            .from(user)
-            .where(eq(user.id, crosshair.userId))
-            .limit(1);
-
-          const hasLiked = userId
-            ? await crosshairRepository.hasLiked(crosshair.id, userId)
-            : false;
-
-          return toCrosshairDto({
-            ...crosshair,
-            user: userData[0] ?? null,
-            hasLiked,
-          });
-        }),
-      );
-
-      return crosshairsWithUser;
+      return allCrosshairs.map(toCrosshairDto);
     }),
 
   getCrosshair: publicProcedure

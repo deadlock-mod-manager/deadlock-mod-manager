@@ -36,6 +36,7 @@ const CrosshairLibraryData = () => {
   const [previewCrosshair, setPreviewCrosshair] =
     useState<PublishedCrosshairDto | null>(null);
   const queryClient = useQueryClient();
+
   const { data, error } = useQuery("crosshairs", getCrosshairs, {
     suspense: true,
     useErrorBoundary: false,
@@ -76,25 +77,29 @@ const CrosshairLibraryData = () => {
       data: data ?? [],
     });
 
-  let filteredResults = results;
+  const filteredResults = useMemo(() => {
+    let filtered = results;
 
-  if (selectedHeroes.length > 0) {
-    filteredResults = filteredResults.filter((crosshair) => {
-      const matchesHero = crosshair.heroes.some((hero) =>
-        selectedHeroes.includes(hero),
-      );
-      return filterMode === "include" ? matchesHero : !matchesHero;
-    });
-  }
+    if (selectedHeroes.length > 0) {
+      filtered = filtered.filter((crosshair) => {
+        const matchesHero = crosshair.heroes.some((hero) =>
+          selectedHeroes.includes(hero),
+        );
+        return filterMode === "include" ? matchesHero : !matchesHero;
+      });
+    }
 
-  if (selectedTags.length > 0) {
-    filteredResults = filteredResults.filter((crosshair) => {
-      const matchesTag = crosshair.tags.some((tag) =>
-        selectedTags.includes(tag),
-      );
-      return filterMode === "include" ? matchesTag : !matchesTag;
-    });
-  }
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter((crosshair) => {
+        const matchesTag = crosshair.tags.some((tag) =>
+          selectedTags.includes(tag),
+        );
+        return filterMode === "include" ? matchesTag : !matchesTag;
+      });
+    }
+
+    return filtered;
+  }, [results, selectedHeroes, selectedTags, filterMode]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const columnsPerRow = useResponsiveColumns();
@@ -110,7 +115,7 @@ const CrosshairLibraryData = () => {
   const rowVirtualizer = useVirtualizer({
     count: crosshairRows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 280,
+    estimateSize: () => 320,
     overscan: 2,
     initialOffset: scrollY,
   });

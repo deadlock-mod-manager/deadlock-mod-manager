@@ -6,11 +6,13 @@ import { crosshairLikes, crosshairs } from "../schema/crosshairs";
 export class CrosshairRepository {
   constructor(private readonly db: Database) {}
 
-  async findAll(): Promise<Crosshair[]> {
-    return await this.db
-      .select()
-      .from(crosshairs)
-      .orderBy(desc(crosshairs.createdAt));
+  async findAll() {
+    return await this.db.query.crosshairs.findMany({
+      with: {
+        user: true,
+      },
+      orderBy: [desc(crosshairs.createdAt)],
+    });
   }
 
   async findById(id: string): Promise<Crosshair | null> {

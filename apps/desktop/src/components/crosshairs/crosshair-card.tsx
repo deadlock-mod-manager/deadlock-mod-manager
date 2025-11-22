@@ -9,7 +9,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useHover } from "@uidotdev/usehooks";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "react-query";
-import { toggleCrosshairLike } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
@@ -45,25 +44,6 @@ export const CrosshairCard = ({
     },
   });
 
-  const likeCrosshairMutation = useMutation({
-    mutationFn: (crosshairId: string) => toggleCrosshairLike(crosshairId),
-    onSuccess: () => {
-      queryClient.invalidateQueries("crosshairs");
-    },
-    onError: (error) => {
-      logger.error(error);
-      if (error instanceof Error && error.message.includes("401")) {
-        toast.error("You must be logged in to like a crosshair.");
-      } else {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t("crosshairs.form.likeError"),
-        );
-      }
-    },
-  });
-
   const crosshairConfig = crosshair?.config ?? config;
   if (!crosshairConfig) {
     return null;
@@ -72,12 +52,6 @@ export const CrosshairCard = ({
   const handleApply = () => {
     setActiveCrosshair(crosshairConfig);
     applyCrosshairMutation.mutate(crosshairConfig);
-  };
-
-  const handleLike = (e: React.MouseEvent) => {
-    if (!crosshair || likeCrosshairMutation.isLoading) return;
-    e.stopPropagation();
-    likeCrosshairMutation.mutate(crosshair.id);
   };
 
   const displayTags = crosshair?.tags?.slice(0, 3) ?? [];
@@ -97,7 +71,7 @@ export const CrosshairCard = ({
             {t("crosshairs.currentlyActive")}
           </Badge>
         )}
-        <div ref={ref} className='relative'>
+        <div ref={ref} className='relative m-auto'>
           {hovering && (
             <div className='absolute inset-0 bg-background/90 rounded-xl flex items-center justify-center transition-all duration-300 z-20 w-full h-full'>
               <div className='flex flex-col gap-2'>
@@ -128,10 +102,15 @@ export const CrosshairCard = ({
               </div>
             </div>
           )}
-          <CrosshairCanvas config={crosshairConfig} interactive={false} />
+          <CrosshairCanvas
+            config={crosshairConfig}
+            interactive={false}
+            width={200}
+            height={200}
+          />
         </div>
         {crosshair && (
-          <div className='space-y-2 p-4'>
+          <div className='space-y-2 px-4 pb-4'>
             <div className='flex items-center justify-between'>
               <h3 className='font-semibold text-sm truncate'>
                 {crosshair.name}
