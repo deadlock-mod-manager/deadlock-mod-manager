@@ -1,49 +1,113 @@
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import { DEFAULT_CROSSHAIR_CONFIG } from "@deadlock-mods/crosshair/types";
+import type { CreateCrosshairDto } from "@deadlock-mods/shared";
 import { DeadlockHeroes } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@deadlock-mods/ui/components/command";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@deadlock-mods/ui/components/form";
 import { Input } from "@deadlock-mods/ui/components/input";
-import { Label } from "@deadlock-mods/ui/components/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@deadlock-mods/ui/components/popover";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import {
+  Check,
+  CheckIcon,
+  Download,
+  RotateCcwIcon,
+  UploadIcon,
+} from "@deadlock-mods/ui/icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "react-query";
+import { z } from "zod";
 import { publishCrosshair } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 import { CrosshairControls } from "./crosshair/crosshair-controls";
+import { CrosshairImportDialog } from "./crosshair-import-dialog";
 
-const ALL_HEROES = Object.values(DeadlockHeroes);
+const ALL_HEROES = ["Default", ...Object.values(DeadlockHeroes)];
+
+const crosshairFormSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Name must be at least 3 characters")
+    .max(50, "Name must be at most 50 characters"),
+  description: z
+    .string()
+    .max(500, "Description must be at most 500 characters")
+    .optional(),
+  tags: z.array(z.string()).max(10, "Maximum 10 tags allowed").default([]),
+  heroes: z
+    .array(z.string())
+    .min(1, "At least one hero must be selected")
+    .max(5, "Maximum 5 heroes allowed"),
+  config: z.custom<CrosshairConfig>(),
+});
+
+type CrosshairFormValues = z.infer<typeof crosshairFormSchema>;
 
 export const CrosshairForm = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { isAuthenticated, setActiveCrosshair } = usePersistedStore();
-  const [config, setConfig] = useState<CrosshairConfig>(
-    DEFAULT_CROSSHAIR_CONFIG,
-  );
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [heroes, setHeroes] = useState<string[]>(["Default"]);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  const form = useForm<CrosshairFormValues>({
+    // @ts-expect-error - react-hook-form version conflicts
+    resolver: zodResolver(crosshairFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      tags: [],
+      heroes: ["Default"],
+      config: DEFAULT_CROSSHAIR_CONFIG,
+    },
+  });
+
+  const currentConfig = form.watch("config");
+  const currentTags = form.watch("tags");
 
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
+    const tags = currentTags || [];
     if (trimmed && !tags.includes(trimmed) && tags.length < 10) {
-      setTags([...tags, trimmed]);
+      form.setValue("tags", [...tags, trimmed]);
       setTagInput("");
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+    const tags = currentTags || [];
+    form.setValue(
+      "tags",
+      tags.filter((tag) => tag !== tagToRemove),
+    );
   };
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -66,237 +130,330 @@ export const CrosshairForm = () => {
     },
   });
 
-  const handleApply = () => {
-    setActiveCrosshair(config);
-    applyCrosshairMutation.mutate(config);
-  };
-
-  const handlePublish = async () => {
-    if (!isAuthenticated) {
-      toast.error(t("crosshairs.form.loginRequired"));
-      return;
-    }
-
-    if (!name.trim() || name.length < 3 || name.length > 50) {
-      toast.error(t("crosshairs.form.nameValidation"));
-      return;
-    }
-
-    if (description && description.length > 500) {
-      toast.error(t("crosshairs.form.descriptionValidation"));
-      return;
-    }
-
-    if (heroes.length === 0 || heroes.length > 5) {
-      toast.error(t("crosshairs.form.heroesValidation"));
-      return;
-    }
-
-    setIsPublishing(true);
-    try {
-      await publishCrosshair({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        config,
-        tags,
-        heroes,
-      });
+  const publishCrosshairMutation = useMutation({
+    mutationFn: (data: CreateCrosshairDto) => publishCrosshair(data),
+    onSuccess: () => {
       toast.success(t("crosshairs.form.published"));
-      setName("");
-      setDescription("");
-      setTags([]);
-      setHeroes(["Default"]);
-      setConfig(DEFAULT_CROSSHAIR_CONFIG);
-    } catch (error) {
+      queryClient.invalidateQueries("crosshairs");
+      form.reset({
+        name: "",
+        description: "",
+        tags: [],
+        heroes: ["Default"],
+        config: DEFAULT_CROSSHAIR_CONFIG,
+      });
+    },
+    onError: (error) => {
+      logger.error(error);
       toast.error(
         error instanceof Error
           ? error.message
           : t("crosshairs.form.publishError"),
       );
-    } finally {
-      setIsPublishing(false);
+    },
+  });
+
+  const handleApply = () => {
+    setActiveCrosshair(currentConfig);
+    applyCrosshairMutation.mutate(currentConfig);
+  };
+
+  const handleImport = (config: CrosshairConfig) => {
+    form.setValue("config", config);
+  };
+
+  const onSubmit = (values: CrosshairFormValues) => {
+    if (!isAuthenticated) {
+      toast.error(t("crosshairs.form.loginRequired"));
+      return;
     }
+
+    publishCrosshairMutation.mutate({
+      name: values.name.trim(),
+      description: values.description?.trim() || undefined,
+      config: values.config,
+      tags: values.tags || [],
+      heroes: values.heroes,
+    });
   };
 
   return (
-    <div className='flex flex-col gap-6'>
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-        <div className='space-y-6'>
-          <div className='space-y-4'>
-            <h3 className='text-lg font-semibold'>
-              {t("crosshairs.form.metadata")}
-            </h3>
-
-            <div className='space-y-2'>
-              <Label htmlFor='name'>
-                {t("crosshairs.form.name")}{" "}
-                <span className='text-destructive'>*</span>
-              </Label>
-              <Input
-                id='name'
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("crosshairs.form.namePlaceholder")}
-                maxLength={50}
+    // @ts-expect-error - react-hook-form version conflicts
+    <Form {...form}>
+      <form
+        // @ts-expect-error - react-hook-form version conflicts
+        onSubmit={form.handleSubmit(onSubmit)}
+        className='flex flex-col gap-6 h-full'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+          <div className='space-y-6  pr-2 overflow-y-auto custom-scrollbar scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full max-h-[70vh]'>
+            <div>
+              <CrosshairControls
+                config={currentConfig}
+                onChange={(newConfig) => form.setValue("config", newConfig)}
               />
             </div>
 
-            <div className='space-y-2'>
-              <Label htmlFor='description'>
-                {t("crosshairs.form.description")}
-              </Label>
-              <Textarea
-                id='description'
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t("crosshairs.form.descriptionPlaceholder")}
-                maxLength={500}
-                rows={3}
-              />
-            </div>
+            <div className='space-y-4'>
+              <h3 className='text-lg font-semibold'>
+                {t("crosshairs.form.metadata")}
+              </h3>
 
-            <div className='space-y-2'>
-              <Label htmlFor='tags'>{t("crosshairs.form.tags")}</Label>
-              <div className='flex gap-2'>
-                <Input
-                  id='tags'
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
-                  placeholder={t("crosshairs.form.tagsPlaceholder")}
-                  disabled={tags.length >= 10}
-                />
-                <Button
-                  type='button'
-                  onClick={handleAddTag}
-                  disabled={!tagInput.trim() || tags.length >= 10}>
-                  {t("crosshairs.form.addTag")}
-                </Button>
-              </div>
-              {tags.length > 0 && (
-                <div className='flex flex-wrap gap-2 mt-2'>
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant='secondary'
-                      className='cursor-pointer'
-                      onClick={() => handleRemoveTag(tag)}>
-                      {tag} ×
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className='space-y-2'>
-              <Label>
-                {t("crosshairs.form.heroes")}{" "}
-                <span className='text-destructive'>*</span>
-              </Label>
-              <div className='border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto'>
-                <div className='flex items-center space-x-2'>
-                  <Checkbox
-                    id='hero-default'
-                    checked={heroes.includes("Default")}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setHeroes(["Default"]);
-                      } else {
-                        setHeroes([]);
-                      }
-                    }}
-                  />
-                  <Label htmlFor='hero-default' className='cursor-pointer'>
-                    Default
-                  </Label>
-                </div>
-                {ALL_HEROES.map((hero) => {
-                  const isSelected = heroes.includes(hero);
-                  return (
-                    <div key={hero} className='flex items-center space-x-2'>
-                      <Checkbox
-                        id={`hero-${hero}`}
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            const newHeroes = heroes.filter(
-                              (h) => h !== "Default",
-                            );
-                            if (newHeroes.length < 5) {
-                              setHeroes([...newHeroes, hero]);
-                            }
-                          } else {
-                            setHeroes(heroes.filter((h) => h !== hero));
-                          }
-                        }}
-                        disabled={
-                          !isSelected &&
-                          heroes.length >= 5 &&
-                          !heroes.includes("Default")
-                        }
+              <FormField
+                // @ts-expect-error - react-hook-form version conflicts
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("crosshairs.form.name")}{" "}
+                      <span className='text-destructive'>*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={t("crosshairs.form.namePlaceholder")}
+                        maxLength={50}
                       />
-                      <Label
-                        htmlFor={`hero-${hero}`}
-                        className='cursor-pointer flex-1'>
-                        {hero}
-                      </Label>
-                    </div>
-                  );
-                })}
-              </div>
-              {heroes.length > 0 && (
-                <div className='flex flex-wrap gap-2 mt-2'>
-                  {heroes.map((hero) => (
-                    <Badge
-                      key={hero}
-                      variant='secondary'
-                      className='cursor-pointer'
-                      onClick={() =>
-                        setHeroes(heroes.filter((h) => h !== hero))
-                      }>
-                      {hero} ×
-                    </Badge>
-                  ))}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                // @ts-expect-error - react-hook-form version conflicts
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("crosshairs.form.description")}</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder={t(
+                          "crosshairs.form.descriptionPlaceholder",
+                        )}
+                        maxLength={500}
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className='space-y-2'>
+                <div className='text-sm font-medium'>
+                  {t("crosshairs.form.tags")}{" "}
+                  <span className='text-muted-foreground'>
+                    (e.g: "streamer", "troll")
+                  </span>
                 </div>
-              )}
+                <div className='flex gap-2'>
+                  <Input
+                    id='tags'
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    placeholder={t("crosshairs.form.tagsPlaceholder")}
+                    disabled={(currentTags?.length || 0) >= 10}
+                  />
+                  <Button
+                    type='button'
+                    onClick={handleAddTag}
+                    disabled={
+                      !tagInput.trim() || (currentTags?.length || 0) >= 10
+                    }>
+                    {t("crosshairs.form.addTag")}
+                  </Button>
+                </div>
+                {currentTags && currentTags.length > 0 && (
+                  <div className='flex flex-wrap gap-2 mt-2'>
+                    {currentTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant='secondary'
+                        className='cursor-pointer'
+                        onClick={() => handleRemoveTag(tag)}>
+                        {tag} ×
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <FormField
+                // @ts-expect-error - react-hook-form version conflicts
+                control={form.control}
+                name='heroes'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("crosshairs.form.heroes")}{" "}
+                      <span className='text-destructive'>*</span>
+                    </FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant='outline'
+                            role='combobox'
+                            className='w-full justify-between'>
+                            <span className='truncate'>
+                              {field.value.length === 0
+                                ? t("crosshairs.form.selectHeroes")
+                                : field.value.length === 1
+                                  ? field.value[0]
+                                  : `${field.value.length} ${t("crosshairs.form.heroesSelected")}`}
+                            </span>
+                            <span className='ml-2 opacity-50'>▼</span>
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent align='start' className='w-[400px] p-0'>
+                        <Command>
+                          <CommandInput
+                            placeholder={t("crosshairs.form.searchHeroes")}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              {t("crosshairs.form.noHeroesFound")}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {ALL_HEROES.map((hero) => {
+                                const isSelected = field.value.includes(hero);
+                                const isDefault = hero === "Default";
+                                const canSelect =
+                                  isSelected ||
+                                  field.value.length < 5 ||
+                                  isDefault;
+
+                                return (
+                                  <CommandItem
+                                    key={hero}
+                                    disabled={!canSelect}
+                                    onSelect={() => {
+                                      if (isDefault) {
+                                        field.onChange(
+                                          isSelected ? [] : ["Default"],
+                                        );
+                                      } else {
+                                        const newHeroes = isSelected
+                                          ? field.value.filter(
+                                              (h) => h !== hero,
+                                            )
+                                          : [
+                                              ...field.value.filter(
+                                                (h) => h !== "Default",
+                                              ),
+                                              hero,
+                                            ];
+                                        field.onChange(
+                                          newHeroes.length === 0
+                                            ? ["Default"]
+                                            : newHeroes,
+                                        );
+                                      }
+                                    }}>
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4 flex-shrink-0",
+                                        isSelected
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    <span className='truncate'>{hero}</span>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {field.value.length > 0 && (
+                      <div className='flex flex-wrap gap-2 mt-2'>
+                        {field.value.map((hero) => (
+                          <Badge
+                            key={hero}
+                            variant='secondary'
+                            className='cursor-pointer'
+                            onClick={() => {
+                              const newHeroes = field.value.filter(
+                                (h) => h !== hero,
+                              );
+                              field.onChange(
+                                newHeroes.length === 0
+                                  ? ["Default"]
+                                  : newHeroes,
+                              );
+                            }}>
+                            {hero} ×
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 
-          <CrosshairControls config={config} onChange={setConfig} />
-        </div>
-
-        <div className='space-y-4'>
-          <div className='sticky top-4'>
-            <h3 className='text-lg font-semibold mb-4'>
-              {t("crosshairs.form.preview")}
-            </h3>
-            <div className='bg-zinc-800 rounded-lg overflow-hidden p-4'>
-              <CrosshairCanvas config={config} interactive />
+          <div className='space-y-4'>
+            <div className='sticky top-4'>
+              <h3 className='text-lg font-semibold mb-4'>
+                {t("crosshairs.form.preview")}
+              </h3>
+              <div className='bg-zinc-800 rounded-lg overflow-hidden p-4'>
+                <CrosshairCanvas config={currentConfig} interactive />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className='flex gap-2'>
-        <Button
-          disabled={applyCrosshairMutation.isLoading}
-          onClick={handleApply}
-          isLoading={applyCrosshairMutation.isLoading}
-          variant='outline'
-          className='flex-1'>
-          {applyCrosshairMutation.isLoading
-            ? t("common.loading")
-            : t("crosshairs.form.apply")}
-        </Button>
-        <Button
-          onClick={handlePublish}
-          disabled={!isAuthenticated || isPublishing}
-          className='flex-1'>
-          {isPublishing
-            ? t("crosshairs.form.publishing")
-            : t("crosshairs.form.publish")}
-        </Button>
-      </div>
-    </div>
+        <div className='flex justify-between'>
+          <div className='flex gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              icon={<Download className='h-4 w-4' />}
+              onClick={() => setImportDialogOpen(true)}>
+              {t("crosshairs.form.import.button")}
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              icon={<RotateCcwIcon className='h-4 w-4' />}
+              onClick={() => form.reset()}>
+              Reset Crosshair
+            </Button>
+          </div>
+          <div className='flex gap-2 justify-end'>
+            <Button
+              type='button'
+              variant='secondary'
+              icon={<CheckIcon className='h-4 w-4' />}
+              onClick={handleApply}>
+              {t("crosshairs.form.apply")}
+            </Button>
+            <Button
+              type='submit'
+              icon={<UploadIcon className='h-4 w-4' />}
+              disabled={!isAuthenticated || publishCrosshairMutation.isLoading}>
+              {publishCrosshairMutation.isLoading
+                ? t("crosshairs.form.publishing")
+                : t("crosshairs.form.publish")}
+            </Button>
+          </div>
+        </div>
+      </form>
+      <CrosshairImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImport={handleImport}
+      />
+    </Form>
   );
 };

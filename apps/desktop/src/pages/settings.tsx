@@ -21,6 +21,7 @@ import {
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
 import {
+  FileCog,
   FlagIcon,
   FolderOpen,
   GamepadIcon,
@@ -33,7 +34,6 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
-import { FileText } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -216,7 +216,7 @@ const CustomSettingsData = () => {
                       enabled: isAutoexecOption
                         ? true
                         : (settingStatusById?.[setting.id] ??
-                          setting.enabled ??
+                          (setting as LocalSetting).enabled ??
                           false),
                     }}
                   />
@@ -230,7 +230,7 @@ const CustomSettingsData = () => {
   );
 };
 
-const CustomSettings = () => {
+const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
 
@@ -252,6 +252,7 @@ const CustomSettings = () => {
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
   const initialTab =
+    value ??
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -297,7 +298,6 @@ const CustomSettings = () => {
     <div className='flex w-full'>
       <div className='flex w-full flex-col gap-4'>
         <PageTitle className='px-4' title={t("navigation.settings")} />
-
         <Tabs
           className='flex h-full gap-6'
           defaultValue='launch-options'
@@ -309,6 +309,12 @@ const CustomSettings = () => {
               value='launch-options'>
               <Settings className='h-5 w-5' />
               {t("settings.launchOptions")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='autoexec'>
+              <FileCog className='h-5 w-5' />
+              {t("settings.autoexec")}
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
@@ -353,12 +359,6 @@ const CustomSettings = () => {
               value='about'>
               <InfoIcon className='h-5 w-5' />
               {t("settings.information")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='autoexec'>
-              <FileText className='h-5 w-5' />
-              {t("settings.autoexec")}
             </TabsTrigger>
           </TabsList>
 

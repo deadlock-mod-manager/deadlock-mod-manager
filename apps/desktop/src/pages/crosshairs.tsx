@@ -1,9 +1,9 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { ArrowLeftIcon, CrosshairIcon } from "@phosphor-icons/react";
+import { CrosshairIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActiveCrosshairs } from "@/components/crosshairs/active-crosshairs";
-import { CrosshairForm } from "@/components/crosshairs/crosshair-form";
+import { CrosshairDialog } from "@/components/crosshairs/crosshair-dialog";
 import { CrosshairLibrary } from "@/components/crosshairs/crosshair-library";
 import PageTitle from "@/components/shared/page-title";
 
@@ -24,25 +24,17 @@ const Crosshairs = () => {
         />
         <Button
           variant='outline'
-          icon={
-            showCrosshairForm ? (
-              <ArrowLeftIcon className='h-4 w-4' />
-            ) : (
-              <CrosshairIcon className='h-4 w-4' />
-            )
-          }
+          icon={<CrosshairIcon className='h-4 w-4' />}
           onClick={handleGenerateCrosshair}>
-          {showCrosshairForm ? t("crosshairs.close") : t("crosshairs.generate")}
+          {t("crosshairs.generate")}
         </Button>
       </div>
-
-      {showCrosshairForm && <CrosshairForm />}
-      {!showCrosshairForm && (
-        <>
-          {" "}
-          <ActiveCrosshairs /> <CrosshairLibrary />
-        </>
-      )}
+      <ActiveCrosshairs />
+      <CrosshairLibrary />
+      <CrosshairDialog
+        open={showCrosshairForm}
+        onOpenChange={setShowCrosshairForm}
+      />
     </div>
   );
 };

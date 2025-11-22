@@ -1,5 +1,11 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@deadlock-mods/ui/components/card";
+import {
   Form,
   FormControl,
   FormField,
@@ -161,61 +167,86 @@ export const AutoexecSettings = () => {
     <Section
       description={t("settings.autoexecDescription")}
       title={t("settings.autoexec")}>
-      {/* @ts-expect-error - react-hook-form types */}
-      <Form {...form}>
-        <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
-          <FormField
-            // @ts-expect-error - react-hook-form types
-            control={form.control}
-            name='content'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("settings.autoexecContent")}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    className='font-mono text-sm min-h-[400px]'
-                    onChange={field.onChange}
-                    placeholder={t("settings.autoexecPlaceholder")}
-                    value={field.value}
-                  />
-                </FormControl>
-                {config && config.readonly_sections.length > 0 && (
-                  <div className='mt-2 text-xs text-muted-foreground'>
-                    {t("settings.autoexecReadonlyNote")}
-                  </div>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className='space-y-4'>
+        <Card className='p-0'>
+          <CardHeader>
+            <CardTitle>What's an Autoexec Config?</CardTitle>
+            <CardDescription>
+              <p>
+                Autoexec is a CFG file for launching a game with set convars
+                (think console command) that will get automatically executed on
+                launch of the game.
+              </p>
+              <p>
+                The mod manager uses this file to set the crosshair settings
+                automatically without needing to run commands in the console.
+                You can still edit the file manually if you want to to add more
+                commands.
+              </p>
+            </CardDescription>
+          </CardHeader>
+        </Card>
 
-          <div className='flex gap-2'>
-            <Button
-              onClick={handleOpenFolder}
-              type='button'
-              variant='outline'
-              isLoading={openFolderMutation.isLoading}>
-              <FolderOpen className='h-4 w-4' />
-              {t("settings.openInFolder")}
-            </Button>
-            <Button
-              onClick={handleOpenEditor}
-              type='button'
-              variant='outline'
-              isLoading={openEditorMutation.isLoading}>
-              <PencilIcon className='h-4 w-4' />
-              {t("settings.openInEditor")}
-            </Button>
-            <Button
-              className='ml-auto'
-              isLoading={saveMutation.isLoading}
-              disabled={saveMutation.isLoading || !isDirty}
-              type='submit'>
-              {saveMutation.isLoading ? "Saving..." : t("settings.saveChanges")}
-            </Button>
-          </div>
-        </form>
-      </Form>
+        {/* @ts-expect-error - react-hook-form types */}
+        <Form {...form}>
+          <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              // @ts-expect-error - react-hook-form types
+              control={form.control}
+              name='content'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className='text-lg font-semibold'>
+                    Current Autoexec Config
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      className='font-mono text-sm min-h-[400px]'
+                      onChange={field.onChange}
+                      placeholder={t("settings.autoexecPlaceholder")}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  {config && config.readonly_sections.length > 0 && (
+                    <div className='mt-2 text-xs text-muted-foreground'>
+                      {t("settings.autoexecReadonlyNote")}
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className='flex gap-2'>
+              <Button
+                onClick={handleOpenFolder}
+                type='button'
+                variant='outline'
+                isLoading={openFolderMutation.isLoading}>
+                <FolderOpen className='h-4 w-4' />
+                {t("settings.openInFolder")}
+              </Button>
+              <Button
+                onClick={handleOpenEditor}
+                type='button'
+                variant='outline'
+                isLoading={openEditorMutation.isLoading}>
+                <PencilIcon className='h-4 w-4' />
+                {t("settings.openInEditor")}
+              </Button>
+              <Button
+                className='ml-auto'
+                isLoading={saveMutation.isLoading}
+                disabled={saveMutation.isLoading || !isDirty}
+                type='submit'>
+                {saveMutation.isLoading
+                  ? "Saving..."
+                  : t("settings.saveChanges")}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </Section>
   );
 };

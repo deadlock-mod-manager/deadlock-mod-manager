@@ -32,7 +32,7 @@ export function CrosshairControls({
   return (
     <div className='space-y-6'>
       <div className='space-y-4'>
-        <h3 className='text-lg font-semibold'>Crosshair Settings</h3>
+        <h3 className='font-semibold'>Crosshair Settings</h3>
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>

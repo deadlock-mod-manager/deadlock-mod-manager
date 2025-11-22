@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Clipboard, PencilIcon } from "@phosphor-icons/react";
+import { CheckIcon } from "@deadlock-mods/ui/icons";
+import { Clipboard } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
@@ -219,7 +220,7 @@ export const CrosshairPreviewDialog = ({
           {onApply && (
             <Button
               disabled={isApplying}
-              icon={<PencilIcon className='h-4 w-4' />}
+              icon={<CheckIcon className='h-4 w-4' />}
               isLoading={isApplying}
               onClick={onApply}>
               {isApplying ? t("common.loading") : t("crosshairs.form.apply")}

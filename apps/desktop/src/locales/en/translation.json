@@ -12,7 +12,8 @@
     "collapseMenu": "Collapse menu",
     "about": "About",
     "crosshairs": "Crosshairs",
-    "customization": "Customization"
+    "customization": "Customization",
+    "autoexec": "Autoexec Config"
   },
   "menu": {
     "about": "About",
@@ -252,7 +253,7 @@
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "confirmClearModsStateAction": "Clear State",
     "modsStateCleared": "Mods state cleared successfully",
-    "autoexec": "Autoexec Config",
+    "autoexec": "Autoexec.cfg",
     "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
     "autoexecContent": "Config File Content",
     "autoexecPlaceholder": "Add your custom console commands here...",
@@ -1070,8 +1071,13 @@
     "subtitle": "Create and customize your crosshairs",
     "generate": "Generate Crosshair",
     "preview": "Preview",
+    "dialog": {
+      "title": "Generate Crosshair",
+      "description": "Create and customize your crosshairs"
+    },
+    "close": "Go back",
     "activeCrosshairs": "Active Crosshairs",
-    "noActiveCrosshair": "No active crosshair",
+    "noActiveCrosshair": "No custom crosshair is currently active",
     "currentlyActive": "Currently Active",
     "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
     "form": {
@@ -1084,6 +1090,10 @@
       "tagsPlaceholder": "Enter tag and press Enter",
       "addTag": "Add",
       "heroes": "Heroes",
+      "selectHeroes": "Select heroes...",
+      "heroesSelected": "selected",
+      "searchHeroes": "Search heroes...",
+      "noHeroesFound": "No heroes found.",
       "preview": "Preview",
       "apply": "Apply",
       "publish": "Publish",
@@ -1096,7 +1106,16 @@
       "descriptionValidation": "Description must be less than 500 characters",
       "heroesValidation": "Please select at least one hero (max 5)",
       "publishError": "Failed to publish crosshair",
-      "likeError": "Failed to toggle crosshair like"
+      "likeError": "Failed to toggle crosshair like",
+      "import": {
+        "button": "Import",
+        "title": "Import Crosshair Settings",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again."
+      }
     },
     "loadError": "Failed to load crosshairs",
     "noCrosshairs": "No crosshairs available",

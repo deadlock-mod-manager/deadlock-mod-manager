@@ -40,6 +40,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<SudoPage />} path='/sudo' />
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
+              <Route
+                element={<CustomSettings value='autoexec' />}
+                path='/settings/autoexec'
+              />
             </Route>
           </Routes>
         </BrowserRouter>

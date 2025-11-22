@@ -2,7 +2,7 @@ import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import type { StateCreator } from "zustand";
 import type { State } from "..";
 
-const MAX_HISTORY_SIZE = 5;
+const MAX_HISTORY_SIZE = 10;
 
 export type CrosshairState = {
   activeCrosshair: CrosshairConfig | null;

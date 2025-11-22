@@ -1,20 +1,10 @@
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import type { PublishedCrosshairDto } from "@deadlock-mods/shared";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@deadlock-mods/ui/components/avatar";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import {
-  DownloadSimple,
-  EyeIcon,
-  Heart,
-  PencilIcon,
-} from "@phosphor-icons/react";
+import { EyeIcon, PencilIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useHover } from "@uidotdev/usehooks";
 import { useTranslation } from "react-i18next";
@@ -61,9 +51,16 @@ export const CrosshairCard = ({
       queryClient.invalidateQueries("crosshairs");
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : t("crosshairs.form.likeError"),
-      );
+      logger.error(error);
+      if (error instanceof Error && error.message.includes("401")) {
+        toast.error("You must be logged in to like a crosshair.");
+      } else {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t("crosshairs.form.likeError"),
+        );
+      }
     },
   });
 
@@ -94,7 +91,7 @@ export const CrosshairCard = ({
     <Card
       className={`border cursor-pointer ${isActive ? "border-2 border-primary" : ""}`}
       onClick={handlePreviewOpen}>
-      <CardContent className='p-4 relative flex flex-col gap-3'>
+      <CardContent className='relative flex flex-col gap-3 p-0'>
         {isActive && (
           <Badge variant='default' className='absolute top-2 right-2 z-10'>
             {t("crosshairs.currentlyActive")}
@@ -102,7 +99,7 @@ export const CrosshairCard = ({
         )}
         <div ref={ref} className='relative'>
           {hovering && (
-            <div className='absolute inset-0 bg-background/90 rounded-xl flex items-center justify-center transition-all duration-300 z-20'>
+            <div className='absolute inset-0 bg-background/90 rounded-xl flex items-center justify-center transition-all duration-300 z-20 w-full h-full'>
               <div className='flex flex-col gap-2'>
                 <Button
                   variant='text'
@@ -134,47 +131,22 @@ export const CrosshairCard = ({
           <CrosshairCanvas config={crosshairConfig} interactive={false} />
         </div>
         {crosshair && (
-          <div className='space-y-2'>
+          <div className='space-y-2 p-4'>
             <div className='flex items-center justify-between'>
               <h3 className='font-semibold text-sm truncate'>
                 {crosshair.name}
               </h3>
             </div>
-            {crosshair.description && (
-              <p className='text-xs text-muted-foreground line-clamp-2'>
-                {crosshair.description}
-              </p>
-            )}
+
             <div className='flex items-center gap-2 text-xs text-muted-foreground'>
               <div className='flex items-center gap-1'>
-                <Avatar className='h-4 w-4'>
-                  <AvatarImage src={crosshair.userImage ?? undefined} />
-                  <AvatarFallback>
-                    {crosshair.userName?.[0]?.toUpperCase() ?? "?"}
-                  </AvatarFallback>
-                </Avatar>
+                <span className='text-xs text-muted-foreground'>By</span>
                 <span className='truncate max-w-[100px]'>
                   {crosshair.userName ?? "Unknown"}
                 </span>
               </div>
             </div>
-            <div className='flex items-center gap-3 text-xs'>
-              <button
-                onClick={handleLike}
-                disabled={likeCrosshairMutation.isLoading}
-                className='flex items-center gap-1 hover:opacity-80 transition-opacity disabled:opacity-50 cursor-pointer'>
-                <Heart
-                  className={`h-4 w-4 ${
-                    crosshair.hasLiked ? "fill-red-500 text-red-500" : ""
-                  }`}
-                />
-                <span>{crosshair.likes}</span>
-              </button>
-              <div className='flex items-center gap-1'>
-                <DownloadSimple className='h-4 w-4' />
-                <span>{crosshair.downloads}</span>
-              </div>
-            </div>
+
             {crosshair.heroes &&
               crosshair.heroes.length > 0 &&
               crosshair.heroes.some((h) => h !== "Default") && (

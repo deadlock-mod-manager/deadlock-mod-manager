@@ -20,7 +20,7 @@ export function CrosshairCanvas({
   config,
   interactive = true,
   width,
-  height,
+  _height,
   className,
   background,
 }: CrosshairCanvasProps) {
