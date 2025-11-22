@@ -31,6 +31,14 @@ export const auth = betterAuth({
     enabled: true,
   },
   advanced: {
+    trustedOrigins: [
+      "https://deadlockmods.app",
+      "https://api.deadlockmods.app",
+    ],
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: ".deadlockmods.app",
+    },
     defaultCookieAttributes: {
       sameSite: "none",
       secure: true,
