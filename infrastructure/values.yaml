@@ -179,7 +179,7 @@ deployments:
 
   www:
     image: stormix/deadlock-mods-www:latest
-    replicas: 3
+    replicas: 1
     memory: 1Gi
     cpu: 250m
 
