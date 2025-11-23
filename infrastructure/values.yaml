@@ -2,8 +2,8 @@ deployments:
   mirror-service:
     image: stormix/deadlock-mods-mirror-service:latest
     replicas: 3
-    memory: 1Gi
-    cpu: 150m
+    memory: 512Mi
+    cpu: 100m
 
     healthCheck:
       readiness:
@@ -49,7 +49,7 @@ deployments:
     image: stormix/deadlock-mods-api:latest
     replicas: 3
     memory: 1Gi
-    cpu: 750m
+    cpu: 600m
 
     healthCheck:
       readiness:
@@ -96,7 +96,7 @@ deployments:
     image: stormix/deadlock-mods-bot:latest
     replicas: 1
     memory: 1Gi
-    cpu: 150m
+    cpu: 100m
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
     port: 3000
@@ -137,7 +137,7 @@ deployments:
     replicas: 1
     memory:
       request: 1Gi
-      limit: 3Gi
+      limit: 2Gi
     cpu: 500m
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
@@ -227,8 +227,8 @@ deployments:
 resources:
   postgres:
     replicas: 3
-    memory: 1Gi
-    cpu: 500m
+    memory: 512Mi
+    cpu: 200m
     disk: 20Gi
     extensions:
       - vector
@@ -253,7 +253,7 @@ resources:
       memory: 128Mi
       cpu: 50m
     replicas: 2
-    memory: 1Gi
+    memory: 512Mi
     cpu: 100m
     disk: 1Gi
     evictionPolicy: allkeys-lru
