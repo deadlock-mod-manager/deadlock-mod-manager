@@ -66,6 +66,23 @@ yay -S deadlock-modmanager
 yay -S deadlock-modmanager-git
 ```
 
+#### nixpkgs
+
+```bash
+# Run in your shell
+nix-shell -p deadlock-mod-manager --run deadlock-mod-manager
+
+# Experimental nix flakes version
+nix shell nixpkgs#deadlock-mod-manager -c deadlock-mod-manager
+```
+
+```nix
+# configuration.nix
+environment.systemPackages = with pkgs; [
+  deadlock-mod-manager
+];
+```
+
 More package managers will be added in the future. If you would like to maintain a package manager for Deadlock Mod Manager, please contact us on [Discord](https://deadlockmods.app/discord).
 
 ## Platform-Specific Installation
