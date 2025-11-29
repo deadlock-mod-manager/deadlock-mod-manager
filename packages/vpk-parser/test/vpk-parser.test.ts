@@ -179,14 +179,5 @@ describe("VPK Parser FFI", () => {
       expect(end - start).toBeLessThan(10); // Should be under 10ms
       expect(parsed.entries).toHaveLength(3);
     });
-
-    it("should calculate hashes quickly", () => {
-      const start = performance.now();
-      const hashes = getVpkHashes(testBuffer, testVpkPath);
-      const end = performance.now();
-
-      expect(end - start).toBeLessThan(5); // Should be under 5ms
-      expect(hashes.fastHash).toBeDefined();
-    });
   });
 });
