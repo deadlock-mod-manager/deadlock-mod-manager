@@ -1,0 +1,22 @@
+{{- if .Values.deployments.web.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Chart.Name }}-web
+  labels:
+    app: {{ .Chart.Name }}-web
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-web
+  endpoints:
+    - port: http
+      path: {{ .Values.deployments.web.metrics.path | default "/metrics" }}
+      interval: {{ .Values.deployments.web.metrics.interval | default "30s" }}
+      scrapeTimeout: {{ .Values.deployments.web.metrics.scrapeTimeout | default "10s" }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}
+

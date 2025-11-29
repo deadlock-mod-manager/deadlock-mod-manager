@@ -104,10 +104,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Chart.Name }}-web
+  labels:
+    app: {{ .Chart.Name }}-web
 spec:
   type: ClusterIP
   ports:
-    - port: {{ $port }}
+    - name: http
+      port: {{ $port }}
       targetPort: {{ $port }}
       protocol: TCP
   selector:

@@ -1,5 +1,6 @@
 import "./instrument";
 
+import { prometheus } from "@hono/prometheus";
 import { sentry } from "@hono/sentry";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -32,6 +33,8 @@ import redirectRouter from "./routers/redirect";
 import { cronService } from "./services/cron";
 import { featureFlagsService } from "./services/feature-flags";
 
+const { printMetrics, registerMetrics } = prometheus();
+
 const app = new Hono();
 
 app.use(
@@ -53,6 +56,9 @@ app.use(
   secureHeaders(),
   trimTrailingSlash(),
 );
+
+app.use("*", registerMetrics);
+app.get("/metrics", printMetrics);
 
 app
   .on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw))

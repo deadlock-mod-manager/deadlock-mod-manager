@@ -51,6 +51,12 @@ deployments:
     memory: 1Gi
     cpu: 600m
 
+    metrics:
+      enabled: true
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
     healthCheck:
       readiness:
         enabled: true
