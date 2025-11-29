@@ -1,12 +1,13 @@
 import { HERO_GAP_CONFIGS, STATIC_GAP_BASE } from "./constants";
-import type { CrosshairConfig } from "./types";
+import type { CrosshairConfig, HerosWithCrosshairOverrides } from "./types";
 
 export const calculateGap = (config: CrosshairConfig): number => {
   if (config.pipGapStatic) {
     return STATIC_GAP_BASE + config.gap * 1;
   }
 
-  const heroConfig = HERO_GAP_CONFIGS[config.hero];
+  const heroConfig =
+    HERO_GAP_CONFIGS[config.hero as HerosWithCrosshairOverrides];
   const baseGap = heroConfig.baseGap + heroConfig.additionalGap;
   const increment = config.gap <= heroConfig.threshold ? 1 : 2;
 
@@ -18,6 +19,7 @@ export const getIncrementValue = (config: CrosshairConfig): number => {
     return 1;
   }
 
-  const heroConfig = HERO_GAP_CONFIGS[config.hero];
+  const heroConfig =
+    HERO_GAP_CONFIGS[config.hero as HerosWithCrosshairOverrides];
   return config.gap <= heroConfig.threshold ? 1 : 2;
 };
