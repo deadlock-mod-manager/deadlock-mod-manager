@@ -6,8 +6,7 @@
     "dev": "vite dev --port 3003",
     "build": "vite build",
     "start": "bun run server.ts",
-    "serve": "vite preview",
-    "test": "vitest run"
+    "serve": "vite preview"
   },
   "overrides": {
     "react": "^19.2.0",

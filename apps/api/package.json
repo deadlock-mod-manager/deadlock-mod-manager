@@ -7,7 +7,6 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
-    "test": "dotenv -e ../../.env -- bun run src/test.ts",
     "test:mod-events": "dotenv -e ../../.env -- bun run src/scripts/test-mod-events.ts",
     "calculate-mod-sizes": "dotenv -e ../../.env -- bun run src/scripts/calculate-mod-sizes.ts",
     "sync-mods": "dotenv -e ../../.env -- bun run src/scripts/sync-mods.ts",

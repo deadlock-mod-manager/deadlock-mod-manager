@@ -1,5 +1,5 @@
+import { beforeAll, describe, expect, it } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
-import { beforeAll, describe, expect, it } from "vitest";
 import {
   getVersion,
   getVpkHashes,
