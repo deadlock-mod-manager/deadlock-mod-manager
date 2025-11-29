@@ -17,12 +17,24 @@ export const PopularModItem = ({ mod, index }: PopularModItemProps) => {
   const navigate = useNavigate();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
+  const handleClick = () => {
+    navigate(`/mods/${mod.remoteId}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
-    <button
-      key={mod.id}
-      className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50'
-      onClick={() => navigate(`/mods/${mod.remoteId}`)}
-      type='button'>
+    <div
+      className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50 cursor-pointer'
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role='button'
+      tabIndex={0}>
       <div className='flex items-start gap-3'>
         <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground text-xs'>
           {index + 1}
@@ -84,6 +96,6 @@ export const PopularModItem = ({ mod, index }: PopularModItemProps) => {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };

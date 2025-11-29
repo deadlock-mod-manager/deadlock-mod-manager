@@ -17,11 +17,24 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
   const navigate = useNavigate();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
+  const handleClick = () => {
+    navigate(`/mods/${mod.remoteId}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
-    <button
-      className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50'
-      onClick={() => navigate(`/mods/${mod.remoteId}`)}
-      type='button'>
+    <div
+      className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50 cursor-pointer'
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role='button'
+      tabIndex={0}>
       <div className='flex items-start gap-3'>
         {/* Thumbnail */}
         <div className='relative h-12 w-12 shrink-0 overflow-hidden rounded-md'>
@@ -83,6 +96,6 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };

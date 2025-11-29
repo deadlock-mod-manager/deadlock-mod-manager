@@ -10,18 +10,13 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Rocket } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import { APP_NAME } from "@/lib/constants";
 import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
 import { OnboardingStepGamePath } from "./step-game-path";
-
-type OnboardingWizardProps = {
-  open: boolean;
-  onComplete: () => void;
-  onSkip: () => void;
-};
 
 type StepComponentProps = {
   onComplete: () => void;
@@ -57,15 +52,15 @@ const STEP_CONFIGS: StepConfig[] = [
 
 const TOTAL_STEPS = STEP_CONFIGS.length;
 
-export const OnboardingWizard = ({
-  open,
-  onComplete,
-  onSkip,
-}: OnboardingWizardProps) => {
+export const OnboardingWizard = () => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
+  const { showOnboarding, completeOnboarding, skipOnboarding } =
+    useOnboarding();
+  const showOnboardingRef = useRef(showOnboarding);
+  const isHandlingCloseRef = useRef(false);
   const currentStepConfig = useMemo(
     () => STEP_CONFIGS.find((config) => config.step === currentStep),
     [currentStep],
@@ -90,11 +85,11 @@ export const OnboardingWizard = ({
 
   const handleNext = useCallback(() => {
     if (isLastStep) {
-      onComplete();
+      completeOnboarding();
     } else {
       setCurrentStep((prev) => prev + 1);
     }
-  }, [isLastStep, onComplete]);
+  }, [isLastStep, completeOnboarding]);
 
   const handleBack = useCallback(() => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
@@ -112,32 +107,47 @@ export const OnboardingWizard = ({
     });
   }, []);
 
+  useEffect(() => {
+    showOnboardingRef.current = showOnboarding;
+  }, [showOnboarding]);
+
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen) {
-        onSkip();
+      if (!isOpen && showOnboardingRef.current && !isHandlingCloseRef.current) {
+        isHandlingCloseRef.current = true;
+        showOnboardingRef.current = false;
+        skipOnboarding();
+        setTimeout(() => {
+          isHandlingCloseRef.current = false;
+        }, 0);
+      } else {
+        showOnboardingRef.current = isOpen;
       }
     },
-    [onSkip],
+    [skipOnboarding],
   );
 
-  const createStepHandlers = useCallback(
-    (step: number, requiresErrorHandler = false): StepComponentProps => {
-      const handlers: StepComponentProps = {
-        onComplete: () => handleStepComplete(step),
-      };
-      if (requiresErrorHandler) {
-        handlers.onError = () => handleStepError(step);
-      }
-      return handlers;
-    },
-    [handleStepComplete, handleStepError],
-  );
+  const stepHandlers = useMemo<StepComponentProps>(() => {
+    if (!currentStepConfig) {
+      return { onComplete: () => {} };
+    }
+    const handlers: StepComponentProps = {
+      onComplete: () => handleStepComplete(currentStep),
+    };
+    if (currentStepConfig.requiresErrorHandler) {
+      handlers.onError = () => handleStepError(currentStep);
+    }
+    return handlers;
+  }, [currentStep, currentStepConfig, handleStepComplete, handleStepError]);
+
+  const onSkip = useCallback(() => {
+    skipOnboarding();
+  }, [skipOnboarding]);
 
   const CurrentStepComponent = currentStepConfig?.component;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={showOnboarding} onOpenChange={handleOpenChange}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <div className='flex items-center gap-2'>
@@ -158,14 +168,7 @@ export const OnboardingWizard = ({
         <div className='py-4'>
           <Progress value={progress} className='h-2 mb-6' />
 
-          {CurrentStepComponent && currentStepConfig && (
-            <CurrentStepComponent
-              {...createStepHandlers(
-                currentStep,
-                currentStepConfig.requiresErrorHandler,
-              )}
-            />
-          )}
+          {CurrentStepComponent && <CurrentStepComponent {...stepHandlers} />}
         </div>
 
         <DialogFooter className='flex-row justify-between gap-2 sm:justify-between'>

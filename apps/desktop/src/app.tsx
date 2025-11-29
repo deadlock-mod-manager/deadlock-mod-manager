@@ -17,7 +17,6 @@ import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
-import { useOnboarding } from "./hooks/use-onboarding";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
 import { queryClient } from "./lib/client";
@@ -40,9 +39,6 @@ const App = () => {
     handleUpdate,
     handleDismiss,
   } = useAutoUpdate();
-
-  const { showOnboarding, completeOnboarding, skipOnboarding } =
-    useOnboarding();
 
   const hydrateStore = async () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });
@@ -78,11 +74,7 @@ const App = () => {
                       open={showUpdateDialog}
                       update={update}
                     />
-                    <OnboardingWizard
-                      open={showOnboarding}
-                      onComplete={completeOnboarding}
-                      onSkip={skipOnboarding}
-                    />
+                    <OnboardingWizard />
                   </TauriAppWindowProvider>
                 </AlertDialogProvider>
               </TooltipProvider>
