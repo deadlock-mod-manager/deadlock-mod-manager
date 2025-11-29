@@ -17,13 +17,12 @@ import {
   RotateCcw,
   Shield,
 } from "@deadlock-mods/ui/icons";
+import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { useConfirm } from "@/components/providers/alert-dialog";
 
-// Type definitions for the gameinfo status from Rust
 type GameInfoStatus = {
   current_hash: string;
   is_modified_by_mod_manager: boolean;
@@ -39,19 +38,12 @@ const GameInfoManagement = () => {
   const confirm = useConfirm();
   const [isOperating, setIsOperating] = useState(false);
 
-  const { data: status, refetch } = useQuery<GameInfoStatus>(
-    "gameinfo-status",
-    () => invoke("get_gameinfo_status"),
-    {
-      refetchInterval: 5000,
-      onError: () => {
-        toast.error("Failed to get gameinfo status");
-        // Error is logged internally by react-query
-      },
-    },
-  );
+  const { data: status, refetch } = useQuery<GameInfoStatus>({
+    queryKey: ["gameinfo-status"],
+    queryFn: () => invoke("get_gameinfo_status"),
+    refetchInterval: 5000,
+  });
 
-  // Status indicators
   const statusInfo = useMemo(() => {
     if (!status) {
       return null;
@@ -197,7 +189,6 @@ const GameInfoManagement = () => {
 
   return (
     <div className='space-y-6'>
-      {/* Status Display */}
       <div className='rounded-lg border bg-card p-4'>
         <h4 className='mb-3 font-medium text-sm'>Current Status</h4>
         <div className='flex flex-wrap items-center gap-4'>
@@ -234,7 +225,6 @@ const GameInfoManagement = () => {
           })}
         </div>
 
-        {/* Warnings */}
         {status.is_modified_externally && (
           <div className='mt-3 rounded-md border-yellow-500 border-l-4 bg-yellow-50 p-3 dark:bg-yellow-950/20'>
             <div className='flex items-center gap-2'>
@@ -265,7 +255,6 @@ const GameInfoManagement = () => {
         )}
       </div>
 
-      {/* Action Buttons */}
       <div className='flex flex-wrap gap-3'>
         <Button
           disabled={isOperating || status.backup_exists}
@@ -313,7 +302,6 @@ const GameInfoManagement = () => {
         </Button>
       </div>
 
-      {/* File Information */}
       <div className='rounded-lg border bg-muted/50 p-3'>
         <div className='flex flex-col gap-2 text-sm'>
           <div>

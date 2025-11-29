@@ -18,12 +18,12 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { Info, Megaphone, Warning, Wrench } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-shell";
 import { format, formatDistanceToNow } from "date-fns";
 import { Markup } from "interweave";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { getAnnouncements } from "@/lib/api";
 import { DashboardCard } from "./dashboard-card";
 
@@ -76,10 +76,10 @@ export const AnnouncementsCard = () => {
   const { t } = useTranslation();
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<AnnouncementDto | null>(null);
-  const { data: announcements, isLoading } = useQuery(
-    "announcements",
-    getAnnouncements,
-  );
+  const { data: announcements, isLoading } = useQuery({
+    queryKey: ["announcements"],
+    queryFn: getAnnouncements,
+  });
 
   return (
     <>
@@ -183,64 +183,66 @@ export const AnnouncementsCard = () => {
         onOpenChange={(open) => {
           if (!open) setSelectedAnnouncement(null);
         }}>
-        {selectedAnnouncement && (
-          <DialogContent className='max-w-2xl max-h-[80vh] overflow-y-auto'>
-            <DialogHeader>
-              <div className='flex items-start gap-4'>
-                {selectedAnnouncement.iconUrl ? (
-                  <img
-                    alt={selectedAnnouncement.title}
-                    className='h-12 w-12 shrink-0 rounded object-cover'
-                    src={selectedAnnouncement.iconUrl}
-                  />
-                ) : (
-                  <AnnouncementCategoryIcon
-                    category={selectedAnnouncement.category}
-                    size='md'
-                  />
-                )}
-                <div className='flex-1 min-w-0'>
-                  <div className='flex items-center gap-2 mb-1'>
-                    <DialogTitle>{selectedAnnouncement.title}</DialogTitle>
-                    <Badge
-                      variant={
-                        selectedAnnouncement.category === "maintenance"
-                          ? "default"
-                          : selectedAnnouncement.category === "downtime"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                      className='shrink-0'>
-                      {getCategoryLabel(selectedAnnouncement.category)}
-                    </Badge>
+        <DialogContent className='max-w-2xl max-h-[80vh] overflow-y-auto'>
+          {selectedAnnouncement && (
+            <>
+              <DialogHeader>
+                <div className='flex items-start gap-4'>
+                  {selectedAnnouncement.iconUrl ? (
+                    <img
+                      alt={selectedAnnouncement.title}
+                      className='h-12 w-12 shrink-0 rounded object-cover'
+                      src={selectedAnnouncement.iconUrl}
+                    />
+                  ) : (
+                    <AnnouncementCategoryIcon
+                      category={selectedAnnouncement.category}
+                      size='md'
+                    />
+                  )}
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center gap-2 mb-1'>
+                      <DialogTitle>{selectedAnnouncement.title}</DialogTitle>
+                      <Badge
+                        variant={
+                          selectedAnnouncement.category === "maintenance"
+                            ? "default"
+                            : selectedAnnouncement.category === "downtime"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className='shrink-0'>
+                        {getCategoryLabel(selectedAnnouncement.category)}
+                      </Badge>
+                    </div>
+                    <DialogDescription className='mt-1'>
+                      {format(
+                        new Date(
+                          selectedAnnouncement.publishedAt ||
+                            selectedAnnouncement.createdAt ||
+                            new Date(),
+                        ),
+                        "PPp",
+                      )}
+                    </DialogDescription>
                   </div>
-                  <DialogDescription className='mt-1'>
-                    {format(
-                      new Date(
-                        selectedAnnouncement.publishedAt ||
-                          selectedAnnouncement.createdAt ||
-                          new Date(),
-                      ),
-                      "PPp",
-                    )}
-                  </DialogDescription>
                 </div>
+              </DialogHeader>
+              <div className='prose prose-sm dark:prose-invert max-w-none text-sm'>
+                <Markup content={selectedAnnouncement.content} />
               </div>
-            </DialogHeader>
-            <div className='prose prose-sm dark:prose-invert max-w-none text-sm'>
-              <Markup content={selectedAnnouncement.content} />
-            </div>
-            {selectedAnnouncement.linkUrl && (
-              <DialogFooter>
-                <Button
-                  onClick={() => open(selectedAnnouncement.linkUrl!)}
-                  variant='default'>
-                  {selectedAnnouncement.linkLabel || "Learn More"}
-                </Button>
-              </DialogFooter>
-            )}
-          </DialogContent>
-        )}
+              {selectedAnnouncement.linkUrl && (
+                <DialogFooter>
+                  <Button
+                    onClick={() => open(selectedAnnouncement.linkUrl!)}
+                    variant='default'>
+                    {selectedAnnouncement.linkLabel || "Learn More"}
+                  </Button>
+                </DialogFooter>
+              )}
+            </>
+          )}
+        </DialogContent>
       </Dialog>
     </>
   );

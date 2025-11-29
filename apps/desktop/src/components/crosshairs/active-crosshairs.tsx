@@ -2,10 +2,10 @@ import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { CrosshairIcon } from "@phosphor-icons/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "react-query";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCard } from "./crosshair-card";
@@ -27,7 +27,7 @@ export const ActiveCrosshairs = () => {
       invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
     onSuccess: () => {
       toast.success(t("crosshairs.appliedRestart"));
-      queryClient.invalidateQueries("autoexec-config");
+      queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
@@ -85,7 +85,7 @@ export const ActiveCrosshairs = () => {
           }}
           config={previewConfig}
           onApply={handleApply}
-          isApplying={applyCrosshairMutation.isLoading}
+          isApplying={applyCrosshairMutation.isPending}
         />
       )}
     </div>

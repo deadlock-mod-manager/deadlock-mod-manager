@@ -201,38 +201,36 @@ export const VpkEntriesDisplay = ({ entries }: VpkEntriesDisplayProps) => {
         </div>
       </div>
 
-      <div className='flex flex-wrap gap-1 items-center'>
-        <Button
-          variant='text'
-          size='sm'
-          onClick={() => setIsExpanded(!isExpanded)}
-          className='h-6 text-xs p-0'>
-          {isExpanded ? (
-            <>
-              <ChevronDown className='w-3 h-3 mr-1' />
-              {t("addons.hide")}
-            </>
-          ) : (
-            <>
-              <ChevronRight className='w-3 h-3 mr-1' />
-              {t("addons.show")}
-            </>
-          )}
-        </Button>
-        {topFileTypes.map(([type, count]) => (
-          <Badge key={type} variant='outline' className='text-xs h-4 px-1'>
-            {count} {type}
-            {count > 1 ? "s" : ""}
-          </Badge>
-        ))}
-        {Object.keys(fileTypeCounts).length > 3 && (
-          <Badge variant='outline' className='text-xs h-4 px-1'>
-            +{Object.keys(fileTypeCounts).length - 3} more
-          </Badge>
-        )}
-      </div>
-
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <div className='flex flex-wrap gap-1 items-center'>
+          <CollapsibleTrigger asChild>
+            <Button variant='text' size='sm' className='h-6 text-xs p-0'>
+              {isExpanded ? (
+                <>
+                  <ChevronDown className='w-3 h-3 mr-1' />
+                  {t("addons.hide")}
+                </>
+              ) : (
+                <>
+                  <ChevronRight className='w-3 h-3 mr-1' />
+                  {t("addons.show")}
+                </>
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          {topFileTypes.map(([type, count]) => (
+            <Badge key={type} variant='outline' className='text-xs h-4 px-1'>
+              {count} {type}
+              {count > 1 ? "s" : ""}
+            </Badge>
+          ))}
+          {Object.keys(fileTypeCounts).length > 3 && (
+            <Badge variant='outline' className='text-xs h-4 px-1'>
+              +{Object.keys(fileTypeCounts).length - 3} more
+            </Badge>
+          )}
+        </div>
+
         <CollapsibleContent>
           <div className='border rounded-md bg-muted/20'>
             <ScrollArea className='h-[200px]'>

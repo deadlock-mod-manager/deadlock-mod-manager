@@ -1,5 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useQuery } from "react-query";
 import { getProfileInstalledVpks } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 
@@ -16,15 +16,13 @@ export const useVpkScan = () => {
     isRefetching,
     error,
     refetch,
-  } = useQuery(
-    ["profile-vpks", activeProfile?.folderName],
-    () => getProfileInstalledVpks(activeProfile?.folderName ?? null),
-    {
-      enabled: !!activeProfile,
-      refetchOnWindowFocus: false,
-      refetchOnMount: true,
-    },
-  );
+  } = useQuery({
+    queryKey: ["profile-vpks", activeProfile?.folderName],
+    queryFn: () => getProfileInstalledVpks(activeProfile?.folderName ?? null),
+    enabled: !!activeProfile,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+  });
 
   const unmatchedVpkData = useMemo(() => {
     if (!vpkFiles || vpkFiles.length === 0) {

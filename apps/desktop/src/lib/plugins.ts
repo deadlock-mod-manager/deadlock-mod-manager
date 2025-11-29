@@ -15,7 +15,8 @@ const pluginAssetModules = import.meta.glob(
   ],
   {
     eager: true,
-    as: "url",
+    query: "?url",
+    import: "default",
   },
 ) as Record<string, string>;
 

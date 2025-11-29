@@ -10,7 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Rocket } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { APP_NAME } from "@/lib/constants";
 import { OnboardingStepAddons } from "./step-addons";
@@ -23,7 +23,39 @@ type OnboardingWizardProps = {
   onSkip: () => void;
 };
 
-const TOTAL_STEPS = 3;
+type StepComponentProps = {
+  onComplete: () => void;
+  onError?: () => void;
+};
+
+type StepConfig = {
+  step: number;
+  component: React.ComponentType<StepComponentProps>;
+  requiresCompletion: boolean;
+  requiresErrorHandler?: boolean;
+};
+
+const STEP_CONFIGS: StepConfig[] = [
+  {
+    step: 1,
+    component:
+      OnboardingStepGamePath as React.ComponentType<StepComponentProps>,
+    requiresCompletion: true,
+  },
+  {
+    step: 2,
+    component: OnboardingStepApi as React.ComponentType<StepComponentProps>,
+    requiresCompletion: true,
+    requiresErrorHandler: true,
+  },
+  {
+    step: 3,
+    component: OnboardingStepAddons as React.ComponentType<StepComponentProps>,
+    requiresCompletion: false,
+  },
+];
+
+const TOTAL_STEPS = STEP_CONFIGS.length;
 
 export const OnboardingWizard = ({
   open,
@@ -34,43 +66,78 @@ export const OnboardingWizard = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
-  const progress = (currentStep / TOTAL_STEPS) * 100;
-  const isCurrentStepComplete = completedSteps.has(currentStep);
+  const currentStepConfig = useMemo(
+    () => STEP_CONFIGS.find((config) => config.step === currentStep),
+    [currentStep],
+  );
 
-  const handleNext = () => {
-    if (currentStep < TOTAL_STEPS) {
-      setCurrentStep(currentStep + 1);
-    } else {
+  const progress = useMemo(
+    () => (currentStep / TOTAL_STEPS) * 100,
+    [currentStep],
+  );
+
+  const isCurrentStepComplete = useMemo(
+    () => completedSteps.has(currentStep),
+    [completedSteps, currentStep],
+  );
+
+  const canProceed = useMemo(() => {
+    if (!currentStepConfig) return false;
+    return !currentStepConfig.requiresCompletion || isCurrentStepComplete;
+  }, [currentStepConfig, isCurrentStepComplete]);
+
+  const isLastStep = useMemo(() => currentStep === TOTAL_STEPS, [currentStep]);
+
+  const handleNext = useCallback(() => {
+    if (isLastStep) {
       onComplete();
+    } else {
+      setCurrentStep((prev) => prev + 1);
     }
-  };
+  }, [isLastStep, onComplete]);
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  const handleBack = useCallback(() => {
+    setCurrentStep((prev) => Math.max(1, prev - 1));
+  }, []);
 
-  const handleStepComplete = (step: number) => {
+  const handleStepComplete = useCallback((step: number) => {
     setCompletedSteps((prev) => new Set(prev).add(step));
-  };
+  }, []);
 
-  const handleStepError = (step: number) => {
+  const handleStepError = useCallback((step: number) => {
     setCompletedSteps((prev) => {
       const next = new Set(prev);
       next.delete(step);
       return next;
     });
-  };
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (!isOpen) {
+        onSkip();
+      }
+    },
+    [onSkip],
+  );
+
+  const createStepHandlers = useCallback(
+    (step: number, requiresErrorHandler = false): StepComponentProps => {
+      const handlers: StepComponentProps = {
+        onComplete: () => handleStepComplete(step),
+      };
+      if (requiresErrorHandler) {
+        handlers.onError = () => handleStepError(step);
+      }
+      return handlers;
+    },
+    [handleStepComplete, handleStepError],
+  );
+
+  const CurrentStepComponent = currentStepConfig?.component;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          onSkip();
-        }
-      }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <div className='flex items-center gap-2'>
@@ -91,19 +158,13 @@ export const OnboardingWizard = ({
         <div className='py-4'>
           <Progress value={progress} className='h-2 mb-6' />
 
-          {currentStep === 1 && (
-            <OnboardingStepGamePath onComplete={() => handleStepComplete(1)} />
-          )}
-
-          {currentStep === 2 && (
-            <OnboardingStepApi
-              onComplete={() => handleStepComplete(2)}
-              onError={() => handleStepError(2)}
+          {CurrentStepComponent && currentStepConfig && (
+            <CurrentStepComponent
+              {...createStepHandlers(
+                currentStep,
+                currentStepConfig.requiresErrorHandler,
+              )}
             />
-          )}
-
-          {currentStep === 3 && (
-            <OnboardingStepAddons onComplete={() => handleStepComplete(3)} />
           )}
         </div>
 
@@ -122,10 +183,8 @@ export const OnboardingWizard = ({
             <Button
               variant='default'
               onClick={handleNext}
-              disabled={!isCurrentStepComplete && currentStep !== 3}>
-              {currentStep === TOTAL_STEPS
-                ? t("onboarding.finish")
-                : t("onboarding.next")}
+              disabled={!canProceed}>
+              {isLastStep ? t("onboarding.finish") : t("onboarding.next")}
             </Button>
           </div>
         </DialogFooter>

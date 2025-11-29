@@ -34,11 +34,11 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { useLocation } from "react-router";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
@@ -90,18 +90,16 @@ const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
 
 const CustomSettingsData = () => {
   const { t } = useTranslation();
-  const { data, error } = useQuery("custom-settings", getCustomSettings, {
-    suspense: true,
-    useErrorBoundary: false,
+  const { data, error } = useSuspenseQuery({
+    queryKey: ["custom-settings"],
+    queryFn: getCustomSettings,
   });
-  const { data: autoexecConfig } = useQuery(
-    "autoexec-config",
-    getAutoexecConfig,
-    {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  );
+  const { data: autoexecConfig } = useQuery({
+    queryKey: ["autoexec-config"],
+    queryFn: getAutoexecConfig,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const { settings, toggleSetting } = usePersistedStore();
 
   useEffect(() => {

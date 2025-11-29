@@ -36,11 +36,11 @@ import {
   UploadIcon,
 } from "@deadlock-mods/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "react-query";
 import { z } from "zod";
 import { publishCrosshair } from "@/lib/api";
 import logger from "@/lib/logger";
@@ -122,7 +122,7 @@ export const CrosshairForm = () => {
       invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
     onSuccess: () => {
       toast.success(t("crosshairs.appliedRestart"));
-      queryClient.invalidateQueries("autoexec-config");
+      queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
@@ -134,7 +134,7 @@ export const CrosshairForm = () => {
     mutationFn: (data: CreateCrosshairDto) => publishCrosshair(data),
     onSuccess: () => {
       toast.success(t("crosshairs.form.published"));
-      queryClient.invalidateQueries("crosshairs");
+      queryClient.invalidateQueries({ queryKey: ["crosshairs"] });
       form.reset({
         name: "",
         description: "",
@@ -441,8 +441,8 @@ export const CrosshairForm = () => {
             <Button
               type='submit'
               icon={<UploadIcon className='h-4 w-4' />}
-              disabled={!isAuthenticated || publishCrosshairMutation.isLoading}>
-              {publishCrosshairMutation.isLoading
+              disabled={!isAuthenticated || publishCrosshairMutation.isPending}>
+              {publishCrosshairMutation.isPending
                 ? t("crosshairs.form.publishing")
                 : t("crosshairs.form.publish")}
             </Button>

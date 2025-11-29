@@ -8,10 +8,10 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Suspense, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
@@ -26,9 +26,9 @@ import { usePersistedStore } from "@/lib/store";
 
 const GetModsData = () => {
   const { t } = useTranslation();
-  const { data, error } = useQuery("mods", getMods, {
-    suspense: true,
-    useErrorBoundary: false,
+  const { data, error } = useSuspenseQuery({
+    queryKey: ["mods"],
+    queryFn: getMods,
     retry: 3,
   });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();

@@ -1,6 +1,6 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClientProvider } from "react-query";
 import { BrowserRouter, Route, Routes } from "react-router";
 import App from "./app";
 import { queryClient } from "./lib/client";

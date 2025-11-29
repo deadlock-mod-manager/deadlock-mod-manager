@@ -17,11 +17,11 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FolderOpen, PencilIcon } from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQuery, useQueryClient } from "react-query";
 import { z } from "zod";
 import logger from "@/lib/logger";
 import Section from "./section";
@@ -51,17 +51,11 @@ type AutoexecFormValues = z.infer<typeof autoexecSchema>;
 export const AutoexecSettings = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: config, isLoading } = useQuery(
-    "autoexec-config",
-    getAutoexecConfig,
-    {
-      retry: 3,
-      onError: (error) => {
-        logger.error(error);
-        toast.error(t("settings.autoexecLoadError"));
-      },
-    },
-  );
+  const { data: config, isLoading } = useQuery({
+    queryKey: ["autoexec-config"],
+    queryFn: getAutoexecConfig,
+    retry: 3,
+  });
 
   const form = useForm<AutoexecFormValues>({
     resolver: zodResolver(autoexecSchema),
@@ -87,7 +81,7 @@ export const AutoexecSettings = () => {
     },
     onSuccess: async () => {
       toast.success(t("settings.autoexecSaved"));
-      await queryClient.invalidateQueries("autoexec-config");
+      await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
@@ -187,11 +181,9 @@ export const AutoexecSettings = () => {
           </CardHeader>
         </Card>
 
-        {/* @ts-expect-error - react-hook-form types */}
         <Form {...form}>
           <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
-              // @ts-expect-error - react-hook-form types
               control={form.control}
               name='content'
               render={({ field }) => (
@@ -222,7 +214,7 @@ export const AutoexecSettings = () => {
                 onClick={handleOpenFolder}
                 type='button'
                 variant='outline'
-                isLoading={openFolderMutation.isLoading}>
+                isLoading={openFolderMutation.isPending}>
                 <FolderOpen className='h-4 w-4' />
                 {t("settings.openInFolder")}
               </Button>
@@ -230,16 +222,16 @@ export const AutoexecSettings = () => {
                 onClick={handleOpenEditor}
                 type='button'
                 variant='outline'
-                isLoading={openEditorMutation.isLoading}>
+                isLoading={openEditorMutation.isPending}>
                 <PencilIcon className='h-4 w-4' />
                 {t("settings.openInEditor")}
               </Button>
               <Button
                 className='ml-auto'
-                isLoading={saveMutation.isLoading}
-                disabled={saveMutation.isLoading || !isDirty}
+                isLoading={saveMutation.isPending}
+                disabled={saveMutation.isPending || !isDirty}
                 type='submit'>
-                {saveMutation.isLoading
+                {saveMutation.isPending
                   ? "Saving..."
                   : t("settings.saveChanges")}
               </Button>

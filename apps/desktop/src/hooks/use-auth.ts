@@ -1,10 +1,10 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { fetch } from "@tauri-apps/plugin-http";
 import { open } from "@tauri-apps/plugin-shell";
 import { useEffect } from "react";
-import { useQueryClient } from "react-query";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { Session, User } from "@/lib/store/slices/auth";
@@ -53,7 +53,7 @@ export const useAuth = () => {
 
         logger.info("Session validated for user:", data.user.email);
         setAuth(data.user, { ...data.session, token });
-        queryClient.invalidateQueries(["feature-flags"]);
+        queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
       } catch (error) {
         logger.error("Failed to validate session", error);
         await invoke("clear_auth_token");
@@ -132,7 +132,7 @@ export const useAuth = () => {
     } finally {
       await invoke("clear_auth_token");
       clearAuth();
-      queryClient.invalidateQueries(["feature-flags"]);
+      queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
       toast.success("Logged out successfully");
     }
   };

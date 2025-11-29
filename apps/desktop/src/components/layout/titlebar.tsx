@@ -16,7 +16,6 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { WindowTitlebar } from "tauri-controls";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { GITHUB_REPO } from "@/lib/constants";
@@ -24,6 +23,7 @@ import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { AboutDialog } from "./about-dialog";
 import Logo from "./logo";
+import { WindowTitlebar } from "./window-controls/window-titlebar";
 
 const logger = createLogger("titlebar");
 
@@ -309,7 +309,7 @@ export const Titlebar = () => {
 
   return (
     <>
-      <WindowTitlebar className='z-20 bg-background' data-titlebar='true'>
+      <WindowTitlebar className='z-20 bg-background'>
         <div className='inline-flex h-fit w-fit items-center gap-2 px-2 py-1'>
           <Logo className='size-5' />
           <Menubar className='border-none bg-transparent shadow-none h-auto p-0'>

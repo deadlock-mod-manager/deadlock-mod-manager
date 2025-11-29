@@ -1,11 +1,12 @@
 import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { load } from "@tauri-apps/plugin-store";
 import usePromise from "react-promise-suspense";
-import { QueryClientProvider } from "react-query";
 import { Outlet } from "react-router";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
+import { TauriAppWindowProvider } from "./components/layout/window-controls/window-context";
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
@@ -64,23 +65,25 @@ const App = () => {
             <ProgressProvider>
               <TooltipProvider>
                 <AlertDialogProvider>
-                  <Layout>
-                    <Outlet />
-                  </Layout>
-                  <GlobalPluginRenderer />
-                  <UpdateDialog
-                    downloadProgress={downloadProgress}
-                    isDownloading={isDownloading}
-                    onOpenChange={handleDismiss}
-                    onUpdate={handleUpdate}
-                    open={showUpdateDialog}
-                    update={update}
-                  />
-                  <OnboardingWizard
-                    open={showOnboarding}
-                    onComplete={completeOnboarding}
-                    onSkip={skipOnboarding}
-                  />
+                  <TauriAppWindowProvider>
+                    <Layout>
+                      <Outlet />
+                    </Layout>
+                    <GlobalPluginRenderer />
+                    <UpdateDialog
+                      downloadProgress={downloadProgress}
+                      isDownloading={isDownloading}
+                      onOpenChange={handleDismiss}
+                      onUpdate={handleUpdate}
+                      open={showUpdateDialog}
+                      update={update}
+                    />
+                    <OnboardingWizard
+                      open={showOnboarding}
+                      onComplete={completeOnboarding}
+                      onSkip={skipOnboarding}
+                    />
+                  </TauriAppWindowProvider>
                 </AlertDialogProvider>
               </TooltipProvider>
             </ProgressProvider>

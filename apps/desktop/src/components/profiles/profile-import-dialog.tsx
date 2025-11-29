@@ -10,9 +10,9 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ImportIcon } from "@deadlock-mods/ui/icons";
+import { useMutation, useQueries } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueries } from "react-query";
 import { useProfileImport } from "@/hooks/use-profile-import";
 import { getMod, getProfile } from "@/lib/api";
 import {
@@ -30,30 +30,29 @@ export const ProfileImportDialog = () => {
   const { t } = useTranslation();
   const { createProfileFromImport, importProgress } = useProfileImport();
 
-  const { isLoading, mutate } = useMutation(
-    (profileId: string) => getProfile(profileId.trim()),
-    {
-      onSuccess: (data) => {
-        setImportedProfile(data);
-        toast.success(t("profiles.importSuccess"));
-      },
-      onError: () => {
-        toast.error(t("profiles.importError"));
-        setImportedProfile(null);
-      },
+  const { isPending, mutate } = useMutation({
+    mutationFn: (profileId: string) => getProfile(profileId.trim()),
+    onSuccess: (data) => {
+      setImportedProfile(data);
+      toast.success(t("profiles.importSuccess"));
     },
-  );
+    onError: () => {
+      toast.error(t("profiles.importError"));
+      setImportedProfile(null);
+    },
+  });
 
   // Fetch mod details for each mod in the imported profile
-  const modQueries = useQueries(
-    importedProfile?.payload.mods.map((mod) => ({
-      queryKey: ["mod", mod.remoteId],
-      queryFn: () => getMod(mod.remoteId),
-      enabled: !!importedProfile,
-    })) || [],
-  );
+  const modQueries = useQueries({
+    queries:
+      importedProfile?.payload.mods.map((mod) => ({
+        queryKey: ["mod", mod.remoteId],
+        queryFn: () => getMod(mod.remoteId),
+        enabled: !!importedProfile,
+      })) || [],
+  });
 
-  const modsLoading = modQueries.some((query) => query.isLoading);
+  const modsLoading = modQueries.some((query) => query.isPending);
   const modsData = modQueries
     .map((query) => query.data)
     .filter(Boolean) as ModDto[];
@@ -121,7 +120,7 @@ export const ProfileImportDialog = () => {
           <ProfileImportForm
             onSubmit={onSubmit}
             onCancel={handleCancel}
-            isLoading={isLoading}
+            isLoading={isPending}
           />
         )}
       </DialogContent>

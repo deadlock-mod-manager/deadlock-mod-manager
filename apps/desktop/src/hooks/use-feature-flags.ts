@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteFeatureFlagUserOverride,
   getFeatureFlags,
@@ -11,7 +11,7 @@ export const useFeatureFlags = () => {
     queryKey: ["feature-flags"],
     queryFn: getFeatureFlags,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 3,
     onError: (error) => {
       logger.error("Failed to fetch feature flags from API", error);
@@ -42,7 +42,7 @@ export const useFeatureFlagMutation = () => {
     mutationFn: ({ flagId, value }: { flagId: string; value: unknown }) =>
       setFeatureFlagUserOverride(flagId, value),
     onSuccess: () => {
-      queryClient.invalidateQueries(["feature-flags"]);
+      queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
     },
     onError: (error) => {
       logger.error("Failed to set feature flag override", error);
@@ -52,7 +52,7 @@ export const useFeatureFlagMutation = () => {
   const deleteOverride = useMutation({
     mutationFn: (flagId: string) => deleteFeatureFlagUserOverride(flagId),
     onSuccess: () => {
-      queryClient.invalidateQueries(["feature-flags"]);
+      queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
     },
     onError: (error) => {
       logger.error("Failed to delete feature flag override", error);
@@ -70,7 +70,7 @@ export const useFeatureFlagMutation = () => {
     setOverride: setOverride.mutateAsync,
     deleteOverride: deleteOverride.mutateAsync,
     toggleFlag,
-    isSettingOverride: setOverride.isLoading,
-    isDeletingOverride: deleteOverride.isLoading,
+    isSettingOverride: setOverride.isPending,
+    isDeletingOverride: deleteOverride.isPending,
   };
 };

@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getMod } from "@/lib/api";
 
 interface UseModOptions {
@@ -21,9 +21,8 @@ export const useMod = (
       return getMod(modId);
     },
     enabled: !!modId && !modId?.includes("local") && enabled,
-    suspense: false,
     retry,
-    useErrorBoundary: false,
+    throwOnError: false,
   });
 
   return {

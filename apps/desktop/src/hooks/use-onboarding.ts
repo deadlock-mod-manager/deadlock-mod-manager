@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { usePersistedStore } from "@/lib/store";
 
 export const useOnboarding = () => {
@@ -10,13 +11,13 @@ export const useOnboarding = () => {
 
   const showOnboarding = !hasCompletedOnboarding;
 
-  const completeOnboarding = () => {
+  const completeOnboarding = useCallback(() => {
     setHasCompletedOnboarding(true);
-  };
+  }, [setHasCompletedOnboarding]);
 
-  const skipOnboarding = () => {
+  const skipOnboarding = useCallback(() => {
     setHasCompletedOnboarding(true);
-  };
+  }, [setHasCompletedOnboarding]);
 
   return {
     showOnboarding,

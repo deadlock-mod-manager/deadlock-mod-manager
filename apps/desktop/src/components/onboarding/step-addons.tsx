@@ -5,10 +5,10 @@ import {
   MagnifyingGlass,
   Package,
 } from "@phosphor-icons/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQuery } from "react-query";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { analyzeLocalAddons } from "@/lib/api";
 import logger from "@/lib/logger";
@@ -35,16 +35,20 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
 
   const {
     data: addonsExist,
-    isLoading: isChecking,
+    isPending: isChecking,
     error: checkError,
-  } = useQuery(["check-addons-exist", profileFolder], async () => {
-    const exists = await invoke<boolean>("check_addons_exist", {
-      profileFolder,
-    });
-    return exists;
+  } = useQuery({
+    queryKey: ["check-addons-exist", profileFolder],
+    queryFn: async () => {
+      const exists = await invoke<boolean>("check_addons_exist", {
+        profileFolder,
+      });
+      return exists;
+    },
   });
 
-  const analyzeMutation = useMutation(analyzeLocalAddons, {
+  const analyzeMutation = useMutation({
+    mutationFn: analyzeLocalAddons,
     onSuccess: (result) => {
       setAnalysisResult(result);
       setShowAnalysisDialog(true);
@@ -108,7 +112,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
             </div>
           )}
 
-          {(checkState === "found" || analyzeMutation.isLoading) && (
+          {(checkState === "found" || analyzeMutation.isPending) && (
             <div className='space-y-3'>
               <div className='flex items-start gap-3 p-4 border rounded-lg bg-blue-500/10 border-blue-500/20'>
                 <Package className='h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5' />
@@ -125,10 +129,10 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
                 variant='default'
                 size='sm'
                 onClick={handleAnalyze}
-                disabled={analyzeMutation.isLoading}
+                disabled={analyzeMutation.isPending}
                 className='w-full'>
                 <FolderOpen className='h-4 w-4 mr-2' />
-                {analyzeMutation.isLoading
+                {analyzeMutation.isPending
                   ? t("onboarding.addons.analyzing")
                   : t("onboarding.addons.analyze")}
               </Button>
@@ -136,7 +140,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
                 variant='outline'
                 size='sm'
                 onClick={onComplete}
-                disabled={analyzeMutation.isLoading}
+                disabled={analyzeMutation.isPending}
                 className='w-full'>
                 {t("onboarding.addons.skipAnalysis")}
               </Button>

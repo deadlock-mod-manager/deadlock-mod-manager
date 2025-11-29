@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getModDownloads } from "@/lib/api";
 
 interface UseModDownloadsOptions {
@@ -39,10 +39,10 @@ export const useModDownloads = ({
     // Cache for 5 minutes to reduce unnecessary requests
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 10 minutes after component unmounts
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     // Retry failed requests up to 2 times
     retry: 2,
-    useErrorBoundary: false,
+    throwOnError: false,
   });
 
   return {

@@ -1,5 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
 import { app } from "@tauri-apps/api";
-import { useQuery } from "react-query";
 import logger from "@/lib/logger";
 
 export const fetchAboutData = async () => {
@@ -17,7 +17,10 @@ export const fetchAboutData = async () => {
 };
 
 const useAbout = () => {
-  const result = useQuery("about", fetchAboutData);
+  const result = useQuery({
+    queryKey: ["about"],
+    queryFn: fetchAboutData,
+  });
   return {
     ...result,
     version: result.data?.version,

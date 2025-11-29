@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { usePersistedStore } from "@/lib/store";
 
 export const useSyncProfiles = (enabled = true) => {
@@ -12,7 +12,7 @@ export const useSyncProfiles = (enabled = true) => {
     },
     enabled,
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });

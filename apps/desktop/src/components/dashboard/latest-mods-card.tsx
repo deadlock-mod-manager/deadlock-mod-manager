@@ -1,15 +1,18 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { Clock } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { getMods } from "@/lib/api";
 import { DashboardCard } from "./dashboard-card";
 import { LatestModItem } from "./latest-mod-item";
 
 export const LatestModsCard = () => {
   const { t } = useTranslation();
-  const { data: mods, isLoading } = useQuery("mods", getMods);
+  const { data: mods, isPending } = useQuery({
+    queryKey: ["mods"],
+    queryFn: getMods,
+  });
 
   const latestMods = mods
     ?.sort(
@@ -24,7 +27,7 @@ export const LatestModsCard = () => {
       icon={<Clock className='h-5 w-5' weight='duotone' />}
       title={t("dashboard.latestMods")}>
       <div className='space-y-3'>
-        {isLoading ? (
+        {isPending ? (
           Array.from({ length: 5 }).map(() => (
             <div key={crypto.randomUUID()} className='flex items-start gap-3'>
               <Skeleton className='h-12 w-12 rounded-md' />

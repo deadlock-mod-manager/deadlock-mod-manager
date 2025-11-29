@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
@@ -10,6 +10,7 @@ export const useIngestToolInit = () => {
   const ingestToolEnabled = usePersistedStore(
     (state) => state.ingestToolEnabled,
   );
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
     const initializeIngestTool = async () => {
@@ -18,13 +19,17 @@ export const useIngestToolInit = () => {
         return;
       }
 
+      if (hasInitialized.current) {
+        return;
+      }
+      hasInitialized.current = true;
+
       try {
         logger.info("Initializing ingest tool on app startup");
         await invoke("initialize_ingest_tool");
         logger.info("Ingest tool initialized successfully");
       } catch (error) {
         logger.error("Failed to initialize ingest tool:", error);
-        // Don't throw - we don't want to break the app if ingest tool fails
       }
     };
 

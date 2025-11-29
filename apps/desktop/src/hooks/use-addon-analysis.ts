@@ -1,8 +1,8 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useMutation } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "react-query";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { analyzeLocalAddons, getMod } from "@/lib/api";
 import logger from "@/lib/logger";
@@ -65,7 +65,8 @@ export const useAddonAnalysis = () => {
     };
   }, []);
 
-  const { mutate: analyzeAddons, isLoading } = useMutation(analyzeLocalAddons, {
+  const { mutate: analyzeAddons, isPending } = useMutation({
+    mutationFn: analyzeLocalAddons,
     onSuccess: async (data) => {
       setAnalysisResult(data);
 
@@ -208,7 +209,7 @@ export const useAddonAnalysis = () => {
     analysisResult,
     dialogOpen,
     setDialogOpen: safeSetDialogOpen,
-    isLoading,
+    isPending,
     startAnalysis,
     dismissProgressToast,
   };

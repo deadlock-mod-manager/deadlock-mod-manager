@@ -4,8 +4,9 @@ import {
   PlugsConnected,
   WarningCircle,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { getApiHealth } from "@/lib/api";
 import logger from "@/lib/logger";
 
@@ -19,24 +20,32 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
 
   const {
     data: health,
-    isLoading,
+    isPending,
     error,
     refetch,
-  } = useQuery("api-health", getApiHealth, {
+  } = useQuery({
+    queryKey: ["api-health"],
+    queryFn: getApiHealth,
     retry: 3,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
-    onSuccess: (data) => {
-      logger.info("API connection successful", { version: data.version });
-      onComplete();
-    },
-    onError: (err) => {
-      logger.error("Failed to connect to API", { error: err });
-      onError();
-    },
   });
 
-  const checkState = isLoading ? "checking" : error ? "error" : "success";
+  useEffect(() => {
+    if (health) {
+      logger.info("API connection successful", { version: health.version });
+      onComplete();
+    }
+  }, [health, onComplete]);
+
+  useEffect(() => {
+    if (error) {
+      logger.error("Failed to connect to API", { error });
+      onError();
+    }
+  }, [error, onError]);
+
+  const checkState = isPending ? "checking" : error ? "error" : "success";
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
   return (

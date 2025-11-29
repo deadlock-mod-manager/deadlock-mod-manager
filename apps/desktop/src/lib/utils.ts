@@ -1,11 +1,21 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 
 import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import { SortType } from "./constants";
 
 export { cn } from "@deadlock-mods/ui/lib/utils";
+
+export async function getOsType(): Promise<string> {
+  try {
+    const osPlatform = await platform();
+    return osPlatform.toLowerCase();
+  } catch {
+    return "unknown";
+  }
+}
 
 export const formatSize = (size: number) => {
   const units = ["B", "KB", "MB", "GB"];

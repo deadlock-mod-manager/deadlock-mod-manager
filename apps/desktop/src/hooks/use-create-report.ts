@@ -1,6 +1,6 @@
 import type { CreateReportInput } from "@deadlock-mods/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useMutation, useQueryClient } from "react-query";
 
 interface CreateReportResponse {
   id: string;

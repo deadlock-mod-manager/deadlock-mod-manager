@@ -26,10 +26,10 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import ModMetadataForm, {
   type ModMetadata,
 } from "@/components/mod-creation/mod-metadata-form";
@@ -53,8 +53,9 @@ const SudoPage = () => {
     data: mods,
     isLoading,
     error,
-  } = useQuery("mods", getMods, {
-    suspense: false,
+  } = useQuery({
+    queryKey: ["mods"],
+    queryFn: getMods,
     retry: 2,
   });
 
@@ -90,11 +91,11 @@ const SudoPage = () => {
     [rightList, selectedLocalId],
   );
 
-  const { data: downloadsData } = useQuery(
-    ["sudo-downloads", selectedStoreId],
-    () => getModDownloads(selectedStoreId as string),
-    { enabled: !!selectedStoreId },
-  );
+  const { data: downloadsData } = useQuery({
+    queryKey: ["sudo-downloads", selectedStoreId],
+    queryFn: () => getModDownloads(selectedStoreId as string),
+    enabled: !!selectedStoreId,
+  });
   const availableFiles = (downloadsData?.downloads ??
     []) as unknown as ModDownloadItem[];
 

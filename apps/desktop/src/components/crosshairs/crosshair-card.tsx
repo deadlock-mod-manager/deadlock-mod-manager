@@ -5,10 +5,10 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { EyeIcon, PencilIcon } from "@phosphor-icons/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useHover } from "@uidotdev/usehooks";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "react-query";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
@@ -36,7 +36,7 @@ export const CrosshairCard = ({
       invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
     onSuccess: () => {
       toast.success(t("crosshairs.appliedRestart"));
-      queryClient.invalidateQueries("autoexec-config");
+      queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
@@ -86,16 +86,16 @@ export const CrosshairCard = ({
                   {t("crosshairs.preview")}
                 </Button>
                 <Button
-                  disabled={applyCrosshairMutation.isLoading}
+                  disabled={applyCrosshairMutation.isPending}
                   variant='text'
-                  isLoading={applyCrosshairMutation.isLoading}
+                  isLoading={applyCrosshairMutation.isPending}
                   icon={<PencilIcon className='h-4 w-4' />}
                   className='text-white hover:text-primary'
                   onClick={(e) => {
                     e.stopPropagation();
                     handleApply();
                   }}>
-                  {applyCrosshairMutation.isLoading
+                  {applyCrosshairMutation.isPending
                     ? t("common.loading")
                     : t("crosshairs.form.apply")}
                 </Button>

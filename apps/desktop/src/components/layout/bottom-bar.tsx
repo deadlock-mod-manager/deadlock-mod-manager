@@ -12,8 +12,8 @@ import {
   WifiSlash,
   WifiX,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "react-query";
 import { useApiStatus } from "@/hooks/use-api-status";
 import useUpdateManager from "@/hooks/use-update-manager";
 import { isGameRunning } from "@/lib/api";

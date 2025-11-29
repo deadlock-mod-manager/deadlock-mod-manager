@@ -10,9 +10,9 @@ import {
 import { Input } from "@deadlock-mods/ui/components/input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { CopyIcon, ShareNetworkIcon } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "react-query";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import useAbout from "@/hooks/use-about";
 import { useHardwareId } from "@/hooks/use-hardware-id";
@@ -86,8 +86,8 @@ export const ProfileShareDialog = () => {
       return baseModData;
     });
 
-  const { mutate, isLoading } = useMutation(
-    async (params: {
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (params: {
       hardwareId: string;
       name: string;
       version: string;
@@ -103,24 +103,22 @@ export const ProfileShareDialog = () => {
         params.profile,
       );
     },
-    {
-      onMutate() {
-        setProfileId(null);
-      },
-      onError(error) {
-        setProfileId(null);
-        logger.error(error);
-        toast.error(t("profiles.shareError"));
-      },
-      onSuccess(data) {
-        setProfileId(data?.id ?? null);
-
-        if (data?.id) {
-          analytics.trackProfileShared(data.id, enabledMods.length, "link");
-        }
-      },
+    onMutate() {
+      setProfileId(null);
     },
-  );
+    onError(error) {
+      setProfileId(null);
+      logger.error(error);
+      toast.error(t("profiles.shareError"));
+    },
+    onSuccess(data) {
+      setProfileId(data?.id ?? null);
+
+      if (data?.id) {
+        analytics.trackProfileShared(data.id, enabledMods.length, "link");
+      }
+    },
+  });
 
   const onSubmit = () => {
     logger.info("Creating profile with enhanced mod data", {
@@ -184,7 +182,7 @@ export const ProfileShareDialog = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button
-          isLoading={isLoading}
+          isLoading={isPending}
           icon={<ShareNetworkIcon />}
           variant='text'
           disabled={!hardwareId || !version}

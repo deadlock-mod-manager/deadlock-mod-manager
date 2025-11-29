@@ -8,11 +8,15 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { invoke } from "@tauri-apps/api/core";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQuery, useQueryClient } from "react-query";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useCrosshairSearch } from "@/hooks/use-crosshair-search";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
@@ -37,9 +41,9 @@ const CrosshairLibraryData = () => {
     useState<PublishedCrosshairDto | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, error } = useQuery("crosshairs", getCrosshairs, {
-    suspense: true,
-    useErrorBoundary: false,
+  const { data, error } = useSuspenseQuery({
+    queryKey: ["crosshairs"],
+    queryFn: getCrosshairs,
     retry: 3,
   });
 
@@ -48,7 +52,7 @@ const CrosshairLibraryData = () => {
       invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
     onSuccess: () => {
       toast.success(t("crosshairs.appliedRestart"));
-      queryClient.invalidateQueries("autoexec-config");
+      queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
@@ -215,7 +219,7 @@ const CrosshairLibraryData = () => {
           }}
           crosshair={previewCrosshair}
           onApply={handleApply}
-          isApplying={applyCrosshairMutation.isLoading}
+          isApplying={applyCrosshairMutation.isPending}
         />
       )}
     </div>
