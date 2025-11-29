@@ -5,7 +5,6 @@ import { logger as loggerMiddleware } from "hono/logger";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { ProcessManager } from "@/lib/process-manager";
-import { StatusMonitorService } from "@/lib/status-monitor";
 import healthRouter from "@/routers/health";
 import { BotStartupService } from "@/services/bot-startup";
 import { HealthService } from "@/services/health";
@@ -38,13 +37,11 @@ const main = async () => {
   const startupService = new BotStartupService();
   await startupService.initialize(client);
 
-  const statusMonitor = new StatusMonitorService();
   const redisSubscriber = RedisSubscriberService.getInstance();
   const healthService = HealthService.getInstance();
 
   const processManager = new ProcessManager();
   processManager.setClient(client);
-  processManager.registerShutdownHandler(statusMonitor);
   processManager.registerShutdownHandler(redisSubscriber);
   processManager.setupSignalHandlers();
 
@@ -52,7 +49,7 @@ const main = async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
     try {
-      await Promise.all([statusMonitor.start(client), redisSubscriber.start()]);
+      await redisSubscriber.start();
       logger.info("Bot is fully initialized and ready");
       healthService.markAsReady();
     } catch (error) {
