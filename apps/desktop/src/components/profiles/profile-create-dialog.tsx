@@ -52,7 +52,7 @@ export const ProfileCreateDialog = ({
     setIsCreating(true);
 
     try {
-      const profileId = createProfile(
+      const profileId = await createProfile(
         name.trim(),
         description.trim() || undefined,
       );

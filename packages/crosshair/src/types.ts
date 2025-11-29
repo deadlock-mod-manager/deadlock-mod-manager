@@ -1,8 +1,9 @@
 import type {
-  crosshairConfigSchema,
+  CrosshairConfig,
   DeadlockHeroes,
 } from "@deadlock-mods/shared";
-import type { z } from "zod";
+
+export type { CrosshairConfig };
 
 export type HerosWithCrosshairOverrides =
   | DeadlockHeroes.Abrams
@@ -10,8 +11,6 @@ export type HerosWithCrosshairOverrides =
   | DeadlockHeroes.Shiv
   | DeadlockHeroes.MoKrill
   | "Default";
-
-export type CrosshairConfig = z.infer<typeof crosshairConfigSchema>;
 
 export interface Crosshair {
   config: CrosshairConfig;

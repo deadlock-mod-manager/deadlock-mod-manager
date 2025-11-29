@@ -62,7 +62,7 @@ export const ReportDialog = ({
 }: ReportDialogProps) => {
   const { t } = useTranslation();
   const { hardwareId } = useHardwareId();
-  const { mutate: createReport, isLoading: isPending } = useCreateReport();
+  const { mutate: createReport, isPending } = useCreateReport();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<ReportFormData>({

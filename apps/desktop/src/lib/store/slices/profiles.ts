@@ -520,7 +520,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       const profilesToRemove: ProfileId[] = [];
       let shouldSwitchToDefault = false;
 
-      for (const [profileId, profile] of Object.entries(profiles)) {
+      for (const [_, profile] of Object.entries(profiles)) {
         if (profile.isDefault) {
           continue;
         }

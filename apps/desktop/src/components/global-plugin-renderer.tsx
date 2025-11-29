@@ -18,7 +18,7 @@ const GlobalPluginRenderer = () => {
   // Create a map of feature flags for quick lookup
   const featureFlagMap = useMemo(() => {
     const flagMap = new Map<string, boolean>();
-    if (featureFlags) {
+    if (featureFlags && Array.isArray(featureFlags)) {
       for (const flag of featureFlags) {
         flagMap.set(flag.name, flag.value as boolean);
       }

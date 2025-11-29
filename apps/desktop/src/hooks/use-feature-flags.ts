@@ -13,9 +13,6 @@ export const useFeatureFlags = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 3,
-    onError: (error) => {
-      logger.error("Failed to fetch feature flags from API", error);
-    },
   });
 };
 
@@ -29,9 +26,9 @@ export const useFeatureFlag = (
   const isEnabled = flag?.enabled ?? defaultValue;
 
   return {
+    ...rest,
     isEnabled,
     flag,
-    ...rest,
   };
 };
 

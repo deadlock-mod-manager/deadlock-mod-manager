@@ -2,7 +2,7 @@ import { generateConfigString } from "@deadlock-mods/crosshair/config-generator"
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import { encodeConfigToURL } from "@deadlock-mods/crosshair/url-encoder";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 
 interface ExportButtonProps {

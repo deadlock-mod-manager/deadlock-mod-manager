@@ -27,7 +27,7 @@ export const AnalyzeAddonsButton = ({
     analysisResult,
     dialogOpen,
     setDialogOpen,
-    isLoading,
+    isPending,
     startAnalysis,
     dismissProgressToast,
   } = useAddonAnalysis();
@@ -40,12 +40,12 @@ export const AnalyzeAddonsButton = ({
             <Button
               variant='outline'
               onClick={startAnalysis}
-              disabled={isLoading}
-              isLoading={isLoading}
+              disabled={isPending}
+              isLoading={isPending}
               icon={<ScanSearch className='w-4 h-4' />}
               size={size}
               className={className}>
-              {isLoading ? t("addons.analyzing") : t("addons.analyzeLocal")}
+              {isPending ? t("addons.analyzing") : t("addons.analyzeLocal")}
             </Button>
           </TooltipTrigger>
           <TooltipContent>

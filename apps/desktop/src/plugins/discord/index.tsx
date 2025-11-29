@@ -13,6 +13,7 @@ export const manifest = {
   descriptionKey: "plugins.discord.description",
   version: "0.0.1",
   author: "Skeptic",
+  icon: "public/icon.svg",
 } as const;
 
 // Official Discord Application ID for Deadlock Mod Manager

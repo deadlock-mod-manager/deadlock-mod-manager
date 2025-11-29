@@ -28,9 +28,9 @@ export const PluginList = () => {
 
   // Create a map of feature flags for quick lookup
   const featureFlagMap = new Map<string, boolean>();
-  if (featureFlags) {
+  if (featureFlags && Array.isArray(featureFlags)) {
     for (const flag of featureFlags) {
-      featureFlagMap.set(flag.name, flag.enabled);
+      featureFlagMap.set(flag.name, flag.enabled as boolean);
     }
   }
 

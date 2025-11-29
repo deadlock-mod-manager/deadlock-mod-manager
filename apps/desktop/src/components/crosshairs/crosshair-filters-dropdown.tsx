@@ -1,5 +1,4 @@
 import type { PublishedCrosshairDto } from "@deadlock-mods/shared";
-import { DeadlockHeroes } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Command,
@@ -25,8 +24,6 @@ import { Check, Filter } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import { cn } from "@/lib/utils";
-
-const ALL_HEROES = Object.values(DeadlockHeroes);
 
 type CrosshairFiltersDropdownProps = {
   crosshairs: PublishedCrosshairDto[];

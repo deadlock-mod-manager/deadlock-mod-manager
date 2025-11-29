@@ -1,5 +1,5 @@
-import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import type { Crosshair } from "@deadlock-mods/database";
+import type { CrosshairConfig } from "../types/crosshair";
 
 export interface PublishedCrosshairDto {
   id: string;
