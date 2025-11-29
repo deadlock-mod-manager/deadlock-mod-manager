@@ -131,12 +131,12 @@ pub extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_c
 
     match VpkParser::parse(buffer_vec, options) {
         Ok(parsed) => {
-            let info = serde_json::json!({
-                "version": parsed.version,
-                "file_count": parsed.entries.len(),
-                "manifest_sha256": parsed.manifest_sha256,
-                "fast_hash": parsed.fingerprint.fast_hash
-            });
+            let info = VpkInfo {
+                version: parsed.version,
+                file_count: parsed.entries.len(),
+                manifest_sha256: parsed.manifest_sha256,
+                fast_hash: parsed.fingerprint.fast_hash,
+            };
             match serde_json::to_string(&info) {
                 Ok(json) => to_c_string(json),
                 Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),

@@ -21,42 +21,6 @@ pub const MIN_CHUNK_SIZE: usize = 256 * 1024;
 /// Maximum chunk size (16MB)
 pub const MAX_CHUNK_SIZE: usize = 16 * 1024 * 1024;
 
-/// Header offsets
-pub mod offsets {
-    pub const MAGIC: usize = 0x00;
-    pub const VERSION: usize = 0x08;
-    pub const FLAGS: usize = 0x0A;
-    pub const METADATA_OFFSET: usize = 0x0C;
-    pub const METADATA_COMPRESSED_SIZE: usize = 0x10;
-    pub const METADATA_UNCOMPRESSED_SIZE: usize = 0x14;
-    pub const FILE_INDEX_OFFSET: usize = 0x18;
-    pub const FILE_INDEX_COMPRESSED_SIZE: usize = 0x1C;
-    pub const FILE_INDEX_UNCOMPRESSED_SIZE: usize = 0x20;
-    pub const CHUNK_TABLE_OFFSET: usize = 0x24;
-    pub const CHUNK_TABLE_SIZE: usize = 0x28;
-    pub const DATA_SECTION_OFFSET: usize = 0x2C;
-    pub const TOTAL_UNCOMPRESSED_SIZE: usize = 0x30;
-    pub const PACKAGE_CRC64: usize = 0x38;
-}
-
-/// Bundle header offsets
-pub mod bundle_offsets {
-    pub const MAGIC: usize = 0x00;
-    pub const VERSION: usize = 0x08;
-    pub const FLAGS: usize = 0x0A;
-    pub const BUNDLE_METADATA_OFFSET: usize = 0x0C;
-    pub const BUNDLE_METADATA_COMPRESSED_SIZE: usize = 0x10;
-    pub const BUNDLE_METADATA_UNCOMPRESSED_SIZE: usize = 0x14;
-    pub const PACKAGE_INDEX_OFFSET: usize = 0x18;
-    pub const PACKAGE_INDEX_SIZE: usize = 0x1C;
-    pub const RESOURCES_OFFSET: usize = 0x20;
-    pub const RESOURCES_COMPRESSED_SIZE: usize = 0x24;
-    pub const RESOURCES_UNCOMPRESSED_SIZE: usize = 0x28;
-    pub const PACKAGES_SECTION_OFFSET: usize = 0x2C;
-    pub const TOTAL_BUNDLE_SIZE: usize = 0x30;
-    pub const BUNDLE_CRC64: usize = 0x38;
-}
-
 /// Package header structure
 #[derive(Debug, Clone)]
 pub struct PackageHeader {

@@ -7,7 +7,6 @@
     "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
     "dev": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
     "version:generate": "genversion -f -p ./package.json --es6 src/version.ts",
-    "test": "dotenv -e ../../.env -- bun run src/scripts/test.ts",
     "health-check": "bun run src/health-check.ts",
     "run-manual": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/scripts/run-manual.ts"
   },

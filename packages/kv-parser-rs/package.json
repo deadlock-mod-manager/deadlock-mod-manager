@@ -1,31 +1,35 @@
 {
-  "name": "@deadlock-mods/vpk-parser",
-  "version": "1.0.0",
-  "description": "High-performance VPK (Valve Package Format) parser for Deadlock mod files using native Rust implementation via Bun FFI",
+  "name": "@deadlock-mods/kv-parser-rs",
+  "version": "0.1.0",
+  "description": "High-performance KeyValues (VDF) parser with AST support using native Rust implementation via Bun FFI",
   "exports": {
     ".": "./src/index.ts"
   },
   "files": [
     "src/",
-    "target/release/libvpk_parser.*",
-    "target/release/vpk_parser.*",
+    "target/release/libkv_parser.*",
+    "target/release/kv_parser.*",
     "README.md"
   ],
   "scripts": {
     "build": "pnpm run generate-types && cargo build --release",
     "build:debug": "pnpm run generate-types && cargo build",
     "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
-    "test": "bun test",
+    "test": "pnpm run \"/^test:.*/\"",
+    "test:ts": "bun test",
+    "test:rust": "cargo nextest run",
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "pretest": "pnpm run build"
   },
   "keywords": [
-    "vpk",
+    "keyvalues",
+    "vdf",
     "valve",
     "parser",
     "deadlock",
-    "mod",
+    "ast",
     "ffi",
     "rust",
     "native",
@@ -36,7 +40,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
-    "directory": "packages/vpk-parser"
+    "directory": "packages/kv-parser-rs"
   },
   "engines": {
     "bun": ">=1.3.0"
