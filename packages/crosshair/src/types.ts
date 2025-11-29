@@ -1,7 +1,4 @@
-import type {
-  CrosshairConfig,
-  DeadlockHeroes,
-} from "@deadlock-mods/shared";
+import type { CrosshairConfig, DeadlockHeroes } from "@deadlock-mods/shared";
 
 export type { CrosshairConfig };
 
