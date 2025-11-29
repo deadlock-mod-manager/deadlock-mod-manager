@@ -15,7 +15,7 @@
     "build": "pnpm run generate-types && cargo build --release",
     "build:debug": "pnpm run generate-types && cargo build",
     "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
-    "test": "vitest",
+    "test": "echo 'No tests yet'",
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",
     "prepublishOnly": "pnpm run build"
