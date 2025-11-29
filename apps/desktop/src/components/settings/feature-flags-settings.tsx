@@ -15,7 +15,8 @@ export const FeatureFlagsSettings = () => {
   const { toggleFlag } = useFeatureFlagMutation();
   const { session } = useAuth();
 
-  const exposedFlags = featureFlags?.filter((flag) => flag.exposed) ?? [];
+  const exposedFlags =
+    featureFlags?.filter((flag: FeatureFlag) => flag.exposed) ?? [];
 
   if (!session) {
     return (
@@ -71,7 +72,7 @@ export const FeatureFlagsSettings = () => {
 
   return (
     <div className='space-y-4'>
-      {exposedFlags.map((flag) => (
+      {exposedFlags.map((flag: FeatureFlag) => (
         <div
           className='flex items-center justify-between rounded-lg border border-border bg-card p-4'
           key={flag.id}>

@@ -1,3 +1,4 @@
+import type { FeatureFlag } from "@deadlock-mods/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteFeatureFlagUserOverride,
@@ -7,7 +8,7 @@ import {
 import logger from "@/lib/logger";
 
 export const useFeatureFlags = () => {
-  return useQuery({
+  return useQuery<FeatureFlag[]>({
     queryKey: ["feature-flags"],
     queryFn: getFeatureFlags,
     staleTime: 5 * 60 * 1000, // 5 minutes
