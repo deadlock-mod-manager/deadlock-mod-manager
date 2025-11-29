@@ -42,6 +42,7 @@ pub enum TokenType {
     Include,
     Base,
     Eof,
+    Error,
 }
 
 /// Token with metadata

@@ -1,4 +1,5 @@
 use crate::ast::*;
+use crate::error::{KvError, Result};
 use crate::types::{KeyValuesObject, KeyValuesValue, SerializeOptions};
 
 pub struct Serializer {
@@ -76,7 +77,7 @@ impl Serializer {
     }
 
     /// Serialize data object to KV string
-    pub fn serialize_data(&self, data: &KeyValuesObject) -> String {
+    pub fn serialize_data(&self, data: &KeyValuesObject) -> Result<String> {
         let keys: Vec<_> = data.keys().collect();
 
         if keys.len() == 1 {
@@ -84,11 +85,11 @@ impl Serializer {
             if let Some(KeyValuesValue::Object(_)) = data.get(root_key) {
                 // Standard format with root key
                 let formatted_key = self.format_value(root_key);
-                return format!(
+                return Ok(format!(
                     "{}\n{}\n",
                     formatted_key,
-                    self.serialize_kv_value(data.get(root_key).unwrap(), 0)
-                );
+                    self.serialize_kv_value(data.get(root_key).unwrap(), 0)?
+                ));
             }
         }
 
@@ -96,7 +97,7 @@ impl Serializer {
         self.serialize_object_data(data, 0)
     }
 
-    fn serialize_object_data(&self, obj: &KeyValuesObject, indent: usize) -> String {
+    fn serialize_object_data(&self, obj: &KeyValuesObject, indent: usize) -> Result<String> {
         let indent_str = self.get_indent(indent);
         let next_indent_str = self.get_indent(indent + 1);
         let mut result = String::from("{\n");
@@ -113,14 +114,14 @@ impl Serializer {
                             result.push_str(&format!(
                                 "{}{}\n",
                                 next_indent_str,
-                                self.serialize_kv_value(item, indent + 1)
+                                self.serialize_kv_value(item, indent + 1)?
                             ));
                         } else {
                             result.push_str(&format!(
                                 "{}{}    {}\n",
                                 next_indent_str,
                                 formatted_key,
-                                self.serialize_kv_value(item, indent + 1)
+                                self.serialize_kv_value(item, indent + 1)?
                             ));
                         }
                     }
@@ -130,7 +131,7 @@ impl Serializer {
                     result.push_str(&format!(
                         "{}{}\n",
                         next_indent_str,
-                        self.serialize_kv_value(value, indent + 1)
+                        self.serialize_kv_value(value, indent + 1)?
                     ));
                 }
                 _ => {
@@ -138,24 +139,22 @@ impl Serializer {
                         "{}{}    {}\n",
                         next_indent_str,
                         formatted_key,
-                        self.serialize_kv_value(value, indent + 1)
+                        self.serialize_kv_value(value, indent + 1)?
                     ));
                 }
             }
         }
 
         result.push_str(&format!("{}}}", indent_str));
-        result
+        Ok(result)
     }
 
-    fn serialize_kv_value(&self, value: &KeyValuesValue, indent: usize) -> String {
+    fn serialize_kv_value(&self, value: &KeyValuesValue, indent: usize) -> Result<String> {
         match value {
-            KeyValuesValue::String(s) => self.format_value(s),
-            KeyValuesValue::Number(n) => self.format_number(*n),
+            KeyValuesValue::String(s) => Ok(self.format_value(s)),
+            KeyValuesValue::Number(n) => Ok(self.format_number(*n)),
             KeyValuesValue::Object(o) => self.serialize_object_data(o, indent),
-            KeyValuesValue::Array(_) => {
-                panic!("Arrays should be handled as duplicate keys, not serialized directly")
-            }
+            KeyValuesValue::Array(_) => Err(KvError::ArraySerializationError),
         }
     }
 
@@ -256,7 +255,7 @@ mod tests {
         data.insert("Root".to_string(), KeyValuesValue::Object(root));
 
         let serializer = Serializer::new(SerializeOptions::default());
-        let result = serializer.serialize_data(&data);
+        let result = serializer.serialize_data(&data).unwrap();
 
         assert!(result.contains("Root"));
         assert!(result.contains("Key"));
@@ -272,7 +271,7 @@ mod tests {
         data.insert("Root".to_string(), KeyValuesValue::Object(root));
 
         let serializer = Serializer::new(SerializeOptions::default());
-        let result = serializer.serialize_data(&data);
+        let result = serializer.serialize_data(&data).unwrap();
 
         assert!(result.contains("123"));
         assert!(result.contains("45.67"));
@@ -292,7 +291,7 @@ mod tests {
             use_tabs: true,
             ..Default::default()
         });
-        let result = serializer.serialize_data(&data);
+        let result = serializer.serialize_data(&data).unwrap();
 
         assert!(result.contains('\t'));
     }
@@ -309,7 +308,7 @@ mod tests {
             quote_all_strings: true,
             ..Default::default()
         });
-        let result = serializer.serialize_data(&data);
+        let result = serializer.serialize_data(&data).unwrap();
 
         // Both key and value should be quoted
         assert!(result.contains("\"Key\""));
@@ -342,10 +341,23 @@ mod tests {
         );
 
         let serializer = Serializer::new(SerializeOptions::default());
-        let result = serializer.serialize_data(&data);
+        let result = serializer.serialize_data(&data).unwrap();
 
         assert!(result.contains("\\n"));
         assert!(result.contains("\\t"));
         assert!(result.contains("\\\""));
+    }
+
+    #[test]
+    fn test_serialize_array_error() {
+        use crate::error::KvError;
+
+        let serializer = Serializer::new(SerializeOptions::default());
+        let array_value = KeyValuesValue::Array(vec![KeyValuesValue::String("Value".to_string())]);
+        
+        let result = serializer.serialize_kv_value(&array_value, 0);
+
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), KvError::ArraySerializationError));
     }
 }

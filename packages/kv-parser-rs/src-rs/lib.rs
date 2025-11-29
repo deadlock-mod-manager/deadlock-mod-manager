@@ -154,7 +154,10 @@ pub unsafe extern "C" fn kv_serialize_data(
     };
 
     let serializer = Serializer::new(options);
-    to_c_string(serializer.serialize_data(&data))
+    match serializer.serialize_data(&data) {
+        Ok(result) => to_c_string(result),
+        Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),
+    }
 }
 
 /// # Safety

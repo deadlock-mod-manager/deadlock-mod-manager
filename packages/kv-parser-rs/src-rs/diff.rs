@@ -150,29 +150,42 @@ impl DiffGenerator {
         for change in &diff.changes {
             match change.op {
                 DiffOp::Add => {
-                    output.push_str(&format!(
-                        "+ Add {} = {}\n",
-                        change.path,
-                        Self::format_value(change.new_value.as_ref().unwrap())
-                    ));
+                    if let Some(new_val) = &change.new_value {
+                        output.push_str(&format!(
+                            "+ Add {} = {}\n",
+                            change.path,
+                            Self::format_value(new_val)
+                        ));
+                    } else {
+                        output.push_str(&format!("+ Add {} = <missing value>\n", change.path));
+                    }
                 }
                 DiffOp::Remove => {
-                    output.push_str(&format!(
-                        "- Remove {} (was: {})\n",
-                        change.path,
-                        Self::format_value(change.old_value.as_ref().unwrap())
-                    ));
+                    if let Some(old_val) = &change.old_value {
+                        output.push_str(&format!(
+                            "- Remove {} (was: {})\n",
+                            change.path,
+                            Self::format_value(old_val)
+                        ));
+                    } else {
+                        output.push_str(&format!(
+                            "- Remove {} (was: <missing value>)\n",
+                            change.path
+                        ));
+                    }
                 }
                 DiffOp::Replace => {
                     output.push_str(&format!("~ Replace {}\n", change.path));
-                    output.push_str(&format!(
-                        "  - Old: {}\n",
-                        Self::format_value(change.old_value.as_ref().unwrap())
-                    ));
-                    output.push_str(&format!(
-                        "  + New: {}\n",
-                        Self::format_value(change.new_value.as_ref().unwrap())
-                    ));
+                    if let Some(old_val) = &change.old_value {
+                        output.push_str(&format!("  - Old: {}\n", Self::format_value(old_val)));
+                    } else {
+                        output.push_str(&format!("  - Old: <missing value>\n"));
+                    }
+                    if let Some(new_val) = &change.new_value {
+                        output.push_str(&format!("  + New: {}\n", Self::format_value(new_val)));
+                    } else {
+                        output.push_str(&format!("  + New: <missing value>\n"));
+                    }
                 }
             }
         }
@@ -256,7 +269,7 @@ impl DiffApplicator {
 
     fn apply_change_to_ast(ast: &mut DocumentNode, change: &DiffEntry) -> Result<()> {
         let path_parts: Vec<&str> = change.path.split('.').collect();
-        
+
         match change.op {
             DiffOp::Replace => {
                 Self::update_keyvalue_in_ast_path(ast, &path_parts, change.new_value.as_ref())?;
@@ -296,7 +309,7 @@ impl DiffApplicator {
         new_value: Option<&KeyValuesValue>,
     ) -> Result<()> {
         let key = path_parts[0];
-        
+
         for child in children.iter_mut() {
             if let AstNode::KeyValue(kv) = child
                 && kv.key.value == key
@@ -317,7 +330,7 @@ impl DiffApplicator {
                 }
             }
         }
-        
+
         Err(KvError::PathNotFound {
             path: path_parts.join("."),
         })
@@ -333,7 +346,7 @@ impl DiffApplicator {
                 && kv.key.value == key
             {
                 if let Some(value) = new_value {
-                    kv.value = Self::create_value_node(value);
+                    kv.value = Self::create_value_node(value)?;
                 }
                 return Ok(());
             }
@@ -367,7 +380,7 @@ impl DiffApplicator {
         new_value: Option<&KeyValuesValue>,
     ) -> Result<()> {
         let key = path_parts[0];
-        
+
         for child in children.iter_mut() {
             if let AstNode::KeyValue(kv) = child
                 && kv.key.value == key
@@ -388,7 +401,7 @@ impl DiffApplicator {
                 }
             }
         }
-        
+
         Err(KvError::PathNotFound {
             path: path_parts.join("."),
         })
@@ -430,7 +443,7 @@ impl DiffApplicator {
                     quoted: true,
                     quote_char: Some("\"".to_string()),
                 },
-                value: Self::create_value_node(value),
+                value: Self::create_value_node(value)?,
                 separator: Some(WhitespaceNode {
                     node_type: NodeType::Whitespace,
                     start: Position {
@@ -454,10 +467,7 @@ impl DiffApplicator {
         Ok(())
     }
 
-    fn remove_keyvalue_from_ast_path(
-        ast: &mut DocumentNode,
-        path_parts: &[&str],
-    ) -> Result<()> {
+    fn remove_keyvalue_from_ast_path(ast: &mut DocumentNode, path_parts: &[&str]) -> Result<()> {
         if path_parts.is_empty() {
             return Err(KvError::InvalidPath {
                 path: String::new(),
@@ -471,31 +481,22 @@ impl DiffApplicator {
         }
     }
 
-    fn remove_in_nested_path(
-        children: &mut [AstNode],
-        path_parts: &[&str],
-    ) -> Result<()> {
+    fn remove_in_nested_path(children: &mut [AstNode], path_parts: &[&str]) -> Result<()> {
         let key = path_parts[0];
-        
+
         for child in children.iter_mut() {
             if let AstNode::KeyValue(kv) = child
                 && kv.key.value == key
                 && let ValueNode::Object(obj) = &mut kv.value
             {
                 if path_parts.len() == 2 {
-                    return Self::remove_keyvalue_from_children(
-                        &mut obj.children,
-                        path_parts[1],
-                    );
+                    return Self::remove_keyvalue_from_children(&mut obj.children, path_parts[1]);
                 } else {
-                    return Self::remove_in_nested_path(
-                        &mut obj.children,
-                        &path_parts[1..],
-                    );
+                    return Self::remove_in_nested_path(&mut obj.children, &path_parts[1..]);
                 }
             }
         }
-        
+
         Err(KvError::PathNotFound {
             path: path_parts.join("."),
         })
@@ -518,9 +519,14 @@ impl DiffApplicator {
         }
     }
 
-    fn create_value_node(value: &KeyValuesValue) -> ValueNode {
+    /// Create a ValueNode from a KeyValuesValue.
+    ///
+    /// Note: Arrays are not supported in the AST representation and will return an error.
+    /// KeyValues format does not natively support arrays, and arrays are only used
+    /// internally when duplicate keys are encountered during parsing.
+    fn create_value_node(value: &KeyValuesValue) -> Result<ValueNode> {
         match value {
-            KeyValuesValue::String(s) => ValueNode::String(StringNode {
+            KeyValuesValue::String(s) => Ok(ValueNode::String(StringNode {
                 node_type: NodeType::String,
                 start: Position {
                     offset: 0,
@@ -536,8 +542,8 @@ impl DiffApplicator {
                 value: s.clone(),
                 quoted: true,
                 quote_char: Some("\"".to_string()),
-            }),
-            KeyValuesValue::Number(n) => ValueNode::Number(NumberNode {
+            })),
+            KeyValuesValue::Number(n) => Ok(ValueNode::Number(NumberNode {
                 node_type: NodeType::Number,
                 start: Position {
                     offset: 0,
@@ -552,11 +558,87 @@ impl DiffApplicator {
                 raw: n.to_string(),
                 value: *n,
                 is_float: n.fract() != 0.0,
-            }),
-            KeyValuesValue::Object(_) => {
-                // For simplicity, create an empty object node
-                // In practice, this would need full recursion
-                ValueNode::Object(Box::new(ObjectNode {
+            })),
+            KeyValuesValue::Object(obj) => {
+                let mut children = Vec::new();
+                let mut raw_parts = Vec::new();
+
+                for (key, val) in obj {
+                    let key_node = StringNode {
+                        node_type: NodeType::String,
+                        start: Position {
+                            offset: 0,
+                            line: 0,
+                            column: 0,
+                        },
+                        end: Position {
+                            offset: 0,
+                            line: 0,
+                            column: 0,
+                        },
+                        raw: format!("\"{}\"", key),
+                        value: key.clone(),
+                        quoted: true,
+                        quote_char: Some("\"".to_string()),
+                    };
+
+                    let value_node = Self::create_value_node(val)?;
+
+                    let kv_node = KeyValueNode {
+                        node_type: NodeType::KeyValue,
+                        start: Position {
+                            offset: 0,
+                            line: 0,
+                            column: 0,
+                        },
+                        end: Position {
+                            offset: 0,
+                            line: 0,
+                            column: 0,
+                        },
+                        raw: String::new(),
+                        key: key_node.clone(),
+                        value: value_node.clone(),
+                        separator: Some(WhitespaceNode {
+                            node_type: NodeType::Whitespace,
+                            start: Position {
+                                offset: 0,
+                                line: 0,
+                                column: 0,
+                            },
+                            end: Position {
+                                offset: 0,
+                                line: 0,
+                                column: 0,
+                            },
+                            raw: "    ".to_string(),
+                            value: "    ".to_string(),
+                        }),
+                        conditional_separator: None,
+                        conditional: None,
+                    };
+
+                    raw_parts.push(format!(
+                        "{}{}{}",
+                        key_node.raw,
+                        kv_node.separator.as_ref().unwrap().raw,
+                        match &value_node {
+                            ValueNode::String(s) => s.raw.clone(),
+                            ValueNode::Number(n) => n.raw.clone(),
+                            ValueNode::Object(o) => o.raw.clone(),
+                        }
+                    ));
+
+                    children.push(AstNode::KeyValue(Box::new(kv_node)));
+                }
+
+                let raw = if children.is_empty() {
+                    "{}".to_string()
+                } else {
+                    format!("{{\n{}\n}}", raw_parts.join("\n"))
+                };
+
+                Ok(ValueNode::Object(Box::new(ObjectNode {
                     node_type: NodeType::Object,
                     start: Position {
                         offset: 0,
@@ -568,7 +650,7 @@ impl DiffApplicator {
                         line: 0,
                         column: 0,
                     },
-                    raw: String::new(),
+                    raw,
                     open_brace: TokenNode {
                         node_type: NodeType::Token,
                         start: Position {
@@ -585,7 +667,7 @@ impl DiffApplicator {
                         token_type: "OPEN_BRACE".to_string(),
                         value: "{".to_string(),
                     },
-                    children: Vec::new(),
+                    children,
                     close_brace: TokenNode {
                         node_type: NodeType::Token,
                         start: Position {
@@ -602,27 +684,12 @@ impl DiffApplicator {
                         token_type: "CLOSE_BRACE".to_string(),
                         value: "}".to_string(),
                     },
-                }))
+                })))
             }
             KeyValuesValue::Array(_) => {
-                // Arrays should not be directly in AST
-                ValueNode::String(StringNode {
-                    node_type: NodeType::String,
-                    start: Position {
-                        offset: 0,
-                        line: 0,
-                        column: 0,
-                    },
-                    end: Position {
-                        offset: 0,
-                        line: 0,
-                        column: 0,
-                    },
-                    raw: "\"\"".to_string(),
-                    value: String::new(),
-                    quoted: true,
-                    quote_char: Some("\"".to_string()),
-                })
+                Err(KvError::Other(
+                    "Arrays are not supported in AST representation. KeyValues format does not natively support arrays.".to_string()
+                ))
             }
         }
     }
@@ -771,5 +838,202 @@ mod tests {
         assert_eq!(stats.added, 1);
         assert_eq!(stats.removed, 1);
         assert_eq!(stats.modified, 1);
+    }
+
+    #[test]
+    fn test_create_value_node_object_with_children() {
+        let mut inner_obj = KeyValuesObject::new();
+        inner_obj.insert(
+            "inner_key".to_string(),
+            KeyValuesValue::String("inner_value".to_string()),
+        );
+        inner_obj.insert("inner_number".to_string(), KeyValuesValue::Number(42.0));
+
+        let mut outer_obj = KeyValuesObject::new();
+        outer_obj.insert(
+            "outer_key".to_string(),
+            KeyValuesValue::String("outer_value".to_string()),
+        );
+        outer_obj.insert("nested".to_string(), KeyValuesValue::Object(inner_obj));
+
+        let value_node =
+            DiffApplicator::create_value_node(&KeyValuesValue::Object(outer_obj)).unwrap();
+
+        match value_node {
+            ValueNode::Object(obj) => {
+                assert_eq!(obj.children.len(), 2);
+
+                let mut found_outer = false;
+                let mut found_nested = false;
+
+                for child in &obj.children {
+                    if let AstNode::KeyValue(kv) = child {
+                        match &kv.value {
+                            ValueNode::String(s) => {
+                                if kv.key.value == "outer_key" && s.value == "outer_value" {
+                                    found_outer = true;
+                                }
+                            }
+                            ValueNode::Object(nested_obj) => {
+                                if kv.key.value == "nested" {
+                                    assert_eq!(nested_obj.children.len(), 2);
+                                    found_nested = true;
+
+                                    let mut found_inner_key = false;
+                                    let mut found_inner_number = false;
+
+                                    for nested_child in &nested_obj.children {
+                                        if let AstNode::KeyValue(nested_kv) = nested_child {
+                                            match &nested_kv.value {
+                                                ValueNode::String(nested_s) => {
+                                                    if nested_kv.key.value == "inner_key"
+                                                        && nested_s.value == "inner_value"
+                                                    {
+                                                        found_inner_key = true;
+                                                    }
+                                                }
+                                                ValueNode::Number(n) => {
+                                                    if nested_kv.key.value == "inner_number"
+                                                        && n.value == 42.0
+                                                    {
+                                                        found_inner_number = true;
+                                                    }
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+
+                                    assert!(
+                                        found_inner_key,
+                                        "Should have inner_key in nested object"
+                                    );
+                                    assert!(
+                                        found_inner_number,
+                                        "Should have inner_number in nested object"
+                                    );
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                assert!(found_outer, "Should have outer_key in object");
+                assert!(found_nested, "Should have nested object");
+            }
+            _ => panic!("Expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_create_value_node_empty_object() {
+        let empty_obj = KeyValuesObject::new();
+        let value_node =
+            DiffApplicator::create_value_node(&KeyValuesValue::Object(empty_obj)).unwrap();
+
+        match value_node {
+            ValueNode::Object(obj) => {
+                assert_eq!(obj.children.len(), 0);
+                assert_eq!(obj.raw, "{}");
+            }
+            _ => panic!("Expected Object node"),
+        }
+    }
+
+    #[test]
+    fn test_create_value_node_array_returns_error() {
+        let array_value = KeyValuesValue::Array(vec![
+            KeyValuesValue::String("item1".to_string()),
+            KeyValuesValue::String("item2".to_string()),
+        ]);
+
+        let result = DiffApplicator::create_value_node(&array_value);
+
+        assert!(result.is_err(), "Array should return an error");
+        match result {
+            Err(KvError::Other(msg)) => {
+                assert!(
+                    msg.contains("Arrays are not supported"),
+                    "Error message should mention arrays are not supported"
+                );
+            }
+            _ => panic!("Expected Other error variant"),
+        }
+    }
+
+    #[test]
+    fn test_apply_diff_with_object_value() {
+        let mut new_nested = KeyValuesObject::new();
+        new_nested.insert(
+            "nested_key".to_string(),
+            KeyValuesValue::String("new_value".to_string()),
+        );
+        new_nested.insert("another_key".to_string(), KeyValuesValue::Number(123.0));
+
+        let diff = DocumentDiff {
+            changes: vec![DiffEntry {
+                op: DiffOp::Add,
+                path: "key".to_string(),
+                old_value: None,
+                new_value: Some(KeyValuesValue::Object(new_nested)),
+            }],
+        };
+
+        let result = DiffApplicator::apply_to_ast(
+            &crate::parser::Parser::parse("", crate::types::ParseOptions::default())
+                .unwrap()
+                .ast,
+            &diff,
+        );
+
+        assert!(
+            result.is_ok(),
+            "Should successfully apply diff with object value"
+        );
+
+        let updated_ast = result.unwrap();
+        let mut found_key = false;
+        for child in &updated_ast.children {
+            if let AstNode::KeyValue(kv) = child {
+                if kv.key.value == "key" {
+                    if let ValueNode::Object(obj) = &kv.value {
+                        assert_eq!(
+                            obj.children.len(),
+                            2,
+                            "Nested object should have 2 children"
+                        );
+                        found_key = true;
+                    }
+                }
+            }
+        }
+        assert!(found_key, "Should have added key with object value");
+    }
+
+    #[test]
+    fn test_apply_diff_with_array_value_returns_error() {
+        let diff = DocumentDiff {
+            changes: vec![DiffEntry {
+                op: DiffOp::Add,
+                path: "array_key".to_string(),
+                old_value: None,
+                new_value: Some(KeyValuesValue::Array(vec![KeyValuesValue::String(
+                    "item".to_string(),
+                )])),
+            }],
+        };
+
+        let result = DiffApplicator::apply_to_ast(
+            &crate::parser::Parser::parse("", crate::types::ParseOptions::default())
+                .unwrap()
+                .ast,
+            &diff,
+        );
+
+        assert!(
+            result.is_err(),
+            "Should return error when trying to apply diff with array value"
+        );
     }
 }

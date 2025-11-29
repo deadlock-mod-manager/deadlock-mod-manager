@@ -19,7 +19,7 @@ pnpm add @deadlock-mods/kv-parser-rs
 ## Usage
 
 ```typescript
-import { parseKv, serializeKv } from "@deadlock-mods/kv-parser-rs";
+import { parseKv, serializeAst, serializeData } from "@deadlock-mods/kv-parser-rs";
 
 // Parse KeyValues
 const result = parseKv(`
@@ -32,8 +32,11 @@ const result = parseKv(`
 
 console.log(result.data.GameInfo.game); // "citadel"
 
-// Serialize back
-const kvString = serializeKv(result.ast);
+// Serialize back using AST (preserves formatting, comments, whitespace)
+const kvString = serializeAst(result.ast);
+
+// Or serialize plain data objects (without AST preservation)
+const kvStringFromData = serializeData(result.data);
 ```
 
 ## License

@@ -225,10 +225,15 @@ impl KvDocument {
 
     /// Apply a diff to this document
     pub fn apply_diff(&mut self, diff: &DocumentDiff) -> Result<()> {
-        self.data = DiffApplicator::apply_to_data(&self.data, diff)?;
-        if let Some(ast) = &self.ast {
-            self.ast = Some(DiffApplicator::apply_to_ast(ast, diff)?);
-        }
+        let updated_data = DiffApplicator::apply_to_data(&self.data, diff)?;
+        let updated_ast = if let Some(ast) = &self.ast {
+            Some(DiffApplicator::apply_to_ast(ast, diff)?)
+        } else {
+            None
+        };
+
+        self.data = updated_data;
+        self.ast = updated_ast;
         Ok(())
     }
 
@@ -257,7 +262,9 @@ impl fmt::Display for KvDocument {
             Serializer::serialize_ast(ast)
         } else {
             let serializer = Serializer::new(self.options.clone());
-            serializer.serialize_data(&self.data)
+            serializer
+                .serialize_data(&self.data)
+                .unwrap_or_else(|e| format!("[Serialization error: {}]", e))
         };
         write!(f, "{}", serialized)
     }
@@ -347,18 +354,12 @@ mod tests {
     #[test]
     fn test_document_diff() {
         let mut doc1 = KvDocument::new();
-        doc1.set(
-            "Key",
-            KeyValuesValue::String("Value1".to_string()),
-        )
-        .unwrap();
+        doc1.set("Key", KeyValuesValue::String("Value1".to_string()))
+            .unwrap();
 
         let mut doc2 = KvDocument::new();
-        doc2.set(
-            "Key",
-            KeyValuesValue::String("Value2".to_string()),
-        )
-        .unwrap();
+        doc2.set("Key", KeyValuesValue::String("Value2".to_string()))
+            .unwrap();
 
         let diff = doc1.diff(&doc2);
         assert_eq!(diff.changes.len(), 1);

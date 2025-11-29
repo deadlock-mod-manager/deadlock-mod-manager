@@ -77,9 +77,27 @@ jobs:
 
       - name: Build native dependencies
         run: |
-          pnpm --filter @deadlock-mods/vpk-parser build || true
-          pnpm --filter @deadlock-mods/kv-parser-rs build || true
-          pnpm --filter @deadlock-mods/dmodpkg build || true
+          FAILED_PACKAGES=()
+          
+          if ! pnpm --filter @deadlock-mods/vpk-parser build; then
+            echo "::error::Build failed for @deadlock-mods/vpk-parser"
+            FAILED_PACKAGES+=("@deadlock-mods/vpk-parser")
+          fi
+          
+          if ! pnpm --filter @deadlock-mods/kv-parser-rs build; then
+            echo "::error::Build failed for @deadlock-mods/kv-parser-rs"
+            FAILED_PACKAGES+=("@deadlock-mods/kv-parser-rs")
+          fi
+          
+          if ! pnpm --filter @deadlock-mods/dmodpkg build; then
+            echo "::error::Build failed for @deadlock-mods/dmodpkg"
+            FAILED_PACKAGES+=("@deadlock-mods/dmodpkg")
+          fi
+          
+          if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
+            echo "::error::Native build failed for the following packages: ${FAILED_PACKAGES[*]}"
+            exit 1
+          fi
 
       - name: Run tests
         run: pnpm test

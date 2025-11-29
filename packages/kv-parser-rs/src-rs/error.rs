@@ -70,6 +70,9 @@ pub enum KvError {
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
+    #[error("Arrays must be handled as duplicate keys, not serialized directly")]
+    ArraySerializationError,
+
     #[error("Invalid options: {0}")]
     InvalidOptions(String),
 

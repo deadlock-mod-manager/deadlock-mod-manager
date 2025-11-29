@@ -136,7 +136,7 @@ impl Tokenizer {
         }
     }
 
-    fn read_multi_line_comment(&mut self) -> Token {
+    fn read_multi_line_comment(&mut self) -> Result<Token> {
         let start_line = self.line;
         let start_column = self.column;
         let start_offset = self.pos;
@@ -158,7 +158,23 @@ impl Tokenizer {
             self.advance();
         }
 
-        Token {
+        if self.current_char().is_none() && !raw.ends_with("*/") {
+            return Ok(Token {
+                token_type: TokenType::Error,
+                value: "Unterminated block comment".to_string(),
+                line: start_line,
+                column: start_column,
+                offset: start_offset,
+                raw,
+                metadata: Some(TokenMetadata {
+                    quoted: None,
+                    quote_char: None,
+                    comment_style: Some(CommentStyle::Block),
+                }),
+            });
+        }
+
+        Ok(Token {
             token_type: TokenType::Comment,
             value,
             line: start_line,
@@ -170,7 +186,7 @@ impl Tokenizer {
                 quote_char: None,
                 comment_style: Some(CommentStyle::Block),
             }),
-        }
+        })
     }
 
     fn read_escape_sequence(&mut self) -> Result<char> {
@@ -419,7 +435,7 @@ impl Tokenizer {
                 return Ok(self.read_single_line_comment());
             }
             if self.peek(1) == Some('*') {
-                return Ok(self.read_multi_line_comment());
+                return self.read_multi_line_comment();
             }
         }
 
