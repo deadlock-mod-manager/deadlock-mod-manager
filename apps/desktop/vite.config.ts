@@ -29,6 +29,10 @@ export default defineConfig(async () => ({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
