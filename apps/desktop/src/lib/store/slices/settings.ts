@@ -23,6 +23,7 @@ export type SettingsState = {
   developerMode: boolean;
   ingestToolEnabled: boolean;
   autoUpdateEnabled: boolean;
+  crosshairsEnabled: boolean;
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
 
   addSetting: (setting: LocalSetting) => void;
@@ -52,6 +53,9 @@ export type SettingsState = {
   // Auto-update management
   setAutoUpdateEnabled: (enabled: boolean) => void;
 
+  // Crosshairs management
+  setCrosshairsEnabled: (enabled: boolean) => void;
+
   // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
@@ -68,6 +72,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   developerMode: false,
   ingestToolEnabled: true,
   autoUpdateEnabled: true,
+  crosshairsEnabled: true,
   enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -174,6 +179,12 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setAutoUpdateEnabled: (enabled: boolean) =>
     set(() => ({
       autoUpdateEnabled: enabled,
+    })),
+
+  // Crosshairs management
+  setCrosshairsEnabled: (enabled: boolean) =>
+    set(() => ({
+      crosshairsEnabled: enabled,
     })),
 
   // Plugin management

@@ -123,26 +123,6 @@ export const AutoexecSettings = () => {
 
   const watchedContent = form.watch("content");
 
-  useEffect(() => {
-    if (!config || config.readonly_sections.length === 0) return;
-
-    const hasStartMarker = watchedContent.includes(
-      "// === Deadlock Mod Manager - Crosshair Settings (DO NOT EDIT) ===",
-    );
-    const hasEndMarker = watchedContent.includes(
-      "// === End Crosshair Settings ===",
-    );
-
-    if (!hasStartMarker || !hasEndMarker) {
-      toast.warning(
-        t("settings.autoexecReadonlySectionDeleted", {
-          defaultValue:
-            "Read-only sections cannot be deleted. They will be restored on save.",
-        }),
-      );
-    }
-  }, [watchedContent, config, t]);
-
   const isDirty = watchedContent !== config?.full_content;
 
   if (isLoading) {
@@ -176,6 +156,10 @@ export const AutoexecSettings = () => {
                 automatically without needing to run commands in the console.
                 You can still edit the file manually if you want to to add more
                 commands.
+              </p>
+              <p>
+                P.S: the autoexec config can never be empty if added as launch
+                option or else it'll crash the game.
               </p>
             </CardDescription>
           </CardHeader>

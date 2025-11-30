@@ -75,6 +75,9 @@ export const CrosshairForm = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { isAuthenticated, setActiveCrosshair } = usePersistedStore();
+  const crosshairsEnabled = usePersistedStore(
+    (state) => state.crosshairsEnabled,
+  );
   const [tagInput, setTagInput] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
@@ -118,20 +121,38 @@ export const CrosshairForm = () => {
   };
 
   const applyCrosshairMutation = useMutation({
-    mutationFn: (crosshairConfig: CrosshairConfig) =>
-      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
-    onSuccess: () => {
+    mutationFn: (crosshairConfig: CrosshairConfig) => {
+      if (!crosshairsEnabled) {
+        throw new Error("Custom crosshairs are disabled");
+      }
+      return invoke("apply_crosshair_to_autoexec", { config: crosshairConfig });
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: (_, crosshairConfig) => {
+      setActiveCrosshair(crosshairConfig);
       toast.success(t("crosshairs.appliedRestart"));
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
-      toast.error(t("crosshairs.form.applyError"));
+      if (
+        error instanceof Error &&
+        error.message === "Custom crosshairs are disabled"
+      ) {
+        toast.error(t("crosshairs.disabledError"));
+      } else {
+        toast.error(t("crosshairs.form.applyError"));
+      }
     },
   });
 
   const publishCrosshairMutation = useMutation({
     mutationFn: (data: CreateCrosshairDto) => publishCrosshair(data),
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
     onSuccess: () => {
       toast.success(t("crosshairs.form.published"));
       queryClient.invalidateQueries({ queryKey: ["crosshairs"] });
@@ -154,7 +175,6 @@ export const CrosshairForm = () => {
   });
 
   const handleApply = () => {
-    setActiveCrosshair(currentConfig);
     applyCrosshairMutation.mutate(currentConfig);
   };
 

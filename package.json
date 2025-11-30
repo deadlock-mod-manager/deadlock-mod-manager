@@ -5,6 +5,7 @@
     "db:push": "turbo run db:push",
     "db:seed": "turbo run db:seed",
     "api:dev": "pnpm --filter api dev",
+    "www:dev": "pnpm --filter www dev",
     "dev": "turbo run dev",
     "desktop:dev": "pnpm --filter desktop tauri dev",
     "desktop:build": "pnpm --filter desktop tauri build",

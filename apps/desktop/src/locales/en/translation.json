@@ -267,7 +267,9 @@
     "autoexecOpenFolderError": "Failed to open autoexec folder",
     "autoexecOpenEditorError": "Failed to open autoexec editor",
     "autoexecLaunchOption": "Autoexec Config",
-    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save."
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
+    "customCrosshairs": "Custom Crosshairs",
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file."
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -1087,7 +1089,13 @@
     "activeCrosshairs": "Active Crosshairs",
     "noActiveCrosshair": "No custom crosshair is currently active",
     "currentlyActive": "Currently Active",
+    "remove": "Remove",
+    "removeFromHistory": "Remove from history",
+    "removedFromHistory": "Crosshair removed from history",
     "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
+    "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
+    "toggleError": "Failed to toggle custom crosshairs",
     "form": {
       "metadata": "Metadata",
       "name": "Name",

@@ -37,6 +37,9 @@ const CrosshairLibraryData = () => {
     updateCrosshairFilters,
     setActiveCrosshair,
   } = usePersistedStore();
+  const crosshairsEnabled = usePersistedStore(
+    (state) => state.crosshairsEnabled,
+  );
   const [previewCrosshair, setPreviewCrosshair] =
     useState<PublishedCrosshairDto | null>(null);
   const queryClient = useQueryClient();
@@ -48,21 +51,35 @@ const CrosshairLibraryData = () => {
   });
 
   const applyCrosshairMutation = useMutation({
-    mutationFn: (crosshairConfig: PublishedCrosshairDto["config"]) =>
-      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
-    onSuccess: () => {
+    mutationFn: (crosshairConfig: PublishedCrosshairDto["config"]) => {
+      if (!crosshairsEnabled) {
+        throw new Error("Custom crosshairs are disabled");
+      }
+      return invoke("apply_crosshair_to_autoexec", { config: crosshairConfig });
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: (_, crosshairConfig) => {
+      setActiveCrosshair(crosshairConfig);
       toast.success(t("crosshairs.appliedRestart"));
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
-      toast.error(t("crosshairs.form.applyError"));
+      if (
+        error instanceof Error &&
+        error.message === "Custom crosshairs are disabled"
+      ) {
+        toast.error(t("crosshairs.disabledError"));
+      } else {
+        toast.error(t("crosshairs.form.applyError"));
+      }
     },
   });
 
   const handleApply = () => {
     if (!previewCrosshair?.config) return;
-    setActiveCrosshair(previewCrosshair.config);
     applyCrosshairMutation.mutate(previewCrosshair.config);
   };
 

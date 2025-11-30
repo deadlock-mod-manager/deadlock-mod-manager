@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ActiveCrosshairs } from "@/components/crosshairs/active-crosshairs";
 import { CrosshairDialog } from "@/components/crosshairs/crosshair-dialog";
 import { CrosshairLibrary } from "@/components/crosshairs/crosshair-library";
+import { CrosshairsToggle } from "@/components/settings/crosshairs-toggle";
 import PageTitle from "@/components/shared/page-title";
 
 const Crosshairs = () => {
@@ -28,6 +29,9 @@ const Crosshairs = () => {
           onClick={handleGenerateCrosshair}>
           {t("crosshairs.generate")}
         </Button>
+      </div>
+      <div className='mb-6'>
+        <CrosshairsToggle />
       </div>
       <ActiveCrosshairs />
       <CrosshairLibrary />

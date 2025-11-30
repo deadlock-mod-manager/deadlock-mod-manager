@@ -1811,3 +1811,18 @@ pub async fn apply_crosshair_to_autoexec(config: Value) -> Result<(), Error> {
     .get_autoexec_manager()
     .update_crosshair_section(game_path, &config_string)
 }
+
+#[tauri::command]
+pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
+  log::info!("Removing crosshair section from autoexec config");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  mod_manager
+    .get_autoexec_manager()
+    .remove_crosshair_section(game_path)
+}

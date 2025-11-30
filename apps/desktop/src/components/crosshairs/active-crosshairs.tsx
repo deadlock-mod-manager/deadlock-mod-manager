@@ -16,17 +16,53 @@ export const ActiveCrosshairs = () => {
   const activeCrosshairHistory = usePersistedStore(
     (state) => state.activeCrosshairHistory,
   );
-  const { setActiveCrosshair } = usePersistedStore();
+  const { setActiveCrosshair, removeFromActiveCrosshairHistory } =
+    usePersistedStore();
+  const crosshairsEnabled = usePersistedStore(
+    (state) => state.crosshairsEnabled,
+  );
   const [previewConfig, setPreviewConfig] = useState<CrosshairConfig | null>(
     null,
   );
   const queryClient = useQueryClient();
 
   const applyCrosshairMutation = useMutation({
-    mutationFn: (crosshairConfig: CrosshairConfig) =>
-      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
-    onSuccess: () => {
+    mutationFn: (crosshairConfig: CrosshairConfig) => {
+      if (!crosshairsEnabled) {
+        throw new Error("Custom crosshairs are disabled");
+      }
+      return invoke("apply_crosshair_to_autoexec", { config: crosshairConfig });
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: (_, crosshairConfig) => {
+      setActiveCrosshair(crosshairConfig);
       toast.success(t("crosshairs.appliedRestart"));
+      queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
+    },
+    onError: (error) => {
+      logger.error(error);
+      if (
+        error instanceof Error &&
+        error.message === "Custom crosshairs are disabled"
+      ) {
+        toast.error(t("crosshairs.disabledError"));
+      } else {
+        toast.error(t("crosshairs.form.applyError"));
+      }
+    },
+  });
+
+  const removeCrosshairMutation = useMutation({
+    mutationFn: () => {
+      return invoke("remove_crosshair_from_autoexec");
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: () => {
+      toast.success(t("crosshairs.removedRestart"));
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
@@ -37,8 +73,17 @@ export const ActiveCrosshairs = () => {
 
   const handleApply = () => {
     if (!previewConfig) return;
-    setActiveCrosshair(previewConfig);
     applyCrosshairMutation.mutate(previewConfig);
+  };
+
+  const handleRemove = (config: CrosshairConfig, isActive: boolean) => {
+    removeFromActiveCrosshairHistory(config);
+
+    if (isActive) {
+      removeCrosshairMutation.mutate();
+    } else {
+      toast.success(t("crosshairs.removedFromHistory"));
+    }
   };
 
   if (activeCrosshairHistory.length === 0) {
@@ -72,6 +117,7 @@ export const ActiveCrosshairs = () => {
                 config={config}
                 isActive={index === 0}
                 onPreviewOpen={() => setPreviewConfig(config)}
+                onRemove={() => handleRemove(config, index === 0)}
               />
             </div>
           ),

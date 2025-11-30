@@ -147,7 +147,10 @@ const CustomSettingsData = () => {
   }, [autoexecConfig]);
 
   const autoexecLaunchOption: LocalSetting | null = useMemo(() => {
-    if (!hasAutoexecConfig) return null;
+    if (!autoexecConfig) return null;
+
+    const persistedEnabled = settingStatusById[AUTOEXEC_LAUNCH_OPTION_ID] ?? false;
+    const enabled = hasAutoexecConfig ? persistedEnabled : false;
 
     return {
       id: AUTOEXEC_LAUNCH_OPTION_ID,
@@ -155,11 +158,11 @@ const CustomSettingsData = () => {
       value: "deadlock-mod-manager",
       type: CustomSettingType.LAUNCH_OPTION,
       description: t("settings.autoexecLaunchOption"),
-      enabled: true,
+      enabled,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-  }, [hasAutoexecConfig, t]);
+  }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
 
   return (
     <>
@@ -199,23 +202,25 @@ const CustomSettingsData = () => {
             }>
             <div className='grid grid-cols-1 gap-4'>
               {settingsForType.map((setting) => {
-                const isAutoexecOption =
-                  setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
+                const isAutoexecOption = setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
+                const canToggle = !isAutoexecOption || hasAutoexecConfig;
+                const isDisabled = isAutoexecOption && !hasAutoexecConfig;
+
                 return (
                   <SettingCard
+                    disabled={isDisabled}
                     key={setting.id}
-                    onChange={
-                      isAutoexecOption
-                        ? () => {}
-                        : () => toggleSetting(setting.id, setting)
-                    }
+                    onChange={() => {
+                      if (canToggle) {
+                        toggleSetting(setting.id, setting);
+                      }
+                    }}
                     setting={{
                       ...setting,
-                      enabled: isAutoexecOption
-                        ? true
-                        : (settingStatusById?.[setting.id] ??
-                          (setting as LocalSetting).enabled ??
-                          false),
+                      enabled:
+                        settingStatusById?.[setting.id] ??
+                        (setting as LocalSetting).enabled ??
+                        false,
                     }}
                   />
                 );

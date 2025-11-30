@@ -8,6 +8,7 @@ export type CrosshairState = {
   activeCrosshair: CrosshairConfig | null;
   activeCrosshairHistory: CrosshairConfig[];
   setActiveCrosshair: (config: CrosshairConfig) => void;
+  removeFromActiveCrosshairHistory: (config: CrosshairConfig) => void;
   clearActiveCrosshair: () => void;
   getActiveCrosshair: () => CrosshairConfig | null;
 };
@@ -36,6 +37,18 @@ export const createCrosshairSlice: StateCreator<
       return {
         activeCrosshair: config,
         activeCrosshairHistory: newHistory,
+      };
+    }),
+  removeFromActiveCrosshairHistory: (config: CrosshairConfig) =>
+    set((state) => {
+      const configString = JSON.stringify(config);
+      const filteredHistory = state.activeCrosshairHistory.filter(
+        (item) => JSON.stringify(item) !== configString,
+      );
+      const wasActive = state.activeCrosshair && JSON.stringify(state.activeCrosshair) === configString;
+      return {
+        activeCrosshair: wasActive ? (filteredHistory[0] || null) : state.activeCrosshair,
+        activeCrosshairHistory: filteredHistory,
       };
     }),
   clearActiveCrosshair: () =>

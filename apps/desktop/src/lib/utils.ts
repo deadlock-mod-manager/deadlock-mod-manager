@@ -36,23 +36,32 @@ export const getAdditionalArgs = async (settings: LocalSetting[]) => {
   const additionalArgs: string[] = [];
 
   for (const setting of settings.filter(
-    (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled,
+    (s) =>
+      s.type === CustomSettingType.LAUNCH_OPTION &&
+      s.enabled &&
+      s.id !== "autoexec-launch-option",
   )) {
     additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
   }
 
-  try {
-    const autoexecConfig = await invoke<{
-      full_content: string;
-    }>("get_autoexec_config");
-    if (
-      autoexecConfig?.full_content &&
-      autoexecConfig.full_content.trim().length > 0
-    ) {
-      additionalArgs.push("-exec autoexec");
+  const autoexecLaunchOption = settings.find(
+    (s) => s.id === "autoexec-launch-option" && s.enabled,
+  );
+
+  if (autoexecLaunchOption) {
+    try {
+      const autoexecConfig = await invoke<{
+        full_content: string;
+      }>("get_autoexec_config");
+      if (
+        autoexecConfig?.full_content &&
+        autoexecConfig.full_content.trim().length > 0
+      ) {
+        additionalArgs.push("-exec autoexec");
+      }
+    } catch {
+      // Autoexec config doesn't exist or failed to load, skip
     }
-  } catch {
-    // Autoexec config doesn't exist or failed to load, skip
   }
 
   return additionalArgs.join(" ");

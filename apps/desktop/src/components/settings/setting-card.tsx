@@ -30,6 +30,7 @@ import {
 type SettingsCardProps = {
   setting: LocalSetting | undefined;
   onChange: (newValue: boolean) => void;
+  disabled?: boolean;
 };
 
 const parseCommand = (input: string) => {
@@ -99,7 +100,11 @@ export const SettingCardSkeleton = () => {
   );
 };
 
-const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
+const SettingCard = ({
+  setting,
+  onChange,
+  disabled = false,
+}: SettingsCardProps) => {
   const { t } = useTranslation();
   const addSetting = usePersistedStore((s) => s.addSetting);
   const removeSetting = usePersistedStore((s) => s.removeSetting);
@@ -203,7 +208,7 @@ const SettingCard = ({ setting, onChange }: SettingsCardProps) => {
 
           <Switch
             checked={setting.enabled}
-            disabled={isAutoexecOption}
+            disabled={disabled}
             id={`toggle-setting-${setting.id}`}
             onCheckedChange={onChange}
           />

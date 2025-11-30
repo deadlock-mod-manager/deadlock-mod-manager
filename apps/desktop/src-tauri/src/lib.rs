@@ -277,7 +277,8 @@ pub fn run() {
       commands::update_autoexec_config,
       commands::open_autoexec_folder,
       commands::open_autoexec_editor,
-      commands::apply_crosshair_to_autoexec
+      commands::apply_crosshair_to_autoexec,
+      commands::remove_crosshair_from_autoexec
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

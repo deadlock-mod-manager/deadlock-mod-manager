@@ -4,7 +4,7 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { EyeIcon, PencilIcon } from "@phosphor-icons/react";
+import { EyeIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useHover } from "@uidotdev/usehooks";
@@ -18,6 +18,7 @@ export interface CrosshairCardProps {
   config?: CrosshairConfig;
   isActive?: boolean;
   onPreviewOpen?: () => void;
+  onRemove?: () => void;
 }
 
 export const CrosshairCard = ({
@@ -25,22 +26,41 @@ export const CrosshairCard = ({
   config,
   isActive = false,
   onPreviewOpen,
+  onRemove,
 }: CrosshairCardProps) => {
   const { t } = useTranslation();
   const [ref, hovering] = useHover();
   const queryClient = useQueryClient();
   const { setActiveCrosshair } = usePersistedStore();
+  const crosshairsEnabled = usePersistedStore(
+    (state) => state.crosshairsEnabled,
+  );
 
   const applyCrosshairMutation = useMutation({
-    mutationFn: (crosshairConfig: CrosshairConfig) =>
-      invoke("apply_crosshair_to_autoexec", { config: crosshairConfig }),
-    onSuccess: () => {
+    mutationFn: (crosshairConfig: CrosshairConfig) => {
+      if (!crosshairsEnabled) {
+        throw new Error("Custom crosshairs are disabled");
+      }
+      return invoke("apply_crosshair_to_autoexec", { config: crosshairConfig });
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: (_, crosshairConfig) => {
+      setActiveCrosshair(crosshairConfig);
       toast.success(t("crosshairs.appliedRestart"));
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.error(error);
-      toast.error(t("crosshairs.form.applyError"));
+      if (
+        error instanceof Error &&
+        error.message === "Custom crosshairs are disabled"
+      ) {
+        toast.error(t("crosshairs.disabledError"));
+      } else {
+        toast.error(t("crosshairs.form.applyError"));
+      }
     },
   });
 
@@ -50,7 +70,6 @@ export const CrosshairCard = ({
   }
 
   const handleApply = () => {
-    setActiveCrosshair(crosshairConfig);
     applyCrosshairMutation.mutate(crosshairConfig);
   };
 
@@ -99,6 +118,18 @@ export const CrosshairCard = ({
                     ? t("common.loading")
                     : t("crosshairs.form.apply")}
                 </Button>
+                {onRemove && (
+                  <Button
+                    variant='text'
+                    icon={<TrashIcon className='h-4 w-4' />}
+                    className='text-white hover:text-destructive'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove();
+                    }}>
+                    {t("crosshairs.remove")}
+                  </Button>
+                )}
               </div>
             </div>
           )}

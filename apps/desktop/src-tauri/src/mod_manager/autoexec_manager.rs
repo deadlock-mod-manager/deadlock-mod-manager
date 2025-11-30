@@ -177,6 +177,39 @@ impl AutoexecManager {
     self.write_autoexec_config(game_path, &content)
   }
 
+  pub fn remove_crosshair_section(&self, game_path: &Path) -> Result<(), Error> {
+    let mut content = self.read_autoexec_config(game_path)?;
+
+    if let Some(start_pos) = content.find(CROSSHAIR_SECTION_START) {
+      if let Some(end_pos) = content.find(CROSSHAIR_SECTION_END) {
+        let end_pos = end_pos + CROSSHAIR_SECTION_END.len();
+        let before_section = content[..start_pos].trim_end();
+        let after_section = content[end_pos..].trim_start();
+        
+        let mut new_content = String::new();
+        if !before_section.is_empty() {
+          new_content.push_str(before_section);
+        }
+        if !after_section.is_empty() {
+          if !new_content.is_empty() && !new_content.ends_with('\n') {
+            new_content.push('\n');
+          }
+          new_content.push_str(after_section);
+        }
+        
+        content = new_content;
+      } else {
+        log::warn!("Found start marker but not end marker, removing from start marker to end");
+        content.truncate(start_pos);
+        content = content.trim_end().to_string();
+      }
+    } else {
+      log::info!("Crosshair section not found, nothing to remove");
+    }
+
+    self.write_autoexec_config(game_path, &content)
+  }
+
   pub fn open_autoexec_folder(&self, game_path: &Path) -> Result<(), Error> {
     let autoexec_path = self.get_autoexec_path(game_path);
     if let Some(parent) = autoexec_path.parent() {
