@@ -1,5 +1,12 @@
 # desktop
 
+## 0.11.1
+
+### Patch Changes
+
+- - UX improvements to custom crosshairs (option to disable, delete them)
+  - Japanese translations
+
 ## 0.11.0
 
 ### Minor Changes

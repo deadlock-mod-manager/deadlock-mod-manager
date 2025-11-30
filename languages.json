@@ -195,6 +195,20 @@
           "github": "Constrat"
         }
       ]
+    },
+    {
+      "code": "ja",
+      "name": "Japanese",
+      "nativeName": "日本語",
+      "flag": "🇯🇵",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "hiropiki",
+          "discord": "hiropiki"
+        }
+      ]
     }
   ]
 }

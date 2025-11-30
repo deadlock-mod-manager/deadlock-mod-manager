@@ -13,6 +13,7 @@ const LANGUAGE_CODES = [
   "fr",
   "gsw",
   "it",
+  "ja",
   "pl",
   "pt-BR",
   "ru",

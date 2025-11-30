@@ -149,7 +149,8 @@ const CustomSettingsData = () => {
   const autoexecLaunchOption: LocalSetting | null = useMemo(() => {
     if (!autoexecConfig) return null;
 
-    const persistedEnabled = settingStatusById[AUTOEXEC_LAUNCH_OPTION_ID] ?? false;
+    const persistedEnabled =
+      settingStatusById[AUTOEXEC_LAUNCH_OPTION_ID] ?? false;
     const enabled = hasAutoexecConfig ? persistedEnabled : false;
 
     return {
@@ -202,7 +203,8 @@ const CustomSettingsData = () => {
             }>
             <div className='grid grid-cols-1 gap-4'>
               {settingsForType.map((setting) => {
-                const isAutoexecOption = setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
+                const isAutoexecOption =
+                  setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
                 const canToggle = !isAutoexecOption || hasAutoexecConfig;
                 const isDisabled = isAutoexecOption && !hasAutoexecConfig;
 

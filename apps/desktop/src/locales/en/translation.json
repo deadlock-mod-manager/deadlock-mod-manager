@@ -593,12 +593,21 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.11.1": {
+        "title": "Crosshair UX Improvements & Japanese Support",
+        "features": [
+          "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
+          "🌐 Japanese language support added to the application",
+          "🔧 Minor bug fixes and stability improvements"
+        ]
+      },
       "0.11.0": {
         "title": "Crosshairs & Autoexec Support",
         "features": [
-          "🎯 Crosshair library and crosshair generator",
-          "⚙️ Autoexec configuration editor",
-          "🔧 Minor fixes and improvements"
+          "🎯 Crosshair publishing feature - create, publish, and browse community crosshairs with a built-in generator",
+          "⚙️ Autoexec configuration editor - manage your autoexec.cfg file directly from the app",
+          "🔧 Improved cache ingestion efficiency and plugin asset handling",
+          "⌨️ Updated zoom shortcut key and improved shortcut display formatting"
         ]
       },
       "0.10.1": {

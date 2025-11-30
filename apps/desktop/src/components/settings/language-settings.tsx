@@ -24,6 +24,7 @@ const languages = [
   { code: "es", name: "Español", flag: "🇪🇸" },
   { code: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷" },
   { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
 ];
 
 export const LanguageSettings = () => {

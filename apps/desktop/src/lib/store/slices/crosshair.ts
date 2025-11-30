@@ -45,9 +45,13 @@ export const createCrosshairSlice: StateCreator<
       const filteredHistory = state.activeCrosshairHistory.filter(
         (item) => JSON.stringify(item) !== configString,
       );
-      const wasActive = state.activeCrosshair && JSON.stringify(state.activeCrosshair) === configString;
+      const wasActive =
+        state.activeCrosshair &&
+        JSON.stringify(state.activeCrosshair) === configString;
       return {
-        activeCrosshair: wasActive ? (filteredHistory[0] || null) : state.activeCrosshair,
+        activeCrosshair: wasActive
+          ? filteredHistory[0] || null
+          : state.activeCrosshair,
         activeCrosshairHistory: filteredHistory,
       };
     }),

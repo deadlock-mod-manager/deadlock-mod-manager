@@ -69,6 +69,7 @@ pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(),
 
   let supported_languages = [
     "en", "de", "fr", "ar", "pl", "gsw", "th", "tr", "ru", "zh-CN", "zh-TW",
+    "es", "pt-BR", "it", "ja",
   ];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(

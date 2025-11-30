@@ -11,6 +11,7 @@ import gswTranslation from "@/locales/gsw/translation.json" with {
   type: "json",
 };
 import itTranslation from "@/locales/it/translation.json" with { type: "json" };
+import jaTranslation from "@/locales/ja/translation.json" with { type: "json" };
 import plTranslation from "@/locales/pl/translation.json" with { type: "json" };
 import ptBRTranslation from "@/locales/pt-BR/translation.json" with {
   type: "json",
@@ -68,6 +69,9 @@ const resources = {
   it: {
     translation: itTranslation,
   },
+  ja: {
+    translation: jaTranslation,
+  },
 };
 
 i18n
@@ -91,6 +95,7 @@ i18n
       "es",
       "pt-BR",
       "it",
+      "ja",
     ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
