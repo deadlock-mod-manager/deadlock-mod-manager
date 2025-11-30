@@ -17,7 +17,7 @@
     "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
     "test": "pnpm run \"/^test:.*/\"",
     "test:ts": "bun test",
-    "test:rust": "cargo nextest run",
+    "test:rust": "cargo test",
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",
     "prepublishOnly": "pnpm run build",
