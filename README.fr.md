@@ -188,6 +188,7 @@ Nous travaillons activement pour rendre Deadlock Mod Manager accessible aux util
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | ✅ Complete | [meneee](https://discordapp.com/users/meneee/) |
 | 🇮🇹 **Italian** | Italiano | ✅ Complete | [Constrat](https://github.com/Constrat) |
+| 🇯🇵 **Japanese** | 日本語 | ✅ Complete | [hiropiki](https://discordapp.com/users/hiropiki/) |
 
 <!-- LANGUAGE_TABLE_END -->
 
