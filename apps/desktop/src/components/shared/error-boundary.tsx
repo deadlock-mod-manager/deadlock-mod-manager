@@ -16,6 +16,15 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
       <AlertDescription className='flex flex-grow flex-row items-center justify-between gap-2'>
         <div className='flex flex-col gap-2'>
           <p>{t("errors.genericMessage")}</p>
+          {error.message.includes("Failed to parse game configuration") && (
+            <div className="flex flex-col gap-2">
+              <p>{t("errors.failedToParseGameConfiguration.instruction")}</p>
+              <ol className="list-decimal list-inside">
+                <li>{t("errors.failedToParseGameConfiguration.step1")}</li>
+                <li>{t("errors.failedToParseGameConfiguration.step2")}</li>
+              </ol>
+            </div>
+          )}
           <pre>
             {t("errors.errorCode")} {error.message}
           </pre>
