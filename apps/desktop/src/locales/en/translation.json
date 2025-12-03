@@ -564,8 +564,10 @@
     "goBack": "Go back",
     "failedToParseGameConfiguration": {
       "instruction": "Please follow these steps to resolve the issue:",
-      "step1": "Verify game files on Steam.",
-      "step2": "Open Mod Manager and click 'Launch Modded'."
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
     }
   },
   "table": {
