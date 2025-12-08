@@ -19,7 +19,3 @@ spec:
     matchNames:
       - {{ .Release.Namespace }}
 {{- end }}
-
-
-
-

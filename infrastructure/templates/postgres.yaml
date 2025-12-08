@@ -71,7 +71,7 @@ kind: ScheduledBackup
 metadata:
   name: {{ .Chart.Name }}
 spec:
-  schedule: "0 0 * * * *" # Every hour
+  schedule: "0 0 * * *" # Every day at midnight
   backupOwnerReference: self
   cluster:
     name: {{ .Chart.Name }}
