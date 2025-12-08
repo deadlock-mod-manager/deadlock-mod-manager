@@ -235,7 +235,7 @@ resources:
     replicas: 3
     memory: 512Mi
     cpu: 200m
-    disk: 25Gi
+    disk: 30Gi
     extensions:
       - vector
     config:
