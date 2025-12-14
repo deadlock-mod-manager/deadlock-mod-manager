@@ -43,7 +43,8 @@
     "db:studio": "pnpm --filter database db:studio",
     "db:migrate": "pnpm --filter database db:migrate",
     "db:generate": "pnpm --filter database db:generate",
-    "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle"
+    "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle",
+    "clean": "rimraf --glob **/node_modules"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
@@ -59,12 +60,6 @@
     "@changesets/cli": "^2.29.7"
   },
   "pnpm": {
-    "overrides": {
-      "@types/react": "19.0.2",
-      "@types/react-dom": "19.0.2",
-      "tailwind-merge": "^2.6.0",
-      "drizzle-orm": "^0.42.0"
-    },
     "onlyBuiltDependencies": [
       "@parcel/watcher",
       "@swc/core",
