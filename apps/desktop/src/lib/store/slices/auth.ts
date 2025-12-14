@@ -24,11 +24,9 @@ export type AuthState = {
   user: User | null;
   session: Session | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
 
   setAuth: (user: User | null, session: Session | null) => void;
   clearAuth: () => void;
-  setLoading: (isLoading: boolean) => void;
 };
 
 export const createAuthSlice: StateCreator<State, [], [], AuthState> = (
@@ -37,7 +35,6 @@ export const createAuthSlice: StateCreator<State, [], [], AuthState> = (
   user: null,
   session: null,
   isAuthenticated: false,
-  isLoading: true,
 
   setAuth: (user, session) =>
     set(() => ({
@@ -53,10 +50,5 @@ export const createAuthSlice: StateCreator<State, [], [], AuthState> = (
       session: null,
       isAuthenticated: false,
       isLoading: false,
-    })),
-
-  setLoading: (isLoading) =>
-    set(() => ({
-      isLoading,
     })),
 });

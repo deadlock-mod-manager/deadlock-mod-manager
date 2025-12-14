@@ -1,148 +1,97 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { fetch } from "@tauri-apps/plugin-http";
-import { open } from "@tauri-apps/plugin-shell";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { exchangeCodeForTokens } from "@/lib/auth/oidc";
+import { clearTokens, setTokens } from "@/lib/auth/token";
 import logger from "@/lib/logger";
-import { usePersistedStore } from "@/lib/store";
-import type { Session, User } from "@/lib/store/slices/auth";
+import { useOIDCSession } from "./use-oidc-session";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
-const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3003";
+interface OIDCCallbackPayload {
+  code: string;
+  state?: string;
+}
+
+interface OIDCErrorPayload {
+  error: string;
+  error_description?: string;
+}
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
   const {
-    user,
     session,
-    isAuthenticated,
     isLoading,
-    setAuth,
-    clearAuth,
-    setLoading,
-  } = usePersistedStore();
+    refetch,
+    signOut: oidcSignOut,
+  } = useOIDCSession();
+
+  const handleOIDCCallback = useCallback(
+    async (payload: OIDCCallbackPayload) => {
+      try {
+        const tokenResponse = await exchangeCodeForTokens(payload.code);
+        await setTokens(tokenResponse);
+        queryClient.invalidateQueries({ queryKey: ["oidc-session"] });
+        queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
+        toast.success("Successfully logged in!");
+      } catch (error) {
+        logger.error("Failed to exchange code for tokens", error);
+        toast.error("Failed to complete login");
+      }
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
-    const validateAndSetSessionInternal = async (token: string) => {
-      try {
-        logger.info(
-          "Validating token at:",
-          `${BASE_URL}/auth/desktop/validate`,
-        );
-        const response = await fetch(`${BASE_URL}/auth/desktop/validate`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        logger.info("Validation response status:", response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          logger.error("Validation failed with response:", errorText);
-          throw new Error("Failed to validate session");
-        }
-
-        const data = (await response.json()) as {
-          user: User;
-          session: Omit<Session, "token">;
-        };
-
-        logger.info("Session validated for user:", data.user.email);
-        setAuth(data.user, { ...data.session, token });
-        queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
-      } catch (error) {
-        logger.error("Failed to validate session", error);
-        await invoke("clear_auth_token");
-        clearAuth();
-        throw error;
-      }
-    };
-
-    const initializeAuth = async () => {
-      try {
-        setLoading(true);
-        const token = await invoke<string | null>("get_auth_token");
-
-        if (token) {
-          await validateAndSetSessionInternal(token);
-        } else {
-          setLoading(false);
-        }
-      } catch (error) {
-        logger.error("Failed to initialize auth", error);
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    const setupAuthCallbackListener = async () => {
-      const unlisten = await listen<string>(
-        "auth-callback-received",
+    const setupAuthCallbackListeners = async () => {
+      const unlistenOIDCSuccess = await listen<OIDCCallbackPayload>(
+        "oidc-callback-received",
         async (event) => {
-          const token = event.payload;
-
-          try {
-            await invoke("store_auth_token", { token });
-            await validateAndSetSessionInternal(token);
-            toast.success("Successfully logged in!");
-          } catch (error) {
-            logger.error("Failed to process auth callback", error);
-            toast.error("Failed to complete login");
-          }
+          await handleOIDCCallback(event.payload);
         },
       );
 
-      return unlisten;
+      const unlistenOIDCError = await listen<OIDCErrorPayload>(
+        "oidc-callback-error",
+        async (event) => {
+          const { error, error_description } = event.payload;
+          logger.error("OIDC callback error", { error, error_description });
+          toast.error(error_description || error || "Authentication failed");
+        },
+      );
+
+      return () => {
+        unlistenOIDCSuccess();
+        unlistenOIDCError();
+      };
     };
 
-    const unlistenPromise = setupAuthCallbackListener();
+    const unlistenPromise = setupAuthCallbackListeners();
 
     return () => {
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [setAuth, clearAuth, setLoading, queryClient.invalidateQueries]);
+  }, [handleOIDCCallback]);
 
-  const login = async () => {
+  const logout = useCallback(async () => {
     try {
-      const loginUrl = `${WEB_URL}/login?desktop=true`;
-      await open(loginUrl);
-    } catch (error) {
-      logger.error("Failed to open login page", error);
-      toast.error("Failed to open login page");
-    }
-  };
-
-  const logout = async () => {
-    try {
-      if (session?.token) {
-        await fetch(`${BASE_URL}/api/auth/sign-out`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.token}`,
-          },
-        });
-      }
-    } catch (error) {
-      logger.error("Failed to sign out from server", error);
-    } finally {
-      await invoke("clear_auth_token");
-      clearAuth();
+      await clearTokens();
+      await oidcSignOut();
+      queryClient.invalidateQueries({ queryKey: ["oidc-session"] });
       queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
       toast.success("Logged out successfully");
+    } catch (error) {
+      logger.error("Failed to logout", error);
+      toast.error("Failed to logout");
     }
-  };
+  }, [oidcSignOut, queryClient]);
 
   return {
-    user,
-    session,
-    isAuthenticated,
+    user: session?.user ?? null,
+    session: session ?? null,
+    isAuthenticated: !!session?.user,
     isLoading,
-    login,
     logout,
+    refetch,
   };
 };
