@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";

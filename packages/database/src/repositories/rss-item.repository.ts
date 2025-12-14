@@ -1,4 +1,4 @@
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { NewRssItem, RssItem } from "../schema/rss-items";
 import { rssItems } from "../schema/rss-items";

@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Announcement, NewAnnouncement } from "../schema/announcements";
 import { announcements } from "../schema/announcements";

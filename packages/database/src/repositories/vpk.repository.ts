@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { CachedVPK, CachedVPKWithMod, NewCachedVPK } from "../schema/vpk";
 import { vpk } from "../schema/vpk";

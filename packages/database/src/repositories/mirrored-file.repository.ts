@@ -1,5 +1,5 @@
 import { EntityNotFoundError, mapDrizzleError } from "@deadlock-mods/common";
-import { and, count, eq, lt, sum } from "drizzle-orm";
+import { and, count, eq, lt, sum } from "@deadlock-mods/database";
 import { err, ok } from "neverthrow";
 import { mirroredFiles, type NewMirroredFile } from "../schema/mirrored-files";
 import { BaseRepository } from "./base";

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type {
   CustomSetting,

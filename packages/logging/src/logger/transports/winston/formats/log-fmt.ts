@@ -18,20 +18,20 @@ export const devFormat = format.combine(
     const seenKeys = new Set<string>();
 
     // Extract app and version before processing splat to avoid duplicates
-    const app = (meta?.["app"] ?? "") as string;
+    const app = (meta?.app ?? "") as string;
     if (app) seenKeys.add("app");
 
-    const service = (meta?.["service"] ?? "") as string;
+    const service = (meta?.service ?? "") as string;
     if (service) seenKeys.add("service");
 
-    if (meta?.["version"]) seenKeys.add("version");
+    if (meta?.version) seenKeys.add("version");
 
     // Remove app and version from meta to avoid duplicates
     const metadata = { ...meta };
 
-    delete metadata["app"];
-    delete metadata["version"];
-    delete metadata["service"];
+    delete metadata.app;
+    delete metadata.version;
+    delete metadata.service;
     delete metadata[Symbol.for("splat")];
 
     const { formattedMessage, formattedMetadata, formattedError } =
@@ -43,12 +43,12 @@ export const devFormat = format.combine(
       });
 
     const splat = formatSplat(meta[Symbol.for("splat")], seenKeys);
-    const version = (meta?.["version"] ?? "") as string;
+    const version = (meta?.version ?? "") as string;
     const parts = [
       timestamp,
       `[${level}]`,
       `${app}${version ? `@${version}` : ""}`,
-      chalk.cyan(service || "*") + ":",
+      `${chalk.cyan(service || "*")}:`,
       formattedMessage.trim(),
       splat?.trim() ? chalk.gray(splat?.trim()) : null,
       formattedMetadata?.trim() ? chalk.gray(formattedMetadata?.trim()) : null,

@@ -31,6 +31,43 @@ import { db, schema } from "./client";
       ])
       .onConflictDoNothing();
 
+    // Seed OAuth applications (OIDC trusted clients)
+    await db
+      .insert(schema.oauthApplication)
+      .values([
+        {
+          clientId: "deadlockmods-www",
+          clientSecret:
+            "sk_web_" +
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15),
+          name: "Deadlock Mod Manager - Web",
+          redirectUrls: JSON.stringify([
+            "https://deadlockmods.app/auth/callback",
+            "http://localhost:3003/auth/callback",
+          ]),
+          type: "web",
+          disabled: false,
+          metadata: JSON.stringify({ internal: true }),
+        },
+        {
+          clientId: "deadlockmods-desktop",
+          clientSecret:
+            "sk_desktop_" +
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15),
+          name: "Deadlock Mod Manager - Desktop",
+          redirectUrls: JSON.stringify([
+            "https://auth.deadlockmods.app/auth/desktop-callback",
+            "http://localhost:3004/auth/desktop-callback",
+          ]),
+          type: "native",
+          disabled: false,
+          metadata: JSON.stringify({ internal: true }),
+        },
+      ])
+      .onConflictDoNothing();
+
     console.log("Database seeded successfully");
   } catch (error) {
     console.error("Failed to seed database:", error);
