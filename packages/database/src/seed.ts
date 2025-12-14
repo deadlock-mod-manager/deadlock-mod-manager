@@ -1,4 +1,4 @@
-import { db, schema } from "./client";
+import { db, eq, schema } from "./client";
 
 (async () => {
   try {
@@ -37,36 +37,40 @@ import { db, schema } from "./client";
       .values([
         {
           clientId: "deadlockmods-www",
-          clientSecret:
-            "sk_web_" +
-            Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15),
+          clientSecret: null,
           name: "Deadlock Mod Manager - Web",
           redirectUrls: JSON.stringify([
             "https://deadlockmods.app/auth/callback",
             "http://localhost:3003/auth/callback",
           ]),
-          type: "web",
+          type: "public",
           disabled: false,
           metadata: JSON.stringify({ internal: true }),
         },
         {
           clientId: "deadlockmods-desktop",
-          clientSecret:
-            "sk_desktop_" +
-            Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15),
+          clientSecret: null,
           name: "Deadlock Mod Manager - Desktop",
           redirectUrls: JSON.stringify([
             "https://auth.deadlockmods.app/auth/desktop-callback",
             "http://localhost:3004/auth/desktop-callback",
           ]),
-          type: "native",
+          type: "public",
           disabled: false,
           metadata: JSON.stringify({ internal: true }),
         },
       ])
       .onConflictDoNothing();
+
+    // Ensure public clients have no clientSecret (use PKCE instead)
+    await db
+      .update(schema.oauthApplication)
+      .set({ clientSecret: null })
+      .where(eq(schema.oauthApplication.clientId, "deadlockmods-desktop"));
+    await db
+      .update(schema.oauthApplication)
+      .set({ clientSecret: null })
+      .where(eq(schema.oauthApplication.clientId, "deadlockmods-www"));
 
     console.log("Database seeded successfully");
   } catch (error) {

@@ -260,6 +260,13 @@
       "when": 1765724973774,
       "tag": "0036_curved_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1765743388605,
+      "tag": "0037_stiff_bruce_banner",
+      "breakpoints": true
     }
   ]
 }

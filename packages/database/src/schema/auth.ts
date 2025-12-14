@@ -108,3 +108,13 @@ export const oauthConsent = pgTable("oauth_consent", {
   consentGiven: boolean("consent_given").notNull(),
   ...timestamps,
 });
+
+export const jwks = pgTable("jwks", {
+  id: typeId("id", "jwks")
+    .primaryKey()
+    .$defaultFn(() => generateId("jwks").toString()),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
