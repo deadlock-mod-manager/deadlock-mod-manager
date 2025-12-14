@@ -5,7 +5,7 @@
     "includes": [
       "**/*",
       "!apps/docs/.next",
-      "!apps/www/src/routeTree.gen.ts",
+      "!**/routeTree.gen.ts",
       "!**/components/ui",
       "!apps/desktop/src/components/ui",
       "!apps/web/components/ui",
