@@ -1,0 +1,117 @@
+{{- $port := .Values.deployments.auth.port | default 3004 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-auth
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.auth.replicas }}
+  {{- if .Values.deployments.auth.strategy }}
+  strategy:
+    type: {{ .Values.deployments.auth.strategy.type | default "RollingUpdate" }}
+    {{- if eq (.Values.deployments.auth.strategy.type | default "RollingUpdate") "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.deployments.auth.strategy.maxUnavailable | default 1 }}
+      maxSurge: {{ .Values.deployments.auth.strategy.maxSurge | default 1 }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-auth
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-auth
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: auth
+    spec:
+      {{- if .Values.deployments.auth.restartPolicy }}
+      restartPolicy: {{ .Values.deployments.auth.restartPolicy }}
+      {{- end }}
+      {{- if .Values.deployments.auth.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployments.auth.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: auth
+          image: {{ .Values.deployments.auth.image }}
+          {{- if .Values.deployments.auth.command }}
+          command:
+            {{- range .Values.deployments.auth.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          {{- if .Values.deployments.auth.healthCheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployments.auth.healthCheck.startup.path }}
+              port: {{ .Values.deployments.auth.healthCheck.startup.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.auth.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.auth.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.auth.healthCheck.startup.timeoutSeconds | default 15 }}
+            successThreshold: {{ .Values.deployments.auth.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.auth.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.auth.healthCheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployments.auth.healthCheck.readiness.path }}
+              port: {{ .Values.deployments.auth.healthCheck.readiness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.auth.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.auth.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.auth.healthCheck.readiness.timeoutSeconds | default 15 }}
+            successThreshold: {{ .Values.deployments.auth.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.auth.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.auth.healthCheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployments.auth.healthCheck.liveness.path }}
+              port: {{ .Values.deployments.auth.healthCheck.liveness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.auth.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.auth.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.auth.healthCheck.liveness.timeoutSeconds | default 15 }}
+            successThreshold: {{ .Values.deployments.auth.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.auth.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.deployments.auth.memory }}
+              cpu: {{ .Values.deployments.auth.cpu }}
+            limits:
+              memory: {{ .Values.deployments.auth.memory }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.auth.env }}
+            {{- .Values.deployments.auth.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-auth
+  labels:
+    app: {{ .Chart.Name }}-auth
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ $port }}
+      targetPort: {{ $port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-auth

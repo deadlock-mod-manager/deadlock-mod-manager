@@ -1,4 +1,4 @@
-name: Release Services (API, Bot, Lockdex, Mirror)
+name: Release Services (API, Auth, Bot, Lockdex, Mirror)
 env:
   NODE_VERSION: "24.8.0"
 
@@ -16,6 +16,7 @@ jobs:
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
       api_version: ${{ steps.get-versions.outputs.api_version }}
+      auth_version: ${{ steps.get-versions.outputs.auth_version }}
       bot_version: ${{ steps.get-versions.outputs.bot_version }}
       lockdex_version: ${{ steps.get-versions.outputs.lockdex_version }}
       mirror_version: ${{ steps.get-versions.outputs.mirror_version }}
@@ -36,16 +37,19 @@ jobs:
         id: get-versions
         run: |
           API_VERSION=$(jq -r '.version' ./apps/api/package.json)
+          AUTH_VERSION=$(jq -r '.version' ./apps/auth/package.json)
           BOT_VERSION=$(jq -r '.version' ./apps/bot/package.json)
           LOCKDEX_VERSION=$(jq -r '.version' ./apps/lockdex/package.json)
           MIRROR_VERSION=$(jq -r '.version' ./apps/mirror-service/package.json)
 
           echo "API Version: $API_VERSION"
+          echo "Auth Version: $AUTH_VERSION"
           echo "Bot Version: $BOT_VERSION"
           echo "Lockdex Version: $LOCKDEX_VERSION"
           echo "Mirror Version: $MIRROR_VERSION"
 
           echo "api_version=$API_VERSION" >> $GITHUB_OUTPUT
+          echo "auth_version=$AUTH_VERSION" >> $GITHUB_OUTPUT
           echo "bot_version=$BOT_VERSION" >> $GITHUB_OUTPUT
           echo "lockdex_version=$LOCKDEX_VERSION" >> $GITHUB_OUTPUT
           echo "mirror_version=$MIRROR_VERSION" >> $GITHUB_OUTPUT
@@ -73,6 +77,7 @@ jobs:
                 console.log(`Creating new release for tag: ${tag}`);
                 
                 const apiVersion = process.env.API_VERSION || 'unknown';
+                const authVersion = process.env.AUTH_VERSION || 'unknown';
                 const botVersion = process.env.BOT_VERSION || 'unknown';
                 const lockdexVersion = process.env.LOCKDEX_VERSION || 'unknown';
                 const mirrorVersion = process.env.MIRROR_VERSION || 'unknown';
@@ -84,6 +89,10 @@ jobs:
                 ### 🚀 API Service
                 - **Version:** v${apiVersion}
                 - **Docker Image:** \`stormix/deadlock-mods-api:${apiVersion}\`
+                
+                ### 🔐 Auth Service
+                - **Version:** v${authVersion}
+                - **Docker Image:** \`stormix/deadlock-mods-auth:${authVersion}\`
                 
                 ### 🤖 Discord Bot
                 - **Version:** v${botVersion}
@@ -117,6 +126,7 @@ jobs:
             }
         env:
           API_VERSION: ${{ steps.get-versions.outputs.api_version }}
+          AUTH_VERSION: ${{ steps.get-versions.outputs.auth_version }}
           BOT_VERSION: ${{ steps.get-versions.outputs.bot_version }}
           LOCKDEX_VERSION: ${{ steps.get-versions.outputs.lockdex_version }}
           MIRROR_VERSION: ${{ steps.get-versions.outputs.mirror_version }}
@@ -145,6 +155,34 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: api
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+
+  build-auth:
+    needs: create-release
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        uses: ./.github/actions/docker-build-push
+        with:
+          service-name: auth
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: auth
+          deployment-name: deadlock-mod-manager-auth
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -233,7 +271,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-api, build-bot, build-lockdex, build-mirror]
+    needs: [create-release, build-api, build-auth, build-bot, build-lockdex, build-mirror]
 
     steps:
       - name: Publish release
@@ -275,7 +313,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-api, build-bot, build-lockdex, build-mirror]
+    needs: [create-release, build-api, build-auth, build-bot, build-lockdex, build-mirror]
     if: failure()
 
     steps:

@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       api: ${{ steps.filter.outputs.api }}
+      auth: ${{ steps.filter.outputs.auth }}
       bot: ${{ steps.filter.outputs.bot }}
       lockdex: ${{ steps.filter.outputs.lockdex }}
       mirror: ${{ steps.filter.outputs.mirror }}
@@ -37,6 +38,9 @@ jobs:
           filters: |
             api:
               - 'apps/api/**'
+              - 'packages/**'
+            auth:
+              - 'apps/auth/**'
               - 'packages/**'
             bot:
               - 'apps/bot/**'
@@ -81,6 +85,40 @@ jobs:
         with:
           service-name: api
           deployment-name: deadlock-mod-manager-web
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+
+  deploy-auth:
+    environment:
+      name: production
+      url: https://auth.deadlockmods.app
+    name: Deploy Auth
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.auth == 'true' || github.event.inputs.force-deploy == 'true' }}
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        id: docker-build
+        uses: ./.github/actions/docker-build-push
+        with:
+          service-name: auth
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restart Kubernetes deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: auth
+          deployment-name: deadlock-mod-manager-auth
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -216,4 +254,3 @@ jobs:
           deployment-name: deadlock-mod-manager-www
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
-
