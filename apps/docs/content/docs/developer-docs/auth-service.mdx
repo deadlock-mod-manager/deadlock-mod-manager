@@ -1,0 +1,110 @@
+---
+title: Authentication Service
+description: Overview of the authentication service, OIDC provider, and authentication flows
+---
+
+# Authentication Service
+
+The Deadlock Mod Manager uses a centralized authentication service built on [Better Auth](https://www.better-auth.com/) with OIDC (OpenID Connect) support. The service supports multiple authentication methods and provides OIDC endpoints for both web and desktop applications.
+
+## Architecture
+
+The authentication service is located in the `apps/auth` directory and provides:
+
+- **Better Auth Core**: Session management, user accounts, and authentication providers
+- **OIDC Provider Plugin**: OAuth 2.0 / OpenID Connect provider for client applications
+- **Database Integration**: User and session data stored via Drizzle ORM
+- **Multiple Auth Methods**: Email/password, GitHub OAuth, Steam authentication
+
+## Service Configuration
+
+The auth service is configured in `apps/auth/src/lib/auth/index.ts`:
+
+```typescript
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+  }),
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
+  // ... configuration
+});
+```
+
+### Key Features
+
+- **Account Linking**: Users can link multiple authentication providers to a single account
+- **Cross-Subdomain Cookies**: Cookies work across `.deadlockmods.app` subdomains
+- **Secure Cookies**: HTTP-only, secure, same-site cookies for session management
+- **Admin Support**: Additional `isAdmin` field for user accounts
+
+### Authentication Providers
+
+1. **Email/Password**: Traditional email and password authentication
+2. **GitHub OAuth**: Social login via GitHub
+3. **Steam**: Custom Steam authentication plugin
+4. **OIDC Provider**: OAuth 2.0 / OpenID Connect provider for internal clients
+
+## OIDC Provider Configuration
+
+The OIDC provider plugin enables the auth service to act as an identity provider for client applications. Two trusted clients are configured:
+
+### Web Client (`deadlockmods-www`)
+
+- **Type**: Web application
+- **Redirect URLs**:
+  - Production: `https://deadlockmods.app/auth/callback`
+  - Development: `http://localhost:3003/auth/callback`
+- **Skip Consent**: Enabled (internal client)
+
+### Desktop Client (`deadlockmods-desktop`)
+
+- **Type**: Native application
+- **Redirect URLs**:
+  - Production: `https://auth.deadlockmods.app/auth/desktop-callback`
+  - Development: `http://localhost:3004/auth/desktop-callback`
+- **Skip Consent**: Enabled (internal client)
+
+## Authentication Flows
+
+### Web Application Flow
+
+The web application (`apps/www`) uses a standard OAuth 2.0 authorization code flow:
+
+1. **Initiate Login**: User clicks sign in, triggering `initiateOIDCLogin()`
+2. **Authorization Request**: Browser redirects to `/api/auth/oauth2/authorize` with:
+   - `client_id`: `deadlockmods-www`
+   - `redirect_uri`: Web app callback URL
+   - `response_type`: `code`
+   - `scope`: `openid profile email`
+   - `state`: Base64-encoded JSON with return URL
+3. **User Authentication**: User authenticates via the auth service login page
+4. **Authorization Code**: Auth service redirects to callback URL with authorization code
+5. **Token Exchange**: Web app exchanges code for tokens via `/api/auth/oauth2/token`
+6. **Token Storage**: Tokens stored in browser localStorage
+7. **User Info**: Web app fetches user info from `/api/auth/oauth2/userinfo`
+
+### Desktop Application Flow
+
+The desktop application (`apps/desktop`) uses a similar flow with deep link handling:
+
+1. **Initiate Login**: User clicks sign in in desktop app
+2. **Open Browser**: Desktop app opens system browser to auth service
+3. **Authorization Request**: Browser redirects to `/api/auth/oauth2/authorize` with desktop client ID
+4. **User Authentication**: User authenticates via the auth service login page
+5. **Desktop Callback**: Auth service redirects to `/auth/desktop-callback` with authorization code
+6. **Deep Link**: Callback page attempts to open `deadlock-mod-manager://auth/callback?code=...`
+7. **Deep Link Handler**: Desktop app receives deep link and emits `oidc-callback-received` event
+8. **Token Exchange**: Desktop app exchanges code for tokens
+9. **Token Storage**: Tokens stored securely via Tauri commands (encrypted storage)
+10. **User Info**: Desktop app fetches user info from `/api/auth/oauth2/userinfo`
+
+#### Fallback Flow
+
+If the deep link fails (app not running or deep link handler unavailable):
+
+1. **Fallback UI**: Callback page shows authorization code
+2. **Manual Entry**: User can copy code and paste it into desktop app
+3. **Code Entry**: Desktop app provides manual code entry UI
+4. **Token Exchange**: Desktop app exchanges manually entered code for tokens
