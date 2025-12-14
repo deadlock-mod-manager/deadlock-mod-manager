@@ -59,11 +59,12 @@ export const auth = betterAuth({
       trustedClients: [
         {
           clientId: "deadlockmods-www",
+          clientSecret: env.BETTER_AUTH_WEB_CLIENT_SECRET,
           name: "DeadlockMods Web",
           type: "web",
           redirectUrls: [
             "https://deadlockmods.app/auth/callback",
-            "http://localhost:3003/auth/callback",
+            "http://localhost:3004/auth/callback",
           ],
           disabled: false,
           skipConsent: true,
@@ -71,6 +72,7 @@ export const auth = betterAuth({
         },
         {
           clientId: "deadlockmods-desktop",
+          clientSecret: env.BETTER_AUTH_DESKTOP_CLIENT_SECRET,
           name: "DeadlockMods Desktop",
           type: "native",
           redirectUrls: [

@@ -28,6 +28,8 @@ export const envSchema = z.object({
   STEAM_API_KEY: z.string(),
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),
+  BETTER_AUTH_WEB_CLIENT_SECRET: z.string(),
+  BETTER_AUTH_DESKTOP_CLIENT_SECRET: z.string(),
 });
 
 export const env = envSchema.parse(process.env);
