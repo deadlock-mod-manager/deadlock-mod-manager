@@ -18,6 +18,7 @@
     "@loglayer/transport-tslog": "^2.1.2",
     "@loglayer/transport-winston": "^2.1.2",
     "@sentry/node": "catalog:",
+    "chalk": "^5.6.2",
     "lodash": "^4.17.21",
     "logfmt": "^1.4.0",
     "loglayer": "^6.7.0",

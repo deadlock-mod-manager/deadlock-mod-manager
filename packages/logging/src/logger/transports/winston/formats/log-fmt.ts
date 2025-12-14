@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/performance/noDelete: don't care lmao */
+import chalk from "chalk";
 import logfmt from "logfmt";
-import type winston from "winston";
 import { format } from "winston";
 import { formatLogComponents } from "../utils";
 
@@ -10,7 +9,8 @@ import { formatLogComponents } from "../utils";
  * Example:
  * 2025-03-17T15:37:13+01:00 app-api (1.0.0) [error]: Test error app=app-api
  */
-export const devFormat: winston.Logform.Format = format.combine(
+export const devFormat = format.combine(
+  format.timestamp({ format: "HH:mm:ss" }),
   format.colorize(),
   format.align(),
   format.printf(({ level, message, timestamp, error, ...meta }) => {
@@ -18,21 +18,20 @@ export const devFormat: winston.Logform.Format = format.combine(
     const seenKeys = new Set<string>();
 
     // Extract app and version before processing splat to avoid duplicates
-    const app = meta?.app ?? "";
-    if (app) {
-      seenKeys.add("app");
-    }
+    const app = (meta?.["app"] ?? "") as string;
+    if (app) seenKeys.add("app");
 
-    const version = meta?.version ? `(${meta?.version})` : "";
-    if (meta?.version) {
-      seenKeys.add("version");
-    }
+    const service = (meta?.["service"] ?? "") as string;
+    if (service) seenKeys.add("service");
+
+    if (meta?.["version"]) seenKeys.add("version");
 
     // Remove app and version from meta to avoid duplicates
     const metadata = { ...meta };
 
-    delete metadata.app;
-    delete metadata.version;
+    delete metadata["app"];
+    delete metadata["version"];
+    delete metadata["service"];
     delete metadata[Symbol.for("splat")];
 
     const { formattedMessage, formattedMetadata, formattedError } =
@@ -44,17 +43,23 @@ export const devFormat: winston.Logform.Format = format.combine(
       });
 
     const splat = formatSplat(meta[Symbol.for("splat")], seenKeys);
-
-    return [
+    const version = (meta?.["version"] ?? "") as string;
+    const parts = [
       timestamp,
-      app,
-      version,
-      `[${level}]:`,
-      formattedMessage,
-      splat,
-      formattedMetadata,
-      formattedError,
-    ].join(" ");
+      `[${level}]`,
+      `${app}${version ? `@${version}` : ""}`,
+      chalk.cyan(service || "*") + ":",
+      formattedMessage.trim(),
+      splat?.trim() ? chalk.gray(splat?.trim()) : null,
+      formattedMetadata?.trim() ? chalk.gray(formattedMetadata?.trim()) : null,
+      formattedError?.trim()
+        ? level.includes("warn")
+          ? chalk.yellow(formattedError?.trim())
+          : chalk.red(formattedError?.trim())
+        : null,
+    ].filter(Boolean);
+
+    return parts.join(" ");
   }),
 );
 
@@ -66,7 +71,11 @@ export const formatSplat = (
   seenKeys: Set<string> = new Set(),
 ): string => {
   if (!Array.isArray(splat)) {
-    return splat ? String(splat) : "";
+    if (!splat) return "";
+    if (typeof splat === "object") {
+      return JSON.stringify(splat, null, 2);
+    }
+    return String(splat);
   }
 
   const result = splat
@@ -89,9 +98,18 @@ export const formatSplat = (
         {} as Record<string, unknown>,
       );
 
-      return Object.keys(filteredObj).length > 0
-        ? logfmt.stringify(filteredObj)
-        : "";
+      if (Object.keys(filteredObj).length > 0) {
+        try {
+          const logfmtResult = logfmt.stringify(filteredObj);
+          if (logfmtResult.includes("[object Object]")) {
+            return JSON.stringify(filteredObj, null, 2);
+          }
+          return logfmtResult;
+        } catch {
+          return JSON.stringify(filteredObj, null, 2);
+        }
+      }
+      return "";
     })
     .filter((str) => str.length > 0)
     .join(" ");
