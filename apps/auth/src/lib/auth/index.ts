@@ -1,7 +1,7 @@
 import { db, schema } from "@deadlock-mods/database";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { oidcProvider } from "better-auth/plugins";
+import { jwt, oidcProvider } from "better-auth/plugins";
 import { env } from "../env";
 import { steam } from "./plugins/steam";
 
@@ -53,15 +53,16 @@ export const auth = betterAuth({
       steamApiKey: env.STEAM_API_KEY,
       accountLinking: true,
     }),
+    jwt(),
     oidcProvider({
       loginPage: "/login",
       allowDynamicClientRegistration: false,
+      useJWTPlugin: true,
       trustedClients: [
         {
           clientId: "deadlockmods-www",
-          clientSecret: env.BETTER_AUTH_WEB_CLIENT_SECRET,
           name: "DeadlockMods Web",
-          type: "web",
+          type: "public",
           redirectUrls: [
             "https://deadlockmods.app/auth/callback",
             "http://localhost:3004/auth/callback",
@@ -72,9 +73,8 @@ export const auth = betterAuth({
         },
         {
           clientId: "deadlockmods-desktop",
-          clientSecret: env.BETTER_AUTH_DESKTOP_CLIENT_SECRET,
           name: "DeadlockMods Desktop",
-          type: "native",
+          type: "public",
           redirectUrls: [
             "https://auth.deadlockmods.app/auth/desktop-callback",
             "http://localhost:3004/auth/desktop-callback",
