@@ -15,6 +15,7 @@ export const envSchema = z.object({
   CORS_ORIGIN: z.array(z.string()).optional().default([
     "https://deadlockmods.com",
     "https://deadlockmods.app",
+    "https://api.deadlockmods.app",
     "http://tauri.localhost", // Tauri production build
     "http://localhost:1420", // Tauri dev server
     "http://localhost:3003", // Local web server
@@ -31,6 +32,10 @@ export const envSchema = z.object({
     .url("MIRROR_SERVICE_URL must be a valid URL")
     .optional()
     .default("https://mirror.deadlockmods.app"),
+  AUTH_URL: z
+    .string()
+    .url("AUTH_URL must be a valid URL")
+    .default("http://localhost:3004"),
 });
 
 export const env = envSchema.parse(process.env);

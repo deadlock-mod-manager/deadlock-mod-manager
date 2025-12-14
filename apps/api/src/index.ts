@@ -12,7 +12,6 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { featureFlagDefinitions } from "./config/feature-flags";
 import { apiHandler } from "./handlers/api";
 import { rpcHandler } from "./handlers/rpc";
-import { auth } from "./lib/auth";
 import {
   MODS_CACHE_CONFIG,
   SENTRY_OPTIONS,
@@ -23,7 +22,6 @@ import { env } from "./lib/env";
 import { logger } from "./lib/logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
-import desktopAuthRouter from "./routers/desktop-auth";
 import artifactsRouter from "./routers/legacy/artifacts";
 import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
@@ -61,7 +59,6 @@ app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
 
 app
-  .on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw))
   .use("/rpc/*", async (c, next) => {
     const context = await createContext({ context: c });
 
@@ -105,11 +102,9 @@ app
   .route("/", healthRouter)
   .route("/docs", docsRouter)
   .route("/redirect", redirectRouter)
-  .route("/artifacts", artifactsRouter)
-  .route("/auth/desktop", desktopAuthRouter);
+  .route("/artifacts", artifactsRouter);
 
 const main = async () => {
-  // Bootstrap feature flags
   logger.info("Bootstrapping feature flags");
   const bootstrapResult = await featureFlagsService.bootstrap(
     featureFlagDefinitions,
@@ -119,10 +114,6 @@ const main = async () => {
     logger
       .withError(bootstrapResult.error)
       .error("Failed to bootstrap feature flags");
-  } else {
-    logger
-      .withMetadata({ successCount: bootstrapResult.value })
-      .info("Feature flags bootstrapped successfully");
   }
 
   logger.info("Defining cron jobs");
