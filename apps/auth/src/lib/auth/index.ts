@@ -68,8 +68,10 @@ export const auth = betterAuth({
           type: "public",
           redirectUrls: [
             "https://deadlockmods.app/auth/callback",
-            "http://localhost:3003/auth/callback",
-          ],
+            env.NODE_ENV === "development"
+              ? "http://localhost:3003/auth/callback"
+              : undefined,
+          ].filter(Boolean) as string[],
           disabled: false,
           skipConsent: true,
           metadata: { internal: true },
@@ -80,8 +82,10 @@ export const auth = betterAuth({
           type: "public",
           redirectUrls: [
             "https://auth.deadlockmods.app/auth/desktop-callback",
-            "http://localhost:3004/auth/desktop-callback",
-          ],
+            env.NODE_ENV === "development"
+              ? "http://localhost:3004/auth/desktop-callback"
+              : undefined,
+          ].filter(Boolean) as string[],
           disabled: false,
           skipConsent: true,
           metadata: { internal: true },

@@ -35,7 +35,7 @@ export const envSchema = z.object({
   AUTH_URL: z
     .string()
     .url("AUTH_URL must be a valid URL")
-    .default("http://localhost:3004"),
+    .default("https://auth.deadlockmods.app"),
 });
 
 export const env = envSchema.parse(process.env);
