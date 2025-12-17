@@ -161,7 +161,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               "http://specs.openid.net/auth/2.0/identifier_select",
             "openid.return_to": `${
               ctx.context.baseURL
-            }/steam/callback?${decodeURIComponent(queryParams.toString())}`,
+            }/steam/callback?${queryParams.toString()}`,
           });
           const openidURL = new URL(
             `/openid/login?${openidQueryParams.toString()}`,

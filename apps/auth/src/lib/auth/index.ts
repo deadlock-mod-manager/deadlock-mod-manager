@@ -58,6 +58,9 @@ export const auth = betterAuth({
       loginPage: "/login",
       allowDynamicClientRegistration: false,
       useJWTPlugin: true,
+      getAdditionalUserInfoClaim: async (user) => ({
+        isAdmin: (user as { isAdmin?: boolean }).isAdmin ?? false,
+      }),
       trustedClients: [
         {
           clientId: "deadlockmods-www",
@@ -65,7 +68,7 @@ export const auth = betterAuth({
           type: "public",
           redirectUrls: [
             "https://deadlockmods.app/auth/callback",
-            "http://localhost:3004/auth/callback",
+            "http://localhost:3003/auth/callback",
           ],
           disabled: false,
           skipConsent: true,
