@@ -81,6 +81,7 @@ function LoginPage() {
             <LoginPageContent
               callbackURL={callbackURL}
               steamErrorCallbackURL={errorCallbackURL}
+              error={error}
             />
           </CardContent>
         </Card>

@@ -1,6 +1,6 @@
-import type { OIDCUser } from "@deadlock-mods/shared/auth";
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { AUTH_URL } from "../config";
 import {
   clearAuthCookies,
@@ -10,6 +10,15 @@ import {
   parseOIDCState,
   setAuthCookies,
 } from "./server";
+
+const OIDCUserSchema = z.object({
+  sub: z.string(),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  email_verified: z.boolean().optional(),
+  picture: z.string().optional(),
+  isAdmin: z.boolean().optional(),
+});
 
 export const initiateLogin = createServerFn({ method: "GET" })
   .inputValidator((data: { returnTo?: string }) => data)
@@ -89,8 +98,14 @@ async function fetchSession() {
       return null;
     }
 
-    const user = (await response.json()) as OIDCUser;
-    return { user };
+    const json = await response.json();
+    const result = OIDCUserSchema.safeParse(json);
+
+    if (!result.success) {
+      return null;
+    }
+
+    return { user: result.data };
   } catch {
     return null;
   }

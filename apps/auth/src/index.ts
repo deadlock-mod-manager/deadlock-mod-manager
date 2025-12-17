@@ -75,10 +75,9 @@ function validateRedirectUrl(returnTo: string, baseURL: string): string {
         return normalized.pathname + normalized.search + normalized.hash;
       }
     } catch {
-      logger.warn("Invalid relative redirect URL", { returnTo });
-      return DEFAULT_REDIRECT;
+      logger.withMetadata({ returnTo }).warn("Invalid relative redirect URL");
     }
-    return returnTo;
+    return DEFAULT_REDIRECT;
   }
 
   // For absolute URLs, validate against trusted origins
@@ -99,12 +98,11 @@ function validateRedirectUrl(returnTo: string, baseURL: string): string {
       return returnTo;
     }
 
-    logger.warn("Redirect URL blocked: untrusted origin", {
-      returnTo,
-      origin: parsedUrl.origin,
-    });
+    logger
+      .withMetadata({ returnTo, origin: parsedUrl.origin })
+      .warn("Redirect URL blocked: untrusted origin");
   } catch {
-    logger.warn("Invalid redirect URL format", { returnTo });
+    logger.withMetadata({ returnTo }).warn("Invalid redirect URL format");
   }
 
   return DEFAULT_REDIRECT;

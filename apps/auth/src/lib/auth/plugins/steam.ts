@@ -560,7 +560,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
           const session = await ctx.context.internalAdapter.createSession(
             user.id,
-            ctx,
+            false,
           );
 
           await setSessionCookie(ctx, {

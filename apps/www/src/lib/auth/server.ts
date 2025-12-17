@@ -5,11 +5,9 @@ import {
   type OIDCState,
   type TokenResponse,
 } from "@deadlock-mods/shared/auth";
-import {
-  getCookie,
-  getRequestHeaders,
-  setCookie,
-} from "@tanstack/react-start/server";
+import { getCookie, setCookie } from "@tanstack/react-start/server";
+import { z } from "zod";
+import { env } from "../../../../env";
 import { AUTH_URL } from "../config";
 import {
   ACCESS_TOKEN_COOKIE,
@@ -19,7 +17,14 @@ import {
   TOKEN_EXPIRY_COOKIE,
 } from "./constants";
 
-const isProduction = process.env.NODE_ENV === "production";
+const TokenResponseSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string().optional(),
+  expires_in: z.number(),
+  token_type: z.string(),
+});
+
+const isProduction = env.NODE_ENV === "production";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -29,10 +34,18 @@ const COOKIE_OPTIONS = {
 };
 
 export function getRedirectUri(): string {
-  const headers = getRequestHeaders();
-  const host = headers.get("host") || "localhost:3003";
-  const protocol = isProduction ? "https" : "http";
-  return `${protocol}://${host}/auth/callback`;
+  if (env.BASE_URL) {
+    const baseUrl = new URL(env.BASE_URL);
+    return `${baseUrl.origin}/auth/callback`;
+  }
+
+  if (isProduction) {
+    throw new Error(
+      "BASE_URL environment variable is required in production for secure OAuth redirects",
+    );
+  }
+
+  return "http://localhost:3003/auth/callback";
 }
 
 export async function createAuthorizationUrl(
@@ -96,7 +109,8 @@ export async function exchangeCodeForTokens(
     maxAge: 0,
   });
 
-  return response.json() as Promise<TokenResponse>;
+  const data = await response.json();
+  return TokenResponseSchema.parse(data);
 }
 
 export function setAuthCookies(tokenResponse: TokenResponse): void {
@@ -171,7 +185,8 @@ export async function refreshTokens(): Promise<TokenResponse> {
     throw new Error("Token refresh failed");
   }
 
-  const tokenResponse = (await response.json()) as TokenResponse;
+  const data = await response.json();
+  const tokenResponse = TokenResponseSchema.parse(data);
   setAuthCookies(tokenResponse);
 
   return tokenResponse;
