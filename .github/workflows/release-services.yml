@@ -182,7 +182,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: auth
-          deployment-name: deadlock-mod-manager-auth
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -263,7 +262,7 @@ jobs:
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
         with:
-          service-name: mirror-service
+          service-name: mirror
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 

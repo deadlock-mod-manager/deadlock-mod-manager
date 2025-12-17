@@ -84,7 +84,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: api
-          deployment-name: deadlock-mod-manager-web
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -118,7 +117,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: auth
-          deployment-name: deadlock-mod-manager-auth
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -151,7 +149,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: bot
-          deployment-name: deadlock-mod-manager-bot
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -184,7 +181,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: lockdex
-          deployment-name: deadlock-mod-manager-lockdex
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -217,7 +213,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: mirror
-          deployment-name: deadlock-mod-manager-mirror
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
@@ -251,6 +246,5 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: www
-          deployment-name: deadlock-mod-manager-www
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
