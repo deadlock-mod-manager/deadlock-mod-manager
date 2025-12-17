@@ -25,7 +25,7 @@ export const link = new RPCLink({
   url: `${SERVER_URL}/rpc`,
   fetch(url, options) {
     return fetch(url, {
-      ...options,
+      ...(options as RequestInit | undefined),
       credentials: "include",
     });
   },

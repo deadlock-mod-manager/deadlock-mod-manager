@@ -13,10 +13,15 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@deadlock-mods/ui/components/chart";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { orpc } from "@/utils/orpc";
+
+type AnalyticsDataPoint = {
+  date: string;
+  mods: number;
+  downloads: number;
+  users: number;
+  modFiles: number;
+};
 
 type DashboardChartProps = {
   title: string;
@@ -24,6 +29,8 @@ type DashboardChartProps = {
   dataKey: "mods" | "downloads" | "users" | "modFiles";
   color: string;
   timeRange: "1h" | "1d" | "7d" | "30d" | "90d" | "all";
+  data: AnalyticsDataPoint[];
+  isLoading?: boolean;
 };
 
 export function DashboardChart({
@@ -32,19 +39,10 @@ export function DashboardChart({
   dataKey,
   color,
   timeRange,
+  data,
+  isLoading,
 }: DashboardChartProps) {
-  const queryOptions = useMemo(
-    () => orpc.getAnalytics.queryOptions({ timeRange }),
-    [timeRange],
-  );
-  const analyticsQuery = useQuery(queryOptions);
-  const analyticsResponse = analyticsQuery.data;
-  const data = useMemo(
-    () => analyticsResponse?.data || [],
-    [analyticsResponse?.data],
-  );
-
-  if (analyticsQuery.isLoading) {
+  if (isLoading) {
     return (
       <Card className='@container/card'>
         <CardHeader>

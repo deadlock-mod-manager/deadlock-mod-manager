@@ -18,7 +18,7 @@ import { useState } from "react";
 import { DashboardChart } from "@/components/dashboard/chart";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SectionCards } from "@/components/dashboard/section-cards";
-import { orpc } from "@/utils/orpc";
+import { getAnalytics } from "@/lib/api/server";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -34,9 +34,10 @@ function DashboardPage() {
   const [timeRange, setTimeRange] = useState<
     "1h" | "1d" | "7d" | "30d" | "90d" | "all"
   >("7d");
-  const analyticsQuery = useQuery(
-    orpc.getAnalytics.queryOptions({ timeRange }),
-  );
+  const analyticsQuery = useQuery({
+    queryKey: ["analytics", timeRange],
+    queryFn: () => getAnalytics({ data: { timeRange } }),
+  });
   const analyticsResponse = analyticsQuery.data;
   const analyticsData = analyticsResponse?.data || [];
   const totals = analyticsResponse?.totals;
@@ -97,6 +98,8 @@ function DashboardPage() {
           dataKey='mods'
           color='hsl(var(--primary))'
           timeRange={timeRange}
+          data={analyticsData}
+          isLoading={analyticsQuery.isLoading}
         />
         <DashboardChart
           title='Mod Downloads'
@@ -104,6 +107,8 @@ function DashboardPage() {
           dataKey='downloads'
           color='hsl(var(--primary))'
           timeRange={timeRange}
+          data={analyticsData}
+          isLoading={analyticsQuery.isLoading}
         />
         <DashboardChart
           title='Users'
@@ -111,6 +116,8 @@ function DashboardPage() {
           dataKey='users'
           color='hsl(var(--primary))'
           timeRange={timeRange}
+          data={analyticsData}
+          isLoading={analyticsQuery.isLoading}
         />
         <DashboardChart
           title='Mod Files'
@@ -118,6 +125,8 @@ function DashboardPage() {
           dataKey='modFiles'
           color='hsl(var(--primary))'
           timeRange={timeRange}
+          data={analyticsData}
+          isLoading={analyticsQuery.isLoading}
         />
       </div>
     </>

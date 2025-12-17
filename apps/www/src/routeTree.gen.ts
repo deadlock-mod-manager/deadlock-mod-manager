@@ -32,6 +32,7 @@ import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
 import { Route as AuthDesktopCallbackRouteImport } from './routes/auth/desktop-callback'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
   id: '/vpk-analyzer',
@@ -148,6 +149,11 @@ const AuthDesktopCallbackRoute = AuthDesktopCallbackRouteImport.update({
   path: '/auth/desktop-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/auth/callback'
     | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/auth/callback'
     | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/vpk-analyzer'
+    | '/auth/callback'
     | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthDesktopCallbackRoute: typeof AuthDesktopCallbackRoute
   ModIdRoute: typeof ModIdRoute
   ModsIndexRoute: typeof ModsIndexRoute
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDesktopCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -532,6 +552,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   AuthDesktopCallbackRoute: AuthDesktopCallbackRoute,
   ModIdRoute: ModIdRoute,
   ModsIndexRoute: ModsIndexRoute,

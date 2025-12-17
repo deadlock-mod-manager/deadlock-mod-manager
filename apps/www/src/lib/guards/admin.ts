@@ -1,0 +1,1 @@
+export { checkAuth } from "./auth";
