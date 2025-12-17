@@ -25,10 +25,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@api/*": ["../api/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "../api/src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src-tauri"],
   "references": [
     { "path": "./tsconfig.node.json" }

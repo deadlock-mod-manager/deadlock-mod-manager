@@ -2,9 +2,6 @@
   "name": "@deadlock-mods/auth",
   "version": "1.0.0",
   "type": "module",
-  "exports": {
-    ".": "./src/public.ts"
-  },
   "scripts": {
     "build": "tsr generate && vite build",
     "check-types": "tsc --noEmit --skipLibCheck",

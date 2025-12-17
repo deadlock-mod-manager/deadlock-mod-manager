@@ -9,12 +9,12 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/crosshair": "workspace:*",
     "@deadlock-mods/kv-parser": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",
-    "@deadlock-mods/auth": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.12.3",
     "@orpc/json-schema": "^1.12.3",

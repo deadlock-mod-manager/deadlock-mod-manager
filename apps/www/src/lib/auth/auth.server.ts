@@ -68,9 +68,10 @@ export const logout = createServerFn({ method: "POST" }).handler(async () => {
 });
 
 async function fetchSession() {
-  const token = await ensureValidToken();
-
-  if (!token) {
+  let token: string;
+  try {
+    token = await ensureValidToken();
+  } catch {
     return null;
   }
 

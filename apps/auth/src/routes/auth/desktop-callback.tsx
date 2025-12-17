@@ -1,15 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { AuthLayout } from "../../components/auth-layout";
 import { DesktopCallbackStatus } from "../../components/desktop-callback-status";
 
+const searchSchema = z
+  .object({
+    code: z.string().optional().default(""),
+    state: z.string().optional(),
+    error: z.string().optional(),
+    error_description: z.string().optional(),
+  })
+  .transform(({ error_description, ...rest }) => ({
+    ...rest,
+    errorDescription: error_description,
+  }));
+
 export const Route = createFileRoute("/auth/desktop-callback")({
   component: DesktopCallbackPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    code: (search.code as string) || "",
-    state: search.state as string | undefined,
-    error: search.error as string | undefined,
-    errorDescription: search.error_description as string | undefined,
-  }),
+  validateSearch: searchSchema,
 });
 
 function DesktopCallbackPage() {

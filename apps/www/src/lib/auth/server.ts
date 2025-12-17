@@ -1,3 +1,4 @@
+import { UnauthorizedError } from "@deadlock-mods/common";
 import {
   generateCodeChallenge,
   generateCodeVerifier,
@@ -176,7 +177,7 @@ export async function refreshTokens(): Promise<TokenResponse> {
   return tokenResponse;
 }
 
-export async function ensureValidToken(): Promise<string | null> {
+export async function ensureValidToken(): Promise<string> {
   const accessToken = getAccessToken();
 
   if (accessToken && !isTokenExpired()) {
@@ -185,7 +186,7 @@ export async function ensureValidToken(): Promise<string | null> {
 
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    return null;
+    throw new UnauthorizedError("Authentication required");
   }
 
   try {
@@ -193,7 +194,7 @@ export async function ensureValidToken(): Promise<string | null> {
     return tokenResponse.access_token;
   } catch {
     clearAuthCookies();
-    return null;
+    throw new UnauthorizedError("Authentication required");
   }
 }
 

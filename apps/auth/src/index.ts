@@ -52,6 +52,64 @@ app.get("/health", async (c) => {
   return c.json(result, result.status === "ok" ? 200 : 503);
 });
 
+/**
+ * Validates and sanitizes a redirect URL to prevent open redirect attacks.
+ * Allows only relative paths or URLs matching trusted origins from CORS_ORIGIN.
+ * Returns the safe redirect URL or "/" if validation fails.
+ */
+function validateRedirectUrl(returnTo: string, baseURL: string): string {
+  const DEFAULT_REDIRECT = "/";
+  const trustedOrigins = env.CORS_ORIGIN;
+
+  if (!returnTo || returnTo === "/") {
+    return DEFAULT_REDIRECT;
+  }
+
+  // Allow relative paths starting with "/" (but not "//" which could be protocol-relative)
+  if (returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    try {
+      // Normalize the path using URL parsing to handle encoded characters
+      const normalized = new URL(returnTo, baseURL);
+      // Ensure the normalized URL still belongs to the base origin
+      if (normalized.origin === new URL(baseURL).origin) {
+        return normalized.pathname + normalized.search + normalized.hash;
+      }
+    } catch {
+      logger.warn("Invalid relative redirect URL", { returnTo });
+      return DEFAULT_REDIRECT;
+    }
+    return returnTo;
+  }
+
+  // For absolute URLs, validate against trusted origins
+  try {
+    const parsedUrl = new URL(returnTo);
+
+    // Check if the origin matches any trusted origin
+    const isTrustedOrigin = trustedOrigins.some((trustedOrigin) => {
+      try {
+        const trusted = new URL(trustedOrigin);
+        return parsedUrl.origin === trusted.origin;
+      } catch {
+        return false;
+      }
+    });
+
+    if (isTrustedOrigin) {
+      return returnTo;
+    }
+
+    logger.warn("Redirect URL blocked: untrusted origin", {
+      returnTo,
+      origin: parsedUrl.origin,
+    });
+  } catch {
+    logger.warn("Invalid redirect URL format", { returnTo });
+  }
+
+  return DEFAULT_REDIRECT;
+}
+
 app.get("/login", async (c, next) => {
   const returnTo = c.req.query("returnTo") || "/";
   const baseURL = env.BETTER_AUTH_URL || `http://localhost:${env.PORT}`;
@@ -61,9 +119,10 @@ app.get("/login", async (c, next) => {
   });
 
   if (sessionResponse?.session) {
-    const redirectUrl = returnTo.startsWith("http")
-      ? returnTo
-      : `${baseURL}${returnTo.startsWith("/") ? "" : "/"}${returnTo}`;
+    const safeReturnTo = validateRedirectUrl(returnTo, baseURL);
+    const redirectUrl = safeReturnTo.startsWith("http")
+      ? safeReturnTo
+      : `${baseURL}${safeReturnTo.startsWith("/") ? "" : "/"}${safeReturnTo}`;
     return c.redirect(redirectUrl);
   }
 

@@ -1,7 +1,7 @@
 import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetch } from "@tauri-apps/plugin-http";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   clearTokens,
   ensureValidToken,
@@ -22,9 +22,14 @@ interface UseOIDCSessionResult {
 
 export function useOIDCSession(): UseOIDCSessionResult {
   const queryClient = useQueryClient();
+  const [tokensLoaded, setTokensLoaded] = useState(false);
 
   useEffect(() => {
-    void loadStoredTokens();
+    loadStoredTokens()
+      .catch(() => {})
+      .finally(() => {
+        setTokensLoaded(true);
+      });
   }, []);
 
   const sessionQuery = useQuery<OIDCSession | null>({
@@ -53,7 +58,7 @@ export function useOIDCSession(): UseOIDCSessionResult {
       const userInfo = (await response.json()) as OIDCUser;
       return { user: userInfo };
     },
-    enabled: hasTokens(),
+    enabled: tokensLoaded && hasTokens(),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });

@@ -31,7 +31,6 @@ import { Route as ModIdRouteImport } from './routes/mod/$id'
 import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
-import { Route as AuthDesktopCallbackRouteImport } from './routes/auth/desktop-callback'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
@@ -144,11 +143,6 @@ const DashboardAnnouncementsRoute = DashboardAnnouncementsRouteImport.update({
   path: '/announcements',
   getParentRoute: () => DashboardRoute,
 } as any)
-const AuthDesktopCallbackRoute = AuthDesktopCallbackRouteImport.update({
-  id: '/auth/desktop-callback',
-  path: '/auth/desktop-callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -172,7 +166,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -196,7 +189,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -223,7 +215,6 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/desktop-callback': typeof AuthDesktopCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -251,7 +242,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/callback'
-    | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -275,7 +265,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/callback'
-    | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -301,7 +290,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vpk-analyzer'
     | '/auth/callback'
-    | '/auth/desktop-callback'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -328,7 +316,6 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  AuthDesktopCallbackRoute: typeof AuthDesktopCallbackRoute
   ModIdRoute: typeof ModIdRoute
   ModsIndexRoute: typeof ModsIndexRoute
 }
@@ -489,13 +476,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAnnouncementsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/auth/desktop-callback': {
-      id: '/auth/desktop-callback'
-      path: '/auth/desktop-callback'
-      fullPath: '/auth/desktop-callback'
-      preLoaderRoute: typeof AuthDesktopCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -553,7 +533,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  AuthDesktopCallbackRoute: AuthDesktopCallbackRoute,
   ModIdRoute: ModIdRoute,
   ModsIndexRoute: ModsIndexRoute,
 }

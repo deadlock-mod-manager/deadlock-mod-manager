@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { type AuthState, createAuthSlice } from "./slices/auth";
 import { type CrosshairState, createCrosshairSlice } from "./slices/crosshair";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
@@ -16,7 +15,6 @@ export type State = ModsState &
   SettingsState &
   UIState &
   ScrollState &
-  AuthState &
   CrosshairState;
 
 export const usePersistedStore = create<State>()(
@@ -28,7 +26,6 @@ export const usePersistedStore = create<State>()(
       ...createSettingsSlice(...a),
       ...createUISlice(...a),
       ...createScrollSlice(...a),
-      ...createAuthSlice(...a),
       ...createCrosshairSlice(...a),
     }),
     {
@@ -188,14 +185,6 @@ export const usePersistedStore = create<State>()(
           // Exclude analysis dialog state (ephemeral)
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
-          // Exclude auth state (managed separately via secure storage)
-          user: _user,
-          session: _session,
-          isAuthenticated: _isAuthenticated,
-          isLoading: _isLoading,
-          setAuth: _setAuth,
-          clearAuth: _clearAuth,
-          setLoading: _setLoading,
           ...rest
         } = state;
         return rest;

@@ -6,15 +6,6 @@ import type { DbHealth, HealthResponse } from "../types/health";
 
 @injectable()
 export class HealthService {
-  private static singleton: HealthService;
-
-  static getInstance(): HealthService {
-    if (!HealthService.singleton) {
-      HealthService.singleton = new HealthService();
-    }
-    return HealthService.singleton;
-  }
-
   async checkDb(): Promise<DbHealth> {
     try {
       await db.execute(sql`select 1`);

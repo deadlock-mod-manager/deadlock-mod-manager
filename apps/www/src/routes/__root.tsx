@@ -163,7 +163,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     select: (s) => s.location.pathname,
   });
 
-  const fullscreenRoutes = ["/login", "/auth/desktop-callback"];
+  const fullscreenRoutes = ["/login"];
   const isFullscreenRoute = fullscreenRoutes.includes(pathname);
   const isDashboardRoute = pathname.startsWith("/dashboard");
 

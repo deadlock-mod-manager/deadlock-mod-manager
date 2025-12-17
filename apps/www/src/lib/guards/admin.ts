@@ -1,1 +1,0 @@
-export { checkAuth } from "./auth";

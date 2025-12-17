@@ -5,14 +5,12 @@ import type { AppRouterClient } from "../../../../api/src/routers/index";
 import { ensureValidToken } from "../auth/server";
 import { SERVER_URL } from "../config";
 
-function createAuthenticatedClient(token: string | null): AppRouterClient {
+function createAuthenticatedClient(token: string): AppRouterClient {
   const link = new RPCLink({
     url: `${SERVER_URL}/rpc`,
     fetch(url, options) {
       const headers = new Headers((options as RequestInit)?.headers);
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
+      headers.set("Authorization", `Bearer ${token}`);
       return fetch(url, {
         ...(options as RequestInit | undefined),
         headers,
