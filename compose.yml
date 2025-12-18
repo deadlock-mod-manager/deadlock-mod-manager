@@ -1,12 +1,6 @@
-volumes:
-  database:
-    driver: local
-  redis_data:
-    driver: local
-
 services:
   postgres:
-    image: postgres
+    image: dhi.io/postgres:17
     restart: unless-stopped
     container_name: turborepo_postgres
     shm_size: 128mb
@@ -19,7 +13,7 @@ services:
       - database:/var/lib/postgresql/data
 
   redis:
-    image: redis:7-alpine
+    image: dhi.io/redis:7
     restart: unless-stopped
     container_name: deadlock_redis
     ports:
@@ -103,3 +97,10 @@ services:
       VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     depends_on:
       - api
+
+
+volumes:
+  database:
+    driver: local
+  redis_data:
+    driver: local
