@@ -7,7 +7,7 @@ import {
 } from "@deadlock-mods/shared/auth";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { env } from "../../../../env";
+import { env } from "../../../env";
 import { AUTH_URL } from "../config";
 import {
   ACCESS_TOKEN_COOKIE,
@@ -219,7 +219,14 @@ export function parseOIDCState(state: string | null): OIDCState {
   }
 
   try {
-    return JSON.parse(atob(state)) as OIDCState;
+    const parsed = JSON.parse(atob(state)) as OIDCState;
+    const returnTo = parsed.returnTo;
+
+    if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) {
+      return { returnTo };
+    }
+
+    return { returnTo: "/" };
   } catch {
     return { returnTo: "/" };
   }

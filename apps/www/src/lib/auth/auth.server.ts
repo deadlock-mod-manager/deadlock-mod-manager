@@ -20,8 +20,18 @@ const OIDCUserSchema = z.object({
   isAdmin: z.boolean().optional(),
 });
 
+const InitiateLoginInput = z.object({
+  returnTo: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (val.startsWith("/") && !val.startsWith("//")),
+      "returnTo must be a relative path",
+    ),
+});
+
 export const initiateLogin = createServerFn({ method: "GET" })
-  .inputValidator((data: { returnTo?: string }) => data)
+  .inputValidator(InitiateLoginInput.parse)
   .handler(async ({ data }) => {
     const authUrl = await createAuthorizationUrl(data.returnTo || "/");
     throw redirect({ href: authUrl });
