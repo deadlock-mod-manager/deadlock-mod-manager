@@ -1,5 +1,11 @@
 # api
 
+## 2.5.0
+
+### Minor Changes
+
+- Auth refactor
+
 ## 2.4.0
 
 ### Minor Changes

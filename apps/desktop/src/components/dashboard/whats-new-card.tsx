@@ -9,6 +9,13 @@ export const WhatsNewCard = () => {
 
   const recentUpdates = [
     {
+      version: "0.12.0",
+      title: t("whatsNew.versions.0.12.0.title"),
+      features: t("whatsNew.versions.0.12.0.features", {
+        returnObjects: true,
+      }) as string[],
+    },
+    {
       version: "0.11.1",
       title: t("whatsNew.versions.0.11.1.title"),
       features: t("whatsNew.versions.0.11.1.features", {

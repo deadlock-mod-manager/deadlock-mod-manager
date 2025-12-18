@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-mod-manager"
-version = "0.11.1"
+version = "0.12.0"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <contact@stormix.co>"]
 license = "GPL-3.0"

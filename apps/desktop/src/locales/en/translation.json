@@ -593,6 +593,12 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.12.0": {
+        "title": "Auth Refactor",
+        "features": [
+          "🔒 Auth refactor - improved authentication and authorization flow"
+        ]
+      },
       "0.11.1": {
         "title": "Crosshair UX Improvements & Japanese Support",
         "features": [

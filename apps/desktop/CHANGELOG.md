@@ -1,5 +1,11 @@
 # desktop
 
+## 0.12.0
+
+### Minor Changes
+
+- Auth refactor
+
 ## 0.11.1
 
 ### Patch Changes
