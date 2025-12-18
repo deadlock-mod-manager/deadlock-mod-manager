@@ -42,6 +42,7 @@ import { useState } from "react";
 import { type FieldValues, type SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { useAuth } from "@/hooks/use-auth";
 import { publishCrosshair } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -74,7 +75,8 @@ type CrosshairFormValues = z.infer<typeof crosshairFormSchema>;
 export const CrosshairForm = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { isAuthenticated, setActiveCrosshair } = usePersistedStore();
+  const { isAuthenticated } = useAuth();
+  const { setActiveCrosshair } = usePersistedStore();
   const crosshairsEnabled = usePersistedStore(
     (state) => state.crosshairsEnabled,
   );

@@ -11,7 +11,7 @@ import type {
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { AnalyzeAddonsResult } from "@/types/mods";
-import { getAccessToken } from "./auth/token";
+import { ensureValidToken } from "./auth/token";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
@@ -32,7 +32,7 @@ const apiRequest = async <T>(
     "Content-Type": "application/json",
   };
 
-  const accessToken = getAccessToken();
+  const accessToken = await ensureValidToken();
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   }
