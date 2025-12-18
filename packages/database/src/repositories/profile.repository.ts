@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { NewProfile, Profile } from "../schema/profiles";
 import { profiles } from "../schema/profiles";

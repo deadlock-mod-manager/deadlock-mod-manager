@@ -15,10 +15,7 @@
 
     // Performance optimizations
     "incremental": true,
-    "composite": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo",
-    "disableSourceOfProjectReferenceRedirect": true,
-    "assumeChangesOnlyAffectDirectDependencies": true,
 
     "strict": true,
     "noUnusedLocals": true,
@@ -27,12 +24,12 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src-tauri"],
   "references": [
-    { "path": "./tsconfig.node.json" }, 
+    { "path": "./tsconfig.node.json" }
   ]
 }

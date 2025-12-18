@@ -41,14 +41,21 @@ import {
 } from "@deadlock-mods/ui/components/table";
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { orpc } from "@/utils/orpc";
+import {
+  archiveAnnouncement,
+  createAnnouncement,
+  deleteAnnouncement,
+  listAllAnnouncements,
+  publishAnnouncement,
+  updateAnnouncement,
+} from "@/lib/api/server";
 import { seo } from "@/utils/seo";
 
 const announcementFormSchema = z.object({
@@ -94,19 +101,39 @@ function DashboardAnnouncementsPage() {
     useState<AnnouncementDto | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: announcements, refetch } = useQuery(
-    orpc.listAllAnnouncements.queryOptions(),
-  );
+  const queryClient = useQueryClient();
+  const { data: announcements, refetch } = useQuery({
+    queryKey: ["announcements"],
+    queryFn: () => listAllAnnouncements(),
+  });
 
-  const createMutation = useMutation(orpc.createAnnouncement.mutationOptions());
-  const updateMutation = useMutation(orpc.updateAnnouncement.mutationOptions());
-  const deleteMutation = useMutation(orpc.deleteAnnouncement.mutationOptions());
-  const publishMutation = useMutation(
-    orpc.publishAnnouncement.mutationOptions(),
-  );
-  const archiveMutation = useMutation(
-    orpc.archiveAnnouncement.mutationOptions(),
-  );
+  const createMutation = useMutation({
+    mutationFn: (data: Parameters<typeof createAnnouncement>[0]["data"]) =>
+      createAnnouncement({ data }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["announcements"] }),
+  });
+  const updateMutation = useMutation({
+    mutationFn: (data: Parameters<typeof updateAnnouncement>[0]["data"]) =>
+      updateAnnouncement({ data }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["announcements"] }),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (data: { id: string }) => deleteAnnouncement({ data }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["announcements"] }),
+  });
+  const publishMutation = useMutation({
+    mutationFn: (data: { id: string }) => publishAnnouncement({ data }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["announcements"] }),
+  });
+  const archiveMutation = useMutation({
+    mutationFn: (data: { id: string }) => archiveAnnouncement({ data }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["announcements"] }),
+  });
 
   const {
     register,

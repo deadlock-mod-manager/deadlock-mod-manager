@@ -1,5 +1,5 @@
 import { mapDrizzleError } from "@deadlock-mods/common";
-import { eq } from "drizzle-orm";
+import { eq } from "@deadlock-mods/database";
 import { err, ok } from "neverthrow";
 import {
   documentationSync,

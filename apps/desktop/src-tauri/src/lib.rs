@@ -39,11 +39,59 @@ fn handle_deep_link_url(
     return Ok(()); // Don't fail the whole app
   };
 
-  // Check if this is an auth callback
-  if data_part.starts_with("//auth-callback") {
-    log::info!("Processing auth callback deep link");
+  // Check if this is an OIDC auth callback (new flow)
+  if data_part.starts_with("//auth/callback") {
+    log::info!("Processing OIDC auth callback deep link");
 
-    // Parse query parameters
+    if let Some(query_start) = data_part.find('?') {
+      let query = &data_part[query_start + 1..];
+      let params: std::collections::HashMap<String, String> = query
+        .split('&')
+        .filter_map(|pair| {
+          let mut parts = pair.split('=');
+          let key = parts.next()?.to_string();
+          let value = urlencoding::decode(parts.next()?).ok()?.into_owned();
+          Some((key, value))
+        })
+        .collect();
+
+      if let Some(code) = params.get("code") {
+        log::info!("OIDC authorization code received via deep link");
+        let state = params.get("state").cloned();
+
+        if let Some(window) = app_handle.get_webview_window("main") {
+          window.emit(
+            "oidc-callback-received",
+            serde_json::json!({ "code": code, "state": state }),
+          )?;
+        }
+
+        return Ok(());
+      }
+
+      if let Some(error) = params.get("error") {
+        let error_description = params.get("error_description").cloned();
+        log::error!("OIDC callback error: {error}");
+
+        if let Some(window) = app_handle.get_webview_window("main") {
+          window.emit(
+            "oidc-callback-error",
+            serde_json::json!({ "error": error, "error_description": error_description }),
+          )?;
+        }
+
+        return Ok(());
+      }
+    }
+
+    log::error!("OIDC callback deep link missing code or error parameter");
+    return Ok(());
+  }
+
+  // Legacy auth callback (for backwards compatibility)
+  if data_part.starts_with("//auth-callback") {
+    log::info!("Processing legacy auth callback deep link");
+
     if let Some(query_start) = data_part.find('?') {
       let query = &data_part[query_start + 1..];
       let params: std::collections::HashMap<String, String> = query
@@ -63,9 +111,19 @@ fn handle_deep_link_url(
 
         return Ok(());
       }
+
+      if let Some(error) = params.get("error") {
+        log::error!("Auth callback error received via deep link: {error}");
+
+        if let Some(window) = app_handle.get_webview_window("main") {
+          window.emit("auth-callback-error", error)?;
+        }
+
+        return Ok(());
+      }
     }
 
-    log::error!("Auth callback deep link missing token parameter");
+    log::error!("Auth callback deep link missing token or error parameter");
     return Ok(());
   }
 

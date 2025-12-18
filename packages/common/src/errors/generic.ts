@@ -1,4 +1,4 @@
-import { type ErrorCode, GenericErrorCode } from "./codes";
+import { ApiErrorCode, type ErrorCode, GenericErrorCode } from "./codes";
 export abstract class BaseError extends Error {
   abstract readonly code: ErrorCode;
   readonly originalError?: unknown;
@@ -37,5 +37,14 @@ export class UnknownError extends GenericError {
 
   constructor(originalError?: unknown) {
     super("Unknown error", originalError);
+  }
+}
+
+export class UnauthorizedError extends BaseError {
+  readonly code = ApiErrorCode.UNAUTHORIZED_ERROR;
+  readonly status = 401;
+
+  constructor(message = "Authentication required", originalError?: unknown) {
+    super(message, originalError);
   }
 }

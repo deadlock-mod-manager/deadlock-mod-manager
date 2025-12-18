@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";
@@ -67,12 +67,29 @@ export class ModRepository {
   }
 
   async upsertByRemoteId(mod: NewMod): Promise<Mod> {
-    const existing = await this.findByRemoteId(mod.remoteId);
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      isBlacklisted: _isBlacklisted,
+      blacklistReason: _blacklistReason,
+      blacklistedAt: _blacklistedAt,
+      blacklistedBy: _blacklistedBy,
+      ...updateableFields
+    } = mod;
 
-    if (existing) {
-      return await this.updateByRemoteId(mod.remoteId, mod);
-    }
-    return await this.create(mod);
+    const [result] = await this.db
+      .insert(mods)
+      .values(mod)
+      .onConflictDoUpdate({
+        target: mods.remoteId,
+        set: {
+          ...updateableFields,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    return result;
   }
 
   async delete(id: string): Promise<void> {

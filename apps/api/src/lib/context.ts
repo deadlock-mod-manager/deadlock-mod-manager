@@ -1,36 +1,34 @@
 import type { Context as HonoContext } from "hono";
-import { auth } from "./auth";
-import { env } from "./env";
+import { introspectToken, type UserInfo } from "./auth/introspection";
 
 export type CreateContextOptions = {
   context: HonoContext;
 };
 
-export async function createContext({ context }: CreateContextOptions) {
+export interface Session {
+  user: UserInfo;
+}
+
+export async function createContext({
+  context,
+}: CreateContextOptions): Promise<{ session: Session | null }> {
   const authHeader = context.req.header("Authorization");
-  const rawBearerToken = authHeader?.replace("Bearer ", "");
 
-  const bearerToken = rawBearerToken
-    ? decodeURIComponent(rawBearerToken)
-    : undefined;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { session: null };
+  }
 
-  let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
-  if (bearerToken) {
-    const headers = new Headers();
-    const cookieName =
-      env.NODE_ENV === "production"
-        ? "__Secure-better-auth.session_token"
-        : "better-auth.session_token";
-    headers.set("Cookie", `${cookieName}=${bearerToken}`);
-    session = await auth.api.getSession({ headers });
-  } else {
-    session = await auth.api.getSession({
-      headers: context.req.raw.headers,
-    });
+  const token = authHeader.slice(7);
+  const userInfo = await introspectToken(token);
+
+  if (!userInfo) {
+    return { session: null };
   }
 
   return {
-    session,
+    session: {
+      user: userInfo,
+    },
   };
 }
 

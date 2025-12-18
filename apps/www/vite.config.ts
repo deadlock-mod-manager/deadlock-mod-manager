@@ -12,9 +12,11 @@ const config = defineConfig({
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
-    tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      srcDirectory: './src',
+    }),
     viteReact(),
+    tailwindcss(),
     sitemap({
       hostname: 'https://deadlockmods.app',
       outDir: 'dist/client',

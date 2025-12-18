@@ -60,3 +60,61 @@ export const verification = pgTable("verification", {
   expiresAt: timestamp("expires_at").notNull(),
   ...timestamps,
 });
+
+export const oauthApplication = pgTable("oauth_application", {
+  id: typeId("id", "oauth_application")
+    .primaryKey()
+    .$defaultFn(() => generateId("oauth_application").toString()),
+  clientId: text("client_id").notNull().unique(),
+  clientSecret: text("client_secret"),
+  name: text("name").notNull(),
+  redirectUrls: text("redirect_urls").notNull(),
+  metadata: text("metadata"),
+  type: text("type").notNull(),
+  disabled: boolean("disabled").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  ...timestamps,
+});
+
+export const oauthAccessToken = pgTable("oauth_access_token", {
+  id: typeId("id", "oauth_access_token")
+    .primaryKey()
+    .$defaultFn(() => generateId("oauth_access_token").toString()),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at").notNull(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  scopes: text("scopes").notNull(),
+  ...timestamps,
+});
+
+export const oauthConsent = pgTable("oauth_consent", {
+  id: typeId("id", "oauth_consent")
+    .primaryKey()
+    .$defaultFn(() => generateId("oauth_consent").toString()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
+  scopes: text("scopes").notNull(),
+  consentGiven: boolean("consent_given").notNull(),
+  ...timestamps,
+});
+
+export const jwks = pgTable("jwks", {
+  id: typeId("id", "jwks")
+    .primaryKey()
+    .$defaultFn(() => generateId("jwks").toString()),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});

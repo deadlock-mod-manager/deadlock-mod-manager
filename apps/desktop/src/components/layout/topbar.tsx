@@ -2,7 +2,7 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import useAbout from "@/hooks/use-about";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
-import UserMenu from "../user-menu";
+import UserMenu from "../user/user-menu";
 import Logo from "./logo";
 
 type ThemesPluginSettings =

@@ -1,4 +1,4 @@
-import { CrosshairRepository, db, user } from "@deadlock-mods/database";
+import { CrosshairRepository, db, eq, user } from "@deadlock-mods/database";
 import {
   CreateCrosshairSchema,
   CrosshairDtoSchema,
@@ -8,7 +8,6 @@ import {
   toCrosshairDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
-import { eq } from "drizzle-orm";
 import { protectedProcedure, publicProcedure } from "../../lib/orpc";
 
 const crosshairRepository = new CrosshairRepository(db);

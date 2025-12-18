@@ -1,5 +1,5 @@
 import { EntityNotFoundError, mapDrizzleError } from "@deadlock-mods/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@deadlock-mods/database";
 import { err, ok } from "neverthrow";
 import type { Database } from "../client";
 import type { ModDownload, NewModDownload } from "../schema/mods";

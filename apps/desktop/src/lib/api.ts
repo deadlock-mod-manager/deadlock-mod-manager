@@ -11,6 +11,7 @@ import type {
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { AnalyzeAddonsResult } from "@/types/mods";
+import { ensureValidToken } from "./auth/token";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
@@ -31,23 +32,21 @@ const apiRequest = async <T>(
     "Content-Type": "application/json",
   };
 
-  // Get auth token if available
-  try {
-    const token = await invoke<string | null>("get_auth_token");
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-  } catch {
-    // nothing
+  const accessToken = await ensureValidToken();
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
   }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: method ?? (body ? "POST" : "GET"),
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    credentials: "include",
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[API] Error ${response.status}:`, errorText);
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 

@@ -2,7 +2,7 @@ name: "Kubernetes Restart Deployment"
 description: "Restart Kubernetes deployment after Docker image update"
 inputs:
   service-name:
-    description: "Name of the service (api, bot, lockdex)"
+    description: "Name of the service (api, auth, bot, lockdex, mirror, www)"
     required: true
   kubeconfig:
     description: "Base64 encoded kubeconfig file"
@@ -11,9 +11,6 @@ inputs:
     description: "Kubernetes namespace"
     required: false
     default: "default"
-  deployment-name:
-    description: "Kubernetes deployment name"
-    required: true
 
 runs:
   using: "composite"
@@ -33,7 +30,13 @@ runs:
     - name: Restart deployment
       run: |
         export KUBECONFIG=kubeconfig.yaml
-        DEPLOYMENT_NAME="${{ inputs.deployment-name }}"
+        SERVICE_NAME="${{ inputs.service-name }}"
+        # api service uses 'web' deployment name for historical reasons
+        DEPLOY_SUFFIX="${SERVICE_NAME}"
+        if [ "$SERVICE_NAME" = "api" ]; then
+          DEPLOY_SUFFIX="web"
+        fi
+        DEPLOYMENT_NAME="deadlock-mod-manager-${DEPLOY_SUFFIX}"
 
         echo "Restarting deployment: $DEPLOYMENT_NAME in namespace: ${{ inputs.namespace }}"
 

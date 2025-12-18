@@ -82,7 +82,6 @@ export const AddonsBackupManagement = () => {
 
     const setupProgressListener = async () => {
       unlisten = await listen<BackupProgress>("backup-progress", (event) => {
-        console.log("Backup progress event:", event.payload);
         setBackupProgress(event.payload);
 
         if (event.payload.stage === "completed") {

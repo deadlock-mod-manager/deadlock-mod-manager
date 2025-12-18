@@ -12,3 +12,4 @@ catalog:
   cacheable: ^2.1.0
   typescript: ^5.9.3
   zod: 4.1.9
+  better-auth: ^1.4.6

@@ -2,7 +2,8 @@
   "name": "@deadlock-mods/shared",
   "version": "1.7.0",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./auth": "./src/auth/index.ts"
   },
   "scripts": {
     "test": "vitest"

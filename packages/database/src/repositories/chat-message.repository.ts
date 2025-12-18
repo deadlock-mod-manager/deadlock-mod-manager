@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@deadlock-mods/database";
 import {
   type ChatMessage,
   chatMessages,

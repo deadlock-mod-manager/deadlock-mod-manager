@@ -1,29 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LoginForm from "@/components/login-form";
-import Logo from "@/components/logo";
+import { z } from "zod";
+import Loader from "@/components/loader";
+import { initiateLogin } from "@/lib/auth/auth.server";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
+  validateSearch: z.object({
+    desktop: z.boolean().optional().default(false),
+    error: z.string().optional().default(""),
+    returnTo: z.string().optional().default("/"),
+  }),
+  beforeLoad: async ({ search }) => {
+    if (!search.error) {
+      await initiateLogin({ data: { returnTo: search.returnTo } });
+    }
+  },
 });
 
 function RouteComponent() {
-  return (
-    <div className='flex flex-col justify-center w-xl'>
-      <div className='sm:mx-auto sm:w-full sm:max-w-md text-center'>
-        <Logo className='mx-auto h-24 w-auto' />
-        <h1 className='mt-8 text-2xl font-semibold tracking-tight text-balance font-primary'>
-          <span className='bg-gradient-to-r from-[#EFE1BE] to-primary bg-clip-text text-transparent'>
-            Deadlock Mod Manager
-          </span>
-        </h1>
-        <h2 className='text-center font-bold tracking-tight text-foreground'>
-          Sign in to your account
-        </h2>
-      </div>
+  const { error } = Route.useSearch();
 
-      <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]'>
-        <LoginForm />
+  if (error) {
+    return (
+      <div className='flex min-h-screen flex-col items-center justify-center'>
+        <div className='max-w-md rounded-lg border border-destructive bg-destructive/10 p-6'>
+          <h2 className='mb-2 text-xl font-semibold text-destructive'>
+            Sign In Failed
+          </h2>
+          <p className='text-sm text-muted-foreground'>{error}</p>
+          <a
+            href='/login'
+            className='mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90'>
+            Try Again
+          </a>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className='flex min-h-screen flex-col items-center justify-center'>
+      <Loader />
+      <p className='mt-4 text-lg'>Redirecting to sign in...</p>
     </div>
   );
 }

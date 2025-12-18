@@ -75,8 +75,6 @@ export const ReportDialog = ({
   });
 
   const onSubmit = (data: ReportFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Form errors:", form.formState.errors);
     createReport(
       {
         modId: mod.id,
