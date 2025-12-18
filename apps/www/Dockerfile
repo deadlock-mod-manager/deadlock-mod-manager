@@ -86,6 +86,8 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/www ./apps/www
 RUN pnpm install --prod
 
 ENV PORT=3000
+ENV BASE_URL=https://deadlockmods.app
+ENV NODE_ENV=production
 
 EXPOSE 3000
 

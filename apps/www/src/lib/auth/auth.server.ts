@@ -34,7 +34,7 @@ export const initiateLogin = createServerFn({ method: "GET" })
   .inputValidator(InitiateLoginInput.parse)
   .handler(async ({ data }) => {
     const authUrl = await createAuthorizationUrl(data.returnTo || "/");
-    throw redirect({ href: authUrl });
+    return { authUrl };
   });
 
 export const handleCallback = createServerFn({ method: "GET" })

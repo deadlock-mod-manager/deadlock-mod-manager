@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import Loader from "@/components/loader";
 import { initiateLogin } from "@/lib/auth/auth.server";
@@ -11,12 +11,18 @@ export const Route = createFileRoute("/login")({
       .optional()
       .transform((val) => val === true || val === "true")
       .default(false),
-    error: z.string().optional().default(""),
+    error: z
+      .string()
+      .optional()
+      .transform((val) => val || undefined),
     returnTo: z.string().optional().default("/"),
   }),
   beforeLoad: async ({ search }) => {
     if (!search.error) {
-      await initiateLogin({ data: { returnTo: search.returnTo } });
+      const { authUrl } = await initiateLogin({
+        data: { returnTo: search.returnTo },
+      });
+      throw redirect({ href: authUrl });
     }
   },
 });
