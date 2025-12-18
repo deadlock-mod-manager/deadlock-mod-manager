@@ -3,7 +3,7 @@ import { z } from "zod";
 export const envSchema = z.object({
   PORT: z.coerce.number().min(1).max(65535).default(3000),
   NODE_ENV: z.enum(["development", "production"]).default("production"),
-  BASE_URL: z.string().url().optional(),
+  BASE_URL: z.string().url().optional().default("https://deadlockmods.app"),
   ASSET_PRELOAD_MAX_SIZE: z.coerce
     .number()
     .min(0)
