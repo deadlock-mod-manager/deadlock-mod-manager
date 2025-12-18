@@ -60,6 +60,10 @@
     "@changesets/cli": "^2.29.7"
   },
   "pnpm": {
+    "overrides": {
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0"
+    },
     "onlyBuiltDependencies": [
       "@parcel/watcher",
       "@swc/core",

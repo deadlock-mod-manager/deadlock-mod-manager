@@ -6,7 +6,11 @@ import { initiateLogin } from "@/lib/auth/auth.server";
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
   validateSearch: z.object({
-    desktop: z.boolean().optional().default(false),
+    desktop: z
+      .union([z.boolean(), z.string()])
+      .optional()
+      .transform((val) => val === true || val === "true")
+      .default(false),
     error: z.string().optional().default(""),
     returnTo: z.string().optional().default("/"),
   }),
