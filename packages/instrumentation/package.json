@@ -17,7 +17,7 @@
     "@opentelemetry/context-async-hooks": "^2.1.0",
     "@opentelemetry/instrumentation-http": "^0.200.0",
     "@opentelemetry/instrumentation-pg": "^0.52.0",
-    "@sentry/node": "^10.15.0",
+    "@sentry/node": "^10.27.0",
     "@sentry/opentelemetry": "^10.15.0"
   },
   "devDependencies": {
