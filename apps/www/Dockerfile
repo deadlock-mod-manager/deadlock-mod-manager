@@ -25,11 +25,13 @@ COPY apps/www ./apps/www
 
 # Build arguments for Vite environment variables
 ARG VITE_SERVER_URL=https://api.deadlockmods.app
+ARG VITE_AUTH_URL=https://auth.deadlockmods.app
 ARG VITE_GA_MEASUREMENT_ID=G-EN5J1SBZ10
 ARG VITE_SENTRY_DSN=
 
 # Set environment variables for Vite build
 ENV VITE_SERVER_URL=${VITE_SERVER_URL}
+ENV VITE_AUTH_URL=${VITE_AUTH_URL}
 ENV VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID}
 ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
 

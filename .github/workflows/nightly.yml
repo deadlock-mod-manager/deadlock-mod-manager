@@ -262,6 +262,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         with:
           projectPath: ./apps/desktop

@@ -40,9 +40,7 @@ export function getRedirectUri(): string {
   }
 
   if (isProduction) {
-    throw new Error(
-      "BASE_URL environment variable is required in production for secure OAuth redirects",
-    );
+    return "https://deadlockmods.app/auth/callback";
   }
 
   return "http://localhost:3003/auth/callback";

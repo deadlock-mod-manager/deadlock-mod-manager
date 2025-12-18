@@ -1,6 +1,0 @@
-[build.environment]
-NODE_VERSION = "24.8.0"
-
-[build]
-publish = "apps/www/dist/client"
-command = "pnpm install && pnpm --filter @deadlock-mods/www build"

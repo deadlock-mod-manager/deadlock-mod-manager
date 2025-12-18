@@ -14,6 +14,10 @@ inputs:
     description: "Node.js version to use"
     required: false
     default: "22.11.0"
+  build-args:
+    description: "Additional build arguments for Docker"
+    required: false
+    default: ""
 
 outputs:
   version:
@@ -73,6 +77,7 @@ runs:
         cache-to: type=gha,mode=max
         file: ./apps/${{ inputs.service-name }}/Dockerfile
         push: true
+        build-args: ${{ inputs.build-args }}
         tags: |
           ${{ inputs.docker-username }}/deadlock-mods-${{ inputs.service-name }}:${{ steps.get-version.outputs.version }}
           ${{ inputs.docker-username }}/deadlock-mods-${{ inputs.service-name }}:latest

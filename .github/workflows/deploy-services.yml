@@ -241,6 +241,8 @@ jobs:
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
           node-version: ${{ env.NODE_VERSION }}
+          build-args: |
+            VITE_AUTH_URL=https://auth.deadlockmods.app
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
