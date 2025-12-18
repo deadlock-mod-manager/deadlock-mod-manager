@@ -561,7 +561,14 @@
     "genericMessage": "We're sorry, but an error occurred while processing your request.",
     "errorCode": "Error code:",
     "tryAgain": "Try again",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "failedToParseGameConfiguration": {
+      "instruction": "Please follow these steps to resolve the issue:",
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
+    }
   },
   "table": {
     "name": "Name",
