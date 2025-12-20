@@ -69,7 +69,11 @@ export const useAnalyticsEvents = () => {
 
   // User identification and properties
   const identifyUser = useCallback(
-    async (hardwareId: string, userId?: string, properties?: UserProperties) => {
+    async (
+      hardwareId: string,
+      userId?: string,
+      properties?: UserProperties,
+    ) => {
       if (!isEnabled) return;
 
       const distinctId = userId ?? hardwareId;
