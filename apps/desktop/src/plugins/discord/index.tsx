@@ -130,9 +130,7 @@ const Render = () => {
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    logger.info("Discord plugin effect triggered", {
-      isEnabled,
-    });
+    logger.withMetadata({ isEnabled }).info("Discord plugin effect triggered");
 
     // reset cancellation and clear any leftover timers
     cancelledRef.current = false;
@@ -149,7 +147,11 @@ const Render = () => {
         invoke("clear_discord_presence")
           .then(() => logger.info("Discord presence cleared"))
           .catch((error) => {
-            logger.warn("Failed to clear Discord presence:", error);
+            logger
+              .withError(
+                error instanceof Error ? error : new Error(String(error)),
+              )
+              .warn("Failed to clear Discord presence");
           });
         return;
       }
@@ -170,10 +172,12 @@ const Render = () => {
           settings?.showElapsedTime !== false ? startTimestamp : null,
       };
 
-      logger.info("Attempting to set Discord presence", {
-        applicationId: applicationId,
-        activity,
-      });
+      logger
+        .withMetadata({
+          applicationId: applicationId,
+          activity,
+        })
+        .info("Attempting to set Discord presence");
 
       // Try to set presence with retry logic
       const attemptConnection = async (retries = 3) => {
@@ -186,10 +190,12 @@ const Render = () => {
           logger.info("Discord Rich Presence connected successfully");
         } catch (error) {
           if (retries > 0) {
-            logger.warn(
-              `Failed to set Discord presence, retrying... (${retries} attempts left)`,
-              error,
-            );
+            logger
+              .withMetadata({ retries })
+              .withError(
+                error instanceof Error ? error : new Error(String(error)),
+              )
+              .warn("Failed to set Discord presence, retrying");
             if (cancelledRef.current) return;
             const retryId = window.setTimeout(() => {
               if (cancelledRef.current) return;
@@ -197,10 +203,11 @@ const Render = () => {
             }, 2000);
             timeoutsRef.current.push(retryId);
           } else {
-            logger.warn(
-              "Failed to set Discord presence after all attempts:",
-              error,
-            );
+            logger
+              .withError(
+                error instanceof Error ? error : new Error(String(error)),
+              )
+              .warn("Failed to set Discord presence after all attempts");
             logger.info("Make sure Discord is running and you're logged in");
           }
         }
@@ -221,7 +228,11 @@ const Render = () => {
       invoke("clear_discord_presence")
         .then(() => logger.info("Discord presence cleared"))
         .catch((error) => {
-          logger.error("Failed to clear Discord presence:", error);
+          logger
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .error("Failed to clear Discord presence");
         });
     };
   }, [isEnabled, settings, startTimestamp]);

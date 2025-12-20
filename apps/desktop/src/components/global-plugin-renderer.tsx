@@ -72,10 +72,12 @@ const GlobalPluginRenderer = () => {
               newLoadedPlugins[plugin.manifest.id] = resolved;
             }
           } catch (error) {
-            logger.error("Failed to load plugin for global rendering", {
-              pluginId: plugin.manifest.id,
-              error,
-            });
+            logger
+              .withMetadata({ pluginId: plugin.manifest.id })
+              .withError(
+                error instanceof Error ? error : new Error(String(error)),
+              )
+              .error("Failed to load plugin for global rendering");
           }
         }
       }

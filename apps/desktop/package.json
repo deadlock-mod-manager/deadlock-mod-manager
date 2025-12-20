@@ -48,6 +48,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "interweave": "^13.1.1",
     "jszip": "^3.10.1",
+    "loglayer": "^6.7.0",
     "neverthrow": "^8.2.0",
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
@@ -60,6 +61,7 @@
     "react-promise-suspense": "^0.3.4",
     "react-router": "^7.9.5",
     "recharts": "^2.15.4",
+    "serialize-error": "^12.0.0",
     "tailwindcss-animate": "^1.0.7",
     "tauri-plugin-sentry-api": "^0.3.1",
     "tslog": "^4.10.2",
@@ -68,7 +70,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.9.2",
+    "@tauri-apps/cli": "^2.9.6",
     "@types/node": "^20.19.24",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

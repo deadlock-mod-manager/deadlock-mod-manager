@@ -60,7 +60,10 @@ const PluginEntry = () => {
           setModule(resolved);
         }
       } catch (e) {
-        logger.error("Error loading module", { pluginId: id, error: e });
+        logger
+          .withMetadata({ pluginId: id })
+          .withError(e instanceof Error ? e : new Error(String(e)))
+          .error("Error loading module");
       }
     })();
     return () => {

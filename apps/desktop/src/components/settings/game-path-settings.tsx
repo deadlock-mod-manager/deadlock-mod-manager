@@ -32,7 +32,9 @@ export const GamePathSettings = () => {
         toast.success(t("settings.gamePathSet"));
       }
     } catch (error) {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(t("settings.invalidGamePath"));
     } finally {
       setIsBrowsing(false);
@@ -46,7 +48,9 @@ export const GamePathSettings = () => {
       setGamePath(path);
       toast.success(t("settings.gamePathAutoDetected"));
     } catch (error) {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(t("settings.invalidGamePath"));
     } finally {
       setIsAutoDetecting(false);

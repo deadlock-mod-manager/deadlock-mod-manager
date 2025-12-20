@@ -111,19 +111,21 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
     set((state) => {
-      logger.info("Adding identified local mod", {
-        modId: mod.id,
-        remoteId: mod.remoteId,
-        name: mod.name,
-        filePath,
-        markAsInstalled,
-        existingModCount: state.localMods.length,
-      });
+      logger
+        .withMetadata({
+          modId: mod.id,
+          remoteId: mod.remoteId,
+          name: mod.name,
+          filePath,
+          markAsInstalled,
+          existingModCount: state.localMods.length,
+        })
+        .info("Adding identified local mod");
 
       if (state.localMods.some((m) => m.remoteId === mod.remoteId)) {
-        logger.info("Mod already exists in store, skipping", {
-          remoteId: mod.remoteId,
-        });
+        logger
+          .withMetadata({ remoteId: mod.remoteId })
+          .info("Mod already exists in store, skipping");
         return state;
       }
 
@@ -140,11 +142,13 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installOrder: markAsInstalled ? maxOrder + 1 : undefined,
       };
 
-      logger.info("Adding new mod to store and enabling in current profile", {
-        modId: newMod.id,
-        remoteId: newMod.remoteId,
-        name: newMod.name,
-      });
+      logger
+        .withMetadata({
+          modId: newMod.id,
+          remoteId: newMod.remoteId,
+          name: newMod.name,
+        })
+        .info("Adding new mod to store and enabling in current profile");
 
       const { activeProfileId, profiles } = state;
       const currentProfile = profiles[activeProfileId];
@@ -182,7 +186,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   setModStatus: (remoteId, status) => {
     const mod = get().localMods.find((m) => m.remoteId === remoteId);
     if (!mod) {
-      logger.error("Mod not found", { remoteId });
+      logger.withMetadata({ remoteId }).error("Mod not found");
       return;
     }
     const validateStatus = ModStatusStateMachine.validateTransition(
@@ -191,11 +195,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     );
 
     if (validateStatus.isErr()) {
-      logger.error("Invalid status transition", {
-        remoteId,
-        status,
-        error: validateStatus.error,
-      });
+      logger
+        .withMetadata({ remoteId, status })
+        .withError(validateStatus.error)
+        .error("Invalid status transition");
       return;
     }
 
@@ -309,24 +312,28 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   updateModVpksAfterReorder: (vpkMappings: Array<[string, string[]]>) =>
     set((state) => {
-      logger.info("Updating mod VPK mappings after reorder", {
-        mappingsCount: vpkMappings.length,
-        mappings: vpkMappings.map(([remoteId, vpks]) => ({
-          remoteId,
-          vpkCount: vpks.length,
-        })),
-      });
+      logger
+        .withMetadata({
+          mappingsCount: vpkMappings.length,
+          mappings: vpkMappings.map(([remoteId, vpks]) => ({
+            remoteId,
+            vpkCount: vpks.length,
+          })),
+        })
+        .info("Updating mod VPK mappings after reorder");
 
       const vpkMap = new Map(vpkMappings);
       return {
         localMods: state.localMods.map((mod) => {
           const newVpks = vpkMap.get(mod.remoteId);
           if (newVpks) {
-            logger.info("Updating VPKs for mod", {
-              remoteId: mod.remoteId,
-              oldVpks: mod.installedVpks,
-              newVpks,
-            });
+            logger
+              .withMetadata({
+                remoteId: mod.remoteId,
+                oldVpks: mod.installedVpks,
+                newVpks,
+              })
+              .info("Updating VPKs for mod");
             return {
               ...mod,
               installedVpks: newVpks,
@@ -389,13 +396,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         return state;
       }
 
-      logger.info("Migrating legacy installed mods without install order", {
-        totalMods: state.localMods.length,
-        installedMods: installedMods.length,
-        modsToMigrate: installedMods.filter(
-          (mod) => mod.installOrder === undefined,
-        ).length,
-      });
+      logger
+        .withMetadata({
+          totalMods: state.localMods.length,
+          installedMods: installedMods.length,
+          modsToMigrate: installedMods.filter(
+            (mod) => mod.installOrder === undefined,
+          ).length,
+        })
+        .info("Migrating legacy installed mods without install order");
 
       const sortedInstalledMods = [...installedMods].sort((a, b) => {
         const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
@@ -418,9 +427,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         };
       });
 
-      logger.info("Legacy mod migration completed", {
-        migratedInstalledMods: modOrderUpdates.size,
-      });
+      logger
+        .withMetadata({ migratedInstalledMods: modOrderUpdates.size })
+        .info("Legacy mod migration completed");
 
       return {
         ...state,

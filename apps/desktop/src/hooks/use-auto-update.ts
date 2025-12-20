@@ -35,13 +35,17 @@ export const useAutoUpdate = () => {
         logger.info("Checking for updates on launch");
         const update = await updateManager.checkForUpdates();
         if (update) {
-          logger.info("Update available:", update.version);
+          logger
+            .withMetadata({ version: update.version })
+            .info("Update available");
           setShowUpdateDialog(true);
         } else {
           logger.info("No updates available");
         }
       } catch (error) {
-        logger.warn("Failed to check for updates", { error });
+        logger
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .warn("Failed to check for updates");
       }
     };
 
@@ -54,7 +58,9 @@ export const useAutoUpdate = () => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      logger.error("Failed to update and relaunch", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to update and relaunch");
       setShowUpdateDialog(false);
     }
   };

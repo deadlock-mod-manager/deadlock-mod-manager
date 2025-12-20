@@ -40,10 +40,12 @@ export const useGlobalShortcuts = (shortcuts: GlobalShortcut[]) => {
         event.preventDefault();
         event.stopPropagation();
 
-        logger.debug("Global shortcut triggered", {
-          shortcut: shortcutString,
-          description: shortcut.description,
-        });
+        logger
+          .withMetadata({
+            shortcut: shortcutString,
+            description: shortcut.description,
+          })
+          .debug("Global shortcut triggered");
 
         shortcut.handler();
       }

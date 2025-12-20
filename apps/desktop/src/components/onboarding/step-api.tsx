@@ -33,14 +33,18 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
 
   useEffect(() => {
     if (health) {
-      logger.info("API connection successful", { version: health.version });
+      logger
+        .withMetadata({ version: health.version })
+        .info("API connection successful");
       onComplete();
     }
   }, [health, onComplete]);
 
   useEffect(() => {
     if (error) {
-      logger.error("Failed to connect to API", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to connect to API");
       onError();
     }
   }, [error, onError]);

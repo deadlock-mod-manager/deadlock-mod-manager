@@ -108,7 +108,9 @@ export const ProfileShareDialog = () => {
     },
     onError(error) {
       setProfileId(null);
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(t("profiles.shareError"));
     },
     onSuccess(data) {
@@ -121,14 +123,16 @@ export const ProfileShareDialog = () => {
   });
 
   const onSubmit = () => {
-    logger.info("Creating profile with enhanced mod data", {
-      enabledModsCount: enabledMods.length,
-      enabledMods: enabledMods.map((mod) => ({
-        remoteId: mod.remoteId,
-        hasFileTree: !!mod.fileTree,
-        hasSelectedDownload: !!mod.selectedDownload,
-      })),
-    });
+    logger
+      .withMetadata({
+        enabledModsCount: enabledMods.length,
+        enabledMods: enabledMods.map((mod) => ({
+          remoteId: mod.remoteId,
+          hasFileTree: !!mod.fileTree,
+          hasSelectedDownload: !!mod.selectedDownload,
+        })),
+      })
+      .info("Creating profile with enhanced mod data");
 
     const validatedProfile = profileSchema.safeParse({
       version: "1",
@@ -138,19 +142,23 @@ export const ProfileShareDialog = () => {
     });
 
     if (!validatedProfile.success) {
-      logger.error("Invalid profile", {
-        profile: validatedProfile.error,
-        enabledMods,
-      });
+      logger
+        .withMetadata({
+          profile: validatedProfile.error,
+          enabledMods,
+        })
+        .error("Invalid profile");
       toast.error(t("profiles.shareError"));
       return;
     }
 
-    logger.info("Profile validation successful", {
-      validatedProfile: validatedProfile.data,
-      originalEnabledMods: enabledMods,
-      validatedMods: validatedProfile.data.payload.mods,
-    });
+    logger
+      .withMetadata({
+        validatedProfile: validatedProfile.data,
+        originalEnabledMods: enabledMods,
+        validatedMods: validatedProfile.data.payload.mods,
+      })
+      .info("Profile validation successful");
 
     if (!validatedProfile || !hardwareId || !version) {
       logger.error("Hardware ID or version is missing");
@@ -170,10 +178,12 @@ export const ProfileShareDialog = () => {
       profile: validatedProfile.data,
     };
 
-    logger.info("Sharing profile", {
-      payload: JSON.stringify(payload, null, 2),
-      profileMods: validatedProfile.data.payload.mods,
-    });
+    logger
+      .withMetadata({
+        payload: JSON.stringify(payload, null, 2),
+        profileMods: validatedProfile.data.payload.mods,
+      })
+      .info("Sharing profile");
 
     return mutate(payload);
   };

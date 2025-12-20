@@ -25,11 +25,10 @@ export const useIngestToolInit = () => {
       hasInitialized.current = true;
 
       try {
-        logger.info("Initializing ingest tool on app startup");
         await invoke("initialize_ingest_tool");
         logger.info("Ingest tool initialized successfully");
       } catch (error) {
-        logger.error("Failed to initialize ingest tool:", error);
+        logger.withError(error).error("Failed to initialize ingest tool");
       }
     };
 

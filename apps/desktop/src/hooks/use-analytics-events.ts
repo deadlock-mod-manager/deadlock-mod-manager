@@ -76,11 +76,13 @@ export const useAnalyticsEvents = () => {
           app_version: version || "unknown",
           ...properties,
         });
-        logger.info("User identified for analytics", {
-          hardwareId: `${hardwareId.slice(0, 8)}...`,
-        });
+        logger
+          .withMetadata({ hardwareId: `${hardwareId.slice(0, 8)}...` })
+          .info("User identified for analytics");
       } catch (error) {
-        logger.warn("Failed to identify user for analytics", error);
+        logger
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .warn("Failed to identify user for analytics");
       }
     },
     [identify, isEnabled, version],

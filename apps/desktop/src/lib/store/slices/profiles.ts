@@ -83,7 +83,9 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         profileId,
         profileName: name.trim(),
       });
-      logger.info("Created profile folder", { profileId, folderName });
+      logger
+        .withMetadata({ profileId, folderName })
+        .info("Created profile folder");
       const newProfile: ModProfile = {
         id: profileId,
         name: name.trim(),
@@ -104,7 +106,10 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
 
       return profileId;
     } catch (error) {
-      logger.error("Failed to create profile folder", { profileId, error });
+      logger
+        .withMetadata({ profileId })
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to create profile folder");
       return null;
     }
   },
@@ -122,16 +127,20 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         await invoke("delete_profile_folder", {
           profileFolder: profile.folderName,
         });
-        logger.info("Deleted profile folder", {
-          profileId,
-          folderName: profile.folderName,
-        });
+        logger
+          .withMetadata({
+            profileId,
+            folderName: profile.folderName,
+          })
+          .info("Deleted profile folder");
       } catch (error) {
-        logger.error("Failed to delete profile folder", {
-          profileId,
-          folderName: profile.folderName,
-          error,
-        });
+        logger
+          .withMetadata({
+            profileId,
+            folderName: profile.folderName,
+          })
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .error("Failed to delete profile folder");
       }
     }
 
@@ -178,13 +187,15 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   },
 
   switchToProfile: async (profileId: ProfileId) => {
-    logger.info("Switching to profile", { profileId });
+    logger.withMetadata({ profileId }).info("Switching to profile");
     const state = get();
     const { profiles, activeProfileId } = state;
     const targetProfile = profiles[profileId];
 
     if (!targetProfile || profileId === activeProfileId) {
-      logger.error("Profile not found or already active", { profileId });
+      logger
+        .withMetadata({ profileId })
+        .error("Profile not found or already active");
       return {
         disabledMods: [],
         enabledMods: [],
@@ -206,10 +217,12 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       await invoke("switch_profile", {
         profileFolder: targetProfile.folderName,
       });
-      logger.info("Successfully switched profile gameinfo.gi path", {
-        profileId,
-        folderName: targetProfile.folderName,
-      });
+      logger
+        .withMetadata({
+          profileId,
+          folderName: targetProfile.folderName,
+        })
+        .info("Successfully switched profile gameinfo.gi path");
 
       const now = new Date();
       set((state) => ({
@@ -227,7 +240,10 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
 
       await get().syncProfileEnabledMods(profileId);
     } catch (error) {
-      logger.error("Failed to switch profile", { profileId, error });
+      logger
+        .withMetadata({ profileId })
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to switch profile");
       result.errors.push(`Failed to switch profile: ${error}`);
     } finally {
       set({ isSwitching: false });
@@ -359,16 +375,18 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     const profile = profiles[activeProfileId];
 
     if (!profile) {
-      logger.error("Cannot save mods: active profile not found", {
-        activeProfileId,
-      });
+      logger
+        .withMetadata({ activeProfileId })
+        .error("Cannot save mods: active profile not found");
       return;
     }
 
-    logger.info("Saving current mods to profile", {
-      profileId: activeProfileId,
-      modsCount: localMods.length,
-    });
+    logger
+      .withMetadata({
+        profileId: activeProfileId,
+        modsCount: localMods.length,
+      })
+      .info("Saving current mods to profile");
 
     set((state) => ({
       profiles: {
@@ -386,14 +404,18 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     const profile = profiles[profileId];
 
     if (!profile) {
-      logger.error("Cannot load mods: profile not found", { profileId });
+      logger
+        .withMetadata({ profileId })
+        .error("Cannot load mods: profile not found");
       return;
     }
 
-    logger.info("Loading mods from profile", {
-      profileId,
-      modsCount: profile.mods.length,
-    });
+    logger
+      .withMetadata({
+        profileId,
+        modsCount: profile.mods.length,
+      })
+      .info("Loading mods from profile");
 
     set({ localMods: [...profile.mods] });
   },
@@ -404,24 +426,28 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       const profile = profiles[profileId];
 
       if (!profile) {
-        logger.error("Profile not found for sync", { profileId });
+        logger.withMetadata({ profileId }).error("Profile not found for sync");
         return;
       }
 
-      logger.info("Syncing profile enabled mods with filesystem", {
-        profileId,
-        folderName: profile.folderName,
-      });
+      logger
+        .withMetadata({
+          profileId,
+          folderName: profile.folderName,
+        })
+        .info("Syncing profile enabled mods with filesystem");
 
       const allVpks = await invoke<string[]>("get_profile_installed_vpks", {
         profileFolder: profile.folderName,
       });
 
-      logger.info("Found VPKs in profile folder", {
-        profileId,
-        count: allVpks.length,
-        vpks: allVpks,
-      });
+      logger
+        .withMetadata({
+          profileId,
+          count: allVpks.length,
+          vpks: allVpks,
+        })
+        .info("Found VPKs in profile folder");
 
       // Enabled VPKs follow the pattern pak##_dir.vpk
       // Disabled (prefixed) VPKs follow the pattern {modid}_*.vpk
@@ -481,10 +507,12 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         }
       }
 
-      logger.info("Synced profile enabled mods", {
-        profileId,
-        enabledCount: Object.keys(updatedEnabledMods).length,
-      });
+      logger
+        .withMetadata({
+          profileId,
+          enabledCount: Object.keys(updatedEnabledMods).length,
+        })
+        .info("Synced profile enabled mods");
 
       set((state) => ({
         localMods: updatedLocalMods,
@@ -497,7 +525,10 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         },
       }));
     } catch (error) {
-      logger.error("Failed to sync profile enabled mods", { profileId, error });
+      logger
+        .withMetadata({ profileId })
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to sync profile enabled mods");
     }
   },
 
@@ -544,10 +575,12 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       }
 
       if (profilesToRemove.length > 0) {
-        logger.info("Removing profiles that no longer exist in filesystem", {
-          count: profilesToRemove.length,
-          profileIds: profilesToRemove,
-        });
+        logger
+          .withMetadata({
+            count: profilesToRemove.length,
+            profileIds: profilesToRemove,
+          })
+          .info("Removing profiles that no longer exist in filesystem");
 
         set((state) => {
           const newProfiles = { ...state.profiles };
@@ -559,10 +592,12 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       }
 
       if (unknownFolders.length > 0) {
-        logger.info("Syncing unknown profile folders to state", {
-          count: unknownFolders.length,
-          folders: unknownFolders,
-        });
+        logger
+          .withMetadata({
+            count: unknownFolders.length,
+            folders: unknownFolders,
+          })
+          .info("Syncing unknown profile folders to state");
 
         const newProfiles: Record<ProfileId, ModProfile> = {};
 
@@ -598,12 +633,14 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
           },
         }));
 
-        logger.info("Added unknown profiles to state", {
-          count: Object.keys(newProfiles).length,
-        });
+        logger
+          .withMetadata({ count: Object.keys(newProfiles).length })
+          .info("Added unknown profiles to state");
       }
     } catch (error) {
-      logger.error("Failed to sync profiles with filesystem", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to sync profiles with filesystem");
     }
   },
 });

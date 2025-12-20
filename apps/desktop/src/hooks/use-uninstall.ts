@@ -56,11 +56,13 @@ const useUninstall = () => {
       const profileFolder = activeProfile?.folderName ?? null;
 
       if (mod.status === ModStatus.Installed) {
-        logger.info("Uninstalling mod", {
-          modId: mod.remoteId,
-          vpks: mod.installedVpks,
-          profileFolder,
-        });
+        logger
+          .withMetadata({
+            modId: mod.remoteId,
+            vpks: mod.installedVpks,
+            profileFolder,
+          })
+          .info("Uninstalling mod");
         if (remove) {
           await invoke("purge_mod", {
             modId: mod.remoteId,
@@ -87,7 +89,9 @@ const useUninstall = () => {
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
     } catch (error) {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(remove ? t("mods.deleteError") : t("mods.disableError"));
     }
   };

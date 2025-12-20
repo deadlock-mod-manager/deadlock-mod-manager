@@ -232,7 +232,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         e.stopPropagation();
         await action();
       } catch (error) {
-        logger.error("Failed to perform action", { error });
+        logger
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .error("Failed to perform action");
         toast.error(t("notifications.failedToPerformAction"));
         setIsActionInProgress(false);
       }

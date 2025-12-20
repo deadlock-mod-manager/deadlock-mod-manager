@@ -49,7 +49,9 @@ class DownloadManager {
       (event) => {
         const mod = this.pendingDownloads.get(event.payload.modId);
         if (mod) {
-          logger.info("Download started", { mod: event.payload.modId });
+          logger
+            .withMetadata({ mod: event.payload.modId })
+            .info("Download started");
           mod.onStart();
         }
       },
@@ -76,10 +78,12 @@ class DownloadManager {
       (event) => {
         const mod = this.pendingDownloads.get(event.payload.modId);
         if (mod) {
-          logger.info("Download complete", {
-            mod: event.payload.modId,
-            path: event.payload.path,
-          });
+          logger
+            .withMetadata({
+              mod: event.payload.modId,
+              path: event.payload.path,
+            })
+            .info("Download complete");
           mod.onComplete(event.payload.path);
           this.pendingDownloads.delete(event.payload.modId);
         }
@@ -91,10 +95,10 @@ class DownloadManager {
       (event) => {
         const mod = this.pendingDownloads.get(event.payload.modId);
         if (mod) {
-          logger.error("Download error", {
-            mod: event.payload.modId,
-            error: event.payload.error,
-          });
+          logger
+            .withMetadata({ mod: event.payload.modId })
+            .withError(new Error(event.payload.error))
+            .error("Download error");
           mod.onError(new Error(event.payload.error));
           this.pendingDownloads.delete(event.payload.modId);
         }
@@ -106,11 +110,13 @@ class DownloadManager {
       (event) => {
         const mod = this.pendingDownloads.get(event.payload.modId);
         if (mod) {
-          logger.info("File tree received for mod", {
-            mod: event.payload.modId,
-            totalFiles: event.payload.fileTree.total_files,
-            hasMultiple: event.payload.fileTree.has_multiple_files,
-          });
+          logger
+            .withMetadata({
+              mod: event.payload.modId,
+              totalFiles: event.payload.fileTree.total_files,
+              hasMultiple: event.payload.fileTree.has_multiple_files,
+            })
+            .info("File tree received for mod");
 
           // Store file tree in mod metadata
           const store = usePersistedStore.getState();
@@ -151,7 +157,9 @@ class DownloadManager {
   addToQueue(mod: DownloadableMod) {
     this.pendingDownloads.set(mod.remoteId, mod);
     this.queueDownload(mod).catch((error) => {
-      logger.error("Failed to queue download", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to queue download");
       toast.error(`Failed to queue download: ${error.message}`);
       mod.onError(error);
       this.pendingDownloads.delete(mod.remoteId);
@@ -163,10 +171,12 @@ class DownloadManager {
       throw new Error("No downloads available for this mod");
     }
 
-    logger.info("Queueing download for mod", {
-      mod: mod.remoteId,
-      files: mod.downloads.length,
-    });
+    logger
+      .withMetadata({
+        mod: mod.remoteId,
+        files: mod.downloads.length,
+      })
+      .info("Queueing download for mod");
 
     const profileFolder = mod.profileFolder ?? null;
 
@@ -185,9 +195,11 @@ class DownloadManager {
     try {
       await invoke("cancel_download", { modId });
       this.pendingDownloads.delete(modId);
-      logger.info("Download cancelled", { mod: modId });
+      logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
-      logger.error("Failed to cancel download", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to cancel download");
       throw error;
     }
   }
@@ -196,7 +208,9 @@ class DownloadManager {
     try {
       return await invoke("get_download_status", { modId });
     } catch (error) {
-      logger.error("Failed to get download status", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to get download status");
       throw error;
     }
   }
@@ -205,7 +219,9 @@ class DownloadManager {
     try {
       return await invoke("get_all_downloads");
     } catch (error) {
-      logger.error("Failed to get all downloads", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to get all downloads");
       throw error;
     }
   }

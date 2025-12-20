@@ -186,7 +186,9 @@ export const ProfileManagerDialog = ({
       await syncProfilesWithFilesystem();
       toast.success(t("profiles.syncSuccess"));
     } catch (error) {
-      logger.error("Failed to sync profiles", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to sync profiles");
       toast.error(t("profiles.syncError"));
     } finally {
       setIsSyncing(false);

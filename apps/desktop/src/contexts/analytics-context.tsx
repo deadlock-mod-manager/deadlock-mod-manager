@@ -58,7 +58,13 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
       });
 
       isIdentified.current = true;
-      logger.info("User identified for analytics");
+      logger
+        .withMetadata({
+          hardwareId,
+          totalMods,
+          totalProfiles,
+        })
+        .info("User identified for analytics");
     }
   }, [
     analytics,

@@ -19,7 +19,9 @@ const useUpdateManager = () => {
       setUpdate(update);
       return update;
     } catch (error) {
-      logger.error("Failed to check for updates", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to check for updates");
       return null;
     }
   };
@@ -37,17 +39,19 @@ const useUpdateManager = () => {
       switch (event.event) {
         case "Started":
           setSize(event.data.contentLength ?? 0);
-          logger.info(`started downloading ${event.data.contentLength} bytes`);
+          logger
+            .withMetadata({ contentLength: event.data.contentLength })
+            .info("started downloading");
           break;
         case "Progress":
           setDownloaded((prev) => prev + event.data.chunkLength);
-          logger.info(`downloaded ${downloaded} from ${size}`);
+          logger.withMetadata({ downloaded, size }).info("downloaded");
           break;
         case "Finished":
           logger.info("download finished");
           break;
         default:
-          logger.info("Unknown update event:", event);
+          logger.withMetadata({ event }).info("Unknown update event");
           break;
       }
     });

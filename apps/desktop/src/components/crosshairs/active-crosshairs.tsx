@@ -42,7 +42,9 @@ export const ActiveCrosshairs = () => {
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"
@@ -66,7 +68,9 @@ export const ActiveCrosshairs = () => {
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(t("crosshairs.form.applyError"));
     },
   });

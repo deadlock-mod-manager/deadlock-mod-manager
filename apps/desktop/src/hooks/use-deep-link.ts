@@ -25,7 +25,7 @@ type FileInfo = {
 const GAMEBANANA_MMDL_REGEX = /\/mmdl\/(\d+)/;
 
 const getFileInfoFromHeaders = async (url: string): Promise<FileInfo> => {
-  logger.info("Fetching file info from headers for URL:", url);
+  logger.withMetadata({ url }).info("Fetching file info from headers for URL");
 
   try {
     // Make a HEAD request to get headers without downloading the file
@@ -73,14 +73,12 @@ const getFileInfoFromHeaders = async (url: string): Promise<FileInfo> => {
       }
     }
 
-    logger.info("File info extracted from headers:", {
-      name,
-      size,
-      contentType,
-    });
+    logger
+      .withMetadata({ name, size, contentType })
+      .info("File info extracted from headers");
     return { name, size };
   } catch (error) {
-    logger.error("Failed to get file info from headers:", error);
+    logger.withError(error).error("Failed to get file info from headers");
 
     // Fallback to URL-based extraction if header request fails
     let name = "download.zip";
@@ -113,7 +111,7 @@ export const useDeepLink = () => {
 
     const setupDeepLinkListener = async () => {
       try {
-        logger.debug("Setting up deep link listener...");
+        logger.debug("Setting up deep link listener");
 
         unlisten = await listen<DeepLinkData>(
           "deep-link-received",
@@ -122,12 +120,16 @@ export const useDeepLink = () => {
 
             // Prevent duplicate processing of the same mod
             if (processingRef.current.has(mod_id)) {
-              logger.warn("Already processing deep link for mod:", mod_id);
+              logger
+                .withMetadata({ modId: mod_id })
+                .warn("Already processing deep link for mod");
               return;
             }
 
             processingRef.current.add(mod_id);
-            logger.info("Deep link received:", event.payload);
+            logger
+              .withMetadata({ payload: event.payload })
+              .info("Deep link received");
 
             try {
               // Navigate to the mod page first
@@ -142,10 +144,11 @@ export const useDeepLink = () => {
                 (m) => m.remoteId === modData.remoteId,
               );
               if (existingMod?.status === ModStatus.Installed) {
-                logger.info(
-                  "Mod already installed, skipping download and installation:",
-                  modData.remoteId,
-                );
+                logger
+                  .withMetadata({ remoteId: modData.remoteId })
+                  .info(
+                    "Mod already installed, skipping download and installation",
+                  );
                 toast.success(`${modData.name} is already installed!`);
                 // Just navigate to the mod page to show it's installed
                 navigate(`/mods/${mod_id}`);
@@ -183,10 +186,9 @@ export const useDeepLink = () => {
                 profileFolder,
                 onStart: () => {
                   setModStatus(modData.remoteId, ModStatus.Downloading);
-                  logger.info(
-                    "Started direct download for mod:",
-                    modData.remoteId,
-                  );
+                  logger
+                    .withMetadata({ remoteId: modData.remoteId })
+                    .info("Started direct download for mod");
                 },
                 onProgress: (progress) => {
                   setModProgress(modData.remoteId, progress);
@@ -195,10 +197,11 @@ export const useDeepLink = () => {
                   // Set mod as downloaded
                   setModStatus(modData.remoteId, ModStatus.Downloaded);
 
-                  logger.info(
-                    "Download completed, starting auto-installation for mod:",
-                    modData.remoteId,
-                  );
+                  logger
+                    .withMetadata({ remoteId: modData.remoteId })
+                    .info(
+                      "Download completed, starting auto-installation for mod",
+                    );
                   toast.success(
                     `${modData.name} downloaded! Installing automatically...`,
                   );
@@ -215,10 +218,9 @@ export const useDeepLink = () => {
                     await install(localMod, {
                       onStart: (mod) => {
                         setModStatus(mod.remoteId, ModStatus.Installing);
-                        logger.info(
-                          "Started auto-installation for mod:",
-                          mod.remoteId,
-                        );
+                        logger
+                          .withMetadata({ remoteId: mod.remoteId })
+                          .info("Started auto-installation for mod");
                       },
                       onComplete: (mod, result) => {
                         setModStatus(mod.remoteId, ModStatus.Installed);
@@ -230,10 +232,9 @@ export const useDeepLink = () => {
                         toast.success(
                           `${mod.name} installed successfully via 1-click!`,
                         );
-                        logger.info(
-                          "Auto-installation completed for mod:",
-                          mod.remoteId,
-                        );
+                        logger
+                          .withMetadata({ remoteId: mod.remoteId })
+                          .info("Auto-installation completed for mod");
                         // Remove from processing set when fully complete
                         processingRef.current.delete(mod_id);
                       },
@@ -242,17 +243,18 @@ export const useDeepLink = () => {
                         toast.error(
                           `Failed to install ${mod.name}: ${error.message}`,
                         );
-                        logger.error(
-                          "Auto-installation failed for mod:",
-                          mod.remoteId,
-                          error,
-                        );
+                        logger
+                          .withMetadata({ remoteId: mod.remoteId })
+                          .withError(error)
+                          .error("Auto-installation failed for mod");
                         // Remove from processing set on error
                         processingRef.current.delete(mod_id);
                       },
                     });
                   } catch (error) {
-                    logger.error("Failed to start auto-installation:", error);
+                    logger
+                      .withError(error)
+                      .error("Failed to start auto-installation");
                     toast.error(
                       `Downloaded but failed to install ${modData.name}. You can install it manually.`,
                     );
@@ -265,17 +267,16 @@ export const useDeepLink = () => {
                   toast.error(
                     `Failed to download ${modData.name}: ${error.message}`,
                   );
-                  logger.error(
-                    "Direct download failed for mod:",
-                    modData.remoteId,
-                    error,
-                  );
+                  logger
+                    .withMetadata({ remoteId: modData.remoteId })
+                    .withError(error)
+                    .error("Direct download failed for mod");
                   // Remove from processing set on error
                   processingRef.current.delete(mod_id);
                 },
               });
             } catch (error) {
-              logger.error("Failed to process deep link:", error);
+              logger.withError(error).error("Failed to process deep link");
               toast.error(
                 "Failed to process 1-click download. The mod may not exist or be unavailable.",
               );
@@ -285,7 +286,7 @@ export const useDeepLink = () => {
           },
         );
       } catch (error) {
-        logger.error("Failed to setup deep link listener:", error);
+        logger.withError(error).error("Failed to setup deep link listener");
       }
     };
 

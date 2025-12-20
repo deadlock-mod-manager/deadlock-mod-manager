@@ -52,13 +52,17 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
     onSuccess: (result) => {
       setAnalysisResult(result);
       setShowAnalysisDialog(true);
-      logger.info("Local addons analyzed", {
-        count: result.addons.length,
-        errors: result.errors.length,
-      });
+      logger
+        .withMetadata({
+          count: result.addons.length,
+          errors: result.errors.length,
+        })
+        .info("Local addons analyzed");
     },
     onError: (error) => {
-      logger.error("Failed to analyze addons", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to analyze addons");
     },
   });
 

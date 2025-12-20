@@ -43,7 +43,7 @@ export const useFeatureFlagMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
     },
     onError: (error) => {
-      logger.error("Failed to set feature flag override", error);
+      logger.withError(error).error("Failed to set feature flag override");
     },
   });
 
@@ -53,7 +53,7 @@ export const useFeatureFlagMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
     },
     onError: (error) => {
-      logger.error("Failed to delete feature flag override", error);
+      logger.withError(error).error("Failed to delete feature flag override");
     },
   });
 

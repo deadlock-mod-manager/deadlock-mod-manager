@@ -60,7 +60,9 @@ export const Titlebar = () => {
       const profileFolder = activeProfile?.folderName ?? null;
       await invoke("open_mods_folder", { profileFolder });
     } catch (error) {
-      logger.error("Failed to open mods folder", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to open mods folder");
       toast.error(t("common.failedToOpenFolder"));
     }
   };
@@ -69,7 +71,9 @@ export const Titlebar = () => {
     try {
       await invoke("open_game_folder");
     } catch (error) {
-      logger.error("Failed to open game folder", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to open game folder");
       toast.error(t("common.failedToOpenFolder"));
     }
   };
@@ -88,7 +92,9 @@ export const Titlebar = () => {
         toast.info(t("about.latestVersion"));
       }
     } catch (error) {
-      logger.error("Failed to check for updates", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to check for updates");
       toast.error(t("about.updateFailed"));
     }
   };
@@ -97,7 +103,9 @@ export const Titlebar = () => {
     try {
       await exit(0);
     } catch (error) {
-      logger.error("Failed to exit", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to exit");
     }
   };
 
@@ -108,7 +116,9 @@ export const Titlebar = () => {
       }
       window.location.reload();
     } catch (error) {
-      logger.error("Failed to reload", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to reload");
     }
   };
 
@@ -119,7 +129,9 @@ export const Titlebar = () => {
         await currentWindow.setFullscreen(!isFullscreen);
       }
     } catch (error) {
-      logger.error("Failed to toggle fullscreen", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to toggle fullscreen");
     }
   };
 
@@ -177,7 +189,11 @@ export const Titlebar = () => {
         try {
           await invoke("open_mods_store");
         } catch (error) {
-          logger.error("Failed to open mods store", { error });
+          logger
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .error("Failed to open mods store");
           toast.error(t("common.failedToOpenFolder"));
         }
       },

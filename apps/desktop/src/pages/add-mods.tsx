@@ -115,7 +115,9 @@ const AddMods = () => {
       await processMod(metadata, category, detected);
       setOpen(false);
     } catch (error) {
-      logger.error("Failed to process mod:", error);
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to process mod");
       toast.error(t("addMods.processingError"));
     }
   };

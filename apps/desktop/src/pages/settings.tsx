@@ -294,7 +294,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
       clearMods();
       toast.success(t("settings.allModsCleared"));
     } catch (error) {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error(t("settings.failedToClearMods"));
     }
   };

@@ -57,11 +57,13 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     fileTree?: ModFileTree,
   ): Promise<InstallableMod | null> => {
     try {
-      logger.info("Performing installation", {
-        modId: mod.remoteId,
-        hasFileTree: !!fileTree,
-        selectedFiles: fileTree?.files.filter((f) => f.is_selected).length,
-      });
+      logger
+        .withMetadata({
+          modId: mod.remoteId,
+          hasFileTree: !!fileTree,
+          selectedFiles: fileTree?.files.filter((f) => f.is_selected).length,
+        })
+        .info("Performing installation");
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
@@ -69,10 +71,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       // If file tree is provided and mod was downloaded with multiple files,
       // we need to copy selected VPKs from archive first
       if (fileTree?.has_multiple_files) {
-        logger.info("Copying selected VPKs from archive", {
-          modId: mod.remoteId,
-          selectedFiles: fileTree.files.filter((f) => f.is_selected).length,
-        });
+        logger
+          .withMetadata({
+            modId: mod.remoteId,
+            selectedFiles: fileTree.files.filter((f) => f.is_selected).length,
+          })
+          .info("Copying selected VPKs from archive");
 
         try {
           await invoke("copy_selected_vpks_from_archive", {
@@ -81,10 +85,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             profileFolder,
           });
         } catch (error: unknown) {
-          logger.error("Failed to copy selected VPKs", {
-            modId: mod.remoteId,
-            error,
-          });
+          logger
+            .withMetadata({ modId: mod.remoteId })
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .error("Failed to copy selected VPKs");
           // If copying fails, try to proceed anyway (maybe VPKs already exist)
           // This handles edge cases where archive was already processed
         }
@@ -107,7 +113,10 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       options.onComplete(mod, result);
       return result;
     } catch (error: unknown) {
-      logger.error("Installation failed", { modId: mod.remoteId, error });
+      logger
+        .withMetadata({ modId: mod.remoteId })
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Installation failed");
 
       if (error instanceof Error) {
         options.onError(mod, {
@@ -139,23 +148,28 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
       // If a preselected file tree was provided, use it directly
       if (preselectedFileTree) {
-        logger.info("Using preselected file tree", {
-          modId: mod.remoteId,
-          selectedFiles: preselectedFileTree.files.filter((f) => f.is_selected)
-            .length,
-        });
+        logger
+          .withMetadata({
+            modId: mod.remoteId,
+            selectedFiles: preselectedFileTree.files.filter(
+              (f) => f.is_selected,
+            ).length,
+          })
+          .info("Using preselected file tree");
 
         return await performInstallation(mod, options, preselectedFileTree);
       }
 
       // Check if file tree was stored during download
       if (mod.installedFileTree) {
-        logger.info("Using stored file tree from download", {
-          modId: mod.remoteId,
-          totalFiles: mod.installedFileTree.total_files,
-          hasMultipleFiles: mod.installedFileTree.has_multiple_files,
-          hasInstalledVpks: !!mod.installedVpks?.length,
-        });
+        logger
+          .withMetadata({
+            modId: mod.remoteId,
+            totalFiles: mod.installedFileTree.total_files,
+            hasMultipleFiles: mod.installedFileTree.has_multiple_files,
+            hasInstalledVpks: !!mod.installedVpks?.length,
+          })
+          .info("Using stored file tree from download");
 
         // Call onFileTreeAnalyzed callback if provided
         options.onFileTreeAnalyzed?.(mod, mod.installedFileTree);
@@ -165,13 +179,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           // If mod already has installedVpks, it means user previously selected files
           // Use that selection instead of prompting again
           if (mod.installedVpks && mod.installedVpks.length > 0) {
-            logger.info(
-              "Mod has previous VPK selection, using it for re-enable",
-              {
+            logger
+              .withMetadata({
                 modId: mod.remoteId,
                 previouslyInstalledVpks: mod.installedVpks.length,
-              },
-            );
+              })
+              .info("Mod has previous VPK selection, using it for re-enable");
 
             // Create a new file tree with only previously selected files marked as selected
             const previouslySelectedFiles = new Set(
@@ -191,21 +204,26 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
               })),
             };
 
-            logger.info("Using previous VPK selection for re-enable", {
-              modId: mod.remoteId,
-              selectedFiles: updatedFileTree.files.filter((f) => f.is_selected)
-                .length,
-              totalFiles: updatedFileTree.total_files,
-            });
+            logger
+              .withMetadata({
+                modId: mod.remoteId,
+                selectedFiles: updatedFileTree.files.filter(
+                  (f) => f.is_selected,
+                ).length,
+                totalFiles: updatedFileTree.total_files,
+              })
+              .info("Using previous VPK selection for re-enable");
 
             return await performInstallation(mod, options, updatedFileTree);
           }
 
           // No previous selection - show file selector dialog
-          logger.info("Mod has multiple files, showing file selector dialog", {
-            modId: mod.remoteId,
-            totalFiles: mod.installedFileTree.total_files,
-          });
+          logger
+            .withMetadata({
+              modId: mod.remoteId,
+              totalFiles: mod.installedFileTree.total_files,
+            })
+            .info("Mod has multiple files, showing file selector dialog");
 
           // Store mod and options for dialog callbacks
           setCurrentMod(mod);
@@ -219,13 +237,14 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         }
 
         // Single file - proceed with installation directly
-        logger.info(
-          "Mod has single file or no files, proceeding with installation",
-          {
+        logger
+          .withMetadata({
             modId: mod.remoteId,
             totalFiles: mod.installedFileTree.total_files,
-          },
-        );
+          })
+          .info(
+            "Mod has single file or no files, proceeding with installation",
+          );
 
         return await performInstallation(mod, options, mod.installedFileTree);
       }
@@ -240,31 +259,34 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         const modsRoot = await join(base, "mods");
         const modDir = await join(modsRoot, mod.remoteId);
 
-        logger.info("Analyzing mod file tree", {
-          modId: mod.remoteId,
-          modPath: modDir,
-        });
+        logger
+          .withMetadata({ modId: mod.remoteId, modPath: modDir })
+          .info("Analyzing mod file tree");
 
         // Get file tree from backend
         fileTree = (await invoke("get_mod_file_tree", {
           modPath: modDir,
         })) as ModFileTree;
 
-        logger.info("File tree analysis complete", {
-          modId: mod.remoteId,
-          totalFiles: fileTree.total_files,
-          hasMultipleFiles: fileTree.has_multiple_files,
-        });
+        logger
+          .withMetadata({
+            modId: mod.remoteId,
+            totalFiles: fileTree.total_files,
+            hasMultipleFiles: fileTree.has_multiple_files,
+          })
+          .info("File tree analysis complete");
 
         // Call onFileTreeAnalyzed callback if provided
         options.onFileTreeAnalyzed?.(mod, fileTree);
 
         // If mod has multiple files, show file selector dialog
         if (fileTree.has_multiple_files) {
-          logger.info("Mod has multiple files, showing file selector dialog", {
-            modId: mod.remoteId,
-            totalFiles: fileTree.total_files,
-          });
+          logger
+            .withMetadata({
+              modId: mod.remoteId,
+              totalFiles: fileTree.total_files,
+            })
+            .info("Mod has multiple files, showing file selector dialog");
 
           // Store mod and options for dialog callbacks
           setCurrentMod(mod);
@@ -278,25 +300,25 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         }
 
         // Single file or no files - proceed with installation directly
-        logger.info(
-          "Mod has single file or no files, proceeding with installation",
-          {
+        logger
+          .withMetadata({
             modId: mod.remoteId,
             totalFiles: fileTree.total_files,
-          },
-        );
+          })
+          .info(
+            "Mod has single file or no files, proceeding with installation",
+          );
 
         setIsAnalyzing(false);
         return await performInstallation(mod, options, fileTree);
       } catch (error: unknown) {
         setIsAnalyzing(false);
-        logger.warn(
-          "File tree analysis failed, proceeding with direct installation",
-          {
-            modId: mod.remoteId,
-            error,
-          },
-        );
+        logger
+          .withMetadata({ modId: mod.remoteId })
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .warn(
+            "File tree analysis failed, proceeding with direct installation",
+          );
 
         // If analysis fails, proceed with installation without file tree
         // This handles cases where mod directory doesn't exist or analysis fails
@@ -304,10 +326,10 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       }
     } catch (error: unknown) {
       setIsAnalyzing(false);
-      logger.error("Installation process failed", {
-        modId: mod.remoteId,
-        error,
-      });
+      logger
+        .withMetadata({ modId: mod.remoteId })
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Installation process failed");
 
       if (error instanceof Error) {
         options.onError(mod, {
@@ -336,10 +358,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       return;
     }
 
-    logger.info("User confirmed installation", {
-      modId: currentMod.remoteId,
-      selectedFiles: fileTree.files.filter((f) => f.is_selected).length,
-    });
+    logger
+      .withMetadata({
+        modId: currentMod.remoteId,
+        selectedFiles: fileTree.files.filter((f) => f.is_selected).length,
+      })
+      .info("User confirmed installation");
 
     setShowFileSelector(false);
 
@@ -355,7 +379,9 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
   const cancelInstallation = (): void => {
     if (currentMod && currentOptions) {
-      logger.info("User canceled installation", { modId: currentMod.remoteId });
+      logger
+        .withMetadata({ modId: currentMod.remoteId })
+        .info("User canceled installation");
 
       // Call onCancel callback to revert mod status
       currentOptions.onCancel?.(currentMod);

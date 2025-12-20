@@ -25,16 +25,17 @@ export const useModOrderMigration = () => {
     );
 
     if (needsMigration && installedMods.length > 0) {
-      logger.info(
-        "Detected installed mods without install order, starting migration",
-        {
+      logger
+        .withMetadata({
           totalMods: localMods.length,
           installedMods: installedMods.length,
           modsToMigrate: installedMods.filter(
             (mod) => mod.installOrder === undefined,
           ).length,
-        },
-      );
+        })
+        .info(
+          "Detected installed mods without install order, starting migration",
+        );
 
       migrateLegacyMods();
     }

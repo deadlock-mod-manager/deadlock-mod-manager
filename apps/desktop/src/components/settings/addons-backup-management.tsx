@@ -64,9 +64,11 @@ export const AddonsBackupManagement = () => {
       setLoading(true);
       const backupList = await invoke<AddonsBackup[]>("list_addons_backups");
       setBackups(backupList);
-      logger.info("Loaded backups", { count: backupList.length });
+      logger.withMetadata({ count: backupList.length }).info("Loaded backups");
     } catch (error) {
-      logger.error("Failed to load backups", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to load backups");
       toast.error(t("settings.backupDeleteFailed"));
     } finally {
       setLoading(false);
@@ -107,12 +109,14 @@ export const AddonsBackupManagement = () => {
       setCreating(true);
       setBackupProgress(null);
       const backup = await invoke<AddonsBackup>("create_addons_backup");
-      logger.info("Backup created", { backup });
+      logger.withMetadata({ backup }).info("Backup created");
       // Progress completion is handled by the event listener
     } catch (error) {
       setCreating(false);
       setBackupProgress(null);
-      logger.error("Failed to create backup", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to create backup");
       toast.error(t("settings.backupCreationFailed"));
     }
   };
@@ -133,10 +137,14 @@ export const AddonsBackupManagement = () => {
       });
       toast.dismiss();
       toast.success(t("settings.backupRestored"));
-      logger.info("Backup restored", { fileName: selectedBackup, strategy });
+      logger
+        .withMetadata({ fileName: selectedBackup, strategy })
+        .info("Backup restored");
     } catch (error) {
       toast.dismiss();
-      logger.error("Failed to restore backup", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to restore backup");
       toast.error(t("settings.backupRestoreFailed"));
     } finally {
       setSelectedBackup(null);
@@ -150,10 +158,12 @@ export const AddonsBackupManagement = () => {
     try {
       await invoke("delete_addons_backup", { fileName });
       toast.success(t("settings.backupDeleted"));
-      logger.info("Backup deleted", { fileName });
+      logger.withMetadata({ fileName }).info("Backup deleted");
       await loadBackups();
     } catch (error) {
-      logger.error("Failed to delete backup", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to delete backup");
       toast.error(t("settings.backupDeleteFailed"));
     }
   };
@@ -162,7 +172,9 @@ export const AddonsBackupManagement = () => {
     try {
       await invoke("open_addons_backups_folder");
     } catch (error) {
-      logger.error("Failed to open backups folder", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to open backups folder");
       toast.error(t("settings.failedToOpenFolder"));
     }
   };

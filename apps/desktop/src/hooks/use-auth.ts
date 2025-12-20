@@ -35,7 +35,7 @@ export const useAuth = () => {
         queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
         toast.success("Successfully logged in!");
       } catch (error) {
-        logger.error("Failed to exchange code for tokens", error);
+        logger.withError(error).error("Failed to exchange code for tokens");
         toast.error("Failed to complete login");
       }
     },
@@ -55,7 +55,10 @@ export const useAuth = () => {
         "oidc-callback-error",
         async (event) => {
           const { error, error_description } = event.payload;
-          logger.error("OIDC callback error", { error, error_description });
+          logger
+            .withMetadata({ error_description })
+            .withError(new Error(error))
+            .error("OIDC callback error");
           toast.error(error_description || error || "Authentication failed");
         },
       );
@@ -81,7 +84,7 @@ export const useAuth = () => {
       queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
       toast.success("Logged out successfully");
     } catch (error) {
-      logger.error("Failed to logout", error);
+      logger.withError(error).error("Failed to logout");
       toast.error("Failed to logout");
     }
   }, [oidcSignOut, queryClient]);

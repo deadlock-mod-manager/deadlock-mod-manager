@@ -52,7 +52,9 @@ export class ModStatusStateMachine {
   ): Result<true, StateTransitionError> {
     // If status is not changing, it's always valid
     if (currentStatus === targetStatus) {
-      logger.debug("Status is not changing", { currentStatus, targetStatus });
+      logger
+        .withMetadata({ currentStatus, targetStatus })
+        .debug("Status is not changing");
       return ok(true);
     }
 
@@ -60,10 +62,9 @@ export class ModStatusStateMachine {
     const allowedTransitions = VALID_TRANSITIONS[currentStatus];
 
     if (!allowedTransitions.includes(targetStatus)) {
-      logger.debug("Transition is not allowed", {
-        currentStatus,
-        targetStatus,
-      });
+      logger
+        .withMetadata({ currentStatus, targetStatus })
+        .debug("Transition is not allowed");
       return err({
         message: `Cannot transition from ${currentStatus} to ${targetStatus}`,
         currentStatus,
@@ -71,7 +72,9 @@ export class ModStatusStateMachine {
       });
     }
 
-    logger.debug("Transition is allowed", { currentStatus, targetStatus });
+    logger
+      .withMetadata({ currentStatus, targetStatus })
+      .debug("Transition is allowed");
     return ok(true);
   }
 

@@ -29,7 +29,9 @@ export const useLaunch = () => {
         profileFolder,
       });
     } catch (error) {
-      logger.error(error);
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       toast.error((error as ErrorKind).message);
     }
   };

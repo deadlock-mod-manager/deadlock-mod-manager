@@ -31,9 +31,11 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
       setDetectedPath(path);
       setGamePath(path);
       setDetectionState("success");
-      logger.info("Game path auto-detected", { path });
+      logger.withMetadata({ path }).info("Game path auto-detected");
     } catch (error) {
-      logger.error("Failed to auto-detect game path", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to auto-detect game path");
       setDetectionState("error");
     }
   }, [setGamePath]);
@@ -54,14 +56,20 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
           setDetectedPath(path);
           setGamePath(path);
           setDetectionState("success");
-          logger.info("Game path manually set", { path });
+          logger.withMetadata({ path }).info("Game path manually set");
         } catch (error) {
-          logger.error("Invalid game path selected", { error });
+          logger
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .error("Invalid game path selected");
           setDetectionState("error");
         }
       }
     } catch (error) {
-      logger.error("Failed to browse for game path", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to browse for game path");
     }
   }, [t, setGamePath]);
 

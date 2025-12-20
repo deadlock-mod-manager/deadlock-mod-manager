@@ -74,10 +74,12 @@ export const useProfileImport = () => {
     }>,
     modsData: ModDto[],
   ): Promise<void> => {
-    logger.info("Starting profile import", {
-      importedModsCount: importedMods.length,
-      modsDataCount: modsData.length,
-    });
+    logger
+      .withMetadata({
+        importedModsCount: importedMods.length,
+        modsDataCount: modsData.length,
+      })
+      .info("Starting profile import");
 
     // Initialize progress tracking
     setImportProgress({
@@ -255,10 +257,12 @@ export const useProfileImport = () => {
 
       // Show results
       if (result.failed.length > 0) {
-        logger.warn("Some mods failed to import", {
-          failed: result.failed.length,
-          succeeded: result.succeeded.length,
-        });
+        logger
+          .withMetadata({
+            failed: result.failed.length,
+            succeeded: result.succeeded.length,
+          })
+          .warn("Some mods failed to import");
         toast.warning(
           t("profiles.createSuccess", { profileName: "Imported Profile" }) +
             ` (${result.succeeded.length}/${importedMods.length} mods imported)`,
@@ -269,7 +273,9 @@ export const useProfileImport = () => {
         );
       }
     } catch (error) {
-      logger.error("Profile import failed", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.createError"));
       throw error;
@@ -303,9 +309,9 @@ export const useProfileImport = () => {
       isInstalling: false,
     });
 
-    logger.info("Overriding current profile with imported mods", {
-      profileId: activeProfile.id,
-    });
+    logger
+      .withMetadata({ profileId: activeProfile.id })
+      .info("Overriding current profile with imported mods");
 
     // Prepare mods for batch import
     const profileImportMods: ProfileImportMod[] = await Promise.all(
@@ -405,10 +411,12 @@ export const useProfileImport = () => {
 
       // Show results
       if (result.failed.length > 0) {
-        logger.warn("Some mods failed to import to current profile", {
-          failed: result.failed.length,
-          succeeded: result.succeeded.length,
-        });
+        logger
+          .withMetadata({
+            failed: result.failed.length,
+            succeeded: result.succeeded.length,
+          })
+          .warn("Some mods failed to import to current profile");
         toast.warning(
           t("profiles.overrideSuccess") +
             ` (${result.succeeded.length}/${importedMods.length} mods imported)`,
@@ -417,7 +425,9 @@ export const useProfileImport = () => {
         toast.success(t("profiles.overrideSuccess"));
       }
     } catch (error) {
-      logger.error("Profile import failed", { error });
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.updateError"));
       throw error;

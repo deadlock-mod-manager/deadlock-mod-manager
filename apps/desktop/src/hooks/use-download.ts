@@ -36,14 +36,16 @@ export const useDownload = (
       downloads: selectedFiles,
       profileFolder,
       onStart: () => {
-        logger.info("Starting download", { mod: mod.remoteId });
+        logger.withMetadata({ mod: mod.remoteId }).info("Starting download");
         setModStatus(mod.remoteId, ModStatus.Downloading);
       },
       onProgress: (progress) => {
         setModProgress(mod.remoteId, progress);
       },
       onComplete: (path) => {
-        logger.info("Download complete", { mod: mod.remoteId, path });
+        logger
+          .withMetadata({ mod: mod.remoteId, path })
+          .info("Download complete");
         setModStatus(mod.remoteId, ModStatus.Downloaded);
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
