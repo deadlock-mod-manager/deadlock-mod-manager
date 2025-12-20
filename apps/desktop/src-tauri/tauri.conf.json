@@ -50,7 +50,7 @@
     },
     "deepLink": {
       "desktop": {
-        "schemes": ["deadlock-mod-manager", "deadlock-modmanager"]
+        "schemes": ["deadlock-mod-manager", "deadlock-modmanager", "dlmm"]
       }
     }
   }

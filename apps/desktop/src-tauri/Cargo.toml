@@ -42,7 +42,7 @@ tauri-plugin-process = "2.3"
 sevenz-rust = "0.6.1"
 tauri-plugin-sentry = "0.5.0"
 steamlocate = "2.0.1"
-tauri-plugin-deep-link = "2.4"
+tauri-plugin-deep-link = "2"
 sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"

@@ -9,6 +9,10 @@ pub struct CliArgs {
   /// Disable automatic updates
   #[arg(long, help = "Disable automatic updates on startup")]
   pub disable_auto_update: bool,
+
+  /// Deep link URL or other trailing arguments (passed by Windows when opening via protocol handler)
+  #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
+  pub _trailing: Vec<String>,
 }
 
 /// Global CLI arguments instance

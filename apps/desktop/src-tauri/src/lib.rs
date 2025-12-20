@@ -6,6 +6,7 @@
 
 pub mod cli;
 mod commands;
+mod deep_link;
 mod discord_rpc;
 mod download_manager;
 mod errors;
@@ -14,72 +15,60 @@ mod mod_manager;
 mod reports;
 mod utils;
 
-use std::env;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
+
+use crate::deep_link::{
+  EVENT_AUTH_CALLBACK, EVENT_AUTH_ERROR, EVENT_DEEP_LINK_RECEIVED, EVENT_OIDC_CALLBACK,
+  EVENT_OIDC_ERROR, PATH_LEGACY_AUTH_CALLBACK, PATH_OIDC_CALLBACK, SCHEME_PRIMARY,
+  SCHEME_SECONDARY, SCHEME_SHORT, emit_to_main_window, is_deep_link, parse_query_params,
+  strip_scheme, validate_mod_deep_link,
+};
 
 fn handle_deep_link_url(
   app_handle: &tauri::AppHandle,
   url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-  log::info!("Processing deep link URL: {url}");
+  log::info!("[DeepLink] Processing deep link URL: {url}");
 
-  // Parse the deep link manually here to avoid async issues
-  let url = url.trim();
-
-  // Remove the protocol prefix
-  let data_part = if let Some(stripped) = url.strip_prefix("deadlock-mod-manager:") {
-    stripped
-  } else if let Some(stripped) = url.strip_prefix("deadlock-modmanager:") {
-    stripped
-  } else {
-    log::error!("Invalid deep link format");
-    return Ok(()); // Don't fail the whole app
+  let data_part = match strip_scheme(url) {
+    Some(part) => part,
+    None => {
+      log::error!(
+        "[DeepLink] Invalid deep link format - no matching scheme found. Expected: {}, {}, {}",
+        SCHEME_PRIMARY,
+        SCHEME_SECONDARY,
+        SCHEME_SHORT
+      );
+      return Ok(());
+    }
   };
 
-  // Check if this is an OIDC auth callback (new flow)
-  if data_part.starts_with("//auth/callback") {
-    log::info!("Processing OIDC auth callback deep link");
-
+  if data_part.starts_with(PATH_OIDC_CALLBACK) {
     if let Some(query_start) = data_part.find('?') {
       let query = &data_part[query_start + 1..];
-      let params: std::collections::HashMap<String, String> = query
-        .split('&')
-        .filter_map(|pair| {
-          let mut parts = pair.split('=');
-          let key = parts.next()?.to_string();
-          let value = urlencoding::decode(parts.next()?).ok()?.into_owned();
-          Some((key, value))
-        })
-        .collect();
+      let params = parse_query_params(query);
 
       if let Some(code) = params.get("code") {
-        log::info!("OIDC authorization code received via deep link");
         let state = params.get("state").cloned();
-
-        if let Some(window) = app_handle.get_webview_window("main") {
-          window.emit(
-            "oidc-callback-received",
-            serde_json::json!({ "code": code, "state": state }),
-          )?;
-        }
-
+        emit_to_main_window(
+          app_handle,
+          EVENT_OIDC_CALLBACK,
+          serde_json::json!({ "code": code, "state": state }),
+        )?;
         return Ok(());
       }
 
       if let Some(error) = params.get("error") {
         let error_description = params.get("error_description").cloned();
         log::error!("OIDC callback error: {error}");
-
-        if let Some(window) = app_handle.get_webview_window("main") {
-          window.emit(
-            "oidc-callback-error",
-            serde_json::json!({ "error": error, "error_description": error_description }),
-          )?;
-        }
-
+        emit_to_main_window(
+          app_handle,
+          EVENT_OIDC_ERROR,
+          serde_json::json!({ "error": error, "error_description": error_description }),
+        )?;
         return Ok(());
       }
     }
@@ -88,37 +77,19 @@ fn handle_deep_link_url(
     return Ok(());
   }
 
-  // Legacy auth callback (for backwards compatibility)
-  if data_part.starts_with("//auth-callback") {
-    log::info!("Processing legacy auth callback deep link");
-
+  if data_part.starts_with(PATH_LEGACY_AUTH_CALLBACK) {
     if let Some(query_start) = data_part.find('?') {
       let query = &data_part[query_start + 1..];
-      let params: std::collections::HashMap<String, String> = query
-        .split('&')
-        .filter_map(|pair| {
-          let mut parts = pair.split('=');
-          Some((parts.next()?.to_string(), parts.next()?.to_string()))
-        })
-        .collect();
+      let params = parse_query_params(query);
 
       if let Some(token) = params.get("token") {
-        log::info!("Auth token received via deep link");
-
-        if let Some(window) = app_handle.get_webview_window("main") {
-          window.emit("auth-callback-received", token)?;
-        }
-
+        emit_to_main_window(app_handle, EVENT_AUTH_CALLBACK, token)?;
         return Ok(());
       }
 
       if let Some(error) = params.get("error") {
-        log::error!("Auth callback error received via deep link: {error}");
-
-        if let Some(window) = app_handle.get_webview_window("main") {
-          window.emit("auth-callback-error", error)?;
-        }
-
+        log::error!("Auth callback error: {error}");
+        emit_to_main_window(app_handle, EVENT_AUTH_ERROR, error)?;
         return Ok(());
       }
     }
@@ -127,43 +98,17 @@ fn handle_deep_link_url(
     return Ok(());
   }
 
-  // Handle mod installation deep links
-  // Split by comma to get the three parts
-  let parts: Vec<&str> = data_part.split(',').collect();
-
-  if parts.len() != 3 {
-    log::error!("Deep link must contain exactly 3 parts separated by commas");
-    return Ok(()); // Don't fail the whole app
+  if let Some((download_url, mod_type, mod_id)) = validate_mod_deep_link(data_part) {
+    let parsed_data = commands::DeepLinkData {
+      download_url,
+      mod_type,
+      mod_id,
+    };
+    emit_to_main_window(app_handle, EVENT_DEEP_LINK_RECEIVED, parsed_data)?;
+  } else {
+    log::error!("Invalid mod installation deep link format");
   }
 
-  let download_url = parts[0].to_string();
-  let mod_type = parts[1].to_string();
-  let mod_id = parts[2].to_string();
-
-  // Validate that the download URL is from gamebanana
-  if !download_url.contains("gamebanana.com") {
-    log::error!("Download URL must be from gamebanana.com");
-    return Ok(());
-  }
-
-  // Validate that mod_id is numeric
-  if mod_id.parse::<u32>().is_err() {
-    log::error!("Mod ID must be numeric");
-    return Ok(());
-  }
-
-  let parsed_data = commands::DeepLinkData {
-    download_url,
-    mod_type,
-    mod_id,
-  };
-
-  // Emit event to frontend with the parsed data
-  if let Some(window) = app_handle.get_webview_window("main") {
-    window.emit("deep-link-received", &parsed_data)?;
-  }
-
-  log::info!("Deep link event emitted successfully");
   Ok(())
 }
 
@@ -186,24 +131,24 @@ pub fn run() {
 
   #[cfg(desktop)]
   {
-    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-      println!(
-        "a new app instance was opened with {argv:?} and the deep link event was already triggered"
+    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _| {
+      log::info!(
+        "[DeepLink] Single instance callback triggered with argv: {:?}",
+        argv
       );
 
-      // Handle deep links passed through single instance
       for arg in argv {
-        if arg.starts_with("deadlock-mod-manager:") || arg.starts_with("deadlock-modmanager:") {
-          println!("Processing deep link from single instance: {arg}");
+        if is_deep_link(&arg) {
           if let Err(e) = handle_deep_link_url(app, &arg) {
-            log::error!("Failed to handle deep link from single instance: {e}");
+            log::error!("[DeepLink] Failed to handle deep link from single instance: {e}");
           }
 
-          // Bring window to focus when deep link is triggered
           if let Some(window) = app.get_webview_window("main") {
             let _ = window.set_focus();
             let _ = window.show();
             let _ = window.unminimize();
+          } else {
+            log::warn!("[DeepLink] Could not find main window to focus");
           }
         }
       }
@@ -241,30 +186,42 @@ pub fn run() {
     .setup(|app| {
       let handle = app.app_handle();
 
-      // Prepare store
       let _store = handle.store("state.json")?;
 
-      #[cfg(desktop)]
-      app.deep_link().register("deadlock-mod-manager")?;
+      log::info!("[DeepLink] Registering deep link protocols...");
 
-      #[cfg(any(windows, target_os = "linux"))]
+      #[cfg(desktop)]
       {
-        use tauri_plugin_deep_link::DeepLinkExt;
-        app.deep_link().register_all()?;
+        if let Err(e) = app
+          .deep_link()
+          .register(SCHEME_PRIMARY.trim_end_matches(':'))
+        {
+          log::error!("[DeepLink] Failed to register {}: {e}", SCHEME_PRIMARY);
+        }
+      }
+
+      // Register all schemes on Linux and Windows (including debug mode)
+      #[cfg(any(target_os = "linux", windows))]
+      {
+        if let Err(e) = app.deep_link().register_all() {
+          log::error!("[DeepLink] Failed to register_all: {e}");
+        }
       }
 
       // Handle deep links only for app startup (when launched by deep link)
       // The single instance handler will take care of deep links when app is already running
       let start_urls = app.deep_link().get_current()?;
+
       if let Some(urls) = start_urls {
-        // app was likely started by a deep link
-        println!("App started with deep link URLs: {urls:?}");
+        log::info!("[DeepLink] App started with deep link URLs: {:?}", urls);
         for url in urls {
           if let Err(e) = handle_deep_link_url(handle, url.as_ref()) {
-            log::error!("Failed to handle startup deep link: {e}");
+            log::error!("[DeepLink] Failed to handle startup deep link: {e}");
           }
         }
       }
+
+      log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
@@ -286,6 +243,7 @@ pub fn run() {
       commands::reorder_mods_by_remote_id,
       commands::is_game_running,
       commands::parse_deep_link,
+      commands::get_deep_link_debug_info,
       commands::backup_gameinfo,
       commands::restore_gameinfo_backup,
       commands::reset_to_vanilla,

@@ -185,7 +185,7 @@ impl AutoexecManager {
         let end_pos = end_pos + CROSSHAIR_SECTION_END.len();
         let before_section = content[..start_pos].trim_end();
         let after_section = content[end_pos..].trim_start();
-        
+
         let mut new_content = String::new();
         if !before_section.is_empty() {
           new_content.push_str(before_section);
@@ -196,7 +196,7 @@ impl AutoexecManager {
           }
           new_content.push_str(after_section);
         }
-        
+
         content = new_content;
       } else {
         log::warn!("Found start marker but not end marker, removing from start marker to end");
