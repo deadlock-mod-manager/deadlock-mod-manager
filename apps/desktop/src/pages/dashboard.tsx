@@ -13,10 +13,10 @@ const Dashboard = () => {
       <PageTitle className='mb-4' title={t("dashboard.title")} />
       <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin flex-1 overflow-y-auto pb-4'>
         <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-          <WhatsNewCard />
-          <AnnouncementsCard />
           <LatestModsCard />
+          <AnnouncementsCard />
           <PopularModsCard />
+          <WhatsNewCard />
         </div>
       </div>
     </div>
