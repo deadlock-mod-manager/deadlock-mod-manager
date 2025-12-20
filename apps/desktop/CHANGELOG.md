@@ -1,5 +1,16 @@
 # desktop
 
+## 0.13.0
+
+### Minor Changes
+
+- 6cbb882: Fixed broken deep links
+
+### Patch Changes
+
+- 6cbb882: Improved logging in desktop app
+- 6cbb882: Ensure we identify logged in users using their USER ID
+
 ## 0.12.0
 
 ### Minor Changes

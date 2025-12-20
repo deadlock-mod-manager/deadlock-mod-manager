@@ -600,6 +600,14 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.13.0": {
+        "title": "Bug Fixes & Improvements",
+        "features": [
+          "🔧 Fixed broken deep links",
+          "🔧 Improved logging in desktop app",
+          "🔧 Ensure we identify logged in users using their USER ID"
+        ]
+      },
       "0.12.0": {
         "title": "Auth Refactor",
         "features": [
