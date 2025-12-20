@@ -8,6 +8,7 @@ import {
 } from "react";
 import useAbout from "@/hooks/use-about";
 import { useAnalyticsEvents } from "@/hooks/use-analytics-events";
+import { useAuth } from "@/hooks/use-auth";
 import { useHardwareId } from "@/hooks/use-hardware-id";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -27,8 +28,10 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   const analytics = useAnalyticsEvents();
   const { hardwareId } = useHardwareId();
   const { version } = useAbout();
+  const { user } = useAuth();
   const isIdentified = useRef<boolean>(false);
   const hasTrackedAppStart = useRef<boolean>(false);
+  const lastUserId = useRef<string | undefined>(undefined);
 
   const telemetrySettings = usePersistedStore(
     (state) => state.telemetrySettings,
@@ -37,38 +40,48 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
   const profilesState = usePersistedStore((state) => state.profiles);
 
   // Identify user when analytics is enabled and hardware ID is available
+  // Re-identify when auth state changes (login/logout)
   useEffect(() => {
+    const userId = user?.sub;
+    const authStateChanged = userId !== lastUserId.current;
+
     if (
       analytics.isEnabled &&
       hardwareId &&
-      !isIdentified.current &&
       telemetrySettings.analyticsEnabled &&
       modsState &&
       profilesState
     ) {
-      const totalMods = Object.keys(modsState).length;
-      const totalProfiles = Object.keys(profilesState).length;
+      // Identify if not yet identified, or if auth state changed
+      if (!isIdentified.current || authStateChanged) {
+        const totalMods = Object.keys(modsState).length;
+        const totalProfiles = Object.keys(profilesState).length;
 
-      analytics.identifyUser(hardwareId, {
-        app_version: version,
-        platform: "desktop",
-        total_mods_installed: totalMods,
-        total_profiles_created: totalProfiles,
-        first_identified_at: new Date().toISOString(),
-      });
+        analytics.identifyUser(hardwareId, userId, {
+          app_version: version,
+          platform: "desktop",
+          total_mods_installed: totalMods,
+          total_profiles_created: totalProfiles,
+          first_identified_at: new Date().toISOString(),
+        });
 
-      isIdentified.current = true;
-      logger
-        .withMetadata({
-          hardwareId,
-          totalMods,
-          totalProfiles,
-        })
-        .info("User identified for analytics");
+        isIdentified.current = true;
+        lastUserId.current = userId;
+        logger
+          .withMetadata({
+            hardwareId,
+            userId,
+            totalMods,
+            totalProfiles,
+            authStateChanged,
+          })
+          .info("User identified for analytics");
+      }
     }
   }, [
     analytics,
     hardwareId,
+    user?.sub,
     telemetrySettings.analyticsEnabled,
     version,
     modsState,

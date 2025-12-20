@@ -14,6 +14,8 @@ interface UserProperties extends BaseAnalyticsProperties {
   total_mods_installed?: number;
   total_profiles_created?: number;
   first_identified_at?: string;
+  hardware_id?: string;
+  user_id?: string;
 }
 
 interface ModDownloadProperties extends BaseAnalyticsProperties {
@@ -67,17 +69,24 @@ export const useAnalyticsEvents = () => {
 
   // User identification and properties
   const identifyUser = useCallback(
-    async (hardwareId: string, properties?: UserProperties) => {
+    async (hardwareId: string, userId?: string, properties?: UserProperties) => {
       if (!isEnabled) return;
 
+      const distinctId = userId ?? hardwareId;
+
       try {
-        await identify(hardwareId, {
+        await identify(distinctId, {
           platform: "desktop",
           app_version: version || "unknown",
+          hardware_id: hardwareId,
+          user_id: userId,
           ...properties,
         });
         logger
-          .withMetadata({ hardwareId: `${hardwareId.slice(0, 8)}...` })
+          .withMetadata({
+            hardwareId: `${hardwareId.slice(0, 8)}...`,
+            userId: userId ? `${userId.slice(0, 8)}...` : undefined,
+          })
           .info("User identified for analytics");
       } catch (error) {
         logger
