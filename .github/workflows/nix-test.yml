@@ -149,6 +149,24 @@ jobs:
     needs: check-flake
     if: always() && needs.check-flake.result == 'success'
     steps:
+      - name: Free disk space
+        run: |
+          echo "::group::Disk space before cleanup"
+          df -h
+          echo "::endgroup::"
+          
+          echo "::group::Removing unnecessary software"
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          echo "::endgroup::"
+          
+          echo "::group::Disk space after cleanup"
+          df -h
+          echo "::endgroup::"
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
