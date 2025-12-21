@@ -117,12 +117,12 @@ jobs:
             echo 'Checking Rust toolchain...'
             rustc --version
             cargo --version
-            
+
             echo 'Checking Node.js tools...'
             node --version
             pnpm --version
             bun --version
-            
+
             echo 'Checking development tools...'
             biome --version || echo 'biome not in PATH'
             turbo --version
@@ -154,15 +154,15 @@ jobs:
         run: |
           # Try to build and capture hash mismatch errors
           nix build .#nightly --print-build-logs 2>&1 | tee build.log || true
-          
+
           if grep -q "hash mismatch" build.log; then
             echo "needs_update=true" >> $GITHUB_OUTPUT
             echo "Hash mismatch detected - updating hashes"
-            
+
             # Extract the expected hashes from error messages
             CARGO_HASH=$(grep -A5 "cargoHash" build.log | grep "got:" | sed 's/.*got: *\(sha256-[^ ]*\).*/\1/' || echo "")
             PNPM_HASH=$(grep -A5 "pnpmDeps" build.log | grep "got:" | sed 's/.*got: *\(sha256-[^ ]*\).*/\1/' || echo "")
-            
+
             echo "cargo_hash=$CARGO_HASH" >> $GITHUB_OUTPUT
             echo "pnpm_hash=$PNPM_HASH" >> $GITHUB_OUTPUT
           else
@@ -174,17 +174,17 @@ jobs:
         run: |
           CARGO_HASH="${{ steps.check-hashes.outputs.cargo_hash }}"
           PNPM_HASH="${{ steps.check-hashes.outputs.pnpm_hash }}"
-          
+
           if [ -n "$CARGO_HASH" ]; then
             echo "Updating cargoHash to: $CARGO_HASH"
             sed -i "s|cargoHash = \"sha256-[^\"]*\";|cargoHash = \"$CARGO_HASH\";|g" flake.nix
           fi
-          
+
           if [ -n "$PNPM_HASH" ]; then
             echo "Updating pnpmHash to: $PNPM_HASH"
             sed -i "s|pnpmHash = \"sha256-[^\"]*\";|pnpmHash = \"$PNPM_HASH\";|g" flake.nix
           fi
-          
+
           echo "Updated flake.nix:"
           grep -A2 "cargoHash\|pnpmHash" flake.nix
 
@@ -193,7 +193,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           git add flake.nix
           git commit -m "chore(nix): update dependency hashes [skip ci]" || exit 0
           git push
