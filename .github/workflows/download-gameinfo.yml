@@ -3,6 +3,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * *" # Run daily at midnight UTC
+  pull_request:
+
+env:
+  NODE_VERSION: "24.8.0"
 
 jobs:
   fetch:
@@ -53,10 +57,53 @@ jobs:
         run: |
           install -D "${OUTDIR}/game/citadel/gameinfo.gi" "apps/api/src/static/artifacts/deadlock/gameinfo.gi"
 
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/kv-parser-rs -> packages/kv-parser-rs/target
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build kv-parser-rs native dependency
+        run: pnpm --filter @deadlock-mods/kv-parser-rs build
+
+      - name: Generate gameinfo patches
+        env:
+          GAMEINFO_FILE: "apps/api/src/static/artifacts/deadlock/gameinfo.gi"
+        run: bun run apps/desktop/scripts/generate-gameinfo-patches.ts
+
       - name: Check for changes
         id: git-check
         run: |
-          git diff --quiet apps/api/src/static/artifacts/deadlock/gameinfo.gi || echo "changed=true" >> $GITHUB_OUTPUT
+          CHANGED=false
+          if ! git diff --quiet apps/api/src/static/artifacts/deadlock/gameinfo.gi; then
+            CHANGED=true
+          fi
+          if ! git diff --quiet apps/desktop/patches/enable-mods.patch.json apps/desktop/patches/disable-mods.patch.json; then
+            CHANGED=true
+          fi
+          if [ "$CHANGED" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit and push if changed
         if: steps.git-check.outputs.changed == 'true'
@@ -64,5 +111,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add apps/api/src/static/artifacts/deadlock/gameinfo.gi
+          git add apps/desktop/patches/enable-mods.patch.json
+          git add apps/desktop/patches/disable-mods.patch.json
           git commit -m "chore: update gameinfo.gi from depot"
           git push

@@ -12,4 +12,5 @@ export type TokenType =
   | "Conditional"
   | "Include"
   | "Base"
-  | "Eof";
+  | "Eof"
+  | "Error";

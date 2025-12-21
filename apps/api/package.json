@@ -20,6 +20,7 @@
     "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/feature-flags": "workspace:*",
     "@deadlock-mods/instrumentation": "workspace:*",
+    "@deadlock-mods/kv-parser-rs": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",

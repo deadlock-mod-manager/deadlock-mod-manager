@@ -91,6 +91,7 @@ impl KvDocument {
         }
 
         current.insert(last_part.to_string(), value);
+        self.ast = None; // Clear AST since data was modified
         Ok(())
     }
 
@@ -113,7 +114,11 @@ impl KvDocument {
             }
         }
 
-        Ok(current.remove(*last_part).is_some())
+        let removed = current.remove(*last_part).is_some();
+        if removed {
+            self.ast = None; // Clear AST since data was modified
+        }
+        Ok(removed)
     }
 
     /// Check if a path exists
@@ -215,6 +220,7 @@ impl KvDocument {
             }
         }
 
+        self.ast = None; // Clear AST since data was modified
         Ok(())
     }
 
@@ -233,7 +239,7 @@ impl KvDocument {
         };
 
         self.data = updated_data;
-        self.ast = updated_ast;
+        self.ast = updated_ast; // AST is updated by apply_to_ast, or None if no AST existed
         Ok(())
     }
 
@@ -253,6 +259,16 @@ impl KvDocument {
     pub fn diff_summary(&self, other: &KvDocument) -> String {
         let diff = self.diff(other);
         DiffGenerator::format_diff(&diff)
+    }
+
+    /// Serialize the document to a string
+    pub fn serialize(&self) -> Result<String> {
+        if let Some(ast) = &self.ast {
+            Ok(Serializer::serialize_ast(ast))
+        } else {
+            let serializer = Serializer::new(self.options.clone());
+            serializer.serialize_data(&self.data)
+        }
     }
 }
 

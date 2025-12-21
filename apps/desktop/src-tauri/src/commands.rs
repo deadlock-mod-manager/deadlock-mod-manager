@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use crate::deep_link::{strip_scheme, validate_mod_deep_link, SCHEME_PRIMARY, SCHEME_SECONDARY};
+use crate::deep_link::{SCHEME_PRIMARY, SCHEME_SECONDARY, strip_scheme, validate_mod_deep_link};
 use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
@@ -183,8 +183,12 @@ pub async fn get_deep_link_debug_info() -> Result<DeepLinkDebugInfo, Error> {
     }
   }
 
-  log::debug!("[DeepLink] Debug info: debug_mode={}, os={}, registry={:?}",
-    debug_mode, target_os, registry_status);
+  log::debug!(
+    "[DeepLink] Debug info: debug_mode={}, os={}, registry={:?}",
+    debug_mode,
+    target_os,
+    registry_status
+  );
 
   Ok(DeepLinkDebugInfo {
     debug_mode,
@@ -496,6 +500,111 @@ pub async fn open_gameinfo_editor() -> Result<(), Error> {
   mod_manager
     .get_config_manager()
     .open_gameinfo_with_editor(&game_path)
+}
+
+/// Read gameinfo.gi content as string
+#[tauri::command]
+pub async fn read_gameinfo() -> Result<String, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => return Err(Error::GamePathNotSet),
+  };
+
+  let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+  if !gameinfo_path.exists() {
+    return Err(Error::GameConfigParse(
+      "gameinfo.gi file not found".to_string(),
+    ));
+  }
+
+  let content = std::fs::read_to_string(&gameinfo_path)?;
+  log::debug!("Read gameinfo.gi ({} bytes)", content.len());
+  Ok(content)
+}
+
+/// Apply a patch to gameinfo.gi using kv-parser
+#[tauri::command]
+pub async fn apply_gameinfo_patch(
+  patch_json: String,
+  profile: Option<String>,
+) -> Result<(), Error> {
+  use kv_parser::{is_patch_already_applied, DiffApplicator, DocumentDiff, ParseOptions, Parser, Serializer};
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => return Err(Error::GamePathNotSet),
+  };
+
+  let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+  if !gameinfo_path.exists() {
+    return Err(Error::GameConfigParse(
+      "gameinfo.gi file not found".to_string(),
+    ));
+  }
+
+  // Create backup if it doesn't exist
+  let backup_path = gameinfo_path.with_extension("gi.bak");
+  if !backup_path.exists() {
+    log::info!("Creating backup: {:?}", backup_path);
+    std::fs::copy(&gameinfo_path, &backup_path)?;
+  }
+
+  // Read current gameinfo content
+  let current_content = std::fs::read_to_string(&gameinfo_path)?;
+
+  // Apply profile placeholder substitution to patch
+  let substituted_patch = if let Some(ref profile_name) = profile {
+    patch_json.replace("{{PROFILE}}", profile_name)
+  } else {
+    patch_json.replace("{{PROFILE}}", "")
+  };
+
+  // Parse the patch JSON
+  let diff: DocumentDiff = serde_json::from_str(&substituted_patch)
+    .map_err(|e| Error::GameConfigParse(format!("Invalid patch JSON: {e}")))?;
+
+  // Check if patch is already applied
+  match is_patch_already_applied(&current_content, &diff) {
+    Ok(true) => {
+      log::info!(
+        "Patch already applied (profile: {:?}), skipping modification",
+        profile
+      );
+      return Ok(());
+    }
+    Ok(false) => {
+      log::debug!("Patch not yet applied, proceeding with modification");
+    }
+    Err(e) => {
+      log::warn!("Failed to check if patch is already applied: {}, proceeding with modification", e);
+    }
+  }
+
+  // Parse current gameinfo
+  let parse_result = Parser::parse(&current_content, ParseOptions::default())
+    .map_err(|e| Error::GameConfigParse(format!("Failed to parse gameinfo.gi: {e}")))?;
+
+  // Apply diff to AST for perfect formatting preservation
+  let patched_ast = DiffApplicator::apply_to_ast(&parse_result.ast, &diff)
+    .map_err(|e| Error::GameConfigParse(format!("Failed to apply patch: {e}")))?;
+
+  // Serialize back to string
+  let patched_content = Serializer::serialize_ast(&patched_ast);
+
+  // Write patched content
+  std::fs::write(&gameinfo_path, &patched_content)?;
+
+  log::info!(
+    "Applied gameinfo patch ({} changes, profile: {:?})",
+    diff.changes.len(),
+    profile
+  );
+
+  Ok(())
 }
 
 #[tauri::command]
