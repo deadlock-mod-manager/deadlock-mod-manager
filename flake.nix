@@ -94,8 +94,8 @@
             src = self;
             # These hashes need to be updated when dependencies change
             # Run `nix build .#nightly` and update hashes from error messages
-            cargoHash = "sha256-tzF1mFzFCdnB6h43TiVKEKWWQgWlrEm9Xh3HKKnNXZ0=";
-            pnpmHash = "sha256-MCzRZt+l2wHETOxzSatPnz5G48HjjGrOj3BVP+S7/Ss=";
+            cargoHash = "sha256-PeY59bvL/JGl8KyE0X+nPY3XC4TNa15lGcG2i///bCI=";
+            pnpmHash = "sha256-dS9s5oy8GtRek7OwiGDwv7280zZuyjxIhiA6BqH8C1w=";
           };
 
           nightly = self.packages.${system}.default;
