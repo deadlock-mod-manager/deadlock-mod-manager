@@ -101,65 +101,68 @@
           nightly = self.packages.${system}.default;
         };
 
-        devShells.default = pkgs.mkShell {
-          inherit buildInputs nativeBuildInputs;
+        # Dev shell only available on Linux (requires GTK/WebKit)
+        devShells = pkgs.lib.optionalAttrs isLinux {
+          default = pkgs.mkShell {
+            inherit buildInputs nativeBuildInputs;
 
-          packages = with pkgs; [
-            # Rust toolchain
-            rustToolchain
-            cargo-watch
-            cargo-edit
+            packages = with pkgs; [
+              # Rust toolchain
+              rustToolchain
+              cargo-watch
+              cargo-edit
 
-            # Node.js ecosystem
-            nodejs_22
-            nodePackages.pnpm
-            bun
+              # Node.js ecosystem
+              nodejs_22
+              nodePackages.pnpm
+              bun
 
-            # Development tools
-            biome
-            turbo
-            lefthook
-            git
+              # Development tools
+              biome
+              turbo
+              lefthook
+              git
 
-            # Docker and container tools
-            docker
-            docker-compose
+              # Docker and container tools
+              docker
+              docker-compose
 
-            # Database tools
-            postgresql
+              # Database tools
+              postgresql
 
-            # Build tools
-            gnumake
-            gcc
+              # Build tools
+              gnumake
+              gcc
 
-            # Additional utilities
-            ripgrep
-            fd
-            jq
-          ];
+              # Additional utilities
+              ripgrep
+              fd
+              jq
+            ];
 
-          shellHook = ''
-            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
-            export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
-            export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
+            shellHook = ''
+              export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+              export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
+              export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
 
-            # Set up pnpm
-            export PNPM_HOME="$HOME/.local/share/pnpm"
-            export PATH="$PNPM_HOME:$PATH"
+              # Set up pnpm
+              export PNPM_HOME="$HOME/.local/share/pnpm"
+              export PATH="$PNPM_HOME:$PATH"
 
-            # Verify pnpm installation
-            if ! command -v pnpm &> /dev/null; then
-              echo "Installing pnpm..."
-              npm install -g pnpm
-            fi
-          '';
+              # Verify pnpm installation
+              if ! command -v pnpm &> /dev/null; then
+                echo "Installing pnpm..."
+                npm install -g pnpm
+              fi
+            '';
 
-          # Environment variables for Tauri development
-          WEBKIT_DISABLE_COMPOSITING_MODE = "1";
+            # Environment variables for Tauri development
+            WEBKIT_DISABLE_COMPOSITING_MODE = "1";
 
-          # Rust environment
-          RUST_BACKTRACE = "1";
-          CARGO_TARGET_DIR = "./target";
+            # Rust environment
+            RUST_BACKTRACE = "1";
+            CARGO_TARGET_DIR = "./target";
+          };
         };
       }
     );

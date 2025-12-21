@@ -19,7 +19,7 @@ pkgs.rustPlatform.buildRustPackage {
     rustPlatform.cargoSetupHook
     cargo-tauri.hook
     nodejs_22
-    pnpm_9.configHook
+    pnpmConfigHook
     pnpm_9
     pkg-config
     wrapGAppsHook3
