@@ -53,6 +53,14 @@ pkgs.rustPlatform.buildRustPackage {
     hash = pnpmHash;
   };
 
+  # Fetch patch from nixpkgs to disable updater artifacts (avoids need for signing key)
+  patches = [
+    (pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/by-name/de/deadlock-mod-manager/no-updater-artifacts.patch";
+      hash = "sha256-Ve0WIq4noldm1CwkEv9JelKsnY8kBjX3cpuv3R83quc=";
+    })
+  ];
+
   VITE_API_URL = "https://api.deadlockmods.app";
 
   # Skip tests that require network access
