@@ -36,7 +36,7 @@ jobs:
           else
             VERSION=$(node -p "require('./apps/desktop/package.json').version")
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
           echo "Updating to version: $VERSION"
@@ -63,10 +63,10 @@ jobs:
           cd /tmp/nixpkgs
           echo "Building deadlock-mod-manager..."
           nix-build -A deadlock-mod-manager
-          
+
           echo "Testing binary..."
           ./result/bin/deadlock-mod-manager --version || echo "Version check not available"
-          
+
           echo "Build successful!" >> $GITHUB_STEP_SUMMARY
           echo "Package built successfully" >> $GITHUB_STEP_SUMMARY
 
@@ -74,7 +74,7 @@ jobs:
         run: |
           cd /tmp/nixpkgs
           git format-patch -1 HEAD --stdout > /tmp/deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
-          
+
           echo "Patch file generated:"
           cat /tmp/deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
 
@@ -134,7 +134,7 @@ jobs:
           script: |
             const version = process.env.VERSION;
             const runId = process.env.RUN_ID;
-            
+
             const body = \`## Nixpkgs Update Ready
 
             The nixpkgs package has been automatically updated and tested! ✅
@@ -143,7 +143,7 @@ jobs:
 
             Apply the patch to your nixpkgs fork and create a PR to NixOS/nixpkgs.
             \`;
-            
+
             await github.rest.repos.createReleaseComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
