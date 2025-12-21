@@ -125,12 +125,10 @@ jobs:
     name: Check Flake
     runs-on: ubuntu-latest
     needs: [update-hashes]
-    if: always() && (needs.update-hashes.result == 'success' || needs.update-hashes.result == 'skipped')
+    if: always() && !failure() && !cancelled()
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -149,11 +147,11 @@ jobs:
     name: Build Nightly Package
     runs-on: ubuntu-latest
     needs: check-flake
+    if: always() && needs.check-flake.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install Nix
@@ -181,11 +179,10 @@ jobs:
     name: Test Development Shell
     runs-on: ubuntu-latest
     needs: check-flake
+    if: always() && needs.check-flake.result == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
