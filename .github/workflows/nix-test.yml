@@ -34,13 +34,6 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v15
-        with:
-          name: deadlock-mod-manager
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: ${{ github.event_name == 'pull_request' }}
-
       - name: Check flake
         run: nix flake check --all-systems --show-trace
 
@@ -63,13 +56,6 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v15
-        with:
-          name: deadlock-mod-manager
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: ${{ github.event_name == 'pull_request' }}
 
       - name: Build nightly package
         run: |
@@ -99,13 +85,6 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v15
-        with:
-          name: deadlock-mod-manager
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: ${{ github.event_name == 'pull_request' }}
 
       - name: Build development shell
         run: |
