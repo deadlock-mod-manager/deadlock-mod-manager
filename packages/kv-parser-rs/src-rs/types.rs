@@ -100,7 +100,7 @@ fn default_true() -> bool {
 }
 
 /// Serialize options
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct SerializeOptions {
@@ -112,6 +112,17 @@ pub struct SerializeOptions {
     pub quote_all_strings: bool,
     #[serde(default = "default_true")]
     pub minimize_quotes: bool,
+}
+
+impl Default for SerializeOptions {
+    fn default() -> Self {
+        Self {
+            indent_size: default_indent_size(),
+            use_tabs: false,
+            quote_all_strings: false,
+            minimize_quotes: default_true(),
+        }
+    }
 }
 
 fn default_indent_size() -> usize {
