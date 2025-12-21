@@ -83,7 +83,7 @@ pub enum CommentStyle {
 }
 
 /// Parse options
-#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct ParseOptions {
@@ -93,6 +93,16 @@ pub struct ParseOptions {
     pub allow_conditionals: bool,
     #[serde(default = "default_true")]
     pub allow_includes: bool,
+}
+
+impl Default for ParseOptions {
+    fn default() -> Self {
+        Self {
+            allow_escape_sequences: true,
+            allow_conditionals: true,
+            allow_includes: true,
+        }
+    }
 }
 
 fn default_true() -> bool {
@@ -148,6 +158,15 @@ pub enum DiffOp {
     Replace,
 }
 
+/// Comment position relative to a path
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub enum CommentPosition {
+    Before,
+    After,
+}
+
 /// Single diff entry
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
@@ -159,6 +178,12 @@ pub struct DiffEntry {
     pub old_value: Option<KeyValuesValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_value: Option<KeyValuesValue>,
+    /// Comment text to add/remove (for comment operations)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comment: Option<String>,
+    /// Position where comment should be inserted relative to path
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comment_position: Option<CommentPosition>,
 }
 
 /// Document diff

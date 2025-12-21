@@ -50,15 +50,18 @@ function createModdedSearchPaths(
 ): KeyValuesObject {
   const modded: KeyValuesObject = {};
 
+  // Preserve Game_Language at the top
   for (const [key, value] of Object.entries(vanillaSearchPaths)) {
     if (key === "Game_Language") {
       modded[key] = value;
     }
   }
 
+  // Create the modded search paths with proper interspersed entries
+  // Each system (citadel and core) gets its own Game, Mod, and Write entries
   modded.Game = ["citadel/addons/{{PROFILE}}", "citadel", "core"];
-  modded.Mod = "citadel";
-  modded.Write = "citadel";
+  modded.Mod = ["citadel", "core"];
+  modded.Write = ["citadel", "core"];
 
   return modded;
 }
@@ -122,25 +125,29 @@ async function main() {
   const markerStart = "Deadlock Mod Manager - Start";
   const markerEnd = "Deadlock Mod Manager - End";
 
-  // Add start marker before Game array modification
-  enableDiff.changes.push({
-    op: "add",
-    path: "GameInfo.FileSystem.SearchPaths.Game",
-    oldValue: null,
-    newValue: null,
-    comment: markerStart,
-    commentPosition: "before",
-  });
+  // Reorder changes: comments should be added FIRST, before other modifications
+  // This ensures the "Start" comment goes before Game entries and "End" goes after everything
+  const commentChanges = [
+    {
+      op: "add" as const,
+      path: "GameInfo.FileSystem.SearchPaths.Game",
+      oldValue: null,
+      newValue: null,
+      comment: markerStart,
+      commentPosition: "before" as const,
+    },
+    {
+      op: "add" as const,
+      path: "GameInfo.FileSystem.SearchPaths.Game",
+      oldValue: null,
+      newValue: null,
+      comment: markerEnd,
+      commentPosition: "after" as const,
+    },
+  ];
 
-  // Add end marker after Game array modification
-  enableDiff.changes.push({
-    op: "add",
-    path: "GameInfo.FileSystem.SearchPaths.Game",
-    oldValue: null,
-    newValue: null,
-    comment: markerEnd,
-    commentPosition: "after",
-  });
+  // Put comments at the beginning so they're applied first
+  enableDiff.changes = [...commentChanges, ...enableDiff.changes];
 
   console.log("Generating disable-mods diff...");
   const disableDiff = reverseDiff(enableDiff);
@@ -168,7 +175,9 @@ async function main() {
 
   console.log("\nEnable diff changes:");
   for (const change of enableDiff.changes) {
-    console.log(`  ${change.op}: ${change.path}`);
+    console.log(
+      `  ${change.op}: ${change.path}${change.comment ? ` [comment: ${change.comment}]` : ""}`,
+    );
   }
 }
 

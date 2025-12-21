@@ -2,13 +2,13 @@
   "changes": [
     {
       "op": "remove",
-      "path": "GameInfo.FileSystem.SearchPaths.Mod",
-      "oldValue": "citadel"
+      "path": "GameInfo.FileSystem.SearchPaths.Write",
+      "oldValue": ["citadel", "core"]
     },
     {
       "op": "remove",
-      "path": "GameInfo.FileSystem.SearchPaths.Write",
-      "oldValue": "citadel"
+      "path": "GameInfo.FileSystem.SearchPaths.Mod",
+      "oldValue": ["citadel", "core"]
     },
     {
       "op": "replace",
