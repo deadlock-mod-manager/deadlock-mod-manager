@@ -77,6 +77,20 @@
 
       in
       {
+        packages = {
+          # Nightly build from the current source
+          default = pkgs.callPackage ./package.nix {
+            version = "nightly-${self.shortRev or "dirty"}";
+            src = self;
+            # These hashes need to be updated when dependencies change
+            # Run `nix build .#nightly` and update hashes from error messages
+            cargoHash = "sha256-tzF1mFzFCdnB6h43TiVKEKWWQgWlrEm9Xh3HKKnNXZ0=";
+            pnpmHash = "sha256-MCzRZt+l2wHETOxzSatPnz5G48HjjGrOj3BVP+S7/Ss=";
+          };
+
+          nightly = self.packages.${system}.default;
+        };
+
         devShells.default = pkgs.mkShell {
           inherit buildInputs nativeBuildInputs;
 
