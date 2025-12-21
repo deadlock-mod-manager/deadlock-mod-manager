@@ -1,0 +1,36 @@
+{
+  "changes": [
+    {
+      "op": "add",
+      "path": "GameInfo.FileSystem.SearchPaths.Mod",
+      "newValue": "citadel"
+    },
+    {
+      "op": "add",
+      "path": "GameInfo.FileSystem.SearchPaths.Write",
+      "newValue": "citadel"
+    },
+    {
+      "op": "replace",
+      "path": "GameInfo.FileSystem.SearchPaths.Game",
+      "oldValue": ["citadel", "core"],
+      "newValue": ["citadel/addons/{{PROFILE}}", "citadel", "core"]
+    },
+    {
+      "op": "add",
+      "path": "GameInfo.FileSystem.SearchPaths.Game",
+      "oldValue": null,
+      "newValue": null,
+      "comment": "Deadlock Mod Manager - Start",
+      "commentPosition": "before"
+    },
+    {
+      "op": "add",
+      "path": "GameInfo.FileSystem.SearchPaths.Game",
+      "oldValue": null,
+      "newValue": null,
+      "comment": "Deadlock Mod Manager - End",
+      "commentPosition": "after"
+    }
+  ]
+}
