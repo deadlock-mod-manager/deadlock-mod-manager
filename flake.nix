@@ -17,6 +17,14 @@
       flake-utils,
       rust-overlay,
     }:
+    let
+      # Package only supports Linux (Tauri with GTK/WebKit)
+      linuxSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    in
+    # Dev shells for all default systems
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -24,6 +32,7 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
+        isLinux = builtins.elem system linuxSystems;
 
         # Rust toolchain for Tauri and native libraries
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
@@ -77,7 +86,8 @@
 
       in
       {
-        packages = {
+        # Packages only available on Linux (Tauri with GTK/WebKit)
+        packages = pkgs.lib.optionalAttrs isLinux {
           # Nightly build from the current source
           default = pkgs.callPackage ./package.nix {
             version = "nightly-${self.shortRev or "dirty"}";
