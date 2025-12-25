@@ -8,7 +8,7 @@ import {
 import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { env } from "../../../env";
-import { AUTH_URL } from "../config";
+import { AUTH_URL, WEB_URL } from "../config.server";
 import {
   ACCESS_TOKEN_COOKIE,
   CLIENT_ID,
@@ -34,16 +34,7 @@ const COOKIE_OPTIONS = {
 };
 
 export function getRedirectUri(): string {
-  if (env.BASE_URL) {
-    const baseUrl = new URL(env.BASE_URL);
-    return `${baseUrl.origin}/auth/callback`;
-  }
-
-  if (isProduction) {
-    return "https://deadlockmods.app/auth/callback";
-  }
-
-  return "http://localhost:3003/auth/callback";
+  return `${WEB_URL}/auth/callback`;
 }
 
 export async function createAuthorizationUrl(

@@ -1,6 +1,6 @@
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
-import { SERVER_URL } from "@/lib/config";
+import { SERVER_URL } from "@/lib/config.server";
 import type { AppRouterClient } from "../../../api/src/routers/index";
 
 /**
