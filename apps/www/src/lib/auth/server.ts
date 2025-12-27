@@ -132,6 +132,11 @@ export function clearAuthCookies(): void {
   setCookie(ACCESS_TOKEN_COOKIE, "", clearOptions);
   setCookie(REFRESH_TOKEN_COOKIE, "", clearOptions);
   setCookie(TOKEN_EXPIRY_COOKIE, "", clearOptions);
+
+  // Clear better-auth session cookie in development
+  if (!isProduction) {
+    setCookie("better-auth.session_token", "", clearOptions);
+  }
 }
 
 export function getAccessToken(): string | null {
