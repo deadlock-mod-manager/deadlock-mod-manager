@@ -22,4 +22,5 @@ export interface OIDCUser {
 
 export interface OIDCSession {
   user: OIDCUser;
+  accessToken?: string;
 }

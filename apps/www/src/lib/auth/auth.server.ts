@@ -115,7 +115,7 @@ async function fetchSession() {
       return null;
     }
 
-    return { user: result.data };
+    return { user: result.data, accessToken: token };
   } catch {
     return null;
   }

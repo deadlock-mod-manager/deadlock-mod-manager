@@ -14,7 +14,7 @@ import {
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { LogInIcon, PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 import { useOIDCSession } from "@/hooks/use-oidc-session";
 
 export default function UserMenu() {
@@ -91,6 +91,12 @@ export default function UserMenu() {
           </div>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+          <Link to='/friends'>
+            <Users className='size-4' />
+            <span>Friends</span>
+          </Link>
+        </DropdownMenuItem>
         {isAdmin && (
           <>
             <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
@@ -99,9 +105,9 @@ export default function UserMenu() {
                 <span>Dashboard</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           className='cursor-pointer gap-2 py-2.5'
           onClick={() => {
