@@ -1,7 +1,7 @@
 const isDev = import.meta.env.DEV;
 
 export const SERVER_URL =
-  import.meta.env.VITE_API_URL ??
+  import.meta.env.VITE_SERVER_URL ??
   (isDev ? "http://localhost:9000" : "https://api.deadlockmods.app");
 
 export const WEB_URL =
