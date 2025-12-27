@@ -11,5 +11,5 @@ export const AUTH_URL =
   (isDev ? "http://localhost:3004" : "https://auth.deadlockmods.app");
 
 export const WEB_URL =
-  process.env.BASE_URL ??
+  process.env.VITE_WEB_URL ??
   (isDev ? "http://localhost:3003" : "https://deadlockmods.app");
