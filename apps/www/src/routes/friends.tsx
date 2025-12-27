@@ -13,8 +13,9 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, Check, Copy, UserPlus, Users } from "lucide-react";
+import { AlertCircle, Check, Copy, Lock, UserPlus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useOIDCSession } from "@/hooks/use-oidc-session";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/friends")({
 function FriendsPage() {
   const navigate = useNavigate();
   const { session, isLoading: isSessionPending } = useOIDCSession();
+  const { isEnabled: isFriendSystemEnabled, isLoading: isFeatureFlagLoading } =
+    useFeatureFlag("friend-system");
   const [friendCodeInput, setFriendCodeInput] = useState("");
   const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | null>(
     null,
@@ -39,23 +42,9 @@ function FriendsPage() {
     null,
   );
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (!isSessionPending && !session) {
-      navigate({
-        to: "/login",
-        search: {
-          returnTo: "/friends",
-        },
-      });
-    }
-  }, [isSessionPending, session, navigate]);
-
   const { data: userIdData, isLoading: isUserIdLoading } = useQuery({
     ...orpc.getUserId.queryOptions(),
-    enabled: !!session,
+    enabled: !!session && isFriendSystemEnabled,
   });
 
   const {
@@ -64,7 +53,7 @@ function FriendsPage() {
     refetch: refetchFriends,
   } = useQuery({
     ...orpc.listFriends.queryOptions(),
-    enabled: !!session,
+    enabled: !!session && isFriendSystemEnabled,
   });
 
   const sendFriendRequestMutation = useMutation(
@@ -89,12 +78,58 @@ function FriendsPage() {
   const isLoading = isSessionPending || isUserIdLoading || isFriendsLoading;
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!isSessionPending && !session) {
+      navigate({
+        to: "/login",
+        search: {
+          returnTo: "/friends",
+        },
+      });
+    }
+  }, [isSessionPending, session, navigate]);
+
+  useEffect(() => {
     return () => {
       if (copyFeedbackTimeout.current) {
         clearTimeout(copyFeedbackTimeout.current);
       }
     };
   }, []);
+
+  if (isFeatureFlagLoading) {
+    return (
+      <div className='container max-w-4xl py-8'>
+        <div className='flex items-center justify-center py-12'>
+          <Skeleton className='h-64 w-full' />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isFriendSystemEnabled) {
+    return (
+      <div className='container max-w-4xl py-8'>
+        <Card className='border-border/50 bg-card/80 backdrop-blur-sm'>
+          <CardContent className='flex flex-col items-center justify-center gap-4 py-12'>
+            <Lock className='size-12 text-muted-foreground' />
+            <div className='text-center'>
+              <h2 className='font-semibold text-lg'>Feature Not Available</h2>
+              <p className='text-muted-foreground text-sm'>
+                The friend system is currently disabled. Enable it in the
+                desktop app under Settings &gt; Experimental.
+              </p>
+            </div>
+            <Button variant='outline' onClick={() => navigate({ to: "/" })}>
+              Go Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const showCopyFeedback = (state: "copied" | "error") => {
     if (copyFeedbackTimeout.current) {

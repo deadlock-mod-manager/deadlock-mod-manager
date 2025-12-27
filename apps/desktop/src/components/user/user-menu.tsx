@@ -8,10 +8,12 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { useState } from "react";
 import { FriendsSidebar } from "@/components/friends/friends-sidebar";
 import { useAuth } from "@/hooks/use-auth";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import AuthModal from "./auth-modal";
 
 export default function UserMenu() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isEnabled: isFriendSystemEnabled } = useFeatureFlag("friend-system");
   const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
 
   if (isLoading) {
@@ -47,7 +49,7 @@ export default function UserMenu() {
         </div>
         <button
           type='button'
-          onClick={() => setShowFriendsSidebar(true)}
+          onClick={() => isFriendSystemEnabled && setShowFriendsSidebar(true)}
           className='rounded-full transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'>
           <Avatar className='h-12 w-12 cursor-pointer'>
             <AvatarImage
@@ -59,10 +61,12 @@ export default function UserMenu() {
         </button>
       </div>
 
-      <FriendsSidebar
-        open={showFriendsSidebar}
-        onOpenChange={setShowFriendsSidebar}
-      />
+      {isFriendSystemEnabled && (
+        <FriendsSidebar
+          open={showFriendsSidebar}
+          onOpenChange={setShowFriendsSidebar}
+        />
+      )}
     </>
   );
 }

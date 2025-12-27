@@ -2,6 +2,7 @@ import type { FriendListDto } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import { getFriends } from "@/lib/api";
 import { useAuth } from "./use-auth";
+import { useFeatureFlag } from "./use-feature-flags";
 
 interface UseFriendsResult {
   friends: FriendListDto | null;
@@ -12,11 +13,12 @@ interface UseFriendsResult {
 
 export function useFriends(): UseFriendsResult {
   const { isAuthenticated } = useAuth();
+  const { isEnabled: isFriendSystemEnabled } = useFeatureFlag("friend-system");
 
   const friendsQuery = useQuery<FriendListDto>({
     queryKey: ["friends"],
     queryFn: getFriends,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isFriendSystemEnabled,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
   });
