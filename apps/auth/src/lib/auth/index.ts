@@ -2,11 +2,13 @@ import { db, schema } from "@deadlock-mods/database";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt, oidcProvider } from "better-auth/plugins";
+import { isDevAuthEnabled } from "../dev-auth";
 import { env } from "../env";
 import { steam } from "./plugins/steam";
 
 const isProduction = env.NODE_ENV === "production";
 const isDevelopment = env.NODE_ENV === "development";
+const devAuthEnabled = isDevAuthEnabled();
 
 function getRedirectUrls(productionUrl: string, localUrl: string): string[] {
   const urls: string[] = [productionUrl];
@@ -40,7 +42,7 @@ export const auth = betterAuth({
   },
   trustedOrigins: env.CORS_ORIGIN,
   emailAndPassword: {
-    enabled: true,
+    enabled: devAuthEnabled,
   },
   advanced: {
     defaultCookieAttributes: {

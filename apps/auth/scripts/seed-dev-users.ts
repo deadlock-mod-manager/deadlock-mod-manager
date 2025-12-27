@@ -3,43 +3,17 @@ import "dotenv/config";
 import { and, db, eq, schema } from "@deadlock-mods/database";
 import { createAppLogger, createLoggerContext } from "@deadlock-mods/logging";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
-
-type DevUser = {
-  name: string;
-  email: string;
-  password: string;
-  isAdmin?: boolean;
-};
+import {
+  type DevUser,
+  getDevAuthConfig,
+  validateDevAuthSeedRequirements,
+} from "../src/lib/dev-auth";
 
 const logger = createAppLogger({
   app: "auth-seed",
   environment: process.env.NODE_ENV ?? "development",
   context: createLoggerContext(),
 });
-
-const devUsers: DevUser[] = [
-  {
-    name: "Dev User One",
-    email: "dev1@deadlockmods.test",
-    password: "devpass-1!",
-  },
-  {
-    name: "Dev User Two",
-    email: "dev2@deadlockmods.test",
-    password: "devpass-2!",
-  },
-];
-
-function ensureDevEnvironment() {
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.ALLOW_PROD_AUTH_SEED !== "true"
-  ) {
-    throw new Error(
-      "auth:seed is restricted to non-production environments. Set ALLOW_PROD_AUTH_SEED=true to override.",
-    );
-  }
-}
 
 async function ensureCredentialAccount(
   userId: string,
@@ -138,7 +112,12 @@ async function upsertUser(
 }
 
 async function main() {
-  ensureDevEnvironment();
+  validateDevAuthSeedRequirements();
+
+  const config = getDevAuthConfig();
+  const devUsers = config.users;
+
+  logger.info("Starting dev user seeding", { userCount: devUsers.length });
 
   for (const user of devUsers) {
     const result = await upsertUser(user);
