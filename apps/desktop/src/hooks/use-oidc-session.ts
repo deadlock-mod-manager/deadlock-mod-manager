@@ -1,6 +1,7 @@
 import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetch } from "@tauri-apps/plugin-http";
+import { open } from "@tauri-apps/plugin-shell";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearTokens,
@@ -66,6 +67,15 @@ export function useOIDCSession(): UseOIDCSessionResult {
   const signOut = useCallback(async () => {
     await clearTokens();
     queryClient.setQueryData(["oidc-session"], null);
+
+    // In dev mode, open the auth server's logout page in system browser
+    if (import.meta.env.DEV) {
+      try {
+        await open(`${AUTH_URL}/logout`);
+      } catch {
+        // Silently fail - the local tokens are already cleared
+      }
+    }
   }, [queryClient]);
 
   return {
