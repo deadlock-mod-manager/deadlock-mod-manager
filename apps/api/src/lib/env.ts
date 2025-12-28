@@ -3,6 +3,7 @@ import { z } from "zod";
 export const envSchema = z.object({
   TZ: z.string().default("Europe/Berlin"),
   PORT: z.coerce.number().min(1).max(65535).default(9000),
+  HEARTBEAT_INTERVAL_SECONDS: z.coerce.number().min(10).max(300).default(60),
   NODE_ENV: z.enum(["development", "production"]).default("production"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
   SENTRY_DSN: z

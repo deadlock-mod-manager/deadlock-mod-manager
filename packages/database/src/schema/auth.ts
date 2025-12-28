@@ -63,6 +63,16 @@ export const userHeartbeats = pgTable("user_heartbeats", {
 
 export type UserHeartbeat = typeof userHeartbeats.$inferSelect;
 
+export const userActiveMods = pgTable("user_active_mods", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  modIds: text("mod_ids").array().notNull().default([]),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type UserActiveMods = typeof userActiveMods.$inferSelect;
+
 export const session = pgTable("session", {
   id: typeId("id", "session")
     .primaryKey()

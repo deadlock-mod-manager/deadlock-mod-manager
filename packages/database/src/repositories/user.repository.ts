@@ -4,6 +4,7 @@ import {
   type FriendshipStatus,
   friendships,
   user,
+  userActiveMods,
   userHeartbeats,
 } from "../schema/auth";
 
@@ -25,7 +26,15 @@ export interface UserOnlineStatus {
   readonly isOnline: boolean;
 }
 
-const ONLINE_THRESHOLD_MINUTES = 2;
+export interface OnlineStatusOptions {
+  readonly heartbeatIntervalSeconds: number;
+}
+
+export interface FriendModUsage {
+  readonly userId: string;
+  readonly displayName: string;
+  readonly avatarUrl?: string | null;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DatabaseOrTransaction = Database | any;
@@ -236,7 +245,7 @@ export class UserRepository {
     }));
   }
 
-  async updateHeartbeat(userId: string): Promise<void> {
+  async updateHeartbeat(userId: string, modIds?: string[]): Promise<void> {
     const now = new Date();
     await this.db
       .insert(userHeartbeats)
@@ -250,19 +259,36 @@ export class UserRepository {
           lastHeartbeat: now,
         },
       });
+
+    if (modIds !== undefined) {
+      await this.db
+        .insert(userActiveMods)
+        .values({
+          userId,
+          modIds,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userActiveMods.userId,
+          set: {
+            modIds,
+            updatedAt: now,
+          },
+        });
+    }
   }
 
   async getOnlineStatus(
     userIds: readonly string[],
+    options: OnlineStatusOptions,
   ): Promise<UserOnlineStatus[]> {
     if (userIds.length === 0) {
       return [];
     }
 
     const uniqueIds = Array.from(new Set(userIds));
-    const threshold = new Date(
-      Date.now() - ONLINE_THRESHOLD_MINUTES * 60 * 1000,
-    );
+    const thresholdMs = options.heartbeatIntervalSeconds * 2 * 1000;
+    const threshold = new Date(Date.now() - thresholdMs);
 
     const rows = await this.db
       .select({
@@ -281,5 +307,62 @@ export class UserRepository {
       const isOnline = lastHeartbeat ? lastHeartbeat > threshold : false;
       return { userId: id, isOnline };
     });
+  }
+
+  async getFriendsActiveMods(
+    userId: string,
+  ): Promise<Record<string, FriendModUsage[]>> {
+    const friendState = await this.getFriendState(userId);
+    if (!friendState || friendState.friends.length === 0) {
+      return {};
+    }
+
+    const friendIds = friendState.friends;
+
+    const [friendsData, activeModsData] = await Promise.all([
+      this.db
+        .select({
+          id: user.id,
+          name: user.name,
+          image: user.image,
+        })
+        .from(user)
+        .where(inArray(user.id, friendIds)),
+      this.db
+        .select({
+          odId: userActiveMods.userId,
+          modIds: userActiveMods.modIds,
+        })
+        .from(userActiveMods)
+        .where(inArray(userActiveMods.userId, friendIds)),
+    ]);
+
+    const friendMap = new Map(
+      friendsData.map((f) => [
+        f.id,
+        { displayName: f.name, avatarUrl: f.image },
+      ]),
+    );
+
+    const result: Record<string, FriendModUsage[]> = {};
+
+    for (const row of activeModsData) {
+      const friendUserId = row.odId;
+      const friendInfo = friendMap.get(friendUserId);
+      if (!friendInfo || !row.modIds) continue;
+
+      for (const modId of row.modIds) {
+        if (!result[modId]) {
+          result[modId] = [];
+        }
+        result[modId].push({
+          userId: friendUserId,
+          displayName: friendInfo.displayName,
+          avatarUrl: friendInfo.avatarUrl,
+        });
+      }
+    }
+
+    return result;
   }
 }

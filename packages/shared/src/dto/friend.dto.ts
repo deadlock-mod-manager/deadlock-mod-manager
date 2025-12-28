@@ -22,3 +22,13 @@ export const toFriendEntryDto = (
   avatarUrl: user.image ?? null,
   isOnline,
 });
+
+export interface FriendModUsageDto {
+  readonly userId: string;
+  readonly displayName: string;
+  readonly avatarUrl?: string | null;
+}
+
+export interface FriendsActiveModsDto {
+  readonly [modId: string]: FriendModUsageDto[];
+}

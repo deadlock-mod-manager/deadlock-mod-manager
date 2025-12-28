@@ -2,9 +2,12 @@ import { db, UserRepository } from "@deadlock-mods/database";
 import {
   type FriendEntryDto,
   type FriendListDto,
+  type FriendsActiveModsDto,
   toFriendEntryDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { z } from "zod";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { protectedProcedure } from "../../lib/orpc";
 import {
@@ -13,6 +16,17 @@ import {
   RespondToFriendRequestInputSchema,
   SendFriendRequestInputSchema,
 } from "../../validation/friends";
+
+const FriendModUsageDtoSchema = z.object({
+  userId: z.string(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable().optional(),
+});
+
+const FriendsActiveModsResponseSchema = z.record(
+  z.string(),
+  z.array(FriendModUsageDtoSchema),
+);
 
 const userRepository = new UserRepository(db);
 
@@ -33,7 +47,9 @@ const toFriendDtoList = async (userId: string): Promise<FriendListDto> => {
 
   const [users, onlineStatuses] = await Promise.all([
     userRepository.getUsersByIds(Array.from(lookupIds)),
-    userRepository.getOnlineStatus(friends),
+    userRepository.getOnlineStatus(friends, {
+      heartbeatIntervalSeconds: env.HEARTBEAT_INTERVAL_SECONDS,
+    }),
   ]);
 
   const userMap = new Map(users.map((user) => [user.id, user]));
@@ -351,5 +367,17 @@ export const friendsRouter = {
         .info("Friend removed");
 
       return await toFriendDtoList(sessionUserId);
+    }),
+
+  getActiveMods: protectedProcedure
+    .route({ method: "GET", path: "/v2/friends/active-mods" })
+    .output(FriendsActiveModsResponseSchema)
+    .handler(async ({ context }): Promise<FriendsActiveModsDto> => {
+      const sessionUserId = context.session?.user?.id;
+      if (!sessionUserId) {
+        throw new ORPCError("UNAUTHORIZED");
+      }
+
+      return await userRepository.getFriendsActiveMods(sessionUserId);
     }),
 };

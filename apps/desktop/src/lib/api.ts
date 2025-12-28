@@ -4,6 +4,7 @@ import type {
   CustomSettingDto,
   FeatureFlag,
   FriendListDto,
+  FriendsActiveModsDto,
   ModDownloadDto,
   ModDto,
   PublishedCrosshairDto,
@@ -260,10 +261,15 @@ export const getUserId = async () => {
 };
 
 // Heartbeat API function
-export const sendHeartbeat = async () => {
+export const sendHeartbeat = async (modIds?: string[]) => {
   return await apiRequest<{ success: boolean }>(
     "/api/v2/heartbeat",
-    {},
+    { modIds },
     "POST",
   );
+};
+
+// Friends active mods API function
+export const getFriendsActiveMods = async () => {
+  return await apiRequest<FriendsActiveModsDto>("/api/v2/friends/active-mods");
 };
