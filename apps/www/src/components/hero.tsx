@@ -1,10 +1,13 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { PlatformDownloadButton } from "@/components/downloads/platform-download-button";
 import { GITHUB_REPO } from "@/lib/constants";
 
 export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
+  const { t } = useTranslation();
+
   return (
     <div className='relative isolate overflow-hidden bg-background'>
       <svg
@@ -67,19 +70,18 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
                 v{version}
               </span>
               <span className='inline-flex items-center space-x-2 text-sm/6 font-medium text-muted-foreground'>
-                <span>View Release Notes</span>
+                <span>{t("hero.viewReleaseNotes")}</span>
                 <span aria-hidden='true'>→</span>
               </span>
             </a>
           </div>
           <h1 className='mt-8 text-4xl font-semibold tracking-tight text-balance font-primary sm:text-5xl lg:text-7xl'>
             <span className='bg-gradient-to-r from-[#EFE1BE] to-primary bg-clip-text text-transparent'>
-              Deadlock Mod Manager
+              {t("hero.title")}
             </span>
           </h1>
           <p className='mt-6 text-base font-medium text-pretty text-muted-foreground sm:mt-8 sm:text-lg lg:text-xl/8'>
-            Mods for Deadlock, minus the hassle. Find, install, and update mods
-            in a couple of clicks. No folders, no guesswork.
+            {t("hero.description")}
           </p>
           <div className='mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-x-6'>
             <PlatformDownloadButton className='px-4 w-full sm:w-auto' />
@@ -88,7 +90,7 @@ export const HeroSection: React.FC<{ version: string }> = ({ version }) => {
                 className='px-4 w-full sm:w-auto'
                 size='lg'
                 variant='ghost'>
-                All Downloads <span aria-hidden='true'>→</span>
+                {t("hero.allDownloads")} <span aria-hidden='true'>→</span>
               </Button>
             </Link>
           </div>

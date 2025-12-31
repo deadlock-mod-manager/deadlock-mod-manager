@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "Kaynak Kodunu Görüntüle",
+    "source": "Kaynak",
+    "learnMore": "Daha fazla bilgi",
+    "download": "İndir",
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "close": "Kapat"
+  },
+  "nav": {
+    "home": "Ana Sayfa",
+    "browseMods": "Modlara Göz At",
+    "crosshairGenerator": "Nişangah Oluşturucu",
+    "status": "Durum",
+    "documentation": "Dokümantasyon",
+    "tools": "Araçlar",
+    "vpkAnalyzer": "VPK Analizörü",
+    "kvParser": "KeyValues Ayrıştırıcı"
+  },
+  "theme": {
+    "toggle": "Temayı değiştir",
+    "light": "Açık",
+    "dark": "Koyu",
+    "system": "Sistem"
+  },
+  "language": {
+    "toggle": "Dili değiştir",
+    "select": "Dil seç"
+  },
+  "hero": {
+    "viewReleaseNotes": "Sürüm Notlarını Görüntüle",
+    "title": "Deadlock Mod Manager",
+    "description": "Deadlock için modlar, zahmetsizce. Birkaç tıklamayla mod bulun, kurun ve güncelleyin. Klasör yok, tahmin yok.",
+    "allDownloads": "Tüm İndirmeler"
+  },
+  "latestUpdates": {
+    "label": "Son Güncellemeler",
+    "title": "Yeniliklere Bakın"
+  },
+  "features": {
+    "sectionLabel": "Özellikler",
+    "sectionTitle": "Deadlock'u kendinize göre yapın",
+    "oneClickInstall": {
+      "title": "Tek tıkla kurulum",
+      "description": "Bir mod seçin, biz onu Deadlock'un beklediği yere koyalım. Manuel adım yok, tahmin yok."
+    },
+    "manageWithConfidence": {
+      "title": "Güvenle yönetin",
+      "description": "Her şeyi Modlarım'da görün. İstediğiniz zaman açın/kapatın, güncelleyin veya kaldırın."
+    },
+    "builtInBrowser": {
+      "title": "Dahili tarayıcı",
+      "description": "Uygulamadan çıkmadan topluluk modlarını arayın ve keşfedin. Her şey tek yerde."
+    },
+    "crossPlatform": {
+      "title": "Çoklu platform",
+      "description": "Windows, macOS ve Linux'ta çalışır. Küçük indirme, hızlı başlangıç, düşük kaynak kullanımı."
+    },
+    "openSource": {
+      "title": "Açık kaynak",
+      "description": "Kullandığınıza güvenin. Kodu okuyun, sorun bildirin veya özellik ekleyin. Sizin seçiminiz."
+    },
+    "easyUpdates": {
+      "title": "Kolay güncellemeler",
+      "description": "Güncel olmayan modlar açıkça işaretlenir. Tek tıkla güncelleyin."
+    }
+  },
+  "stats": {
+    "sectionLabel": "İstatistikler",
+    "sectionTitle": "Rakamlarla",
+    "sectionDescription": "Büyüyen bir mod kütüphanesi ve her gün Deadlock'u daha iyi yapan aktif bir topluluk.",
+    "availableMods": "Mevcut Modlar",
+    "modDownloads": "Mod İndirmeleri",
+    "appDownloads": "Uygulama İndirmeleri"
+  },
+  "showcase": {
+    "sectionLabel": "Vitrin",
+    "sectionTitle1": "Göz Atın ve Kurun",
+    "sectionTitle2": "Saniyeler İçinde Modlar",
+    "sectionDescription": "Popüler modları keşfedin, inceleyin ve tek tıklamayla kurun. Karmaşık kurulum gerekmez.",
+    "popularMods": "Popüler Modlar",
+    "browseAllMods": "Tüm Modlara Göz At"
+  },
+  "faq": {
+    "sectionLabel": "SSS",
+    "sectionTitle": "Sık sorulan sorular",
+    "sectionDescription": "Farklı bir sorunuz var ve cevabı bulamıyor musunuz?",
+    "comprehensiveFaq": "kapsamlı SSS dokümantasyonumuza",
+    "orReachOut": "göz atın veya",
+    "creatingIssue": "bir issue oluşturarak",
+    "questions": {
+      "whatIs": {
+        "question": "Deadlock Mod Manager nedir?",
+        "answer": "Deadlock mod kullanımını basitleştiren küçük bir masaüstü uygulaması. Oyun klasörlerine dokunmadan modlara göz atın, kurun ve yönetin."
+      },
+      "howToInstall": {
+        "question": "Modları nasıl kurarım?",
+        "answer": {
+          "step1": "Deadlock Mod Manager'ı indirin ve açın.",
+          "step2": "Deadlock'u otomatik algılarız (veya Ayarlar'da klasörü belirleyebilirsiniz).",
+          "step3": "Modlara göz atın ve İndir'e tıklayın.",
+          "step4": "Uygulama modu doğru yere kurar. Manuel adım yok."
+        }
+      },
+      "isSafe": {
+        "question": "Mod kullanmak güvenli mi?",
+        "answer": "Modlar üçüncü taraf dosyalarıdır. Uygulama .vpk dosyalarını oyun dizininize kopyalar ve çalıştırılabilir dosyanızı değiştirmez. Sağduyulu olun ve emin değilseniz dosyaları tarayın."
+      },
+      "howToUninstall": {
+        "question": "Modları nasıl kaldırırım?",
+        "answer": "Modlarım'ı açın ve istemediğinizi kaldırın, veya Ayarlar'da Tüm Modları Temizle'yi kullanın."
+      },
+      "platforms": {
+        "question": "Hangi platformlar destekleniyor?",
+        "answer": "Windows, macOS ve Linux. Arch kullanıcıları AUR'dan da kurabilir."
+      },
+      "reportBug": {
+        "question": "Bir hata buldum, nasıl bildiririm?",
+        "answer": "Hataları",
+        "answerLink": "GitHub deposunda",
+        "answerSuffix": "bir issue oluşturarak bildirebilirsiniz. Yeniden oluşturma adımlarını, ne beklediğinizi ve ne olduğunu ekleyin."
+      },
+      "documentation": {
+        "question": "Daha ayrıntılı dokümantasyonu nerede bulabilirim?",
+        "answer": "Ayrıntılı kılavuzlar, öğreticiler ve teknik referans materyalleri için kapsamlı",
+        "answerLink": "dokümantasyon sitemize",
+        "answerSuffix": "göz atın."
+      },
+      "officialSkins": {
+        "question": "Deadlock'un resmi skinleri olacak mı?",
+        "answer": "Deadlock gelişiyor. Resmi kozmetik ürünler gelirse, bu uygulama topluluk tarafından yapılan seçenekler için hala burada olacak."
+      },
+      "othersSeeSkins": {
+        "question": "Diğer oyuncular kurduğum skinleri görebilir mi?",
+        "answer": "Hayır. Bunlar istemci taraflıdır. Diğer oyuncular varsayılan modelleri ve dokuları görür."
+      }
+    }
+  },
+  "footer": {
+    "description": "Valve'ın Deadlock oyunu için mod kurma ve yönetmeye yarayan küçük, açık kaynaklı bir uygulama.",
+    "disclaimer": "Valve ile bağlantılı değildir. \"Deadlock\" ve ilgili markalar Valve Corporation'ın ticari markalarıdır.",
+    "links": "Bağlantılar",
+    "sourceCode": "Kaynak Kodu",
+    "support": "Destek",
+    "reportBug": "Hata Bildir",
+    "partners": "Ortaklar",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Hizmet Şartları",
+    "madeWith": "Sevgiyle yapıldı",
+    "by": "tarafından"
+  },
+  "downloads": {
+    "pageTitle": "Deadlock Mod Manager'ı Edinin",
+    "pageDescription": "Windows, macOS veya Linux için en son sürümü indirin ve dakikalar içinde mod kurmaya başlayın."
+  }
+}

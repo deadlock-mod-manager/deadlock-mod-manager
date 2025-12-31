@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { orpc } from "@/utils/orpc";
 
 const formatNumber = (num: number): string => {
@@ -12,23 +13,24 @@ const formatNumber = (num: number): string => {
 };
 
 export const StatsSection = () => {
+  const { t } = useTranslation();
   const statsQuery = useQuery(orpc.getStats.queryOptions());
   const stats = statsQuery.data;
 
   const statsData = [
     {
       id: 1,
-      name: "Available Mods",
+      nameKey: "stats.availableMods",
       value: stats ? formatNumber(stats.totalMods) : "...",
     },
     {
       id: 2,
-      name: "Mod Downloads",
+      nameKey: "stats.modDownloads",
       value: stats ? `${formatNumber(stats.modDownloads)}+` : "...",
     },
     {
       id: 3,
-      name: "App Downloads",
+      nameKey: "stats.appDownloads",
       value: stats ? `${formatNumber(stats.appDownloads)}+` : "...",
     },
   ];
@@ -41,14 +43,13 @@ export const StatsSection = () => {
         <div className='mx-auto max-w-2xl lg:max-w-none'>
           <div className='text-center'>
             <h2 className='mb-2 text-center text-lg text-primary tracking-wider'>
-              Stats
+              {t("stats.sectionLabel")}
             </h2>
             <h2 className='font-semibold font-primary text-3xl text-balance text-foreground tracking-tight sm:text-4xl lg:text-5xl'>
-              By the numbers
+              {t("stats.sectionTitle")}
             </h2>
             <p className='mt-4 text-base text-muted-foreground sm:text-lg/8'>
-              A growing library of mods and an active community making Deadlock
-              better every day.
+              {t("stats.sectionDescription")}
             </p>
           </div>
           <dl className='mt-12 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:mt-16 lg:grid-cols-3'>
@@ -57,7 +58,7 @@ export const StatsSection = () => {
                 key={stat.id}
                 className='flex flex-col bg-white/[0.05] p-6 backdrop-blur-sm sm:p-8'>
                 <dt className='font-semibold text-muted-foreground text-sm/6'>
-                  {stat.name}
+                  {t(stat.nameKey)}
                 </dt>
                 <dd className='order-first font-semibold font-primary text-3xl text-foreground tracking-tight'>
                   {stat.value}

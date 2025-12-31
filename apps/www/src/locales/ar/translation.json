@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "عرض المصدر",
+    "source": "المصدر",
+    "learnMore": "اعرف المزيد",
+    "download": "تحميل",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "close": "إغلاق"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "browseMods": "تصفح المودات",
+    "crosshairGenerator": "منشئ التصويب",
+    "status": "الحالة",
+    "documentation": "التوثيق",
+    "tools": "الأدوات",
+    "vpkAnalyzer": "محلل VPK",
+    "kvParser": "محلل KeyValues"
+  },
+  "theme": {
+    "toggle": "تبديل السمة",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "language": {
+    "toggle": "تغيير اللغة",
+    "select": "اختر اللغة"
+  },
+  "hero": {
+    "viewReleaseNotes": "عرض ملاحظات الإصدار",
+    "title": "Deadlock Mod Manager",
+    "description": "مودات لـ Deadlock، بدون متاعب. اعثر على المودات وثبتها وحدثها بنقرات قليلة. لا مجلدات، لا تخمين.",
+    "allDownloads": "جميع التنزيلات"
+  },
+  "latestUpdates": {
+    "label": "آخر التحديثات",
+    "title": "شاهد الجديد"
+  },
+  "features": {
+    "sectionLabel": "الميزات",
+    "sectionTitle": "اجعل Deadlock خاصتك",
+    "oneClickInstall": {
+      "title": "تثبيت بنقرة واحدة",
+      "description": "اختر مود وسنضعه حيث يتوقعه Deadlock. لا خطوات يدوية، لا تخمين."
+    },
+    "manageWithConfidence": {
+      "title": "أدر بثقة",
+      "description": "شاهد كل شيء في موداتي. فعّل/عطّل، حدّث، أو أزل متى شئت."
+    },
+    "builtInBrowser": {
+      "title": "متصفح مدمج",
+      "description": "ابحث واكتشف مودات المجتمع دون مغادرة التطبيق. كل شيء في مكان واحد."
+    },
+    "crossPlatform": {
+      "title": "متعدد المنصات",
+      "description": "يعمل على Windows و macOS و Linux. تنزيل صغير، بدء سريع، استهلاك منخفض للموارد."
+    },
+    "openSource": {
+      "title": "مفتوح المصدر",
+      "description": "ثق بما تستخدمه. اقرأ الكود، أبلغ عن المشاكل، أو ساهم بميزات. خيارك."
+    },
+    "easyUpdates": {
+      "title": "تحديثات سهلة",
+      "description": "المودات القديمة محددة بوضوح. حدثها بنقرة واحدة."
+    }
+  },
+  "stats": {
+    "sectionLabel": "الإحصائيات",
+    "sectionTitle": "بالأرقام",
+    "sectionDescription": "مكتبة متنامية من المودات ومجتمع نشط يجعل Deadlock أفضل كل يوم.",
+    "availableMods": "المودات المتاحة",
+    "modDownloads": "تنزيلات المودات",
+    "appDownloads": "تنزيلات التطبيق"
+  },
+  "showcase": {
+    "sectionLabel": "العرض",
+    "sectionTitle1": "تصفح وثبت",
+    "sectionTitle2": "مودات في ثوان",
+    "sectionDescription": "اكتشف المودات الشائعة، تفقدها، وثبتها بنقرة واحدة. لا إعداد معقد مطلوب.",
+    "popularMods": "المودات الشائعة",
+    "browseAllMods": "تصفح جميع المودات"
+  },
+  "faq": {
+    "sectionLabel": "الأسئلة الشائعة",
+    "sectionTitle": "الأسئلة الشائعة",
+    "sectionDescription": "لديك سؤال مختلف ولا تجد الإجابة؟ تحقق من",
+    "comprehensiveFaq": "توثيق الأسئلة الشائعة الشامل",
+    "orReachOut": "لدينا أو تواصل معنا",
+    "creatingIssue": "بإنشاء issue",
+    "questions": {
+      "whatIs": {
+        "question": "ما هو Deadlock Mod Manager؟",
+        "answer": "تطبيق سطح مكتب صغير يجعل تعديل Deadlock بسيطًا. تصفح، ثبت، وأدر المودات دون لمس مجلدات اللعبة."
+      },
+      "howToInstall": {
+        "question": "كيف أثبت المودات؟",
+        "answer": {
+          "step1": "حمّل وافتح Deadlock Mod Manager.",
+          "step2": "سنكتشف Deadlock تلقائيًا (أو يمكنك تعيين المجلد في الإعدادات).",
+          "step3": "تصفح المودات وانقر على تحميل.",
+          "step4": "التطبيق يثبت المود في المكان الصحيح. لا خطوات يدوية."
+        }
+      },
+      "isSafe": {
+        "question": "هل استخدام المودات آمن؟",
+        "answer": "المودات ملفات طرف ثالث. التطبيق ينسخ ملفات .vpk إلى دليل لعبتك ولا يعدل الملف التنفيذي. استخدم الحكم السليم وافحص الملفات إذا لم تكن متأكدًا."
+      },
+      "howToUninstall": {
+        "question": "كيف أزيل المودات؟",
+        "answer": "افتح موداتي وأزل ما لا تريده، أو استخدم مسح جميع المودات في الإعدادات."
+      },
+      "platforms": {
+        "question": "ما المنصات المدعومة؟",
+        "answer": "Windows و macOS و Linux. مستخدمو Arch يمكنهم أيضًا التثبيت من AUR."
+      },
+      "reportBug": {
+        "question": "وجدت خطأ، كيف أبلغ عنه؟",
+        "answer": "يمكنك الإبلاغ عن الأخطاء بإنشاء issue في",
+        "answerLink": "مستودع GitHub",
+        "answerSuffix": "الخاص بنا. أضف خطوات إعادة الإنتاج، ما توقعته، وما حدث."
+      },
+      "documentation": {
+        "question": "أين أجد توثيقًا أكثر تفصيلاً؟",
+        "answer": "تحقق من",
+        "answerLink": "موقع التوثيق",
+        "answerSuffix": "الشامل لدينا للأدلة التفصيلية والدروس والمراجع التقنية."
+      },
+      "officialSkins": {
+        "question": "هل سيكون لـ Deadlock سكينات رسمية؟",
+        "answer": "Deadlock في تطور. إذا جاءت مستحضرات التجميل الرسمية، سيظل هذا التطبيق هنا للخيارات المصنوعة من المجتمع."
+      },
+      "othersSeeSkins": {
+        "question": "هل يمكن للاعبين الآخرين رؤية السكينات المثبتة لدي؟",
+        "answer": "لا. هذه من جانب العميل. اللاعبون الآخرون يرون النماذج والقوام الافتراضية."
+      }
+    }
+  },
+  "footer": {
+    "description": "تطبيق صغير مفتوح المصدر لتثبيت وإدارة المودات للعبة Valve Deadlock.",
+    "disclaimer": "غير مرتبط بـ Valve. \"Deadlock\" والعلامات ذات الصلة هي علامات تجارية لـ Valve Corporation.",
+    "links": "روابط",
+    "sourceCode": "الكود المصدري",
+    "support": "الدعم",
+    "reportBug": "الإبلاغ عن خطأ",
+    "partners": "الشركاء",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "madeWith": "صنع بـ",
+    "by": "بواسطة"
+  },
+  "downloads": {
+    "pageTitle": "احصل على Deadlock Mod Manager",
+    "pageDescription": "حمّل أحدث إصدار لـ Windows أو macOS أو Linux وابدأ التعديل في دقائق."
+  }
+}

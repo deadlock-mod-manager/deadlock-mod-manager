@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "查看源代码",
+    "source": "源代码",
+    "learnMore": "了解更多",
+    "download": "下载",
+    "loading": "加载中...",
+    "error": "错误",
+    "close": "关闭"
+  },
+  "nav": {
+    "home": "首页",
+    "browseMods": "浏览模组",
+    "crosshairGenerator": "准星生成器",
+    "status": "状态",
+    "documentation": "文档",
+    "tools": "工具",
+    "vpkAnalyzer": "VPK分析器",
+    "kvParser": "KeyValues解析器"
+  },
+  "theme": {
+    "toggle": "切换主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "language": {
+    "toggle": "更改语言",
+    "select": "选择语言"
+  },
+  "hero": {
+    "viewReleaseNotes": "查看更新日志",
+    "title": "Deadlock Mod Manager",
+    "description": "Deadlock模组，轻松管理。只需几次点击即可查找、安装和更新模组。无需手动操作文件夹，无需猜测。",
+    "allDownloads": "所有下载"
+  },
+  "latestUpdates": {
+    "label": "最新更新",
+    "title": "查看新功能"
+  },
+  "features": {
+    "sectionLabel": "功能",
+    "sectionTitle": "让Deadlock成为你的",
+    "oneClickInstall": {
+      "title": "一键安装",
+      "description": "选择模组，我们会将其放到Deadlock期望的位置。无需手动操作，无需猜测。"
+    },
+    "manageWithConfidence": {
+      "title": "自信管理",
+      "description": "在我的模组中查看所有内容。随时启用/禁用、更新或删除。"
+    },
+    "builtInBrowser": {
+      "title": "内置浏览器",
+      "description": "无需离开应用即可搜索和发现社区模组。一切尽在一处。"
+    },
+    "crossPlatform": {
+      "title": "跨平台",
+      "description": "支持Windows、macOS和Linux。下载体积小，启动快，占用资源低。"
+    },
+    "openSource": {
+      "title": "开源",
+      "description": "信任你使用的工具。阅读代码、报告问题或贡献功能。由你决定。"
+    },
+    "easyUpdates": {
+      "title": "轻松更新",
+      "description": "过时的模组会被清楚标记。一键更新。"
+    }
+  },
+  "stats": {
+    "sectionLabel": "统计",
+    "sectionTitle": "数据说话",
+    "sectionDescription": "不断增长的模组库和活跃的社区每天都在让Deadlock变得更好。",
+    "availableMods": "可用模组",
+    "modDownloads": "模组下载",
+    "appDownloads": "应用下载"
+  },
+  "showcase": {
+    "sectionLabel": "展示",
+    "sectionTitle1": "浏览和安装",
+    "sectionTitle2": "秒速获取模组",
+    "sectionDescription": "发现热门模组，查看并一键安装。无需复杂设置。",
+    "popularMods": "热门模组",
+    "browseAllMods": "浏览所有模组"
+  },
+  "faq": {
+    "sectionLabel": "常见问题",
+    "sectionTitle": "常见问题解答",
+    "sectionDescription": "有其他问题找不到答案？查看我们的",
+    "comprehensiveFaq": "完整FAQ文档",
+    "orReachOut": "或通过",
+    "creatingIssue": "创建Issue",
+    "questions": {
+      "whatIs": {
+        "question": "什么是Deadlock Mod Manager？",
+        "answer": "一个让Deadlock模组管理变简单的小型桌面应用。无需触碰游戏文件夹即可浏览、安装和管理模组。"
+      },
+      "howToInstall": {
+        "question": "如何安装模组？",
+        "answer": {
+          "step1": "下载并打开Deadlock Mod Manager。",
+          "step2": "我们会自动检测Deadlock（或者你可以在设置中指定文件夹）。",
+          "step3": "浏览模组并点击下载。",
+          "step4": "应用会将模组安装到正确位置。无需手动操作。"
+        }
+      },
+      "isSafe": {
+        "question": "使用模组安全吗？",
+        "answer": "模组是第三方文件。应用将.vpk文件复制到游戏目录，不会修改你的可执行文件。请明智判断，如有疑虑请扫描文件。"
+      },
+      "howToUninstall": {
+        "question": "如何卸载模组？",
+        "answer": "打开我的模组删除不需要的，或在设置中使用清除所有模组。"
+      },
+      "platforms": {
+        "question": "支持哪些平台？",
+        "answer": "Windows、macOS和Linux。Arch用户也可以从AUR安装。"
+      },
+      "reportBug": {
+        "question": "发现bug了，如何报告？",
+        "answer": "你可以在我们的",
+        "answerLink": "GitHub仓库",
+        "answerSuffix": "创建Issue来报告bug。请包含重现步骤、你期望的结果和实际发生的情况。"
+      },
+      "documentation": {
+        "question": "哪里可以找到更详细的文档？",
+        "answer": "查看我们完整的",
+        "answerLink": "文档网站",
+        "answerSuffix": "获取详细指南、教程和技术参考资料。"
+      },
+      "officialSkins": {
+        "question": "Deadlock会有官方皮肤吗？",
+        "answer": "Deadlock正在发展中。如果官方装饰品到来，这个应用仍然会为社区制作的选项服务。"
+      },
+      "othersSeeSkins": {
+        "question": "其他玩家能看到我安装的皮肤吗？",
+        "answer": "不能。这些是客户端本地的。其他玩家看到的是默认模型和贴图。"
+      }
+    }
+  },
+  "footer": {
+    "description": "一个用于安装和管理Valve游戏Deadlock模组的小型开源应用。",
+    "disclaimer": "与Valve无关。\"Deadlock\"及相关标志是Valve Corporation的商标。",
+    "links": "链接",
+    "sourceCode": "源代码",
+    "support": "支持",
+    "reportBug": "报告Bug",
+    "partners": "合作伙伴",
+    "privacyPolicy": "隐私政策",
+    "termsOfService": "服务条款",
+    "madeWith": "用心制作",
+    "by": "作者"
+  },
+  "downloads": {
+    "pageTitle": "获取Deadlock Mod Manager",
+    "pageDescription": "下载Windows、macOS或Linux的最新版本，几分钟内开始使用模组。"
+  }
+}

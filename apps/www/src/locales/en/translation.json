@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "View Source",
+    "source": "Source",
+    "learnMore": "Learn More",
+    "download": "Download",
+    "loading": "Loading...",
+    "error": "Error",
+    "close": "Close"
+  },
+  "nav": {
+    "home": "Home",
+    "browseMods": "Browse Mods",
+    "crosshairGenerator": "Crosshair Generator",
+    "status": "Status",
+    "documentation": "Documentation",
+    "tools": "Tools",
+    "vpkAnalyzer": "VPK Analyzer",
+    "kvParser": "KeyValues Parser"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "toggle": "Change language",
+    "select": "Select language"
+  },
+  "hero": {
+    "viewReleaseNotes": "View Release Notes",
+    "title": "Deadlock Mod Manager",
+    "description": "Mods for Deadlock, minus the hassle. Find, install, and update mods in a couple of clicks. No folders, no guesswork.",
+    "allDownloads": "All Downloads"
+  },
+  "latestUpdates": {
+    "label": "Latest Updates",
+    "title": "See What's New"
+  },
+  "features": {
+    "sectionLabel": "Features",
+    "sectionTitle": "Make Deadlock yours",
+    "oneClickInstall": {
+      "title": "One-click install",
+      "description": "Grab a mod and we'll put it where Deadlock expects it. No manual steps, no guesswork."
+    },
+    "manageWithConfidence": {
+      "title": "Manage with confidence",
+      "description": "See everything in My Mods. Toggle on/off, update, or remove whenever you like."
+    },
+    "builtInBrowser": {
+      "title": "Built-in browser",
+      "description": "Search and discover community mods without leaving the app. It's all in one place."
+    },
+    "crossPlatform": {
+      "title": "Cross-platform",
+      "description": "Works on Windows, macOS, and Linux. Small download, quick start, low overhead."
+    },
+    "openSource": {
+      "title": "Open source",
+      "description": "Trust what you use. Read the code, file issues, or contribute features. Your call."
+    },
+    "easyUpdates": {
+      "title": "Easy updates",
+      "description": "Out-of-date mods are clearly marked. Update them in one click."
+    }
+  },
+  "stats": {
+    "sectionLabel": "Stats",
+    "sectionTitle": "By the numbers",
+    "sectionDescription": "A growing library of mods and an active community making Deadlock better every day.",
+    "availableMods": "Available Mods",
+    "modDownloads": "Mod Downloads",
+    "appDownloads": "App Downloads"
+  },
+  "showcase": {
+    "sectionLabel": "Showcase",
+    "sectionTitle1": "Browse & Install",
+    "sectionTitle2": "Mods in Seconds",
+    "sectionDescription": "Discover popular mods, check them out, and install with a single click. No complicated setup required.",
+    "popularMods": "Popular Mods",
+    "browseAllMods": "Browse All Mods"
+  },
+  "faq": {
+    "sectionLabel": "FAQ",
+    "sectionTitle": "Frequently asked questions",
+    "sectionDescription": "Have a different question and can't find the answer you're looking for? Check out our",
+    "comprehensiveFaq": "comprehensive FAQ documentation",
+    "orReachOut": "or reach out by",
+    "creatingIssue": "creating an issue",
+    "questions": {
+      "whatIs": {
+        "question": "What is Deadlock Mod Manager?",
+        "answer": "A small desktop app that makes Deadlock modding simple. Browse, install, and manage mods without touching your game folders."
+      },
+      "howToInstall": {
+        "question": "How do I install mods?",
+        "answer": {
+          "step1": "Download and open Deadlock Mod Manager.",
+          "step2": "We'll auto-detect Deadlock (or you can set the folder in Settings).",
+          "step3": "Browse mods and click Download.",
+          "step4": "The app installs the mod in the right place. No manual steps."
+        }
+      },
+      "isSafe": {
+        "question": "Is it safe to use mods?",
+        "answer": "Mods are third-party files. The app copies .vpk files to your game directory and doesn't patch your executable. Use good judgment and scan files if you're unsure."
+      },
+      "howToUninstall": {
+        "question": "How do I uninstall mods?",
+        "answer": "Open My Mods and remove what you don't want, or use Clear All Mods in Settings."
+      },
+      "platforms": {
+        "question": "Which platforms are supported?",
+        "answer": "Windows, macOS, and Linux. Arch users can also install from the AUR."
+      },
+      "reportBug": {
+        "question": "I found a bug, how do I report it?",
+        "answer": "You can report bugs by creating an issue on our",
+        "answerLink": "GitHub repository",
+        "answerSuffix": ". Include steps to reproduce, what you expected, and what happened."
+      },
+      "documentation": {
+        "question": "Where can I find more detailed documentation?",
+        "answer": "Check out our comprehensive",
+        "answerLink": "documentation site",
+        "answerSuffix": "for detailed guides, tutorials, and technical reference materials."
+      },
+      "officialSkins": {
+        "question": "Will Deadlock have official skins?",
+        "answer": "Deadlock is evolving. If official cosmetics arrive, this app will still be here for community-made options."
+      },
+      "othersSeeSkins": {
+        "question": "Can other players see my installed skins?",
+        "answer": "No. These are client-side. Other players see default models and textures."
+      }
+    }
+  },
+  "footer": {
+    "description": "A small, open-source app for installing and managing mods for the Valve game Deadlock.",
+    "disclaimer": "Not affiliated with Valve. \"Deadlock\" and related marks are trademarks of Valve Corporation.",
+    "links": "Links",
+    "sourceCode": "Source Code",
+    "support": "Support",
+    "reportBug": "Report Bug",
+    "partners": "Partners",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "madeWith": "Made with",
+    "by": "by"
+  },
+  "downloads": {
+    "pageTitle": "Get Deadlock Mod Manager",
+    "pageDescription": "Download the latest version for Windows, macOS, or Linux and start modding in minutes."
+  }
+}

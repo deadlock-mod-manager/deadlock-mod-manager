@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "ソースを見る",
+    "source": "ソース",
+    "learnMore": "詳細を見る",
+    "download": "ダウンロード",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "close": "閉じる"
+  },
+  "nav": {
+    "home": "ホーム",
+    "browseMods": "MODを探す",
+    "crosshairGenerator": "クロスヘアジェネレーター",
+    "status": "ステータス",
+    "documentation": "ドキュメント",
+    "tools": "ツール",
+    "vpkAnalyzer": "VPKアナライザー",
+    "kvParser": "KeyValuesパーサー"
+  },
+  "theme": {
+    "toggle": "テーマを切り替え",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "language": {
+    "toggle": "言語を変更",
+    "select": "言語を選択"
+  },
+  "hero": {
+    "viewReleaseNotes": "リリースノートを見る",
+    "title": "Deadlock Mod Manager",
+    "description": "Deadlock用のMODを、手間なく。数クリックでMODの検索、インストール、更新ができます。フォルダ操作も推測も不要。",
+    "allDownloads": "すべてのダウンロード"
+  },
+  "latestUpdates": {
+    "label": "最新アップデート",
+    "title": "新機能をチェック"
+  },
+  "features": {
+    "sectionLabel": "機能",
+    "sectionTitle": "Deadlockを自分好みに",
+    "oneClickInstall": {
+      "title": "ワンクリックインストール",
+      "description": "MODを選ぶだけで、Deadlockが期待する場所に配置します。手動の手順も推測も不要。"
+    },
+    "manageWithConfidence": {
+      "title": "自信を持って管理",
+      "description": "マイMODですべてを確認。いつでもオン/オフ、更新、削除が可能。"
+    },
+    "builtInBrowser": {
+      "title": "内蔵ブラウザ",
+      "description": "アプリを離れずにコミュニティMODを検索・発見。すべてが一か所に。"
+    },
+    "crossPlatform": {
+      "title": "クロスプラットフォーム",
+      "description": "Windows、macOS、Linuxで動作。軽量ダウンロード、素早い起動、低オーバーヘッド。"
+    },
+    "openSource": {
+      "title": "オープンソース",
+      "description": "使うものを信頼してください。コードを読む、問題を報告する、機能を貢献する。あなた次第。"
+    },
+    "easyUpdates": {
+      "title": "簡単更新",
+      "description": "古いMODは明確にマーク。ワンクリックで更新。"
+    }
+  },
+  "stats": {
+    "sectionLabel": "統計",
+    "sectionTitle": "数字で見る",
+    "sectionDescription": "成長するMODライブラリとアクティブなコミュニティが毎日Deadlockをより良くしています。",
+    "availableMods": "利用可能なMOD",
+    "modDownloads": "MODダウンロード",
+    "appDownloads": "アプリダウンロード"
+  },
+  "showcase": {
+    "sectionLabel": "ショーケース",
+    "sectionTitle1": "閲覧とインストール",
+    "sectionTitle2": "数秒でMODを",
+    "sectionDescription": "人気のMODを発見し、確認して、ワンクリックでインストール。複雑な設定は不要。",
+    "popularMods": "人気のMOD",
+    "browseAllMods": "すべてのMODを見る"
+  },
+  "faq": {
+    "sectionLabel": "FAQ",
+    "sectionTitle": "よくある質問",
+    "sectionDescription": "別の質問があって答えが見つかりませんか？",
+    "comprehensiveFaq": "包括的なFAQドキュメント",
+    "orReachOut": "をご覧いただくか、",
+    "creatingIssue": "Issueを作成",
+    "questions": {
+      "whatIs": {
+        "question": "Deadlock Mod Managerとは？",
+        "answer": "DeadlockのMOD管理を簡単にする小さなデスクトップアプリ。ゲームフォルダに触れずにMODの閲覧、インストール、管理ができます。"
+      },
+      "howToInstall": {
+        "question": "MODのインストール方法は？",
+        "answer": {
+          "step1": "Deadlock Mod Managerをダウンロードして開きます。",
+          "step2": "Deadlockを自動検出します（または設定でフォルダを指定できます）。",
+          "step3": "MODを閲覧してダウンロードをクリック。",
+          "step4": "アプリが正しい場所にMODをインストール。手動の手順は不要。"
+        }
+      },
+      "isSafe": {
+        "question": "MODの使用は安全ですか？",
+        "answer": "MODはサードパーティのファイルです。アプリは.vpkファイルをゲームディレクトリにコピーし、実行ファイルにパッチを当てません。良識を持って、不安な場合はファイルをスキャンしてください。"
+      },
+      "howToUninstall": {
+        "question": "MODのアンインストール方法は？",
+        "answer": "マイMODを開いて不要なものを削除するか、設定ですべてのMODをクリアを使用してください。"
+      },
+      "platforms": {
+        "question": "どのプラットフォームがサポートされていますか？",
+        "answer": "Windows、macOS、Linux。ArchユーザーはAURからもインストールできます。"
+      },
+      "reportBug": {
+        "question": "バグを見つけました。どう報告すればいいですか？",
+        "answer": "私たちの",
+        "answerLink": "GitHubリポジトリ",
+        "answerSuffix": "でIssueを作成してバグを報告できます。再現手順、期待した動作、実際に起こったことを含めてください。"
+      },
+      "documentation": {
+        "question": "より詳細なドキュメントはどこにありますか？",
+        "answer": "詳細なガイド、チュートリアル、技術参考資料については、",
+        "answerLink": "ドキュメントサイト",
+        "answerSuffix": "をご覧ください。"
+      },
+      "officialSkins": {
+        "question": "Deadlockには公式スキンがありますか？",
+        "answer": "Deadlockは進化中です。公式コスメティックが登場しても、このアプリはコミュニティ製のオプションのためにここにあります。"
+      },
+      "othersSeeSkins": {
+        "question": "他のプレイヤーはインストールしたスキンを見ることができますか？",
+        "answer": "いいえ。これらはクライアントサイドです。他のプレイヤーはデフォルトのモデルとテクスチャを見ます。"
+      }
+    }
+  },
+  "footer": {
+    "description": "ValveのゲームDeadlock用MODのインストールと管理のための小さなオープンソースアプリ。",
+    "disclaimer": "Valveとは提携していません。「Deadlock」および関連商標はValve Corporationの商標です。",
+    "links": "リンク",
+    "sourceCode": "ソースコード",
+    "support": "サポート",
+    "reportBug": "バグを報告",
+    "partners": "パートナー",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "madeWith": "作成者",
+    "by": ""
+  },
+  "downloads": {
+    "pageTitle": "Deadlock Mod Managerを入手",
+    "pageDescription": "Windows、macOS、Linux向けの最新版をダウンロードして、数分でMOD導入を始めましょう。"
+  }
+}

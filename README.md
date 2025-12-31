@@ -98,6 +98,8 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 ### Currently Supported Languages
 
+Both the **Desktop Application** and the **Website** ([deadlockmods.app](https://deadlockmods.app)) support the following languages:
+
 <!-- LANGUAGE_TABLE_START -->
 
 | Language | Native Name | Status | Contributors |
@@ -120,6 +122,13 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 <!-- LANGUAGE_TABLE_END -->
 
+### Website Features
+
+The website supports:
+- **Light/Dark/System theme** - Automatically detects your browser preference
+- **15 languages** - Uses your browser's language preference as default
+- **Cookie-based persistence** - Theme and language preferences are saved in cookies (no URL changes)
+
 ### How to Help
 
 1. **Join our Discord server**: First [join our Discord server](https://deadlockmods.app/discord) to access the translation channels
@@ -127,7 +136,12 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 3. **Suggest a new language**: Open an issue to request support for your language
 4. **Improve existing translations**: Found an error or better phrasing? Submit a PR!
 
-Translation files are located in `apps/desktop/public/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
+### Translation Files Location
+
+- **Desktop App**: `apps/desktop/src/locales/`
+- **Website**: `apps/www/src/locales/`
+
+We use [react-i18next](https://react.i18next.com/) for internationalization in both applications.
 
 ---
 

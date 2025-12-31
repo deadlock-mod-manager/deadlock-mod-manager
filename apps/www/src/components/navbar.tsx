@@ -13,44 +13,49 @@ import {
 import { Github, List, PhosphorIcons, X } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LuExternalLink } from "react-icons/lu";
+import { LanguageToggle } from "@/components/language-toggle";
+import { ModeToggle } from "@/components/mode-toggle";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
 import Logo from "./logo";
 import UserMenu from "./user-menu";
 
 type RouteProps = {
   href: string;
-  label: string;
+  labelKey: string;
   external?: boolean;
 };
 
 const routeList: RouteProps[] = [
   {
     href: "/",
-    label: "Home",
+    labelKey: "nav.home",
   },
   {
     href: "/mods",
-    label: "Browse Mods",
+    labelKey: "nav.browseMods",
   },
   {
     href: "/crosshair-generator",
-    label: "Crosshair Generator",
+    labelKey: "nav.crosshairGenerator",
   },
   {
     href: "/status",
-    label: "Status",
+    labelKey: "nav.status",
     external: true,
   },
   {
     href: "https://docs.deadlockmods.app/",
-    label: "Documentation",
+    labelKey: "nav.documentation",
     external: true,
   },
 ];
 
 export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const { t } = useTranslation();
+
   return (
     <header className='bg-background'>
       <nav
@@ -66,12 +71,12 @@ export const Navbar = () => {
         <div className='hidden lg:flex lg:gap-x-6'>
           {routeList.map((item) => (
             <a
-              key={item.label}
+              key={item.labelKey}
               href={item.href}
               rel={item.external ? "noopener noreferrer" : undefined}
               target={item.external ? "_blank" : undefined}
               className='flex items-center gap-1 text-sm/6 font-semibold text-foreground'>
-              {item.label}
+              {t(item.labelKey)}
               {item.external && (
                 <LuExternalLink className='size-3.5' aria-hidden='true' />
               )}
@@ -79,7 +84,7 @@ export const Navbar = () => {
           ))}
           <DropdownMenu>
             <DropdownMenuTrigger className='flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-foreground/80 transition-colors outline-none data-[state=open]:text-foreground/80'>
-              Tools
+              {t("nav.tools")}
               <PhosphorIcons.CaretDownIcon className='size-4' />
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -90,26 +95,28 @@ export const Navbar = () => {
                 asChild
                 className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
                 <Link to='/vpk-analyzer' className='w-full font-medium'>
-                  VPK Analyzer
+                  {t("nav.vpkAnalyzer")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
                 asChild
                 className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
                 <Link to='/kv-parser' className='w-full font-medium'>
-                  KeyValues Parser
+                  {t("nav.kvParser")}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className='hidden flex-1 items-center justify-end gap-x-6 sm:flex'>
+        <div className='hidden flex-1 items-center justify-end gap-x-4 sm:flex'>
+          <ModeToggle />
+          <LanguageToggle />
           <Button
             size='sm'
             href={GITHUB_REPO}
             icon={<Github className='size-4' />}>
-            <span className='hidden md:inline'>View Source</span>
-            <span className='md:hidden'>Source</span>
+            <span className='hidden md:inline'>{t("common.viewSource")}</span>
+            <span className='md:hidden'>{t("common.source")}</span>
           </Button>
           <UserMenu />
         </div>
@@ -130,6 +137,8 @@ export const Navbar = () => {
                   <Logo className='h-8 w-auto' />
                 </Link>
                 <div className='ml-auto flex items-center gap-2'>
+                  <ModeToggle />
+                  <LanguageToggle />
                   <UserMenu />
                   <button
                     type='button'
@@ -145,13 +154,13 @@ export const Navbar = () => {
                   <div className='space-y-2 py-6'>
                     {routeList.map((item) => (
                       <a
-                        key={item.label}
+                        key={item.labelKey}
                         href={item.href}
                         rel={item.external ? "noopener noreferrer" : undefined}
                         target={item.external ? "_blank" : undefined}
                         onClick={() => setMobileMenuOpen(false)}
                         className='-mx-3 flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted'>
-                        {item.label}
+                        {t(item.labelKey)}
                         {item.external && (
                           <LuExternalLink
                             className='size-4'
@@ -162,20 +171,20 @@ export const Navbar = () => {
                     ))}
                     <div className='-mx-3 px-3 py-2'>
                       <div className='font-semibold text-base/7 text-muted-foreground'>
-                        Tools
+                        {t("nav.tools")}
                       </div>
                       <div className='mt-2 space-y-2'>
                         <Link
                           to='/vpk-analyzer'
                           onClick={() => setMobileMenuOpen(false)}
                           className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
-                          VPK Analyzer
+                          {t("nav.vpkAnalyzer")}
                         </Link>
                         <Link
                           to='/kv-parser'
                           onClick={() => setMobileMenuOpen(false)}
                           className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
-                          KeyValues Parser
+                          {t("nav.kvParser")}
                         </Link>
                       </div>
                     </div>

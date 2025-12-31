@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "Ver código fuente",
+    "source": "Fuente",
+    "learnMore": "Saber más",
+    "download": "Descargar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "close": "Cerrar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "browseMods": "Explorar mods",
+    "crosshairGenerator": "Generador de mira",
+    "status": "Estado",
+    "documentation": "Documentación",
+    "tools": "Herramientas",
+    "vpkAnalyzer": "Analizador VPK",
+    "kvParser": "Analizador KeyValues"
+  },
+  "theme": {
+    "toggle": "Cambiar tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "toggle": "Cambiar idioma",
+    "select": "Seleccionar idioma"
+  },
+  "hero": {
+    "viewReleaseNotes": "Ver notas de la versión",
+    "title": "Deadlock Mod Manager",
+    "description": "Mods para Deadlock, sin complicaciones. Encuentra, instala y actualiza mods con unos pocos clics. Sin carpetas, sin adivinanzas.",
+    "allDownloads": "Todas las descargas"
+  },
+  "latestUpdates": {
+    "label": "Últimas actualizaciones",
+    "title": "Mira las novedades"
+  },
+  "features": {
+    "sectionLabel": "Características",
+    "sectionTitle": "Haz Deadlock tuyo",
+    "oneClickInstall": {
+      "title": "Instalación con un clic",
+      "description": "Elige un mod y lo pondremos donde Deadlock lo espera. Sin pasos manuales, sin adivinanzas."
+    },
+    "manageWithConfidence": {
+      "title": "Gestiona con confianza",
+      "description": "Ve todo en Mis Mods. Activa/desactiva, actualiza o elimina cuando quieras."
+    },
+    "builtInBrowser": {
+      "title": "Navegador integrado",
+      "description": "Busca y descubre mods de la comunidad sin salir de la aplicación. Todo en un solo lugar."
+    },
+    "crossPlatform": {
+      "title": "Multiplataforma",
+      "description": "Funciona en Windows, macOS y Linux. Descarga pequeña, inicio rápido, bajo consumo de recursos."
+    },
+    "openSource": {
+      "title": "Código abierto",
+      "description": "Confía en lo que usas. Lee el código, reporta problemas o contribuye con funciones. Tú decides."
+    },
+    "easyUpdates": {
+      "title": "Actualizaciones fáciles",
+      "description": "Los mods desactualizados están claramente marcados. Actualízalos con un clic."
+    }
+  },
+  "stats": {
+    "sectionLabel": "Estadísticas",
+    "sectionTitle": "En números",
+    "sectionDescription": "Una biblioteca creciente de mods y una comunidad activa que mejora Deadlock cada día.",
+    "availableMods": "Mods disponibles",
+    "modDownloads": "Descargas de mods",
+    "appDownloads": "Descargas de la app"
+  },
+  "showcase": {
+    "sectionLabel": "Vitrina",
+    "sectionTitle1": "Explora e instala",
+    "sectionTitle2": "Mods en segundos",
+    "sectionDescription": "Descubre mods populares, revísalos e instálalos con un solo clic. No requiere configuración complicada.",
+    "popularMods": "Mods populares",
+    "browseAllMods": "Explorar todos los mods"
+  },
+  "faq": {
+    "sectionLabel": "FAQ",
+    "sectionTitle": "Preguntas frecuentes",
+    "sectionDescription": "¿Tienes otra pregunta y no encuentras la respuesta? Consulta nuestra",
+    "comprehensiveFaq": "documentación FAQ completa",
+    "orReachOut": "o contáctanos",
+    "creatingIssue": "creando un issue",
+    "questions": {
+      "whatIs": {
+        "question": "¿Qué es Deadlock Mod Manager?",
+        "answer": "Una pequeña aplicación de escritorio que simplifica el modding de Deadlock. Explora, instala y gestiona mods sin tocar las carpetas del juego."
+      },
+      "howToInstall": {
+        "question": "¿Cómo instalo mods?",
+        "answer": {
+          "step1": "Descarga y abre Deadlock Mod Manager.",
+          "step2": "Detectaremos Deadlock automáticamente (o puedes configurar la carpeta en Ajustes).",
+          "step3": "Explora mods y haz clic en Descargar.",
+          "step4": "La aplicación instala el mod en el lugar correcto. Sin pasos manuales."
+        }
+      },
+      "isSafe": {
+        "question": "¿Es seguro usar mods?",
+        "answer": "Los mods son archivos de terceros. La aplicación copia archivos .vpk a tu directorio del juego y no parchea tu ejecutable. Usa el sentido común y escanea archivos si no estás seguro."
+      },
+      "howToUninstall": {
+        "question": "¿Cómo desinstalo mods?",
+        "answer": "Abre Mis Mods y elimina lo que no quieras, o usa Borrar todos los mods en Ajustes."
+      },
+      "platforms": {
+        "question": "¿Qué plataformas son compatibles?",
+        "answer": "Windows, macOS y Linux. Los usuarios de Arch también pueden instalar desde el AUR."
+      },
+      "reportBug": {
+        "question": "Encontré un bug, ¿cómo lo reporto?",
+        "answer": "Puedes reportar bugs creando un issue en nuestro",
+        "answerLink": "repositorio de GitHub",
+        "answerSuffix": ". Incluye los pasos para reproducir, lo que esperabas y lo que pasó."
+      },
+      "documentation": {
+        "question": "¿Dónde puedo encontrar documentación más detallada?",
+        "answer": "Consulta nuestro",
+        "answerLink": "sitio de documentación",
+        "answerSuffix": "completo para guías detalladas, tutoriales y materiales de referencia técnica."
+      },
+      "officialSkins": {
+        "question": "¿Tendrá Deadlock skins oficiales?",
+        "answer": "Deadlock está evolucionando. Si llegan cosméticos oficiales, esta aplicación seguirá aquí para opciones hechas por la comunidad."
+      },
+      "othersSeeSkins": {
+        "question": "¿Pueden otros jugadores ver mis skins instalados?",
+        "answer": "No. Estos son del lado del cliente. Otros jugadores ven modelos y texturas predeterminados."
+      }
+    }
+  },
+  "footer": {
+    "description": "Una pequeña aplicación de código abierto para instalar y gestionar mods para el juego de Valve Deadlock.",
+    "disclaimer": "No afiliado con Valve. \"Deadlock\" y marcas relacionadas son marcas comerciales de Valve Corporation.",
+    "links": "Enlaces",
+    "sourceCode": "Código fuente",
+    "support": "Soporte",
+    "reportBug": "Reportar bug",
+    "partners": "Socios",
+    "privacyPolicy": "Política de privacidad",
+    "termsOfService": "Términos de servicio",
+    "madeWith": "Hecho con",
+    "by": "por"
+  },
+  "downloads": {
+    "pageTitle": "Obtener Deadlock Mod Manager",
+    "pageDescription": "Descarga la última versión para Windows, macOS o Linux y empieza a modear en minutos."
+  }
+}

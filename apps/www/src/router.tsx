@@ -15,12 +15,7 @@ export const getRouter = () => {
     defaultPreload: "intent",
     Wrap: (props: { children: React.ReactNode }) => {
       return (
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='dark'
-          disableTransitionOnChange
-          enableSystem={false}
-          storageKey='vite-ui-theme'>
+        <ThemeProvider>
           <AnalyticsProvider>
             <TanstackQuery.Provider {...rqContext}>
               {props.children}

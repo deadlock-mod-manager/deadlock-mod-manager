@@ -6,6 +6,7 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   LuDownload,
   LuGlobe,
@@ -17,50 +18,46 @@ import { RiOpenSourceFill } from "react-icons/ri";
 
 type FeaturesProps = {
   icon: React.ElementType;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
 };
 
 const featureList: FeaturesProps[] = [
   {
     icon: LuDownload,
-    title: "One-click install",
-    description:
-      "Grab a mod and we’ll put it where Deadlock expects it. No manual steps, no guesswork.",
+    titleKey: "features.oneClickInstall.title",
+    descriptionKey: "features.oneClickInstall.description",
   },
   {
     icon: LuSettings,
-    title: "Manage with confidence",
-    description:
-      "See everything in My Mods. Toggle on/off, update, or remove whenever you like.",
+    titleKey: "features.manageWithConfidence.title",
+    descriptionKey: "features.manageWithConfidence.description",
   },
   {
     icon: LuLayoutGrid,
-    title: "Built-in browser",
-    description:
-      "Search and discover community mods without leaving the app. It’s all in one place.",
+    titleKey: "features.builtInBrowser.title",
+    descriptionKey: "features.builtInBrowser.description",
   },
   {
     icon: LuGlobe,
-    title: "Cross-platform",
-    description:
-      "Works on Windows, macOS, and Linux. Small download, quick start, low overhead.",
+    titleKey: "features.crossPlatform.title",
+    descriptionKey: "features.crossPlatform.description",
   },
   {
     icon: RiOpenSourceFill,
-    title: "Open source",
-    description:
-      "Trust what you use. Read the code, file issues, or contribute features. Your call.",
+    titleKey: "features.openSource.title",
+    descriptionKey: "features.openSource.description",
   },
   {
     icon: LuRefreshCw,
-    title: "Easy updates",
-    description:
-      "Out-of-date mods are clearly marked. Update them in one click.",
+    titleKey: "features.easyUpdates.title",
+    descriptionKey: "features.easyUpdates.description",
   },
 ];
 
 export const FeaturesSection = () => {
+  const { t } = useTranslation();
+
   return (
     <section
       className='container relative mx-auto overflow-hidden px-4 py-16 sm:px-6 sm:py-24 lg:py-32'
@@ -81,18 +78,18 @@ export const FeaturesSection = () => {
       </div>
 
       <h2 className='relative mb-2 text-center text-lg text-primary tracking-wider'>
-        Features
+        {t("features.sectionLabel")}
       </h2>
 
       <h2 className='relative mb-6 text-center font-bold font-primary text-3xl sm:mb-8 md:text-4xl'>
-        Make Deadlock yours
+        {t("features.sectionTitle")}
       </h2>
 
       <div className='relative grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3'>
-        {featureList.map(({ icon, title, description }) => (
+        {featureList.map(({ icon, titleKey, descriptionKey }) => (
           <Card
             className='h-full border-muted/50 bg-background/50 backdrop-blur-sm'
-            key={title}>
+            key={titleKey}>
             <CardHeader className='flex items-center justify-center'>
               <div className='mb-4 rounded-full bg-primary/20 p-3 ring-8 ring-primary/10'>
                 {React.createElement(icon, {
@@ -101,11 +98,11 @@ export const FeaturesSection = () => {
                 })}
               </div>
 
-              <CardTitle>{title}</CardTitle>
+              <CardTitle>{t(titleKey)}</CardTitle>
             </CardHeader>
 
             <CardContent className='text-center text-muted-foreground'>
-              {description}
+              {t(descriptionKey)}
             </CardContent>
           </Card>
         ))}

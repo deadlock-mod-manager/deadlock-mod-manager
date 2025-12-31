@@ -1,21 +1,18 @@
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 
 interface LatestUpdateVideoSectionProps {
   videoId: string;
-  label?: string;
-  title?: string;
   description?: string;
 }
 
 export const LatestUpdateVideoSection: React.FC<
   LatestUpdateVideoSectionProps
-> = ({
-  videoId,
-  label = "Latest Updates",
-  title = "See What's New",
-  description,
-}) => {
+> = ({ videoId, description }) => {
+  const { t } = useTranslation();
+  const label = t("latestUpdates.label");
+  const title = t("latestUpdates.title");
   const embedUrl = `https://www.youtube.com/embed/${videoId}`;
 
   return (

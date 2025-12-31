@@ -1,0 +1,157 @@
+{
+  "common": {
+    "viewSource": "Quällcode aluege",
+    "source": "Quälle",
+    "learnMore": "Meh erfahre",
+    "download": "Abelade",
+    "loading": "Ladet...",
+    "error": "Fähler",
+    "close": "Schliesse"
+  },
+  "nav": {
+    "home": "Startsyte",
+    "browseMods": "Mods dureschtoibere",
+    "crosshairGenerator": "Fadencrüz-Generator",
+    "status": "Status",
+    "documentation": "Dokumentation",
+    "tools": "Wärchzüg",
+    "vpkAnalyzer": "VPK-Analysator",
+    "kvParser": "KeyValues-Parser"
+  },
+  "theme": {
+    "toggle": "Design wächsle",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "language": {
+    "toggle": "Sprach ändere",
+    "select": "Sprach uswähle"
+  },
+  "hero": {
+    "viewReleaseNotes": "Versionshinwiis aluege",
+    "title": "Deadlock Mod Manager",
+    "description": "Mods für Deadlock, ohni Ufwand. Find, installier und aktualisier Mods mit wenige Klicks. Kei Ordner, keis Rätsle.",
+    "allDownloads": "Alli Downloads"
+  },
+  "latestUpdates": {
+    "label": "Neuschti Updates",
+    "title": "Was gits Neus"
+  },
+  "features": {
+    "sectionLabel": "Funktione",
+    "sectionTitle": "Mach Deadlock zu dim Spiel",
+    "oneClickInstall": {
+      "title": "Ei-Klick-Installation",
+      "description": "Wähl en Mod und mir leged ne dört abe, wo Deadlock ne erwartet. Kei manuelli Schritt, keis Rätsle."
+    },
+    "manageWithConfidence": {
+      "title": "Verwalte mit Sicherheit",
+      "description": "Gsesch alles in Mini Mods. Ein-/uusgschalte, aktualisiere oder entferne, wänn du wötsch."
+    },
+    "builtInBrowser": {
+      "title": "Integrierte Browser",
+      "description": "Such und entdeck Community-Mods ohni d App z verlah. Alles a eim Ort."
+    },
+    "crossPlatform": {
+      "title": "Plattformübergryfend",
+      "description": "Funktioniert uf Windows, macOS und Linux. Chline Download, schnelle Start, wenig Overhead."
+    },
+    "openSource": {
+      "title": "Open Source",
+      "description": "Vertrau dem, was du nutztisch. Lies de Code, meld Problem oder trag Funktione by. Dini Wahl."
+    },
+    "easyUpdates": {
+      "title": "Eifachi Updates",
+      "description": "Veralti Mods sind dütlich markiert. Aktualisier sie mit eim Klick."
+    }
+  },
+  "stats": {
+    "sectionLabel": "Statistike",
+    "sectionTitle": "In Zahle",
+    "sectionDescription": "E wachsendi Bibliothek vo Mods und e aktivi Community, wo Deadlock jede Tag besser macht.",
+    "availableMods": "Verfüegbari Mods",
+    "modDownloads": "Mod-Downloads",
+    "appDownloads": "App-Downloads"
+  },
+  "showcase": {
+    "sectionLabel": "Präsentation",
+    "sectionTitle1": "Dureschtoibere & Installiere",
+    "sectionTitle2": "Mods in Sekunde",
+    "sectionDescription": "Entdeck beliebti Mods, lueg sie a und installier sie mit eim Klick. Kei komplizierti Irichtig nötig.",
+    "popularMods": "Beliebti Mods",
+    "browseAllMods": "Alli Mods dureschtoibere"
+  },
+  "faq": {
+    "sectionLabel": "FAQ",
+    "sectionTitle": "Hüfig gstellti Frage",
+    "sectionDescription": "Häsch e anderi Frag und findsch d Antwort nöd? Lueg dir üsi",
+    "comprehensiveFaq": "umfassendi FAQ-Dokumentation",
+    "orReachOut": "a oder wänd dich a üs, indem du",
+    "creatingIssue": "es Issue erstellsch",
+    "questions": {
+      "whatIs": {
+        "question": "Was isch Deadlock Mod Manager?",
+        "answer": "E chlyni Desktop-App, wo s Modding vo Deadlock eifach macht. Dureschtoibere, installiere und verwalte Mods, ohni dini Spielordner aazlange."
+      },
+      "howToInstall": {
+        "question": "Wie installier ich Mods?",
+        "answer": {
+          "step1": "Lad Deadlock Mod Manager abe und öffne ne.",
+          "step2": "Mir erkänned Deadlock automatisch (oder du chasch de Ordner in de Istellige festlege).",
+          "step3": "Dureschtoibere Mods und klick uf Abelade.",
+          "step4": "D App installiert de Mod am richtige Ort. Kei manuelli Schritt."
+        }
+      },
+      "isSafe": {
+        "question": "Isch es sicher, Mods z verwände?",
+        "answer": "Mods sind Dateie vo Dritte. D App kopiert .vpk-Dateie in dis Spielverzeichnis und patcht dini uusführbari Datei nöd. Nutz di gsunde Mänscheverstand und scann Dateie, wänn du unsicher bisch."
+      },
+      "howToUninstall": {
+        "question": "Wie deinstallier ich Mods?",
+        "answer": "Öffne Mini Mods und entfern, was du nöd wötsch, oder nutz Alli Mods lösche in de Istellige."
+      },
+      "platforms": {
+        "question": "Welli Plattforme werded unterstützt?",
+        "answer": "Windows, macOS und Linux. Arch-Benutzer chönd au us em AUR installiere."
+      },
+      "reportBug": {
+        "question": "Ich ha en Bug gfunde, wie meld ich ne?",
+        "answer": "Du chasch Bugs melde, indem du es Issue in üsem",
+        "answerLink": "GitHub-Repository",
+        "answerSuffix": "erstellsch. Füeg Schritt zur Reproduktion, was du erwartet häsch und was passiert isch, hinzu."
+      },
+      "documentation": {
+        "question": "Wo find ich detailliertere Dokumentation?",
+        "answer": "Lueg dir üsi umfassendi",
+        "answerLink": "Dokumentationssyte",
+        "answerSuffix": "für detaillierti Aleitige, Tutorials und technischi Referänzmaterialie a."
+      },
+      "officialSkins": {
+        "question": "Wird Deadlock offizielli Skins ha?",
+        "answer": "Deadlock entwicklet sich wyter. Wänn offizielli Kosmetika chömed, wird die App immer no für vo de Community erstellti Optione da si."
+      },
+      "othersSeeSkins": {
+        "question": "Chönd anderi Spieler mini installierte Skins gseh?",
+        "answer": "Nei. Die sind clientsytig. Anderi Spieler gsehnd Standardmodell und -texture."
+      }
+    }
+  },
+  "footer": {
+    "description": "E chlyni, Open-Source-App zum Installiere und Verwalte vo Mods für s Valve-Spiel Deadlock.",
+    "disclaimer": "Nöd mit Valve verbunde. \"Deadlock\" und verwandti Marke sind Markezeiche vo de Valve Corporation.",
+    "links": "Links",
+    "sourceCode": "Quällcode",
+    "support": "Support",
+    "reportBug": "Bug melde",
+    "partners": "Partner",
+    "privacyPolicy": "Dateschutzrichtlinie",
+    "termsOfService": "Nutzigsbedingige",
+    "madeWith": "Erstellt mit",
+    "by": "vo"
+  },
+  "downloads": {
+    "pageTitle": "Deadlock Mod Manager abelade",
+    "pageDescription": "Lad d neuscht Version für Windows, macOS oder Linux abe und start in Minute mit em Modding."
+  }
+}

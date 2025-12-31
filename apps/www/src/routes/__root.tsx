@@ -10,6 +10,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
 import { FullscreenLayout } from "@/components/layouts/fullscreen-layout";
 import { MainLayout } from "@/components/layouts/main-layout";
+import "@/lib/i18n";
 import { seo } from "@/utils/seo";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -168,11 +169,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const isDashboardRoute = pathname.startsWith("/dashboard");
 
   return (
-    <html
-      lang='en'
-      className='dark'
-      style={{ colorScheme: "dark" }}
-      suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

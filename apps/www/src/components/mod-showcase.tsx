@@ -4,11 +4,13 @@ import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ModCard } from "@/components/mod-card";
 import { ModPreview } from "@/components/mod-preview";
 import { orpc } from "@/utils/orpc";
 
 export const ModShowcaseSection = () => {
+  const { t } = useTranslation();
   const [selectedMod, setSelectedMod] = React.useState<string | null>(null);
   const modsQuery = useQuery(orpc.listModsV2.queryOptions());
   const mods = useMemo(
@@ -54,17 +56,20 @@ export const ModShowcaseSection = () => {
       <div className='container relative mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='mx-auto mb-12 max-w-3xl text-center sm:mb-16'>
           <h2 className='mb-2 text-center text-base text-primary tracking-wider sm:text-lg'>
-            Showcase
+            {t("showcase.sectionLabel")}
           </h2>
           <h2 className='mb-4 font-bold font-primary text-2xl sm:mb-6 sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl'>
-            <span className='text-foreground'>Browse & Install</span>
+            <span className='text-foreground'>
+              {t("showcase.sectionTitle1")}
+            </span>
             <br />
-            <span className='deadlock-text-gradient'>Mods in Seconds</span>
+            <span className='deadlock-text-gradient'>
+              {t("showcase.sectionTitle2")}
+            </span>
           </h2>
 
           <p className='text-sm text-muted-foreground leading-relaxed sm:text-base lg:text-lg xl:text-xl'>
-            Discover popular mods, check them out, and install with a single
-            click. No complicated setup required.
+            {t("showcase.sectionDescription")}
           </p>
 
           <div className='deadlock-gradient-primary mx-auto mt-6 h-1 w-24 rounded-full' />
@@ -72,7 +77,7 @@ export const ModShowcaseSection = () => {
         <div className='grid gap-6 overflow-hidden lg:grid-cols-2 lg:gap-12'>
           <div className='min-w-0 space-y-3 sm:space-y-4'>
             <h3 className='mb-4 flex items-center gap-2 font-semibold text-base sm:mb-6 sm:text-lg lg:text-xl'>
-              Popular Mods
+              {t("showcase.popularMods")}
             </h3>
 
             {mods.map((mod) => (
@@ -92,7 +97,7 @@ export const ModShowcaseSection = () => {
         <div className='mt-8 mx-auto w-full flex justify-center'>
           <Link to='/mods'>
             <Button size='lg' className='px-8'>
-              Browse All Mods <span aria-hidden='true'>→</span>
+              {t("showcase.browseAllMods")} <span aria-hidden='true'>→</span>
             </Button>
           </Link>
         </div>

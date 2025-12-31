@@ -1,9 +1,12 @@
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { APP_NAME, COPYRIGHT, social } from "@/lib/constants";
 import Logo from "./logo";
 
 export const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className='border border-secondary bg-card' id='footer'>
       <div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:py-20'>
@@ -15,59 +18,57 @@ export const Footer = () => {
               <Logo className='h-10 w-10 sm:h-12 sm:w-12' /> {APP_NAME}
             </a>
             <p className='mt-4 text-sm opacity-60 max-w-md'>
-              A small, open-source app for installing and managing mods for the
-              Valve game Deadlock.
+              {t("footer.description")}
             </p>
             <p className='mt-2 text-sm opacity-60 max-w-md'>
-              Not affiliated with Valve. "Deadlock" and related marks are
-              trademarks of Valve Corporation.
+              {t("footer.disclaimer")}
             </p>
           </div>
 
           <div className='grid grid-cols-2 gap-6 sm:grid-cols-3 sm:gap-8 lg:col-span-2'>
             <div className='flex flex-col gap-3'>
-              <h3 className='font-bold font-primary'>Links</h3>
+              <h3 className='font-bold font-primary'>{t("footer.links")}</h3>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager/releases/latest'
                 rel='noopener noreferrer'
                 target='_blank'>
-                Download
+                {t("common.download")}
               </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager'
                 rel='noopener noreferrer'
                 target='_blank'>
-                Source Code
+                {t("footer.sourceCode")}
               </a>
             </div>
 
             <div className='flex flex-col gap-3'>
-              <h3 className='font-bold font-primary'>Support</h3>
+              <h3 className='font-bold font-primary'>{t("footer.support")}</h3>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://docs.deadlockmods.app/'
                 rel='noopener noreferrer'
                 target='_blank'>
-                Documentation
+                {t("nav.documentation")}
               </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='/#faq'>
-                FAQ
+                {t("faq.sectionLabel")}
               </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='https://github.com/Stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md'
                 rel='noopener noreferrer'
                 target='_blank'>
-                Report Bug
+                {t("footer.reportBug")}
               </a>
             </div>
 
             <div className='flex flex-col gap-3'>
-              <h3 className='font-bold font-primary'>Partners</h3>
+              <h3 className='font-bold font-primary'>{t("footer.partners")}</h3>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href='http://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
@@ -113,23 +114,23 @@ export const Footer = () => {
               <Link
                 className='hover:opacity-100 transition-opacity'
                 to='/privacy'>
-                Privacy Policy
+                {t("footer.privacyPolicy")}
               </Link>
               <span className='hidden sm:inline'>•</span>
               <Link
                 className='hover:opacity-100 transition-opacity'
                 to='/terms'>
-                Terms of Service
+                {t("footer.termsOfService")}
               </Link>
             </div>
 
             <p className='text-sm text-center'>
-              {COPYRIGHT}. Made with{" "}
+              {COPYRIGHT}. {t("footer.madeWith")}{" "}
               <PhosphorIcons.HeartIcon
                 weight='duotone'
                 className='w-4 h-4 inline-block'
               />{" "}
-              by{" "}
+              {t("footer.by")}{" "}
               <a
                 className='border-primary text-primary transition-all hover:border-b-2'
                 href='https://github.com/Stormix'
