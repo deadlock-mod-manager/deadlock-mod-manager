@@ -309,6 +309,12 @@
 			PreMergeOpenSpaceMaxRatio "8.0"
 			PreMergeSmallRegionsSizeThreshold "20.0"
 		}
+
+		ExperimentalVDataLocalization
+		{
+			GameOutputPath	"resource/localization/citadel_vdata"
+			TokenPrefix		"Citadel_VData_"
+		}
 	}
 
 	Source1Import
