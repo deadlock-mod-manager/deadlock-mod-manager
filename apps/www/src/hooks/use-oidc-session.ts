@@ -1,7 +1,8 @@
 import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { getServerSession, logout } from "@/lib/auth/auth.server";
+import { setAccessToken } from "@/utils/orpc";
 
 export type { OIDCSession, OIDCUser };
 
@@ -20,13 +21,27 @@ export function useOIDCSession(): UseOIDCSessionResult {
     queryKey: ["oidc-session"],
     queryFn: async () => {
       const session = await getServerSession();
+      if (session?.accessToken) {
+        setAccessToken(session.accessToken);
+      } else {
+        setAccessToken(null);
+      }
       return session;
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
+  useEffect(() => {
+    if (sessionQuery.data?.accessToken) {
+      setAccessToken(sessionQuery.data.accessToken);
+    } else if (!sessionQuery.isLoading) {
+      setAccessToken(null);
+    }
+  }, [sessionQuery.data?.accessToken, sessionQuery.isLoading]);
+
   const signOut = useCallback(async () => {
+    setAccessToken(null);
     queryClient.setQueryData(["oidc-session"], null);
     await logout();
   }, [queryClient]);

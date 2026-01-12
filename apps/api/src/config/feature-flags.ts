@@ -58,4 +58,11 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "boolean",
     defaultValue: true,
   },
+  {
+    name: "friend-system",
+    description: "Enable friend system functionality",
+    type: "boolean",
+    defaultValue: false,
+    exposed: true,
+  },
 ];

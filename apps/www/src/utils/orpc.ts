@@ -6,6 +6,16 @@ import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { SERVER_URL } from "@/lib/config";
 import type { AppRouterClient } from "../../../api/src/routers/index";
 
+let currentAccessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  currentAccessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return currentAccessToken;
+}
+
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
@@ -24,8 +34,17 @@ export const queryClient = new QueryClient({
 export const link = new RPCLink({
   url: `${SERVER_URL}/rpc`,
   fetch(url, options) {
+    const headers = new Headers(
+      (options as RequestInit | undefined)?.headers || {},
+    );
+
+    if (currentAccessToken) {
+      headers.set("Authorization", `Bearer ${currentAccessToken}`);
+    }
+
     return fetch(url, {
       ...(options as RequestInit | undefined),
+      headers,
       credentials: "include",
     });
   },

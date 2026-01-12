@@ -1,0 +1,225 @@
+---
+title: Dev Authentication
+description: How to set up and use development authentication for local testing without Steam
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+# Dev Authentication
+
+During local development, you may want to test authentication flows without setting up Steam OAuth credentials. The dev authentication system provides a secure way to create and use test accounts locally.
+
+<Callout type="warn" title="Development Only">
+  Dev authentication is strictly for local development. It is disabled by default and requires explicit environment configuration to enable. Never enable dev authentication in production environments.
+</Callout>
+
+## Overview
+
+The dev authentication system provides:
+
+- **Email/Password Login**: Simple credential-based authentication for testing
+- **Environment-Based Configuration**: All credentials stored in environment variables, not in code
+- **Conditional Enablement**: The `emailAndPassword` provider in Better Auth is only enabled when dev auth is configured
+- **Database Seeding**: Automated script to create dev user accounts
+
+## Configuration
+
+### Environment Variables
+
+Two flags control the dev authentication system:
+
+| Variable | Purpose |
+| --- | --- |
+| `DEV_AUTH_SEED_ENABLED` | Enables the seed script and email/password authentication in the backend |
+| `VITE_ENABLE_DEV_LOGIN` | Shows the dev login button in the auth UI |
+
+### User Credentials
+
+Dev user credentials are configured via environment variables:
+
+```bash
+# User 1
+DEV_AUTH_USER_1_EMAIL=dev1@deadlockmods.test
+DEV_AUTH_USER_1_PASSWORD=YourSecurePassword123!
+DEV_AUTH_USER_1_NAME=Dev User One
+DEV_AUTH_USER_1_ADMIN=false
+
+# User 2 (optional)
+DEV_AUTH_USER_2_EMAIL=dev2@deadlockmods.test
+DEV_AUTH_USER_2_PASSWORD=YourSecurePassword456!
+DEV_AUTH_USER_2_NAME=Dev User Two
+DEV_AUTH_USER_2_ADMIN=false
+```
+
+<Callout type="info" title="Password Requirements">
+  Passwords must be at least 8 characters long. Choose secure passwords even for development accounts.
+</Callout>
+
+## Setup Guide
+
+<Steps>
+  <Step>
+    ### Configure Environment Variables
+
+    Add the following to your `.env` file:
+
+    ```bash
+    # Enable dev authentication
+    DEV_AUTH_SEED_ENABLED=true
+    VITE_ENABLE_DEV_LOGIN=true
+
+    # Configure at least one dev user
+    DEV_AUTH_USER_1_EMAIL=dev1@deadlockmods.test
+    DEV_AUTH_USER_1_PASSWORD=YourSecurePassword123!
+    DEV_AUTH_USER_1_NAME=Dev User One
+    DEV_AUTH_USER_1_ADMIN=false
+    ```
+  </Step>
+
+  <Step>
+    ### Start Database
+
+    Ensure your local database is running:
+
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+
+  <Step>
+    ### Seed Dev Users
+
+    Run the seed script to create the dev users in your database:
+
+    ```bash
+    pnpm auth:seed
+    ```
+
+    You should see output confirming the users were created:
+
+    ```
+    [info] Starting dev user seeding { userCount: 1 }
+    [info] Seeded dev user { email: "dev1@deadlockmods.test", userId: "..." }
+    [info] Completed auth dev user seeding { total: 1 }
+    ```
+  </Step>
+
+  <Step>
+    ### Start the Auth Service
+
+    Start the auth development server:
+
+    ```bash
+    pnpm auth:dev
+    ```
+
+    The auth service runs at `http://localhost:3004` by default.
+  </Step>
+
+  <Step>
+    ### Login with Dev Credentials
+
+    1. Navigate to the login page
+    2. Click **"Use dev email login"** button
+    3. Enter your dev user email and password
+    4. Sign in
+
+    You are now authenticated as a dev user and can test authenticated features locally.
+  </Step>
+</Steps>
+
+## Security Architecture
+
+The dev authentication system is designed with multiple safety layers:
+
+### Backend Protection
+
+```
+DEV_AUTH_SEED_ENABLED=false (default)
+       │
+       ▼
+┌──────────────────────────────┐
+│  emailAndPassword: false     │  ◄── Provider disabled
+│  Seed script fails           │  ◄── Cannot create users
+│  /sign-in/email returns 401  │  ◄── Endpoint protected
+└──────────────────────────────┘
+```
+
+When `DEV_AUTH_SEED_ENABLED` is not set to `true`:
+
+- The `emailAndPassword` provider in Better Auth is disabled
+- The seed script exits with an error
+- Email/password sign-in endpoints reject requests
+
+### Frontend Protection
+
+The dev login button is only visible when:
+
+- `import.meta.env.DEV` is true (Vite dev mode), OR
+- `VITE_ENABLE_DEV_LOGIN` is set to `"true"`
+
+This ensures the button never appears in production builds.
+
+### Credential Security
+
+- **No hardcoded credentials**: All passwords are stored in environment variables
+- **Not committed to git**: The `.env` file is gitignored
+- **Minimum password length**: Passwords must be at least 8 characters
+- **Zod validation**: All environment variables are validated at runtime
+
+## Troubleshooting
+
+### Seed Script Fails
+
+**Error**: `Dev auth seed is disabled. Set DEV_AUTH_SEED_ENABLED=true to enable.`
+
+**Solution**: Add `DEV_AUTH_SEED_ENABLED=true` to your `.env` file.
+
+---
+
+**Error**: `No dev users configured. Set DEV_AUTH_USER_1_EMAIL and DEV_AUTH_USER_1_PASSWORD environment variables.`
+
+**Solution**: Add at least one dev user's email and password to your `.env` file.
+
+---
+
+**Error**: Database connection refused
+
+**Solution**: Ensure Docker containers are running with `docker compose up -d`.
+
+### Dev Login Button Not Visible
+
+1. Check that `VITE_ENABLE_DEV_LOGIN=true` is in your `.env` file
+2. Restart the auth dev server after changing environment variables
+3. Clear browser cache and refresh the page
+
+### Invalid Credentials Error
+
+1. Verify you ran `pnpm auth:seed` after configuring environment variables
+2. Check that the email and password match your `.env` configuration
+3. Passwords are case-sensitive
+
+## Module Structure
+
+The dev authentication module is located at `apps/auth/src/lib/dev-auth/`:
+
+```
+apps/auth/src/lib/dev-auth/
+├── config.ts   # Configuration and environment parsing
+└── index.ts    # Module exports
+```
+
+### Key Functions
+
+| Function | Purpose |
+| --- | --- |
+| `isDevAuthEnabled()` | Returns true if `DEV_AUTH_SEED_ENABLED=true` |
+| `getDevAuthConfig()` | Returns enabled state and list of configured dev users |
+| `validateDevAuthSeedRequirements()` | Throws error if seed requirements not met |
+
+## Related Documentation
+
+- [Authentication Service](/docs/developer-docs/auth-service) - Overview of the full auth system
+- [Development Setup](/docs/developer-docs/development-setup) - Setting up your development environment
+

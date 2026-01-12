@@ -8,6 +8,7 @@ export interface FeatureFlagDefinition {
   description?: string;
   type?: FeatureFlagType;
   defaultValue?: unknown;
+  exposed?: boolean;
 }
 
 export class FeatureFlagRegistry {
@@ -28,6 +29,7 @@ export class FeatureFlagRegistry {
       description,
       type = "boolean",
       defaultValue = false,
+      exposed = false,
     } = definition;
 
     try {
@@ -41,7 +43,7 @@ export class FeatureFlagRegistry {
       }
 
       this.logger
-        .withMetadata({ name, type, defaultValue })
+        .withMetadata({ name, type, defaultValue, exposed })
         .info("Creating feature flag");
 
       const createResult = await this.featureFlagService.createFeatureFlag({
@@ -49,6 +51,7 @@ export class FeatureFlagRegistry {
         description,
         type,
         value: defaultValue,
+        exposed,
       });
 
       if (createResult.isErr()) {
