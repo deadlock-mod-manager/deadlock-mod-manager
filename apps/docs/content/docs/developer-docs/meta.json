@@ -7,6 +7,7 @@
     "project-structure",
     "architecture",
     "auth-service",
+    "dev-authentication",
     "mirror-service",
     "plugins",
     "contributing",

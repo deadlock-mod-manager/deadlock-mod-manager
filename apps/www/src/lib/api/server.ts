@@ -3,7 +3,7 @@ import { RPCLink } from "@orpc/client/fetch";
 import { createServerFn } from "@tanstack/react-start";
 import type { AppRouterClient } from "../../../../api/src/routers/index";
 import { ensureValidToken } from "../auth/server";
-import { SERVER_URL } from "../config";
+import { SERVER_URL } from "../config.server";
 
 function createAuthenticatedClient(token: string): AppRouterClient {
   const link = new RPCLink({
