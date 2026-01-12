@@ -224,10 +224,12 @@ jobs:
           if [[ -n "$S3_ENDPOINT" ]]; then
             aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
               --endpoint-url "$S3_ENDPOINT" \
-              --content-type "application/octet-stream"
+              --content-type "application/octet-stream" \
+              --no-verify-checksum
           else
             aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
-              --content-type "application/octet-stream"
+              --content-type "application/octet-stream" \
+              --no-verify-checksum
           fi
 
           echo "Backup uploaded successfully to s3://${S3_BUCKET}/${S3_KEY}"
