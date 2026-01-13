@@ -13,9 +13,6 @@ const config: NextConfig = {
     ];
   },
   reactStrictMode: true,
-  experimental: {
-    turbo: false,
-  },
 };
 
 export default withMDX(config);
