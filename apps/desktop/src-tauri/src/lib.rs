@@ -250,6 +250,8 @@ pub fn run() {
       commands::validate_gameinfo_patch,
       commands::get_gameinfo_status,
       commands::open_gameinfo_editor,
+      commands::read_gameinfo,
+      commands::apply_gameinfo_patch,
       commands::set_language,
       commands::set_api_url,
       commands::is_auto_update_disabled,

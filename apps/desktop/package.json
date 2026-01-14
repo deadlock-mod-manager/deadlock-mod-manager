@@ -12,10 +12,12 @@
     "dev": "pnpm tauri dev",
     "build": "pnpm tauri build",
     "build:dev": "pnpm tauri build --no-bundle",
-    "format:rust": "cd src-tauri && rustfmt"
+    "format:rust": "cd src-tauri && rustfmt",
+    "generate:patches": "bun run scripts/generate-gameinfo-patches.ts"
   },
   "dependencies": {
     "@deadlock-mods/crosshair": "workspace:*",
+    "@deadlock-mods/kv-parser-rs": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",

@@ -157,6 +157,10 @@ impl Parser {
                     conditional = Some(self.parse_conditional()?);
                     break;
                 }
+                TokenType::Comment => {
+                    // Comments can appear after conditionals on same line, skip
+                    break;
+                }
                 _ => break,
             }
         }
@@ -547,6 +551,39 @@ mod tests {
         } else {
             panic!("Expected Root to be an object");
         }
+    }
+
+    #[test]
+    fn test_parse_conditional_with_or_operator() {
+        let input = r#""VulkanOnly"								"1"	[ $LINUX || $OSX ] // No OpenGL or D3D9/11 fallback on Linux or OSX, only Vulkan is supported."#;
+
+        // First test tokenization
+        use crate::tokenizer::Tokenizer;
+        let mut tokenizer = Tokenizer::new(input);
+        match tokenizer.tokenize() {
+            Ok(tokens) => {
+                println!("Tokens ({} total):", tokens.len());
+                for (i, token) in tokens.iter().enumerate() {
+                    println!(
+                        "  {}: {:?} at line {}, col {} = {:?}",
+                        i, token.token_type, token.line, token.column, token.value
+                    );
+                }
+            }
+            Err(e) => println!("Tokenize error: {:?}", e),
+        }
+
+        // Now check what Parser sees
+        let tokens_result = crate::tokenizer::Tokenizer::new(input).tokenize().unwrap();
+        eprintln!("\nParser will see {} tokens", tokens_result.len());
+
+        let result = Parser::parse(input, ParseOptions::default());
+
+        if let Err(ref e) = result {
+            println!("Parse error: {:?}", e);
+        }
+
+        assert!(result.is_ok(), "Should parse conditional with OR operator");
     }
 
     #[test]
