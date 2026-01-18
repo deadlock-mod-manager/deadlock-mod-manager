@@ -10,6 +10,20 @@
       "contributors": []
     },
     {
+      "code": "bg",
+      "name": "Bulgarian",
+      "nativeName": "Български",
+      "flag": "🇧🇬",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "macchiako",
+          "discord": "macchiako."
+        }
+      ]
+    },
+    {
       "code": "de",
       "name": "German",
       "nativeName": "Deutsch",
@@ -19,7 +33,7 @@
       "contributors": [
         {
           "name": "skeptic",
-          "discord": "__skeptic__"
+          "github": "Skeptic-systems"
         }
       ]
     },

@@ -3,6 +3,7 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import arTranslation from "@/locales/ar/translation.json" with { type: "json" };
+import bgTranslation from "@/locales/bg/translation.json" with { type: "json" };
 import deTranslation from "@/locales/de/translation.json" with { type: "json" };
 import enTranslation from "@/locales/en/translation.json" with { type: "json" };
 import esTranslation from "@/locales/es/translation.json" with { type: "json" };
@@ -72,6 +73,9 @@ const resources = {
   ja: {
     translation: jaTranslation,
   },
+  bg: {
+    translation: bgTranslation,
+  },
 };
 
 i18n
@@ -96,6 +100,7 @@ i18n
       "pt-BR",
       "it",
       "ja",
+      "bg",
     ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
