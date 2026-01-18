@@ -127,7 +127,26 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 3. **Suggest a new language**: Open an issue to request support for your language
 4. **Improve existing translations**: Found an error or better phrasing? Submit a PR!
 
-Translation files are located in `apps/desktop/public/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
+### Translation Helper Script
+
+We provide an interactive CLI tool to make translating easier:
+
+```bash
+pnpm translate
+```
+
+The script offers two modes:
+
+- **Create a new translation**: Guides you through creating a complete translation for a new language
+- **Update an existing translation**: Finds missing strings and lets you translate only what's needed
+
+**Features:**
+- Step-by-step translation with English reference text
+- Pause anytime with `pause` command - your progress is saved
+- Continue later using "Update existing translation"
+- Automatic registration in all required files
+
+Translation files are located in `apps/desktop/src/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
 
 ---
 

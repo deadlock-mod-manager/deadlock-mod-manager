@@ -546,42 +546,69 @@ CREATE INDEX idx_mod_ratings_rating ON mod_ratings(rating DESC);
 
 ## Translation Contributions
 
-### Adding a New Language
+### Translation Helper Script
+
+We provide an interactive CLI tool that simplifies the translation process:
+
+```bash
+pnpm translate
+```
+
+<Callout type="info" title="Recommended Approach">
+  The translation helper script is the easiest way to contribute translations. It guides you through every step and handles all the technical setup automatically.
+</Callout>
+
+#### Creating a New Translation
+
+1. Run `pnpm translate` and select **"Create a new translation"**
+2. Enter the language details:
+   - **Language code**: ISO 639-1 code (e.g., `ko`, `vi`, `nl`) or BCP 47 (e.g., `pt-BR`)
+   - **Language name**: English name (e.g., "Korean")
+   - **Native name**: Name in the target language (e.g., "한국어")
+   - **Flag emoji**: Country flag (e.g., 🇰🇷)
+3. Enter your contributor information (name + Discord/GitHub/Email)
+4. Translate each string step-by-step
+
+**Commands during translation:**
+- Press `Enter` without typing to keep the English value
+- Type `pause` to save your progress and continue later
+- Type `quit` to abort without saving
+
+#### Updating an Existing Translation
+
+1. Run `pnpm translate` and select **"Update an existing translation"**
+2. Choose the language you want to update
+3. Only missing translations will be shown
+4. Your new translations are merged with existing ones
+
+### Manual Translation Setup
+
+If you prefer manual setup:
 
 1. **Join the Discord**: Connect with the translation team in [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067)
 
-2. **Create translation files**:
+2. **Create translation folder and file**:
 
    ```bash
-   # Copy English template
-   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[language-code].json
+   mkdir apps/desktop/src/locales/[language-code]
+   cp apps/desktop/src/locales/en/translation.json apps/desktop/src/locales/[language-code]/translation.json
    ```
 
-3. **Translate the content**:
+3. **Translate the content** in the new file
 
-   ```json
-   {
-     "common": {
-       "loading": "Laden...",
-       "error": "Fehler",
-       "success": "Erfolgreich"
-     },
-     "mods": {
-       "title": "Mods",
-       "search": "Mods durchsuchen...",
-       "install": "Installieren"
-     }
-   }
-   ```
+4. **Register the language** in these files:
+   - `languages.json` - Add language metadata and contributor info
+   - `apps/desktop/src/lib/i18n.ts` - Add import and resources entry
+   - `apps/desktop/src/components/settings/language-settings.tsx` - Add to dropdown
 
-4. **Test your translations**:
+5. **Test your translations**:
 
    ```bash
    pnpm --filter desktop dev
    # Change language in settings to test
    ```
 
-5. **Submit a PR** with your translations
+6. **Submit a PR** with your translations
 
 ### Translation Guidelines
 

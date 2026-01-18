@@ -98,16 +98,17 @@ pnpm db:seed
 
 ### Available Commands
 
-| Command            | Description                         |
-| ------------------ | ----------------------------------- |
-| `pnpm desktop:dev` | Start desktop app development       |
-| `pnpm api:dev`     | Start API server development        |
-| `pnpm build`       | Build all packages and applications |
-| `pnpm lint`        | Run linting checks                  |
-| `pnpm format`      | Format code with Biome              |
-| `pnpm check-types` | Run TypeScript type checking        |
-| `pnpm db:push`     | Push schema changes to database     |
-| `pnpm db:seed`     | Seed database with initial data     |
+| Command            | Description                           |
+| ------------------ | ------------------------------------- |
+| `pnpm desktop:dev` | Start desktop app development         |
+| `pnpm api:dev`     | Start API server development          |
+| `pnpm build`       | Build all packages and applications   |
+| `pnpm lint`        | Run linting checks                    |
+| `pnpm format`      | Format code with Biome                |
+| `pnpm check-types` | Run TypeScript type checking          |
+| `pnpm db:push`     | Push schema changes to database       |
+| `pnpm db:seed`     | Seed database with initial data       |
+| `pnpm translate`   | Interactive translation helper script |
 
 ## Project Structure
 
@@ -353,7 +354,35 @@ Include screenshots of UI changes
 
 ## Translation & Localization
 
-### Adding a New Language
+### Translation Helper Script
+
+We provide an interactive CLI tool that makes translating much easier:
+
+```bash
+pnpm translate
+```
+
+The script guides you through the entire process:
+
+1. **Create a new translation**:
+   - Enter language code, name, native name, and flag emoji
+   - Add your contributor info (name + Discord/GitHub/Email)
+   - Translate each string step-by-step with English reference
+   - All files are automatically created and registered
+
+2. **Update an existing translation**:
+   - Select a language from the list
+   - Only missing strings are shown for translation
+   - Merged automatically with existing translations
+
+**Useful commands during translation:**
+- Press `Enter` to keep the English value
+- Type `pause` to save progress and continue later
+- Type `quit` to abort without saving
+
+### Manual Translation Setup
+
+If you prefer manual setup:
 
 1. **Join our Discord** server and visit the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel
 
@@ -361,19 +390,24 @@ Include screenshots of UI changes
 
    ```bash
    # Copy English files as template
-   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[lang-code].json
+   cp apps/desktop/src/locales/en/translation.json apps/desktop/src/locales/[lang-code]/translation.json
    ```
 
 3. **Translate the content** in the new file
 
-4. **Test your translations**:
+4. **Register the language** in:
+   - `languages.json` - Add language metadata and contributor info
+   - `apps/desktop/src/lib/i18n.ts` - Add import and resources entry
+   - `apps/desktop/src/components/settings/language-settings.tsx` - Add to dropdown
+
+5. **Test your translations**:
 
    ```bash
    pnpm desktop:dev
    # Change language in settings to test
    ```
 
-5. **Submit a PR** with your translations
+6. **Submit a PR** with your translations
 
 ### Translation Guidelines
 
