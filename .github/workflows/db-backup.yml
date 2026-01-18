@@ -1,314 +1,314 @@
-name: Database Backup
+# name: Database Backup
 
-on:
-  schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch:
-    inputs:
-      skip-retention:
-        description: "Skip retention cleanup (useful for testing)"
-        required: false
-        default: false
-        type: boolean
-      test-mode:
-        description: "Test mode - creates backup but skips S3 upload"
-        required: false
-        default: false
-        type: boolean
+# on:
+#   schedule:
+#     - cron: "0 * * * *"
+#   workflow_dispatch:
+#     inputs:
+#       skip-retention:
+#         description: "Skip retention cleanup (useful for testing)"
+#         required: false
+#         default: false
+#         type: boolean
+#       test-mode:
+#         description: "Test mode - creates backup but skips S3 upload"
+#         required: false
+#         default: false
+#         type: boolean
 
-jobs:
-  backup:
-    name: Backup Database to S3
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generate backup filename
-        id: backup-filename
-        run: |
-          TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
-          echo "filename=backup-${TIMESTAMP}.dump" >> $GITHUB_OUTPUT
-          echo "s3_key=backups/backup-${TIMESTAMP}.dump" >> $GITHUB_OUTPUT
+# jobs:
+#   backup:
+#     name: Backup Database to S3
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Generate backup filename
+#         id: backup-filename
+#         run: |
+#           TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
+#           echo "filename=backup-${TIMESTAMP}.dump" >> $GITHUB_OUTPUT
+#           echo "s3_key=backups/backup-${TIMESTAMP}.dump" >> $GITHUB_OUTPUT
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: "latest"
+#       - name: Set up kubectl
+#         uses: azure/setup-kubectl@v3
+#         with:
+#           version: "latest"
 
-      - name: Configure kubectl
-        env:
-          KUBECONFIG_SECRET: ${{ secrets.KUBECONFIG }}
-          K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'default' }}
-        run: |
-          if [[ -z "$KUBECONFIG_SECRET" ]]; then
-            echo "::error::KUBECONFIG secret is not set"
-            exit 1
-          fi
+#       - name: Configure kubectl
+#         env:
+#           KUBECONFIG_SECRET: ${{ secrets.KUBECONFIG }}
+#           K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'default' }}
+#         run: |
+#           if [[ -z "$KUBECONFIG_SECRET" ]]; then
+#             echo "::error::KUBECONFIG secret is not set"
+#             exit 1
+#           fi
 
-          echo "$KUBECONFIG_SECRET" | base64 -d > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
-          # Verify kubectl connection without exposing sensitive config
-          kubectl cluster-info --request-timeout=5s >/dev/null 2>&1 || echo "::warning::Could not verify cluster connection"
+#           echo "$KUBECONFIG_SECRET" | base64 -d > kubeconfig.yaml
+#           export KUBECONFIG=kubeconfig.yaml
+#           # Verify kubectl connection without exposing sensitive config
+#           kubectl cluster-info --request-timeout=5s >/dev/null 2>&1 || echo "::warning::Could not verify cluster connection"
 
-      - name: Discover PostgreSQL service
-        id: discover-postgres
-        env:
-          KUBECONFIG: kubeconfig.yaml
-          K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'default' }}
-        run: |
-          export KUBECONFIG=kubeconfig.yaml
-          NAMESPACE="${{ secrets.K8S_NAMESPACE || 'default' }}"
+#       - name: Discover PostgreSQL service
+#         id: discover-postgres
+#         env:
+#           KUBECONFIG: kubeconfig.yaml
+#           K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE || 'default' }}
+#         run: |
+#           export KUBECONFIG=kubeconfig.yaml
+#           NAMESPACE="${{ secrets.K8S_NAMESPACE || 'default' }}"
 
-          SERVICE_NAME=""
+#           SERVICE_NAME=""
 
-          if kubectl get svc deadlock-mod-manager-rw -n "$NAMESPACE" >/dev/null 2>&1; then
-            SERVICE_NAME="deadlock-mod-manager-rw"
-          elif kubectl get svc deadlock-mod-manager -n "$NAMESPACE" >/dev/null 2>&1; then
-            SERVICE_NAME="deadlock-mod-manager"
-          else
-            SERVICE_NAME=$(kubectl get svc -n "$NAMESPACE" -l cnpg.io/cluster=deadlock-mod-manager -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-          fi
+#           if kubectl get svc deadlock-mod-manager-rw -n "$NAMESPACE" >/dev/null 2>&1; then
+#             SERVICE_NAME="deadlock-mod-manager-rw"
+#           elif kubectl get svc deadlock-mod-manager -n "$NAMESPACE" >/dev/null 2>&1; then
+#             SERVICE_NAME="deadlock-mod-manager"
+#           else
+#             SERVICE_NAME=$(kubectl get svc -n "$NAMESPACE" -l cnpg.io/cluster=deadlock-mod-manager -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+#           fi
 
-          if [[ -z "$SERVICE_NAME" ]]; then
-            echo "::error::Could not find PostgreSQL service. Available services:"
-            kubectl get svc -n "$NAMESPACE"
-            exit 1
-          fi
+#           if [[ -z "$SERVICE_NAME" ]]; then
+#             echo "::error::Could not find PostgreSQL service. Available services:"
+#             kubectl get svc -n "$NAMESPACE"
+#             exit 1
+#           fi
 
-          echo "service=${SERVICE_NAME}" >> $GITHUB_OUTPUT
-          echo "namespace=${NAMESPACE}" >> $GITHUB_OUTPUT
-          echo "Found PostgreSQL service: ${SERVICE_NAME} in namespace ${NAMESPACE}"
+#           echo "service=${SERVICE_NAME}" >> $GITHUB_OUTPUT
+#           echo "namespace=${NAMESPACE}" >> $GITHUB_OUTPUT
+#           echo "Found PostgreSQL service: ${SERVICE_NAME} in namespace ${NAMESPACE}"
 
-      - name: Parse DATABASE_URL
-        id: parse-db-url
-        env:
-          DB_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          if [[ -z "$DB_URL" ]]; then
-            echo "::error::DATABASE_URL secret is not set"
-            exit 1
-          fi
+#       - name: Parse DATABASE_URL
+#         id: parse-db-url
+#         env:
+#           DB_URL: ${{ secrets.DATABASE_URL }}
+#         run: |
+#           if [[ -z "$DB_URL" ]]; then
+#             echo "::error::DATABASE_URL secret is not set"
+#             exit 1
+#           fi
 
-          DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
-          CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
-          HOST_PORT_DB="${DB_URL_NO_PROTOCOL#*@}"
+#           DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
+#           CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
+#           HOST_PORT_DB="${DB_URL_NO_PROTOCOL#*@}"
 
-          DB_USER="${CREDENTIALS%%:*}"
-          DB_NAME="${HOST_PORT_DB##*/}"
+#           DB_USER="${CREDENTIALS%%:*}"
+#           DB_NAME="${HOST_PORT_DB##*/}"
 
-          LOCAL_PORT=$((RANDOM % 10000 + 20000))
+#           LOCAL_PORT=$((RANDOM % 10000 + 20000))
 
-          echo "user=${DB_USER}" >> $GITHUB_OUTPUT
-          echo "database=${DB_NAME}" >> $GITHUB_OUTPUT
-          echo "local_port=${LOCAL_PORT}" >> $GITHUB_OUTPUT
+#           echo "user=${DB_USER}" >> $GITHUB_OUTPUT
+#           echo "database=${DB_NAME}" >> $GITHUB_OUTPUT
+#           echo "local_port=${LOCAL_PORT}" >> $GITHUB_OUTPUT
 
-      - name: Install netcat for connection testing
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y netcat-openbsd
+#       - name: Install netcat for connection testing
+#         run: |
+#           sudo apt-get update -qq
+#           sudo apt-get install -y netcat-openbsd
 
-      - name: Port-forward PostgreSQL service
-        id: port-forward
-        env:
-          KUBECONFIG: kubeconfig.yaml
-        run: |
-          export KUBECONFIG=kubeconfig.yaml
-          SERVICE_NAME="${{ steps.discover-postgres.outputs.service }}"
-          NAMESPACE="${{ steps.discover-postgres.outputs.namespace }}"
-          LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
+#       - name: Port-forward PostgreSQL service
+#         id: port-forward
+#         env:
+#           KUBECONFIG: kubeconfig.yaml
+#         run: |
+#           export KUBECONFIG=kubeconfig.yaml
+#           SERVICE_NAME="${{ steps.discover-postgres.outputs.service }}"
+#           NAMESPACE="${{ steps.discover-postgres.outputs.namespace }}"
+#           LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
 
-          echo "Starting port-forward from localhost:${LOCAL_PORT} to ${SERVICE_NAME}:5432 in namespace ${NAMESPACE}"
+#           echo "Starting port-forward from localhost:${LOCAL_PORT} to ${SERVICE_NAME}:5432 in namespace ${NAMESPACE}"
 
-          kubectl port-forward -n "$NAMESPACE" "svc/${SERVICE_NAME}" "${LOCAL_PORT}:5432" > /tmp/port-forward.log 2>&1 &
-          PORT_FORWARD_PID=$!
+#           kubectl port-forward -n "$NAMESPACE" "svc/${SERVICE_NAME}" "${LOCAL_PORT}:5432" > /tmp/port-forward.log 2>&1 &
+#           PORT_FORWARD_PID=$!
 
-          echo "port_forward_pid=${PORT_FORWARD_PID}" >> $GITHUB_OUTPUT
+#           echo "port_forward_pid=${PORT_FORWARD_PID}" >> $GITHUB_OUTPUT
 
-          sleep 5
+#           sleep 5
 
-          for i in {1..30}; do
-            if nc -z localhost "$LOCAL_PORT" 2>/dev/null; then
-              echo "Port-forward is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "::error::Port-forward failed to establish connection"
-              cat /tmp/port-forward.log
-              kill $PORT_FORWARD_PID 2>/dev/null || true
-              exit 1
-            fi
-            sleep 1
-          done
+#           for i in {1..30}; do
+#             if nc -z localhost "$LOCAL_PORT" 2>/dev/null; then
+#               echo "Port-forward is ready"
+#               break
+#             fi
+#             if [ $i -eq 30 ]; then
+#               echo "::error::Port-forward failed to establish connection"
+#               cat /tmp/port-forward.log
+#               kill $PORT_FORWARD_PID 2>/dev/null || true
+#               exit 1
+#             fi
+#             sleep 1
+#           done
 
-      - name: Create database backup
-        id: create-backup
-        env:
-          KUBECONFIG: kubeconfig.yaml
-          DB_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
-          LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
+#       - name: Create database backup
+#         id: create-backup
+#         env:
+#           KUBECONFIG: kubeconfig.yaml
+#           DB_URL: ${{ secrets.DATABASE_URL }}
+#         run: |
+#           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
+#           LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
 
-          # Parse password from DATABASE_URL in this step (not stored in outputs)
-          DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
-          CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
-          DB_PASS="${CREDENTIALS#*:}"
+#           # Parse password from DATABASE_URL in this step (not stored in outputs)
+#           DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
+#           CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
+#           DB_PASS="${CREDENTIALS#*:}"
 
-          docker run --rm \
-            --network host \
-            -e PGPASSWORD="${DB_PASS}" \
-            -v "$(pwd):/backup" \
-            postgres:latest \
-            pg_dump \
-            -h localhost \
-            -p "${LOCAL_PORT}" \
-            -U "${{ steps.parse-db-url.outputs.user }}" \
-            -d "${{ steps.parse-db-url.outputs.database }}" \
-            -Fc \
-            -f "/backup/${BACKUP_FILE}"
+#           docker run --rm \
+#             --network host \
+#             -e PGPASSWORD="${DB_PASS}" \
+#             -v "$(pwd):/backup" \
+#             postgres:latest \
+#             pg_dump \
+#             -h localhost \
+#             -p "${LOCAL_PORT}" \
+#             -U "${{ steps.parse-db-url.outputs.user }}" \
+#             -d "${{ steps.parse-db-url.outputs.database }}" \
+#             -Fc \
+#             -f "/backup/${BACKUP_FILE}"
 
-          if [ ! -f "$BACKUP_FILE" ]; then
-            echo "::error::Failed to create backup file"
-            exit 1
-          fi
+#           if [ ! -f "$BACKUP_FILE" ]; then
+#             echo "::error::Failed to create backup file"
+#             exit 1
+#           fi
 
-          BACKUP_SIZE=$(stat -f%z "$BACKUP_FILE" 2>/dev/null || stat -c%s "$BACKUP_FILE" 2>/dev/null || echo "0")
-          echo "backup_size=${BACKUP_SIZE}" >> $GITHUB_OUTPUT
-          echo "Backup created: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
+#           BACKUP_SIZE=$(stat -f%z "$BACKUP_FILE" 2>/dev/null || stat -c%s "$BACKUP_FILE" 2>/dev/null || echo "0")
+#           echo "backup_size=${BACKUP_SIZE}" >> $GITHUB_OUTPUT
+#           echo "Backup created: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
 
-      - name: Stop port-forward
-        if: always()
-        env:
-          KUBECONFIG: kubeconfig.yaml
-        run: |
-          PORT_FORWARD_PID="${{ steps.port-forward.outputs.port_forward_pid }}"
-          if [[ -n "$PORT_FORWARD_PID" ]]; then
-            echo "Stopping port-forward (PID: ${PORT_FORWARD_PID})"
-            kill "$PORT_FORWARD_PID" 2>/dev/null || true
-            wait "$PORT_FORWARD_PID" 2>/dev/null || true
-          fi
+#       - name: Stop port-forward
+#         if: always()
+#         env:
+#           KUBECONFIG: kubeconfig.yaml
+#         run: |
+#           PORT_FORWARD_PID="${{ steps.port-forward.outputs.port_forward_pid }}"
+#           if [[ -n "$PORT_FORWARD_PID" ]]; then
+#             echo "Stopping port-forward (PID: ${PORT_FORWARD_PID})"
+#             kill "$PORT_FORWARD_PID" 2>/dev/null || true
+#             wait "$PORT_FORWARD_PID" 2>/dev/null || true
+#           fi
 
-      - name: Configure AWS CLI
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-        run: |
-          if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
-            echo "::error::S3 credentials are not set"
-            exit 1
-          fi
+#       - name: Configure AWS CLI
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+#         run: |
+#           if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
+#             echo "::error::S3 credentials are not set"
+#             exit 1
+#           fi
 
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip -q awscliv2.zip
-          sudo ./aws/install --update
+#           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#           unzip -q awscliv2.zip
+#           sudo ./aws/install --update
 
-      - name: Upload backup to S3
-        if: ${{ !inputs.test-mode }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-        run: |
-          if [[ -z "$S3_BUCKET" ]]; then
-            echo "::error::S3_BUCKET secret is not set"
-            exit 1
-          fi
+#       - name: Upload backup to S3
+#         if: ${{ !inputs.test-mode }}
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+#           S3_BUCKET: ${{ secrets.S3_BUCKET }}
+#           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+#         run: |
+#           if [[ -z "$S3_BUCKET" ]]; then
+#             echo "::error::S3_BUCKET secret is not set"
+#             exit 1
+#           fi
 
-          BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
-          S3_KEY="${{ steps.backup-filename.outputs.s3_key }}"
+#           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
+#           S3_KEY="${{ steps.backup-filename.outputs.s3_key }}"
 
-          if [ ! -f "$BACKUP_FILE" ]; then
-            echo "::error::Backup file not found: $BACKUP_FILE"
-            exit 1
-          fi
+#           if [ ! -f "$BACKUP_FILE" ]; then
+#             echo "::error::Backup file not found: $BACKUP_FILE"
+#             exit 1
+#           fi
 
-          if [[ -n "$S3_ENDPOINT" ]]; then
-            aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
-              --endpoint-url "$S3_ENDPOINT" \
-              --content-type "application/octet-stream" \
-              --no-verify-checksum
-          else
-            aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
-              --content-type "application/octet-stream" \
-              --no-verify-checksum
-          fi
+#           if [[ -n "$S3_ENDPOINT" ]]; then
+#             aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
+#               --endpoint-url "$S3_ENDPOINT" \
+#               --content-type "application/octet-stream" \
+#               --no-verify-checksum
+#           else
+#             aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" \
+#               --content-type "application/octet-stream" \
+#               --no-verify-checksum
+#           fi
 
-          echo "Backup uploaded successfully to s3://${S3_BUCKET}/${S3_KEY}"
+#           echo "Backup uploaded successfully to s3://${S3_BUCKET}/${S3_KEY}"
 
-      - name: Test mode - Skip S3 upload
-        if: ${{ inputs.test-mode }}
-        run: |
-          BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
-          BACKUP_SIZE="${{ steps.create-backup.outputs.backup_size }}"
-          echo "::notice::Test mode enabled - Backup created but not uploaded to S3"
-          echo "Backup file: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
-          echo "To upload manually, run: aws s3 cp ${BACKUP_FILE} s3://<bucket>/backups/${BACKUP_FILE}"
+#       - name: Test mode - Skip S3 upload
+#         if: ${{ inputs.test-mode }}
+#         run: |
+#           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
+#           BACKUP_SIZE="${{ steps.create-backup.outputs.backup_size }}"
+#           echo "::notice::Test mode enabled - Backup created but not uploaded to S3"
+#           echo "Backup file: ${BACKUP_FILE} (${BACKUP_SIZE} bytes)"
+#           echo "To upload manually, run: aws s3 cp ${BACKUP_FILE} s3://<bucket>/backups/${BACKUP_FILE}"
 
-      - name: Clean up old backups (keep 5 most recent)
-        if: ${{ !inputs.skip-retention && !inputs.test-mode }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-        run: |
-          S3_BUCKET="${{ secrets.S3_BUCKET }}"
-          S3_PREFIX="backups/backup-"
+#       - name: Clean up old backups (keep 5 most recent)
+#         if: ${{ !inputs.skip-retention && !inputs.test-mode }}
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+#           S3_BUCKET: ${{ secrets.S3_BUCKET }}
+#           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+#         run: |
+#           S3_BUCKET="${{ secrets.S3_BUCKET }}"
+#           S3_PREFIX="backups/backup-"
 
-          if [[ -n "$S3_ENDPOINT" ]]; then
-            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --endpoint-url "$S3_ENDPOINT" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
-          else
-            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
-          fi
+#           if [[ -n "$S3_ENDPOINT" ]]; then
+#             BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --endpoint-url "$S3_ENDPOINT" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
+#           else
+#             BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
+#           fi
 
-          if [[ -z "$BACKUP_LIST" ]]; then
-            echo "No existing backups found"
-            exit 0
-          fi
+#           if [[ -z "$BACKUP_LIST" ]]; then
+#             echo "No existing backups found"
+#             exit 0
+#           fi
 
-          BACKUP_COUNT=$(echo "$BACKUP_LIST" | grep -c "\.dump$" || echo "0")
+#           BACKUP_COUNT=$(echo "$BACKUP_LIST" | grep -c "\.dump$" || echo "0")
 
-          if [ "$BACKUP_COUNT" -gt 5 ]; then
-            echo "Found $BACKUP_COUNT backups, keeping 5 most recent"
-            TO_DELETE=$(echo "$BACKUP_LIST" | tail -n +6)
+#           if [ "$BACKUP_COUNT" -gt 5 ]; then
+#             echo "Found $BACKUP_COUNT backups, keeping 5 most recent"
+#             TO_DELETE=$(echo "$BACKUP_LIST" | tail -n +6)
             
-            while IFS= read -r line; do
-              if [[ -n "$line" ]]; then
-                BACKUP_KEY=$(echo "$line" | awk '{print $4}')
-                if [[ -n "$BACKUP_KEY" ]]; then
-                  echo "Deleting old backup: $BACKUP_KEY"
-                  if [[ -n "$S3_ENDPOINT" ]]; then
-                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}" --endpoint-url "$S3_ENDPOINT"
-                  else
-                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}"
-                  fi
-                fi
-              fi
-            done <<< "$TO_DELETE"
+#             while IFS= read -r line; do
+#               if [[ -n "$line" ]]; then
+#                 BACKUP_KEY=$(echo "$line" | awk '{print $4}')
+#                 if [[ -n "$BACKUP_KEY" ]]; then
+#                   echo "Deleting old backup: $BACKUP_KEY"
+#                   if [[ -n "$S3_ENDPOINT" ]]; then
+#                     aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}" --endpoint-url "$S3_ENDPOINT"
+#                   else
+#                     aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}"
+#                   fi
+#                 fi
+#               fi
+#             done <<< "$TO_DELETE"
             
-            echo "Retention cleanup completed"
-          else
-            echo "Found $BACKUP_COUNT backups, no cleanup needed (limit: 5)"
-          fi
+#             echo "Retention cleanup completed"
+#           else
+#             echo "Found $BACKUP_COUNT backups, no cleanup needed (limit: 5)"
+#           fi
 
-      - name: Cleanup local backup file
-        if: ${{ always() && !inputs.test-mode }}
-        run: |
-          BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
-          if [ -f "$BACKUP_FILE" ]; then
-            rm -f "$BACKUP_FILE"
-            echo "Local backup file cleaned up"
-          fi
+#       - name: Cleanup local backup file
+#         if: ${{ always() && !inputs.test-mode }}
+#         run: |
+#           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
+#           if [ -f "$BACKUP_FILE" ]; then
+#             rm -f "$BACKUP_FILE"
+#             echo "Local backup file cleaned up"
+#           fi
 
-      - name: Test mode - Keep backup file
-        if: ${{ always() && inputs.test-mode }}
-        run: |
-          BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
-          if [ -f "$BACKUP_FILE" ]; then
-            echo "::notice::Test mode enabled - Backup file kept for inspection: ${BACKUP_FILE}"
-            ls -lh "$BACKUP_FILE"
-          fi
+#       - name: Test mode - Keep backup file
+#         if: ${{ always() && inputs.test-mode }}
+#         run: |
+#           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
+#           if [ -f "$BACKUP_FILE" ]; then
+#             echo "::notice::Test mode enabled - Backup file kept for inspection: ${BACKUP_FILE}"
+#             ls -lh "$BACKUP_FILE"
+#           fi
 
-      - name: Cleanup kubeconfig
-        if: always()
-        run: |
-          rm -f kubeconfig.yaml
+#       - name: Cleanup kubeconfig
+#         if: always()
+#         run: |
+#           rm -f kubeconfig.yaml
