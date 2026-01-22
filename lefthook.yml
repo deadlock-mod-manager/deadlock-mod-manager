@@ -1,6 +1,6 @@
 pre-commit:
   jobs:
-    - run: npx pnpm format:fix
+    - run: pnpm format:fix
       glob:
         - "*.js"
         - "*.jsx"
@@ -10,7 +10,7 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: npx pnpm lint:fix
+    - run: pnpm lint:fix
       glob:
         - "*.js"
         - "*.jsx"
