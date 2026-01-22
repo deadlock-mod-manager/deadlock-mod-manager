@@ -1,6 +1,6 @@
 pre-commit:
   jobs:
-    - run: npx @biomejs/biome format --write {staged_files}
+    - run: pnpm format:fix
       glob:
         - "*.js"
         - "*.jsx"
@@ -10,7 +10,7 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: npx @biomejs/biome check --write {staged_files}
+    - run: pnpm lint:fix
       glob:
         - "*.js"
         - "*.jsx"
