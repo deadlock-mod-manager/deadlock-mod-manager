@@ -41,6 +41,9 @@
 			// *LANGUAGE* will be replaced with the actual language name. If not running a specific language, these paths will not be mounted
 			Game_Language		citadel_*LANGUAGE*
 
+			// These are optional low-violence paths. They will only get mounted if you're in a low-violence mode.
+			Game_LowViolence	citadel_lv
+
 			Game				citadel
 			Game				core
 		}
@@ -56,7 +59,6 @@
 			game Outline
 			game Depth
 			game FrontDepth
-			game MotionVectors
 
 			dev ToolsVis // Visualization modes for all shaders (lighting only, normal maps only, etc.)
 			dev ToolsWireframe // This should use the ToolsVis mode above instead of being its own mode\
@@ -92,8 +94,8 @@
 	{
 		IndexBufferPoolSizeMB 32
 		UseReverseDepth 1
-		Use32BitDepthBuffer 1
-		Use32BitDepthBufferWithoutStencil 1
+		Use32BitDepthBuffer 0
+		Use32BitDepthBufferWithoutStencil 0
 		SwapChainSampleableDepth 1
 		VulkanMutableSwapchain 1
 		"LowLatency"								"1"
@@ -110,7 +112,6 @@
 		"VulkanDefrag"				"1"
 		"MinStreamingPoolSizeMB"	"1024"
 		"MinStreamingPoolSizeMBTools" "2048"
-		"AlwaysPreloadTexturesInGame" "0"
 	}
 
 	NVNGX
@@ -143,6 +144,7 @@
 	{
 		SteamAudioEnabled            "1"
 		WaveDataCacheSizeMB          "256"
+		"UsePlatTime"            "1"
 	}
 	Sounds
 	{
@@ -181,6 +183,9 @@
 		"SupportsDisplacementMapping" "0"
 		"SteamAudioEnabled"				"1"
 		"LatticeDeformerEnabled"		"1"
+		"ShadowAtlasWidth" "16384"
+		"ShadowAtlasHeight" "16384"
+		"TimeSlicedShadowMapRendering" "1"
 	}
 
 	SoundTool
@@ -226,6 +231,8 @@
 			TrianglesPerMeshlet 64	// Maximum valid value currently is 126
 			UseMikkTSpace 1
 			EncodeVertexBuffer 1
+            EncodeVertexBufferVersion 1
+            EncodeVertexBufferLevel 3
 			EncodeIndexBuffer 1
 			SplitDepthStream 1
 		}
@@ -272,6 +279,7 @@
 			UseStaticLightProbes 0
 			LPVAtlas 1
 			BC6HHueShiftFixup 0 // Causes more artifacts than it solves atm
+			Repack2 1
 		}
 
 		SteamAudio
@@ -310,7 +318,7 @@
 			PreMergeSmallRegionsSizeThreshold "20.0"
 		}
 
-		ExperimentalVDataLocalization
+		VDataLocalization
 		{
 			GameOutputPath	"resource/localization/citadel_vdata"
 			TokenPrefix		"Citadel_VData_"
@@ -344,7 +352,7 @@
 		GpuLightBinner 1
 		FogCachedShadowAtlasWidth 2048
 		FogCachedShadowAtlasHeight 2048
-		FogCachedShadowTileSize 256
+		FogCachedShadowTileSize 128
 		GpuLightBinnerSunLightFastPath 1
 		CSMCascadeResolution 2048
 		SunLightManagerCount 0
@@ -353,7 +361,8 @@
 		DefaultShadowTextureHeight 6144
 		DynamicShadowResolution 1
 
-		TransformTextureRowCount	2048
+		TransformTextureRowCount	1024
+		TransformTextureRowCountToolsMode 6144
 		SunLightMaxCascadeSize		4
 		SunLightShadowRenderMode	Depth
 		LayerBatchThresholdFullsort 20
@@ -419,7 +428,7 @@
 	}
 
 	ConVars
-	{
+	{	 
 		"rate"
 		{
 			"min"		"98304"
@@ -430,9 +439,6 @@
 		"sv_maxunlag"	"0.500"
 		"sv_maxunlag_player" "0.200"
 		"sv_lagcomp_filterbyviewangle" "false"
-		"cl_clock_buffer_ticks"	"1"
-		"cl_interp_ratio" "0"
-		"cl_async_usercmd_send" "false"
 
 		// Spew warning when adding/removing classes to/from the top of the hierarchy
 		"panorama_classes_perf_warning_threshold_ms" "0.75"
@@ -465,6 +471,10 @@
 		// Sound debugging
 		"snd_report_audio_nan" "1"
 
+		// Audio system settings
+		"snd_sos_max_event_base_depth" "10"
+		"sos_use_guid_filter" "1"
+
 		"voice_always_sample_mic"               
 		{
 			"version"	"2"
@@ -479,7 +489,13 @@
 		// For perf reasons, since we don't use source-based DSP:
 		"disable_source_soundscape_trace"       "1"
 		
-		"cl_tickpacket_desired_queuelength" "1"
+		// Networking - Induced latency (pred offset)
+		"cl_tickpacket_recvmargin_desired" "5" 					// 5 ms base, min. floor for protecting against thrashing the queue
+		"cl_tickpacket_desired_queuelength" "0"					// 0 = attempt to always reach the queue's min floor
+		"cl_async_usercmd_send_disabled_recvmargin_min" "0.5"	// Additional frame since we do not use the async usercmd send (potentially unneccessary)
+		"cl_clock_buffer_ticks"	"1"
+		"cl_interp_ratio" "0"
+		"cl_async_usercmd_send" "false"
 
 		"fps_max"		"400"
 		"fps_max_ui"	"120"
