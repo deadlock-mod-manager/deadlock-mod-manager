@@ -11,7 +11,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::slice;
 
-pub use diff::{DiffApplicator, DiffGenerator};
+pub use diff::{is_patch_already_applied, DiffApplicator, DiffGenerator};
 pub use document::KvDocument;
 pub use error::{KvError, Result};
 pub use parser::Parser;

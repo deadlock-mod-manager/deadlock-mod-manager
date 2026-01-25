@@ -12,7 +12,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "pnpm run generate-types && cargo build --release",
+    "prebuild": "pnpm run generate-types",
+    "build": "cargo build --release",
     "build:debug": "pnpm run generate-types && cargo build",
     "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
     "test": "pnpm run \"/^test:.*/\"",
@@ -21,7 +22,8 @@
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",
     "prepublishOnly": "pnpm run build",
-    "pretest": "pnpm run build"
+    "pretest": "pnpm run build",
+    "postbuild": "pnpm run -w lint:fix"
   },
   "keywords": [
     "keyvalues",

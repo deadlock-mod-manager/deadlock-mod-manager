@@ -354,10 +354,13 @@ mod tests {
 
         let serializer = Serializer::new(SerializeOptions::default());
         let array_value = KeyValuesValue::Array(vec![KeyValuesValue::String("Value".to_string())]);
-        
+
         let result = serializer.serialize_kv_value(&array_value, 0);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KvError::ArraySerializationError));
+        assert!(matches!(
+            result.unwrap_err(),
+            KvError::ArraySerializationError
+        ));
     }
 }
