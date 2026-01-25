@@ -49,7 +49,7 @@
 [![Linux][linux-status]][linux-url]
 [![AUR][aur-status]][aur-url]
 
-  <img src="./docs/assets/mods.png" alt="Deadlock Mod Manager" width="600">
+  <img src="./docs/assets/deadlock-mod-manager.png" alt="Deadlock Mod Manager" width="600">
   
 </div>
 
@@ -68,6 +68,7 @@
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#sponsors">Sponsors</a></li>
   </ol>
 </details>
 
@@ -96,7 +97,8 @@ For development setup, project architecture, contributing guidelines, and API in
 
 We're actively working to make Deadlock Mod Manager accessible to users worldwide. Join our translation efforts and help bring the mod manager to your language!
 
-### Currently Supported Languages
+<details>
+  <summary><strong>Currently Supported Languages</strong></summary>
 
 <!-- LANGUAGE_TABLE_START -->
 
@@ -120,6 +122,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇯🇵 **Japanese** | 日本語 | ✅ Complete | [hiropiki](https://discordapp.com/users/hiropiki/) |
 
 <!-- LANGUAGE_TABLE_END -->
+</details>
 
 ### How to Help
 
@@ -149,7 +152,6 @@ The script offers two modes:
 
 Translation files are located in `apps/desktop/src/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
 
----
 
 ## Contributing
 
@@ -204,6 +206,19 @@ This project was only possible thanks to the amazing open source community, espe
 - [Bun](https://bun.sh/)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [shadcn/ui](https://ui.shadcn.com/)
+
+## Sponsors
+
+<p align="center">
+  <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">
+    <img src="https://avatars.githubusercontent.com/u/34448643" alt="SignPath" height="60" />
+  </a>
+</p>
+
+<p align="center">
+  Free code signing on Windows provided by <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath.io</a><br/>
+  Certificate by <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath Foundation</a>
+</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
