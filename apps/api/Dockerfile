@@ -35,8 +35,16 @@ RUN cd packages/vpk-parser && \
     pnpm run generate-types && \
     cd ../..
 
+RUN cd packages/kv-parser && \
+    pnpm run generate-types && \
+    cd ../..
+
 # Build Rust FFI libraries
 RUN cd packages/vpk-parser && \
+    cargo build --release && \
+    cd ../..
+
+RUN cd packages/kv-parser && \
     cargo build --release && \
     cd ../..
 
