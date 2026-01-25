@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import _globalsCss from "./styles/globals.css";
+// oxlint-disable-next-line import/no-unassigned-import
+import "./styles/globals.css";
 import { routeTree } from "./routeTree.gen";
 
 const queryClient = new QueryClient({
