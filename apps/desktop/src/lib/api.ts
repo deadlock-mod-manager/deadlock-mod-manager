@@ -13,7 +13,7 @@ import { fetch } from "@tauri-apps/plugin-http";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
+const BASE_URL = import.meta.env.VITE_SERVER_URL ?? "http://localhost:9000";
 
 export const initializeApiUrl = async (): Promise<void> => {
   try {
