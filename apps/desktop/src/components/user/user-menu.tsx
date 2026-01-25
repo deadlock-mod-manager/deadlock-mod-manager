@@ -5,11 +5,16 @@ import {
 } from "@deadlock-mods/ui/components/avatar";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { useState } from "react";
+import { FriendsSidebar } from "@/components/friends/friends-sidebar";
 import { useAuth } from "@/hooks/use-auth";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import AuthModal from "./auth-modal";
 
 export default function UserMenu() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isEnabled: isFriendSystemEnabled } = useFeatureFlag("friend-system");
+  const [showFriendsSidebar, setShowFriendsSidebar] = useState(false);
 
   if (isLoading) {
     return <Skeleton className='h-10 w-10 rounded-full' />;
@@ -30,20 +35,38 @@ export default function UserMenu() {
     "U";
 
   return (
-    <div className='flex items-center gap-4'>
-      <div className='flex flex-col gap-2 overflow-hidden items-end'>
-        <p className='font-medium leading-none'>{user.name}</p>
-        <Button variant='text' size='text' className='text-xs' onClick={logout}>
-          Sign out
-        </Button>
+    <>
+      <div className='flex items-center gap-4'>
+        <div className='flex flex-col gap-2 overflow-hidden items-end'>
+          <p className='font-medium leading-none'>{user.name}</p>
+          <Button
+            variant='text'
+            size='text'
+            className='text-xs'
+            onClick={logout}>
+            Sign out
+          </Button>
+        </div>
+        <button
+          type='button'
+          onClick={() => isFriendSystemEnabled && setShowFriendsSidebar(true)}
+          className='rounded-full transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'>
+          <Avatar className='h-12 w-12 cursor-pointer'>
+            <AvatarImage
+              src={user.picture || undefined}
+              alt={user.name || user.email || "User"}
+            />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+        </button>
       </div>
-      <Avatar className='h-12 w-12'>
-        <AvatarImage
-          src={user.picture || undefined}
-          alt={user.name || user.email || "User"}
+
+      {isFriendSystemEnabled && (
+        <FriendsSidebar
+          open={showFriendsSidebar}
+          onOpenChange={setShowFriendsSidebar}
         />
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
-    </div>
+      )}
+    </>
   );
 }

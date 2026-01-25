@@ -14,12 +14,14 @@ import {
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { LogInIcon, PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useOIDCSession } from "@/hooks/use-oidc-session";
 
 export default function UserMenu() {
   const navigate = useNavigate();
   const { session, isLoading, signOut } = useOIDCSession();
+  const { isEnabled: isFriendSystemEnabled } = useFeatureFlag("friend-system");
 
   if (isLoading) {
     return <Skeleton className='h-10 w-10 rounded-full' />;
@@ -91,17 +93,23 @@ export default function UserMenu() {
           </div>
         </div>
         <DropdownMenuSeparator />
-        {isAdmin && (
-          <>
-            <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
-              <Link to='/dashboard'>
-                <LayoutDashboard className='size-4' />
-                <span>Dashboard</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
+        {isFriendSystemEnabled && (
+          <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+            <Link to='/friends'>
+              <Users className='size-4' />
+              <span>Friends</span>
+            </Link>
+          </DropdownMenuItem>
         )}
+        {isAdmin && (
+          <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+            <Link to='/dashboard'>
+              <LayoutDashboard className='size-4' />
+              <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           className='cursor-pointer gap-2 py-2.5'
           onClick={() => {

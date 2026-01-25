@@ -3,6 +3,8 @@ import type {
   CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
+  FriendListDto,
+  FriendsActiveModsDto,
   ModDownloadDto,
   ModDto,
   PublishedCrosshairDto,
@@ -247,4 +249,27 @@ export const analyzeHashes = async (hashes: {
       };
     }>
   >("/api/v2/vpk-analyse-hashes", hashes);
+};
+
+// Friends API functions
+export const getFriends = async () => {
+  return await apiRequest<FriendListDto>("/api/v2/friends");
+};
+
+export const getUserId = async () => {
+  return await apiRequest<{ userId: string }>("/api/v2/auth/user-id");
+};
+
+// Heartbeat API function
+export const sendHeartbeat = async (modIds?: string[]) => {
+  return await apiRequest<{ success: boolean }>(
+    "/api/v2/heartbeat",
+    { modIds },
+    "POST",
+  );
+};
+
+// Friends active mods API function
+export const getFriendsActiveMods = async () => {
+  return await apiRequest<FriendsActiveModsDto>("/api/v2/friends/active-mods");
 };

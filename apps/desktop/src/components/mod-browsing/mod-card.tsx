@@ -18,6 +18,7 @@ import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";
 import { isModOutdated } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import FriendsBadge from "./friends-badge";
 import ModButton from "./mod-button";
 import NSFWBlur from "./nsfw-blur";
 
@@ -82,11 +83,12 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             </div>
           </div>
         )}
-        <div className='absolute top-2 right-2 flex flex-col gap-1'>
+        <div className='absolute top-2 right-2 flex flex-col items-end gap-1'>
           {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
           {status === ModStatus.Installed && <Badge>Installed</Badge>}
           {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
           <ReportCounter modId={mod.id} variant='indicator' />
+          <FriendsBadge modId={mod.remoteId} />
         </div>
       </div>
       <CardHeader className='px-3 py-4'>

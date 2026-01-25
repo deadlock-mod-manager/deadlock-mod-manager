@@ -14,6 +14,7 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { auth } from "./lib/auth";
 import { SENTRY_OPTIONS } from "./lib/constants";
 import container from "./lib/container";
+import { isDevAuthEnabled } from "./lib/dev-auth";
 import { env } from "./lib/env";
 import { logger } from "./lib/logger";
 import { HealthService } from "./services/health";
@@ -126,6 +127,37 @@ app.get("/login", async (c, next) => {
 
   return next();
 });
+
+// Logout endpoint for dev auth - clears the better-auth session cookie
+if (isDevAuthEnabled()) {
+  app.get("/logout", async (c) => {
+    const returnTo = c.req.query("returnTo") || "/";
+    const baseURL = env.BETTER_AUTH_URL || `http://localhost:${env.PORT}`;
+
+    // Call better-auth's sign-out to clear the session
+    const signOutResponse = await auth.api.signOut({
+      headers: c.req.raw.headers,
+    });
+
+    // Get the Set-Cookie headers from the sign-out response
+    const setCookieHeaders = signOutResponse?.headers?.getSetCookie?.() || [];
+
+    const safeReturnTo = validateRedirectUrl(returnTo, baseURL);
+    const redirectUrl = safeReturnTo.startsWith("http")
+      ? safeReturnTo
+      : `${baseURL}${safeReturnTo.startsWith("/") ? "" : "/"}${safeReturnTo}`;
+
+    // Create redirect response with the sign-out cookies
+    const response = c.redirect(redirectUrl, 302);
+
+    // Forward the Set-Cookie headers to clear the session cookie
+    for (const cookie of setCookieHeaders) {
+      response.headers.append("Set-Cookie", cookie);
+    }
+
+    return response;
+  });
+}
 
 app.use("/assets/*", serveStatic({ root: "./dist/client/" }));
 app.get("*", serveStatic({ path: "./dist/client/index.html" }));

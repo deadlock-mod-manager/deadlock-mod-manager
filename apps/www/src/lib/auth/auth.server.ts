@@ -1,7 +1,7 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { AUTH_URL } from "../config";
+import { AUTH_URL } from "../config.server";
 import {
   clearAuthCookies,
   createAuthorizationUrl,
@@ -16,7 +16,7 @@ const OIDCUserSchema = z.object({
   name: z.string().optional(),
   email: z.string().optional(),
   email_verified: z.boolean().optional(),
-  picture: z.string().optional(),
+  picture: z.string().nullable().optional(),
   isAdmin: z.boolean().optional(),
 });
 
@@ -115,7 +115,7 @@ async function fetchSession() {
       return null;
     }
 
-    return { user: result.data };
+    return { user: result.data, accessToken: token };
   } catch {
     return null;
   }

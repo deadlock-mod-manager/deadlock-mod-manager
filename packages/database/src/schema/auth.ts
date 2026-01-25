@@ -1,4 +1,12 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
@@ -17,6 +25,53 @@ export const user = pgTable(
   },
   (table) => [index("idx_user_created_at").on(table.createdAt)],
 );
+
+export const friendshipStatusEnum = pgEnum("friendship_status", [
+  "pending",
+  "accepted",
+]);
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    friendId: text("friend_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: friendshipStatusEnum("status").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.friendId] }),
+    index("idx_friendships_user_id_status").on(table.userId, table.status),
+    index("idx_friendships_friend_id_status").on(table.friendId, table.status),
+  ],
+);
+
+export type Friendship = typeof friendships.$inferSelect;
+export type NewFriendship = typeof friendships.$inferInsert;
+export type FriendshipStatus = (typeof friendshipStatusEnum.enumValues)[number];
+
+export const userHeartbeats = pgTable("user_heartbeats", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  lastHeartbeat: timestamp("last_heartbeat").notNull().defaultNow(),
+});
+
+export type UserHeartbeat = typeof userHeartbeats.$inferSelect;
+
+export const userActiveMods = pgTable("user_active_mods", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  modIds: text("mod_ids").array().notNull().default([]),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type UserActiveMods = typeof userActiveMods.$inferSelect;
 
 export const session = pgTable("session", {
   id: typeId("id", "session")

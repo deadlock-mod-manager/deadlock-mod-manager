@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createContext, useContext, useEffect } from "react";
+import { useHeartbeat } from "@/hooks/use-heartbeat";
 import { usePersistedStore } from "@/lib/store";
 
 type AppProviderProps = {
@@ -14,6 +15,8 @@ const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
   const { gamePath, setGamePath } = usePersistedStore();
+
+  useHeartbeat();
 
   useEffect(() => {
     if (!gamePath) {

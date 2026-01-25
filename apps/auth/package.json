@@ -7,7 +7,7 @@
     "check-types": "tsc --noEmit --skipLibCheck",
     "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
     "dev:server": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
-    "dev:client": "vite build --watch",
+    "dev:client": "dotenv -e ../../.env -- vite build --watch",
     "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\""
   },
   "dependencies": {
