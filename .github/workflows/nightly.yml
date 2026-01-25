@@ -197,6 +197,22 @@ jobs:
               prerelease: true
             });
 
+            console.log(`Release created with ID: ${data.id}`);
+            console.log(`Release URL: ${data.html_url}`);
+
+            // Verify the release was created successfully
+            const { data: verifyRelease } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: data.id
+            });
+
+            if (!verifyRelease || verifyRelease.id !== data.id) {
+              throw new Error(`Failed to verify release creation. Expected ID ${data.id}, got ${verifyRelease?.id}`);
+            }
+
+            console.log(`Release verified: ${verifyRelease.name} (ID: ${verifyRelease.id}, draft: ${verifyRelease.draft})`);
+
             core.setOutput('tag_name', tag);
             return data.id;
 
@@ -324,26 +340,58 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            console.log(`Release ID from env: ${process.env.RELEASE_ID}`);
+            console.log(`Parsed release ID: ${releaseId}`);
+            
+            // Verify the release exists before uploading
+            try {
+              const { data: release } = await github.rest.repos.getRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId
+              });
+              console.log(`Found release: ${release.name} (draft: ${release.draft})`);
+            } catch (error) {
+              console.error(`Failed to find release ${releaseId}: ${error.message}`);
+              throw error;
+            }
+            
             const artifactDir = './artifact-output';
             const files = fs.readdirSync(artifactDir);
+            console.log(`Files in artifact directory: ${JSON.stringify(files)}`);
             
             for (const file of files) {
               const filePath = path.join(artifactDir, file);
               const stats = fs.statSync(filePath);
               
               if (stats.isFile()) {
-                console.log(`Uploading ${file} to release...`);
+                // Sanitize filename - remove any trailing whitespace or special chars
+                const sanitizedName = file.trim();
+                console.log(`Uploading "${sanitizedName}" (original: "${file}") to release...`);
+                console.log(`File size: ${stats.size} bytes`);
                 const content = fs.readFileSync(filePath);
                 
-                await github.rest.repos.uploadReleaseAsset({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: parseInt(process.env.RELEASE_ID),
-                  name: file,
-                  data: content
-                });
-                
-                console.log(`Successfully uploaded ${file}`);
+                try {
+                  await github.rest.repos.uploadReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: releaseId,
+                    name: sanitizedName,
+                    data: content
+                  });
+                  console.log(`Successfully uploaded ${sanitizedName}`);
+                } catch (uploadError) {
+                  console.error(`Upload failed for ${sanitizedName}`);
+                  console.error(`Owner: ${context.repo.owner}, Repo: ${context.repo.repo}`);
+                  console.error(`Release ID: ${releaseId}`);
+                  console.error(`Error: ${uploadError.message}`);
+                  if (uploadError.response) {
+                    console.error(`Status: ${uploadError.response.status}`);
+                    console.error(`Response data: ${JSON.stringify(uploadError.response.data)}`);
+                  }
+                  throw uploadError;
+                }
               }
             }
 

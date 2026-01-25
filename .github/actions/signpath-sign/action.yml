@@ -65,6 +65,12 @@ runs:
       shell: bash
       run: mkdir -p "${{ inputs.output-directory }}"
 
+    - name: List signed output contents
+      shell: bash
+      run: |
+        echo "Contents of signpath-signed-output:"
+        ls -la ./signpath-signed-output/ || echo "Directory doesn't exist or is empty"
+
     - name: Regenerate Tauri updater signature
       if: inputs.regenerate-tauri-signature == 'true'
       shell: bash
