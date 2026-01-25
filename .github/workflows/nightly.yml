@@ -1,11 +1,13 @@
 name: Nightly Build
+
 env:
   NODE_VERSION: "24.8.0"
+  ENABLE_SIGNED_UPDATER: "false"
 
 on:
-  schedule:
-    # Run at 2 AM UTC every day
-    - cron: "0 2 * * *"
+  # schedule:
+  #   # Run at 2 AM UTC every day
+  #   - cron: "0 2 * * *"
   workflow_dispatch: # Allow manual triggering
     inputs:
       build_windows:
@@ -26,9 +28,9 @@ jobs:
       latest_commit: ${{ steps.check.outputs.latest_commit }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Get full history
+          fetch-depth: 0
 
       - name: Check for new commits since last nightly
         id: check
@@ -105,17 +107,20 @@ jobs:
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
       tag_name: ${{ steps.create-release.outputs.tag_name }}
+      package_version: ${{ steps.version.outputs.package_version }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+
       - uses: pnpm/action-setup@v4
 
       - name: Get version and create tag
@@ -126,6 +131,7 @@ jobs:
           COMMIT_SHORT=${{ needs.check-commits.outputs.latest_commit }}
           TAG_NAME="nightly-${PACKAGE_VERSION}-${DATE}-${COMMIT_SHORT}"
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
@@ -153,7 +159,7 @@ jobs:
 
       - name: Create nightly release
         id: create-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           COMMITS: ${{ steps.commits.outputs.commits }}
         with:
@@ -165,15 +171,15 @@ jobs:
             console.log(`Creating nightly release: ${tag}`);
 
             const releaseBody = [
-              "**🌙 Nightly build from latest development**",
+              "**Nightly build from latest development**",
               "",
-              `📅 **Built:** ${new Date().toISOString().split('T')[0]}`,
-              `📊 **Commits since last nightly:** ${commitCount}`,
-              `🔗 **Latest Commit:** ${context.sha.substring(0, 7)}`,
+              `Built: ${new Date().toISOString().split('T')[0]}`,
+              `Commits since last nightly: ${commitCount}`,
+              `Latest Commit: ${context.sha.substring(0, 7)}`,
               "",
-              "⚠️ **Warning:** This is a nightly build and may contain unstable features or bugs.",
+              "**Warning:** This is a nightly build and may contain unstable features or bugs.",
               "",
-              "## 📋 Changes in this nightly build",
+              "## Changes in this nightly build",
               "",
               commits || "No commits found",
               "",
@@ -185,13 +191,12 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tag,
-              name: `🌙 Nightly ${tag}`,
+              name: `Nightly ${tag}`,
               body: releaseBody,
               draft: true,
               prerelease: true
             });
 
-            // Set output for the step
             core.setOutput('tag_name', tag);
             return data.id;
 
@@ -207,7 +212,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -220,10 +225,11 @@ jobs:
           workspaces: apps/desktop -> apps/desktop/target
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+
       - uses: pnpm/action-setup@v4
 
       - name: Install apt dependencies (ubuntu only)
@@ -255,7 +261,9 @@ jobs:
       - name: Update version with commit hash
         run: pnpm version:nightly ${{ needs.check-commits.outputs.latest_commit }}
 
-      - name: Build the app
+      # Linux build - upload directly to release
+      - name: Build the app (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -267,7 +275,126 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
-          args: ${{ matrix.platform == 'windows-latest' && '--bundles nsis,updater' || '' }}
+
+      # Windows build - don't upload to release yet, need to code-sign first
+      - name: Build the app (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        with:
+          projectPath: ./apps/desktop
+          args: "--bundles nsis,updater"
+
+      # Windows: SignPath code signing flow
+      - name: Upload unsigned Windows artifact
+        id: upload-unsigned
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nightly-unsigned
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+      - name: Submit to SignPath
+        if: matrix.platform == 'windows-latest'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORGANIZATION_ID }}"
+          project-slug: "deadlock-mod-manager"
+          signing-policy-slug: "test-signing"
+          github-artifact-id: "${{ steps.upload-unsigned.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: "./signed-output"
+
+      - name: Prepare signed artifacts
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p artifact-output
+          
+          if [ "${{ env.ENABLE_SIGNED_UPDATER }}" == "true" ]; then
+            # Regenerate Tauri signature for code-signed exe
+            exeFile=$(ls ./signed-output/*.exe)
+            pnpm tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
+            mv ./signed-output/*.exe ./artifact-output/
+            mv ./signed-output/*.exe.sig ./artifact-output/
+          else
+            # Just move the signed exe without regenerating signature
+            mv ./signed-output/*.exe ./artifact-output/
+          fi
+
+      - name: Upload signed Windows artifact
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nightly-signed
+          path: ./artifact-output/*
+          if-no-files-found: error
+
+      - name: Upload signed artifacts to release
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+            
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+              
+              if (stats.isFile()) {
+                console.log(`Uploading ${file} to release...`);
+                const content = fs.readFileSync(filePath);
+                
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: parseInt(process.env.RELEASE_ID),
+                  name: file,
+                  data: content
+                });
+                
+                console.log(`Successfully uploaded ${file}`);
+              }
+            }
+
+  update-latest-json:
+    needs: [check-commits, create-nightly-release, build-nightly]
+    if: needs.check-commits.outputs.should_build == 'true' && vars.ENABLE_SIGNED_UPDATER == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows signed artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-nightly-signed
+          path: release-artifacts/windows
+
+      - name: Update latest.json
+        uses: ./.github/actions/update-latest-json
+        with:
+          release-id: ${{ needs.create-nightly-release.outputs.release_id }}
+          signed-artifact-path: ./release-artifacts/windows
+          version: ${{ needs.create-nightly-release.outputs.tag_name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-nightly:
     permissions:
@@ -279,8 +406,7 @@ jobs:
 
     steps:
       - name: Publish nightly release
-        id: publish-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           release_id: ${{ needs.create-nightly-release.outputs.release_id }}
         with:
@@ -288,13 +414,12 @@ jobs:
             try {
               console.log(`Publishing nightly release ID: ${process.env.release_id}`);
               
-              // Update the release to publish it
               const { data: updatedRelease } = await github.rest.repos.updateRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 release_id: process.env.release_id,
                 draft: false,
-                prerelease: true // Keep as prerelease for nightly builds
+                prerelease: true
               });
               
               console.log(`Successfully published nightly release: ${updatedRelease.html_url}`);
@@ -305,7 +430,7 @@ jobs:
             }
 
       - name: Cleanup old nightly releases
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { data: releases } = await github.rest.repos.listReleases({
@@ -314,26 +439,22 @@ jobs:
               per_page: 100
             });
 
-            // Filter nightly releases and sort by creation date
             const nightlyReleases = releases
               .filter(release => release.tag_name.startsWith('nightly-'))
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-            // Keep only the latest 7 nightly releases, delete older ones
             const releasesToDelete = nightlyReleases.slice(7);
 
             for (const release of releasesToDelete) {
               console.log(`Deleting old nightly release: ${release.tag_name}`);
               
               try {
-                // Delete the release
                 await github.rest.repos.deleteRelease({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   release_id: release.id
                 });
                 
-                // Delete the tag
                 await github.rest.git.deleteRef({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -356,7 +477,7 @@ jobs:
 
     steps:
       - name: Delete failed nightly release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           release_id: ${{ needs.create-nightly-release.outputs.release_id }}
         with:

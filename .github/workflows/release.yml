@@ -1,6 +1,8 @@
 name: Release Desktop App
+
 env:
   NODE_VERSION: "24.8.0"
+  ENABLE_SIGNED_UPDATER: "false"
 
 on:
   workflow_dispatch:
@@ -15,17 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
+      package_version: ${{ steps.get-version.outputs.version }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+
       - uses: pnpm/action-setup@v4
 
       - name: Setup Bun
@@ -34,19 +39,22 @@ jobs:
           bun-version: latest
 
       - name: Get version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")" >> $GITHUB_ENV
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Get previous release tag
         id: previous-tag
         run: |
-          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "nightly" | grep -v "v${{ env.PACKAGE_VERSION }}" | head -1)
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "nightly" | grep -v "v${{ steps.get-version.outputs.version }}" | head -1)
           echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
           echo "Previous release tag: $PREVIOUS_TAG"
 
       - name: Generate release notes
         id: release-notes
         run: |
-          RELEASE_NOTES=$(bun run scripts/generate-release-notes.ts "${{ env.PACKAGE_VERSION }}" "${{ steps.previous-tag.outputs.previous_tag }}")
+          RELEASE_NOTES=$(bun run scripts/generate-release-notes.ts "${{ steps.get-version.outputs.version }}" "${{ steps.previous-tag.outputs.previous_tag }}")
 
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
@@ -54,15 +62,15 @@ jobs:
 
       - name: Create or get existing release
         id: create-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           RELEASE_BODY: ${{ steps.release-notes.outputs.release_notes }}
+          PACKAGE_VERSION: ${{ steps.get-version.outputs.version }}
         with:
           script: |
             const tag = `v${process.env.PACKAGE_VERSION}`;
             const releaseBody = process.env.RELEASE_BODY;
 
-            // First, try to get existing release by tag
             try {
               const { data: release } = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
@@ -72,7 +80,6 @@ jobs:
               
               console.log(`Found existing release: ${release.id}`);
               
-              // Update the existing release with new body
               await github.rest.repos.updateRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -83,7 +90,6 @@ jobs:
               return release.id;
             } catch (error) {
               if (error.status === 404) {
-                // Release doesn't exist, create a new one
                 console.log(`Creating new release for tag: ${tag}`);
                 const { data } = await github.rest.repos.createRelease({
                   owner: context.repo.owner,
@@ -96,7 +102,6 @@ jobs:
                 });
                 return data.id;
               } else {
-                // Re-throw if it's a different error
                 throw error;
               }
             }
@@ -113,7 +118,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -126,10 +131,11 @@ jobs:
           workspaces: apps/desktop -> apps/desktop/target
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
+
       - uses: pnpm/action-setup@v4
 
       - name: Install apt dependencies (ubuntu only)
@@ -153,7 +159,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build the app
+      # Linux build - upload directly to release
+      - name: Build the app (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -166,16 +174,136 @@ jobs:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-release.outputs.release_id }}
 
+      # Windows build - don't upload to release yet, need to code-sign first
+      - name: Build the app (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        with:
+          projectPath: ./apps/desktop
+          args: "--bundles nsis,updater"
+
+      # Windows: SignPath code signing flow
+      - name: Upload unsigned Windows artifact
+        id: upload-unsigned
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unsigned
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+      - name: Submit to SignPath
+        if: matrix.platform == 'windows-latest'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORGANIZATION_ID }}"
+          project-slug: "deadlock-mod-manager"
+          signing-policy-slug: "release-signing"
+          github-artifact-id: "${{ steps.upload-unsigned.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: "./signed-output"
+
+      - name: Prepare signed artifacts
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p artifact-output
+          
+          if [ "${{ env.ENABLE_SIGNED_UPDATER }}" == "true" ]; then
+            # Regenerate Tauri signature for code-signed exe
+            exeFile=$(ls ./signed-output/*.exe)
+            pnpm tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
+            mv ./signed-output/*.exe ./artifact-output/
+            mv ./signed-output/*.exe.sig ./artifact-output/
+          else
+            # Just move the signed exe without regenerating signature
+            mv ./signed-output/*.exe ./artifact-output/
+          fi
+
+      - name: Upload signed Windows artifact
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-signed
+          path: ./artifact-output/*
+          if-no-files-found: error
+
+      - name: Upload signed artifacts to release
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+            
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+              
+              if (stats.isFile()) {
+                console.log(`Uploading ${file} to release...`);
+                const content = fs.readFileSync(filePath);
+                
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: parseInt(process.env.RELEASE_ID),
+                  name: file,
+                  data: content
+                });
+                
+                console.log(`Successfully uploaded ${file}`);
+              }
+            }
+
+  update-latest-json:
+    needs: [create-release, build-tauri]
+    if: ${{ vars.ENABLE_SIGNED_UPDATER == 'true' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows signed artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-signed
+          path: release-artifacts/windows
+
+      - name: Update latest.json
+        uses: ./.github/actions/update-latest-json
+        with:
+          release-id: ${{ needs.create-release.outputs.release_id }}
+          signed-artifact-path: ./release-artifacts/windows
+          version: v${{ needs.create-release.outputs.package_version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   publish-release:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     needs: [create-release, build-tauri]
+    if: always() && needs.build-tauri.result == 'success'
 
     steps:
       - name: Publish release
-        id: publish-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -183,7 +311,6 @@ jobs:
             try {
               console.log(`Updating release ID: ${process.env.release_id}`);
               
-              // First get the current release to check its state
               const { data: currentRelease } = await github.rest.repos.getRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -192,7 +319,6 @@ jobs:
               
               console.log(`Current release state - Draft: ${currentRelease.draft}, Tag: ${currentRelease.tag_name}`);
               
-              // Update the release to publish it
               const { data: updatedRelease } = await github.rest.repos.updateRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -218,7 +344,7 @@ jobs:
 
     steps:
       - name: Delete release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:

@@ -1,0 +1,86 @@
+name: "SignPath Code Signing"
+description: "Sign Windows executables using SignPath and optionally regenerate Tauri updater signature"
+
+inputs:
+  unsigned-artifact-path:
+    description: "Path to the unsigned executable(s)"
+    required: true
+  output-directory:
+    description: "Directory to output signed artifacts"
+    required: true
+  signpath-api-token:
+    description: "SignPath API token"
+    required: true
+  signpath-organization-id:
+    description: "SignPath organization ID"
+    required: true
+  signpath-project-slug:
+    description: "SignPath project slug"
+    required: true
+    default: "deadlock-mod-manager"
+  signpath-signing-policy:
+    description: "SignPath signing policy slug"
+    required: true
+    default: "release-signing"
+  regenerate-tauri-signature:
+    description: "Whether to regenerate the Tauri updater signature after code signing"
+    required: false
+    default: "false"
+  tauri-private-key:
+    description: "Tauri signing private key (required if regenerate-tauri-signature is true)"
+    required: false
+
+outputs:
+  signed-artifact-path:
+    description: "Path to the signed artifact(s)"
+    value: ${{ inputs.output-directory }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Upload unsigned artifact
+      id: upload-unsigned
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-unsigned-${{ github.run_id }}
+        path: ${{ inputs.unsigned-artifact-path }}
+        if-no-files-found: error
+
+    - name: Submit to SignPath
+      uses: signpath/github-action-submit-signing-request@v2
+      with:
+        api-token: ${{ inputs.signpath-api-token }}
+        organization-id: ${{ inputs.signpath-organization-id }}
+        project-slug: ${{ inputs.signpath-project-slug }}
+        signing-policy-slug: ${{ inputs.signpath-signing-policy }}
+        github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+        wait-for-completion: true
+        output-artifact-directory: "./signpath-signed-output"
+
+    - name: Create output directory
+      shell: bash
+      run: mkdir -p "${{ inputs.output-directory }}"
+
+    - name: Regenerate Tauri updater signature
+      if: inputs.regenerate-tauri-signature == 'true'
+      shell: bash
+      env:
+        TAURI_PRIVATE_KEY: ${{ inputs.tauri-private-key }}
+      run: |
+        exeFile=$(ls ./signpath-signed-output/*.exe)
+        echo "Regenerating Tauri signature for: $exeFile"
+        pnpm tauri signer sign -k "$TAURI_PRIVATE_KEY" "$exeFile"
+        mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
+        mv ./signpath-signed-output/*.exe.sig "${{ inputs.output-directory }}/"
+        echo "Moved signed exe and regenerated sig to output directory"
+
+    - name: Move signed exe without regenerating signature
+      if: inputs.regenerate-tauri-signature != 'true'
+      shell: bash
+      run: |
+        mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
+        echo "Moved signed exe to output directory (no sig regeneration)"
+
+    - name: Cleanup temporary signed output
+      shell: bash
+      run: rm -rf ./signpath-signed-output

@@ -1,0 +1,112 @@
+name: "Update latest.json"
+description: "Update latest.json with new Windows NSIS signature after code signing"
+
+inputs:
+  release-id:
+    description: "GitHub release ID"
+    required: true
+  signed-artifact-path:
+    description: "Path to the directory containing signed Windows artifacts (.exe and .exe.sig)"
+    required: true
+  version:
+    description: "Version string for the release URL (e.g., 'v1.0.0' or 'nightly-1.0.0-20240101-abc1234')"
+    required: true
+  github-token:
+    description: "GitHub token for API access"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update latest.json with new Windows NSIS signature
+      uses: actions/github-script@v7
+      env:
+        RELEASE_ID: ${{ inputs.release-id }}
+        VERSION: ${{ inputs.version }}
+        ARTIFACT_PATH: ${{ inputs.signed-artifact-path }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          const releaseId = parseInt(process.env.RELEASE_ID);
+          const version = process.env.VERSION;
+          const artifactPath = process.env.ARTIFACT_PATH;
+          
+          // Get the release and find the existing latest.json
+          const { data: release } = await github.rest.repos.getRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: releaseId
+          });
+          
+          const latestJsonAsset = release.assets.find(a => a.name === 'latest.json');
+          if (!latestJsonAsset) {
+            throw new Error('latest.json not found in release assets. Linux build may not have completed.');
+          }
+          
+          // Download the existing latest.json
+          const response = await github.rest.repos.getReleaseAsset({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            asset_id: latestJsonAsset.id,
+            headers: {
+              Accept: 'application/octet-stream'
+            }
+          });
+          
+          const latestJson = JSON.parse(Buffer.from(response.data).toString('utf8'));
+          console.log('Downloaded existing latest.json');
+          console.log('Existing platforms:', Object.keys(latestJson.platforms));
+          
+          // Read the new Windows NSIS signature and find the exe file
+          const files = fs.readdirSync(artifactPath);
+          const sigFile = files.find(f => f.endsWith('.exe.sig'));
+          const exeFile = files.find(f => f.endsWith('.exe') && !f.endsWith('.exe.sig'));
+          
+          if (!sigFile) {
+            throw new Error('No .exe.sig file found in signed artifacts');
+          }
+          if (!exeFile) {
+            throw new Error('No .exe file found in signed artifacts');
+          }
+          
+          const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
+          console.log(`Read new signature from ${sigFile}`);
+          
+          const exeUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${exeFile}`;
+          
+          // Update or add Windows NSIS entries
+          latestJson.platforms['windows-x86_64'] = {
+            signature: newSignature,
+            url: exeUrl
+          };
+          console.log('Updated windows-x86_64 entry');
+          
+          latestJson.platforms['windows-x86_64-nsis'] = {
+            signature: newSignature,
+            url: exeUrl
+          };
+          console.log('Updated windows-x86_64-nsis entry');
+          
+          console.log('Final platforms:', Object.keys(latestJson.platforms));
+          
+          // Delete existing latest.json and upload new one
+          await github.rest.repos.deleteReleaseAsset({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            asset_id: latestJsonAsset.id
+          });
+          console.log('Deleted existing latest.json');
+          
+          const newContent = JSON.stringify(latestJson, null, 2);
+          await github.rest.repos.uploadReleaseAsset({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: releaseId,
+            name: 'latest.json',
+            data: Buffer.from(newContent)
+          });
+          
+          console.log('Successfully uploaded updated latest.json');
