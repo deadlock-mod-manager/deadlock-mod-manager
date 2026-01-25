@@ -174,7 +174,8 @@ Wir arbeiten aktiv daran, den Deadlock Mod Manager für Nutzer weltweit zugängl
 | Language | Native Name | Status | Contributors |
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://discordapp.com/users/__skeptic__/) |
+| 🇧🇬 **Bulgarian** | Български | ✅ Complete | [macchiako](https://discordapp.com/users/macchiako./) |
+| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://github.com/Skeptic-systems) |
 | 🇫🇷 **French** | Français | ✅ Complete | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
