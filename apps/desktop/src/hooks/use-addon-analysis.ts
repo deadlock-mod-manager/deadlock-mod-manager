@@ -86,7 +86,7 @@ export const useAddonAnalysis = () => {
 
       // Process identified addons and add them to the store
       let processedIdentifiedCount = 0;
-      let processedPrefixedCount = 0;
+      let _processedPrefixedCount = 0;
       console.log("Processing analysis results:", {
         totalAddons: data.addons.length,
         addonsWithRemoteId: data.addons.filter((a) => a.remoteId).length,
@@ -107,7 +107,7 @@ export const useAddonAnalysis = () => {
               // This is a prefixed VPK (no matchInfo) - add as downloaded but not installed
               // Path can be empty since install_mod will find and rename the prefixed VPKs in addons
               addIdentifiedLocalMod(modDetails, "", false);
-              processedPrefixedCount++;
+              _processedPrefixedCount++;
             }
           } catch (error) {
             logger

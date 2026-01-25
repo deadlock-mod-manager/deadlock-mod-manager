@@ -39,6 +39,7 @@ class GameBananaRssParser extends Parser<GameBananaFeed, GameBananaItem> {
     } catch (error) {
       throw new Error(
         `Failed to parse GameBanana RSS feed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { cause: error },
       );
     }
   }

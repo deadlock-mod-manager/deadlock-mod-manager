@@ -1,4 +1,6 @@
+// oxlint-disable-next-line import/no-unassigned-import Necessary for tsyringe
 import "reflect-metadata";
+// oxlint-disable-next-line import/no-unassigned-import Necessary for instrumentation
 import "./instrument";
 
 import { prometheus } from "@hono/prometheus";

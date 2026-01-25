@@ -270,7 +270,15 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-api, build-auth, build-bot, build-lockdex, build-mirror]
+    needs:
+      [
+        create-release,
+        build-api,
+        build-auth,
+        build-bot,
+        build-lockdex,
+        build-mirror,
+      ]
 
     steps:
       - name: Publish release
@@ -312,7 +320,15 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-api, build-auth, build-bot, build-lockdex, build-mirror]
+    needs:
+      [
+        create-release,
+        build-api,
+        build-auth,
+        build-bot,
+        build-lockdex,
+        build-mirror,
+      ]
     if: failure()
 
     steps:

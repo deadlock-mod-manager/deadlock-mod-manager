@@ -28,7 +28,6 @@
 ### Minor Changes
 
 - 921a7a8: Add background workers for mirror service validation and cleanup
-
   - Validation worker runs every hour (configurable) to check for stale files by comparing mirroredFiles with modDownloads
   - Cleanup worker runs daily to remove unused files older than 14 days (configurable)
   - Added Redis configuration and cron job scheduling using @deadlock-mods/queue

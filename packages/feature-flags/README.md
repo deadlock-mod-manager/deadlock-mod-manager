@@ -57,7 +57,7 @@ const segmentService = new SegmentService(segmentRepository, logger);
 const featureFlagService = new FeatureFlagService(
   logger,
   featureFlagRepository,
-  segmentService
+  segmentService,
 );
 
 // Initialize registry
@@ -85,7 +85,7 @@ if (result.isOk()) {
 // Check if a feature flag is enabled (basic)
 const isEnabled = await featureFlagService.isFeatureFlagEnabled(
   "feature-flag-id",
-  { shouldThrow: false }
+  { shouldThrow: false },
 );
 
 // Check with user context for segment overrides
@@ -94,7 +94,7 @@ const isEnabledForUser = await featureFlagService.isFeatureFlagEnabled(
   {
     shouldThrow: false,
     userId: "user-123",
-  }
+  },
 );
 ```
 
@@ -153,13 +153,13 @@ const segments = await segmentService.getUserSegments("user-id");
 await segmentService.createSegmentFeatureFlagOverride(
   "segment-id",
   "feature-flag-id",
-  true // Enable for this segment
+  true, // Enable for this segment
 );
 
 // Get specific override
 const override = await segmentService.getSegmentOverride(
   "segment-id",
-  "feature-flag-id"
+  "feature-flag-id",
 );
 ```
 
@@ -175,7 +175,7 @@ When a user belongs to multiple segments with different overrides, the segment w
 // Result will be TRUE because beta-users has higher priority
 const isEnabled = await featureFlagService.isFeatureFlagEnabled(
   "feature-flag-id",
-  { userId: "user-id" }
+  { userId: "user-id" },
 );
 ```
 
@@ -240,7 +240,7 @@ const isEnabled = await featureFlagsService.isFeatureEnabled("new-dashboard");
 // Check with user context
 const isEnabledForUser = await featureFlagsService.isFeatureEnabled(
   "new-dashboard",
-  "user-id"
+  "user-id",
 );
 
 // Bootstrap on startup
@@ -373,13 +373,13 @@ Use `shouldThrow: false` in user-facing code:
 // Safe for user-facing features
 const isEnabled = await featureFlagService.isFeatureFlagEnabled(
   "feature-id",
-  { shouldThrow: false } // Returns false if error occurs
+  { shouldThrow: false }, // Returns false if error occurs
 );
 
 // Use shouldThrow: true for admin operations
 const result = await featureFlagService.isFeatureFlagEnabled(
   "feature-id",
-  { shouldThrow: true } // Throws error for debugging
+  { shouldThrow: true }, // Throws error for debugging
 );
 ```
 

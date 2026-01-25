@@ -2,6 +2,24 @@ import { debug, error, info, trace, warn } from "@tauri-apps/plugin-log";
 import { BlankTransport, ConsoleTransport, LogLayer, LogLevel } from "loglayer";
 import { serializeError } from "serialize-error";
 
+const serializeKeyValues = (
+  data: Record<string, unknown>,
+): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === "string") {
+      result[key] = value;
+    } else if (value === null || value === undefined) {
+      result[key] = String(value);
+    } else if (typeof value === "object") {
+      result[key] = JSON.stringify(value);
+    } else {
+      result[key] = String(value);
+    }
+  }
+  return result;
+};
+
 const logger = new LogLayer({
   errorFieldName: "error",
   copyMsgOnOnlyError: false,
@@ -17,7 +35,7 @@ const logger = new LogLayer({
           .join(" ") // + (hasData ? JSON.stringify(data) : "")
           .trim();
         const options = {
-          keyValues: data && hasData ? data : undefined,
+          keyValues: data && hasData ? serializeKeyValues(data) : undefined,
         };
         switch (logLevel) {
           case LogLevel.debug:

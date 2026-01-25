@@ -1,3 +1,4 @@
+// oxlint-disable import/no-unassigned-import
 import { QueryClientProvider } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";

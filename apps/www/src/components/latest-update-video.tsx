@@ -66,6 +66,7 @@ export const LatestUpdateVideoSection: React.FC<
             allowFullScreen
             className='absolute inset-0 h-full w-full'
             loading='lazy'
+            sandbox='allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox'
           />
         </div>
       </div>

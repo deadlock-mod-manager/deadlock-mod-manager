@@ -2,15 +2,33 @@
   "name": "@deadlock-mods/vpk-parser",
   "version": "1.0.0",
   "description": "High-performance VPK (Valve Package Format) parser for Deadlock mod files using native Rust implementation via Bun FFI",
+  "keywords": [
+    "deadlock",
+    "ffi",
+    "mod",
+    "native",
+    "parser",
+    "performance",
+    "rust",
+    "valve",
+    "vpk"
+  ],
+  "license": "GPL-3.0",
+  "author": "stormix <contact@stormix.co>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
+    "directory": "packages/vpk-parser"
+  },
+  "files": [
+    "README.md",
+    "src/",
+    "target/release/libvpk_parser.*",
+    "target/release/vpk_parser.*"
+  ],
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": [
-    "src/",
-    "target/release/libvpk_parser.*",
-    "target/release/vpk_parser.*",
-    "README.md"
-  ],
   "scripts": {
     "build": "pnpm run generate-types && cargo build --release",
     "build:debug": "pnpm run generate-types && cargo build",
@@ -20,27 +38,6 @@
     "check": "cargo check",
     "prepublishOnly": "pnpm run build"
   },
-  "keywords": [
-    "vpk",
-    "valve",
-    "parser",
-    "deadlock",
-    "mod",
-    "ffi",
-    "rust",
-    "native",
-    "performance"
-  ],
-  "author": "stormix <contact@stormix.co>",
-  "license": "GPL-3.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
-    "directory": "packages/vpk-parser"
-  },
-  "engines": {
-    "bun": ">=1.3.0"
-  },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "^1.3.0",
@@ -48,6 +45,9 @@
     "bun-types": "^1.3.0"
   },
   "peerDependencies": {
+    "bun": ">=1.3.0"
+  },
+  "engines": {
     "bun": ">=1.3.0"
   }
 }

@@ -8,4 +8,3 @@
 - Binary format structure definitions
 - Configuration parsing for mod.config.json and bundle.config.json
 - Core type system for layers, variants, and transformers
-

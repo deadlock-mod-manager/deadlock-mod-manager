@@ -72,14 +72,16 @@ const PRE_DEFINED_THEMES = [
     name: "Nightshift",
     description: "A teal-accented cyberpunk theme with elegant UI elements",
     component: NightshiftTheme,
-    previewImage: "/src/plugins/themes/public/pre-defiend/nightshift/preview.png",
+    previewImage:
+      "/src/plugins/themes/public/pre-defiend/nightshift/preview.png",
   },
   {
     id: "bloodmoon",
-    name: "Bloodmoon", 
+    name: "Bloodmoon",
     description: "A dark theme with black-red gradients and crimson accents",
     component: BloodmoonTheme,
-    previewImage: "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
+    previewImage:
+      "/src/plugins/themes/public/pre-defiend/bloodmoon/preview.png",
   },
 ];
 ```
@@ -90,7 +92,7 @@ const PRE_DEFINED_THEMES = [
 const Render = () => {
   const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]);
   const isEnabled = usePersistedStore((s) => s.enabledPlugins[manifest.id]);
-  
+
   if (!isEnabled || !settings.activeTheme) return null;
 
   // Check for user-created themes first
@@ -110,7 +112,7 @@ const Render = () => {
   const activeTheme = PRE_DEFINED_THEMES.find(
     (theme) => theme.id === settings.activeTheme
   );
-  
+
   if (activeTheme?.component) {
     const ThemeComponent = activeTheme.component;
     return <ThemeComponent />;
@@ -162,7 +164,7 @@ export const ExportCustomThemeButton = () => {
 export const beginEditingUserTheme = (id: string) => {
   const settings = getState().pluginSettings["themes"] as ThemeSettings;
   const theme = settings.userThemes?.find((t) => t.id === id);
-  
+
   if (theme) {
     setSettings("themes", {
       ...settings,
@@ -184,7 +186,7 @@ export const beginEditingUserTheme = (id: string) => {
 export const saveEditingUserTheme = () => {
   const settings = getState().pluginSettings["themes"] as ThemeSettings;
   const editingId = settings.editingThemeId;
-  
+
   if (editingId && settings.customTheme) {
     const updatedThemes = settings.userThemes?.map((theme) =>
       theme.id === editingId
@@ -197,9 +199,9 @@ export const saveEditingUserTheme = () => {
             backgroundData: settings.customTheme!.backgroundData,
             backgroundOpacity: settings.customTheme!.backgroundOpacity,
           }
-        : theme
+        : theme,
     );
-    
+
     setSettings("themes", {
       ...settings,
       userThemes: updatedThemes,
@@ -323,28 +325,21 @@ The Themes plugin automatically disables the Background plugin to prevent confli
 
 ## Troubleshooting
 
-<Callout type="warning">
-**Theme Not Rendering**
-- Check if Background plugin is conflicting
-- Verify theme component exists
-- Ensure settings are properly saved
-- Check console for rendering errors
+<Callout type='warning'>
+  **Theme Not Rendering** - Check if Background plugin is conflicting - Verify
+  theme component exists - Ensure settings are properly saved - Check console
+  for rendering errors
 </Callout>
 
-<Callout type="warning">
-**Export Failures**
-- Verify all required fields are filled
-- Check image file size limits
-- Ensure unique theme names
-- Validate image formats
+<Callout type='warning'>
+  **Export Failures** - Verify all required fields are filled - Check image file
+  size limits - Ensure unique theme names - Validate image formats
 </Callout>
 
-<Callout type="warning">
-**Editing Issues**
-- Check `editingThemeId` state
-- Verify theme exists in `userThemes`
-- Ensure proper state synchronization
-- Check for concurrent edits
+<Callout type='warning'>
+  **Editing Issues** - Check `editingThemeId` state - Verify theme exists in
+  `userThemes` - Ensure proper state synchronization - Check for concurrent
+  edits
 </Callout>
 
 ## Related Docs

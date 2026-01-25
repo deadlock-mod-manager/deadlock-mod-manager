@@ -1,4 +1,4 @@
-import "./instrument";
+import * as _instrument from "./instrument";
 
 import { prometheus } from "@hono/prometheus";
 import { sentry } from "@hono/sentry";

@@ -190,65 +190,65 @@ Mods are defined by a `mod.config.json` file in the project root.
 
 #### Core Metadata
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Unique identifier (kebab-case, a-z0-9-) |
-| `display_name` | string | Yes | Human-readable name |
-| `version` | string | Yes | Semantic version (semver) |
-| `description` | string | Yes | Short description (max 500 chars) |
-| `game_version` | string | No | Compatible Deadlock version constraint |
-| `authors` | array | Yes | List of authors (string or object) |
-| `license` | string | No | SPDX license identifier |
-| `readme` | string | No | Path to README file |
-| `homepage` | string | No | Project homepage URL |
-| `repository` | string | No | Source code repository URL |
-| `screenshots` | array | No | Mod-level screenshots (paths or URLs) |
+| Field          | Type   | Required | Description                             |
+| -------------- | ------ | -------- | --------------------------------------- |
+| `name`         | string | Yes      | Unique identifier (kebab-case, a-z0-9-) |
+| `display_name` | string | Yes      | Human-readable name                     |
+| `version`      | string | Yes      | Semantic version (semver)               |
+| `description`  | string | Yes      | Short description (max 500 chars)       |
+| `game_version` | string | No       | Compatible Deadlock version constraint  |
+| `authors`      | array  | Yes      | List of authors (string or object)      |
+| `license`      | string | No       | SPDX license identifier                 |
+| `readme`       | string | No       | Path to README file                     |
+| `homepage`     | string | No       | Project homepage URL                    |
+| `repository`   | string | No       | Source code repository URL              |
+| `screenshots`  | array  | No       | Mod-level screenshots (paths or URLs)   |
 
 #### Variant Groups
 
 Variant groups define mutually exclusive options (user picks one):
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | Yes | Unique group identifier |
-| `name` | string | Yes | Display name |
-| `description` | string | No | Group description |
-| `default` | string | Yes | Default variant ID |
-| `variants` | array | Yes | List of variant options |
+| Field         | Type   | Required | Description             |
+| ------------- | ------ | -------- | ----------------------- |
+| `id`          | string | Yes      | Unique group identifier |
+| `name`        | string | Yes      | Display name            |
+| `description` | string | No       | Group description       |
+| `default`     | string | Yes      | Default variant ID      |
+| `variants`    | array  | Yes      | List of variant options |
 
 Each variant specifies which layers to enable and can include preview images.
 
 ##### Variant Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | Yes | Unique variant identifier |
-| `name` | string | Yes | Display name |
-| `description` | string | No | Variant description |
-| `layers` | array | Yes | Which layers to enable for this variant |
-| `preview_image` | string | No | Main preview image (path or URL) |
-| `screenshots` | array | No | Additional screenshots (paths or URLs) |
+| Field           | Type   | Required | Description                             |
+| --------------- | ------ | -------- | --------------------------------------- |
+| `id`            | string | Yes      | Unique variant identifier               |
+| `name`          | string | Yes      | Display name                            |
+| `description`   | string | No       | Variant description                     |
+| `layers`        | array  | Yes      | Which layers to enable for this variant |
+| `preview_image` | string | No       | Main preview image (path or URL)        |
+| `screenshots`   | array  | No       | Additional screenshots (paths or URLs)  |
 
 #### Layers
 
 Layers are additive content modules with priority-based overrides:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Unique layer name |
-| `priority` | number | Yes | Override priority (higher = wins) |
-| `description` | string | No | Layer description |
-| `required` | boolean | No | Must be installed (default: false) |
+| Field         | Type    | Required | Description                        |
+| ------------- | ------- | -------- | ---------------------------------- |
+| `name`        | string  | Yes      | Unique layer name                  |
+| `priority`    | number  | Yes      | Override priority (higher = wins)  |
+| `description` | string  | No       | Layer description                  |
+| `required`    | boolean | No       | Must be installed (default: false) |
 
 #### Transformers
 
 Transformers are plugins that preprocess files during packing:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Transformer plugin name |
-| `patterns` | array | Yes | Glob patterns for matching files |
-| `config` | object | No | Transformer-specific configuration |
+| Field      | Type   | Required | Description                        |
+| ---------- | ------ | -------- | ---------------------------------- |
+| `name`     | string | Yes      | Transformer plugin name            |
+| `patterns` | array  | Yes      | Glob patterns for matching files   |
+| `config`   | object | No       | Transformer-specific configuration |
 
 ---
 
@@ -369,22 +369,22 @@ The `.dmodpkg` file is a binary format optimized for fast extraction and verific
 
 ### Header Format (64 bytes)
 
-| Offset | Size | Type | Description |
-|--------|------|------|-------------|
-| 0x00 | 8 | ASCII | Magic bytes: "DMODPKG\0" |
-| 0x08 | 2 | uint16 | Format version (current: 1) |
-| 0x0A | 2 | uint16 | Flags (reserved) |
-| 0x0C | 4 | uint32 | Metadata section offset |
-| 0x10 | 4 | uint32 | Metadata section compressed size |
-| 0x14 | 4 | uint32 | Metadata section uncompressed size |
-| 0x18 | 4 | uint32 | File index section offset |
-| 0x1C | 4 | uint32 | File index section compressed size |
-| 0x20 | 4 | uint32 | File index section uncompressed size |
-| 0x24 | 4 | uint32 | Chunk table offset |
-| 0x28 | 4 | uint32 | Chunk table size |
-| 0x2C | 4 | uint32 | Data section offset |
-| 0x30 | 8 | uint64 | Total uncompressed size |
-| 0x38 | 8 | uint64 | Package CRC64 |
+| Offset | Size | Type   | Description                          |
+| ------ | ---- | ------ | ------------------------------------ |
+| 0x00   | 8    | ASCII  | Magic bytes: "DMODPKG\0"             |
+| 0x08   | 2    | uint16 | Format version (current: 1)          |
+| 0x0A   | 2    | uint16 | Flags (reserved)                     |
+| 0x0C   | 4    | uint32 | Metadata section offset              |
+| 0x10   | 4    | uint32 | Metadata section compressed size     |
+| 0x14   | 4    | uint32 | Metadata section uncompressed size   |
+| 0x18   | 4    | uint32 | File index section offset            |
+| 0x1C   | 4    | uint32 | File index section compressed size   |
+| 0x20   | 4    | uint32 | File index section uncompressed size |
+| 0x24   | 4    | uint32 | Chunk table offset                   |
+| 0x28   | 4    | uint32 | Chunk table size                     |
+| 0x2C   | 4    | uint32 | Data section offset                  |
+| 0x30   | 8    | uint64 | Total uncompressed size              |
+| 0x38   | 8    | uint64 | Package CRC64                        |
 
 ### Metadata Section
 
@@ -392,7 +392,9 @@ Zstd-compressed JSON containing the full `mod.config.json` plus:
 
 ```json
 {
-  "config": { /* mod.config.json contents */ },
+  "config": {
+    /* mod.config.json contents */
+  },
   "build_info": {
     "builder_version": "1.0.0",
     "build_timestamp": "2025-11-10T12:34:56Z",
@@ -608,7 +610,9 @@ Mods can have multiple independent variant groups:
       "id": "skin_style",
       "name": "Skin Style",
       "default": "realistic",
-      "variants": [/* ... */]
+      "variants": [
+        /* ... */
+      ]
     },
     {
       "id": "ui_theme",
@@ -693,13 +697,11 @@ interface Transformer {
   matches(filePath: string, pattern: string[]): boolean;
 
   // Transform file content
-  transform(
-    input: {
-      filePath: string;
-      content: Buffer;
-      config: any;
-    }
-  ): Promise<{
+  transform(input: {
+    filePath: string;
+    content: Buffer;
+    config: any;
+  }): Promise<{
     content: Buffer;
     metadata?: Record<string, any>;
   }>;
@@ -774,13 +776,11 @@ Example custom transformer:
 ```javascript
 // index.js
 module.exports = {
-  name: 'my-custom-transformer',
-  version: '1.0.0',
+  name: "my-custom-transformer",
+  version: "1.0.0",
 
   matches(filePath, patterns) {
-    return patterns.some(pattern =>
-      minimatch(filePath, pattern)
-    );
+    return patterns.some((pattern) => minimatch(filePath, pattern));
   },
 
   async transform({ filePath, content, config }) {
@@ -791,10 +791,10 @@ module.exports = {
       content: processed,
       metadata: {
         processed_at: new Date().toISOString(),
-        transformer: 'my-custom-transformer'
-      }
+        transformer: "my-custom-transformer",
+      },
     };
-  }
+  },
 };
 ```
 
@@ -839,8 +839,10 @@ Error handling configuration:
     {
       "name": "vpk-validator",
       "patterns": ["**/*.vpk"],
-      "on_error": "abort",  // "abort" | "warn" | "skip"
-      "config": { /* ... */ }
+      "on_error": "abort", // "abort" | "warn" | "skip"
+      "config": {
+        /* ... */
+      }
     }
   ]
 }
@@ -978,36 +980,36 @@ Bundles are defined by a `bundle.config.json` file:
 
 #### Core Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Unique bundle identifier (kebab-case) |
-| `display_name` | string | Yes | Human-readable bundle name |
-| `version` | string | Yes | Bundle version (semver) |
-| `description` | string | Yes | Bundle description (max 1000 chars) |
-| `authors` | array | Yes | Bundle authors (not individual mod authors) |
-| `homepage` | string | No | Bundle homepage URL |
-| `screenshots` | array | No | Bundle-level screenshots (paths or URLs) |
-| `mods` | array | Yes | List of included mod packages |
-| `presets` | array | No | Variant configuration presets |
-| `metadata` | object | No | Additional metadata (tags, category) |
+| Field          | Type   | Required | Description                                 |
+| -------------- | ------ | -------- | ------------------------------------------- |
+| `name`         | string | Yes      | Unique bundle identifier (kebab-case)       |
+| `display_name` | string | Yes      | Human-readable bundle name                  |
+| `version`      | string | Yes      | Bundle version (semver)                     |
+| `description`  | string | Yes      | Bundle description (max 1000 chars)         |
+| `authors`      | array  | Yes      | Bundle authors (not individual mod authors) |
+| `homepage`     | string | No       | Bundle homepage URL                         |
+| `screenshots`  | array  | No       | Bundle-level screenshots (paths or URLs)    |
+| `mods`         | array  | Yes      | List of included mod packages               |
+| `presets`      | array  | No       | Variant configuration presets               |
+| `metadata`     | object | No       | Additional metadata (tags, category)        |
 
 #### Mod Entry Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `package` | string | Yes | Filename of the .dmodpkg file |
-| `required` | boolean | No | Whether mod is required (default: true) |
-| `description` | string | No | Brief description of this mod's role in bundle |
+| Field         | Type    | Required | Description                                    |
+| ------------- | ------- | -------- | ---------------------------------------------- |
+| `package`     | string  | Yes      | Filename of the .dmodpkg file                  |
+| `required`    | boolean | No       | Whether mod is required (default: true)        |
+| `description` | string  | No       | Brief description of this mod's role in bundle |
 
 #### Preset Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | Yes | Unique preset identifier |
-| `name` | string | Yes | Display name |
-| `description` | string | No | Preset description |
-| `default` | boolean | No | Whether this is the default preset |
-| `mods` | array | Yes | Variant configurations for each mod |
+| Field         | Type    | Required | Description                         |
+| ------------- | ------- | -------- | ----------------------------------- |
+| `id`          | string  | Yes      | Unique preset identifier            |
+| `name`        | string  | Yes      | Display name                        |
+| `description` | string  | No       | Preset description                  |
+| `default`     | boolean | No       | Whether this is the default preset  |
+| `mods`        | array   | Yes      | Variant configurations for each mod |
 
 Each preset mod entry contains:
 
@@ -1056,22 +1058,22 @@ The `.dmodbundle` file structure:
 
 #### Bundle Header Format (64 bytes)
 
-| Offset | Size | Type | Description |
-|--------|------|------|-------------|
-| 0x00 | 8 | ASCII | Magic bytes: "DMODBNDL" |
-| 0x08 | 2 | uint16 | Format version (current: 1) |
-| 0x0A | 2 | uint16 | Flags (reserved) |
-| 0x0C | 4 | uint32 | Bundle metadata offset |
-| 0x10 | 4 | uint32 | Bundle metadata compressed size |
-| 0x14 | 4 | uint32 | Bundle metadata uncompressed size |
-| 0x18 | 4 | uint32 | Package index offset |
-| 0x1C | 4 | uint32 | Package index size |
-| 0x20 | 4 | uint32 | Resources offset |
-| 0x24 | 4 | uint32 | Resources compressed size |
-| 0x28 | 4 | uint32 | Resources uncompressed size |
-| 0x2C | 4 | uint32 | Packages section offset |
-| 0x30 | 8 | uint64 | Total bundle size |
-| 0x38 | 8 | uint64 | Bundle CRC64 |
+| Offset | Size | Type   | Description                       |
+| ------ | ---- | ------ | --------------------------------- |
+| 0x00   | 8    | ASCII  | Magic bytes: "DMODBNDL"           |
+| 0x08   | 2    | uint16 | Format version (current: 1)       |
+| 0x0A   | 2    | uint16 | Flags (reserved)                  |
+| 0x0C   | 4    | uint32 | Bundle metadata offset            |
+| 0x10   | 4    | uint32 | Bundle metadata compressed size   |
+| 0x14   | 4    | uint32 | Bundle metadata uncompressed size |
+| 0x18   | 4    | uint32 | Package index offset              |
+| 0x1C   | 4    | uint32 | Package index size                |
+| 0x20   | 4    | uint32 | Resources offset                  |
+| 0x24   | 4    | uint32 | Resources compressed size         |
+| 0x28   | 4    | uint32 | Resources uncompressed size       |
+| 0x2C   | 4    | uint32 | Packages section offset           |
+| 0x30   | 8    | uint64 | Total bundle size                 |
+| 0x38   | 8    | uint64 | Bundle CRC64                      |
 
 #### Bundle Metadata Section
 
@@ -1079,7 +1081,9 @@ Zstd-compressed JSON containing `bundle.config.json` plus build info:
 
 ```json
 {
-  "config": { /* bundle.config.json contents */ },
+  "config": {
+    /* bundle.config.json contents */
+  },
   "build_info": {
     "builder_version": "1.0.0",
     "build_timestamp": "2025-11-10T15:30:00Z",
@@ -1715,10 +1719,7 @@ Multiple skin variants, user picks one.
   "version": "2.0.0",
   "description": "Multiple hero skin options",
   "authors": ["ArtistName"],
-  "screenshots": [
-    "previews/mod/overview.png",
-    "previews/mod/ingame.png"
-  ],
+  "screenshots": ["previews/mod/overview.png", "previews/mod/ingame.png"],
   "variant_groups": [
     {
       "id": "hero_skin",
@@ -1895,14 +1896,29 @@ Full-featured mod using all systems.
     }
   ],
   "layers": [
-    { "name": "base", "priority": 0, "description": "Core files", "required": true },
+    {
+      "name": "base",
+      "priority": 0,
+      "description": "Core files",
+      "required": true
+    },
     { "name": "realistic_visuals", "priority": 10, "required": false },
     { "name": "stylized_visuals", "priority": 10, "required": false },
     { "name": "low_spec", "priority": 5, "required": false },
     { "name": "med_spec", "priority": 5, "required": false },
     { "name": "high_spec", "priority": 5, "required": false },
-    { "name": "enhanced_audio", "priority": 15, "description": "Optional sound pack", "required": false },
-    { "name": "bonus_content", "priority": 20, "description": "Extra features", "required": false }
+    {
+      "name": "enhanced_audio",
+      "priority": 15,
+      "description": "Optional sound pack",
+      "required": false
+    },
+    {
+      "name": "bonus_content",
+      "priority": 20,
+      "description": "Extra features",
+      "required": false
+    }
   ],
   "transformers": [
     {
@@ -2004,13 +2020,13 @@ Mod dependencies are not currently common in the Deadlock modding ecosystem, so 
 
 Following npm-style semantic versioning:
 
-| Constraint | Meaning | Example Match |
-|------------|---------|---------------|
-| `1.2.3` | Exact version | 1.2.3 only |
-| `^1.2.3` | Compatible (minor updates) | 1.2.3, 1.5.0, 1.9.9 (not 2.0.0) |
-| `~1.2.3` | Patch updates only | 1.2.3, 1.2.9 (not 1.3.0) |
-| `>=1.0.0` | Minimum version | 1.0.0, 2.5.1, 99.0.0 |
-| `>=1.0.0 <2.0.0` | Range | 1.0.0 to 1.9.9 |
+| Constraint       | Meaning                    | Example Match                   |
+| ---------------- | -------------------------- | ------------------------------- |
+| `1.2.3`          | Exact version              | 1.2.3 only                      |
+| `^1.2.3`         | Compatible (minor updates) | 1.2.3, 1.5.0, 1.9.9 (not 2.0.0) |
+| `~1.2.3`         | Patch updates only         | 1.2.3, 1.2.9 (not 1.3.0)        |
+| `>=1.0.0`        | Minimum version            | 1.0.0, 2.5.1, 99.0.0            |
+| `>=1.0.0 <2.0.0` | Range                      | 1.0.0 to 1.9.9                  |
 
 #### Dependency Resolution Considerations
 

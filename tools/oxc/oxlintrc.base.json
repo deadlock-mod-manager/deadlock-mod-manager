@@ -1,0 +1,58 @@
+{
+  "plugins": ["typescript", "react", "import"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2022": true
+  },
+  "globals": {
+    "Bun": "readonly"
+  },
+  "categories": {
+    "correctness": "warn",
+    "perf": "warn",
+    "suspicious": "warn",
+    "style": "off",
+    "nursery": "off",
+    "pedantic": "off",
+    "restriction": "off"
+  },
+  "rules": {
+    "eslint/no-unused-vars": [
+      "error",
+      {
+        "caughtErrors": "none",
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_"
+      }
+    ],
+    "react-hooks/exhaustive-deps": "off",
+    "eslint/no-await-in-loop": "off",
+    "typescript/no-extraneous-class": "off",
+    "react/react-in-jsx-scope": "off",
+    "import/no-unused-modules": "off",
+    "no-shadow": "off",
+    "no-excessive-cognitive-complexity": "off",
+    "no-for-each": "off",
+    "no-static-only-class": "off",
+    "no-namespace-import": "off",
+    "no-barrel-file": "off",
+    "use-top-level-regex": "off",
+    "no-img-element": "off",
+    "use-await": "off",
+    "no-document-cookie": "off",
+    "no-unknown-at-rules": "off",
+    "use-consistent-type-definitions": "off",
+    "use-image-size": "off",
+    "use-max-params": "off",
+    "use-block-statements": "off",
+    "use-readonly-class-properties": "off",
+    "no-non-null-assertion": "off",
+    "no-enum": "off",
+    "no-nested-ternary": "off",
+    "no-magic-numbers": "off",
+    "no-parameter-properties": "off",
+    "use-unique-element-ids": "off"
+  }
+}

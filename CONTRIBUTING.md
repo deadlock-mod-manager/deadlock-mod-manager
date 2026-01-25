@@ -376,6 +376,7 @@ The script guides you through the entire process:
    - Merged automatically with existing translations
 
 **Useful commands during translation:**
+
 - Press `Enter` to keep the English value
 - Type `pause` to save progress and continue later
 - Type `quit` to abort without saving

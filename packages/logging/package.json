@@ -6,11 +6,6 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "devDependencies": {
-    "@deadlock-mods/typescript-config": "workspace:*",
-    "@types/lodash": "^4.17.20",
-    "@types/logfmt": "^1.2.6"
-  },
   "dependencies": {
     "@loglayer/plugin-opentelemetry": "2.1.6",
     "@loglayer/transport": "^2.2.2",
@@ -25,5 +20,10 @@
     "serialize-error": "^12.0.0",
     "winston": "^3.17.0",
     "winston-logfmt": "^1.0.0"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/lodash": "^4.17.20",
+    "@types/logfmt": "^1.2.6"
   }
 }

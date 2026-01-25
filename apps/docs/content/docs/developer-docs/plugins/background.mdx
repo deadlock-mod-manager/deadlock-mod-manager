@@ -25,11 +25,11 @@ This page documents the technical implementation of the Background plugin, inclu
 
 ```typescript
 type BgSettings = {
-  imageUrl: string;           // Online image URL
-  imageData?: string;         // Base64 local image
+  imageUrl: string; // Online image URL
+  imageData?: string; // Base64 local image
   sourceType?: "url" | "local";
-  opacity: number;            // 0-100
-  blur: number;               // 0-20px
+  opacity: number; // 0-100
+  blur: number; // 0-20px
   includeSidebar?: boolean;
 };
 ```
@@ -67,4 +67,3 @@ Rendering occurs in a top-level container via the Global Plugin Renderer. Sideba
 
 - User guide: [/docs/plugins/background](/docs/plugins/background)
 - Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)
-

@@ -18,6 +18,7 @@ export enum DatabaseErrorCode {
 }
 
 export enum GenericErrorCode {
+  MULTIPLE_ERRORS = "MULTIPLE_ERRORS",
   RUNTIME_ERROR = "RUNTIME_ERROR",
   VALIDATION_ERROR = "VALIDATION_ERROR",
   UNKNOWN_ERROR = "UNKNOWN_ERROR",

@@ -3,8 +3,10 @@ import * as React from "react";
 import { cn } from "../lib/utils";
 import { Input } from "./input";
 
-export interface SearchInputProps
-  extends Omit<React.ComponentProps<"input">, "type"> {
+export interface SearchInputProps extends Omit<
+  React.ComponentProps<"input">,
+  "type"
+> {
   onClear?: () => void;
 }
 

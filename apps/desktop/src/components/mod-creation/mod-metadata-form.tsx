@@ -172,7 +172,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         setPreview(resolvedDefault);
       }
       return () => sub.unsubscribe();
-    }, [form.getValues, form.watch, initial?.imageSrc, resolvedDefault]);
+    }, [form, initial?.imageSrc, resolvedDefault]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];

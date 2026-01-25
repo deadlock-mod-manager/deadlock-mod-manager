@@ -618,7 +618,7 @@ CREATE TABLE mirrored_files (
 - `last_validated` - Tracks validation worker progress
 - `file_hash` - SHA-256 hash for integrity verification
 
-<Callout type="info" title="Performance Considerations">
+<Callout type='info' title='Performance Considerations'>
   The mirror service is designed for high throughput with: - Stream-based
   processing (no file buffering) - S3 multipart uploads (5 MB chunks) - Retry
   logic for S3 operations - Connection pooling for database queries
@@ -626,23 +626,23 @@ CREATE TABLE mirrored_files (
 
 <Cards>
   <Card
-    title="Architecture Overview"
-    description="See how mirror service fits into the overall system"
-    href="/developer-docs/architecture"
+    title='Architecture Overview'
+    description='See how mirror service fits into the overall system'
+    href='/developer-docs/architecture'
   />
   <Card
-    title="API Reference"
-    description="Complete API documentation for all services"
-    href="/developer-docs/api-reference"
+    title='API Reference'
+    description='Complete API documentation for all services'
+    href='/developer-docs/api-reference'
   />
   <Card
-    title="Development Setup"
-    description="Set up your development environment"
-    href="/developer-docs/development-setup"
+    title='Development Setup'
+    description='Set up your development environment'
+    href='/developer-docs/development-setup'
   />
 </Cards>
 
-<Callout type="warn" title="Production Deployment">
+<Callout type='warn' title='Production Deployment'>
   When deploying the mirror service: - Ensure S3 credentials have appropriate
   permissions (read/write/delete) - Configure Redis for persistence if metrics
   are critical - Set up monitoring for cache hit rates and storage usage -

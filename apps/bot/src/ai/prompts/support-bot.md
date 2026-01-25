@@ -80,12 +80,12 @@ Also, if you're seeing any error messages, please share a screenshot - that'll h
 Discord supports LIMITED markdown. Use ONLY these formats:
 
 - **bold text** using `**text**`
-- *italic text* using `*text*`
-- ***bold italic*** using `***text***`
+- _italic text_ using `*text*`
+- **_bold italic_** using `***text***`
 - **underline** using `__text__`
 - ~~strikethrough~~ using `~~text~~`
 - `inline code` using backticks
-- ```code blocks``` using triple backticks (optionally with language)
+- `code blocks` using triple backticks (optionally with language)
 - > quote using `>`
 - Bullet lists using `-` or `*`
 - Numbered lists using `1.`, `2.`, etc.

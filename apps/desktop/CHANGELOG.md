@@ -123,7 +123,6 @@
 ### Minor Changes
 
 - 45d2f75: Major desktop UI features and enhancements
-
   - Add new bottom bar component for improved navigation
   - Implement filter mode for enhanced mod browsing experience
   - Add file drag-and-drop functionality for easier mod processing
@@ -138,7 +137,6 @@
   - Improved dialog handling for multi-file downloads
 
 - 45d2f75: Comprehensive internationalization support
-
   - Add multiple new language support with locale files
   - Add confirmation messages for mod deletion and disabling across all languages
   - Support for Arabic, German, French, Polish, Russian, Turkish, and Swiss German
@@ -147,7 +145,6 @@
   - Better language detection and switching capabilities
 
 - 45d2f75: Enhanced theme support and visual improvements
-
   - Add comprehensive light mode support with system theme detection
   - Switch default theme to dark mode with updated logo colors
   - Recognize and respond to system default theme value
@@ -158,14 +155,12 @@
 ### Patch Changes
 
 - 45d2f75: Dependencies and maintenance updates
-
   - Update dependencies in Cargo.lock and Cargo.toml for Rust components
   - Update dependencies and scripts across multiple packages
   - Improve code formatting and consistency across files
   - General maintenance and dependency updates for better security and performance
 
 - 45d2f75: Desktop refactoring and performance optimizations
-
   - Optimize useDeepLink and useInstall hooks for better performance
   - Replace static fallback SVG with dynamic generation
   - Remove unused DownloadProgress component and update related UI elements
@@ -184,32 +179,27 @@
 - 7f379a5: ## 🎉 Major Features
 
   ### Multi-File Download System
-
   - **Multi-file download support**: Mods can now have multiple download files per version
   - **File selection dialogs**: Choose which files to install when mods have multiple archives or VPK files
   - **Streamlined download handling**: Improved UI and backend processing for better user experience
 
   ### Content Management & Safety
-
   - **NSFW content detection and filtering**: Automatic detection and filtering of NSFW content with user controls
   - **Gameinfo.gi management**: Advanced gameinfo.gi section replacement and management features
   - **Enhanced mod descriptions**: Rich text support using Interweave for better mod descriptions
 
   ### New Logging System
-
   - **Dedicated logging package**: New `@deadlock-mods/logging` package for better error tracking and debugging across all applications
 
   ## 🎨 UI/UX Improvements
 
   ### Visual Updates
-
   - **New logo design**: Updated logo across desktop and web applications with modern design
   - **Enhanced settings layout**: Improved settings page styling and organization
   - **Launch button animation**: Added smooth animations to launch buttons
   - **Improved button styling**: Better visual feedback and animation handling throughout the app
 
   ### Enhanced Navigation & Performance
-
   - **Scroll position management**: Maintains scroll position in mod cards and mods page for better navigation
   - **Improved search sorting**: Enhanced search results relevance and sorting capabilities
   - **Better mod card functionality**: Enhanced mod card components with improved interactions
@@ -217,17 +207,14 @@
   ## 🔧 Technical Improvements
 
   ### API Enhancements
-
   - **Version handling in health checks**: Better API version management and health check responses
   - **Enhanced backend structure**: Improved API architecture to support new multi-file features
 
   ### Web Application Updates
-
   - **Fixed image sources**: Corrected image references in web HeroSection component
   - **Updated documentation**: Improved README with better development instructions and screenshots
 
   ## 🛠️ Development & Maintenance
-
   - **Package.json updates**: Refined build scripts and development workflow
   - **Documentation updates**: Updated README with new screenshots and development instructions
   - **Code quality improvements**: Various refactoring and optimization across the codebase
@@ -321,7 +308,6 @@
 ### Patch Changes
 
 - 079f045: Fixed mods unintall and added a stop game button
-
   - Add game stop button to toolbar
   - Fixed mod uninstallation process
   - Add support for 7zip archives

@@ -1,8 +1,8 @@
 {
   "name": "@deadlock-mods/bot",
   "version": "1.2.2",
-  "main": "src/index.ts",
   "type": "module",
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc && tsc-alias",
     "check-types": "tsc --noEmit --skipLibCheck",

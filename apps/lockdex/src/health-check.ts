@@ -98,7 +98,7 @@ export async function legacyHealthCheck(): Promise<void> {
     await redis.ping();
   } catch (error) {
     logger.withError(error as Error).error("Health check failed");
-    throw new Error("Redis ping failed");
+    throw new Error("Redis ping failed", { cause: error });
   }
 
   try {
@@ -112,6 +112,6 @@ export async function legacyHealthCheck(): Promise<void> {
     await redis.del(testKey);
   } catch (error) {
     logger.withError(error as Error).error("Health check failed");
-    throw new Error("Redis read/write test failed");
+    throw new Error("Redis read/write test failed", { cause: error });
   }
 }

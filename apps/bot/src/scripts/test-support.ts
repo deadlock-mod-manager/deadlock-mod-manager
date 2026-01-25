@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import "../instrument";
+import * as _instrument from "../instrument";
 import { SupportAgent } from "@/ai/agents/support";
 import { logger } from "@/lib/logger";
 

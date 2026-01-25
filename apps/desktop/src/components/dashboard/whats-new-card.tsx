@@ -7,27 +7,30 @@ import { DashboardCard } from "./dashboard-card";
 export const WhatsNewCard = () => {
   const { t } = useTranslation();
 
+  const getFeatures = (version: string): string[] => {
+    const features = t(`whatsNew.versions.${version}.features`, {
+      returnObjects: true,
+      defaultValue: [],
+    });
+    if (!Array.isArray(features)) return [];
+    return features.filter((f): f is string => typeof f === "string");
+  };
+
   const recentUpdates = [
     {
       version: "0.13.0",
       title: t("whatsNew.versions.0.13.0.title"),
-      features: t("whatsNew.versions.0.13.0.features", {
-        returnObjects: true,
-      }) as string[],
+      features: getFeatures("0.13.0"),
     },
     {
       version: "0.12.0",
       title: t("whatsNew.versions.0.12.0.title"),
-      features: t("whatsNew.versions.0.12.0.features", {
-        returnObjects: true,
-      }) as string[],
+      features: getFeatures("0.12.0"),
     },
     {
       version: "0.11.1",
       title: t("whatsNew.versions.0.11.1.title"),
-      features: t("whatsNew.versions.0.11.1.features", {
-        returnObjects: true,
-      }) as string[],
+      features: getFeatures("0.11.1"),
     },
   ];
 

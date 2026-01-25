@@ -64,11 +64,11 @@ tempfile = "3.23.0"
 
 # Optimized for bundle size. If you want faster builds comment out/delete this section.
 [profile.release]
-lto = true        # Enable Link Time Optimization
-opt-level = "s"   # Optimize for size.
+lto = true # Enable Link Time Optimization
+opt-level = "s" # Optimize for size.
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = "abort"   # Abort on panic
-strip = true      # Automatically strip symbols from the binary.
+panic = "abort" # Abort on panic
+strip = true # Automatically strip symbols from the binary.
 debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]

@@ -1,4 +1,4 @@
-import "@/app/global.css";
+import _globalCss from "@/app/global.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";

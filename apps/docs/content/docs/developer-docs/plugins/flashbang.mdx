@@ -29,7 +29,7 @@ Technical reference for the Flashbang plugin which forces Light Mode during a sc
 type FlashbangSettings = {
   enabled: boolean;
   startHour?: number; // 0-23
-  endHour?: number;   // 0-23
+  endHour?: number; // 0-23
 };
 
 const DEFAULTS: FlashbangSettings = {
@@ -91,24 +91,23 @@ The `Render` component returns `null` - this plugin doesn't render UI elements. 
 ## Theme Provider Requirements
 
 The theme provider must:
+
 - Expose `setFlashbangEnabled(boolean)` method
 - Read `deadlock-flashbang-start` and `deadlock-flashbang-end` from localStorage
 - Apply Light Mode during scheduled hours when enabled
 
 ## Troubleshooting
 
-<Callout type="warning">
-**Theme Not Switching**
-- Verify theme provider implements `setFlashbangEnabled`
-- Check localStorage values are being read correctly
-- Ensure plugin enable state is properly synchronized
+<Callout type='warning'>
+  **Theme Not Switching** - Verify theme provider implements
+  `setFlashbangEnabled` - Check localStorage values are being read correctly -
+  Ensure plugin enable state is properly synchronized
 </Callout>
 
-<Callout type="warning">
-**Settings Not Persisting**
-- Check `usePersistedStore` integration
-- Verify localStorage synchronization in both Settings and Render components
-- Ensure input validation doesn't prevent valid values
+<Callout type='warning'>
+  **Settings Not Persisting** - Check `usePersistedStore` integration - Verify
+  localStorage synchronization in both Settings and Render components - Ensure
+  input validation doesn't prevent valid values
 </Callout>
 
 ## Related Docs
