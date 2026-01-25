@@ -1,5 +1,5 @@
 {
-  "name": "@deadlock-mods/kv-parser-rs",
+  "name": "@deadlock-mods/kv-parser",
   "version": "0.2.0",
   "description": "High-performance KeyValues (VDF) parser with AST support using native Rust implementation via Bun FFI",
   "exports": {
@@ -42,7 +42,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
-    "directory": "packages/kv-parser-rs"
+    "directory": "packages/kv-parser"
   },
   "engines": {
     "bun": ">=1.3.0"

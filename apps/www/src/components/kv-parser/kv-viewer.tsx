@@ -1,4 +1,4 @@
-import type { KeyValuesValue } from "@deadlock-mods/kv-parser-rs";
+import type { KeyValuesValue } from "@deadlock-mods/kv-parser";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,

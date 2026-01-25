@@ -1,4 +1,4 @@
-import { parseKv } from "@deadlock-mods/kv-parser-rs";
+import { parseKv } from "@deadlock-mods/kv-parser";
 import { publicProcedure } from "../../lib/orpc";
 import { ParseKvInputSchema } from "../../validation/kv";
 

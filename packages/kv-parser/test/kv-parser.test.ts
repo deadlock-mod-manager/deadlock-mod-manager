@@ -8,7 +8,7 @@ import {
   serializeData,
 } from "../src";
 
-describe("kv-parser-rs", () => {
+describe("kv-parser", () => {
   describe("basic parsing", () => {
     it("should parse simple key-value pairs", () => {
       const input = `

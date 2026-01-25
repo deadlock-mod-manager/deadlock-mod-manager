@@ -1,4 +1,4 @@
-# @deadlock-mods/kv-parser-rs
+# @deadlock-mods/kv-parser
 
 ## 0.2.0
 
