@@ -9,13 +9,13 @@ This package provides core functionality for creating, rendering, and managing D
 ## Usage Example
 
 ```typescript
-import { DEFAULT_CROSSHAIR_CONFIG } from '@deadlock-mods/crosshair/types';
-import { renderCrosshair } from '@deadlock-mods/crosshair/renderer';
-import { generateConfigString } from '@deadlock-mods/crosshair/config-generator';
+import { DEFAULT_CROSSHAIR_CONFIG } from "@deadlock-mods/crosshair/types";
+import { renderCrosshair } from "@deadlock-mods/crosshair/renderer";
+import { generateConfigString } from "@deadlock-mods/crosshair/config-generator";
 
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d');
-const config = { ...DEFAULT_CROSSHAIR_CONFIG, gap: 5, hero: 'Abrams' };
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const ctx = canvas.getContext("2d");
+const config = { ...DEFAULT_CROSSHAIR_CONFIG, gap: 5, hero: "Abrams" };
 
 renderCrosshair(ctx, canvas, config);
 

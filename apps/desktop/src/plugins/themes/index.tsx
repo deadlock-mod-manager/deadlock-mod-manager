@@ -175,8 +175,7 @@ const Settings = () => {
                         className='absolute inset-0 h-full w-full object-cover'
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
-                          e.currentTarget.parentElement!.innerHTML =
-                            `<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">${t("plugins.themes.previewComingSoon")}</span>`;
+                          e.currentTarget.parentElement!.innerHTML = `<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">${t("plugins.themes.previewComingSoon")}</span>`;
                         }}
                       />
                     )}

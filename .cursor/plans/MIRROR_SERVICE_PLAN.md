@@ -9,17 +9,14 @@ Build a separate microservice that mirrors GameBanana files to S3, with smart ca
 ### GameBanana Download Flow
 
 1. **GameBanana API Integration** (`apps/api/src/providers/game-banana/index.ts`)
-
    - Base URL: `https://gamebanana.com/apiv11`
    - Download Endpoint: `/{modType}/{remoteId}/DownloadPage`
    - `refreshModDownloads()` fetches download page metadata (line 534)
 
 2. **Database Storage** (`packages/database/src/schema/mods.ts`)
-
    - `modDownloads` table stores: remoteId, file, url, size, modId
 
 3. **Frontend Download** (`apps/desktop/src/hooks/use-download.ts`)
-
    - User selects files → `downloadManager.addToQueue()` → Tauri command `queue_download`
 
 4. **Rust Download Manager** (`apps/desktop/src-tauri/src/download_manager/`)

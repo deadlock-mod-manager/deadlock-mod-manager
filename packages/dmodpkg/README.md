@@ -44,7 +44,7 @@ pnpm run build:debug
 > **Note**: TypeScript/FFI integration is not yet implemented. This package currently provides the Rust library foundation.
 
 ```typescript
-import { /* API to be defined */ } from "@deadlock-mods/dmodpkg";
+import {} from /* API to be defined */ "@deadlock-mods/dmodpkg";
 
 // Usage examples will be added when FFI integration is complete
 ```

@@ -1,0 +1,25 @@
+{
+  "extends": ["./tools/oxc/oxlintrc.base.json"],
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/target/**",
+    "**/.turbo/**",
+    "**/.tsbuildinfo",
+    "apps/docs/.next/**",
+    "**/routeTree.gen.ts",
+    "**/components/ui/**",
+    "apps/desktop/src/components/ui/**",
+    "apps/web/components/ui/**",
+    "**/tsconfig*.json",
+    "**/next.config.js",
+    "**/tailwind.config.js",
+    "**/vite.config.ts",
+    "apps/desktop/src-tauri/gen/**",
+    "packages/vpk-parser/src/generated/**",
+    "packages/kv-parser/src-rs/generated/**",
+    "apps/docs/.source/**",
+    "infrastructure/templates/**"
+  ]
+}

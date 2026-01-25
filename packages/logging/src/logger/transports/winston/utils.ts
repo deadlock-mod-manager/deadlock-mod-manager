@@ -17,8 +17,10 @@ export interface LogMessageError {
   message?: string;
 }
 
-export const formatError = (error: LogMessageError | undefined) =>
-  error?.stack ? `\n${error.stack}` : "";
+export const formatError = (error: LogMessageError | undefined) => {
+  if (!error) return "";
+  return `error=${error?.name} error.message=${error?.message} error.stack=${error?.stack}`;
+};
 
 export const isMessageObject = (value: unknown): value is LogMessage =>
   value !== null && typeof value === "object";

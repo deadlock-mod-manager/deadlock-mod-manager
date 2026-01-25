@@ -1,4 +1,5 @@
 {
+  "name": "@deadlock-mods/root",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -28,10 +29,10 @@
     "docker:www:stop": "docker compose down",
     "docker:www:logs": "docker compose logs -f www",
     "docker": "docker compose up -d",
-    "format": "biome format .",
-    "lint": "biome check .",
-    "format:fix": "biome format . --write",
-    "lint:fix": "biome check . --write",
+    "format": "oxfmt .",
+    "lint": "oxlint .",
+    "format:fix": "oxfmt . --write",
+    "lint:fix": "oxlint . --fix",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
@@ -47,19 +48,20 @@
     "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle",
     "clean": "rimraf --glob **/node_modules"
   },
+  "dependencies": {
+    "@changesets/cli": "^2.29.7"
+  },
   "devDependencies": {
-    "@biomejs/biome": "2.2.2",
     "cross-env": "^10.1.0",
     "dotenv-cli": "^7.4.4",
     "lefthook": "^1.13.6",
+    "oxfmt": "latest",
+    "oxlint": "latest",
     "rimraf": "^6.1.0",
     "turbo": "^2.6.0",
     "typescript": "catalog:"
   },
-  "name": "@deadlock-mods/root",
-  "dependencies": {
-    "@changesets/cli": "^2.29.7"
-  },
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a",
   "pnpm": {
     "overrides": {
       "react": "19.2.0",
@@ -81,6 +83,5 @@
     "ignoredBuiltDependencies": [
       "better-sqlite3"
     ]
-  },
-  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a"
+  }
 }

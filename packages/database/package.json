@@ -13,8 +13,8 @@
     "db:seed": "dotenv -e ../../.env -- bun run src/seed.ts"
   },
   "dependencies": {
-    "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/common": "workspace:*",
+    "@deadlock-mods/logging": "workspace:*",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.42.0",
     "neverthrow": "^8.2.0",

@@ -19,8 +19,8 @@ import {
   LuHeart,
   LuUser,
 } from "react-icons/lu";
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
+import { Lightbox } from "yet-another-react-lightbox";
+import _lightboxStyles from "yet-another-react-lightbox/styles.css";
 import { ModDescription } from "@/components/mods/mod-description";
 import { NSFWBlur } from "@/components/mods/nsfw-blur";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";

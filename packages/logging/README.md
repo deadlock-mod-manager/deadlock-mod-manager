@@ -146,7 +146,7 @@ app.use("*", async (c, next) => {
     { requestId: c.get("requestId") },
     async () => {
       await next();
-    }
+    },
   );
 });
 ```

@@ -110,22 +110,22 @@ If automatic generation doesn't produce good results, manually add an entry to `
 
 ### Emoji Guidelines
 
-| Emoji | Usage                        |
-| ----- | ---------------------------- |
-| 🔧    | Bug fixes, configuration     |
+| Emoji | Usage                         |
+| ----- | ----------------------------- |
+| 🔧    | Bug fixes, configuration      |
 | ✨    | New features, UI improvements |
-| 🔒    | Auth, security               |
-| 🎯    | Crosshairs                   |
-| 🔌    | Plugins                      |
-| 🎨    | Themes, styling              |
-| 📁    | Profiles, file management    |
-| 📥    | Downloads                    |
-| 📦    | VPK, packaging               |
-| 🌐    | Localization, languages      |
-| 🛠️    | Developer tools              |
-| ⚡    | Performance                  |
-| 🛡️    | Security                     |
-| 🐛    | Bug fixes                    |
+| 🔒    | Auth, security                |
+| 🎯    | Crosshairs                    |
+| 🔌    | Plugins                       |
+| 🎨    | Themes, styling               |
+| 📁    | Profiles, file management     |
+| 📥    | Downloads                     |
+| 📦    | VPK, packaging                |
+| 🌐    | Localization, languages       |
+| 🛠️    | Developer tools               |
+| ⚡    | Performance                   |
+| 🛡️    | Security                      |
+| 🐛    | Bug fixes                     |
 
 ## Example Usage
 
@@ -147,4 +147,3 @@ If automatic generation doesn't produce good results, manually add an entry to `
 - `apps/desktop/src-tauri/Cargo.toml` - Rust version (must match package.json)
 - `apps/desktop/CHANGELOG.md` - Source for What's New content
 - `apps/desktop/src/locales/en/translation.json` - What's New translations
-

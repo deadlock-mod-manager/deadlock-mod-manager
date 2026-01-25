@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import "../instrument";
+import * as _instrument from "../instrument";
 import { logger } from "@/lib/logger";
 import { MessageTriageService } from "@/services/message-triage";
 import { PatternSyncService } from "@/services/pattern-sync";

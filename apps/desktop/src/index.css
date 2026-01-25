@@ -221,7 +221,7 @@
 
 /* Target the bottom bar by its structure */
 .background-plugin-active
-.z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: transparent;
 }

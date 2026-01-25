@@ -42,4 +42,3 @@ const kvStringFromData = serializeData(result.data);
 ## License
 
 GPL-3.0
-

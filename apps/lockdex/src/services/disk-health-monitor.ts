@@ -96,7 +96,7 @@ export class DiskHealthMonitor {
         this.logger.info(
           `Disk health check: ${diskInfo.usagePercentage.toFixed(1)}% used, ` +
             `${(diskInfo.freeBytes / 1024 / 1024 / 1024).toFixed(2)} GB free, ` +
-            `temp dirs: ${tempDirInfo.count} (${(tempDirInfo.totalSizeMB).toFixed(2)} MB)`,
+            `temp dirs: ${tempDirInfo.count} (${tempDirInfo.totalSizeMB.toFixed(2)} MB)`,
         );
       }
 

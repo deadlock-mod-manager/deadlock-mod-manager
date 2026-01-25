@@ -100,7 +100,9 @@ export const publicRouter = {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error occurred";
-        throw new Error(`Failed to fetch releases: ${errorMessage}`);
+        throw new Error(`Failed to fetch releases: ${errorMessage}`, {
+          cause: error,
+        });
       }
     }),
 

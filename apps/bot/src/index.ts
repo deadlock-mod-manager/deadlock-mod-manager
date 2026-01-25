@@ -1,4 +1,4 @@
-import "./instrument";
+import * as _instrument from "./instrument";
 
 import { Hono } from "hono";
 import { logger as loggerMiddleware } from "hono/logger";

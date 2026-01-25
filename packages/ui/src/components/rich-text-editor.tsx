@@ -1,7 +1,7 @@
 "use client";
 
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import TipTapStarterKit from "@tiptap/starter-kit";
 import * as React from "react";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
@@ -19,7 +19,7 @@ export const RichTextEditor = React.forwardRef<
   RichTextEditorProps
 >(({ content, onChange, placeholder, className, minHeight = "200px" }, ref) => {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [TipTapStarterKit],
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());

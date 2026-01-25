@@ -216,7 +216,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifact-output
-          
+
           if [ "${{ env.ENABLE_SIGNED_UPDATER }}" == "true" ]; then
             # Regenerate Tauri signature for code-signed exe
             exeFile=$(ls ./signed-output/*.exe)
@@ -245,10 +245,10 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             const artifactDir = './artifact-output';
             const files = fs.readdirSync(artifactDir);
-            
+
             for (const file of files) {
               const filePath = path.join(artifactDir, file);
               const stats = fs.statSync(filePath);

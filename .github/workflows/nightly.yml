@@ -339,11 +339,11 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             const releaseId = parseInt(process.env.RELEASE_ID);
             console.log(`Release ID from env: ${process.env.RELEASE_ID}`);
             console.log(`Parsed release ID: ${releaseId}`);
-            
+
             // Verify the release exists before uploading
             try {
               const { data: release } = await github.rest.repos.getRelease({
@@ -356,11 +356,11 @@ jobs:
               console.error(`Failed to find release ${releaseId}: ${error.message}`);
               throw error;
             }
-            
+
             const artifactDir = './artifact-output';
             const files = fs.readdirSync(artifactDir);
             console.log(`Files in artifact directory: ${JSON.stringify(files)}`);
-            
+
             for (const file of files) {
               const filePath = path.join(artifactDir, file);
               const stats = fs.statSync(filePath);

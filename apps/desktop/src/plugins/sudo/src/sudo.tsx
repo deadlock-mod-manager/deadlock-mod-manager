@@ -44,8 +44,8 @@ import { type DetectedSource, getFileName } from "@/lib/file-utils";
 import { usePersistedStore } from "@/lib/store";
 import { type AddModFormValues, addModSchema } from "@/types/add-mods";
 import { type LocalMod, type ModDownloadItem, ModStatus } from "@/types/mods";
-import ActiveRow from "./active-row";
-import StoreRow from "./store-row";
+import { ActiveRow } from "./active-row";
+import { StoreRow } from "./store-row";
 
 const SudoPage = () => {
   const { t } = useTranslation();
@@ -182,7 +182,9 @@ const SudoPage = () => {
         const activeProfile = s.getActiveProfile();
         const profileFolder = activeProfile?.folderName ?? null;
 
-        await (await import("@tauri-apps/api/core")).invoke("purge_mod", {
+        await (
+          await import("@tauri-apps/api/core")
+        ).invoke("purge_mod", {
           modId: selectedLocal.remoteId,
           vpks: selectedLocal.installedVpks ?? [],
           profileFolder,

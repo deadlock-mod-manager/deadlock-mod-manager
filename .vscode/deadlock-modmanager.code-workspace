@@ -1,44 +1,26 @@
 {
   "folders": [
     {
-      "path": ".."
-    }
+      "path": "..",
+    },
   ],
   "settings": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "[javascript]": {
-      "editor.defaultFormatter": "biomejs.biome"
+    "editor.codeActionsOnSave": {
+      "source.fixAll.oxc": "always",
     },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.preferences.importModuleSpecifier": "shortest",
+    "typescript.preferences.importModuleSpecifierEnding": "auto",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "[typescript]": {
-      "editor.defaultFormatter": "biomejs.biome"
+      "editor.defaultFormatter": "oxc.oxc-vscode",
     },
-    "[javascriptreact]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[typescriptreact]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[json]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[jsonc]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[css]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "[graphql]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "oxc.path.oxfmt": "./node_modules/.bin/oxfmt",
+    "oxc.path.oxlint": "./node_modules/.bin/oxlint",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
     "emmet.showExpandedAbbreviation": "never",
-    "editor.codeActionsOnSave": {
-      "source.fixAll.biome": "explicit",
-      "source.organizeImports.biome": "explicit"
-    },
-
     // TypeScript performance optimizations
     "typescript.disableAutomaticTypeAcquisition": true,
     "typescript.enablePromptUseWorkspaceTsdk": true,
@@ -48,7 +30,6 @@
     "typescript.suggest.completeFunctionCalls": false,
     "typescript.suggest.jsdoc.generateReturns": false,
     "typescript.workspaceSymbols.scope": "currentProject",
-
     // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,
@@ -56,7 +37,7 @@
       "**/build": true,
       "**/target": true,
       "**/.turbo": true,
-      "**/.tsbuildinfo": true
+      "**/.tsbuildinfo": true,
     },
     "search.exclude": {
       "**/node_modules": true,
@@ -66,7 +47,7 @@
       "**/.turbo": true,
       "**/.tsbuildinfo": true,
       "**/pnpm-lock.yaml": true,
-      "**/routeTree.gen.ts": true
+      "**/routeTree.gen.ts": true,
     },
     "files.watcherExclude": {
       "**/node_modules/**": true,
@@ -75,17 +56,17 @@
       "**/target/**": true,
       "**/.turbo/**": true,
       "**/.tsbuildinfo": true,
-      "**/routeTree.gen.ts": true
+      "**/routeTree.gen.ts": true,
     },
     "files.readonlyInclude": {
-      "**/routeTree.gen.ts": true
+      "**/routeTree.gen.ts": true,
     },
     "rust-analyzer.linkedProjects": ["apps/desktop/src-tauri/Cargo.toml"],
     "[rust]": {
-      "editor.defaultFormatter": "rust-lang.rust-analyzer"
+      "editor.defaultFormatter": "rust-lang.rust-analyzer",
     },
     "[xml]": {
-      "editor.defaultFormatter": "redhat.vscode-xml"
-    }
-  }
+      "editor.defaultFormatter": "redhat.vscode-xml",
+    },
+  },
 }

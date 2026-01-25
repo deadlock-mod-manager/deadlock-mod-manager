@@ -52,3 +52,29 @@ export class UnauthorizedError extends BaseError {
     super(message, originalError);
   }
 }
+
+export class MultipleErrors extends BaseError {
+  readonly errors: BaseError[];
+  readonly code = GenericErrorCode.MULTIPLE_ERRORS;
+
+  constructor(
+    message: string,
+    errors: BaseError[],
+    code = GenericErrorCode.RUNTIME_ERROR,
+  ) {
+    super(message, code);
+    this.errors = errors;
+  }
+
+  override get stack() {
+    const baseStack = super.stack || "";
+    const errorStacks = this.errors.map((error) => error.stack).join("\n---\n");
+    return `${baseStack}\n\nAggregated Errors:\n${errorStacks}`;
+  }
+
+  override get message() {
+    const baseMessage = super.message;
+    const errorMessages = this.errors.map((error) => error.message).join("; ");
+    return `${baseMessage} (${errorMessages})`;
+  }
+}

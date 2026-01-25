@@ -9,7 +9,7 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 The plugin system allows developers to create custom functionality for Deadlock Mod Manager. Plugins are loaded dynamically and can render UI globally or provide settings interfaces.
 
-<Callout type="info">
+<Callout type='info'>
   **Feature Flag**: The plugin system is controlled by the `show-plugins`
   feature flag (default: `false`). When disabled, the plugins tab in Settings is
   hidden. This allows for controlled rollout of plugin functionality.
@@ -37,7 +37,7 @@ const entryModules = import.meta.glob(
   ["@/plugins/*/src/**/*.tsx", "@/plugins/*/index.tsx"],
   {
     eager: false,
-  }
+  },
 );
 ```
 
@@ -143,7 +143,7 @@ export default mod;
 ```typescript
 // Always check enabled state before rendering
 const isEnabled = usePersistedStore(
-  (s) => s.enabledPlugins[manifest.id] ?? false
+  (s) => s.enabledPlugins[manifest.id] ?? false,
 );
 if (!isEnabled) return null;
 
@@ -167,12 +167,12 @@ const Render = () => {
 
 ## Troubleshooting
 
-<Callout type="warning">
+<Callout type='warning'>
   **Plugin Not Loading** - Check manifest.json syntax - Verify entry point path
   - Ensure proper exports in plugin file
 </Callout>
 
-<Callout type="warning">
+<Callout type='warning'>
   **Settings Not Persisting** - Use global store methods - Check plugin ID
   consistency
 </Callout>

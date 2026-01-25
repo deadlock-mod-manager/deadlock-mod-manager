@@ -19,7 +19,7 @@ import { usePersistedStore } from "@/lib/store";
 import { isModOutdated } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import ModButton from "./mod-button";
-import NSFWBlur from "./nsfw-blur";
+import { NSFWBlur } from "./nsfw-blur";
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
   const { localMods, setScrollPosition } = usePersistedStore();

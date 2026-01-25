@@ -27,9 +27,9 @@ Technical reference for the Discord plugin that integrates Discord Rich Presence
 
 ```typescript
 type DiscordSettings = {
-  details?: string;           // First line of Rich Presence
-  state?: string;             // Second line of Rich Presence
-  showElapsedTime?: boolean;  // Whether to show elapsed time
+  details?: string; // First line of Rich Presence
+  state?: string; // Second line of Rich Presence
+  showElapsedTime?: boolean; // Whether to show elapsed time
 };
 
 const DEFAULT_SETTINGS: DiscordSettings = {
@@ -62,7 +62,7 @@ The plugin uses two Tauri commands:
 const activity = {
   details: settings?.details || DEFAULT_SETTINGS.details,
   state: settings?.state || DEFAULT_SETTINGS.state,
-  large_image_key: null,      // No custom images
+  large_image_key: null, // No custom images
   large_image_text: null,
   small_image_key: null,
   small_image_text: null,
@@ -106,23 +106,19 @@ The `Render` component returns `null` - this plugin doesn't render UI elements. 
 
 ## Troubleshooting
 
-<Callout type="warning">
-**Connection Issues**
-- Ensure Discord client is running and logged in
-- Check Discord Rich Presence is enabled in Discord settings
-- Plugin waits 1 second before connecting to avoid rapid cycles
+<Callout type='warning'>
+  **Connection Issues** - Ensure Discord client is running and logged in - Check
+  Discord Rich Presence is enabled in Discord settings - Plugin waits 1 second
+  before connecting to avoid rapid cycles
 </Callout>
 
-<Callout type="warning">
-**Presence Not Updating**
-- Verify settings are saved correctly
-- Check browser console for Tauri command errors
-- Try disabling and re-enabling the plugin
+<Callout type='warning'>
+  **Presence Not Updating** - Verify settings are saved correctly - Check
+  browser console for Tauri command errors - Try disabling and re-enabling the
+  plugin
 </Callout>
 
 ## Related Docs
 
 - User guide: [/docs/plugins/discord](/docs/plugins/discord)
 - Plugin system: [/docs/developer-docs/plugins](/docs/developer-docs/plugins)
-
-
