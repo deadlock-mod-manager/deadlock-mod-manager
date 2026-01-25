@@ -73,7 +73,7 @@
     "tanstack-start-sitemap": "^0.0.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "7.1.7",
+    "vite": "7.1.11",
     "vite-plugin-sitemap": "^0.8.2",
     "vitest": "^3.2.4",
     "web-vitals": "^5.1.0"
