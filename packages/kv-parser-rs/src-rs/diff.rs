@@ -2553,55 +2553,6 @@ mod tests {
         assert!(has_write, "Write should be present");
     }
 
-    /// Extract the SearchPaths section from serialized gameinfo.gi output
-    fn extract_search_paths(serialized: &str) -> String {
-        let lines: Vec<&str> = serialized.lines().collect();
-        let mut in_search_paths = false;
-        let mut brace_depth = 0;
-        let mut start_idx = None;
-        let mut end_idx = None;
-
-        for (i, line) in lines.iter().enumerate() {
-            if line.trim().starts_with("SearchPaths") {
-                in_search_paths = true;
-                start_idx = Some(i);
-                brace_depth = 0;
-                // Count opening braces on the same line
-                for ch in line.chars() {
-                    if ch == '{' {
-                        brace_depth += 1;
-                    }
-                }
-                continue;
-            }
-
-            if in_search_paths {
-                // Count braces to track when SearchPaths block ends
-                for ch in line.chars() {
-                    if ch == '{' {
-                        brace_depth += 1;
-                    } else if ch == '}' {
-                        brace_depth -= 1;
-                        if brace_depth == 0 {
-                            end_idx = Some(i + 1);
-                            break;
-                        }
-                    }
-                }
-
-                if end_idx.is_some() {
-                    break;
-                }
-            }
-        }
-
-        if let (Some(start), Some(end)) = (start_idx, end_idx) {
-            lines[start..end].join("\n")
-        } else {
-            String::new()
-        }
-    }
-
     #[test]
     fn test_is_patch_already_applied_simple_add() {
         let mut original = KeyValuesObject::new();
