@@ -1,5 +1,6 @@
 {
   "name": "@deadlock-mods/www",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +12,6 @@
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/crosshair": "workspace:*",
-    "@deadlock-mods/kv-parser": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",

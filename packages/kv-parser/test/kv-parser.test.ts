@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { parseKv, serializeKv } from "../src/parser";
+import { describe, expect, it } from "bun:test";
+import {
+  applyDiff,
+  generateDiff,
+  getDiffStats,
+  parseKv,
+  serializeAst,
+  serializeData,
+} from "../src";
 
 describe("kv-parser", () => {
   describe("basic parsing", () => {
@@ -12,7 +19,7 @@ describe("kv-parser", () => {
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         RootKey: {
           Key1: "Value1",
           Key2: "Value2",
@@ -34,7 +41,7 @@ describe("kv-parser", () => {
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Level1: {
             Level2: {
@@ -54,7 +61,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Key1: "Value1",
           Key2: "Value2",
@@ -71,7 +78,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Key1: "Quoted Value",
           Key2: "UnquotedValue",
@@ -90,7 +97,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           IntKey: 123,
           NegativeInt: -456,
@@ -107,7 +114,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           FloatKey: 123.456,
           NegativeFloat: -78.9,
@@ -127,7 +134,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Key1: "Value1",
           Key2: "Value2",
@@ -145,7 +152,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Key1: "Value1",
         },
@@ -164,7 +171,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Key1: "Value with\nnewline",
           Key2: "Value with\ttab",
@@ -185,7 +192,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           DupKey: ["Value1", "Value2", "Value3"],
         },
@@ -207,7 +214,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           Item: [{ Name: "Item1" }, { Name: "Item2" }],
         },
@@ -223,8 +230,7 @@ Root
           Key2: "Value2",
         },
       };
-      const result = serializeKv(data);
-      // Keys and values are unquoted if they don't need quotes
+      const result = serializeData(data);
       expect(result).toContain("Root");
       expect(result).toContain("Key1");
       expect(result).toContain("Value1");
@@ -238,7 +244,7 @@ Root
           },
         },
       };
-      const result = serializeKv(data);
+      const result = serializeData(data);
       expect(result).toContain("Root");
       expect(result).toContain("Level1");
       expect(result).toContain("Key");
@@ -251,7 +257,7 @@ Root
           FloatKey: 45.67,
         },
       };
-      const result = serializeKv(data);
+      const result = serializeData(data);
       expect(result).toContain("123");
       expect(result).toContain("45.67");
     });
@@ -262,7 +268,7 @@ Root
           Key: "Value with spaces",
         },
       };
-      const result = serializeKv(data);
+      const result = serializeData(data);
       expect(result).toContain('"Value with spaces"');
     });
 
@@ -272,9 +278,30 @@ Root
           Key: 'Value with "quotes" and \n newline',
         },
       };
-      const result = serializeKv(data);
+      const result = serializeData(data);
       expect(result).toContain('\\"');
       expect(result).toContain("\\n");
+    });
+  });
+
+  describe("AST serialization", () => {
+    it("should preserve exact formatting", () => {
+      const input = `"Key"    "Value"`;
+      const result = parseKv(input);
+      const serialized = serializeAst(result.ast);
+
+      // Should preserve spacing
+      expect(serialized).toBe(input);
+    });
+
+    it("should preserve comments", () => {
+      const input = `// Comment
+"Key" "Value"
+`;
+      const result = parseKv(input);
+      const serialized = serializeAst(result.ast);
+
+      expect(serialized).toContain("// Comment");
     });
   });
 
@@ -291,9 +318,9 @@ Root
 }
 `;
       const parsed = parseKv(input);
-      const serialized = serializeKv(parsed);
+      const serialized = serializeData(parsed.data);
       const reparsed = parseKv(serialized);
-      expect(reparsed).toEqual(parsed);
+      expect(reparsed.data).toEqual(parsed.data);
     });
   });
 
@@ -305,7 +332,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {},
       });
     });
@@ -318,7 +345,7 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           "Key With Spaces": "Value",
         },
@@ -333,11 +360,66 @@ Root
 }
 `;
       const result = parseKv(input);
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         Root: {
           EmptyKey: "",
         },
       });
+    });
+  });
+
+  describe("diff system", () => {
+    it("should generate diff for added keys", () => {
+      const source = {};
+      const target = { NewKey: "NewValue" };
+
+      const diff = generateDiff(source, target);
+      expect(diff.changes).toHaveLength(1);
+      expect(diff.changes[0].op).toBe("add");
+      expect(diff.changes[0].path).toBe("NewKey");
+    });
+
+    it("should generate diff for removed keys", () => {
+      const source = { Key: "Value" };
+      const target = {};
+
+      const diff = generateDiff(source, target);
+      expect(diff.changes).toHaveLength(1);
+      expect(diff.changes[0].op).toBe("remove");
+      expect(diff.changes[0].path).toBe("Key");
+    });
+
+    it("should generate diff for replaced values", () => {
+      const source = { Key: "OldValue" };
+      const target = { Key: "NewValue" };
+
+      const diff = generateDiff(source, target);
+      expect(diff.changes).toHaveLength(1);
+      expect(diff.changes[0].op).toBe("replace");
+      expect(diff.changes[0].path).toBe("Key");
+    });
+
+    it("should apply diff correctly", () => {
+      const source = { Key: "OldValue" };
+      const target = { Key: "NewValue" };
+
+      const diff = generateDiff(source, target);
+      const result = applyDiff(source, diff);
+
+      expect(result).toEqual(target);
+    });
+
+    it("should provide diff statistics", () => {
+      const source = { Key1: "Value1" };
+      const target = { Key2: "Value2", Key3: "Value3" };
+
+      const diff = generateDiff(source, target);
+      const stats = getDiffStats(diff);
+
+      expect(stats.total).toBe(3);
+      expect(stats.added).toBe(2);
+      expect(stats.removed).toBe(1);
+      expect(stats.modified).toBe(0);
     });
   });
 });

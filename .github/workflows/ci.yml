@@ -69,7 +69,7 @@ jobs:
         with:
           workspaces: |
             packages/vpk-parser -> packages/vpk-parser/target
-            packages/kv-parser-rs -> packages/kv-parser-rs/target
+            packages/kv-parser -> packages/kv-parser/target
             packages/dmodpkg -> packages/dmodpkg/target
 
       - name: Install dependencies
@@ -84,9 +84,9 @@ jobs:
             FAILED_PACKAGES+=("@deadlock-mods/vpk-parser")
           fi
           
-          if ! pnpm --filter @deadlock-mods/kv-parser-rs build; then
-            echo "::error::Build failed for @deadlock-mods/kv-parser-rs"
-            FAILED_PACKAGES+=("@deadlock-mods/kv-parser-rs")
+          if ! pnpm --filter @deadlock-mods/kv-parser build; then
+            echo "::error::Build failed for @deadlock-mods/kv-parser"
+            FAILED_PACKAGES+=("@deadlock-mods/kv-parser")
           fi
           
           if ! pnpm --filter @deadlock-mods/dmodpkg build; then

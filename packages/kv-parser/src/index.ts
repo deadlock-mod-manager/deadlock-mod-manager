@@ -1,9 +1,14 @@
-export * from "./ast";
-export * from "./ast-parser";
-export * from "./ast-serializer";
-export * from "./diff-applicator";
-export * from "./diff-generator";
-export * from "./document";
-export * from "./document-base";
-export * from "./parser";
+// Export FFI functions
+export {
+  applyDiff,
+  generateDiff,
+  getDiffStats,
+  getVersion,
+  parseKv,
+  serializeAst,
+  serializeData,
+} from "./ffi";
+// Re-export for convenience
+export type { ParseResult } from "./types";
+// Export all types
 export * from "./types";

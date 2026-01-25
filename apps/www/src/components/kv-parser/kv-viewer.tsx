@@ -1,4 +1,4 @@
-import { type KeyValuesValue, parseKv } from "@deadlock-mods/kv-parser/browser";
+import type { KeyValuesValue } from "@deadlock-mods/kv-parser";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Card,
@@ -7,7 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { parseKvContent } from "@/lib/kv-parser.server";
 import { JsonTreeView } from "./json-tree";
 import { SyntaxHighlighter } from "./syntax-highlighter";
 
@@ -28,34 +30,39 @@ interface ParseResult {
 export function KvViewer({ content }: KvViewerProps) {
   const [showJson, setShowJson] = useState(true);
 
-  const parseResult = useMemo<ParseResult>(() => {
+  const {
+    data: parseResult,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["kv-parse", content],
+    queryFn: () => parseKvContent({ content }),
+    enabled: content.trim().length > 0,
+  });
+
+  const result: ParseResult = useMemo(() => {
     if (!content.trim()) {
       return { success: false };
     }
-
-    try {
-      const parsed = parseKv(content);
-      return { success: true, data: parsed };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown parsing error";
-
-      const lineMatch = errorMessage.match(/line (\d+)/);
-      const columnMatch = errorMessage.match(/column (\d+)/);
-
+    if (isLoading) {
+      return { success: false };
+    }
+    if (queryError) {
       return {
         success: false,
         error: {
-          message: errorMessage,
-          line: lineMatch ? Number.parseInt(lineMatch[1], 10) : undefined,
-          column: columnMatch ? Number.parseInt(columnMatch[1], 10) : undefined,
+          message:
+            queryError instanceof Error
+              ? queryError.message
+              : "Failed to parse KeyValues content",
         },
       };
     }
-  }, [content]);
+    return parseResult ?? { success: false };
+  }, [content, isLoading, parseResult, queryError]);
 
   const stats = useMemo(() => {
-    if (!parseResult.success || !parseResult.data) {
+    if (!result.success || !result.data) {
       return null;
     }
 
@@ -74,29 +81,36 @@ export function KvViewer({ content }: KvViewerProps) {
       );
     };
 
-    const keys = countKeys(parseResult.data);
+    const keys = countKeys(result.data);
 
     return { lines, chars, keys };
-  }, [content, parseResult]);
+  }, [content, result]);
 
   return (
     <div className='space-y-6'>
-      {parseResult.error && (
+      {isLoading && (
+        <Card>
+          <CardContent className='pt-6'>
+            <p className='text-center text-muted-foreground'>Parsing...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && result.error && (
         <Card className='border-destructive/50'>
           <CardHeader>
             <CardTitle className='text-destructive flex items-center gap-2'>
               <span>Parse Error</span>
               <Badge variant='destructive'>Failed</Badge>
             </CardTitle>
-            <CardDescription>{parseResult.error.message}</CardDescription>
+            <CardDescription>{result.error.message}</CardDescription>
           </CardHeader>
-          {(parseResult.error.line || parseResult.error.column) && (
+          {(result.error.line || result.error.column) && (
             <CardContent>
               <p className='text-muted-foreground text-sm'>
-                {parseResult.error.line && `Line: ${parseResult.error.line}`}
-                {parseResult.error.line && parseResult.error.column && " | "}
-                {parseResult.error.column &&
-                  `Column: ${parseResult.error.column}`}
+                {result.error.line && `Line: ${result.error.line}`}
+                {result.error.line && result.error.column && " | "}
+                {result.error.column && `Column: ${result.error.column}`}
               </p>
             </CardContent>
           )}
@@ -114,7 +128,7 @@ export function KvViewer({ content }: KvViewerProps) {
           <Badge variant='secondary'>
             {stats.keys} {stats.keys === 1 ? "key" : "keys"}
           </Badge>
-          {parseResult.success && (
+          {result.success && (
             <Badge className='ml-auto' variant='default'>
               ✓ Valid
             </Badge>
@@ -125,10 +139,7 @@ export function KvViewer({ content }: KvViewerProps) {
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <div>
           <h3 className='mb-3 font-semibold text-lg'>Original</h3>
-          <SyntaxHighlighter
-            code={content}
-            errorLine={parseResult.error?.line}
-          />
+          <SyntaxHighlighter code={content} errorLine={result.error?.line} />
         </div>
 
         <div>
@@ -144,27 +155,29 @@ export function KvViewer({ content }: KvViewerProps) {
             </button>
           </div>
 
-          {parseResult.success && parseResult.data ? (
+          {!isLoading && result.success && result.data ? (
             showJson ? (
               <div className='rounded-lg border border-muted-foreground/20 overflow-auto max-h-[600px]'>
                 <SyntaxHighlighter
-                  code={JSON.stringify(parseResult.data, null, 2)}
+                  code={JSON.stringify(result.data, null, 2)}
                   language='json'
                 />
               </div>
             ) : (
-              <JsonTreeView data={parseResult.data as KeyValuesValue} />
+              <JsonTreeView data={result.data as KeyValuesValue} />
             )
           ) : (
-            <Card>
-              <CardContent className='pt-6'>
-                <p className='text-center text-muted-foreground'>
-                  {parseResult.error
-                    ? "Fix the errors above to see the parsed output"
-                    : "Enter KeyValues content to see the parsed result"}
-                </p>
-              </CardContent>
-            </Card>
+            !isLoading && (
+              <Card>
+                <CardContent className='pt-6'>
+                  <p className='text-center text-muted-foreground'>
+                    {result.error
+                      ? "Fix the errors above to see the parsed output"
+                      : "Enter KeyValues content to see the parsed result"}
+                  </p>
+                </CardContent>
+              </Card>
+            )
           )}
         </div>
       </div>

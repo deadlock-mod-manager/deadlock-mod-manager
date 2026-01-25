@@ -2,17 +2,9 @@
   "extends": "@deadlock-mods/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "types": ["bun-types"]
+    "rootDir": "./src"
   },
-  "include": [
-    "src/**/*",
-    "bin/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "target",
-    "test"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "target"]
 }
 

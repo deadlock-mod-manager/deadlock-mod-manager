@@ -51,6 +51,49 @@ function processData<T>(data: T): T {
 - Use named exports for components
 - Keep components small and focused on a single responsibility
 - Use proper prop typing
+- **Use React Query mutations for async operations** - Never manually manage loading state with `useState` for async operations. Use `useMutation` from `@tanstack/react-query` instead
+
+```typescript
+// ✅ Good: Using React Query mutation
+const deleteItemMutation = useMutation({
+  mutationFn: (id: string) => deleteItem(id),
+  meta: {
+    skipGlobalErrorHandler: true,
+  },
+  onSuccess: () => {
+    toast.success("Item deleted");
+    queryClient.invalidateQueries({ queryKey: ["items"] });
+  },
+  onError: (error) => {
+    toast.error(error.message);
+  },
+});
+
+<Button
+  onClick={() => deleteItemMutation.mutate(itemId)}
+  disabled={deleteItemMutation.isPending}>
+  {deleteItemMutation.isPending ? "Deleting..." : "Delete"}
+</Button>
+
+// ❌ Bad: Manually managing loading state
+const [isDeleting, setIsDeleting] = useState(false);
+
+const handleDelete = async () => {
+  setIsDeleting(true);
+  try {
+    await deleteItem(itemId);
+    toast.success("Item deleted");
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
+<Button onClick={handleDelete} disabled={isDeleting}>
+  {isDeleting ? "Deleting..." : "Delete"}
+</Button>
+```
 
 ### Backend (Bun + Hono)
 

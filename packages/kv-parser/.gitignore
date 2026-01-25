@@ -1,2 +1,7 @@
-*.md
-!README.md
+# Rust
+target/
+Cargo.lock
+
+# Node
+node_modules/
+dist/

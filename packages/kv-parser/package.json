@@ -1,23 +1,29 @@
 {
   "name": "@deadlock-mods/kv-parser",
-  "version": "1.1.0",
-  "description": "KeyValues (VDF) parser for Valve's KeyValues format in TypeScript",
+  "version": "0.2.0",
+  "description": "High-performance KeyValues (VDF) parser with AST support using native Rust implementation via Bun FFI",
   "exports": {
-    ".": "./src/index.ts",
-    "./browser": "./src/index.browser.ts"
-  },
-  "bin": {
-    "kv-parser": "./bin/cli.ts"
+    ".": "./src/index.ts"
   },
   "files": [
     "src/",
-    "bin/",
+    "target/release/libkv_parser.*",
+    "target/release/kv_parser.*",
     "README.md"
   ],
   "scripts": {
-    "test": "vitest",
-    "cli": "bun run bin/cli.ts",
-    "check-types": "tsc --noEmit --skipLibCheck"
+    "prebuild": "pnpm run generate-types",
+    "build": "cargo build --release",
+    "build:debug": "pnpm run generate-types && cargo build",
+    "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
+    "test": "pnpm run \"/^test:.*/\"",
+    "test:ts": "bun test",
+    "test:rust": "cargo test",
+    "clean": "cargo clean && rm -rf src/generated/*.ts",
+    "check": "cargo check",
+    "prepublishOnly": "pnpm run build",
+    "pretest": "pnpm run build",
+    "postbuild": "pnpm run -w lint:fix"
   },
   "keywords": [
     "keyvalues",
@@ -25,8 +31,11 @@
     "valve",
     "parser",
     "deadlock",
-    "source-engine",
-    "typescript"
+    "ast",
+    "ffi",
+    "rust",
+    "native",
+    "performance"
   ],
   "author": "stormix <contact@stormix.co>",
   "license": "GPL-3.0",
@@ -35,15 +44,16 @@
     "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
     "directory": "packages/kv-parser"
   },
+  "engines": {
+    "bun": ">=1.3.0"
+  },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "^1.3.0",
     "@types/node": "^24.5.2",
-    "@types/yargs": "^17.0.33",
-    "bun-types": "^1.3.0",
-    "chalk": "^5.6.2",
-    "picocolors": "^1.1.1",
-    "vitest": "^3.2.4",
-    "yargs": "^18.0.0"
+    "bun-types": "^1.3.0"
+  },
+  "peerDependencies": {
+    "bun": ">=1.3.0"
   }
 }
