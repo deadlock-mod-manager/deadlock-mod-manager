@@ -297,7 +297,7 @@ jobs:
         id: signpath-sign
         uses: ./.github/actions/signpath-sign
         with:
-          unsigned-artifact-path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          unsigned-artifact-path: apps/desktop/target/release/bundle/nsis/*.exe
           output-directory: ./artifact-output
           signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}

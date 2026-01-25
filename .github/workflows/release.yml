@@ -196,7 +196,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-unsigned
-          path: apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+          path: apps/desktop/target/release/bundle/nsis/*.exe
           if-no-files-found: error
 
       - name: Submit to SignPath
