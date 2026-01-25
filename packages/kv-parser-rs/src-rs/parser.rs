@@ -560,28 +560,9 @@ mod tests {
         // First test tokenization
         use crate::tokenizer::Tokenizer;
         let mut tokenizer = Tokenizer::new(input);
-        match tokenizer.tokenize() {
-            Ok(tokens) => {
-                println!("Tokens ({} total):", tokens.len());
-                for (i, token) in tokens.iter().enumerate() {
-                    println!(
-                        "  {}: {:?} at line {}, col {} = {:?}",
-                        i, token.token_type, token.line, token.column, token.value
-                    );
-                }
-            }
-            Err(e) => println!("Tokenize error: {:?}", e),
-        }
-
-        // Now check what Parser sees
-        let tokens_result = crate::tokenizer::Tokenizer::new(input).tokenize().unwrap();
-        eprintln!("\nParser will see {} tokens", tokens_result.len());
+        let _ = tokenizer.tokenize();
 
         let result = Parser::parse(input, ParseOptions::default());
-
-        if let Err(ref e) = result {
-            println!("Parse error: {:?}", e);
-        }
 
         assert!(result.is_ok(), "Should parse conditional with OR operator");
     }
