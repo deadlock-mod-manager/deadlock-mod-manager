@@ -21,6 +21,10 @@ inputs:
   signpath-signing-policy:
     description: "SignPath signing policy slug"
     required: true
+    type: choice
+    options:
+      - "release-signing"
+      - "test-signing"
     default: "release-signing"
   regenerate-tauri-signature:
     description: "Whether to regenerate the Tauri updater signature after code signing"
