@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-import * as _instrument from "../instrument";
+// oxlint-disable import/no-unassigned-import
+import "../instrument";
 import { SupportAgent } from "@/ai/agents/support";
 import { logger } from "@/lib/logger";
 

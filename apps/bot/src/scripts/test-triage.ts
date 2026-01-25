@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
-import * as _instrument from "../instrument";
+// oxlint-disable import/no-unassigned-import
+import "../instrument";
 import { logger } from "@/lib/logger";
 import { MessageTriageService } from "@/services/message-triage";
 import { PatternSyncService } from "@/services/pattern-sync";

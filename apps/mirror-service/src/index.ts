@@ -1,4 +1,5 @@
-import * as _instrument from "./instrument";
+// oxlint-disable import/no-unassigned-import
+import "./instrument";
 
 import { CronPatterns } from "@deadlock-mods/queue/cron";
 import { sentry } from "@hono/sentry";

@@ -1,4 +1,5 @@
-import * as _instrument from "./instrument";
+// oxlint-disable import/no-unassigned-import
+import "./instrument";
 
 import { Hono } from "hono";
 import { logger as loggerMiddleware } from "hono/logger";

@@ -1,3 +1,4 @@
-import * as _gameBanana from "./game-banana";
+// oxlint-disable import/no-unassigned-import
+import "./game-banana";
 
 export { providerRegistry } from "./registry";
