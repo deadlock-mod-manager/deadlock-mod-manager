@@ -42,6 +42,8 @@ impl DiffGenerator {
                             old_value: Some(src_obj[key].clone()),
                             new_value: None,
                             comment: None,
+                            old_comment: None,
+                            new_comment: None,
                             comment_position: None,
                         });
                     }
@@ -71,6 +73,8 @@ impl DiffGenerator {
                                     old_value: Some(src_value.clone()),
                                     new_value: Some(tgt_value.clone()),
                                     comment: None,
+                                    old_comment: None,
+                                    new_comment: None,
                                     comment_position: None,
                                 });
                             }
@@ -83,6 +87,8 @@ impl DiffGenerator {
                             old_value: None,
                             new_value: Some(tgt_value.clone()),
                             comment: None,
+                            old_comment: None,
+                            new_comment: None,
                             comment_position: None,
                         });
                     }
@@ -97,6 +103,8 @@ impl DiffGenerator {
                         old_value: Some(source.clone()),
                         new_value: Some(target.clone()),
                         comment: None,
+                        old_comment: None,
+                        new_comment: None,
                         comment_position: None,
                     });
                 }
@@ -277,7 +285,23 @@ impl DiffApplicator {
     }
 
     fn apply_change_to_ast(ast: &mut DocumentNode, change: &DiffEntry) -> Result<()> {
-        // Handle comment operations
+        // Handle comment Replace operations (uses old_comment/new_comment fields)
+        if change.old_comment.is_some() || change.new_comment.is_some() {
+            if change.op == DiffOp::Replace {
+                let path_parts: Vec<&str> = change.path.split('.').collect();
+                let position = change.comment_position.unwrap_or(CommentPosition::Before);
+
+                if let Some(old_comment) = &change.old_comment {
+                    Self::remove_comment_from_ast_path(ast, &path_parts, old_comment)?;
+                }
+                if let Some(new_comment) = &change.new_comment {
+                    Self::add_comment_to_ast_path(ast, &path_parts, new_comment, position)?;
+                }
+                return Ok(());
+            }
+        }
+
+        // Handle comment Add/Remove operations (uses comment field)
         if let Some(comment_text) = &change.comment {
             let path_parts: Vec<&str> = change.path.split('.').collect();
             let position = change.comment_position.unwrap_or(CommentPosition::Before);
@@ -290,9 +314,9 @@ impl DiffApplicator {
                     Self::remove_comment_from_ast_path(ast, &path_parts, comment_text)?;
                 }
                 DiffOp::Replace => {
-                    // For replace, remove old comment and add new one
-                    Self::remove_comment_from_ast_path(ast, &path_parts, comment_text)?;
-                    Self::add_comment_to_ast_path(ast, &path_parts, comment_text, position)?;
+                    return Err(KvError::DiffError {
+                        message: "Comment Replace operations must use old_comment/new_comment fields, not comment field".to_string(),
+                    });
                 }
             }
             return Ok(());
@@ -1514,9 +1538,13 @@ pub fn is_patch_already_applied(content: &str, diff: &DocumentDiff) -> Result<bo
 
     for change in &diff.changes {
         let is_applied = match change.op {
-            DiffOp::Add => check_add_already_applied(&parse_result.data, change)?,
-            DiffOp::Replace => check_replace_already_applied(&parse_result.data, change)?,
-            DiffOp::Remove => check_remove_already_applied(&parse_result.data, change)?,
+            DiffOp::Add => check_add_already_applied(&parse_result.data, &parse_result.ast, change)?,
+            DiffOp::Replace => {
+                check_replace_already_applied(&parse_result.data, &parse_result.ast, change)?
+            }
+            DiffOp::Remove => {
+                check_remove_already_applied(&parse_result.data, &parse_result.ast, change)?
+            }
         };
 
         if !is_applied {
@@ -1527,9 +1555,77 @@ pub fn is_patch_already_applied(content: &str, diff: &DocumentDiff) -> Result<bo
     Ok(true)
 }
 
-fn check_add_already_applied(data: &KeyValuesObject, change: &DiffEntry) -> Result<bool> {
-    if change.comment.is_some() {
-        return Ok(true);
+/// Check if a comment with the given text exists in the AST at the specified path.
+/// Searches the children of the node at the given path for a comment containing the text.
+fn comment_exists_at_path(
+    ast: &crate::types::DocumentNode,
+    path_parts: &[&str],
+    comment_text: &str,
+) -> bool {
+    use crate::types::{AstNode, ValueNode};
+
+    if path_parts.is_empty() {
+        return comment_exists_in_children(&ast.children, comment_text);
+    }
+
+    // Navigate to the parent container and search for comments there
+    let mut children: &[AstNode] = &ast.children;
+
+    for (i, part) in path_parts.iter().enumerate() {
+        let is_last = i == path_parts.len() - 1;
+
+        // Find the key-value node with this key
+        let found = children.iter().find_map(|child| {
+            if let AstNode::KeyValue(kv) = child {
+                if kv.key.value == *part {
+                    return Some(kv);
+                }
+            }
+            None
+        });
+
+        match found {
+            Some(kv) => {
+                if is_last {
+                    // At target path - search in the parent's children (current level)
+                    return comment_exists_in_children(children, comment_text);
+                }
+                // Navigate deeper into object
+                if let ValueNode::Object(obj) = &kv.value {
+                    children = &obj.children;
+                } else {
+                    return false;
+                }
+            }
+            None => return false,
+        }
+    }
+
+    false
+}
+
+/// Check if any comment in the children list contains the given text.
+fn comment_exists_in_children(children: &[crate::types::AstNode], comment_text: &str) -> bool {
+    use crate::types::AstNode;
+
+    children.iter().any(|child| {
+        if let AstNode::Comment(comment) = child {
+            comment.value.contains(comment_text)
+        } else {
+            false
+        }
+    })
+}
+
+fn check_add_already_applied(
+    data: &KeyValuesObject,
+    ast: &crate::types::DocumentNode,
+    change: &DiffEntry,
+) -> Result<bool> {
+    // For comment-only Add operations, verify the comment exists in the AST
+    if let Some(comment_text) = &change.comment {
+        let path_parts: Vec<&str> = change.path.split('.').collect();
+        return Ok(comment_exists_at_path(ast, &path_parts, comment_text));
     }
 
     let path_parts: Vec<&str> = change.path.split('.').collect();
@@ -1566,9 +1662,29 @@ fn check_add_already_applied(data: &KeyValuesObject, change: &DiffEntry) -> Resu
     Ok(false)
 }
 
-fn check_replace_already_applied(data: &KeyValuesObject, change: &DiffEntry) -> Result<bool> {
-    if change.comment.is_some() {
-        return Ok(true);
+fn check_replace_already_applied(
+    data: &KeyValuesObject,
+    ast: &crate::types::DocumentNode,
+    change: &DiffEntry,
+) -> Result<bool> {
+    // For comment Replace operations, verify the new comment exists and old comment is gone
+    if change.new_comment.is_some() || change.old_comment.is_some() {
+        let path_parts: Vec<&str> = change.path.split('.').collect();
+        let new_exists = change
+            .new_comment
+            .as_ref()
+            .is_none_or(|c| comment_exists_at_path(ast, &path_parts, c));
+        let old_gone = change
+            .old_comment
+            .as_ref()
+            .is_none_or(|c| !comment_exists_at_path(ast, &path_parts, c));
+        return Ok(new_exists && old_gone);
+    }
+
+    // For comment-only operations (legacy field)
+    if let Some(comment_text) = &change.comment {
+        let path_parts: Vec<&str> = change.path.split('.').collect();
+        return Ok(comment_exists_at_path(ast, &path_parts, comment_text));
     }
 
     let path_parts: Vec<&str> = change.path.split('.').collect();
@@ -1605,9 +1721,15 @@ fn check_replace_already_applied(data: &KeyValuesObject, change: &DiffEntry) -> 
     Ok(false)
 }
 
-fn check_remove_already_applied(data: &KeyValuesObject, change: &DiffEntry) -> Result<bool> {
-    if change.comment.is_some() {
-        return Ok(true);
+fn check_remove_already_applied(
+    data: &KeyValuesObject,
+    ast: &crate::types::DocumentNode,
+    change: &DiffEntry,
+) -> Result<bool> {
+    // For comment-only Remove operations, verify the comment no longer exists
+    if let Some(comment_text) = &change.comment {
+        let path_parts: Vec<&str> = change.path.split('.').collect();
+        return Ok(!comment_exists_at_path(ast, &path_parts, comment_text));
     }
 
     let path_parts: Vec<&str> = change.path.split('.').collect();
@@ -1794,6 +1916,8 @@ mod tests {
                 old_value: Some(KeyValuesValue::String("OldValue".to_string())),
                 new_value: Some(KeyValuesValue::String("NewValue".to_string())),
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -1815,6 +1939,8 @@ mod tests {
                     old_value: None,
                     new_value: Some(KeyValuesValue::String("Value".to_string())),
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
                 DiffEntry {
@@ -1823,6 +1949,8 @@ mod tests {
                     old_value: Some(KeyValuesValue::String("Value".to_string())),
                     new_value: None,
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
                 DiffEntry {
@@ -1831,6 +1959,8 @@ mod tests {
                     old_value: Some(KeyValuesValue::String("Old".to_string())),
                     new_value: Some(KeyValuesValue::String("New".to_string())),
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
             ],
@@ -1981,6 +2111,8 @@ mod tests {
                 old_value: None,
                 new_value: Some(KeyValuesValue::Object(new_nested)),
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -2028,6 +2160,8 @@ mod tests {
                     KeyValuesValue::String("item2".to_string()),
                 ])),
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -2085,6 +2219,8 @@ mod tests {
                 old_value: None,
                 new_value: None,
                 comment: Some("Deadlock Mod Manager - Start".to_string()),
+                old_comment: None,
+                new_comment: None,
                 comment_position: Some(CommentPosition::Before),
             }],
         };
@@ -2157,6 +2293,8 @@ mod tests {
                 old_value: None,
                 new_value: None,
                 comment: Some("Deadlock Mod Manager - End".to_string()),
+                old_comment: None,
+                new_comment: None,
                 comment_position: Some(CommentPosition::After),
             }],
         };
@@ -2225,6 +2363,8 @@ mod tests {
                 old_value: None,
                 new_value: Some(KeyValuesValue::String("citadel".to_string())),
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -2295,6 +2435,8 @@ mod tests {
                     old_value: None,
                     new_value: None,
                     comment: Some("Deadlock Mod Manager - Start".to_string()),
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: Some(CommentPosition::Before),
                 },
                 // Replace Game array
@@ -2311,6 +2453,8 @@ mod tests {
                         KeyValuesValue::String("core".to_string()),
                     ])),
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
                 // Add Mod
@@ -2320,6 +2464,8 @@ mod tests {
                     old_value: None,
                     new_value: Some(KeyValuesValue::String("citadel".to_string())),
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
                 // Add Write
@@ -2329,6 +2475,8 @@ mod tests {
                     old_value: None,
                     new_value: Some(KeyValuesValue::String("citadel".to_string())),
                     comment: None,
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: None,
                 },
                 // Add comment after Game
@@ -2338,6 +2486,8 @@ mod tests {
                     old_value: None,
                     new_value: None,
                     comment: Some("Deadlock Mod Manager - End".to_string()),
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: Some(CommentPosition::After),
                 },
             ],
@@ -2577,6 +2727,8 @@ mod tests {
                     KeyValuesValue::String("core".to_string()),
                 ])),
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -2630,6 +2782,8 @@ mod tests {
                     old_value: None,
                     new_value: None,
                     comment: Some("Test Start Marker".to_string()),
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: Some(CommentPosition::Before),
                 },
                 DiffEntry {
@@ -2638,6 +2792,8 @@ mod tests {
                     old_value: None,
                     new_value: None,
                     comment: Some("Test End Marker".to_string()),
+                    old_comment: None,
+                    new_comment: None,
                     comment_position: Some(CommentPosition::After),
                 },
             ],
@@ -2688,6 +2844,8 @@ mod tests {
                 ])),
                 new_value: None,
                 comment: None,
+                old_comment: None,
+                new_comment: None,
                 comment_position: None,
             }],
         };
@@ -2711,6 +2869,97 @@ mod tests {
         assert!(
             !result.contains("\n\n\n"),
             "Should not have 3+ consecutive newlines after removal"
+        );
+    }
+
+    #[test]
+    fn test_replace_comment_with_old_and_new() {
+        // Test that Replace operation works with old_comment and new_comment fields
+        let input = r#""GameInfo"
+{
+    "FileSystem"
+    {
+        "SearchPaths"
+        {
+            // Old Comment
+            "Game"    "citadel"
+        }
+    }
+}"#;
+        let parse_result = Parser::parse(input, ParseOptions::default()).unwrap();
+        let ast = parse_result.ast;
+
+        // Replace the old comment with a new one
+        let diff = DocumentDiff {
+            changes: vec![DiffEntry {
+                op: DiffOp::Replace,
+                path: "GameInfo.FileSystem.SearchPaths.Game".to_string(),
+                old_value: None,
+                new_value: None,
+                comment: None,
+                old_comment: Some("Old Comment".to_string()),
+                new_comment: Some("New Comment".to_string()),
+                comment_position: Some(CommentPosition::Before),
+            }],
+        };
+
+        let result = DiffApplicator::apply_to_ast(&ast, &diff);
+        assert!(
+            result.is_ok(),
+            "Should successfully replace comment: {:?}",
+            result.err()
+        );
+
+        let patched_ast = result.unwrap();
+        let serialized = Serializer::serialize_ast(&patched_ast);
+
+        // Old comment should be gone
+        assert!(
+            !serialized.contains("// Old Comment"),
+            "Old comment should be removed"
+        );
+
+        // New comment should be present
+        assert!(
+            serialized.contains("// New Comment"),
+            "New comment should be added"
+        );
+    }
+
+    #[test]
+    fn test_replace_comment_with_comment_field_returns_error() {
+        // Test that using comment field with Replace op returns an error
+        let input = r#""GameInfo"
+{
+    "Key"    "value"
+}"#;
+        let parse_result = Parser::parse(input, ParseOptions::default()).unwrap();
+        let ast = parse_result.ast;
+
+        let diff = DocumentDiff {
+            changes: vec![DiffEntry {
+                op: DiffOp::Replace,
+                path: "GameInfo.Key".to_string(),
+                old_value: None,
+                new_value: None,
+                comment: Some("Some Comment".to_string()),
+                old_comment: None,
+                new_comment: None,
+                comment_position: Some(CommentPosition::Before),
+            }],
+        };
+
+        let result = DiffApplicator::apply_to_ast(&ast, &diff);
+        assert!(
+            result.is_err(),
+            "Should return error when using comment field with Replace op"
+        );
+
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("old_comment/new_comment"),
+            "Error message should mention old_comment/new_comment fields"
         );
     }
 }

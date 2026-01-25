@@ -58,6 +58,9 @@ pub enum KvError {
     #[error("Invalid path: {path}")]
     InvalidPath { path: String },
 
+    #[error("Diff error: {message}")]
+    DiffError { message: String },
+
     #[error("Path does not exist: {path}")]
     PathNotFound { path: String },
 

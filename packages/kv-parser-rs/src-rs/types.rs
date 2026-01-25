@@ -178,9 +178,15 @@ pub struct DiffEntry {
     pub old_value: Option<KeyValuesValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_value: Option<KeyValuesValue>,
-    /// Comment text to add/remove (for comment operations)
+    /// Comment text to add/remove (for Add/Remove operations)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
+    /// Old comment text (for Replace operations - comment to remove)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub old_comment: Option<String>,
+    /// New comment text (for Replace operations - comment to add)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub new_comment: Option<String>,
     /// Position where comment should be inserted relative to path
     #[serde(skip_serializing_if = "Option::is_none")]
     pub comment_position: Option<CommentPosition>,

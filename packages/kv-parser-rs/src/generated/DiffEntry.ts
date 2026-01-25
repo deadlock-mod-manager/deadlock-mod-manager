@@ -12,9 +12,17 @@ export type DiffEntry = {
   oldValue: KeyValuesValue | null;
   newValue: KeyValuesValue | null;
   /**
-   * Comment text to add/remove (for comment operations)
+   * Comment text to add/remove (for Add/Remove operations)
    */
   comment: string | null;
+  /**
+   * Old comment text (for Replace operations - comment to remove)
+   */
+  oldComment: string | null;
+  /**
+   * New comment text (for Replace operations - comment to add)
+   */
+  newComment: string | null;
   /**
    * Position where comment should be inserted relative to path
    */
