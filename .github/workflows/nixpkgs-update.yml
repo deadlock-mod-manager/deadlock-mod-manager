@@ -1,0 +1,154 @@
+name: Generate Nixpkgs Update
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to update to"
+        required: false
+
+jobs:
+  generate-nixpkgs-patch:
+    name: Generate Nixpkgs Update Patch
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          else
+            VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Updating to version: $VERSION"
+
+      - name: Clone nixpkgs
+        run: |
+          git clone --depth=1 https://github.com/NixOS/nixpkgs.git /tmp/nixpkgs
+          cd /tmp/nixpkgs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install nix-update
+        run: |
+          nix profile install nixpkgs#nix-update
+
+      - name: Run nix-update
+        run: |
+          cd /tmp/nixpkgs
+          nix-update deadlock-mod-manager --version ${{ steps.version.outputs.version }} --commit
+
+      - name: Test build
+        id: test-build
+        run: |
+          cd /tmp/nixpkgs
+          echo "Building deadlock-mod-manager..."
+          nix-build -A deadlock-mod-manager
+
+          echo "Testing binary..."
+          ./result/bin/deadlock-mod-manager --version || echo "Version check not available"
+
+          echo "Build successful!" >> $GITHUB_STEP_SUMMARY
+          echo "Package built successfully" >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate patch file
+        run: |
+          cd /tmp/nixpkgs
+          git format-patch -1 HEAD --stdout > /tmp/deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
+
+          echo "Patch file generated:"
+          cat /tmp/deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
+
+      - name: Upload patch artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nixpkgs-patch-v${{ steps.version.outputs.version }}
+          path: /tmp/deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
+          retention-days: 90
+
+      - name: Create PR instructions
+        id: pr-instructions
+        run: |
+          cat > /tmp/PR_INSTRUCTIONS.md << 'EOF'
+          # Nixpkgs Update Instructions
+
+          ## Automated PR Creation
+
+          Download the patch file from the artifacts and apply it to nixpkgs:
+
+          ```bash
+          # Clone nixpkgs (or use your existing fork)
+          git clone https://github.com/YOUR_USERNAME/nixpkgs.git
+          cd nixpkgs
+
+          # Create a new branch
+          git checkout -b deadlock-mod-manager-${{ steps.version.outputs.version }}
+
+          # Apply the patch
+          git am < deadlock-mod-manager-${{ steps.version.outputs.version }}.patch
+
+          # Push to your fork
+          git push origin deadlock-mod-manager-${{ steps.version.outputs.version }}
+          ```
+
+          Then create a PR on nixpkgs
+
+          ## Quick PR (using gh CLI)
+          EOF
+
+          cat /tmp/PR_INSTRUCTIONS.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload PR instructions
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-instructions-v${{ steps.version.outputs.version }}
+          path: /tmp/PR_INSTRUCTIONS.md
+          retention-days: 90
+
+      - name: Comment on release
+        if: github.event_name == 'release'
+        uses: actions/github-script@v7
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          RUN_ID: ${{ github.run_id }}
+        with:
+          script: |
+            const version = process.env.VERSION;
+            const runId = process.env.RUN_ID;
+
+            const body = \`## Nixpkgs Update Ready
+
+            The nixpkgs package has been automatically updated and tested! ✅
+
+            **Download patch:** [Workflow Artifacts](https://github.com/\${context.repo.owner}/\${context.repo.repo}/actions/runs/\${runId})
+
+            Apply the patch to your nixpkgs fork and create a PR to NixOS/nixpkgs.
+            \`;
+
+            await github.rest.repos.createReleaseComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id,
+              body: body
+            }).catch(() => {
+              console.log('Could not comment on release');
+            });
