@@ -20,6 +20,28 @@
 	{
 		DuplicateTokensAssert	1
 	}
+
+	SupportedLanguages
+	{
+		"brazilian" "3"
+		"czech" "3"
+		"english" "3"
+		"french" "3"
+		"german" "3"
+		"italian" "3"
+		"indonesian" "3"
+		"japanese" "3"
+		"koreana" "3"
+		"latam" "3"
+		"polish" "3"
+		"russian" "3"
+		"schinese" "3"
+		"spanish" "3"
+		"thai" "3"
+		"turkish" "3"
+		"ukrainian" "3"
+	}
+	
 	FileSystem
 	{	
 		//
