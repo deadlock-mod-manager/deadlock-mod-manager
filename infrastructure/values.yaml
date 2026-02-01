@@ -278,28 +278,28 @@ deployments:
     port: 3004
 
 resources:
-  postgres:
-    replicas: 0
-    memory: 512Mi
-    cpu: 200m
-    disk: 30Gi
-    extensions:
-      - vector
-    config:
-      max_connections: "100"
-      shared_buffers: 256MB
-      effective_cache_size: 768MB
-      maintenance_work_mem: 64MB
-      checkpoint_completion_target: "0.9"
-      wal_buffers: 7864kB
-      default_statistics_target: "100"
-      random_page_cost: "1.1"
-      effective_io_concurrency: "200"
-      work_mem: 2427kB
-      min_wal_size: 1GB
-      max_wal_size: 4GB
-      pg_stat_statements.max: "10000"
-      pg_stat_statements.track: top
+  # postgres:
+  #   replicas: 0
+  #   memory: 512Mi
+  #   cpu: 200m
+  #   disk: 30Gi
+  #   extensions:
+  #     - vector
+  #   config:
+  #     max_connections: "100"
+  #     shared_buffers: 256MB
+  #     effective_cache_size: 768MB
+  #     maintenance_work_mem: 64MB
+  #     checkpoint_completion_target: "0.9"
+  #     wal_buffers: 7864kB
+  #     default_statistics_target: "100"
+  #     random_page_cost: "1.1"
+  #     effective_io_concurrency: "200"
+  #     work_mem: 2427kB
+  #     min_wal_size: 1GB
+  #     max_wal_size: 4GB
+  #     pg_stat_statements.max: "10000"
+  #     pg_stat_statements.track: top
   redis:
     sentinels: 3
     sentinel:
