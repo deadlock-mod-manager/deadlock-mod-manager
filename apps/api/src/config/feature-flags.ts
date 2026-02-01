@@ -29,12 +29,6 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     defaultValue: false,
   },
   {
-    name: "plugin-sudo",
-    description: "Enable sudo plugin functionality",
-    type: "boolean",
-    defaultValue: true,
-  },
-  {
     name: "plugin-themes",
     description: "Enable themes plugin functionality",
     type: "boolean",

@@ -1,5 +1,5 @@
 {
   "title": "Plugins Developer Documentation",
   "description": "Documentation for developers creating plugins for Deadlock Mod Manager",
-  "pages": ["plugins", "background", "discord", "flashbang", "sudo", "themes"]
+  "pages": ["plugins", "background", "discord", "flashbang", "themes"]
 }

@@ -11,6 +11,8 @@ export type ThemeSettings = {
   };
   userThemes?: CustomExportedTheme[];
   editingThemeId?: string;
+  arcaneAccentColor?: string;
+  arcaneCustomColors?: string[];
 };
 
 export type CustomExportedTheme = {

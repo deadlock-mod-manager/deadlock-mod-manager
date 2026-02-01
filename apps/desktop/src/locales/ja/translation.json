@@ -1,4 +1,4 @@
-{
+﻿{
   "navigation": {
     "dashboard": "ダッシュボード",
     "myMods": "導入済みのMod",
@@ -847,6 +847,14 @@
       "description": "黒赤のグラデーションと深紅のアクセントを持つダークテーマ。",
       "visit": "テーマ作成者: Skeptic"
     },
+    "arcane": {
+      "description": "Arcaneの美学にインスパイアされた、エレガントなピンク赤のグロー効果を持つスリークなダークテーマ。",
+      "visit": "テーマ作成者: Skeptic",
+      "accentColor": "アクセントカラー",
+      "customColor": "カスタムカラー",
+      "customColorDescription": "Arcaneテーマのカスタムアクセントカラーを選択してください。",
+      "addCustomColor": "カラーを追加"
+    },
     "flashbang": {
       "title": "フラッシュバンモード",
       "description": "スケジュールされた時間ウィンドウ中にライトモードを強制する。",
@@ -854,17 +862,6 @@
       "usageInstructions": "プラグインを有効にして、開始時間と終了時間（0–23）を選択する。",
       "startHour": "開始時間（0–23）",
       "endHour": "終了時間（0–23）"
-    },
-    "sudo": {
-      "title": "スーパーユーザー",
-      "description": "経験豊富なユーザー向けの高度なMod管理ツール。",
-      "detailedDescription": "開発者向けのコントロールと実験的機能のロックを解除する。一部のアクションはファイルを変更したり、安全装置をバイパスしたりする可能性があります。注意して使用してください。",
-      "usageInstructions": "プラグインを有効にしてスーパーユーザーモードをオンにする。開発者オプションと高度なツールがアプリ全体で表示されるようになる。プラグインを無効にすると、再び非表示になる。",
-      "instructions": "左側でModを閲覧し、1つを選択してから右矢印を使用してダウンロードして有効にする。右側でインストール済みのModを選択し、左矢印を使用して削除する。両方のリストを検索できる。",
-      "openAddons": "アドオンを開く",
-      "importMod": "Modをインポート",
-      "viewOriginalPost": "元のフォーラム投稿を表示",
-      "removeMod": "Modを削除"
     },
     "background": {
       "title": "背景",

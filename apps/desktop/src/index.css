@@ -512,6 +512,86 @@
   border-radius: 3px;
 }
 
+/* Arcane Theme Styles */
+.arcane-theme-active [data-sidebar="sidebar"] {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="sidebar"] * {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="content"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="footer"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="group"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="group-content"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="menu"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active [data-sidebar="menu-button"] {
+  background-color: transparent;
+}
+
+.arcane-theme-active
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  background-color: hsl(0 0% 6%);
+  border-color: hsl(var(--border));
+}
+
+.arcane-theme-active {
+  --background: 0 0% 4%;
+  --foreground: 0 0% 90%;
+  --card: 340 15% 6% / 0.9;
+  --card-foreground: 0 0% 90%;
+  --popover: 340 15% 6% / 0.95;
+  --popover-foreground: 0 0% 90%;
+  --secondary: 340 10% 10% / 0.85;
+  --secondary-foreground: 0 0% 85%;
+  --muted: 340 10% 12% / 0.85;
+  --muted-foreground: 0 0% 60%;
+  --primary: 348 70% 48%;
+  --primary-foreground: 0 0% 4%;
+  --accent: 348 50% 38%;
+  --accent-foreground: 0 0% 4%;
+  --border: 340 10% 16%;
+  --input: 340 10% 14% / 0.7;
+  --ring: 348 65% 45%;
+  --sidebar-background: 0 0% 4% / 0.98;
+  --sidebar-foreground: 0 0% 90%;
+  --sidebar-primary: 348 70% 48%;
+  --sidebar-primary-foreground: 0 0% 4%;
+  --sidebar-accent: 348 50% 38%;
+  --sidebar-accent-foreground: 0 0% 4%;
+  --sidebar-border: 340 10% 14%;
+}
+
+.arcane-theme-active body,
+.arcane-theme-active main,
+.arcane-theme-active .group\/sidebar-wrapper,
+.arcane-theme-active .group\/sidebar-wrapper > div,
+.arcane-theme-active [data-topbar="true"],
+.arcane-theme-active [data-titlebar="true"] {
+  background-color: hsl(var(--background));
+}
+
 /* Custom Theme Styles */
 .custom-theme-active [data-sidebar="sidebar"] {
   background-color: transparent;
