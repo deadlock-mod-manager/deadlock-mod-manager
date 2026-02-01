@@ -76,17 +76,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllFeatureFlags(options),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get all feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get all feature flags");
+      return error;
+    });
   }
 
   /**
@@ -96,17 +89,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getClientFeatureFlags(options),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get client feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get client feature flags");
+      return error;
+    });
   }
 
   /**
@@ -116,17 +102,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllExposedFeatureFlags(),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get all exposed feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get all exposed feature flags");
+      return error;
+    });
   }
 
   /**

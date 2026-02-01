@@ -2,7 +2,6 @@ import type { Cache } from "@deadlock-mods/common";
 import { FEATURE_FLAG_CACHE_TTL } from "@deadlock-mods/common";
 import type { NewFeatureFlag } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
-import { ok } from "neverthrow";
 import type { FeatureFlagRepository } from "../repositories/feature-flag";
 import type { SegmentService } from "./segment";
 
@@ -90,12 +89,12 @@ export class FeatureFlagService {
         const allFlagsResult = await this.getAllFeatureFlags(options);
 
         if (allFlagsResult.isErr()) {
-          return allFlagsResult;
+          throw allFlagsResult.error;
         }
 
         const flags = allFlagsResult.value;
 
-        const clientFlags = flags.map((flag) => {
+        return flags.map((flag) => {
           let value = flag.value;
 
           if (
@@ -118,8 +117,6 @@ export class FeatureFlagService {
             exposed: flag.exposed,
           };
         });
-
-        return ok(clientFlags);
       },
       FEATURE_FLAG_CACHE_TTL,
     );
