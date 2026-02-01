@@ -267,6 +267,13 @@
       "when": 1765743388605,
       "tag": "0037_stiff_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1769949327764,
+      "tag": "0038_silent_jane_foster",
+      "breakpoints": true
     }
   ]
 }

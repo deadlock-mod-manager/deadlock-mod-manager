@@ -76,23 +76,29 @@ export const oauthApplication = pgTable("oauth_application", {
   ...timestamps,
 });
 
-export const oauthAccessToken = pgTable("oauth_access_token", {
-  id: typeId("id", "oauth_access_token")
-    .primaryKey()
-    .$defaultFn(() => generateId("oauth_access_token").toString()),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
-  accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at").notNull(),
-  clientId: text("client_id")
-    .notNull()
-    .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  scopes: text("scopes").notNull(),
-  ...timestamps,
-});
+export const oauthAccessToken = pgTable(
+  "oauth_access_token",
+  {
+    id: typeId("id", "oauth_access_token")
+      .primaryKey()
+      .$defaultFn(() => generateId("oauth_access_token").toString()),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull(),
+    accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at").notNull(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    scopes: text("scopes").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("idx_oauth_access_token_on_access_token").on(table.accessToken),
+  ],
+);
 
 export const oauthConsent = pgTable("oauth_consent", {
   id: typeId("id", "oauth_consent")

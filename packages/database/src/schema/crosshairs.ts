@@ -55,7 +55,6 @@ export const crosshairLikes = pgTable(
       table.crosshairId,
       table.userId,
     ),
-    index("idx_crosshair_like_crosshair_id").on(table.crosshairId),
     index("idx_crosshair_like_user_id").on(table.userId),
   ],
 );
