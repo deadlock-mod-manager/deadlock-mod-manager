@@ -76,10 +76,10 @@ spec:
           {{- end }}
           resources:
             requests:
-              memory: {{ .Values.deployments.bot.memory }}
+              memory: {{ .Values.deployments.bot.memory.request | default .Values.deployments.bot.memory }}
               cpu: {{ .Values.deployments.bot.cpu }}
             limits:
-              memory: {{ .Values.deployments.bot.memory }}
+              memory: {{ .Values.deployments.bot.memory.limit | default .Values.deployments.bot.memory }}
               cpu: {{ .Values.deployments.bot.cpu }}
           envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
           env:

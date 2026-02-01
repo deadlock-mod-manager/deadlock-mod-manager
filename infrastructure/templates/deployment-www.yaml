@@ -85,10 +85,10 @@ spec:
           {{- end }}
           resources:
             requests:
-              memory: {{ .Values.deployments.www.memory }}
+              memory: {{ .Values.deployments.www.memory.request | default .Values.deployments.www.memory }}
               cpu: {{ .Values.deployments.www.cpu }}
             limits:
-              memory: {{ .Values.deployments.www.memory }}
+              memory: {{ .Values.deployments.www.memory.limit | default .Values.deployments.www.memory }}
           envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
           env:
             {{- if .Values.env }}
