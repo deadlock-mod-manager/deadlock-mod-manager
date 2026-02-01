@@ -1,4 +1,5 @@
-import _globalCss from "@/app/global.css";
+// oxlint-disable-next-line import/no-unassigned-import
+import "@/app/global.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
