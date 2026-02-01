@@ -35,6 +35,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.68.0",
+    "reflect-metadata": "^0.2.2",
     "tailwindcss": "^4.1.18",
     "tsyringe": "^4.10.0",
     "zod": "catalog:"
