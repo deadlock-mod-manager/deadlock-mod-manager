@@ -1,3 +1,4 @@
+{{- if .Values.resources.postgres }}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -50,3 +51,4 @@ spec:
           - matchExpressions:
               - key: node-role.kubernetes.io/database
                 operator: Exists
+{{- end }}
