@@ -5,13 +5,13 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
-    "@type-cacheable/cache-manager-adapter": "catalog:",
-    "@type-cacheable/core": "catalog:",
-    "cache-manager": "catalog:",
     "dotenv": "^16.4.7",
     "neverthrow": "^8.2.0"
   },

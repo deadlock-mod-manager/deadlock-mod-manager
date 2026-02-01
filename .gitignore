@@ -48,3 +48,4 @@ temp
 target/
 
 .cursor/mcp.json
+.cursor/plans

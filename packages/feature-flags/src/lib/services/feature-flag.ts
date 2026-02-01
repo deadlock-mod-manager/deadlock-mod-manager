@@ -1,8 +1,8 @@
+import type { Cache } from "@deadlock-mods/common";
+import { FEATURE_FLAG_CACHE_TTL } from "@deadlock-mods/common";
 import type { NewFeatureFlag } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
-import { Cacheable } from "@type-cacheable/core";
 import { ok } from "neverthrow";
-import { cacheClient } from "../cache";
 import type { FeatureFlagRepository } from "../repositories/feature-flag";
 import type { SegmentService } from "./segment";
 
@@ -10,6 +10,7 @@ export class FeatureFlagService {
   constructor(
     private readonly logger: Logger,
     private readonly featureFlagRepository: FeatureFlagRepository,
+    private readonly cache: Cache,
     private readonly segmentService?: SegmentService,
   ) {}
 
@@ -50,28 +51,26 @@ export class FeatureFlagService {
   /**
    * Get all feature flags, the result is cached for 15 minutes
    */
-  @Cacheable({
-    cacheKey: (args) => {
-      const userId = args[0]?.userId ?? "";
-      return `all-feature-flags-${userId}`;
-    },
-    ttlSeconds: 15 * 60, // 15 minutes
-    client: cacheClient,
-  })
   async getAllFeatureFlags(options?: { userId?: string }) {
-    return this.featureFlagRepository.findAll(options);
+    const userId = options?.userId ?? "";
+    const cacheKey = `all-feature-flags-${userId}`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () => this.featureFlagRepository.findAll(options),
+      FEATURE_FLAG_CACHE_TTL,
+    );
   }
 
   /**
    * Get all exposed feature flags, the result is cached for 15 minutes
    */
-  @Cacheable({
-    cacheKey: () => "all-exposed-feature-flags",
-    ttlSeconds: 15 * 60, // 15 minutes
-    client: cacheClient,
-  })
   async getAllExposedFeatureFlags() {
-    return this.featureFlagRepository.findAllExposed();
+    return this.cache.wrap(
+      "all-exposed-feature-flags",
+      () => this.featureFlagRepository.findAllExposed(),
+      FEATURE_FLAG_CACHE_TTL,
+    );
   }
 
   /**
@@ -81,49 +80,49 @@ export class FeatureFlagService {
    * @param options - Options including userId for user-specific overrides
    * @returns Array of feature flags with applied overrides ready for client
    */
-  @Cacheable({
-    cacheKey: (args) => {
-      const userId = args[0]?.userId ?? "";
-      return `client-feature-flags-${userId}`;
-    },
-    ttlSeconds: 15 * 60, // 15 minutes
-    client: cacheClient,
-  })
   async getClientFeatureFlags(options?: { userId?: string }) {
-    const allFlagsResult = await this.getAllFeatureFlags(options);
+    const userId = options?.userId ?? "";
+    const cacheKey = `client-feature-flags-${userId}`;
 
-    if (allFlagsResult.isErr()) {
-      return allFlagsResult;
-    }
+    return this.cache.wrap(
+      cacheKey,
+      async () => {
+        const allFlagsResult = await this.getAllFeatureFlags(options);
 
-    const flags = allFlagsResult.value;
-    const userId = options?.userId;
+        if (allFlagsResult.isErr()) {
+          return allFlagsResult;
+        }
 
-    const clientFlags = flags.map((flag) => {
-      let value = flag.value;
+        const flags = allFlagsResult.value;
 
-      if (
-        userId &&
-        "userOverrides" in flag &&
-        flag.userOverrides &&
-        Array.isArray(flag.userOverrides) &&
-        flag.userOverrides.length > 0
-      ) {
-        value = flag.userOverrides[0].value;
-      }
+        const clientFlags = flags.map((flag) => {
+          let value = flag.value;
 
-      return {
-        id: flag.id,
-        name: flag.name,
-        description: flag.description,
-        type: flag.type,
-        value,
-        enabled: value,
-        exposed: flag.exposed,
-      };
-    });
+          if (
+            userId &&
+            "userOverrides" in flag &&
+            flag.userOverrides &&
+            Array.isArray(flag.userOverrides) &&
+            flag.userOverrides.length > 0
+          ) {
+            value = flag.userOverrides[0].value;
+          }
 
-    return ok(clientFlags);
+          return {
+            id: flag.id,
+            name: flag.name,
+            description: flag.description,
+            type: flag.type,
+            value,
+            enabled: value,
+            exposed: flag.exposed,
+          };
+        });
+
+        return ok(clientFlags);
+      },
+      FEATURE_FLAG_CACHE_TTL,
+    );
   }
 
   /**
@@ -133,16 +132,6 @@ export class FeatureFlagService {
    * @param options - Options including shouldThrow and userId for segment overrides
    * @returns The feature flag value
    */
-  @Cacheable({
-    cacheKey: (args) => {
-      const featureFlagName = args[0];
-      const options = args[1];
-      const userId = options?.userId ?? "";
-      return `${featureFlagName}-${userId}`;
-    },
-    ttlSeconds: 15 * 60, // 15 minutes
-    client: cacheClient,
-  })
   async getFeatureFlagValue<T = unknown>(
     featureFlagName: string,
     options?: {
@@ -151,45 +140,53 @@ export class FeatureFlagService {
     },
   ): Promise<T> {
     const { shouldThrow = false, userId } = options ?? {};
-    const featureFlagResult =
-      await this.featureFlagRepository.findByName(featureFlagName);
+    const cacheKey = `feature-flag-value-${featureFlagName}-${userId ?? ""}`;
 
-    if (featureFlagResult.isErr()) {
-      if (shouldThrow) {
-        throw featureFlagResult.error;
-      }
+    return this.cache.wrap(
+      cacheKey,
+      async () => {
+        const featureFlagResult =
+          await this.featureFlagRepository.findByName(featureFlagName);
 
-      this.logger
-        .withError(featureFlagResult.error)
-        .error("Failed to find feature flag by name, returning null");
+        if (featureFlagResult.isErr()) {
+          if (shouldThrow) {
+            throw featureFlagResult.error;
+          }
 
-      return null as T;
-    }
-    const featureFlag = featureFlagResult.value;
+          this.logger
+            .withError(featureFlagResult.error)
+            .error("Failed to find feature flag by name, returning null");
 
-    if (userId) {
-      const userOverride = await this.getUserFeatureFlagOverride(
-        userId,
-        featureFlag.id,
-        shouldThrow,
-      );
-      if (userOverride !== null) {
-        return userOverride as T;
-      }
-
-      if (this.segmentService) {
-        const segmentOverride = await this.getFeatureFlagOverrides(
-          featureFlag.id,
-          userId,
-          shouldThrow,
-        );
-        if (segmentOverride !== null) {
-          return segmentOverride as T;
+          return null as T;
         }
-      }
-    }
+        const featureFlag = featureFlagResult.value;
 
-    return featureFlag.value as T;
+        if (userId) {
+          const userOverride = await this.getUserFeatureFlagOverride(
+            userId,
+            featureFlag.id,
+            shouldThrow,
+          );
+          if (userOverride !== null) {
+            return userOverride as T;
+          }
+
+          if (this.segmentService) {
+            const segmentOverride = await this.getFeatureFlagOverrides(
+              featureFlag.id,
+              userId,
+              shouldThrow,
+            );
+            if (segmentOverride !== null) {
+              return segmentOverride as T;
+            }
+          }
+        }
+
+        return featureFlag.value as T;
+      },
+      FEATURE_FLAG_CACHE_TTL,
+    );
   }
 
   /**

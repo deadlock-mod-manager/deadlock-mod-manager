@@ -7,6 +7,7 @@ import {
 } from "@deadlock-mods/feature-flags";
 import { ResultAsync } from "neverthrow";
 import { logger as mainLogger } from "@/lib/logger";
+import { cache } from "@/lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "feature-flags",
@@ -23,6 +24,7 @@ export class FeatureFlagsService {
     this.featureFlagService = new FeatureFlagService(
       logger,
       featureFlagRepository,
+      cache,
     );
     this.registry = new FeatureFlagRegistry(this.featureFlagService, logger);
   }

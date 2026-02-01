@@ -13,7 +13,9 @@ import {
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { CACHE_TTL } from "@/lib/constants";
 import { env } from "@/lib/env";
+import { cache } from "@/lib/redis";
 import { featureFlagsService } from "@/services/feature-flags";
 import { publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../services/mod-sync";
@@ -27,8 +29,14 @@ export const modsRouter = {
     .route({ method: "GET", path: "/v2/mods" })
     .output(ModsListResponseSchema)
     .handler(async () => {
-      const allMods = await modRepository.findAll();
-      return allMods.map(toModDto);
+      return cache.wrap(
+        "mods:listing",
+        async () => {
+          const allMods = await modRepository.findAll();
+          return allMods.map(toModDto);
+        },
+        CACHE_TTL.MODS_LISTING,
+      );
     }),
 
   getModV2: publicProcedure

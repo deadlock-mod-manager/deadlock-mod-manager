@@ -8,6 +8,8 @@ import {
   sum,
   user,
 } from "@deadlock-mods/database";
+import { CACHE_TTL } from "@/lib/constants";
+import { cache } from "@/lib/redis";
 import type { StatsResponse } from "../types/stats";
 import { GitHubReleasesService } from "./github-releases";
 
@@ -24,31 +26,37 @@ export class StatsService {
   }
 
   async getStats(): Promise<StatsResponse> {
-    const [modStats, releases] = await Promise.all([
-      db
-        .select({
-          totalMods: count(mods.id),
-          modDownloads: sum(mods.downloadCount),
-        })
-        .from(mods),
-      GitHubReleasesService.getInstance().fetchReleases(),
-    ]);
+    return cache.wrap(
+      "stats:mods",
+      async () => {
+        const [modStats, releases] = await Promise.all([
+          db
+            .select({
+              totalMods: count(mods.id),
+              modDownloads: sum(mods.downloadCount),
+            })
+            .from(mods),
+          GitHubReleasesService.getInstance().fetchReleases(),
+        ]);
 
-    const appDownloads = releases.allVersions.reduce((total, version) => {
-      return (
-        total +
-        version.downloads.reduce(
-          (versionTotal, download) => versionTotal + download.downloadCount,
-          0,
-        )
-      );
-    }, 0);
+        const appDownloads = releases.allVersions.reduce((total, version) => {
+          return (
+            total +
+            version.downloads.reduce(
+              (versionTotal, download) => versionTotal + download.downloadCount,
+              0,
+            )
+          );
+        }, 0);
 
-    return {
-      totalMods: modStats[0].totalMods || 0,
-      modDownloads: Number(modStats[0].modDownloads) || 0,
-      appDownloads,
-    };
+        return {
+          totalMods: modStats[0].totalMods || 0,
+          modDownloads: Number(modStats[0].modDownloads) || 0,
+          appDownloads,
+        };
+      },
+      CACHE_TTL.STATS,
+    );
   }
 
   async getAnalytics(hours: number | null = 2160) {

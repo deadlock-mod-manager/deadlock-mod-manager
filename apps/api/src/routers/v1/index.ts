@@ -12,6 +12,8 @@ import {
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { CACHE_TTL } from "@/lib/constants";
+import { cache } from "@/lib/redis";
 import { publicProcedure } from "../../lib/orpc";
 
 const modRepository = new ModRepository(db);
@@ -22,8 +24,14 @@ export const v1Router = {
     .route({ method: "GET", path: "/v1/mods" })
     .output(ModsListResponseSchema)
     .handler(async () => {
-      const allMods = await modRepository.findAll();
-      return allMods.map(toModDto);
+      return cache.wrap(
+        "mods:listing",
+        async () => {
+          const allMods = await modRepository.findAll();
+          return allMods.map(toModDto);
+        },
+        CACHE_TTL.MODS_LISTING,
+      );
     }),
 
   getModV1: publicProcedure

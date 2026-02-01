@@ -1,4 +1,6 @@
+import { createRedisCache } from "@deadlock-mods/common";
 import IORedis from "ioredis";
+import { CACHE_TTL } from "./constants";
 import { env } from "./env";
 import { logger } from "./logger";
 
@@ -27,4 +29,11 @@ redisPublisher.on("error", (error) => {
 
 redisPublisher.on("connect", () => {
   logger.info("Redis publisher connected");
+});
+
+/**
+ * Shared cache-manager instance for the API.
+ */
+export const cache = createRedisCache(env.REDIS_URL, {
+  ttl: CACHE_TTL.DEFAULT,
 });

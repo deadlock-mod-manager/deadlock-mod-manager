@@ -36,6 +36,10 @@ The feature flags system uses four tables:
 ### Initialization
 
 ```typescript
+import {
+  createRedisCache,
+  FEATURE_FLAG_CACHE_TTL,
+} from "@deadlock-mods/common";
 import { db } from "@deadlock-mods/database";
 import {
   FeatureFlagRepository,
@@ -52,12 +56,18 @@ const logger = createAppLogger({ app: "your-app" });
 const featureFlagRepository = new FeatureFlagRepository(db, logger);
 const segmentRepository = new SegmentRepository(db, logger);
 
+// Initialize cache (Redis-backed)
+const cache = createRedisCache(process.env.REDIS_URL, {
+  ttl: FEATURE_FLAG_CACHE_TTL,
+});
+
 // Initialize services
 const segmentService = new SegmentService(segmentRepository, logger);
 const featureFlagService = new FeatureFlagService(
   logger,
   featureFlagRepository,
-  segmentService,
+  cache,
+  segmentService, // optional - only needed for segment-based overrides
 );
 
 // Initialize registry
