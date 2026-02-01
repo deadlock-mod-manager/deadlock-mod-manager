@@ -1,0 +1,1 @@
+DROP INDEX "idx_mirrored_files_mod_download_id";
