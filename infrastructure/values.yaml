@@ -192,7 +192,9 @@ deployments:
   www:
     image: stormix/deadlock-mods-www:latest
     replicas: 1
-    memory: 1Gi
+    memory:
+      request: 1Gi
+      limit: 2Gi
     cpu: 250m
 
     healthCheck:
@@ -239,7 +241,9 @@ deployments:
   auth:
     image: stormix/deadlock-mods-auth:latest
     replicas: 1
-    memory: 512Mi
+    memory:
+      request: 512Mi
+      limit: 1Gi
     cpu: 100m
 
     healthCheck:
