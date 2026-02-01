@@ -1,4 +1,11 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
@@ -52,7 +59,13 @@ export const account = pgTable(
     password: text("password"),
     ...timestamps,
   },
-  (table) => [index("idx_account_account_id").on(table.accountId)],
+  (table) => [
+    index("idx_account_account_id").on(table.accountId),
+    uniqueIndex("idx_account_provider_account").on(
+      table.providerId,
+      table.accountId,
+    ),
+  ],
 );
 
 export const verification = pgTable("verification", {
