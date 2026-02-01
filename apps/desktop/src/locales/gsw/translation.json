@@ -512,6 +512,14 @@
       "description": "Es dunkels Theme mit schwarz‑rote Gradiente und karmesinrote Akzänte.",
       "visit": "Theme vo Skeptic"
     },
+    "arcane": {
+      "description": "Es elegants dunkels Theme mit pink-rote Lüchteffekte, inspiriert vo dr Arcane-Ästhetik.",
+      "visit": "Theme vo Skeptic",
+      "accentColor": "Akzäntfarb",
+      "customColor": "Eigeni Farb",
+      "customColorDescription": "Wähl e eigeni Akzäntfarb für s'Arcane-Theme.",
+      "addCustomColor": "Farb hinzuefüege"
+    },
     "discord": {
       "applicationId": "Discord Application ID",
       "applicationIdDescription": "Kei Iirichtig nötig: Das Plugin brucht unseri offizielli Discord‑Aawendig.",

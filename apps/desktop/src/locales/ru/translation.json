@@ -499,6 +499,14 @@
       "description": "Тёмная тема с чёрно‑красными градиентами и малиновыми акцентами.",
       "visit": "Тема от Skeptic"
     },
+    "arcane": {
+      "description": "Элегантная тёмная тема с розово-красным свечением, вдохновлённая эстетикой Arcane.",
+      "visit": "Тема от Skeptic",
+      "accentColor": "Акцентный цвет",
+      "customColor": "Пользовательский цвет",
+      "customColorDescription": "Выберите пользовательский акцентный цвет для темы Arcane.",
+      "addCustomColor": "Добавить цвет"
+    },
     "discord": {
       "applicationId": "ID приложения Discord",
       "applicationIdDescription": "Никакой настройки не требуется: плагин использует наше официальное приложение Discord.",

@@ -496,6 +496,14 @@
       "description": "Siyah-kırmızı gradyanlar ve koyu kırmızı vurgularla karanlık tema.",
       "visit": "Skeptic tarafından tema"
     },
+    "arcane": {
+      "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
+      "visit": "Skeptic tarafından tema",
+      "accentColor": "Vurgu Rengi",
+      "customColor": "Özel Renk",
+      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin.",
+      "addCustomColor": "Renk ekle"
+    },
     "discord": {
       "applicationId": "Discord Uygulama Kimliği",
       "applicationIdDescription": "Kurulum gerekmez: Bu eklenti resmi Discord uygulamamızı kullanır.",

@@ -496,6 +496,14 @@
       "description": "帶有黑紅漸變和深紅色點綴的暗黑主題。",
       "visit": "Skeptic 製作的主題"
     },
+    "arcane": {
+      "description": "一款優雅的暗黑主題，帶有粉紅色發光效果，靈感來自Arcane美學。",
+      "visit": "Skeptic 製作的主題",
+      "accentColor": "強調色",
+      "customColor": "自訂顏色",
+      "customColorDescription": "為Arcane主題選擇自訂強調色。",
+      "addCustomColor": "新增顏色"
+    },
     "discord": {
       "applicationId": "Discord 應用程式 ID",
       "applicationIdDescription": "無需設定：此外掛程式使用我們的官方 Discord 應用程式。",

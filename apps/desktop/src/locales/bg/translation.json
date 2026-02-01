@@ -185,5 +185,15 @@
     "downloadcount": "Брой изтегляния",
     "rating": "Оценка",
     "releasedate": "Дата на издаване"
+  },
+  "plugins": {
+    "arcane": {
+      "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
+      "visit": "Тема от Skeptic",
+      "accentColor": "Акцентен цвят",
+      "customColor": "Персонализиран цвят",
+      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane.",
+      "addCustomColor": "Добави цвят"
+    }
   }
 }

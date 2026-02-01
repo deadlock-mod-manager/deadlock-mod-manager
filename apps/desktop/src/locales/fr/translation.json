@@ -496,6 +496,14 @@
       "description": "Un thème sombre avec des dégradés noir-rouge et des accents carmin.",
       "visit": "Thème par Skeptic"
     },
+    "arcane": {
+      "description": "Un thème sombre élégant avec des effets de lueur rose-rouge inspirés de l'esthétique Arcane.",
+      "visit": "Thème par Skeptic",
+      "accentColor": "Couleur d'accent",
+      "customColor": "Couleur personnalisée",
+      "customColorDescription": "Choisissez une couleur d'accent personnalisée pour le thème Arcane.",
+      "addCustomColor": "Ajouter une couleur"
+    },
     "discord": {
       "applicationId": "ID d'application Discord",
       "applicationIdDescription": "Aucune configuration requise : ce plugin utilise notre application Discord officielle.",

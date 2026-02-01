@@ -23,10 +23,19 @@ import {
   saveEditingUserTheme,
   type ThemeSettings,
 } from "./custom";
+import {
+  ArcaneAccentPicker,
+  DEFAULT_ACCENT_COLOR,
+} from "./pre-defined/arcane/accent-picker.tsx";
+import ArcaneTheme from "./pre-defined/arcane/arcane.tsx";
 import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
+const arcanePreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/arcane/preview.png",
+);
 const nightshiftPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/nightshift/preview.png",
@@ -88,6 +97,14 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.tea.description",
     component: TeaTheme,
     previewImage: teaPreview,
+  },
+  {
+    id: "arcane",
+    name: "Arcane",
+    description: "A sleek dark theme with elegant pink-red glow effects.",
+    descriptionKey: "plugins.arcane.description",
+    component: ArcaneTheme,
+    previewImage: arcanePreview,
   },
 ] as const;
 
@@ -246,6 +263,46 @@ const Settings = () => {
                           type='button'>
                           Skeptic
                         </button>
+                      </div>
+                    ) : theme.id === "arcane" ? (
+                      <div className='mb-4'>
+                        <div className='text-sm text-muted-foreground mb-2'>
+                          <span className='mr-1'>
+                            {t("plugins.arcane.visit")
+                              .replace("Skeptic", "")
+                              .trim()}
+                          </span>
+                          <button
+                            className='text-primary hover:underline'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void open("https://github.com/Skeptic-systems");
+                            }}
+                            type='button'>
+                            Skeptic
+                          </button>
+                        </div>
+                        <ArcaneAccentPicker
+                          value={
+                            current.arcaneAccentColor ?? DEFAULT_ACCENT_COLOR
+                          }
+                          customColors={current.arcaneCustomColors ?? []}
+                          onChange={(color) =>
+                            setSettings(manifest.id, {
+                              ...current,
+                              arcaneAccentColor: color,
+                            })
+                          }
+                          onAddCustomColor={(color) => {
+                            const existing = current.arcaneCustomColors ?? [];
+                            if (!existing.includes(color)) {
+                              setSettings(manifest.id, {
+                                ...current,
+                                arcaneCustomColors: [...existing, color],
+                              });
+                            }
+                          }}
+                        />
                       </div>
                     ) : null}
 
@@ -562,6 +619,15 @@ const Render = () => {
 
   if (current.activeTheme === "custom") {
     return <CustomTheme />;
+  }
+
+  // Special handling for Arcane theme to pass accent color
+  if (current.activeTheme === "arcane") {
+    return (
+      <ArcaneTheme
+        accentColor={current.arcaneAccentColor ?? DEFAULT_ACCENT_COLOR}
+      />
+    );
   }
 
   const activeTheme = PRE_DEFINED_THEMES.find(

@@ -492,8 +492,16 @@
       "usageInstructions": "To use this plugin: 1) Enable the plugin using the toggle, 2) Enter an image URL or click 'Choose Image' to upload a local file, 3) Adjust opacity and blur settings as desired, 4) Optionally enable 'Include sidebar' to apply the background to the sidebar as well."
     },
     "bloodmoon": {
-      "description": "A dark theme with black-red gradients and crimson accents.",
-      "visit": "Theme by Skeptic"
+      "description": "Un tema oscuro con degradados negro-rojo y acentos carmesí.",
+      "visit": "Tema por Skeptic"
+    },
+    "arcane": {
+      "description": "Un tema oscuro elegante con efectos de brillo rosa-rojo inspirado en la estética de Arcane.",
+      "visit": "Tema por Skeptic",
+      "accentColor": "Color de acento",
+      "customColor": "Color personalizado",
+      "customColorDescription": "Elige un color de acento personalizado para el tema Arcane.",
+      "addCustomColor": "Agregar color"
     },
     "discord": {
       "applicationId": "Discord Application ID",

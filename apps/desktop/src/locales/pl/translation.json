@@ -491,6 +491,14 @@
       "description": "Ciemny motyw z czarno-czerwonymi gradientami i karmazynowymi akcentami.",
       "visit": "Motyw autorstwa Skeptic"
     },
+    "arcane": {
+      "description": "Elegancki ciemny motyw z różowo-czerwonymi efektami poświaty inspirowany estetyką Arcane.",
+      "visit": "Motyw autorstwa Skeptic",
+      "accentColor": "Kolor akcentu",
+      "customColor": "Niestandardowy kolor",
+      "customColorDescription": "Wybierz niestandardowy kolor akcentu dla motywu Arcane.",
+      "addCustomColor": "Dodaj kolor"
+    },
     "discord": {
       "applicationId": "ID aplikacji Discord",
       "applicationIdDescription": "Brak konfiguracji: wtyczka używa naszej oficjalnej aplikacji Discord.",

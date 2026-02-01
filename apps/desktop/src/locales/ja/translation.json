@@ -847,6 +847,14 @@
       "description": "黒赤のグラデーションと深紅のアクセントを持つダークテーマ。",
       "visit": "テーマ作成者: Skeptic"
     },
+    "arcane": {
+      "description": "Arcaneの美学にインスパイアされた、エレガントなピンク赤のグロー効果を持つスリークなダークテーマ。",
+      "visit": "テーマ作成者: Skeptic",
+      "accentColor": "アクセントカラー",
+      "customColor": "カスタムカラー",
+      "customColorDescription": "Arcaneテーマのカスタムアクセントカラーを選択してください。",
+      "addCustomColor": "カラーを追加"
+    },
     "flashbang": {
       "title": "フラッシュバンモード",
       "description": "スケジュールされた時間ウィンドウ中にライトモードを強制する。",

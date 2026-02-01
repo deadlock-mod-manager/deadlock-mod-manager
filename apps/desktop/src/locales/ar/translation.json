@@ -499,6 +499,14 @@
       "description": "ثيم داكن بتدرجات سوداء وحمراء ولمسات قرمزية.",
       "visit": "ثيم من Skeptic"
     },
+    "arcane": {
+      "description": "ثيم داكن أنيق مع تأثيرات توهج وردية-حمراء مستوحاة من جمالية Arcane.",
+      "visit": "ثيم من Skeptic",
+      "accentColor": "لون التمييز",
+      "customColor": "لون مخصص",
+      "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane.",
+      "addCustomColor": "إضافة لون"
+    },
     "discord": {
       "applicationId": "معرف تطبيق Discord",
       "applicationIdDescription": "لا حاجة للإعداد: يستخدم هذا المكون الإضافي تطبيق Discord الرسمي الخاص بنا.",

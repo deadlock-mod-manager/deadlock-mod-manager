@@ -875,6 +875,14 @@
       "description": "A dark theme with black-red gradients and crimson accents.",
       "visit": "Theme by Skeptic"
     },
+    "arcane": {
+      "description": "A sleek dark theme with elegant pink-red glow effects inspired by the Arcane aesthetic.",
+      "visit": "Theme by Skeptic",
+      "accentColor": "Accent Color",
+      "customColor": "Custom Color",
+      "customColorDescription": "Choose a custom accent color for the Arcane theme.",
+      "addCustomColor": "Add custom color"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Force Light Mode during a scheduled time window.",
