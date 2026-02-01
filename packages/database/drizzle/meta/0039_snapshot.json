@@ -1,6 +1,6 @@
 {
-  "id": "b92dc9aa-25fd-4346-a64b-79ed72c50722",
-  "prevId": "b0196645-8da6-47e5-842d-42e9ddcdc286",
+  "id": "0b1dd270-f267-43ae-acc1-05fbeb9c13ae",
+  "prevId": "b92dc9aa-25fd-4346-a64b-79ed72c50722",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -190,7 +190,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_account_account_id": {
+          "name": "idx_account_account_id",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
@@ -325,6 +341,21 @@
           "columns": [
             {
               "expression": "access_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_oauth_access_token_on_refresh_token": {
+          "name": "idx_oauth_access_token_on_refresh_token",
+          "columns": [
+            {
+              "expression": "refresh_token",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1858,6 +1889,21 @@
           "method": "btree",
           "with": {}
         },
+        "idx_mirrored_files_mod_download_id": {
+          "name": "idx_mirrored_files_mod_download_id",
+          "columns": [
+            {
+              "expression": "mod_download_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "unique_mod_download_id_and_mod_id": {
           "name": "unique_mod_download_id_and_mod_id",
           "columns": [
@@ -2200,6 +2246,27 @@
           "columns": [
             {
               "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_mod_blacklisted_remote_updated": {
+          "name": "idx_mod_blacklisted_remote_updated",
+          "columns": [
+            {
+              "expression": "is_blacklisted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "remote_updated_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

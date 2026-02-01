@@ -32,24 +32,28 @@ export const session = pgTable("session", {
   ...timestamps,
 });
 
-export const account = pgTable("account", {
-  id: typeId("id", "account")
-    .primaryKey()
-    .$defaultFn(() => generateId("account").toString()),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  ...timestamps,
-});
+export const account = pgTable(
+  "account",
+  {
+    id: typeId("id", "account")
+      .primaryKey()
+      .$defaultFn(() => generateId("account").toString()),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    ...timestamps,
+  },
+  (table) => [index("idx_account_account_id").on(table.accountId)],
+);
 
 export const verification = pgTable("verification", {
   id: typeId("id", "verification")
@@ -97,6 +101,7 @@ export const oauthAccessToken = pgTable(
   },
   (table) => [
     index("idx_oauth_access_token_on_access_token").on(table.accessToken),
+    index("idx_oauth_access_token_on_refresh_token").on(table.refreshToken),
   ],
 );
 

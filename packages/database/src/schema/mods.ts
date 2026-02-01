@@ -42,6 +42,10 @@ export const mods = pgTable(
   (table) => [
     index("idx_mod_created_at").on(table.createdAt),
     index("idx_mod_updated_at").on(table.updatedAt),
+    index("idx_mod_blacklisted_remote_updated").on(
+      table.isBlacklisted,
+      table.remoteUpdatedAt,
+    ),
   ],
 );
 

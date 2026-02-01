@@ -42,6 +42,7 @@ export const mirroredFiles = pgTable(
   (t) => [
     index("idx_mirrored_files_last_downloaded_at").on(t.lastDownloadedAt),
     index("idx_mirrored_files_is_stale").on(t.isStale),
+    index("idx_mirrored_files_mod_download_id").on(t.modDownloadId),
     uniqueIndex("unique_mod_download_id_and_mod_id").on(
       t.modDownloadId,
       t.modId,
