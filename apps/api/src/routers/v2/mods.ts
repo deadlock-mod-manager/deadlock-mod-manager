@@ -44,11 +44,17 @@ export const modsRouter = {
     .input(ModIdParamSchema)
     .output(ModSchema)
     .handler(async ({ input }) => {
-      const mod = await modRepository.findByRemoteId(input.id);
-      if (!mod) {
-        throw new ORPCError("NOT_FOUND");
-      }
-      return toModDto(mod);
+      return cache.wrap(
+        `mod:${input.id}`,
+        async () => {
+          const mod = await modRepository.findByRemoteId(input.id);
+          if (!mod) {
+            throw new ORPCError("NOT_FOUND");
+          }
+          return toModDto(mod);
+        },
+        CACHE_TTL.DEFAULT,
+      );
     }),
 
   getModDownloadsV2: publicProcedure

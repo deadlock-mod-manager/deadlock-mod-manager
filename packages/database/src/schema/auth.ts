@@ -113,8 +113,10 @@ export const oauthAccessToken = pgTable(
     ...timestamps,
   },
   (table) => [
-    index("idx_oauth_access_token_on_access_token").on(table.accessToken),
-    index("idx_oauth_access_token_on_refresh_token").on(table.refreshToken),
+    uniqueIndex("idx_oauth_access_token_on_access_token").on(table.accessToken),
+    uniqueIndex("idx_oauth_access_token_on_refresh_token").on(
+      table.refreshToken,
+    ),
   ],
 );
 
