@@ -25,6 +25,23 @@ const PREDEFINED_COLORS = [
 
 const DEFAULT_ACCENT_COLOR = "#E8416F";
 
+const HEX_REGEX = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+const isValidHex = (hex: string): boolean => HEX_REGEX.test(hex);
+
+const normalizeHex = (hex: string): string => {
+  if (!isValidHex(hex)) return DEFAULT_ACCENT_COLOR;
+  const clean = hex.replace("#", "");
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  return `#${full.toLowerCase()}`;
+};
+
 type ArcaneAccentPickerProps = {
   value: string;
   customColors: string[];
@@ -160,18 +177,15 @@ export const ArcaneAccentPicker = ({
 
   useEffect(() => {
     if (!open) return;
-    try {
-      const { r: rr, g: gg, b: bb } = hexToRgb(value || DEFAULT_ACCENT_COLOR);
-      setR(rr);
-      setG(gg);
-      setB(bb);
-      const { h: hh, s: ss, v: vv } = rgbToHsv(rr, gg, bb);
-      setH(hh);
-      setS(ss);
-      setV(vv);
-    } catch {
-      // ignore
-    }
+    const validHex = isValidHex(value) ? value : DEFAULT_ACCENT_COLOR;
+    const { r: rr, g: gg, b: bb } = hexToRgb(validHex);
+    setR(rr);
+    setG(gg);
+    setB(bb);
+    const { h: hh, s: ss, v: vv } = rgbToHsv(rr, gg, bb);
+    setH(hh);
+    setS(ss);
+    setV(vv);
   }, [open, value, hexToRgb, rgbToHsv]);
 
   useEffect(() => {
@@ -182,10 +196,12 @@ export const ArcaneAccentPicker = ({
   }, [h, s, v, hsvToRgb]);
 
   const allColors = useMemo(() => {
-    const colors = [...PREDEFINED_COLORS];
+    const colors: string[] = [...PREDEFINED_COLORS];
     for (const custom of customColors) {
-      if (!colors.includes(custom as typeof colors[number])) {
-        colors.push(custom as typeof colors[number]);
+      if (!isValidHex(custom)) continue;
+      const normalized = normalizeHex(custom);
+      if (!colors.some((c) => c.toLowerCase() === normalized.toLowerCase())) {
+        colors.push(normalized);
       }
     }
     return colors;
@@ -270,11 +286,9 @@ export const ArcaneAccentPicker = ({
             <div className='flex flex-col gap-3'>
               <div
                 ref={svRef}
-                onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
+                onMouseDown={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
                   const move = (ev: MouseEvent) => {
-                    const rect = (
-                      e.currentTarget as HTMLDivElement
-                    ).getBoundingClientRect();
                     const x =
                       ev.clientX - rect.left < 0
                         ? 0
@@ -292,7 +306,7 @@ export const ArcaneAccentPicker = ({
                     setS(sN);
                     setV(vN);
                   };
-                  move(e.nativeEvent as unknown as MouseEvent);
+                  move(e.nativeEvent);
                   const up = () => {
                     window.removeEventListener("mousemove", move);
                     window.removeEventListener("mouseup", up);
@@ -314,10 +328,8 @@ export const ArcaneAccentPicker = ({
 
               <div
                 className='h-3 w-full rounded-md border relative cursor-pointer'
-                onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
-                  const rect = (
-                    e.currentTarget as HTMLDivElement
-                  ).getBoundingClientRect();
+                onMouseDown={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
                   const move = (ev: MouseEvent) => {
                     const x =
                       ev.clientX - rect.left < 0
@@ -328,7 +340,7 @@ export const ArcaneAccentPicker = ({
                     const hh = Math.round((x / rect.width) * 360);
                     setH(hh);
                   };
-                  move(e.nativeEvent as unknown as MouseEvent);
+                  move(e.nativeEvent);
                   const up = () => {
                     window.removeEventListener("mousemove", move);
                     window.removeEventListener("mouseup", up);
