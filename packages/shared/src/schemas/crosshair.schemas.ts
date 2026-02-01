@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { DeadlockHeroes } from "../constants";
 
+// Helper for date fields that may come as strings from cache (JSON serialization)
+const coercedDate = z.coerce.date();
+
 export const crosshairConfigSchema = z.object({
   gap: z.number().min(-20).max(50).multipleOf(1),
   width: z.number().min(0).max(100).multipleOf(0.1),
@@ -51,8 +54,8 @@ export const CrosshairDtoSchema = z.object({
   likes: z.number().int(),
   downloads: z.number().int(),
   hasLiked: z.boolean().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: coercedDate,
+  updatedAt: coercedDate,
 });
 
 export const CrosshairsListResponseSchema = z.array(CrosshairDtoSchema);

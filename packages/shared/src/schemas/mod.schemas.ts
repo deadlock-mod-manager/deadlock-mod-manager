@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// Helper for date fields that may come as strings from cache (JSON serialization)
+const coercedDate = z.coerce.date();
+const coercedDateNullable = z.coerce.date().nullable();
+
 // ModDto schema (matches the raw Mod type from database)
 export const ModDtoSchema = z.object({
   id: z.string(),
@@ -11,8 +15,8 @@ export const ModDtoSchema = z.object({
   likes: z.number().int(),
   author: z.string(),
   downloadable: z.boolean(),
-  remoteAddedAt: z.date(),
-  remoteUpdatedAt: z.date(),
+  remoteAddedAt: coercedDate,
+  remoteUpdatedAt: coercedDate,
   tags: z.array(z.string()),
   images: z.array(z.string()),
   hero: z.string().nullable(),
@@ -20,8 +24,8 @@ export const ModDtoSchema = z.object({
   audioUrl: z.string().nullable(),
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),
-  createdAt: z.date().nullable(),
-  updatedAt: z.date().nullable(),
+  createdAt: coercedDateNullable,
+  updatedAt: coercedDateNullable,
 });
 
 // ModDownloadDto schema (matches the transformed output from toModDownloadDto)
@@ -29,8 +33,8 @@ export const ModDownloadDtoSchema = z.object({
   url: z.string(),
   size: z.number().int(),
   name: z.string(), // This comes from the 'file' field in the database
-  createdAt: z.date().nullable(),
-  updatedAt: z.date().nullable(),
+  createdAt: coercedDateNullable,
+  updatedAt: coercedDateNullable,
 });
 
 // CustomSettingDto schema (matches the raw CustomSetting type from database)
@@ -40,8 +44,8 @@ export const CustomSettingDtoSchema = z.object({
   value: z.string(),
   type: z.string(),
   description: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: coercedDate,
+  updatedAt: coercedDate,
 });
 
 // Input schemas for route parameters
