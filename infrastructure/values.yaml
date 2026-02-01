@@ -48,8 +48,8 @@ deployments:
   web:
     image: stormix/deadlock-mods-api:latest
     replicas: 3
-    memory: 1Gi
-    cpu: 600m
+    memory: 3Gi
+    cpu: 1000m
 
     metrics:
       enabled: true
@@ -279,7 +279,7 @@ deployments:
 
 resources:
   postgres:
-    replicas: 3
+    replicas: 0
     memory: 512Mi
     cpu: 200m
     disk: 30Gi
@@ -312,10 +312,10 @@ resources:
     evictionPolicy: allkeys-lru
 
 env:
-  - {
-      name: DATABASE_URL,
-      valueFrom: { secretKeyRef: { name: deadlock-mod-manager-app, key: uri } },
-    }
+  # - {
+  #     name: DATABASE_URL,
+  #     valueFrom: { secretKeyRef: { name: deadlock-mod-manager-app, key: uri } },
+  #   }
   - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
   - {
       name: REDIS_URL,
