@@ -1,4 +1,4 @@
-{
+﻿{
   "about": {
     "checkForUpdates": "Vérifier les mises à jour",
     "close": "Fermer",
@@ -541,17 +541,6 @@
       "visit": "Visiter Nightshift :"
     },
     "renderActive": "Le plugin est actif et fonctionne en arrière-plan",
-    "sudo": {
-      "description": "Outils avancés de gestion des mods pour utilisateurs expérimentés.",
-      "detailedDescription": "Active des contrôles orientés développeur et des fonctionnalités expérimentales. Certaines actions peuvent modifier des fichiers ou contourner des protections. À utiliser avec précaution.",
-      "importMod": "Importer un mod",
-      "instructions": "Parcourez les mods à gauche, sélectionnez‑en un puis utilisez la flèche droite pour le télécharger et l’activer. À droite, sélectionnez un mod installé et utilisez la flèche gauche pour le supprimer. Les deux listes sont recherchables.",
-      "openAddons": "Ouvrir les add‑ons",
-      "removeMod": "Supprimer le mod",
-      "title": "Superutilisateur",
-      "usageInstructions": "Activez le plugin pour passer en mode Superutilisateur. Les options avancées deviennent visibles. Désactivez‑le pour les masquer.",
-      "viewOriginalPost": "Voir le message original du forum"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "Un thème beige chaleureux créé pour le youtubeur et streamer Twitch Snipztea.",

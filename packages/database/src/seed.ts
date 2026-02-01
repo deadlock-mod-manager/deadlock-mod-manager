@@ -52,12 +52,6 @@ import { db, eq, schema } from "./client";
           value: true,
           exposed: true,
         },
-        {
-          name: "plugin-sudo",
-          description: "Enable Sudo plugin",
-          value: true,
-          exposed: true,
-        },
       ])
       .onConflictDoNothing();
 

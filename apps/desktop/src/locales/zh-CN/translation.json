@@ -541,23 +541,6 @@
       "visit": "访问 Nightshift："
     },
     "renderActive": "插件处于活动状态并在后台运行",
-    "sudo": {
-      "description": "面向高级用户的高级模组管理工具。",
-      "detailedDescription": "解锁面向开发者的控制和实验性功能。某些操作可能会修改文件或绕过保护，请谨慎使用。",
-      "importMod": "导入模组",
-      "instructions": "在左侧浏览模组，选择一个后点击右箭头以下载并启用。在右侧选择已安装的模组，点击左箭头以移除。两侧列表均可搜索。",
-      "openAddons": "打开附加组件",
-      "removeMod": "移除模组",
-      "title": "超级用户",
-      "usageInstructions": "启用插件以打开超级用户模式。高级选项将显示；禁用插件即可隐藏。",
-      "viewOriginalPost": "查看原始论坛帖子"
-    },
-    "sudo-old": {
-      "description": "面向高级用户的高级管理工具。",
-      "detailedDescription": "解锁面向开发者的控制与实验功能。部分操作可能修改文件或绕过保护，请谨慎使用。",
-      "title": "超级用户模式",
-      "usageInstructions": "启用插件以打开超级用户模式。高级选项将出现在应用各处；停用插件以隐藏它们。"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "为 YouTuber 与 Twitch 主播 Snipztea 打造的温暖米色主题。",

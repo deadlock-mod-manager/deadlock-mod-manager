@@ -891,17 +891,6 @@
       "startHour": "Start hour (0–23)",
       "endHour": "End hour (0–23)"
     },
-    "sudo": {
-      "title": "Superuser",
-      "description": "Advanced mod management tools for experienced users.",
-      "detailedDescription": "Unlocks developer-oriented controls and experimental features. Some actions can modify files or bypass safeguards. Use with caution.",
-      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
-      "instructions": "Browse mods on the left, select one, then use the right arrow to download and enable it. Select an installed mod on the right and use the left arrow to remove it. You can search both lists.",
-      "openAddons": "Open Addons",
-      "importMod": "Import Mod",
-      "viewOriginalPost": "View original forum post",
-      "removeMod": "Remove mod"
-    },
     "background": {
       "title": "Background",
       "description": "Customize application backgrounds.",

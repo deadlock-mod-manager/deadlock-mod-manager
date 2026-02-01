@@ -541,23 +541,6 @@
       "visit": "Nightshift'i ziyaret et:"
     },
     "renderActive": "Eklenti etkin ve arka planda çalışıyor",
-    "sudo": {
-      "description": "Deneyimli kullanıcılar için gelişmiş mod yönetimi araçları.",
-      "detailedDescription": "Geliştirici odaklı kontroller ve deneysel özellikler açılır. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",
-      "importMod": "Mod içe aktar",
-      "instructions": "Solda modları gez, birini seç ve indirmek/etkinleştirmek için sağ oku kullan. Sağda yüklü bir modu seç ve kaldırmak için sol oku kullan. Her iki liste de aranabilir.",
-      "openAddons": "Eklentileri aç",
-      "removeMod": "Modu kaldır",
-      "title": "Süper Kullanıcı",
-      "usageInstructions": "Eklentiyi etkinleştirerek Süper Kullanıcı modunu açın. Gelişmiş seçenekler görünür olur. Gizlemek için eklentiyi devre dışı bırakın.",
-      "viewOriginalPost": "Orijinal forum gönderisini gör"
-    },
-    "sudo-old": {
-      "description": "Deneyimli kullanıcılar için gelişmiş mod yönetimi araçları.",
-      "detailedDescription": "Geliştirici odaklı kontrolleri ve deneysel özellikleri açar. Bazı işlemler dosyaları değiştirebilir veya korumaları atlayabilir. Dikkatli kullanın.",
-      "title": "Süper Kullanıcı Modu",
-      "usageInstructions": "Süper Kullanıcı Modunu açmak için eklentiyi etkinleştirin. Geliştirici seçenekleri ve gelişmiş araçlar uygulama genelinde görünür olur. Tekrar gizlemek için eklentiyi devre dışı bırakın."
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "YouTube ve Twitch yayıncısı Snipztea için oluşturulmuş sıcak bej bir tema.",

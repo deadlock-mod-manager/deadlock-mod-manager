@@ -536,34 +536,6 @@
       "visit": "Odwiedź Nightshift:"
     },
     "renderActive": "Plugin jest aktywny i działa w tle",
-    "sudo": {
-      "description": "Advanced mod management tools for experienced users.",
-      "detailedDescription": "Unlocks developer-oriented controls and experimental features. Some actions can modify files or bypass safeguards. Use with caution.",
-      "importMod": "Import Mod",
-      "instructions": "Browse mods on the left, select one, then use the right arrow to download and enable it. Select an installed mod on the right and use the left arrow to remove it. You can search both lists.",
-      "openAddons": "Open Addons",
-      "removeMod": "Remove mod",
-      "title": "Superuser",
-      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
-      "viewOriginalPost": "View original forum post"
-    },
-    "sudo-new": {
-      "description": "Zaawansowane narzędzia do zarządzania modami dla doświadczonych użytkowników.",
-      "detailedDescription": "Odblokowuje opcje deweloperskie i eksperymentalne funkcje. Niektóre działania mogą modyfikować pliki lub omijać zabezpieczenia. Używaj ostrożnie.",
-      "importMod": "Importuj mod",
-      "instructions": "Przeglądaj mody po lewej, wybierz jeden i użyj strzałki w prawo, aby pobrać i włączyć. Po prawej wybierz zainstalowany mod i użyj strzałki w lewo, aby usunąć. Obie listy można przeszukiwać.",
-      "openAddons": "Otwórz dodatki",
-      "removeMod": "Usuń mod",
-      "title": "Superuser",
-      "usageInstructions": "Włącz wtyczkę, aby uruchomić tryb Superuser. Zaawansowane opcje staną się widoczne. Wyłącz wtyczkę, aby je ukryć.",
-      "viewOriginalPost": "Zobacz oryginalny post na forum"
-    },
-    "sudo-old": {
-      "description": "Zaawansowane narzędzia zarządzania modami dla doświadczonych użytkowników.",
-      "detailedDescription": "Odblokowuje narzędzia deweloperskie i funkcje eksperymentalne. Niektóre działania mogą modyfikować pliki lub pomijać zabezpieczenia. Używaj ostrożnie.",
-      "title": "Tryb Superuser",
-      "usageInstructions": "Włącz wtyczkę, aby uruchomić Tryb Superuser. Zaawansowane opcje staną się widoczne w całej aplikacji. Wyłącz wtyczkę, aby je ukryć."
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "Przytulny beżowy motyw stworzony dla youtubera i streamera Twitch Snipztea.",

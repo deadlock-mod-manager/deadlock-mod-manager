@@ -30,7 +30,6 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
@@ -237,10 +236,6 @@ export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
-  const localSudoEnabled = usePersistedStore(
-    (state) => state.enabledPlugins.sudo ?? false,
-  );
-  const { isEnabled: apiSudoEnabled } = useFeatureFlag("plugin-sudo");
   const themesEnabled = usePersistedStore(
     (state) => state.enabledPlugins.themes ?? false,
   );
@@ -248,29 +243,9 @@ export const AppSidebar = () => {
     return state.pluginSettings.themes as ThemeSettings | undefined;
   });
 
-  // Plugin is enabled only if both local and feature flag configuration allow it
-  const sudoEnabled = localSudoEnabled && apiSudoEnabled;
   const showTeaMascot = themesEnabled && themeSettings?.activeTheme === "tea";
 
-  let allItems = getSidebarItems(t, developerMode);
-
-  if (sudoEnabled) {
-    allItems = allItems.filter(
-      (item) => !["my-mods", "get-mods"].includes(item.id),
-    );
-
-    // Add Superuser entry linking to the plugin route, with a standard icon
-    allItems = [
-      ...allItems,
-      {
-        id: "sudo",
-        title: () => <span>{t("plugins.sudo.title")}</span>,
-        url: "/sudo",
-        icon: Code,
-        group: "mods",
-      },
-    ];
-  }
+  const allItems = getSidebarItems(t, developerMode);
 
   const topItems = allItems.filter((item) => !item.bottom);
   const bottomItems = allItems.filter((item) => item.bottom);
