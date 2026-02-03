@@ -58,10 +58,23 @@ const PlatformColumn = ({
 );
 
 const getDownloadDisplayName = (download: PlatformDownload): string => {
-  const { platform, architecture } = download;
+  const { platform, architecture, installerType, filename } = download;
+  const name = filename.toLowerCase();
 
   if (platform === "windows") {
-    return `Windows (${architecture})`;
+    if (installerType === "msi") {
+      return `Windows msi (${architecture})`;
+    }
+    if (installerType === "sig" || name.endsWith(".sig")) {
+      if (name.includes(".msi.sig")) {
+        return `Windows msi sig (${architecture})`;
+      }
+      return `Windows exe sig (${architecture})`;
+    }
+    if (!installerType && name.includes(".msi")) {
+      return `Windows msi (${architecture})`;
+    }
+    return `Windows exe (${architecture})`;
   }
 
   if (platform === "macos") {
@@ -75,19 +88,28 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
   }
 
   if (platform === "linux") {
-    if (download.filename.toLowerCase().includes(".deb")) {
+    if (name.endsWith(".deb.sig")) {
+      return `Linux .deb sig (${architecture})`;
+    }
+    if (name.endsWith(".rpm.sig")) {
+      return `Linux RPM sig (${architecture})`;
+    }
+    if (name.endsWith(".appimage.sig")) {
+      return `Linux AppImage sig (${architecture})`;
+    }
+    if (installerType === "deb" || name.includes(".deb")) {
       return `Linux .deb (${architecture})`;
     }
-    if (download.filename.toLowerCase().includes(".rpm")) {
+    if (installerType === "rpm" || name.includes(".rpm")) {
       return `Linux RPM (${architecture})`;
     }
-    if (download.filename.toLowerCase().includes(".appimage")) {
+    if (installerType === "appimage" || name.includes(".appimage")) {
       return `Linux AppImage (${architecture})`;
     }
     return `Linux (${architecture})`;
   }
 
-  return download.filename;
+  return filename;
 };
 
 const groupDownloadsByPlatform = (downloads: PlatformDownload[]) => {

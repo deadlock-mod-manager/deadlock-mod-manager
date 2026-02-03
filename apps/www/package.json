@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3003",
+    "dev": "dotenv -e ../../.env -- vite dev --port 3003",
     "build": "vite build",
     "start": "bun run server.ts",
     "serve": "vite preview"
