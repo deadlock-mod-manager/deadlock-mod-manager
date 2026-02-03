@@ -2,5 +2,4 @@
 "@deadlock-mods/shared": minor
 ---
 
-Add new heroes to regex search and heroes list
-Added allow-scripts to desktop app embedded video
+Add 6 new heroes to shared regex search and heroes list: Apollo, Celeste, Graves, Rem, Silver, Venator
