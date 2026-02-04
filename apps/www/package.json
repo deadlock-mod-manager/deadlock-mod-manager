@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3003",
+    "dev": "dotenv -e ../../.env -- vite dev --port 3003",
     "build": "vite build",
     "start": "bun run server.ts",
     "serve": "vite preview"
@@ -54,6 +54,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "dotenv-cli": "^7.4.4",
     "@netlify/vite-plugin-tanstack-start": "^1.2.3",
     "@tailwindcss/postcss": "^4.1.15",
     "@tanstack/nitro-v2-vite-plugin": "^1.141.0",

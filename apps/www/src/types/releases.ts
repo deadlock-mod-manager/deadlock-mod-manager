@@ -1,6 +1,7 @@
 export interface PlatformDownload {
   platform: "windows" | "macos" | "linux";
   architecture: "x64" | "arm64" | "universal";
+  installerType?: "exe" | "msi" | "dmg" | "deb" | "rpm" | "appimage" | "sig";
   url: string;
   filename: string;
   size: number;
