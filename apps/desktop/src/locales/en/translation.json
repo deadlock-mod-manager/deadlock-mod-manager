@@ -612,6 +612,13 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.13.1": {
+        "title": "Third-Party Content Disclaimer & Improvements",
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ]
+      },
       "0.13.0": {
         "title": "Bug Fixes & Improvements",
         "features": [

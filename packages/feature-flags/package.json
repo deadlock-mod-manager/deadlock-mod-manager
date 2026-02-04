@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/feature-flags",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "exports": {
     ".": "./src/index.ts"

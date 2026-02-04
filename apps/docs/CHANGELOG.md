@@ -1,5 +1,11 @@
 # @deadlock-mods/docs
 
+## 0.0.2
+
+### Patch Changes
+
+- 54f0f69: Fix fumadocs v14/v16 compatibility and MDX hydration error
+
 ## 0.0.1
 
 ### Patch Changes

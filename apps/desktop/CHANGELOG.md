@@ -1,5 +1,15 @@
 # desktop
 
+## 0.13.1
+
+### Patch Changes
+
+- 3176d05: Add third-party content disclaimer as first onboarding step to meet code signing requirements
+- 30074df: Add translation helper script (`pnpm translate`) with step-by-step workflow and pause/resume support
+- c95b5e1: Add SignPath code signing integration for Windows builds in release and nightly workflows
+- 552a5bd: Add Bulgarian language support to the desktop app
+  - @deadlock-mods/shared@1.7.0
+
 ## 0.13.0
 
 ### Minor Changes
