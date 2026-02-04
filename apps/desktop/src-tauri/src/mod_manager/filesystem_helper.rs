@@ -127,7 +127,6 @@ impl FileSystemHelper {
   #[cfg(windows)]
   pub fn create_directory_symlink(&self, target: &Path, link: &Path) -> Result<(), Error> {
     use std::os::windows::fs::symlink_dir;
-    use std::process::Command;
 
     log::info!("Creating directory symlink: {:?} -> {:?}", link, target);
 
@@ -146,26 +145,16 @@ impl FileSystemHelper {
     }
 
     // Fall back to junction (doesn't require admin privileges)
-    let output = Command::new("cmd")
-      .args([
-        "/C",
-        "mklink",
-        "/J",
-        &link.to_string_lossy(),
-        &target.to_string_lossy(),
-      ])
-      .output()?;
-
-    if output.status.success() {
-      log::info!("Created junction successfully");
-      Ok(())
-    } else {
-      let stderr = String::from_utf8_lossy(&output.stderr);
-      Err(Error::Io(std::io::Error::new(
+    // Uses the junction crate which calls Windows APIs directly (no shell invocation)
+    junction::create(target, link).map_err(|e| {
+      Error::Io(std::io::Error::new(
         std::io::ErrorKind::Other,
-        format!("Failed to create junction: {}", stderr),
-      )))
-    }
+        format!("Failed to create junction: {}", e),
+      ))
+    })?;
+
+    log::info!("Created junction successfully");
+    Ok(())
   }
 
   /// Create a directory symlink (Unix)
