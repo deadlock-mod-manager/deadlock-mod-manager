@@ -184,11 +184,6 @@ impl FileSystemHelper {
     }
   }
 
-  /// Get the target of a symlink
-  pub fn read_symlink(&self, path: &Path) -> Result<std::path::PathBuf, Error> {
-    Ok(fs::read_link(path)?)
-  }
-
   /// Remove a symlink or junction (cross-platform)
   /// On Windows, directory symlinks/junctions require remove_dir() instead of remove_file()
   pub fn remove_symlink(&self, path: &Path) -> Result<(), Error> {
