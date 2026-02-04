@@ -753,7 +753,7 @@ impl GameConfigManager {
           "Replays symlink points to wrong location, recreating: {:?}",
           vanilla_replays_path
         );
-        fs::remove_file(&vanilla_replays_path)?;
+        self.filesystem.remove_symlink(&vanilla_replays_path)?;
       } else if vanilla_replays_path.is_dir() {
         // It's a regular directory - move contents to modded location and remove it
         log::info!(

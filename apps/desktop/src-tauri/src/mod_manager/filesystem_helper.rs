@@ -200,6 +200,28 @@ impl FileSystemHelper {
     Ok(fs::read_link(path)?)
   }
 
+  /// Remove a symlink or junction (cross-platform)
+  /// On Windows, directory symlinks/junctions require remove_dir() instead of remove_file()
+  pub fn remove_symlink(&self, path: &Path) -> Result<(), Error> {
+    if !path.exists() && !self.is_symlink(path) {
+      return Ok(());
+    }
+
+    log::info!("Removing symlink/junction: {:?}", path);
+
+    // Try remove_file first (works for file symlinks on all platforms)
+    match fs::remove_file(path) {
+      Ok(()) => return Ok(()),
+      Err(e) => {
+        log::debug!("remove_file failed: {}, trying remove_dir", e);
+      }
+    }
+
+    // Fall back to remove_dir (needed for directory symlinks/junctions on Windows)
+    fs::remove_dir(path)?;
+    Ok(())
+  }
+
   /// Move all contents from source directory to destination directory
   pub fn move_directory_contents(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if !src.exists() {
@@ -233,12 +255,16 @@ impl FileSystemHelper {
             );
             fs::remove_file(&src_path)?;
           } else {
-            // Files differ - rename source to avoid data loss
-            let conflict_name = format!(
-              "{}.conflict",
-              src_path.file_name().unwrap_or_default().to_string_lossy()
-            );
-            let conflict_path = dest.join(&conflict_name);
+            // Files differ - find a unique conflict filename to avoid data loss
+            let base_name = src_path.file_name().unwrap_or_default().to_string_lossy();
+            let mut conflict_path = dest.join(format!("{}.conflict", base_name));
+            let mut counter = 1;
+
+            while conflict_path.exists() {
+              conflict_path = dest.join(format!("{}.conflict.{}", base_name, counter));
+              counter += 1;
+            }
+
             log::warn!(
               "Destination file exists with different size, saving as: {:?}",
               conflict_path
