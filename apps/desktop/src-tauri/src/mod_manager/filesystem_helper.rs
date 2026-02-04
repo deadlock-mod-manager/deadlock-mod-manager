@@ -187,6 +187,14 @@ impl FileSystemHelper {
       .unwrap_or(false)
   }
 
+  /// Check if two paths point to the same location (handles symlinks and Windows junctions)
+  pub fn paths_point_to_same_location(&self, path1: &Path, path2: &Path) -> bool {
+    match (fs::canonicalize(path1), fs::canonicalize(path2)) {
+      (Ok(canonical1), Ok(canonical2)) => canonical1 == canonical2,
+      _ => false,
+    }
+  }
+
   /// Get the target of a symlink
   pub fn read_symlink(&self, path: &Path) -> Result<std::path::PathBuf, Error> {
     Ok(fs::read_link(path)?)
@@ -213,11 +221,35 @@ impl FileSystemHelper {
       } else {
         // Move file (copy + delete for cross-device moves)
         if dest_path.exists() {
-          log::debug!("Destination file already exists, skipping: {:?}", dest_path);
+          // Only delete source if files are identical (same size)
+          // to avoid silent data loss
+          let src_size = fs::metadata(&src_path).map(|m| m.len()).unwrap_or(0);
+          let dest_size = fs::metadata(&dest_path).map(|m| m.len()).unwrap_or(1);
+
+          if src_size == dest_size {
+            log::debug!(
+              "Destination file already exists with same size, removing source: {:?}",
+              dest_path
+            );
+            fs::remove_file(&src_path)?;
+          } else {
+            // Files differ - rename source to avoid data loss
+            let conflict_name = format!(
+              "{}.conflict",
+              src_path.file_name().unwrap_or_default().to_string_lossy()
+            );
+            let conflict_path = dest.join(&conflict_name);
+            log::warn!(
+              "Destination file exists with different size, saving as: {:?}",
+              conflict_path
+            );
+            fs::copy(&src_path, &conflict_path)?;
+            fs::remove_file(&src_path)?;
+          }
         } else {
           fs::copy(&src_path, &dest_path)?;
+          fs::remove_file(&src_path)?;
         }
-        fs::remove_file(&src_path)?;
       }
     }
 

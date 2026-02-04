@@ -737,27 +737,23 @@ impl GameConfigManager {
 
     // Check current state of citadel/replays
     if vanilla_replays_path.exists() {
-      // Check if it's already a symlink
+      // First check if both paths already point to the same location
+      // This handles both symlinks and Windows junctions correctly
+      if self
+        .filesystem
+        .paths_point_to_same_location(&vanilla_replays_path, &modded_replays_path)
+      {
+        log::info!("Replays paths already point to the same location");
+        return Ok(());
+      }
+
+      // Check if it's a symlink pointing elsewhere
       if self.filesystem.is_symlink(&vanilla_replays_path) {
-        // Verify it points to the correct location
-        match self.filesystem.read_symlink(&vanilla_replays_path) {
-          Ok(target) => {
-            if target == modded_replays_path || target.ends_with("addons/replays") {
-              log::info!("Replays symlink already correctly configured");
-              return Ok(());
-            } else {
-              log::info!(
-                "Replays symlink points to wrong location ({:?}), recreating",
-                target
-              );
-              fs::remove_file(&vanilla_replays_path)?;
-            }
-          }
-          Err(e) => {
-            log::warn!("Failed to read symlink target: {e}, recreating");
-            fs::remove_file(&vanilla_replays_path)?;
-          }
-        }
+        log::info!(
+          "Replays symlink points to wrong location, recreating: {:?}",
+          vanilla_replays_path
+        );
+        fs::remove_file(&vanilla_replays_path)?;
       } else if vanilla_replays_path.is_dir() {
         // It's a regular directory - move contents to modded location and remove it
         log::info!(
