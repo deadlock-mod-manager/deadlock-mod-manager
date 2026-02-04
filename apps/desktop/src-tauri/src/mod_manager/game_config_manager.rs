@@ -511,6 +511,12 @@ impl GameConfigManager {
     self.filesystem.create_directories(&addons_path)?;
     log::info!("Created addons directory: {addons_path:?}");
 
+    // Setup replays symlink to ensure replays are saved consistently
+    if let Err(e) = self.setup_replays_symlink(game_path) {
+      log::warn!("Failed to setup replays symlink: {e}");
+      // Continue anyway - this is not critical for mod functionality
+    }
+
     // Modify gameinfo.gi to enable mod loading
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
     self.modify_search_paths(&gameinfo_path, false)?;
@@ -705,6 +711,87 @@ impl GameConfigManager {
     }
 
     log::info!("Successfully modified search paths (vanilla: {vanilla})");
+    Ok(())
+  }
+
+  /// Setup replays symlink to ensure replays are saved to a consistent location
+  ///
+  /// When launching modded, replays are saved to citadel/addons/replays/
+  /// When launching vanilla, replays are saved to citadel/replays/
+  /// This creates a symlink from citadel/replays -> citadel/addons/replays/
+  /// so all replays are stored in one place regardless of launch mode.
+  pub fn setup_replays_symlink(&self, game_path: &Path) -> Result<(), Error> {
+    let citadel_path = game_path.join("game").join("citadel");
+    let vanilla_replays_path = citadel_path.join("replays");
+    let modded_replays_path = citadel_path.join("addons").join("replays");
+
+    log::info!("Setting up replays symlink");
+    log::debug!(
+      "Vanilla replays path: {:?}, Modded replays path: {:?}",
+      vanilla_replays_path,
+      modded_replays_path
+    );
+
+    // Ensure the target directory (addons/replays) exists
+    self.filesystem.create_directories(&modded_replays_path)?;
+
+    // Check current state of citadel/replays
+    if vanilla_replays_path.exists() {
+      // First check if both paths already point to the same location
+      // This handles both symlinks and Windows junctions correctly
+      if self
+        .filesystem
+        .paths_point_to_same_location(&vanilla_replays_path, &modded_replays_path)
+      {
+        log::info!("Replays paths already point to the same location");
+        return Ok(());
+      }
+
+      // Check if it's a symlink pointing elsewhere
+      if self.filesystem.is_symlink(&vanilla_replays_path) {
+        log::info!(
+          "Replays symlink points to wrong location, recreating: {:?}",
+          vanilla_replays_path
+        );
+        self.filesystem.remove_symlink(&vanilla_replays_path)?;
+      } else if vanilla_replays_path.is_dir() {
+        // It's a regular directory - move contents to modded location and remove it
+        log::info!(
+          "Moving existing replays from {:?} to {:?}",
+          vanilla_replays_path,
+          modded_replays_path
+        );
+        self
+          .filesystem
+          .move_directory_contents(&vanilla_replays_path, &modded_replays_path)?;
+
+        // Remove the now-empty directory
+        fs::remove_dir(&vanilla_replays_path).map_err(|e| {
+          Error::Io(std::io::Error::new(
+            e.kind(),
+            format!(
+              "Failed to remove replays directory after moving contents: {}",
+              e
+            ),
+          ))
+        })?;
+        log::info!("Removed original replays directory");
+      } else {
+        // It's a file (unlikely but handle it)
+        log::warn!(
+          "citadel/replays exists but is not a directory, removing: {:?}",
+          vanilla_replays_path
+        );
+        fs::remove_file(&vanilla_replays_path)?;
+      }
+    }
+
+    // Create the symlink: citadel/replays -> citadel/addons/replays
+    self
+      .filesystem
+      .create_directory_symlink(&modded_replays_path, &vanilla_replays_path)?;
+
+    log::info!("Replays symlink created successfully");
     Ok(())
   }
 
