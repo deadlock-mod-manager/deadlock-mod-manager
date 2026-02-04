@@ -69,6 +69,9 @@ export const AboutDialog = () => {
       <DialogDescription asChild>
         <div className='flex flex-col items-center gap-4 text-center text-foreground'>
           <div>{t("about.description")}</div>
+          <div className='text-muted-foreground text-xs'>
+            {t("about.thirdPartyDisclaimerShort")}
+          </div>
           <Separator className='w-8' />
           <div className='text-muted-foreground text-xs'>
             Project created and maintained by{" "}

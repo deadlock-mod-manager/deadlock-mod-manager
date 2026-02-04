@@ -200,6 +200,95 @@
     "shareUrl": "مشاركة",
     "urlCopied": "تم نسخ الرابط إلى الحافظة!"
   },
+  "crosshairs": {
+    "activeCrosshairs": "Active Crosshairs",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "close": "Go back",
+    "currentlyActive": "Currently Active",
+    "dialog": {
+      "description": "Create and customize your crosshairs",
+      "title": "Generate Crosshair"
+    },
+    "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
+    "filters": {
+      "allTags": "All Tags",
+      "noTagsFound": "No tags found.",
+      "searchPlaceholder": "Search crosshairs...",
+      "searchTags": "Search tags...",
+      "tagLabel": "Tag:",
+      "tags": "Tags"
+    },
+    "form": {
+      "addTag": "Add",
+      "applied": "Crosshair applied successfully",
+      "apply": "Apply",
+      "applyError": "Failed to apply crosshair",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "descriptionValidation": "Description must be less than 500 characters",
+      "heroes": "Heroes",
+      "heroesSelected": "selected",
+      "heroesValidation": "Please select at least one hero (max 5)",
+      "import": {
+        "button": "Import",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "title": "Import Crosshair Settings"
+      },
+      "likeError": "Failed to toggle crosshair like",
+      "loginRequired": "You must be logged in to publish crosshairs",
+      "metadata": "Metadata",
+      "name": "Name",
+      "namePlaceholder": "My Awesome Crosshair",
+      "nameValidation": "Name must be between 3 and 50 characters",
+      "noHeroesFound": "No heroes found.",
+      "preview": "Preview",
+      "publish": "Publish",
+      "publishError": "Failed to publish crosshair",
+      "published": "Crosshair published successfully",
+      "publishing": "Publishing...",
+      "searchHeroes": "Search heroes...",
+      "selectHeroes": "Select heroes...",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tag and press Enter"
+    },
+    "generate": "Generate Crosshair",
+    "loadError": "Failed to load crosshairs",
+    "noActiveCrosshair": "No custom crosshair is currently active",
+    "noCrosshairs": "No crosshairs available",
+    "noCrosshairsFound": "No crosshairs found",
+    "noCrosshairsMatchFilters": "No crosshairs match your search or filters",
+    "preview": "Preview",
+    "previewDialog": {
+      "color": "Color",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command",
+      "configValues": "Configuration Values",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "gap": "Gap",
+      "height": "Height",
+      "hero": "Hero",
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "noBackground": "None",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "pipOpacity": "Pip Opacity",
+      "title": "Preview",
+      "width": "Width"
+    },
+    "remove": "Remove",
+    "removeFromHistory": "Remove from history",
+    "removedFromHistory": "Crosshair removed from history",
+    "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
+    "subtitle": "Create and customize your crosshairs",
+    "title": "Crosshairs",
+    "toggleError": "Failed to toggle custom crosshairs",
+    "tryClearingFilters": "Try clearing some filters to see more results"
+  },
   "dashboard": {
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
@@ -238,6 +327,13 @@
   },
   "errors": {
     "errorCode": "رمز الخطأ:",
+    "failedToParseGameConfiguration": {
+      "instruction": "Please follow these steps to resolve the issue:",
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
+    },
     "genericMessage": "نأسف، لكن حدث خطأ أثناء معالجة طلبك.",
     "goBack": "العودة",
     "tryAgain": "حاول مرة أخرى"
@@ -424,7 +520,10 @@
   "navigation": {
     "about": "عن التطبيق",
     "addMods": "إضافة تعديلات",
+    "autoexec": "Autoexec Config",
     "collapseMenu": "إغلاق القائمة",
+    "crosshairs": "Crosshairs",
+    "customization": "Customization",
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "تنزيلات",
@@ -465,6 +564,12 @@
       "version": "API Version"
     },
     "back": "Back",
+    "disclaimer": {
+      "acknowledge": "أفهم أن التعديلات هي محتوى من طرف ثالث",
+      "description": "جميع التعديلات المتاحة من خلال مدير تعديلات Deadlock هي محتوى من طرف ثالث تم إنشاؤه بواسطة أعضاء المجتمع.",
+      "notice": "التعديلات ليست من إنشاء أو مراجعة أو التحقق منها أو تأييدها من قبل مشروع مدير تعديلات Deadlock. قم بتثبيت التعديلات على مسؤوليتك الخاصة.",
+      "title": "محتوى من طرف ثالث"
+    },
     "finish": "Finish",
     "gamePath": {
       "browse": "Browse Manually",
@@ -770,6 +875,20 @@
     "audioVolumeDescription": "اضبط مستوى الصوت لمعاينة وتشغيل الصوت",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "إعادة تطبيق التعديلات تلقائيًا عند تشغيل مدير التعديلات.",
+    "autoUpdate": "Automatic Updates",
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "autoexec": "Autoexec.cfg",
+    "autoexecContent": "Config File Content",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
     "backupCreated": "تم إنشاء النسخة الاحتياطية بنجاح",
     "backupCreationFailed": "فشل في إنشاء النسخة الاحتياطية",
     "backupDate": "التاريخ",
@@ -786,11 +905,16 @@
     "browseGamePath": "Browse",
     "clearAllMods": "امسح جميع التعديلات",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirmClearModsState": "Clear Mods State?",
+    "confirmClearModsStateAction": "Clear State",
+    "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "createBackup": "إنشاء نسخة احتياطية",
     "createCustomSetting": "إنشاء إعداد مخصص",
     "createCustomSettingDescription": "أضف إعدادًا مخصصًا إلى اللعبة. سيتم إضافة هذه إلى اللعبة كخيارات تشغيل.",
     "creatingBackup": "جاري إنشاء النسخة الاحتياطية...",
     "currentGamePath": "Current Game Path",
+    "customCrosshairs": "Custom Crosshairs",
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file.",
     "defaultSort": "الفرز الافتراضي",
     "defaultSortDescription": "اختر ترتيب الفرز الافتراضي لصفحة التعديلات.",
     "defaultSortValue": "قيمة الفرز الافتراضية",
@@ -827,9 +951,12 @@
     "launchOptions": "خيارات التشغيل",
     "launchOptionsDescription": "تخصيص خيارات التشغيل للعبة. يتم تطبيقها بغض النظر عن وضع اللعبة المحدد (أصلية أو معدلة).",
     "launchVanillaNoArgs": "تشغيل اللعبة في الوضع الأصلي بدون وسائط إضافية.",
+    "modsStateCleared": "Mods state cleared successfully",
     "noBackupsFound": "لم يتم العثور على نسخ احتياطية",
     "openBackupsFolder": "افتح مجلد النسخ الاحتياطية",
     "openGameFolder": "افتح مجلد اللعبة",
+    "openInEditor": "Open in Editor",
+    "openInFolder": "Open in Folder",
     "openModsFolder": "افتح مجلد التعديلات",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
@@ -840,6 +967,7 @@
     "restoreStrategyReplace": "استبدال - مسح مجلد الإضافات أولاً",
     "restoreStrategyWarning": "لا يمكن التراجع عن هذا الإجراء. الرجاء الاختيار بعناية.",
     "restoringBackup": "جاري استعادة النسخة الاحتياطية...",
+    "saveChanges": "Save Changes",
     "selectDefaultSort": "اختر الفرز الافتراضي",
     "selectType": "اختر النوع",
     "settingCreated": "تم إنشاء الإعداد",
@@ -920,14 +1048,6 @@
     "gotIt": "فهمت!",
     "title": "ما الجديد",
     "versions": {
-      "0.10.1": {
-        "title": "إصلاحات VPK واستيراد الملف الشخصي",
-        "features": [
-          "🔧 تم إصلاح ترقيم VPK لملء الفجوات بشكل تسلسلي بدلاً من الإلحاق في النهاية",
-          "📁 تم إصلاح استيراد الملف الشخصي الذي لم يتخطى مربع حوار شجرة الملفات للوحدات متعددة الملفات",
-          "🔄 تم إصلاح مربع حوار اختيار ملف VPK الذي ظهر عند إعادة تمكين الوحدات التي تحتوي على ملفات متعددة"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -942,6 +1062,45 @@
           "📦 Mods no longer removed from addons folder in vanilla mode"
         ],
         "title": "Profile Management, Developer Tools, Plugins & Enhanced Features"
+      },
+      "0.10.1": {
+        "features": [
+          "🔧 تم إصلاح ترقيم VPK لملء الفجوات بشكل تسلسلي بدلاً من الإلحاق في النهاية",
+          "📁 تم إصلاح استيراد الملف الشخصي الذي لم يتخطى مربع حوار شجرة الملفات للوحدات متعددة الملفات",
+          "🔄 تم إصلاح مربع حوار اختيار ملف VPK الذي ظهر عند إعادة تمكين الوحدات التي تحتوي على ملفات متعددة"
+        ],
+        "title": "إصلاحات VPK واستيراد الملف الشخصي"
+      },
+      "0.11.0": {
+        "features": [
+          "🎯 Crosshair publishing feature - create, publish, and browse community crosshairs with a built-in generator",
+          "⚙️ Autoexec configuration editor - manage your autoexec.cfg file directly from the app",
+          "🔧 Improved cache ingestion efficiency and plugin asset handling",
+          "⌨️ Updated zoom shortcut key and improved shortcut display formatting"
+        ],
+        "title": "Crosshairs & Autoexec Support"
+      },
+      "0.11.1": {
+        "features": [
+          "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
+          "🌐 Japanese language support added to the application",
+          "🔧 Minor bug fixes and stability improvements"
+        ],
+        "title": "Crosshair UX Improvements & Japanese Support"
+      },
+      "0.12.0": {
+        "features": [
+          "🔒 Auth refactor - improved authentication and authorization flow"
+        ],
+        "title": "Auth Refactor"
+      },
+      "0.13.0": {
+        "features": [
+          "🔧 Fixed broken deep links",
+          "🔧 Improved logging in desktop app",
+          "🔧 Ensure we identify logged in users using their USER ID"
+        ],
+        "title": "Bug Fixes & Improvements"
       },
       "0.2.0": {
         "features": [

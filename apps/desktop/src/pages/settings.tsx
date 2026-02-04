@@ -38,6 +38,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
 import { useConfirm } from "@/components/providers/alert-dialog";
@@ -548,6 +549,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsContent>
 
             <TabsContent className='mt-0 space-y-2' value='about'>
+              <div className='rounded-lg border bg-card p-4'>
+                <div className='flex flex-col gap-2'>
+                  <div className='flex items-center gap-2'>
+                    <WarningCircle className='h-5 w-5 text-amber-500' />
+                    <h3 className='font-semibold text-primary'>
+                      {t("about.thirdPartyDisclaimerTitle")}
+                    </h3>
+                  </div>
+                  <p className='text-muted-foreground text-sm'>
+                    {t("about.thirdPartyDisclaimerDescription")}
+                  </p>
+                </div>
+              </div>
               <Section
                 description={t("about.description")}
                 title={t("about.title")}>
@@ -626,6 +640,29 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       <p className='text-muted-foreground text-sm'>
                         {t("about.openSourceDescription")}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className='rounded-lg border bg-card p-4'>
+                    <div className='flex flex-col gap-2'>
+                      <h3 className='font-semibold text-primary'>
+                        {t("about.resetOnboarding")}
+                      </h3>
+                      <p className='text-muted-foreground text-sm'>
+                        {t("about.resetOnboardingDescription")}
+                      </p>
+                      <Button
+                        className='mt-2 w-fit'
+                        onClick={() => {
+                          usePersistedStore
+                            .getState()
+                            .setHasCompletedOnboarding(false);
+                          toast.success(t("about.resetOnboardingSuccess"));
+                        }}
+                        size='sm'
+                        variant='outline'>
+                        {t("about.resetOnboarding")}
+                      </Button>
                     </div>
                   </div>
                 </div>
