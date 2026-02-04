@@ -121,6 +121,108 @@ impl FileSystemHelper {
     }
     Ok(())
   }
+
+  /// Create a directory symlink (cross-platform)
+  /// On Windows, this creates a directory junction which doesn't require admin privileges
+  #[cfg(windows)]
+  pub fn create_directory_symlink(&self, target: &Path, link: &Path) -> Result<(), Error> {
+    use std::os::windows::fs::symlink_dir;
+    use std::process::Command;
+
+    log::info!("Creating directory symlink: {:?} -> {:?}", link, target);
+
+    // First try symlink_dir (requires admin or developer mode)
+    match symlink_dir(target, link) {
+      Ok(()) => {
+        log::info!("Created symlink successfully");
+        return Ok(());
+      }
+      Err(e) => {
+        log::warn!(
+          "symlink_dir failed (may need admin privileges): {}, trying junction",
+          e
+        );
+      }
+    }
+
+    // Fall back to junction (doesn't require admin privileges)
+    let output = Command::new("cmd")
+      .args([
+        "/C",
+        "mklink",
+        "/J",
+        &link.to_string_lossy(),
+        &target.to_string_lossy(),
+      ])
+      .output()?;
+
+    if output.status.success() {
+      log::info!("Created junction successfully");
+      Ok(())
+    } else {
+      let stderr = String::from_utf8_lossy(&output.stderr);
+      Err(Error::Io(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        format!("Failed to create junction: {}", stderr),
+      )))
+    }
+  }
+
+  /// Create a directory symlink (Unix)
+  #[cfg(unix)]
+  pub fn create_directory_symlink(&self, target: &Path, link: &Path) -> Result<(), Error> {
+    use std::os::unix::fs::symlink;
+
+    log::info!("Creating directory symlink: {:?} -> {:?}", link, target);
+    symlink(target, link)?;
+    log::info!("Created symlink successfully");
+    Ok(())
+  }
+
+  /// Check if a path is a symlink
+  pub fn is_symlink(&self, path: &Path) -> bool {
+    path
+      .symlink_metadata()
+      .map(|m| m.file_type().is_symlink())
+      .unwrap_or(false)
+  }
+
+  /// Get the target of a symlink
+  pub fn read_symlink(&self, path: &Path) -> Result<std::path::PathBuf, Error> {
+    Ok(fs::read_link(path)?)
+  }
+
+  /// Move all contents from source directory to destination directory
+  pub fn move_directory_contents(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+    if !src.exists() {
+      return Ok(());
+    }
+
+    self.create_directories(dest)?;
+
+    for entry in fs::read_dir(src)? {
+      let entry = entry?;
+      let src_path = entry.path();
+      let file_name = entry.file_name();
+      let dest_path = dest.join(&file_name);
+
+      if src_path.is_dir() {
+        // Recursively move subdirectories
+        self.move_directory_contents(&src_path, &dest_path)?;
+        fs::remove_dir(&src_path)?;
+      } else {
+        // Move file (copy + delete for cross-device moves)
+        if dest_path.exists() {
+          log::debug!("Destination file already exists, skipping: {:?}", dest_path);
+        } else {
+          fs::copy(&src_path, &dest_path)?;
+        }
+        fs::remove_file(&src_path)?;
+      }
+    }
+
+    Ok(())
+  }
 }
 
 impl Default for FileSystemHelper {
