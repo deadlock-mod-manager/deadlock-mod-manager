@@ -605,6 +605,14 @@
       "description": "Ein dunkles Theme mit schwarz-roten Gradienten und karmesinroten Akzenten.",
       "visit": "Theme von Skeptic"
     },
+    "arcane": {
+      "description": "Ein elegantes dunkles Theme mit pink-roten Leuchteffekten, inspiriert von der Arcane-Ästhetik.",
+      "visit": "Theme von Skeptic",
+      "accentColor": "Akzentfarbe",
+      "customColor": "Benutzerdefinierte Farbe",
+      "customColorDescription": "Wähle eine benutzerdefinierte Akzentfarbe für das Arcane-Theme.",
+      "addCustomColor": "Farbe hinzufügen"
+    },
     "discord": {
       "applicationId": "Discord Application ID",
       "applicationIdDescription": "Keine Einrichtung nötig: Dieses Plugin verwendet unsere offizielle Discord‑Anwendung.",
@@ -642,17 +650,6 @@
       "visit": "Nightshift besuchen:"
     },
     "renderActive": "Plugin ist aktiv und läuft im Hintergrund",
-    "sudo": {
-      "description": "Erweiterte Mod-Verwaltung für fortgeschrittene Nutzer.",
-      "detailedDescription": "Schaltet entwicklerorientierte Steuerungen und experimentelle Funktionen frei. Manche Aktionen können Dateien ändern oder Schutzmechanismen umgehen. Mit Vorsicht verwenden.",
-      "importMod": "Mod importieren",
-      "instructions": "Links Mods durchsuchen, eine auswählen und mit dem rechten Pfeil herunterladen und aktivieren. Rechts eine installierte Mod auswählen und mit dem linken Pfeil entfernen. Beide Listen sind durchsuchbar.",
-      "openAddons": "Addons öffnen",
-      "removeMod": "Mod entfernen",
-      "title": "Superuser",
-      "usageInstructions": "Plugin aktivieren, um den Superuser‑Modus einzuschalten. Entwickleroptionen und erweiterte Tools werden in der App sichtbar. Zum Beenden Plugin wieder deaktivieren.",
-      "viewOriginalPost": "Zum ursprünglichen Forenbeitrag"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "Ein gemütliches beiges Theme, erstellt für den YouTuber und Twitch-Streamer Snipztea.",

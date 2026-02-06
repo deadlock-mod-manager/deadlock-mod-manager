@@ -621,6 +621,14 @@
       "description": "Es dunkels Theme mit schwarz‑rote Gradiente und karmesinrote Akzänte.",
       "visit": "Theme vo Skeptic"
     },
+    "arcane": {
+      "description": "Es elegants dunkels Theme mit pink-rote Lüchteffekte, inspiriert vo dr Arcane-Ästhetik.",
+      "visit": "Theme vo Skeptic",
+      "accentColor": "Akzäntfarb",
+      "customColor": "Eigeni Farb",
+      "customColorDescription": "Wähl e eigeni Akzäntfarb für s'Arcane-Theme.",
+      "addCustomColor": "Farb hinzuefüege"
+    },
     "discord": {
       "applicationId": "Discord Application ID",
       "applicationIdDescription": "Kei Iirichtig nötig: Das Plugin brucht unseri offizielli Discord‑Aawendig.",
@@ -658,34 +666,6 @@
       "visit": "Nightshift bsueche:"
     },
     "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund",
-    "sudo": {
-      "description": "Advanced mod management tools for experienced users.",
-      "detailedDescription": "Unlocks developer-oriented controls and experimental features. Some actions can modify files or bypass safeguards. Use with caution.",
-      "importMod": "Import Mod",
-      "instructions": "Browse mods on the left, select one, then use the right arrow to download and enable it. Select an installed mod on the right and use the left arrow to remove it. You can search both lists.",
-      "openAddons": "Open Addons",
-      "removeMod": "Remove mod",
-      "title": "Superuser",
-      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
-      "viewOriginalPost": "View original forum post"
-    },
-    "sudo-new": {
-      "description": "Erwyterti Mod-Verwaltig für erfahrni Nutzer.",
-      "detailedDescription": "Schaltet Entwickler‑Tools und experimentelli Funktione frei. Einigi Aktione chönd Dateie ändere oder Schutz umgoh – drum mit Vorsicht.",
-      "importMod": "Mod importiere",
-      "instructions": "Links Mods dursueche, eis wybä und mit em rächte Pfiil abe‑ und aktivierä. Rechts e installierti Mod wybä und mit em linke Pfiil lösche. Bäidi Lischtä chönd dürsuächt wärde.",
-      "openAddons": "Addons öffne",
-      "removeMod": "Mod lösche",
-      "title": "Superuser",
-      "usageInstructions": "Plugin aktiviere, zum Superuser‑Modus aaschalte. Erwyterti Optionä werde sichtbar. Zum Usschalte Plugin wieder deaktiviere.",
-      "viewOriginalPost": "Original Forumsbäitrag aaluege"
-    },
-    "sudo-old": {
-      "description": "Erwiiterti Mod‑Verwaltig für erfahrni Nutzer.",
-      "detailedDescription": "Schaltet Entwickler‑Funktione und experimental Tools frei. Eini Aktione chönd Dateie ändere oder Schutze umgoh – mit Vorsicht bruche.",
-      "title": "Superuser‑Modus",
-      "usageInstructions": "Plugin aktiviere, zum dr Superuser‑Modus aaschalte. D'Erweitertigä Optionä erscheine in dr App. Zum Usschalte s'Plugin wieder deaktivierä."
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "Es gmüetlichs beige Theme für de YouTuber und Twitch-Streamer Snipztea.",

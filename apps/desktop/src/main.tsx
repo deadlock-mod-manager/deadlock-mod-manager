@@ -17,8 +17,6 @@ import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
 import CustomSettings from "./pages/settings";
 import Splash from "./pages/splash";
-import SudoPage from "./plugins/sudo/src/sudo";
-
 import "./index.css";
 import "./lib/i18n";
 
@@ -38,7 +36,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Developer />} path='/developer' />
               <Route element={<PluginEntry />} path='/plugins/:id' />
-              <Route element={<SudoPage />} path='/sudo' />
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route

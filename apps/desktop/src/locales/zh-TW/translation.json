@@ -1,4 +1,4 @@
-{
+﻿{
   "about": {
     "checkForUpdates": "檢查更新",
     "close": "關閉",
@@ -605,6 +605,14 @@
       "description": "帶有黑紅漸變和深紅色點綴的暗黑主題。",
       "visit": "Skeptic 製作的主題"
     },
+    "arcane": {
+      "description": "一款優雅的暗黑主題，帶有粉紅色發光效果，靈感來自Arcane美學。",
+      "visit": "Skeptic 製作的主題",
+      "accentColor": "強調色",
+      "customColor": "自訂顏色",
+      "customColorDescription": "為Arcane主題選擇自訂強調色。",
+      "addCustomColor": "新增顏色"
+    },
     "discord": {
       "applicationId": "Discord 應用程式 ID",
       "applicationIdDescription": "無需設定：此外掛程式使用我們的官方 Discord 應用程式。",
@@ -642,17 +650,6 @@
       "visit": "造訪 Nightshift："
     },
     "renderActive": "Plugin is active and running in the background",
-    "sudo": {
-      "description": "提供進階使用者的模組管理工具。",
-      "detailedDescription": "解鎖開發者導向的控制與實驗性功能。部分操作可能會修改檔案或繞過保護，請小心使用。",
-      "importMod": "匯入模組",
-      "instructions": "在左側瀏覽模組，選擇後按右箭頭下載並啟用。於右側選擇已安裝的模組並按左箭頭移除。兩側列表皆可搜尋。",
-      "openAddons": "開啟附加元件",
-      "removeMod": "移除模組",
-      "title": "超級使用者",
-      "usageInstructions": "啟用外掛以開啟超級使用者模式。進階選項會顯示；停用外掛即可隱藏。",
-      "viewOriginalPost": "查看原始論壇貼文"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "為 YouTuber 與 Twitch 實況主 Snipztea 製作的溫暖米色主題。",

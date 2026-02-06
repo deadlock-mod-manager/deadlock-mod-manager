@@ -1,4 +1,4 @@
-{
+﻿{
   "about": {
     "checkForUpdates": "Buscar Atualizações",
     "close": "Fechar",
@@ -602,8 +602,16 @@
       "usageInstructions": "To use this plugin: 1) Enable the plugin using the toggle, 2) Enter an image URL or click 'Choose Image' to upload a local file, 3) Adjust opacity and blur settings as desired, 4) Optionally enable 'Include sidebar' to apply the background to the sidebar as well."
     },
     "bloodmoon": {
-      "description": "A dark theme with black-red gradients and crimson accents.",
-      "visit": "Theme by Skeptic"
+      "description": "Um tema escuro com gradientes preto-vermelho e acentos carmesim.",
+      "visit": "Tema por Skeptic"
+    },
+    "arcane": {
+      "description": "Um elegante tema escuro com efeitos de brilho rosa-vermelho inspirado na estética de Arcane.",
+      "visit": "Tema por Skeptic",
+      "accentColor": "Cor de destaque",
+      "customColor": "Cor personalizada",
+      "customColorDescription": "Escolha uma cor de destaque personalizada para o tema Arcane.",
+      "addCustomColor": "Adicionar cor"
     },
     "discord": {
       "applicationId": "Discord Application ID",
@@ -642,17 +650,6 @@
       "visit": "Visit Nightshift:"
     },
     "renderActive": "Plugin is active and running in the background",
-    "sudo": {
-      "description": "Advanced mod management tools for experienced users.",
-      "detailedDescription": "Unlocks developer-oriented controls and experimental features. Some actions can modify files or bypass safeguards. Use with caution.",
-      "importMod": "Import Mod",
-      "instructions": "Browse mods on the left, select one, then use the right arrow to download and enable it. Select an installed mod on the right and use the left arrow to remove it. You can search both lists.",
-      "openAddons": "Open Addons",
-      "removeMod": "Remove mod",
-      "title": "Superuser",
-      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
-      "viewOriginalPost": "View original forum post"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "Um tema bege acolhedor criado para o youtuber e streamer da Twitch Snipztea.",

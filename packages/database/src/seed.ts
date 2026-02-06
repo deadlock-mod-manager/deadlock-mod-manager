@@ -20,13 +20,37 @@ import { db, eq, schema } from "./client";
         {
           name: "profile-sharing",
           description: "Enable profile sharing functionality",
-          value: false, // Disabled by default
+          value: false,
         },
         {
           name: "profile-management",
           description:
             "Enable profile management features (create, edit, switch profiles)",
-          value: false, // Disabled by default
+          value: false,
+        },
+        {
+          name: "plugin-themes",
+          description: "Enable Themes plugin",
+          value: true,
+          exposed: true,
+        },
+        {
+          name: "plugin-background",
+          description: "Enable Background plugin",
+          value: true,
+          exposed: true,
+        },
+        {
+          name: "plugin-discord",
+          description: "Enable Discord RPC plugin",
+          value: true,
+          exposed: true,
+        },
+        {
+          name: "plugin-flashbang",
+          description: "Enable Flashbang plugin",
+          value: true,
+          exposed: true,
         },
       ])
       .onConflictDoNothing();

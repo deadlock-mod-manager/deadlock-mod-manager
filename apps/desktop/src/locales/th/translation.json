@@ -1,4 +1,4 @@
-{
+﻿{
   "about": {
     "checkForUpdates": "ตรวจสอบการอัปเดต",
     "close": "ปิด",
@@ -605,8 +605,16 @@
       "usageInstructions": "To use this plugin: 1) Enable the plugin using the toggle, 2) Enter an image URL or click 'Choose Image' to upload a local file, 3) Adjust opacity and blur settings as desired, 4) Optionally enable 'Include sidebar' to apply the background to the sidebar as well."
     },
     "bloodmoon": {
-      "description": "A dark theme with black-red gradients and crimson accents.",
-      "visit": "Theme by Skeptic"
+      "description": "ธีมมืดพร้อมการไล่ระดับสีดำ-แดงและสีแดงเข้ม",
+      "visit": "ธีมโดย Skeptic"
+    },
+    "arcane": {
+      "description": "ธีมมืดสง่างามพร้อมเอฟเฟกต์เรืองแสงสีชมพู-แดง ได้รับแรงบันดาลใจจากสไตล์ Arcane",
+      "visit": "ธีมโดย Skeptic",
+      "accentColor": "สีเน้น",
+      "customColor": "สีกำหนดเอง",
+      "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane",
+      "addCustomColor": "เพิ่มสี"
     },
     "discord": {
       "applicationId": "Discord Application ID",
@@ -645,17 +653,6 @@
       "visit": "Visit Nightshift:"
     },
     "renderActive": "Plugin is active and running in the background",
-    "sudo": {
-      "description": "เครื่องมือจัดการม็อดขั้นสูงสำหรับผู้ใช้ที่มีประสบการณ์",
-      "detailedDescription": "ปลดล็อกการควบคุมสำหรับนักพัฒนาและฟีเจอร์ทดลอง บางการกระทำอาจแก้ไขไฟล์หรือข้ามการป้องกัน ใช้อย่างระมัดระวัง",
-      "importMod": "นำเข้า Mod",
-      "instructions": "ทางซ้ายสามารถค้นหาและเลือกม็อด จากนั้นกดลูกศรขวาเพื่อดาวน์โหลดและเปิดใช้งาน ทางขวาเลือกม็อดที่ติดตั้งแล้วและกดลูกศรซ้ายเพื่อลบ รายการทั้งสองสามารถค้นหาได้",
-      "openAddons": "เปิดโฟลเดอร์ Addons",
-      "removeMod": "ลบม็อด",
-      "title": "ผู้ใช้ระดับสูง",
-      "usageInstructions": "เปิดปลั๊กอินเพื่อเข้าสู่โหมดผู้ใช้ระดับสูง ตัวเลือกขั้นสูงจะปรากฏ ปิดปลั๊กอินเพื่อซ่อน",
-      "viewOriginalPost": "ดูโพสต์ต้นฉบับในฟอรั่ม"
-    },
     "tea": {
       "carrd": "Carrd",
       "description": "A cozy beige theme created for the YouTuber and Twitch streamer Snipztea.",
