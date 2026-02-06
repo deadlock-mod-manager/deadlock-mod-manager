@@ -15,11 +15,10 @@ import {
   LoaderIcon,
   LogInIcon,
 } from "@deadlock-mods/ui/icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { exchangeCodeForTokens, initiateOIDCLogin } from "@/lib/auth/oidc";
-import { setTokens } from "@/lib/auth/token";
+import { useAuth, oidcListenerManager } from "@/hooks/use-auth";
+import { initiateOIDCLogin } from "@/lib/auth/oidc";
 
 type AuthStep = "idle" | "redirecting" | "code-entry";
 
@@ -27,7 +26,6 @@ const FALLBACK_TIMEOUT_MS = 5000;
 
 const AuthModal = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<AuthStep>("idle");
   const [code, setCode] = useState("");
@@ -43,24 +41,15 @@ const AuthModal = () => {
   };
 
   const exchangeCodeMutation = useMutation({
-    mutationFn: async (code: string) => {
-      const tokenResponse = await exchangeCodeForTokens(code.trim());
-      await setTokens(tokenResponse);
-      return tokenResponse;
-    },
-    onSuccess: () => {
-      toast.success("Successfully logged in!");
-      handleClose();
-      queryClient.invalidateQueries({ queryKey: ["oidc-session"] });
-      queryClient.invalidateQueries({ queryKey: ["feature-flags"] });
-    },
-    onError: (error) => {
-      console.error("Token exchange error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to authenticate",
-      );
-    },
+    mutationFn: (code: string) => oidcListenerManager.handleCodeExchange(code),
+    meta: { skipGlobalErrorHandler: true },
   });
+
+  useEffect(() => {
+    if (isAuthenticated && isOpen) {
+      handleClose();
+    }
+  }, [isAuthenticated, isOpen]);
 
   useEffect(() => {
     return () => {
@@ -91,7 +80,7 @@ const AuthModal = () => {
       return;
     }
 
-    exchangeCodeMutation.mutate(code);
+    exchangeCodeMutation.mutate(code.trim());
   };
 
   return (
