@@ -103,6 +103,10 @@
     "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
     "failedToPerformAction": "Failed to perform action"
   },
+  "warnings": {
+    "obsoleteLabel": "Obsolete",
+    "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version."
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -313,6 +317,9 @@
   "about": {
     "title": "About",
     "description": "Deadlock Mod Manager is a tool for installing and managing mods for the Valve game \"Deadlock\".",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
     "gamebananaDescription": "Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.",
     "visitGamebanana": "Visit GameBanana",
     "tauriDescription": "The powerful framework that enables this cross-platform desktop application. Tauri combines the best of web technologies with native performance and security.",
@@ -332,7 +339,10 @@
     "latestVersion": "You have the latest version.",
     "updateFailed": "Failed to check for updates, you may need to manually update the app.",
     "tauriVersion": "Tauri version:",
-    "copyright": "Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation."
+    "copyright": "Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation.",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch"
   },
   "update": {
     "available": "Update Available",
@@ -523,6 +533,12 @@
     "back": "Back",
     "next": "Next",
     "finish": "Finish",
+    "disclaimer": {
+      "title": "Third-Party Content",
+      "description": "All mods available through Deadlock Mod Manager are third-party content created by community members.",
+      "notice": "Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+      "acknowledge": "I understand that mods are third-party content"
+    },
     "gamePath": {
       "title": "Game Path Detection",
       "description": "We'll automatically detect your Deadlock installation path.",
@@ -600,6 +616,13 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.13.1": {
+        "title": "Third-Party Content Disclaimer & Improvements",
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ]
+      },
       "0.13.0": {
         "title": "Bug Fixes & Improvements",
         "features": [

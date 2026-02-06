@@ -85,10 +85,10 @@ spec:
           {{- end }}
           resources:
             requests:
-              memory: {{ .Values.deployments.auth.memory }}
+              memory: {{ .Values.deployments.auth.memory.request | default .Values.deployments.auth.memory }}
               cpu: {{ .Values.deployments.auth.cpu }}
             limits:
-              memory: {{ .Values.deployments.auth.memory }}
+              memory: {{ .Values.deployments.auth.memory.limit | default .Values.deployments.auth.memory }}
           envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
           env:
             {{- if .Values.env }}

@@ -1,5 +1,34 @@
 # api
 
+## 2.6.0
+
+### Minor Changes
+
+- 0892387: Remove old KV-parser (TS package) and replace with KV-parser-rs
+- 3414ada: Add Redis caching for mod listings and stats to reduce database egress bandwidth
+
+### Patch Changes
+
+- d61e80f: Disable automatic hourly database backups in GitHub Actions
+- 9c0bbf1: Optimize database queries and add Redis caching for high-volume endpoints
+  - Change OAuth access token indexes to unique indexes for faster lookups
+  - Add Redis caching to report counts endpoint with 24h TTL
+  - Add Redis caching to individual mod lookup endpoint
+
+- Updated dependencies [07b9688]
+- Updated dependencies [0892387]
+- Updated dependencies [3414ada]
+- Updated dependencies [9c0bbf1]
+- Updated dependencies [729e39c]
+- Updated dependencies [0892387]
+  - @deadlock-mods/database@1.7.1
+  - @deadlock-mods/kv-parser@0.3.0
+  - @deadlock-mods/common@1.2.0
+  - @deadlock-mods/feature-flags@0.2.3
+  - @deadlock-mods/distributed-lock@1.0.5
+  - @deadlock-mods/instrumentation@0.1.5
+  - @deadlock-mods/shared@1.7.0
+
 ## 2.5.0
 
 ### Minor Changes

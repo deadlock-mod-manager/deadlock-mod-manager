@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Helper for date fields that may come as strings from cache (JSON serialization)
+const coercedDateNullable = z.coerce.date().nullable();
+
 export const AnnouncementStatusSchema = z.enum([
   "draft",
   "published",
@@ -22,9 +25,9 @@ export const AnnouncementDtoSchema = z.object({
   category: AnnouncementCategorySchema,
   status: AnnouncementStatusSchema,
   authorId: z.string(),
-  publishedAt: z.date().nullable(),
-  createdAt: z.date().nullable(),
-  updatedAt: z.date().nullable(),
+  publishedAt: coercedDateNullable,
+  createdAt: coercedDateNullable,
+  updatedAt: coercedDateNullable,
 });
 
 export const CreateAnnouncementSchema = z.object({

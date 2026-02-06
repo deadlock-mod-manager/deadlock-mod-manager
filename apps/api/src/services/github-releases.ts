@@ -40,18 +40,34 @@ export class GitHubReleasesService {
   private parsePlatformFromFilename(filename: string): {
     platform: "windows" | "macos" | "linux";
     architecture: "x64" | "arm64" | "universal";
+    installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "appimage" | "sig";
   } | null {
     const name = filename.toLowerCase();
 
     // Windows patterns
+    if (name.endsWith(".msi.sig")) {
+      const arch = name.includes("arm64") ? "arm64" : "x64";
+      return { platform: "windows", architecture: arch, installerType: "sig" };
+    }
+
+    if (name.endsWith(".msi")) {
+      const arch = name.includes("arm64") ? "arm64" : "x64";
+      return { platform: "windows", architecture: arch, installerType: "msi" };
+    }
+
+    if (name.endsWith(".exe") || name.endsWith(".exe.sig")) {
+      const arch = name.includes("arm64") ? "arm64" : "x64";
+      const installerType = name.endsWith(".sig") ? "sig" : "exe";
+      return { platform: "windows", architecture: arch, installerType };
+    }
+
     if (
-      name.includes(".exe") ||
       name.includes("windows") ||
       name.includes("win32") ||
       name.includes("win64")
     ) {
       const arch = name.includes("arm64") ? "arm64" : "x64";
-      return { platform: "windows", architecture: arch };
+      return { platform: "windows", architecture: arch, installerType: "exe" };
     }
 
     // macOS patterns
@@ -65,19 +81,58 @@ export class GitHubReleasesService {
         : name.includes("x64") || name.includes("x86_64")
           ? "x64"
           : "universal";
-      return { platform: "macos", architecture: arch };
+      return { platform: "macos", architecture: arch, installerType: "dmg" };
     }
 
-    // Linux patterns
-    if (
-      name.includes(".appimage") ||
-      name.includes(".deb") ||
-      name.includes(".rpm") ||
-      name.includes("linux")
-    ) {
+    // Linux patterns - check .sig files first
+    if (name.endsWith(".appimage.sig")) {
       const arch =
         name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch };
+      return { platform: "linux", architecture: arch, installerType: "sig" };
+    }
+
+    if (name.endsWith(".deb.sig")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return { platform: "linux", architecture: arch, installerType: "sig" };
+    }
+
+    if (name.endsWith(".rpm.sig")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return { platform: "linux", architecture: arch, installerType: "sig" };
+    }
+
+    if (name.endsWith(".appimage")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return {
+        platform: "linux",
+        architecture: arch,
+        installerType: "appimage",
+      };
+    }
+
+    if (name.endsWith(".deb")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return { platform: "linux", architecture: arch, installerType: "deb" };
+    }
+
+    if (name.endsWith(".rpm")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return { platform: "linux", architecture: arch, installerType: "rpm" };
+    }
+
+    if (name.includes("linux")) {
+      const arch =
+        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
+      return {
+        platform: "linux",
+        architecture: arch,
+        installerType: "appimage",
+      };
     }
 
     return null;
@@ -99,6 +154,7 @@ export class GitHubReleasesService {
         downloads.push({
           platform: platformInfo.platform,
           architecture: platformInfo.architecture,
+          installerType: platformInfo.installerType,
           url: asset.browser_download_url,
           filename: asset.name,
           size: asset.size,

@@ -35,11 +35,9 @@ export const formatLogComponents = ({
   let formattedMetadata = "";
   let error = initialError as LogMessageError | undefined;
 
-  if (initialError) {
-    console.error("Error: ", JSON.stringify(initialError, null, 2));
-  }
-
   if (isMessageObject(message)) {
+    // eslint-disable-next-line no-console
+    console.error(error); // Explicitly log full error object
     error = message.error;
 
     const { error: _, ...metadata } = message;
@@ -56,7 +54,16 @@ export const formatLogComponents = ({
       {} as Record<string, unknown>,
     );
 
-    formattedMetadata = logfmt.stringify(filteredMetadata);
+    try {
+      const logfmtResult = logfmt.stringify(filteredMetadata);
+      if (logfmtResult.includes("[object Object]")) {
+        formattedMetadata = JSON.stringify(filteredMetadata, null, 2);
+      } else {
+        formattedMetadata = logfmtResult;
+      }
+    } catch {
+      formattedMetadata = JSON.stringify(filteredMetadata, null, 2);
+    }
     formattedMessage = error?.message ?? "An error occurred";
   } else {
     formattedMessage = String(message);
@@ -65,9 +72,7 @@ export const formatLogComponents = ({
     const filteredMeta = Object.entries(meta).reduce(
       (acc, [key, value]) => {
         // Skip special symbols
-        if (typeof key === "symbol") {
-          return acc;
-        }
+        if (typeof key === "symbol") return acc;
 
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
@@ -78,7 +83,16 @@ export const formatLogComponents = ({
       {} as Record<string, unknown>,
     );
 
-    formattedMetadata = logfmt.stringify(filteredMeta);
+    try {
+      const logfmtResult = logfmt.stringify(filteredMeta);
+      if (logfmtResult.includes("[object Object]")) {
+        formattedMetadata = JSON.stringify(filteredMeta, null, 2);
+      } else {
+        formattedMetadata = logfmtResult;
+      }
+    } catch {
+      formattedMetadata = JSON.stringify(filteredMeta, null, 2);
+    }
   }
 
   return {

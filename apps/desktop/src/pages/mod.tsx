@@ -17,6 +17,7 @@ import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
+import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
@@ -145,6 +146,11 @@ const Mod = () => {
               Back to Mods
             </Button>
           </div>
+          {mod.isObsolete && (
+            <div className='mb-4'>
+              <ObsoleteModWarning variant='alert' />
+            </div>
+          )}
           {isModOutdated(mod) && (
             <div className='mb-4'>
               <OutdatedModWarning variant='alert' />

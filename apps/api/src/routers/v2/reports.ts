@@ -1,7 +1,9 @@
 import { db, ModRepository, ReportRepository } from "@deadlock-mods/database";
 import { toReportDto, toReportWithModDto } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { CACHE_TTL } from "@/lib/constants";
 import { logger } from "@/lib/logger";
+import { cache } from "@/lib/redis";
 import { publicProcedure } from "../../lib/orpc";
 import { reportService } from "../../services/report";
 import {
@@ -115,8 +117,14 @@ export const reportsRouter = {
     .output(ReportResponseSchema.array())
     .handler(async ({ input }) => {
       try {
-        const reports = await reportRepository.findByModId(input.modId);
-        return reports.map(toReportDto);
+        return await cache.wrap(
+          `reports:mod:${input.modId}`,
+          async () => {
+            const reports = await reportRepository.findByModId(input.modId);
+            return reports.map(toReportDto);
+          },
+          CACHE_TTL.REPORT_COUNTS,
+        );
       } catch (error) {
         logger
           .withError(error)
@@ -134,10 +142,16 @@ export const reportsRouter = {
     .output(ReportCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
-        const counts = await reportRepository.getReportCountsByType(
-          input.modId,
+        return await cache.wrap(
+          `reports:counts:${input.modId}`,
+          async () => {
+            const counts = await reportRepository.getReportCountsByType(
+              input.modId,
+            );
+            return counts;
+          },
+          CACHE_TTL.REPORT_COUNTS,
         );
-        return counts;
       } catch (error) {
         logger
           .withError(error)
@@ -155,8 +169,16 @@ export const reportsRouter = {
     .output(ReportWithModResponseSchema.array())
     .handler(async ({ input }) => {
       try {
-        const reports = await reportRepository.getRecentReports(input.limit);
-        return reports.map(toReportWithModDto);
+        return await cache.wrap(
+          `reports:recent:${input.limit}`,
+          async () => {
+            const reports = await reportRepository.getRecentReports(
+              input.limit,
+            );
+            return reports.map(toReportWithModDto);
+          },
+          CACHE_TTL.REPORT_COUNTS,
+        );
       } catch (error) {
         logger
           .withError(error)

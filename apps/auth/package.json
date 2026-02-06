@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/auth",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "build": "tsr generate && vite build",
@@ -35,6 +35,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.68.0",
+    "reflect-metadata": "^0.2.2",
     "tailwindcss": "^4.1.18",
     "tsyringe": "^4.10.0",
     "zod": "catalog:"

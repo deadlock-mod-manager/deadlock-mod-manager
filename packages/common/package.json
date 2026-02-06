@@ -1,15 +1,17 @@
 {
   "name": "@deadlock-mods/common",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@isaacs/ttlcache": "catalog:",
-    "@type-cacheable/cache-manager-adapter": "catalog:",
-    "@type-cacheable/core": "catalog:",
+    "@keyv/redis": "catalog:",
     "cache-manager": "catalog:",
-    "cacheable": "catalog:",
+    "keyv": "catalog:",
     "pg": "^8.15.5",
     "zod": "catalog:"
   },

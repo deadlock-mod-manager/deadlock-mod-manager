@@ -22,7 +22,6 @@ export const chatSessions = pgTable(
     ...timestamps,
   },
   (t) => [
-    index("idx_chat_session_discord_user_id").on(t.discordUserId),
     index("idx_chat_session_discord_channel_id").on(t.discordChannelId),
     uniqueIndex("unique_chat_session_user_channel").on(
       t.discordUserId,

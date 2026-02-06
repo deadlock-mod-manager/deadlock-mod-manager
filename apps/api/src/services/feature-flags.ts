@@ -9,6 +9,7 @@ import {
 } from "@deadlock-mods/feature-flags";
 import { err, ok, ResultAsync } from "neverthrow";
 import { logger as mainLogger } from "../lib/logger";
+import { cache } from "../lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "feature-flags",
@@ -28,6 +29,7 @@ export class FeatureFlagsServiceSingleton {
     this.featureFlagService = new FeatureFlagService(
       logger,
       featureFlagRepository,
+      cache,
       this.segmentService,
     );
     this.registry = new FeatureFlagRegistry(this.featureFlagService, logger);
@@ -74,17 +76,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllFeatureFlags(options),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get all feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get all feature flags");
+      return error;
+    });
   }
 
   /**
@@ -94,17 +89,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getClientFeatureFlags(options),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get client feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get client feature flags");
+      return error;
+    });
   }
 
   /**
@@ -114,17 +102,10 @@ export class FeatureFlagsServiceSingleton {
     return ResultAsync.fromPromise(
       this.featureFlagService.getAllExposedFeatureFlags(),
       (error) => error as Error,
-    )
-      .andThen((result) => {
-        if (result.isErr()) {
-          return err(result.error);
-        }
-        return ok(result.value);
-      })
-      .mapErr((error) => {
-        logger.withError(error).warn("Failed to get all exposed feature flags");
-        return error;
-      });
+    ).mapErr((error) => {
+      logger.withError(error).warn("Failed to get all exposed feature flags");
+      return error;
+    });
   }
 
   /**

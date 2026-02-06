@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/database",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "exports": {
     ".": "./src/client.ts"
   },

@@ -5,11 +5,11 @@ packages:
 
 catalog:
   "@isaacs/ttlcache": ^1.4.1
+  "@keyv/redis": ^5.1.6
   "@sentry/node": ^10.15.0
-  "@type-cacheable/cache-manager-adapter": ^17.0.2
-  "@type-cacheable/core": ^14.2.1
-  cache-manager: ^5.7.6
+  cache-manager: ^7.2.8
   cacheable: ^2.1.0
+  keyv: ^5.6.0
   typescript: ^5.9.3
   zod: 4.1.9
   better-auth: ^1.4.6

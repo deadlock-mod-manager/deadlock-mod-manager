@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "idx_account_provider_account" ON "account" USING btree ("provider_id","account_id");--> statement-breakpoint
+CREATE INDEX "idx_report_mod_type_status" ON "report" USING btree ("mod_id","type","status");

@@ -197,6 +197,95 @@
     "shareUrl": "分享",
     "urlCopied": "URL 已复制到剪贴板！"
   },
+  "crosshairs": {
+    "activeCrosshairs": "Active Crosshairs",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "close": "Go back",
+    "currentlyActive": "Currently Active",
+    "dialog": {
+      "description": "Create and customize your crosshairs",
+      "title": "Generate Crosshair"
+    },
+    "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
+    "filters": {
+      "allTags": "All Tags",
+      "noTagsFound": "No tags found.",
+      "searchPlaceholder": "Search crosshairs...",
+      "searchTags": "Search tags...",
+      "tagLabel": "Tag:",
+      "tags": "Tags"
+    },
+    "form": {
+      "addTag": "Add",
+      "applied": "Crosshair applied successfully",
+      "apply": "Apply",
+      "applyError": "Failed to apply crosshair",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "descriptionValidation": "Description must be less than 500 characters",
+      "heroes": "Heroes",
+      "heroesSelected": "selected",
+      "heroesValidation": "Please select at least one hero (max 5)",
+      "import": {
+        "button": "Import",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "title": "Import Crosshair Settings"
+      },
+      "likeError": "Failed to toggle crosshair like",
+      "loginRequired": "You must be logged in to publish crosshairs",
+      "metadata": "Metadata",
+      "name": "Name",
+      "namePlaceholder": "My Awesome Crosshair",
+      "nameValidation": "Name must be between 3 and 50 characters",
+      "noHeroesFound": "No heroes found.",
+      "preview": "Preview",
+      "publish": "Publish",
+      "publishError": "Failed to publish crosshair",
+      "published": "Crosshair published successfully",
+      "publishing": "Publishing...",
+      "searchHeroes": "Search heroes...",
+      "selectHeroes": "Select heroes...",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tag and press Enter"
+    },
+    "generate": "Generate Crosshair",
+    "loadError": "Failed to load crosshairs",
+    "noActiveCrosshair": "No custom crosshair is currently active",
+    "noCrosshairs": "No crosshairs available",
+    "noCrosshairsFound": "No crosshairs found",
+    "noCrosshairsMatchFilters": "No crosshairs match your search or filters",
+    "preview": "Preview",
+    "previewDialog": {
+      "color": "Color",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command",
+      "configValues": "Configuration Values",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "gap": "Gap",
+      "height": "Height",
+      "hero": "Hero",
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "noBackground": "None",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "pipOpacity": "Pip Opacity",
+      "title": "Preview",
+      "width": "Width"
+    },
+    "remove": "Remove",
+    "removeFromHistory": "Remove from history",
+    "removedFromHistory": "Crosshair removed from history",
+    "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
+    "subtitle": "Create and customize your crosshairs",
+    "title": "Crosshairs",
+    "toggleError": "Failed to toggle custom crosshairs",
+    "tryClearingFilters": "Try clearing some filters to see more results"
+  },
   "dashboard": {
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
@@ -235,6 +324,13 @@
   },
   "errors": {
     "errorCode": "错误代码：",
+    "failedToParseGameConfiguration": {
+      "instruction": "Please follow these steps to resolve the issue:",
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
+    },
     "genericMessage": "很抱歉，处理您的请求时发生错误。",
     "goBack": "返回",
     "tryAgain": "重试"
@@ -421,7 +517,10 @@
   "navigation": {
     "about": "关于",
     "addMods": "添加模组",
+    "autoexec": "Autoexec Config",
     "collapseMenu": "折叠菜单",
+    "crosshairs": "Crosshairs",
+    "customization": "Customization",
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "下载",
@@ -437,6 +536,10 @@
     "installationCanceled": "安装已取消",
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 个文件。请选择要安装的文件。",
     "modInstalledSuccessfully": "模组安装成功"
+  },
+  "warnings": {
+    "obsoleteLabel": "已淘汰",
+    "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。"
   },
   "onboarding": {
     "addons": {
@@ -462,6 +565,12 @@
       "version": "API Version"
     },
     "back": "Back",
+    "disclaimer": {
+      "acknowledge": "我理解模组是第三方内容",
+      "description": "通过 Deadlock Mod Manager 提供的所有模组都是由社区成员创建的第三方内容。",
+      "notice": "模组并非由 Deadlock Mod Manager 项目创建、审查、验证或认可。请自行决定是否安装模组。",
+      "title": "第三方内容"
+    },
     "finish": "Finish",
     "gamePath": {
       "browse": "Browse Manually",
@@ -751,6 +860,20 @@
     "audioVolumeDescription": "调整音频预览和播放的音量",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "启动模组管理器时自动重新应用模组。",
+    "autoUpdate": "Automatic Updates",
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "autoexec": "Autoexec.cfg",
+    "autoexecContent": "Config File Content",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
     "backupCreated": "备份创建成功",
     "backupCreationFailed": "创建备份失败",
     "backupDate": "日期",
@@ -767,11 +890,16 @@
     "browseGamePath": "Browse",
     "clearAllMods": "清除所有模组",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
+    "confirmClearModsState": "Clear Mods State?",
+    "confirmClearModsStateAction": "Clear State",
+    "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "createBackup": "创建备份",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
     "creatingBackup": "正在创建备份...",
     "currentGamePath": "Current Game Path",
+    "customCrosshairs": "Custom Crosshairs",
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file.",
     "defaultSort": "默认排序",
     "defaultSortDescription": "选择模组页面的默认排序顺序。",
     "defaultSortValue": "默认排序值",
@@ -808,9 +936,12 @@
     "launchOptions": "启动选项",
     "launchOptionsDescription": "自定义游戏的启动选项。这些设置将应用于所选的任何游戏模式（纯净版或模组版）。",
     "launchVanillaNoArgs": "以纯净模式启动游戏，不添加额外参数。",
+    "modsStateCleared": "Mods state cleared successfully",
     "noBackupsFound": "未找到备份",
     "openBackupsFolder": "打开备份文件夹",
     "openGameFolder": "打开游戏文件夹",
+    "openInEditor": "Open in Editor",
+    "openInFolder": "Open in Folder",
     "openModsFolder": "打开模组文件夹",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
@@ -821,6 +952,7 @@
     "restoreStrategyReplace": "替换 - 先清空插件文件夹",
     "restoreStrategyWarning": "此操作无法撤销。请谨慎选择。",
     "restoringBackup": "正在恢复备份...",
+    "saveChanges": "Save Changes",
     "selectDefaultSort": "选择默认排序",
     "selectType": "选择类型",
     "settingCreated": "设置已创建",
@@ -901,14 +1033,6 @@
     "gotIt": "知道了！",
     "title": "更新日志",
     "versions": {
-      "0.10.1": {
-        "title": "VPK 和配置文件导入修复",
-        "features": [
-          "🔧 修复了 VPK 编号，按顺序填充空白而不是追加到末尾",
-          "📁 修复了配置文件导入未跳过多文件模组的文件树对话框",
-          "🔄 修复了重新启用多文件模组时出现的 VPK 文件选择对话框"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -923,6 +1047,45 @@
           "📦 Mods no longer removed from addons folder in vanilla mode"
         ],
         "title": "Profile Management, Developer Tools, Plugins & Enhanced Features"
+      },
+      "0.10.1": {
+        "features": [
+          "🔧 修复了 VPK 编号，按顺序填充空白而不是追加到末尾",
+          "📁 修复了配置文件导入未跳过多文件模组的文件树对话框",
+          "🔄 修复了重新启用多文件模组时出现的 VPK 文件选择对话框"
+        ],
+        "title": "VPK 和配置文件导入修复"
+      },
+      "0.11.0": {
+        "features": [
+          "🎯 Crosshair publishing feature - create, publish, and browse community crosshairs with a built-in generator",
+          "⚙️ Autoexec configuration editor - manage your autoexec.cfg file directly from the app",
+          "🔧 Improved cache ingestion efficiency and plugin asset handling",
+          "⌨️ Updated zoom shortcut key and improved shortcut display formatting"
+        ],
+        "title": "Crosshairs & Autoexec Support"
+      },
+      "0.11.1": {
+        "features": [
+          "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
+          "🌐 Japanese language support added to the application",
+          "🔧 Minor bug fixes and stability improvements"
+        ],
+        "title": "Crosshair UX Improvements & Japanese Support"
+      },
+      "0.12.0": {
+        "features": [
+          "🔒 Auth refactor - improved authentication and authorization flow"
+        ],
+        "title": "Auth Refactor"
+      },
+      "0.13.0": {
+        "features": [
+          "🔧 Fixed broken deep links",
+          "🔧 Improved logging in desktop app",
+          "🔧 Ensure we identify logged in users using their USER ID"
+        ],
+        "title": "Bug Fixes & Improvements"
       },
       "0.2.0": {
         "features": [

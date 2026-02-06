@@ -10,8 +10,8 @@ import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
+import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
-import { ReportCounter } from "@/components/reports/report-counter";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
@@ -85,8 +85,8 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
         <div className='absolute top-2 right-2 flex flex-col gap-1'>
           {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
           {status === ModStatus.Installed && <Badge>Installed</Badge>}
+          {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
           {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
-          <ReportCounter modId={mod.id} variant='indicator' />
         </div>
       </div>
       <CardHeader className='px-3 py-4'>

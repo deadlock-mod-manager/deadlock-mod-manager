@@ -1,4 +1,11 @@
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
@@ -32,24 +39,34 @@ export const session = pgTable("session", {
   ...timestamps,
 });
 
-export const account = pgTable("account", {
-  id: typeId("id", "account")
-    .primaryKey()
-    .$defaultFn(() => generateId("account").toString()),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  ...timestamps,
-});
+export const account = pgTable(
+  "account",
+  {
+    id: typeId("id", "account")
+      .primaryKey()
+      .$defaultFn(() => generateId("account").toString()),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    ...timestamps,
+  },
+  (table) => [
+    index("idx_account_account_id").on(table.accountId),
+    uniqueIndex("idx_account_provider_account").on(
+      table.providerId,
+      table.accountId,
+    ),
+  ],
+);
 
 export const verification = pgTable("verification", {
   id: typeId("id", "verification")
@@ -76,23 +93,32 @@ export const oauthApplication = pgTable("oauth_application", {
   ...timestamps,
 });
 
-export const oauthAccessToken = pgTable("oauth_access_token", {
-  id: typeId("id", "oauth_access_token")
-    .primaryKey()
-    .$defaultFn(() => generateId("oauth_access_token").toString()),
-  accessToken: text("access_token").notNull(),
-  refreshToken: text("refresh_token").notNull(),
-  accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at").notNull(),
-  clientId: text("client_id")
-    .notNull()
-    .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  scopes: text("scopes").notNull(),
-  ...timestamps,
-});
+export const oauthAccessToken = pgTable(
+  "oauth_access_token",
+  {
+    id: typeId("id", "oauth_access_token")
+      .primaryKey()
+      .$defaultFn(() => generateId("oauth_access_token").toString()),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull(),
+    accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at").notNull(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthApplication.clientId, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    scopes: text("scopes").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("idx_oauth_access_token_on_access_token").on(table.accessToken),
+    uniqueIndex("idx_oauth_access_token_on_refresh_token").on(
+      table.refreshToken,
+    ),
+  ],
+);
 
 export const oauthConsent = pgTable("oauth_consent", {
   id: typeId("id", "oauth_consent")

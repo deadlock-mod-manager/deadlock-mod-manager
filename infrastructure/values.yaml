@@ -2,7 +2,9 @@ deployments:
   mirror-service:
     image: stormix/deadlock-mods-mirror-service:latest
     replicas: 3
-    memory: 512Mi
+    memory:
+      request: 512Mi
+      limit: 1Gi
     cpu: 100m
 
     healthCheck:
@@ -48,8 +50,10 @@ deployments:
   web:
     image: stormix/deadlock-mods-api:latest
     replicas: 3
-    memory: 1Gi
-    cpu: 600m
+    memory:
+      request: 1Gi
+      limit: 2Gi
+    cpu: 1000m
 
     metrics:
       enabled: true
@@ -101,7 +105,9 @@ deployments:
   bot:
     image: stormix/deadlock-mods-bot:latest
     replicas: 1
-    memory: 1Gi
+    memory:
+      request: 512Mi
+      limit: 1Gi
     cpu: 100m
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
@@ -186,7 +192,9 @@ deployments:
   www:
     image: stormix/deadlock-mods-www:latest
     replicas: 1
-    memory: 1Gi
+    memory:
+      request: 1Gi
+      limit: 2Gi
     cpu: 250m
 
     healthCheck:
@@ -233,7 +241,9 @@ deployments:
   auth:
     image: stormix/deadlock-mods-auth:latest
     replicas: 1
-    memory: 512Mi
+    memory:
+      request: 512Mi
+      limit: 1Gi
     cpu: 100m
 
     healthCheck:
@@ -278,28 +288,6 @@ deployments:
     port: 3004
 
 resources:
-  postgres:
-    replicas: 3
-    memory: 512Mi
-    cpu: 200m
-    disk: 30Gi
-    extensions:
-      - vector
-    config:
-      max_connections: "100"
-      shared_buffers: 256MB
-      effective_cache_size: 768MB
-      maintenance_work_mem: 64MB
-      checkpoint_completion_target: "0.9"
-      wal_buffers: 7864kB
-      default_statistics_target: "100"
-      random_page_cost: "1.1"
-      effective_io_concurrency: "200"
-      work_mem: 2427kB
-      min_wal_size: 1GB
-      max_wal_size: 4GB
-      pg_stat_statements.max: "10000"
-      pg_stat_statements.track: top
   redis:
     sentinels: 3
     sentinel:
@@ -312,10 +300,6 @@ resources:
     evictionPolicy: allkeys-lru
 
 env:
-  - {
-      name: DATABASE_URL,
-      valueFrom: { secretKeyRef: { name: deadlock-mod-manager-app, key: uri } },
-    }
   - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
   - {
       name: REDIS_URL,

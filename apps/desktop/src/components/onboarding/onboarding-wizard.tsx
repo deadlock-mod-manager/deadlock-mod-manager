@@ -16,6 +16,7 @@ import { useOnboarding } from "@/hooks/use-onboarding";
 import { APP_NAME } from "@/lib/constants";
 import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
+import { OnboardingStepDisclaimer } from "./step-disclaimer";
 import { OnboardingStepGamePath } from "./step-game-path";
 
 type StepComponentProps = {
@@ -34,17 +35,23 @@ const STEP_CONFIGS: StepConfig[] = [
   {
     step: 1,
     component:
-      OnboardingStepGamePath as React.ComponentType<StepComponentProps>,
+      OnboardingStepDisclaimer as React.ComponentType<StepComponentProps>,
     requiresCompletion: true,
   },
   {
     step: 2,
+    component:
+      OnboardingStepGamePath as React.ComponentType<StepComponentProps>,
+    requiresCompletion: true,
+  },
+  {
+    step: 3,
     component: OnboardingStepApi as React.ComponentType<StepComponentProps>,
     requiresCompletion: true,
     requiresErrorHandler: true,
   },
   {
-    step: 3,
+    step: 4,
     component: OnboardingStepAddons as React.ComponentType<StepComponentProps>,
     requiresCompletion: false,
   },

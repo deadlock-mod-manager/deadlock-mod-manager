@@ -42,6 +42,10 @@
     "installationCanceled": "Инсталацията бе прекратена",
     "modContainsFiles": "{{modName}} съдържа {{fileCount}} файла. Изберете кои да бъдат изтеглени."
   },
+  "warnings": {
+    "obsoleteLabel": "Остарял",
+    "obsoleteDescription": "Този мод вече не е наличен в магазина за модове и може да не работи с текущата версия на играта."
+  },
   "common": {
     "loading": "Зарежда...",
     "error": "Грешка",

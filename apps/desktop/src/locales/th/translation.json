@@ -201,6 +201,95 @@
     "shareUrl": "แชร์",
     "urlCopied": "คัดลอก URL ไปยังคลิปบอร์ดแล้ว!"
   },
+  "crosshairs": {
+    "activeCrosshairs": "Active Crosshairs",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "close": "Go back",
+    "currentlyActive": "Currently Active",
+    "dialog": {
+      "description": "Create and customize your crosshairs",
+      "title": "Generate Crosshair"
+    },
+    "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
+    "filters": {
+      "allTags": "All Tags",
+      "noTagsFound": "No tags found.",
+      "searchPlaceholder": "Search crosshairs...",
+      "searchTags": "Search tags...",
+      "tagLabel": "Tag:",
+      "tags": "Tags"
+    },
+    "form": {
+      "addTag": "Add",
+      "applied": "Crosshair applied successfully",
+      "apply": "Apply",
+      "applyError": "Failed to apply crosshair",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "descriptionValidation": "Description must be less than 500 characters",
+      "heroes": "Heroes",
+      "heroesSelected": "selected",
+      "heroesValidation": "Please select at least one hero (max 5)",
+      "import": {
+        "button": "Import",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "title": "Import Crosshair Settings"
+      },
+      "likeError": "Failed to toggle crosshair like",
+      "loginRequired": "You must be logged in to publish crosshairs",
+      "metadata": "Metadata",
+      "name": "Name",
+      "namePlaceholder": "My Awesome Crosshair",
+      "nameValidation": "Name must be between 3 and 50 characters",
+      "noHeroesFound": "No heroes found.",
+      "preview": "Preview",
+      "publish": "Publish",
+      "publishError": "Failed to publish crosshair",
+      "published": "Crosshair published successfully",
+      "publishing": "Publishing...",
+      "searchHeroes": "Search heroes...",
+      "selectHeroes": "Select heroes...",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tag and press Enter"
+    },
+    "generate": "Generate Crosshair",
+    "loadError": "Failed to load crosshairs",
+    "noActiveCrosshair": "No custom crosshair is currently active",
+    "noCrosshairs": "No crosshairs available",
+    "noCrosshairsFound": "No crosshairs found",
+    "noCrosshairsMatchFilters": "No crosshairs match your search or filters",
+    "preview": "Preview",
+    "previewDialog": {
+      "color": "Color",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command",
+      "configValues": "Configuration Values",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "gap": "Gap",
+      "height": "Height",
+      "hero": "Hero",
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "noBackground": "None",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "pipOpacity": "Pip Opacity",
+      "title": "Preview",
+      "width": "Width"
+    },
+    "remove": "Remove",
+    "removeFromHistory": "Remove from history",
+    "removedFromHistory": "Crosshair removed from history",
+    "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
+    "subtitle": "Create and customize your crosshairs",
+    "title": "Crosshairs",
+    "toggleError": "Failed to toggle custom crosshairs",
+    "tryClearingFilters": "Try clearing some filters to see more results"
+  },
   "dashboard": {
     "announcements": "ประกาศ",
     "checkBackLater": "กลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดต",
@@ -239,6 +328,13 @@
   },
   "errors": {
     "errorCode": "รหัสข้อผิดพลาด:",
+    "failedToParseGameConfiguration": {
+      "instruction": "Please follow these steps to resolve the issue:",
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
+    },
     "genericMessage": "ขออภัย เกิดข้อผิดพลาดขณะประมวลผลคำขอของคุณ",
     "goBack": "ย้อนกลับ",
     "tryAgain": "ลองอีกครั้ง"
@@ -424,7 +520,10 @@
   "navigation": {
     "about": "เกี่ยวกับ",
     "addMods": "เพิ่มม็อดในเครื่อง",
+    "autoexec": "Autoexec Config",
     "collapseMenu": "ยุบเมนู",
+    "crosshairs": "Crosshairs",
+    "customization": "Customization",
     "dashboard": "แดชบอร์ด",
     "developer": "เครื่องมือสำหรับนักพัฒนา",
     "downloads": "ดาวน์โหลด",
@@ -440,6 +539,10 @@
     "installationCanceled": "ยกเลิกการติดตั้งแล้ว",
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
     "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว"
+  },
+  "warnings": {
+    "obsoleteLabel": "ล้าสมัย",
+    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน"
   },
   "onboarding": {
     "addons": {
@@ -465,6 +568,12 @@
       "version": "เวอร์ชัน API"
     },
     "back": "ย้อนกลับ",
+    "disclaimer": {
+      "acknowledge": "ฉันเข้าใจว่าโมดเป็นเนื้อหาจากบุคคลที่สาม",
+      "description": "โมดทั้งหมดที่มีให้ผ่าน Deadlock Mod Manager เป็นเนื้อหาจากบุคคลที่สามที่สร้างโดยสมาชิกชุมชน",
+      "notice": "โมดไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดยโครงการ Deadlock Mod Manager ติดตั้งโมดด้วยความเสี่ยงของคุณเอง",
+      "title": "เนื้อหาจากบุคคลที่สาม"
+    },
     "finish": "เสร็จสิ้น",
     "gamePath": {
       "browse": "เลือกด้วยตนเอง",
@@ -754,6 +863,20 @@
     "audioVolumeDescription": "ปรับระดับเสียงสำหรับตัวอย่างเสียงและการเล่นเสียง",
     "autoDetectGamePath": "ตรวจจับอัตโนมัติ",
     "autoReapplyMods": "ใช้ม็อดอีกครั้งโดยอัตโนมัติเมื่อเปิดตัวจัดการม็อด",
+    "autoUpdate": "Automatic Updates",
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "autoexec": "Autoexec.cfg",
+    "autoexecContent": "Config File Content",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
     "backupCreated": "สร้างข้อมูลสำรองเรียบร้อยแล้ว",
     "backupCreationFailed": "ไม่สามารถสร้างข้อมูลสำรองได้",
     "backupDate": "วันที่",
@@ -770,11 +893,16 @@
     "browseGamePath": "เลือกดู",
     "clearAllMods": "ล้างม็อดทั้งหมด",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "confirmClearModsState": "Clear Mods State?",
+    "confirmClearModsStateAction": "Clear State",
+    "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "createBackup": "สร้างข้อมูลสำรอง",
     "createCustomSetting": "สร้างการตั้งค่าที่กำหนดเอง",
     "createCustomSettingDescription": "เพิ่มการตั้งค่าที่กำหนดเองลงในเกม สิ่งเหล่านี้จะถูกเพิ่มเข้าไปในเกมเป็นตัวเลือกการเริ่มเกม",
     "creatingBackup": "กำลังสร้างข้อมูลสำรอง...",
     "currentGamePath": "ตำแหน่งของเกมปัจจุบัน",
+    "customCrosshairs": "Custom Crosshairs",
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file.",
     "defaultSort": "การจัดเรียงเริ่มต้น",
     "defaultSortDescription": "เลือกลำดับการจัดเรียงเริ่มต้นสำหรับหน้าม็อด",
     "defaultSortValue": "ค่าการจัดเรียงเริ่มต้น",
@@ -811,9 +939,12 @@
     "launchOptions": "ตัวเลือกการเริ่มเกม",
     "launchOptionsDescription": "ปรับแต่งตัวเลือกการเริ่มเกม ตัวเลือกเหล่านี้จะถูกนำไปใช้โดยไม่คำนึงถึงโหมดเกมที่เลือก (ปกติหรือมีม็อด)",
     "launchVanillaNoArgs": "เริ่มเกมในโหมดปกติโดยไม่มีอาร์กิวเมนต์เพิ่มเติม",
+    "modsStateCleared": "Mods state cleared successfully",
     "noBackupsFound": "ไม่พบข้อมูลสำรอง",
     "openBackupsFolder": "เปิดโฟลเดอร์ข้อมูลสำรอง",
     "openGameFolder": "เปิดโฟลเดอร์เกม",
+    "openInEditor": "Open in Editor",
+    "openInFolder": "Open in Folder",
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsStore": "เปิดรายการม็อด",
     "plugin": "Plugins",
@@ -825,6 +956,7 @@
     "restoreStrategyReplace": "แทนที่ - ล้างโฟลเดอร์ addons ก่อน",
     "restoreStrategyWarning": "การกระทำนี้ไม่สามารถย้อนกลับได้ โปรดเลือกอย่างระมัดระวัง",
     "restoringBackup": "กำลังกู้คืนข้อมูลสำรอง...",
+    "saveChanges": "Save Changes",
     "selectDefaultSort": "เลือกการจัดเรียงเริ่มต้น",
     "selectType": "เลือกประเภท",
     "settingCreated": "สร้างการตั้งค่าแล้ว",
@@ -905,14 +1037,6 @@
     "gotIt": "รับทราบ!",
     "title": "มีอะไรใหม่",
     "versions": {
-      "0.10.1": {
-        "title": "การแก้ไข VPK และการนำเข้าโปรไฟล์",
-        "features": [
-          "🔧 แก้ไขการนับหมายเลข VPK เพื่อเติมช่องว่างตามลำดับแทนการต่อท้าย",
-          "📁 แก้ไขการนำเข้าโปรไฟล์ที่ไม่ข้ามกล่องโต้ตอบโครงสร้างไฟล์สำหรับมอดหลายไฟล์",
-          "🔄 แก้ไขกล่องโต้ตอบการเลือกไฟล์ VPK ที่ปรากฏเมื่อเปิดใช้งานมอดที่มีหลายไฟล์อีกครั้ง"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -927,6 +1051,45 @@
           "📦 Mods no longer removed from addons folder in vanilla mode"
         ],
         "title": "Profile Management, Developer Tools, Plugins & Enhanced Features"
+      },
+      "0.10.1": {
+        "features": [
+          "🔧 แก้ไขการนับหมายเลข VPK เพื่อเติมช่องว่างตามลำดับแทนการต่อท้าย",
+          "📁 แก้ไขการนำเข้าโปรไฟล์ที่ไม่ข้ามกล่องโต้ตอบโครงสร้างไฟล์สำหรับมอดหลายไฟล์",
+          "🔄 แก้ไขกล่องโต้ตอบการเลือกไฟล์ VPK ที่ปรากฏเมื่อเปิดใช้งานมอดที่มีหลายไฟล์อีกครั้ง"
+        ],
+        "title": "การแก้ไข VPK และการนำเข้าโปรไฟล์"
+      },
+      "0.11.0": {
+        "features": [
+          "🎯 Crosshair publishing feature - create, publish, and browse community crosshairs with a built-in generator",
+          "⚙️ Autoexec configuration editor - manage your autoexec.cfg file directly from the app",
+          "🔧 Improved cache ingestion efficiency and plugin asset handling",
+          "⌨️ Updated zoom shortcut key and improved shortcut display formatting"
+        ],
+        "title": "Crosshairs & Autoexec Support"
+      },
+      "0.11.1": {
+        "features": [
+          "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
+          "🌐 Japanese language support added to the application",
+          "🔧 Minor bug fixes and stability improvements"
+        ],
+        "title": "Crosshair UX Improvements & Japanese Support"
+      },
+      "0.12.0": {
+        "features": [
+          "🔒 Auth refactor - improved authentication and authorization flow"
+        ],
+        "title": "Auth Refactor"
+      },
+      "0.13.0": {
+        "features": [
+          "🔧 Fixed broken deep links",
+          "🔧 Improved logging in desktop app",
+          "🔧 Ensure we identify logged in users using their USER ID"
+        ],
+        "title": "Bug Fixes & Improvements"
       },
       "0.2.0": {
         "features": [

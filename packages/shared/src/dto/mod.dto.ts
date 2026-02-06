@@ -3,6 +3,7 @@ import type { Mod, ModDownload } from "@deadlock-mods/database";
 export const toModDto = (mod: Mod) => {
   return mod;
 };
+
 export const toModDownloadDto = (mod: ModDownload[]) => {
   return mod.map((download) => ({
     url: download.url,

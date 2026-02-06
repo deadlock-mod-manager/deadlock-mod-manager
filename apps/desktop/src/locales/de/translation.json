@@ -197,6 +197,95 @@
     "shareUrl": "Teilen",
     "urlCopied": "URL in die Zwischenablage kopiert!"
   },
+  "crosshairs": {
+    "activeCrosshairs": "Active Crosshairs",
+    "appliedRestart": "Crosshair applied! Restart game for changes to take effect.",
+    "close": "Go back",
+    "currentlyActive": "Currently Active",
+    "dialog": {
+      "description": "Create and customize your crosshairs",
+      "title": "Generate Crosshair"
+    },
+    "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
+    "filters": {
+      "allTags": "All Tags",
+      "noTagsFound": "No tags found.",
+      "searchPlaceholder": "Search crosshairs...",
+      "searchTags": "Search tags...",
+      "tagLabel": "Tag:",
+      "tags": "Tags"
+    },
+    "form": {
+      "addTag": "Add",
+      "applied": "Crosshair applied successfully",
+      "apply": "Apply",
+      "applyError": "Failed to apply crosshair",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "descriptionValidation": "Description must be less than 500 characters",
+      "heroes": "Heroes",
+      "heroesSelected": "selected",
+      "heroesValidation": "Please select at least one hero (max 5)",
+      "import": {
+        "button": "Import",
+        "description": "Paste your citadel crosshair format settings below to import them into the form.",
+        "emptyError": "Please paste crosshair settings to import",
+        "parseError": "Failed to parse crosshair settings. Please check the format and try again.",
+        "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
+        "success": "Crosshair settings imported successfully",
+        "title": "Import Crosshair Settings"
+      },
+      "likeError": "Failed to toggle crosshair like",
+      "loginRequired": "You must be logged in to publish crosshairs",
+      "metadata": "Metadata",
+      "name": "Name",
+      "namePlaceholder": "My Awesome Crosshair",
+      "nameValidation": "Name must be between 3 and 50 characters",
+      "noHeroesFound": "No heroes found.",
+      "preview": "Preview",
+      "publish": "Publish",
+      "publishError": "Failed to publish crosshair",
+      "published": "Crosshair published successfully",
+      "publishing": "Publishing...",
+      "searchHeroes": "Search heroes...",
+      "selectHeroes": "Select heroes...",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tag and press Enter"
+    },
+    "generate": "Generate Crosshair",
+    "loadError": "Failed to load crosshairs",
+    "noActiveCrosshair": "No custom crosshair is currently active",
+    "noCrosshairs": "No crosshairs available",
+    "noCrosshairsFound": "No crosshairs found",
+    "noCrosshairsMatchFilters": "No crosshairs match your search or filters",
+    "preview": "Preview",
+    "previewDialog": {
+      "color": "Color",
+      "commandCopied": "Console command copied to clipboard!",
+      "commandCopyFailed": "Failed to copy console command",
+      "configValues": "Configuration Values",
+      "dotOpacity": "Dot Opacity",
+      "dotOutlineOpacity": "Dot Outline Opacity",
+      "gap": "Gap",
+      "height": "Height",
+      "hero": "Hero",
+      "hint": "Move your mouse over the preview to see how the crosshair behaves in-game.",
+      "noBackground": "None",
+      "pipBorder": "Pip Border",
+      "pipGapStatic": "Pip Gap Static",
+      "pipOpacity": "Pip Opacity",
+      "title": "Preview",
+      "width": "Width"
+    },
+    "remove": "Remove",
+    "removeFromHistory": "Remove from history",
+    "removedFromHistory": "Crosshair removed from history",
+    "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
+    "subtitle": "Create and customize your crosshairs",
+    "title": "Crosshairs",
+    "toggleError": "Failed to toggle custom crosshairs",
+    "tryClearingFilters": "Try clearing some filters to see more results"
+  },
   "dashboard": {
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
@@ -235,6 +324,13 @@
   },
   "errors": {
     "errorCode": "Fehlercode:",
+    "failedToParseGameConfiguration": {
+      "instruction": "Please follow these steps to resolve the issue:",
+      "steps": [
+        "Verify game files on Steam.",
+        "Open Mod Manager and click 'Launch Modded'."
+      ]
+    },
     "genericMessage": "Es tut uns leid, aber bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten.",
     "goBack": "Zurück gehen",
     "tryAgain": "Erneut versuchen"
@@ -421,7 +517,10 @@
   "navigation": {
     "about": "Über",
     "addMods": "Mods hinzufügen",
+    "autoexec": "Autoexec Config",
     "collapseMenu": "Menü einklappen",
+    "crosshairs": "Crosshairs",
+    "customization": "Customization",
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "Downloads",
@@ -437,6 +536,10 @@
     "installationCanceled": "Installation abgebrochen",
     "modContainsFiles": "{{modName}} enthält {{fileCount}} Dateien. Wählen Sie aus, welche installiert werden sollen.",
     "modInstalledSuccessfully": "Mod erfolgreich installiert"
+  },
+  "warnings": {
+    "obsoleteLabel": "Veraltet",
+    "obsoleteDescription": "Dieser Mod ist im Mod-Store nicht mehr verfügbar und funktioniert möglicherweise nicht mit der aktuellen Spielversion."
   },
   "onboarding": {
     "addons": {
@@ -462,6 +565,12 @@
       "version": "API Version"
     },
     "back": "Back",
+    "disclaimer": {
+      "acknowledge": "Ich verstehe, dass Mods Inhalte von Drittanbietern sind",
+      "description": "Alle über den Deadlock Mod Manager verfügbaren Mods sind Inhalte von Drittanbietern, die von Community-Mitgliedern erstellt wurden.",
+      "notice": "Mods werden nicht vom Deadlock Mod Manager-Projekt erstellt, überprüft, verifiziert oder unterstützt. Installieren Sie Mods auf eigenes Risiko.",
+      "title": "Inhalte von Drittanbietern"
+    },
     "finish": "Finish",
     "gamePath": {
       "browse": "Browse Manually",
@@ -751,6 +860,20 @@
     "audioVolumeDescription": "Lautstärke für Audio-Vorschau und Wiedergabe anpassen",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "Mods automatisch erneut anwenden, wenn der Mod Manager gestartet wird.",
+    "autoUpdate": "Automatic Updates",
+    "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "autoexec": "Autoexec.cfg",
+    "autoexecContent": "Config File Content",
+    "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
+    "autoexecLaunchOption": "Autoexec Config",
+    "autoexecLoadError": "Failed to load autoexec config",
+    "autoexecOpenEditorError": "Failed to open autoexec editor",
+    "autoexecOpenFolderError": "Failed to open autoexec folder",
+    "autoexecPlaceholder": "Add your custom console commands here...",
+    "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
+    "autoexecSaveError": "Failed to save autoexec config",
+    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
     "backupCreated": "Sicherung erfolgreich erstellt",
     "backupCreationFailed": "Fehler beim Erstellen der Sicherung",
     "backupDate": "Datum",
@@ -767,11 +890,16 @@
     "browseGamePath": "Browse",
     "clearAllMods": "Alle Mods löschen",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alle Mods löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "confirmClearModsState": "Clear Mods State?",
+    "confirmClearModsStateAction": "Clear State",
+    "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "createBackup": "Sicherung erstellen",
     "createCustomSetting": "Benutzerdefinierte Einstellung erstellen",
     "createCustomSettingDescription": "Fügen Sie eine benutzerdefinierte Einstellung zum Spiel hinzu. Diese werden als Startoptionen zum Spiel hinzugefügt.",
     "creatingBackup": "Sicherung wird erstellt...",
     "currentGamePath": "Current Game Path",
+    "customCrosshairs": "Custom Crosshairs",
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file.",
     "defaultSort": "Standard-Sortierung",
     "defaultSortDescription": "Wählen Sie die Standard-Sortierreihenfolge für die Mods-Seite.",
     "defaultSortValue": "Standard-Sortierwert",
@@ -808,9 +936,12 @@
     "launchOptions": "Startoptionen",
     "launchOptionsDescription": "Passen Sie die Startoptionen für das Spiel an. Diese werden unabhängig vom ausgewählten Spielmodus (Vanilla oder Modded) angewendet.",
     "launchVanillaNoArgs": "Das Spiel im Vanilla-Modus ohne zusätzliche Argumente starten.",
+    "modsStateCleared": "Mods state cleared successfully",
     "noBackupsFound": "Keine Sicherungen gefunden",
     "openBackupsFolder": "Sicherungsordner öffnen",
     "openGameFolder": "Spielordner öffnen",
+    "openInEditor": "Open in Editor",
+    "openInFolder": "Open in Folder",
     "openModsFolder": "Mods-Ordner öffnen",
     "plugin": "Plugins",
     "pluginDescription": "Plugins und Integrationen für die Desktop‑App verwalten.",
@@ -821,6 +952,7 @@
     "restoreStrategyReplace": "Ersetzen - Addons-Ordner zuerst leeren",
     "restoreStrategyWarning": "Diese Aktion kann nicht rückgängig gemacht werden. Bitte wählen Sie sorgfältig.",
     "restoringBackup": "Sicherung wird wiederhergestellt...",
+    "saveChanges": "Save Changes",
     "selectDefaultSort": "Standard-Sortierung auswählen",
     "selectType": "Typ auswählen",
     "settingCreated": "Einstellung erstellt",
@@ -901,14 +1033,6 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
-      "0.10.1": {
-        "title": "VPK & Profile Import Fixes",
-        "features": [
-          "🔧 Fixed VPK numbering to fill gaps sequentially instead of appending to the end",
-          "📁 Fixed profile import not skipping file-tree dialog for multi-file mods",
-          "🔄 Fixed VPK file selection dialog appearing when re-enabling mods with multiple files"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -923,6 +1047,45 @@
           "📦 Mods no longer removed from addons folder in vanilla mode"
         ],
         "title": "Profile Management, Developer Tools, Plugins & Enhanced Features"
+      },
+      "0.10.1": {
+        "features": [
+          "🔧 Fixed VPK numbering to fill gaps sequentially instead of appending to the end",
+          "📁 Fixed profile import not skipping file-tree dialog for multi-file mods",
+          "🔄 Fixed VPK file selection dialog appearing when re-enabling mods with multiple files"
+        ],
+        "title": "VPK & Profile Import Fixes"
+      },
+      "0.11.0": {
+        "features": [
+          "🎯 Crosshair publishing feature - create, publish, and browse community crosshairs with a built-in generator",
+          "⚙️ Autoexec configuration editor - manage your autoexec.cfg file directly from the app",
+          "🔧 Improved cache ingestion efficiency and plugin asset handling",
+          "⌨️ Updated zoom shortcut key and improved shortcut display formatting"
+        ],
+        "title": "Crosshairs & Autoexec Support"
+      },
+      "0.11.1": {
+        "features": [
+          "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
+          "🌐 Japanese language support added to the application",
+          "🔧 Minor bug fixes and stability improvements"
+        ],
+        "title": "Crosshair UX Improvements & Japanese Support"
+      },
+      "0.12.0": {
+        "features": [
+          "🔒 Auth refactor - improved authentication and authorization flow"
+        ],
+        "title": "Auth Refactor"
+      },
+      "0.13.0": {
+        "features": [
+          "🔧 Fixed broken deep links",
+          "🔧 Improved logging in desktop app",
+          "🔧 Ensure we identify logged in users using their USER ID"
+        ],
+        "title": "Bug Fixes & Improvements"
       },
       "0.2.0": {
         "features": [

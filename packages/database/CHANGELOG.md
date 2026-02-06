@@ -1,5 +1,19 @@
 # @deadlock-mods/database
 
+## 1.7.1
+
+### Patch Changes
+
+- 07b9688: Remove redundant index on mirrored_files table to improve insert performance and reduce storage usage
+- 9c0bbf1: Optimize database queries and add Redis caching for high-volume endpoints
+  - Change OAuth access token indexes to unique indexes for faster lookups
+  - Add Redis caching to report counts endpoint with 24h TTL
+  - Add Redis caching to individual mod lookup endpoint
+
+- 729e39c: Add database indexes to optimize expensive queries: covering index for report aggregation and composite unique index for account provider lookups
+- Updated dependencies [3414ada]
+  - @deadlock-mods/common@1.2.0
+
 ## 1.7.0
 
 ### Minor Changes

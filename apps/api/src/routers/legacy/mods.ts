@@ -5,14 +5,23 @@ import {
 } from "@deadlock-mods/database";
 import { toModDownloadDto, toModDto } from "@deadlock-mods/shared";
 import { Hono } from "hono";
+import { CACHE_TTL } from "@/lib/constants";
+import { cache } from "@/lib/redis";
 
 const modsRouter = new Hono();
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
 
 modsRouter.get("/", async (c) => {
-  const allMods = await modRepository.findAll();
-  return c.json(allMods.map(toModDto));
+  const result = await cache.wrap(
+    "mods:listing",
+    async () => {
+      const allMods = await modRepository.findAll();
+      return allMods.map(toModDto);
+    },
+    CACHE_TTL.MODS_LISTING,
+  );
+  return c.json(result);
 });
 
 modsRouter.get("/:id", async (c) => {

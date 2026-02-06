@@ -14,6 +14,23 @@ export enum MonitorSlug {
   GAMEBANANA_RSS = "gamebanana-rss",
 }
 
+/**
+ * Cache TTL values in milliseconds.
+ * Adjust these to control how long different data types are cached in Redis.
+ */
+export const CACHE_TTL = {
+  /** Mod listing cache - 30 minutes */
+  MODS_LISTING: 30 * 60 * 1000,
+  /** Stats aggregation cache - 1 hour */
+  STATS: 60 * 60 * 1000,
+  /** Feature flags cache - 1 hour */
+  FEATURE_FLAGS: 60 * 60 * 1000,
+  /** Report counts cache - 7 days (reports rarely change) */
+  REPORT_COUNTS: 7 * 24 * 60 * 60 * 1000,
+  /** Default cache TTL - 10 minutes */
+  DEFAULT: 60 * 60 * 1000,
+} as const;
+
 export const MODS_CACHE_CONFIG = {
   cacheName: "deadlock-mods-api",
   cacheControl:

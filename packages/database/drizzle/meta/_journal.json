@@ -267,6 +267,48 @@
       "when": 1765743388605,
       "tag": "0037_stiff_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1769949327764,
+      "tag": "0038_silent_jane_foster",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1769949395104,
+      "tag": "0039_green_karnak",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1769953662235,
+      "tag": "0040_equal_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1769955073455,
+      "tag": "0041_square_marvex",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1769971786875,
+      "tag": "0042_tiny_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1770410295854,
+      "tag": "0043_striped_the_phantom",
+      "breakpoints": true
     }
   ]
 }

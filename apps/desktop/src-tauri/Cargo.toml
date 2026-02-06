@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-mod-manager"
-version = "0.13.0"
+version = "0.13.1"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <contact@stormix.co>"]
 license = "GPL-3.0"
@@ -74,3 +74,6 @@ debug = false
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.3.6", features = ["deep-link"] }
 tauri-plugin-updater = "2.9"
+
+[target.'cfg(windows)'.dependencies]
+junction = "1"

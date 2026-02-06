@@ -1,4 +1,5 @@
 import {
+  index,
   pgEnum,
   pgTable,
   text,
@@ -49,6 +50,11 @@ export const reports = pgTable(
     uniqueIndex("report_mod_id_reporter_hardware_id_idx").on(
       table.modId,
       table.reporterHardwareId,
+    ),
+    index("idx_report_mod_type_status").on(
+      table.modId,
+      table.type,
+      table.status,
     ),
   ],
 );

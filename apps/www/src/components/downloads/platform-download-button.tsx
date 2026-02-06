@@ -85,8 +85,26 @@ export const PlatformDownloadButton = ({
 
     const release = releases.latest;
 
+    // Filter out signature files - they are not meant for direct download
+    const mainDownloads = release.downloads.filter(
+      (download) => !download.installerType || download.installerType !== "sig",
+    );
+
+    // For Windows, prefer exe over msi
+    if (userOS.os === "windows") {
+      const exeMatch = mainDownloads.find(
+        (download) =>
+          download.platform === "windows" &&
+          download.architecture === userOS.architecture &&
+          (!download.installerType || download.installerType === "exe"),
+      );
+      if (exeMatch) {
+        return exeMatch;
+      }
+    }
+
     // Find exact match first (platform + architecture)
-    const exactMatch = release.downloads.find(
+    const exactMatch = mainDownloads.find(
       (download) =>
         download.platform === userOS.os &&
         download.architecture === userOS.architecture,
@@ -96,7 +114,7 @@ export const PlatformDownloadButton = ({
     }
 
     // Fallback to platform match with different architecture
-    const platformMatch = release.downloads.find(
+    const platformMatch = mainDownloads.find(
       (download) => download.platform === userOS.os,
     );
     if (platformMatch) {
@@ -105,7 +123,7 @@ export const PlatformDownloadButton = ({
 
     // Fallback to universal macOS builds
     if (userOS.os === "macos") {
-      const universalMatch = release.downloads.find(
+      const universalMatch = mainDownloads.find(
         (download) =>
           download.platform === "macos" &&
           download.architecture === "universal",
