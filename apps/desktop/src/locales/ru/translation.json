@@ -540,6 +540,10 @@
     "modContainsFiles": "{{modName}} содержит {{fileCount}} файлов. Выберите, какие из них установить.",
     "modInstalledSuccessfully": "Мод успешно установлен"
   },
+  "warnings": {
+    "obsoleteLabel": "Устарел",
+    "obsoleteDescription": "Этот мод больше недоступен в магазине модов и может не работать с текущей версией игры."
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",

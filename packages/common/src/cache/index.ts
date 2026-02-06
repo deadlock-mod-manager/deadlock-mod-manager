@@ -37,6 +37,20 @@ export const FEATURE_FLAG_CACHE_TTL = 60 * 60 * 1000;
 export type Cache = ReturnType<typeof createCache>;
 
 /**
+ * Create a no-op cache that never stores or returns cached values.
+ * Every wrap() call executes the function. Use in development to avoid stale responses.
+ */
+export const createNoOpCache = (): Cache => {
+  return {
+    wrap: <T>(_key: string, fn: () => Promise<T>): Promise<T> => fn(),
+    get: async <T>(): Promise<T | undefined> => undefined,
+    set: async <T>(_key: string, _value: T, _ttl?: number): Promise<T> =>
+      _value,
+    del: async (_key: string): Promise<boolean> => true,
+  } as unknown as Cache;
+};
+
+/**
  * Create a Redis-backed cache using cache-manager with @keyv/redis.
  *
  * @param redisUrl - Redis connection URL (e.g., 'redis://localhost:6379')

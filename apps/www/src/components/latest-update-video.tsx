@@ -1,3 +1,4 @@
+// oxlint-disable react/iframe-missing-sandbox
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import type React from "react";
 

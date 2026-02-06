@@ -33,6 +33,7 @@ export const mods = pgTable(
     audioUrl: text("audio_url"),
     downloadCount: integer("download_count").notNull().default(0),
     isNSFW: boolean("is_nsfw").notNull().default(false),
+    isObsolete: boolean("is_obsolete").default(false),
     isBlacklisted: boolean("is_blacklisted").notNull().default(false),
     blacklistReason: text("blacklist_reason"),
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),

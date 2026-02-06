@@ -530,6 +530,10 @@
     "modContainsFiles": "{{modName}}には{{fileCount}}個のファイルが含まれています。インストールするファイルを選択してください。",
     "modInstalledSuccessfully": "Modをインストールしました"
   },
+  "warnings": {
+    "obsoleteLabel": "廃止",
+    "obsoleteDescription": "このModはModストアで提供終了しており、現在のゲームバージョンでは動作しない可能性があります。"
+  },
   "onboarding": {
     "addons": {
       "analyze": "Modを分析",

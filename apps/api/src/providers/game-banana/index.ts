@@ -405,6 +405,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
         isNSFW: classifyNSFW(submission),
+        isObsolete: submission._bIsObsolete ?? false,
       };
     }
 
@@ -436,6 +437,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
         isNSFW: classifyNSFW(submission),
+        isObsolete: submission._bIsObsolete ?? false,
       };
     }
 
@@ -463,6 +465,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
         isNSFW: classifyNSFW(submission),
+        isObsolete: submission._bIsObsolete ?? false,
       };
     }
 
@@ -490,6 +493,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isAudio: true,
         audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
         isNSFW: classifyNSFW(submission),
+        isObsolete: submission._bIsObsolete ?? false,
       };
     }
 

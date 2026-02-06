@@ -540,6 +540,10 @@
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
     "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว"
   },
+  "warnings": {
+    "obsoleteLabel": "ล้าสมัย",
+    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน"
+  },
   "onboarding": {
     "addons": {
       "analyze": "วิเคราะห์ม็อด",

@@ -71,6 +71,10 @@
     "modContainsFiles": "",
     "failedToPerformAction": ""
   },
+  "warnings": {
+    "obsoleteLabel": "",
+    "obsoleteDescription": ""
+  },
   "common": {
     "loading": "",
     "error": "",

@@ -54,7 +54,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "dotenv-cli": "^7.4.4",
     "@netlify/vite-plugin-tanstack-start": "^1.2.3",
     "@tailwindcss/postcss": "^4.1.15",
     "@tanstack/nitro-v2-vite-plugin": "^1.141.0",
@@ -67,6 +66,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "dotenv-cli": "^7.4.4",
     "jsdom": "^27.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",

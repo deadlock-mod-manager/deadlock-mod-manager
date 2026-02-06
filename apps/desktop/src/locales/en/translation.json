@@ -103,6 +103,10 @@
     "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
     "failedToPerformAction": "Failed to perform action"
   },
+  "warnings": {
+    "obsoleteLabel": "Obsolete",
+    "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version."
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

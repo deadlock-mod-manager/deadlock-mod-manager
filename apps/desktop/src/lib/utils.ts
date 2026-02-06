@@ -96,11 +96,8 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
   });
 };
 
-export const isModOutdated = (_mod: { remoteUpdatedAt: string | Date }) => {
-  // TODO: Implement this
-
-  // const cutoffDate = new Date("2025-08-19");
-  // const modUpdatedDate = new Date(mod.remoteUpdatedAt);
-  // return modUpdatedDate < cutoffDate;
-  return false;
+export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
+  const cutoffDate = new Date("2026-01-22"); // OldGods update
+  const modUpdatedDate = new Date(mod.remoteUpdatedAt);
+  return modUpdatedDate < cutoffDate;
 };

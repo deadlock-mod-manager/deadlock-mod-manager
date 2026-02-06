@@ -537,6 +537,10 @@
     "modContainsFiles": "{{modName}} contient {{fileCount}} fichiers. Sélectionnez ceux à installer.",
     "modInstalledSuccessfully": "Mod installé avec succès"
   },
+  "warnings": {
+    "obsoleteLabel": "Obsolète",
+    "obsoleteDescription": "Ce mod n'est plus disponible sur le magasin de mods et peut ne pas fonctionner avec la version actuelle du jeu."
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",

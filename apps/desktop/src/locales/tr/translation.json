@@ -537,6 +537,10 @@
     "modContainsFiles": "{{modName}} {{fileCount}} dosya içeriyor. Yüklenecekleri seçin.",
     "modInstalledSuccessfully": "Mod başarıyla yüklendi"
   },
+  "warnings": {
+    "obsoleteLabel": "Kullanımdan kalkmış",
+    "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir."
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",

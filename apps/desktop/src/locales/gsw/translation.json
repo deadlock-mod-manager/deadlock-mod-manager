@@ -553,6 +553,10 @@
     "modContainsFiles": "{{modName}} enthaltet {{fileCount}} Dateie. Wähle si us, welli installiert werde söll.",
     "modInstalledSuccessfully": "Mod erfolgriich installiert"
   },
+  "warnings": {
+    "obsoleteLabel": "Veraltet",
+    "obsoleteDescription": "De Mod isch im Mod-Store nüme verfüegbar und funktioniert vilicht nöd mit dr aktuelle Spiilversion."
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",

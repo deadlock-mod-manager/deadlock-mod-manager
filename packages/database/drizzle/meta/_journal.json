@@ -302,6 +302,13 @@
       "when": 1769971786875,
       "tag": "0042_tiny_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1770410295854,
+      "tag": "0043_striped_the_phantom",
+      "breakpoints": true
     }
   ]
 }

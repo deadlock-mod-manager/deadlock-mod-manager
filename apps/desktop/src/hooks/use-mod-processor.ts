@@ -247,6 +247,7 @@ export const useModProcessor = () => {
       blacklistReason: null,
       blacklistedAt: null,
       blacklistedBy: null,
+      isObsolete: false,
       category,
     };
 
@@ -326,6 +327,7 @@ export const useModProcessor = () => {
       likes: 0,
       isBlacklisted: false,
       blacklistReason: null,
+      isObsolete: false,
       blacklistedAt: null,
       blacklistedBy: null,
       category,

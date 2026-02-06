@@ -540,6 +540,10 @@
     "modContainsFiles": "{{modName}} يحتوي على {{fileCount}} ملفات. اختر الملفات التي تريد تثبيتها.",
     "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح"
   },
+  "warnings": {
+    "obsoleteLabel": "قديم",
+    "obsoleteDescription": "هذا التعديل لم يعد متوفراً في متجر التعديلات وقد لا يعمل مع الإصدار الحالي من اللعبة."
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",

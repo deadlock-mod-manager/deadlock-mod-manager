@@ -537,6 +537,10 @@
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 個檔案。請選擇要安裝的檔案。",
     "modInstalledSuccessfully": "模組安裝成功"
   },
+  "warnings": {
+    "obsoleteLabel": "已淘汰",
+    "obsoleteDescription": "此模組已無法在模組商店取得，可能無法在目前遊戲版本中正常運作。"
+  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",
