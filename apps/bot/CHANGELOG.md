@@ -1,5 +1,16 @@
 # @deadlock-mods/bot
 
+## 1.2.4
+
+### Patch Changes
+
+- Updated dependencies [48f028f]
+- Updated dependencies [cb40fc6]
+  - @deadlock-mods/shared@1.8.0
+  - @deadlock-mods/database@1.8.0
+  - @deadlock-mods/feature-flags@0.2.4
+  - @deadlock-mods/instrumentation@0.1.6
+
 ## 1.2.3
 
 ### Patch Changes

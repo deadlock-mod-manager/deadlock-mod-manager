@@ -1,5 +1,22 @@
 # api
 
+## 2.7.0
+
+### Minor Changes
+
+- 48f028f: Add MSI installer downloads to the download page alongside EXE files
+- cb40fc6: Detect when mod files change during sync, set filesUpdatedAt, dismiss unverified reports, and show "Updated recently" and "Update available" in the desktop UI
+
+### Patch Changes
+
+- Updated dependencies [48f028f]
+- Updated dependencies [cb40fc6]
+  - @deadlock-mods/shared@1.8.0
+  - @deadlock-mods/database@1.8.0
+  - @deadlock-mods/distributed-lock@1.0.6
+  - @deadlock-mods/feature-flags@0.2.4
+  - @deadlock-mods/instrumentation@0.1.6
+
 ## 2.6.0
 
 ### Minor Changes

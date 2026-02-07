@@ -1,5 +1,11 @@
 # @deadlock-mods/database
 
+## 1.8.0
+
+### Minor Changes
+
+- cb40fc6: Detect when mod files change during sync, set filesUpdatedAt, dismiss unverified reports, and show "Updated recently" and "Update available" in the desktop UI
+
 ## 1.7.1
 
 ### Patch Changes

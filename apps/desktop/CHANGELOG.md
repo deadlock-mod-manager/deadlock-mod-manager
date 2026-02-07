@@ -1,5 +1,26 @@
 # desktop
 
+## 0.14.0
+
+### Minor Changes
+
+- 5492b25: Remove sudo plugin from desktop application
+- cb40fc6: Detect when mod files change during sync, set filesUpdatedAt, dismiss unverified reports, and show "Updated recently" and "Update available" in the desktop UI
+- 5492b25: Add Arcane theme with customizable accent colors and gradient effects
+- e71c61f: Add GameBanana issues page disclaimer to report dialog with direct link
+
+### Patch Changes
+
+- 2c13cda: Fix local analysis mods being deleted instead of renamed when disabled
+- 2c13cda: Fix reordering mods re-enabling disabled mods and deleting a disabled mod leaving files behind
+- 70c00ca: Fix local mods imported via Add page not being toggleable
+- 2fef46f: Fix split replay storage by symlinking to a single location
+- cb40fc6: Add stale mod warning when a mod has multiple open reports and has not been updated for 30+ days.
+- Updated dependencies [48f028f]
+- Updated dependencies [cb40fc6]
+  - @deadlock-mods/shared@1.8.0
+  - @deadlock-mods/crosshair@0.2.1
+
 ## 0.13.1
 
 ### Patch Changes

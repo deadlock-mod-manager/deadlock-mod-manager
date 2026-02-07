@@ -1,5 +1,18 @@
 # web
 
+## 0.2.0
+
+### Minor Changes
+
+- 48f028f: Add MSI installer downloads to the download page alongside EXE files
+
+### Patch Changes
+
+- Updated dependencies [48f028f]
+- Updated dependencies [cb40fc6]
+  - @deadlock-mods/shared@1.8.0
+  - @deadlock-mods/crosshair@0.2.1
+
 ## 0.1.0
 
 ### Minor Changes

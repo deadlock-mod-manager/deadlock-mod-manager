@@ -1,5 +1,12 @@
 # @deadlock-mods/distributed-lock
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [cb40fc6]
+  - @deadlock-mods/database@1.8.0
+
 ## 1.0.5
 
 ### Patch Changes

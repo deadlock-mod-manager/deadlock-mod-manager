@@ -1,5 +1,12 @@
 # @deadlock-mods/shared
 
+## 1.8.0
+
+### Minor Changes
+
+- 48f028f: Add 6 new heroes to shared regex search and heroes list: Apollo, Celeste, Graves, Rem, Silver, Venator
+- cb40fc6: Detect when mod files change during sync, set filesUpdatedAt, dismiss unverified reports, and show "Updated recently" and "Update available" in the desktop UI
+
 ## 1.7.0
 
 ### Minor Changes
