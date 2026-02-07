@@ -30,7 +30,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -167,6 +167,14 @@ export const usePersistedStore = create<State>()(
             filterMode: "include",
             searchQuery: "",
           };
+        }
+
+        // Migration from version 7 to 8: Add linuxGpuOptimization field
+        if (version <= 7) {
+          console.log(
+            "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
+          );
+          state.linuxGpuOptimization = false;
         }
 
         return state;
