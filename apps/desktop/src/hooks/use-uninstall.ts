@@ -79,6 +79,15 @@ const useUninstall = () => {
         if (!remove) {
           setModEnabledInCurrentProfile(mod.remoteId, false);
         }
+      } else if (remove) {
+        logger
+          .withMetadata({ modId: mod.remoteId, profileFolder })
+          .info("Purging disabled mod");
+        await invoke("purge_mod", {
+          modId: mod.remoteId,
+          vpks: [],
+          profileFolder,
+        });
       }
 
       if (remove) {

@@ -73,8 +73,8 @@ impl VpkManager {
 
     let mut updated_mappings = Vec::new();
 
-    // Step 1: Move ALL VPK files to temporary directory, then only restore the ones we're managing
-    // This ensures we start with a clean slate and numbering always starts from pak01
+    // Step 1: Move enabled VPK files to temporary directory, skip disabled (prefixed) VPKs
+    // Disabled VPKs use the format `{mod_id}_{original_name}.vpk` and should not be touched
     if addons_path.exists() {
       for entry in std::fs::read_dir(addons_path)? {
         let entry = entry?;
@@ -84,6 +84,11 @@ impl VpkManager {
           && path.extension().is_some_and(|ext| ext == "vpk")
           && let Some(filename) = path.file_name().and_then(|n| n.to_str())
         {
+          if Self::extract_mod_id_from_prefix(filename).is_some() {
+            log::debug!("Skipping disabled (prefixed) VPK during reorder: {filename}");
+            continue;
+          }
+
           let temp_path = temp_dir.join(filename);
           std::fs::rename(&path, &temp_path)?;
           log::debug!("Moved {filename} to temporary directory");

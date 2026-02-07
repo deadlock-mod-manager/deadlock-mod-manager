@@ -253,9 +253,27 @@ impl ModManager {
         "Disabled mod {mod_id} with {} prefixed VPKs",
         prefixed_vpks.len()
       );
+    } else if !vpks.is_empty() {
+      log::warn!("Mod not found in repository, disabling VPKs directly");
+      // VPKs from local analysis may be full paths; extract just filenames for disable_vpks
+      let vpk_filenames: Vec<String> = vpks
+        .iter()
+        .map(|v| {
+          std::path::Path::new(v)
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_else(|| v.clone())
+        })
+        .collect();
+      self.vpk_manager.disable_vpks(
+        &addons_path,
+        &mod_id,
+        &vpk_filenames,
+        &vpk_filenames,
+      )?;
+      log::info!("Disabled {} VPKs for mod {mod_id}", vpk_filenames.len());
     } else {
-      log::warn!("Mod not found in repository, removing VPKs directly");
-      self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
+      log::warn!("Mod not found in repository and no VPKs provided");
     }
 
     Ok(())
