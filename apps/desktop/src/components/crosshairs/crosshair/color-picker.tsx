@@ -1,5 +1,6 @@
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
+import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
   color: { r: number; g: number; b: number };
@@ -7,6 +8,7 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
+  const { t } = useTranslation();
   const hexValue = rgbToHex(color.r, color.g, color.b);
 
   const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +34,7 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
           type='text'
           value={hexValue}
           onChange={handleHexChange}
-          placeholder='#FFFFFF'
+          placeholder={t("crosshairs.form.hexPlaceholder")}
           className='flex-1 font-mono'
           maxLength={7}
         />

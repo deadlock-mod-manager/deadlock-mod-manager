@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "关闭",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "转到第一页",
     "goToLastPage": "转到最后一页",
     "goToNextPage": "转到下一页",
@@ -40,7 +41,8 @@
     "next": "下一个",
     "nextSlide": "下一张",
     "previous": "上一个",
-    "previousSlide": "上一张"
+    "previousSlide": "上一张",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "添加",
@@ -78,11 +80,16 @@
     "supportedFormats": "支持格式：.vpk/.zip/.rar/.7z",
     "title": "添加模组",
     "unsupportedFiles": "不支持的文件。",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "不支持的选择。",
     "validatingFiles": "正在验证模组文件...",
     "validatingMetadata": "正在验证模组元数据..."
   },
   "addons": {
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
+    "adding": "Adding...",
     "analysisError": "分析本地插件失败",
     "analysisResults": "本地插件分析",
     "analysisResultsDescription": "在您的游戏目录中找到 {{count}} 个插件",
@@ -102,6 +109,7 @@
     },
     "errors": "错误",
     "errorsCount": "{{count}} 个错误",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "文件数",
     "fileSize": "大小",
     "files": "个文件",
@@ -116,6 +124,7 @@
     "modAuthor": "作者",
     "modName": "模组名称",
     "modNotFound": "在数据库中未找到模组",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "在您的游戏目录中未找到插件",
     "noEntriesFound": "在 VPK 文件中未找到任何条目",
     "progress": {
@@ -143,6 +152,13 @@
       "unknown": "未知"
     },
     "vpkContents": "VPK 内容"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "操作",
@@ -232,6 +248,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -321,11 +338,16 @@
     "completed": "已完成",
     "downloading": "正在下载 {{count}} 个模组",
     "downloading_plural": "正在下载 {{count}} 个模组",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "未找到下载",
     "noDownloadsMatchFilter": "没有符合当前筛选条件的下载项。",
     "openDownloadFolder": "打开下载文件夹",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "下载",
+    "total": "Total",
     "viewAllDownloads": "查看所有下载"
   },
   "errors": {
@@ -339,7 +361,8 @@
     },
     "genericMessage": "很抱歉，处理您的请求时发生错误。",
     "goBack": "返回",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -388,11 +411,18 @@
     "sortBy": "排序方式"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "创建备份",
     "openInEditor": "在编辑器中打开",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "重置为纯净版",
     "restoreBackup": "恢复备份",
-    "validateConfiguration": "验证配置"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "验证配置",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -422,6 +452,15 @@
     "removing": "移除中..."
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "当前 VPK 文件",
       "description": "在开发过程中替换模组文件以快速迭代",
@@ -538,6 +577,7 @@
   },
   "notifications": {
     "failedToInstallMod": "模组安装失败",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "操作执行失败",
     "installationCanceled": "安装已取消",
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 个文件。请选择要安装的文件。",
@@ -598,6 +638,7 @@
       "description": "自定义应用程序背景。",
       "detailedDescription": "此插件允许您为整个应用程序设置自定义背景图像。您可以使用在线图像的URL或上传本地图像文件。插件支持透明度和模糊效果来自定义外观。您还可以选择是否在背景效果中包含侧边栏。",
       "imageUrl": "图像URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "包含侧边栏",
       "opacity": "透明度",
       "title": "背景",
@@ -621,6 +662,7 @@
       "description": "在 Discord 上显示你的 Deadlock 活动。",
       "detailedDescription": "使用 Discord Rich Presence 在你的个人资料上显示 Deadlock Mod Manager 的活动。只需启用插件，并可选地编辑“详细信息”和“状态”文本。",
       "details": "详细信息文本",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "大图键",
       "largeImageText": "大图文本",
       "optional": "（可选）",
@@ -634,6 +676,7 @@
       "smallImageKey": "小图键",
       "smallImageText": "小图文本",
       "state": "状态文本",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord 富状态",
       "usageInstructions": "启用插件，然后可选地编辑“详细信息”和“状态”文本。"
     },
@@ -652,6 +695,7 @@
       "visit": "访问 Nightshift："
     },
     "renderActive": "插件处于活动状态并在后台运行",
+
     "tea": {
       "carrd": "Carrd",
       "description": "为 YouTuber 与 Twitch 主播 Snipztea 打造的温暖米色主题。",
@@ -670,6 +714,7 @@
       "chooseImage": "选择图像",
       "choosePreview": "选择预览",
       "clear": "清除",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "使用您喜欢的颜色和样式创建自己的自定义主题。",
       "customThemeBuilder": "主题构建器",
       "customThemeBuilderDescription": "通过选择颜色和样式来构建您自己的主题。",
@@ -697,6 +742,7 @@
       "pickColor": "选择颜色",
       "preDefinedDescription": "从精心设计的主题中选择，以增强您的体验。",
       "preDefinedThemes": "预设主题",
+      "previewAlt": "Preview",
       "previewComingSoon": "预览即将推出",
       "previewImage": "预览图像",
       "r": "R",
@@ -707,6 +753,7 @@
       "subDescriptionPlaceholder": "可选的子描述",
       "themeDescription": "创建自定义主题或使用精选预设。",
       "themeIcon": "主题图标",
+      "themeIconAlt": "Theme icon",
       "title": "主题",
       "usageInstructions": "打开插件，在\"预设主题\"中选择一个预设并点击启用。点击停用返回默认外观。"
     },
@@ -891,10 +938,15 @@
     "backupVpkCount": "VPK 文件",
     "browseGamePath": "Browse",
     "clearAllMods": "清除所有模组",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "创建备份",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
@@ -910,11 +962,13 @@
     "description": "描述",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "清除模组失败",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "闪光弹",
     "flashbangDescription": "无论选择何种主题，在晚上8点到早上8点之间强制使用浅色模式",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "游戏",
     "gameConfigDescription": "管理 gameinfo.gi 文件的备份、恢复和验证，以确保模组安装安全。",
     "gameConfigManagement": "游戏配置管理",
@@ -945,6 +999,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "打开模组文件夹",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "隐私",
@@ -958,7 +1014,9 @@
     "selectDefaultSort": "选择默认排序",
     "selectType": "选择类型",
     "settingCreated": "设置已创建",
+    "settingRemoved": "Setting removed",
     "settingType": "设置类型",
+    "settingUpdated": "Setting updated",
     "systemSettings": "系统设置",
     "systemSettingsDescription": "模组管理器设置。这些设置不影响游戏。",
     "theme": "主题",
@@ -1172,9 +1230,7 @@
         "title": "音频模组支持与启动选项"
       },
       "0.6.1": {
-        "features": [
-          "🔗 添加了对 GameBanana 上一键安装链接的支持"
-        ],
+        "features": ["🔗 添加了对 GameBanana 上一键安装链接的支持"],
         "title": "深度链接与改进"
       },
       "0.7.0": {
@@ -1202,16 +1258,11 @@
         "title": "主要功能与UI更新 + 新语言支持"
       },
       "0.8.1": {
-        "features": [
-          "🔧 更新为对所有 API 调用使用 HTTP 插件，以提高可靠性"
-        ],
+        "features": ["🔧 更新为对所有 API 调用使用 HTTP 插件，以提高可靠性"],
         "title": "技术改进"
       },
       "0.8.2": {
-        "features": [
-          "🐛 修复了各种错误并提高了稳定性",
-          "⚡ 性能改进和优化"
-        ],
+        "features": ["🐛 修复了各种错误并提高了稳定性", "⚡ 性能改进和优化"],
         "title": "错误修复与改进"
       },
       "0.9.0": {

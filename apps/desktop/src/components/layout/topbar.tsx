@@ -2,6 +2,7 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import useAbout from "@/hooks/use-about";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
+import { useTranslation } from "react-i18next";
 import UserMenu from "../user/user-menu";
 import Logo from "./logo";
 
@@ -37,6 +38,7 @@ const isPredefinedTheme = (
 };
 
 export const Topbar = () => {
+  const { t } = useTranslation();
   const { version } = useAbout();
   const themesEnabled = usePersistedStore(
     (s) => s.enabledPlugins.themes ?? false,
@@ -59,7 +61,7 @@ export const Topbar = () => {
       <div className='flex items-center gap-2'>
         {themedIconSrc ? (
           <img
-            alt='Deadlock'
+            alt={t("accessibility.deadlockLogoAlt")}
             className='h-11 w-11 object-contain'
             src={themedIconSrc}
           />

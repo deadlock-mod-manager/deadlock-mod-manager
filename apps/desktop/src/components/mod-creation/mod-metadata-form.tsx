@@ -186,7 +186,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         IMAGE_MIME_TYPE_REGEX.test(file.type) ||
         IMAGE_FILE_EXTENSION_REGEX.test(file.name);
       if (!ok) {
-        toast.error("Unsupported image type");
+        toast.error(t("addMods.unsupportedImageType"));
         e.currentTarget.value = "";
         return;
       }
@@ -310,7 +310,10 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
                 <FormItem>
                   <FormLabel>Link</FormLabel>
                   <FormControl>
-                    <Input placeholder='https://example.com/mod' {...field} />
+                    <Input
+                      placeholder={t("ui.placeholders.websiteUrl")}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -327,7 +330,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
                 <FormControl>
                   <textarea
                     className='w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring'
-                    placeholder='Short description (optional)'
+                    placeholder={t("ui.placeholders.shortDescription")}
                     rows={6}
                     {...field}
                   />

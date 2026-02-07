@@ -8,6 +8,7 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import {
@@ -33,6 +34,7 @@ import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
+  const { t } = useTranslation();
   const { localMods, setScrollPosition } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
   const { data: reportCounts } = useReportCounts(mod?.id ?? "");
@@ -92,12 +94,14 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           <div className='flex h-48 w-full items-center justify-center rounded-t-xl bg-muted'>
             <div className='text-center text-muted-foreground'>
               <DownloadIcon className='mx-auto mb-2 h-12 w-12' />
-              <p className='text-sm'>No preview available</p>
+              <p className='text-sm'>{t("mods.noPreviewAvailable")}</p>
             </div>
           </div>
         )}
         <div className='absolute top-2 right-2 flex flex-col gap-1'>
-          {status === ModStatus.Installed && <Badge>Installed</Badge>}
+          {status === ModStatus.Installed && (
+            <Badge>{t("modStatus.installed")}</Badge>
+          )}
           {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
           {isModOutdated(mod) && !staleResult && (
             <OutdatedModWarning variant='indicator' />
@@ -127,7 +131,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
               <CardDescription
                 className='overflow-clip text-ellipsis text-nowrap'
                 title={mod.author}>
-                By {mod.author}
+                {t("mods.by")} {mod.author}
               </CardDescription>
             </div>
 

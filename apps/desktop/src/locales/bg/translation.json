@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "Close",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "Go to first page",
     "goToLastPage": "Go to last page",
     "goToNextPage": "Go to next page",
@@ -40,7 +41,8 @@
     "next": "Next",
     "nextSlide": "Next slide",
     "previous": "Previous",
-    "previousSlide": "Previous slide"
+    "previousSlide": "Previous slide",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "Add",
@@ -78,11 +80,16 @@
     "supportedFormats": "Supported: .vpk/.zip/.rar/.7z",
     "title": "Add Mods",
     "unsupportedFiles": "Unsupported file(s).",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "Unsupported selection.",
     "validatingFiles": "Validating mod files...",
     "validatingMetadata": "Validating mod metadata..."
   },
   "addons": {
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
+    "adding": "Adding...",
     "analysisError": "Failed to analyze local addons",
     "analysisResults": "Local Addon Analysis",
     "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
@@ -102,6 +109,7 @@
     },
     "errors": "Errors",
     "errorsCount": "{{count}} error(s)",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "Files",
     "fileSize": "Size",
     "files": "files",
@@ -110,6 +118,7 @@
     "modAuthor": "Author",
     "modName": "Mod Name",
     "modNotFound": "Mod not found in database",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "No addons found in your game directory",
     "noEntriesFound": "No entries found in VPK file",
     "progress": {
@@ -137,6 +146,13 @@
       "unknown": "Unknown"
     },
     "vpkContents": "VPK Contents"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "Actions",
@@ -226,6 +242,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -315,11 +332,16 @@
     "completed": "Completed",
     "downloading": "Изтегля се {{count}} мод",
     "downloading_plural": "Изтеглят се {{count}} модове",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "No downloads found",
     "noDownloadsMatchFilter": "There are no downloads matching your current filter.",
     "openDownloadFolder": "Open Download Folder",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "Downloads",
+    "total": "Total",
     "viewAllDownloads": "View all downloads"
   },
   "errors": {
@@ -333,7 +355,8 @@
     },
     "genericMessage": "We're sorry, but an error occurred while processing your request.",
     "goBack": "Go back",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -382,11 +405,18 @@
     "sortBy": "Сортиране по"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "Създаване на резервно копие",
     "openInEditor": "Отваряне в редактор",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "Възстановяване към стандартен режим",
     "restoreBackup": "Възстановяване на резервно копие",
-    "validateConfiguration": "Проверка на Конфигурацията"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "Проверка на Конфигурацията",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -416,6 +446,15 @@
     "removing": "Removing..."
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "Current VPK Files",
       "description": "Replace mod files for quick iteration during development",
@@ -532,6 +571,7 @@
   },
   "notifications": {
     "failedToInstallMod": "Неуспешна инсталация на мод",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "Failed to perform action",
     "installationCanceled": "Инсталацията бе прекратена",
     "modContainsFiles": "{{modName}} съдържа {{fileCount}} файла. Изберете кои да бъдат изтеглени.",
@@ -592,6 +632,7 @@
       "description": "Customize application backgrounds.",
       "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
       "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Include sidebar",
       "opacity": "Opacity",
       "title": "Background",
@@ -607,6 +648,7 @@
       "description": "Shows your Deadlock activity on Discord.",
       "detailedDescription": "Displays your Deadlock activity on Discord using Rich Presence. Simply enable the plugin and optionally customize the Details and State text visible on your profile.",
       "details": "Details Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Large Image Key",
       "largeImageText": "Large Image Text",
       "optional": "(optional)",
@@ -620,6 +662,7 @@
       "smallImageKey": "Small Image Key",
       "smallImageText": "Small Image Text",
       "state": "State Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Enable the plugin, then optionally edit the Details and State text."
     },
@@ -639,12 +682,14 @@
     },
     "renderActive": "Plugin is active and running in the background",
     "sudo": {
+      "activateSelectedMod": "Activate selected mod",
       "description": "Advanced mod management tools for experienced users.",
       "detailedDescription": "Unlocks developer-oriented controls and experimental features. Some actions can modify files or bypass safeguards. Use with caution.",
       "importMod": "Import Mod",
       "instructions": "Browse mods on the left, select one, then use the right arrow to download and enable it. Select an installed mod on the right and use the left arrow to remove it. You can search both lists.",
       "openAddons": "Open Addons",
       "removeMod": "Remove mod",
+      "removeSelectedMod": "Remove selected mod",
       "title": "Superuser",
       "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
       "viewOriginalPost": "View original forum post"
@@ -667,6 +712,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -694,6 +740,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -704,6 +751,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Themes",
       "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look."
     },
@@ -888,10 +936,15 @@
     "backupVpkCount": "VPK Files",
     "browseGamePath": "Browse",
     "clearAllMods": "Изчисти всички модове",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Сигурни ли сте, че искате да изчистите всички модове? Това действие не може да бъде отменено.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "Create Backup",
     "createCustomSetting": "Създаване на персонализирана настройка",
     "createCustomSettingDescription": "Добавете персонализирана настройка. Тези настройки ще бъдат добавени към играта като опции при стартиране",
@@ -907,11 +960,13 @@
     "description": "Описание",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "Неуспешно изчистване на модове",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "Flashbang",
     "flashbangDescription": "Forces Light Mode between 8 PM and 8 AM, regardless of selected theme",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "Игра",
     "gameConfigDescription": "Управление на архивирането, възстановяването и проверката на файла gameinfo.gi за безопасно модифициране.",
     "gameConfigManagement": "Управление на конфигурацията на играта",
@@ -943,6 +998,8 @@
     "openInFolder": "Open in Folder",
     "openModsFolder": "Отвори папката с модове",
     "openModsStore": "Отвори магазин за модове",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "Поверителност",
@@ -956,7 +1013,9 @@
     "selectDefaultSort": "Изберете сортиране по подразбиране",
     "selectType": "Изберете тип",
     "settingCreated": "Настройка създадена",
+    "settingRemoved": "Setting removed",
     "settingType": "Тип настройка",
+    "settingUpdated": "Setting updated",
     "systemSettings": "Системни Настройки",
     "systemSettingsDescription": "Настройки на Мод Мениджъра. Тези настройки не влияят на играта.",
     "theme": "Theme",

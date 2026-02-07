@@ -42,6 +42,7 @@ const parseCommand = (input: string) => {
 };
 
 const Command = ({ setting }: Pick<SettingsCardProps, "setting">) => {
+  const { t } = useTranslation();
   if (!setting) {
     return null;
   }
@@ -63,17 +64,17 @@ const Command = ({ setting }: Pick<SettingsCardProps, "setting">) => {
             navigator.clipboard.writeText(
               `${setting.key} ${setting.value}`.trim(),
             );
-            toast.success("Copied to clipboard");
+            toast.success(t("settings.copiedToClipboard"));
           }}
           type='button'>
-          Command:
+          {t("settings.commandLabel")}:
           <span className='font-mono text-sm underline decoration-dotted underline-offset-4'>
             {`${setting.key} ${setting.value}`.trim()}
           </span>
         </button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Copy to clipboard</p>
+        <p>{t("settings.copyToClipboardTooltip")}</p>
       </TooltipContent>
     </Tooltip>
   );
@@ -133,10 +134,10 @@ const SettingCard = ({
 
     const { key, value } = parseCommand(editCmd);
     if (!key) {
-      return toast.error("Command key is required");
+      return toast.error(t("settings.commandKeyRequired"));
     }
     if (setting.type === CustomSettingType.LAUNCH_OPTION && !value) {
-      return toast.error("Command value is required");
+      return toast.error(t("settings.commandValueRequired"));
     }
 
     const updated: LocalSetting = {
@@ -149,7 +150,7 @@ const SettingCard = ({
 
     addSetting(updated);
     setEditOpen(false);
-    toast.success("Setting updated");
+    toast.success(t("settings.settingUpdated"));
   };
 
   const deleteSetting = () => {
@@ -157,7 +158,7 @@ const SettingCard = ({
       return;
     }
     removeSetting(setting.id);
-    toast.success("Setting removed");
+    toast.success(t("settings.settingRemoved"));
   };
 
   return (
@@ -178,7 +179,7 @@ const SettingCard = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    aria-label='Edit'
+                    aria-label={t("common.edit")}
                     onClick={openEdit}
                     size='icon'
                     variant='ghost'>
@@ -186,13 +187,13 @@ const SettingCard = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Edit</p>
+                  <p>{t("common.edit")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    aria-label='Delete'
+                    aria-label={t("common.delete")}
                     onClick={deleteSetting}
                     size='icon'
                     variant='ghost'>
@@ -200,7 +201,7 @@ const SettingCard = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Delete</p>
+                  <p>{t("common.delete")}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -222,36 +223,38 @@ const SettingCard = ({
       <Dialog onOpenChange={setEditOpen} open={editOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit custom option</DialogTitle>
+            <DialogTitle>{t("settings.editCustomOptionTitle")}</DialogTitle>
           </DialogHeader>
 
           <div className='flex flex-col gap-4'>
             <div className='flex flex-col gap-2'>
-              <Label htmlFor={`name-${setting.id}`}>Name</Label>
+              <Label htmlFor={`name-${setting.id}`}>{t("ui.name")}</Label>
               <Input
                 id={`name-${setting.id}`}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder='e.g. 110 FOV'
+                placeholder={t("settings.placeholderFov")}
                 value={editName}
               />
             </div>
 
             <div className='flex flex-col gap-2'>
-              <Label htmlFor={`cmd-${setting.id}`}>Command</Label>
+              <Label htmlFor={`cmd-${setting.id}`}>
+                {t("settings.commandLabel")}
+              </Label>
               <Input
                 id={`cmd-${setting.id}`}
                 onChange={(e) => setEditCmd(e.target.value)}
-                placeholder='+r_aspectratio 2.7'
+                placeholder={t("settings.placeholderCommand")}
                 value={editCmd}
               />
               <span className='text-muted-foreground text-xs'>
-                Format: +cvar value (leading + is optional)
+                {t("settings.formatCommandHint")}
               </span>
             </div>
           </div>
 
           <DialogFooter>
-            <Button onClick={saveEdit}>Save</Button>
+            <Button onClick={saveEdit}>{t("common.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

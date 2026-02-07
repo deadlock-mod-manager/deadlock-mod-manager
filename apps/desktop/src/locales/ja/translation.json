@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "閉じる",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "最初のページに移動",
     "goToLastPage": "最後のページに移動",
     "goToNextPage": "次のページに移動",
@@ -40,7 +41,8 @@
     "next": "次へ",
     "nextSlide": "次のスライド",
     "previous": "前へ",
-    "previousSlide": "前のスライド"
+    "previousSlide": "前のスライド",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "追加",
@@ -78,11 +80,16 @@
     "supportedFormats": "サポートファイル: .vpk/.zip/.rar/.7z",
     "title": "Modを追加",
     "unsupportedFiles": "未対応のファイルです",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "未対応の選択です。",
     "validatingFiles": "Modファイルを検証中...",
     "validatingMetadata": "Modメタデータを検証中..."
   },
   "addons": {
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
+    "adding": "Adding...",
     "analysisError": "ローカルアドオンの分析に失敗しました",
     "analysisResults": "ローカルアドオン分析",
     "analysisResultsDescription": "ゲームディレクトリに{{count}}個のアドオンが見つかりました",
@@ -102,6 +109,7 @@
     },
     "errors": "エラー",
     "errorsCount": "{{count}}個のエラー",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "ファイル数",
     "fileSize": "サイズ",
     "files": "ファイル",
@@ -110,6 +118,7 @@
     "modAuthor": "作成者",
     "modName": "Mod名",
     "modNotFound": "データベースにModが見つかりません",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "ゲームディレクトリにアドオンが見つかりませんでした",
     "noEntriesFound": "VPKファイルにエントリが見つかりません",
     "progress": {
@@ -137,6 +146,13 @@
       "unknown": "不明"
     },
     "vpkContents": "VPKコンテンツ"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "操作",
@@ -226,6 +242,7 @@
       "heroes": "ヒーロー",
       "heroesSelected": "選択済み",
       "heroesValidation": "少なくとも1つのヒーロー（最大5つ）を選択してください",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "インポート",
         "description": "citadelクロスヘア形式の設定を下に貼り付けて、フォームにインポートする。",
@@ -315,11 +332,16 @@
     "completed": "完了",
     "downloading": "{{count}}個のModをダウンロード中...",
     "downloading_plural": "{{count}}個のModをダウンロード中...",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "ダウンロードなし",
     "noDownloadsMatchFilter": "フィルターに一致するダウンロード項目はありません。",
     "openDownloadFolder": "ダウンロードフォルダを開く",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "ダウンロード",
+    "total": "Total",
     "viewAllDownloads": "すべてのダウンロードを見る"
   },
   "errors": {
@@ -333,7 +355,8 @@
     },
     "genericMessage": "申し訳ございませんが、リクエストの処理中にエラーが発生しました。",
     "goBack": "戻る",
-    "tryAgain": "もう一度試す"
+    "tryAgain": "もう一度試す",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "実験的機能に参加して、全員にリリースされる前に新機能を試す。",
@@ -381,11 +404,18 @@
     "sortBy": "並び順"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "バックアップを作成",
     "openInEditor": "エディターで開く",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "初期化",
     "restoreBackup": "バックアップを復元",
-    "validateConfiguration": "設定を検証"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "設定を検証",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "ドキュメント",
@@ -415,6 +445,15 @@
     "removing": "除外中"
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "現在のVPKファイル",
       "description": "開発中の迅速なイテレーションのためにModファイルを置換する",
@@ -531,6 +570,7 @@
   },
   "notifications": {
     "failedToInstallMod": "Modのインストールに失敗しました",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "操作を実行できませんでした",
     "installationCanceled": "インストールが中止されました",
     "modContainsFiles": "{{modName}}には{{fileCount}}個のファイルが含まれています。インストールするファイルを選択してください。",
@@ -592,6 +632,7 @@
       "description": "アプリケーションの背景をカスタマイズする。",
       "detailedDescription": "このプラグインでは、アプリケーション全体のカスタム背景画像を設定できます。オンライン画像のURLを使用するか、ローカル画像ファイルをアップロードできます。プラグインは不透明度とぼかし効果をサポートして、外観をカスタマイズできます。サイドバーを背景効果に含めるかどうかも選択できます。",
       "imageUrl": "画像URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "サイドバーを含める",
       "opacity": "不透明度",
       "title": "背景",
@@ -607,6 +648,7 @@
       "description": "DiscordでDeadlockのアクティビティを表示する。",
       "detailedDescription": "Rich Presenceを使用してDiscordでDeadlockのアクティビティを表示します。プラグインを有効にして、オプションでプロファイルに表示される詳細とステータステキストをカスタマイズできます。",
       "details": "詳細テキスト",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "大画像キー",
       "largeImageText": "大画像テキスト",
       "optional": "（オプション）",
@@ -620,6 +662,7 @@
       "smallImageKey": "小画像キー",
       "smallImageText": "小画像テキスト",
       "state": "ステータステキスト",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "プラグインを有効にして、オプションで詳細とステータステキストを編集する。"
     },
@@ -639,12 +682,14 @@
     },
     "renderActive": "プラグインがアクティブでバックグラウンドで実行中です",
     "sudo": {
+      "activateSelectedMod": "Activate selected mod",
       "description": "経験豊富なユーザー向けの高度なMod管理ツール。",
       "detailedDescription": "開発者向けのコントロールと実験的機能のロックを解除する。一部のアクションはファイルを変更したり、安全装置をバイパスしたりする可能性があります。注意して使用してください。",
       "importMod": "Modをインポート",
       "instructions": "左側でModを閲覧し、1つを選択してから右矢印を使用してダウンロードして有効にする。右側でインストール済みのModを選択し、左矢印を使用して削除する。両方のリストを検索できる。",
       "openAddons": "アドオンを開く",
       "removeMod": "Modを削除",
+      "removeSelectedMod": "Remove selected mod",
       "title": "スーパーユーザー",
       "usageInstructions": "プラグインを有効にしてスーパーユーザーモードをオンにする。開発者オプションと高度なツールがアプリ全体で表示されるようになる。プラグインを無効にすると、再び非表示になる。",
       "viewOriginalPost": "元のフォーラム投稿を表示"
@@ -667,6 +712,7 @@
       "chooseImage": "画像を選択",
       "choosePreview": "プレビューを選択",
       "clear": "クリア",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "好みの色とスタイルで独自のカスタムテーマを作成する。",
       "customThemeBuilder": "カスタムテーマビルダー",
       "customThemeBuilderDescription": "色とスタイルを選択して独自のテーマを構築する。",
@@ -694,6 +740,7 @@
       "pickColor": "色を選択",
       "preDefinedDescription": "体験を向上させるために設計された慎重に作成されたテーマから選択する。",
       "preDefinedThemes": "事前定義されたテーマ",
+      "previewAlt": "Preview",
       "previewComingSoon": "プレビューは近日公開",
       "previewImage": "プレビュー画像",
       "r": "R",
@@ -704,6 +751,7 @@
       "subDescriptionPlaceholder": "オプションのサブ説明",
       "themeDescription": "独自のテーマを作成するか、キュレートされたプリセットを使用する。",
       "themeIcon": "テーマアイコン",
+      "themeIconAlt": "Theme icon",
       "title": "テーマ",
       "usageInstructions": "プラグインを開き、「事前定義されたテーマ」でプリセットを選択してから、「有効化」を押す。「無効化」を押すとデフォルトの外観に戻る。"
     },
@@ -888,10 +936,15 @@
     "backupVpkCount": "VPKファイル数",
     "browseGamePath": "参照",
     "clearAllMods": "すべてのModを削除",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "すべてのModを削除してよろしいですか？この操作は取り消せません。",
     "confirmClearModsState": "Modの状態をクリアしますか？",
     "confirmClearModsStateAction": "状態をクリア",
     "confirmClearModsStateBody": "これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "バックアップを作成",
     "createCustomSetting": "カスタム設定を作成",
     "createCustomSettingDescription": "ゲームにカスタム設定を追加する。これらは起動オプションとしてゲームに適用される。",
@@ -907,11 +960,13 @@
     "description": "概要",
     "developerMode": "開発者モード",
     "developerModeDescription": "開発者モードを有効にして、高度なツールとデバッグ機能にアクセスする",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "実験的機能",
     "failedToClearMods": "Modの削除に失敗しました",
     "failedToOpenFolder": "フォルダーを開けませんでした",
     "flashbang": "フラッシュバン",
     "flashbangDescription": "テーマ設定に関係なく20時～8時はライトモードを強制適用",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "ゲーム",
     "gameConfigDescription": "gameinfo.giファイルのバックアップ・復元・検証を管理して安全にMod運用を行う",
     "gameConfigManagement": "ゲーム設定管理",
@@ -942,6 +997,8 @@
     "openInEditor": "エディターで開く",
     "openInFolder": "フォルダーで開く",
     "openModsFolder": "Modフォルダを開く",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "プラグイン",
     "pluginDescription": "デスクトップアプリのプラグインと統合機能を管理する。",
     "privacy": "プライバシー",
@@ -955,7 +1012,9 @@
     "selectDefaultSort": "デフォルトソート選択",
     "selectType": "選択の種類",
     "settingCreated": "設定を作成しました",
+    "settingRemoved": "Setting removed",
     "settingType": "設定の種類",
+    "settingUpdated": "Setting updated",
     "systemSettings": "システム設定",
     "systemSettingsDescription": "Modマネージャーの設定。ゲームには影響しない",
     "theme": "テーマ",

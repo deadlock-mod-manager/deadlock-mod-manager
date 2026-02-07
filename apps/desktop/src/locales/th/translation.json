@@ -1,4 +1,4 @@
-﻿{
+{
   "about": {
     "checkForUpdates": "ตรวจสอบการอัปเดต",
     "close": "ปิด",
@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "ปิด",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "ไปที่หน้าแรก",
     "goToLastPage": "ไปที่หน้าสุดท้าย",
     "goToNextPage": "ไปที่หน้าถัดไป",
@@ -40,7 +41,8 @@
     "next": "ถัดไป",
     "nextSlide": "สไลด์ถัดไป",
     "previous": "ก่อนหน้า",
-    "previousSlide": "สไลด์ก่อนหน้า"
+    "previousSlide": "สไลด์ก่อนหน้า",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "เพิ่ม",
@@ -78,11 +80,16 @@
     "supportedFormats": "รองรับ: .vpk/.zip/.rar/.7z",
     "title": "เพิ่มม็อด",
     "unsupportedFiles": "ไฟล์ที่ไม่รองรับ",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "การเลือกที่ไม่รองรับ",
     "validatingFiles": "กำลังตรวจสอบไฟล์ม็อด...",
     "validatingMetadata": "กำลังตรวจสอบข้อมูลเมตาของม็อด..."
   },
   "addons": {
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
+    "adding": "Adding...",
     "analysisError": "ไม่สามารถวิเคราะห์ addons ในเครื่องได้",
     "analysisResults": "ผลการวิเคราะห์ Addon ในเครื่อง",
     "analysisResultsDescription": "พบ {{count}} addon ในไดเรกทอรีเกมของคุณ",
@@ -102,6 +109,7 @@
     },
     "errors": "ข้อผิดพลาด",
     "errorsCount": "{{count}} ข้อผิดพลาด",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "ไฟล์",
     "fileSize": "ขนาด",
     "files": "ไฟล์",
@@ -116,6 +124,7 @@
     "modAuthor": "ผู้สร้าง",
     "modName": "ชื่อม็อด",
     "modNotFound": "ไม่พบม็อดในฐานข้อมูล",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "ไม่พบ addons ในไดเรกทอรีเกมของคุณ",
     "noEntriesFound": "ไม่พบรายการในไฟล์ VPK",
     "progress": {
@@ -143,6 +152,13 @@
       "unknown": "ไม่รู้จัก"
     },
     "vpkContents": "เนื้อหา VPK"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "การดำเนินการ",
@@ -236,6 +252,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -325,11 +342,16 @@
     "completed": "เสร็จสมบูรณ์",
     "downloading": "กำลังดาวน์โหลด {{count}} ม็อด",
     "downloading_plural": "กำลังดาวน์โหลด {{count}} ม็อด",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "ไม่พบการดาวน์โหลด",
     "noDownloadsMatchFilter": "ไม่มีการดาวน์โหลดที่ตรงกับตัวกรองปัจจุบันของคุณ",
     "openDownloadFolder": "เปิดโฟลเดอร์ดาวน์โหลด",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "ดาวน์โหลด",
+    "total": "Total",
     "viewAllDownloads": "ดูการดาวน์โหลดทั้งหมด"
   },
   "errors": {
@@ -343,7 +365,8 @@
     },
     "genericMessage": "ขออภัย เกิดข้อผิดพลาดขณะประมวลผลคำขอของคุณ",
     "goBack": "ย้อนกลับ",
-    "tryAgain": "ลองอีกครั้ง"
+    "tryAgain": "ลองอีกครั้ง",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -391,11 +414,18 @@
     "sortBy": "จัดเรียงตาม"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "สร้างข้อมูลสำรอง",
     "openInEditor": "เปิดในตัวแก้ไข",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "รีเซ็ตเป็นเวอร์ชันปกติ",
     "restoreBackup": "กู้คืนข้อมูลสำรอง",
-    "validateConfiguration": "ตรวจสอบการกำหนดค่า"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "ตรวจสอบการกำหนดค่า",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "เอกสารประกอบ",
@@ -425,6 +455,15 @@
     "removing": "กำลังลบ..."
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "Current VPK Files",
       "description": "Replace mod files for quick iteration during development",
@@ -541,6 +580,7 @@
   },
   "notifications": {
     "failedToInstallMod": "ไม่สามารถติดตั้งม็อดได้",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "ไม่สามารถดำเนินการได้",
     "installationCanceled": "ยกเลิกการติดตั้งแล้ว",
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
@@ -601,6 +641,7 @@
       "description": "Customize application backgrounds.",
       "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
       "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Include sidebar",
       "opacity": "Opacity",
       "title": "Background",
@@ -624,6 +665,7 @@
       "description": "Shows your Deadlock activity on Discord.",
       "detailedDescription": "Displays your Deadlock activity on Discord using Rich Presence. Simply enable the plugin and optionally customize the Details and State text visible on your profile.",
       "details": "Details Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Large Image Key",
       "largeImageText": "Large Image Text",
       "optional": "(optional)",
@@ -637,6 +679,7 @@
       "smallImageKey": "Small Image Key",
       "smallImageText": "Small Image Text",
       "state": "State Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Enable the plugin, then optionally edit the Details and State text."
     },
@@ -655,6 +698,7 @@
       "visit": "Visit Nightshift:"
     },
     "renderActive": "Plugin is active and running in the background",
+
     "tea": {
       "carrd": "Carrd",
       "description": "A cozy beige theme created for the YouTuber and Twitch streamer Snipztea.",
@@ -673,6 +717,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -700,6 +745,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -710,6 +756,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Themes",
       "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look."
     },
@@ -894,10 +941,15 @@
     "backupVpkCount": "ไฟล์ VPK",
     "browseGamePath": "เลือกดู",
     "clearAllMods": "ล้างม็อดทั้งหมด",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "สร้างข้อมูลสำรอง",
     "createCustomSetting": "สร้างการตั้งค่าที่กำหนดเอง",
     "createCustomSettingDescription": "เพิ่มการตั้งค่าที่กำหนดเองลงในเกม สิ่งเหล่านี้จะถูกเพิ่มเข้าไปในเกมเป็นตัวเลือกการเริ่มเกม",
@@ -913,11 +965,13 @@
     "description": "คำอธิบาย",
     "developerMode": "โหมดนักพัฒนา",
     "developerModeDescription": "เปิดใช้งานโหมดนักพัฒนาเพื่อเข้าถึงเครื่องมือขั้นสูงและคุณสมบัติการดีบัก",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
     "failedToOpenFolder": "ไม่สามารถเปิดโฟลเดอร์ได้",
     "flashbang": "แฟลชแบง",
     "flashbangDescription": "บังคับใช้โหมดสว่างระหว่างเวลา 20:00 น. ถึง 8:00 น. โดยไม่คำนึงถึงธีมที่เลือก",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "เกม",
     "gameConfigDescription": "จัดการการสำรอง, การกู้คืน และการตรวจสอบไฟล์ gameinfo.gi เพื่อการลงม็อดอย่างปลอดภัย",
     "gameConfigManagement": "การจัดการการกำหนดค่าเกม",
@@ -949,6 +1003,8 @@
     "openInFolder": "Open in Folder",
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsStore": "เปิดรายการม็อด",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "ความเป็นส่วนตัว",
@@ -962,7 +1018,9 @@
     "selectDefaultSort": "เลือกการจัดเรียงเริ่มต้น",
     "selectType": "เลือกประเภท",
     "settingCreated": "สร้างการตั้งค่าแล้ว",
+    "settingRemoved": "Setting removed",
     "settingType": "ประเภทการตั้งค่า",
+    "settingUpdated": "Setting updated",
     "systemSettings": "การตั้งค่าระบบ",
     "systemSettingsDescription": "การตั้งค่าตัวจัดการม็อด สิ่งเหล่านี้ไม่มีผลต่อเกม",
     "theme": "ธีม",

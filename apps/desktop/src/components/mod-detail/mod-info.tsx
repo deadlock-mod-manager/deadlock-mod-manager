@@ -14,6 +14,7 @@ import {
   Tag,
   User,
 } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
 
@@ -23,6 +24,7 @@ interface ModInfoProps {
 }
 
 export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
+  const { t } = useTranslation();
   const showHeader = hasHero ? false : !mod.isAudio;
   const { localMods } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
@@ -41,22 +43,27 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
           <div className='grid grid-cols-3 gap-4'>
             <div className='flex items-center gap-2'>
               <Hash className='text-muted-foreground' />
-              <span className='text-sm'>ID: {mod.remoteId}</span>
+              <span className='text-sm'>
+                {t("modDetail.idLabel")}: {mod.remoteId}
+              </span>
             </div>
             <div className='flex items-center gap-2'>
               <User className='text-muted-foreground' />
-              <span className='text-sm'>Author: {mod.author}</span>
-            </div>
-            <div className='flex items-center gap-2'>
-              <Calendar className='text-muted-foreground' />
               <span className='text-sm'>
-                Published At: <DateDisplay date={mod.remoteAddedAt} inverse />
+                {t("modDetail.authorLabel")}: {mod.author}
               </span>
             </div>
             <div className='flex items-center gap-2'>
               <Calendar className='text-muted-foreground' />
               <span className='text-sm'>
-                Last Modified At:{" "}
+                {t("modDetail.publishedAt")}:{" "}
+                <DateDisplay date={mod.remoteAddedAt} inverse />
+              </span>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Calendar className='text-muted-foreground' />
+              <span className='text-sm'>
+                {t("modDetail.lastModifiedAt")}:{" "}
                 <DateDisplay date={mod.remoteUpdatedAt} inverse />
               </span>
             </div>
@@ -64,19 +71,23 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
               <div className='flex items-center gap-2'>
                 <Calendar className='text-muted-foreground' />
                 <span className='text-sm'>
-                  Installed At:{" "}
+                  {t("modDetail.installedAt")}:{" "}
                   <DateDisplay date={localMod.downloadedAt} inverse />
                 </span>
               </div>
             )}
             <div className='flex items-center gap-2'>
               <Download className='text-muted-foreground' />
-              <span className='text-sm'>Downloads: {mod.downloadCount}</span>
+              <span className='text-sm'>
+                {t("modDetail.downloadsLabel")}: {mod.downloadCount}
+              </span>
             </div>
             {localMod?.status && (
               <div className='flex items-center gap-2'>
                 <InfoIcon className='text-muted-foreground' />
-                <span className='text-sm'>Mod Status: {localMod?.status}</span>
+                <span className='text-sm'>
+                  {t("modDetail.modStatusLabel")}: {localMod?.status}
+                </span>
               </div>
             )}
           </div>

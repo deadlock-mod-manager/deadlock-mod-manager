@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "Chiudi",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "Vai alla prima pagina",
     "goToLastPage": "Vai all'ultima pagina",
     "goToNextPage": "Vai alla pagina successiva",
@@ -40,7 +41,8 @@
     "next": "Successivo",
     "nextSlide": "Slide successiva",
     "previous": "Precedente",
-    "previousSlide": "Slide precedente"
+    "previousSlide": "Slide precedente",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "Aggiungi",
@@ -78,11 +80,16 @@
     "supportedFormats": "Supportati: .vpk/.zip/.rar/.7z",
     "title": "Aggiungi Mod locale",
     "unsupportedFiles": "File non supportato/i.",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "Selezione non supportata.",
     "validatingFiles": "Validazione file della mod...",
     "validatingMetadata": "Validazione metadati della mod..."
   },
   "addons": {
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
+    "adding": "Adding...",
     "analysisError": "Impossibile analizzare gli addon locali",
     "analysisResults": "Analisi Addon Locali",
     "analysisResultsDescription": "Trovato {{count}} addon nella tua directory di gioco",
@@ -102,6 +109,7 @@
     },
     "errors": "Errori",
     "errorsCount": "{{count}} errore/i",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "File",
     "fileSize": "Dimensione",
     "files": "file",
@@ -116,6 +124,7 @@
     "modAuthor": "Autore",
     "modName": "Nome Mod",
     "modNotFound": "Mod non trovata nel database",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "Nessun addon trovato nella tua directory di gioco",
     "noEntriesFound": "Nessuna voce trovata nel file VPK",
     "progress": {
@@ -143,6 +152,13 @@
       "unknown": "Sconosciuti"
     },
     "vpkContents": "Contenuti VPK"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "Azioni",
@@ -232,6 +248,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -321,11 +338,16 @@
     "completed": "Completati",
     "downloading": "Download di {{count}} mod in corso",
     "downloading_plural": "Download di {{count}} mod in corso",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "Nessun download trovato",
     "noDownloadsMatchFilter": "Non ci sono download che corrispondono al filtro attuale.",
     "openDownloadFolder": "Apri Cartella Download",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "Download",
+    "total": "Total",
     "viewAllDownloads": "Visualizza tutti i download"
   },
   "errors": {
@@ -339,7 +361,8 @@
     },
     "genericMessage": "Siamo spiacenti, ma si è verificato un errore durante l'elaborazione della tua richiesta.",
     "goBack": "Torna indietro",
-    "tryAgain": "Riprova"
+    "tryAgain": "Riprova",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -387,11 +410,18 @@
     "sortBy": "Ordina per"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "Crea Backup",
     "openInEditor": "Apri nell'Editor",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "Ripristina a Vanilla",
     "restoreBackup": "Ripristina Backup",
-    "validateConfiguration": "Valida Configurazione"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "Valida Configurazione",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentazione",
@@ -421,6 +451,15 @@
     "removing": "Rimozione..."
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "File VPK Attuali",
       "description": "Sostituisci file mod per iterazione rapida durante lo sviluppo",
@@ -537,6 +576,7 @@
   },
   "notifications": {
     "failedToInstallMod": "Impossibile installare la mod",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "Impossibile eseguire l'azione",
     "installationCanceled": "Installazione annullata",
     "modContainsFiles": "{{modName}} contiene {{fileCount}} file. Seleziona quali installare.",
@@ -597,6 +637,7 @@
       "description": "Customize application backgrounds.",
       "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
       "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Include sidebar",
       "opacity": "Opacity",
       "title": "Background",
@@ -620,6 +661,7 @@
       "description": "Shows your Deadlock activity on Discord.",
       "detailedDescription": "Displays your Deadlock activity on Discord using Rich Presence. Simply enable the plugin and optionally customize the Details and State text visible on your profile.",
       "details": "Details Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Large Image Key",
       "largeImageText": "Large Image Text",
       "optional": "(optional)",
@@ -633,6 +675,7 @@
       "smallImageKey": "Small Image Key",
       "smallImageText": "Small Image Text",
       "state": "State Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Enable the plugin, then optionally edit the Details and State text."
     },
@@ -651,6 +694,7 @@
       "visit": "Visit Nightshift:"
     },
     "renderActive": "Plugin is active and running in the background",
+
     "tea": {
       "carrd": "Carrd",
       "description": "Un tema beige accogliente creato per lo youtuber e streamer Twitch Snipztea.",
@@ -669,6 +713,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -696,6 +741,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -706,6 +752,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Themes",
       "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look."
     },
@@ -890,10 +937,15 @@
     "backupVpkCount": "File VPK",
     "browseGamePath": "Sfoglia",
     "clearAllMods": "Cancella Tutte le Mod",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Sei sicuro di voler cancellare tutte le mod? Questa azione non può essere annullata.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "Crea Backup",
     "createCustomSetting": "Crea un'impostazione personalizzata",
     "createCustomSettingDescription": "Aggiungi un'impostazione personalizzata al gioco. Queste verranno aggiunte al gioco come opzioni di avvio.",
@@ -909,11 +961,13 @@
     "description": "Descrizione",
     "developerMode": "Modalità Sviluppatore",
     "developerModeDescription": "Abilita la modalità sviluppatore per accedere a strumenti avanzati e funzionalità di debug",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "Impossibile cancellare le mod",
     "failedToOpenFolder": "Impossibile aprire la cartella",
     "flashbang": "Flashbang",
     "flashbangDescription": "Forza la Modalità Chiara tra le 20:00 e le 8:00, indipendentemente dal tema selezionato",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "Gioco",
     "gameConfigDescription": "Gestisci backup, ripristino e validazione del file gameinfo.gi per un modding sicuro.",
     "gameConfigManagement": "Gestione Configurazione Gioco",
@@ -944,6 +998,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "Apri Cartella delle Mod",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "Privacy",
@@ -957,7 +1013,9 @@
     "selectDefaultSort": "Seleziona ordinamento predefinito",
     "selectType": "Seleziona un tipo",
     "settingCreated": "Impostazione creata",
+    "settingRemoved": "Setting removed",
     "settingType": "Tipo di impostazione",
+    "settingUpdated": "Setting updated",
     "systemSettings": "Impostazioni di Sistema",
     "systemSettingsDescription": "Impostazioni del Mod Manager. Queste non influenzano il gioco.",
     "theme": "Tema",

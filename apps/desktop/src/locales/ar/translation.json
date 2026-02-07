@@ -31,6 +31,7 @@
   },
   "accessibility": {
     "close": "إغلاق",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "الذهاب للصفحة الأولى",
     "goToLastPage": "الذهاب للصفحة الأخيرة",
     "goToNextPage": "الذهاب للصفحة التالية",
@@ -40,7 +41,8 @@
     "next": "التالي",
     "nextSlide": "الشريحة التالية",
     "previous": "السابق",
-    "previousSlide": "الشريحة السابقة"
+    "previousSlide": "الشريحة السابقة",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "إضافة",
@@ -78,13 +80,18 @@
     "supportedFormats": "مدعوم: .vpk/.zip/.rar/.7z",
     "title": "إضافة تعديلات",
     "unsupportedFiles": "ملف(ات) غير مدعوم(ة).",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "اختيار غير مدعوم.",
     "validatingFiles": "التحقق من ملفات التعديل...",
     "validatingMetadata": "التحقق من بيانات التعديل..."
   },
   "addons": {
     "addToLibrary": "إضافة إلى المكتبة",
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "addToLibraryTitle": "Add to Library",
     "addedToLibrary": "تمت الإضافة إلى المكتبة",
+    "adding": "Adding...",
     "addingToLibrary": "جاري الإضافة إلى المكتبة...",
     "analysisError": "خطأ في تحليل الإضافات المحلية",
     "analysisResults": "تحليل الإضافات المحلية",
@@ -107,6 +114,7 @@
     "errors": "Errors",
     "errorsCount": "{{count}} error(s)",
     "failedToAdd": "فشل في الإضافة",
+    "failedToAddModToLibrary": "Failed to add mod to library",
     "fileCount": "Files",
     "fileSize": "Size",
     "files": "files",
@@ -116,6 +124,7 @@
     "modAuthor": "Author",
     "modName": "Mod Name",
     "modNotFound": "Mod not found in database",
+    "noAddonSelected": "No addon selected",
     "noAddonsFound": "لم يتم العثور على إضافات",
     "noAddonsFoundDescription": "لم يتم العثور على ملفات إضافات في دليل اللعبة الخاص بك",
     "noEntriesFound": "No entries found in VPK file",
@@ -145,6 +154,13 @@
     },
     "unidentifiedAddons": "الإضافات غير المحددة",
     "vpkContents": "VPK Contents"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Authorization Code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "pleaseEnterCode": "Please enter a code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "common": {
     "actions": "الإجراءات",
@@ -235,6 +251,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -324,11 +341,16 @@
     "completed": "مكتمل",
     "downloading": "جاري التنزيل {{count}} تعديل",
     "downloading_plural": "تعديلات {{count}} تنزيل",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "لم يتم العثور على تحميلات",
     "noDownloadsMatchFilter": "لا توجد تحميلات تطابق المرشح الحالي الخاص بك.",
     "openDownloadFolder": "فتح مجلد التحميل",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectNone": "Select None",
     "title": "التحميلات",
+    "total": "Total",
     "viewAllDownloads": "عرض جميع التحميلات"
   },
   "errors": {
@@ -342,7 +364,8 @@
     },
     "genericMessage": "نأسف، لكن حدث خطأ أثناء معالجة طلبك.",
     "goBack": "العودة",
-    "tryAgain": "حاول مرة أخرى"
+    "tryAgain": "حاول مرة أخرى",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -391,11 +414,18 @@
     "sortBy": "الفرز حسب"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "إنشاء نسخة احتياطية",
     "openInEditor": "افتح في المحرر",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "إعادة التعيين إلى النسخة الأصلية",
     "restoreBackup": "استعادة النسخة الاحتياطية",
-    "validateConfiguration": "تحقق من صحة التكوين"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "تحقق من صحة التكوين",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -425,6 +455,15 @@
     "removing": "جاري الإزالة..."
   },
   "modDetail": {
+    "authorLabel": "Author",
+    "backToMods": "Back to Mods",
+    "downloadsLabel": "Downloads",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "installedAt": "Installed At",
+    "lastModifiedAt": "Last Modified At",
+    "modStatusLabel": "Mod Status",
+    "publishedAt": "Published At",
     "vpkReplacement": {
       "currentFiles": "ملفات VPK الحالية",
       "description": "استبدال ملفات التعديل للتكرار السريع أثناء التطوير",
@@ -541,6 +580,7 @@
   },
   "notifications": {
     "failedToInstallMod": "فشل تثبيت التعديل",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "فشل تنفيذ العملية",
     "installationCanceled": "تم إلغاء التثبيت",
     "modContainsFiles": "{{modName}} يحتوي على {{fileCount}} ملفات. اختر الملفات التي تريد تثبيتها.",
@@ -601,6 +641,7 @@
       "description": "تخصيص خلفيات التطبيق.",
       "detailedDescription": "يتيح لك هذا المكون الإضافي تعيين صور خلفية مخصصة للتطبيق بالكامل. يمكنك استخدام رابط URL لصورة عبر الإنترنت أو رفع ملف صورة محلي. يدعم المكون الإضافي تأثيرات الشفافية والضبابية لتخصيص المظهر. يمكنك أيضًا اختيار ما إذا كنت تريد تضمين الشريط الجانبي في تأثير الخلفية.",
       "imageUrl": "رابط الصورة",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "تضمين الشريط الجانبي",
       "opacity": "الشفافية",
       "title": "الخلفية",
@@ -624,6 +665,7 @@
       "description": "يعرض نشاطك في Deadlock على Discord.",
       "detailedDescription": "يعرض نشاطك في مدير التعديلات Deadlock على ملفك الشخصي في Discord باستخدام Rich Presence. ما عليك سوى تفعيل المكون الإضافي وتخصيص نصوص التفاصيل والحالة حسب الرغبة.",
       "details": "نص التفاصيل",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "مفتاح الصورة الكبيرة",
       "largeImageText": "نص الصورة الكبيرة",
       "optional": "(اختياري)",
@@ -637,6 +679,7 @@
       "smallImageKey": "مفتاح الصورة الصغيرة",
       "smallImageText": "نص الصورة الصغيرة",
       "state": "نص الحالة",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "حالة Discord الغنية",
       "usageInstructions": "فعّل المكون الإضافي، ثم عدّل نصوص التفاصيل والحالة حسب الرغبة."
     },
@@ -655,6 +698,7 @@
       "visit": "زر Nightshift:"
     },
     "renderActive": "المكون الإضافي نشط ويعمل في الخلفية",
+
     "tea": {
       "carrd": "Carrd",
       "description": "سمة بلون بيج دافئ صُممت لمنشئ المحتوى على يوتيوب وتويتش Snipztea.",
@@ -673,6 +717,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -700,6 +745,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -710,6 +756,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "السمات",
       "usageInstructions": "افتح الإضافة، اختر سمة من 'السمات المسبقة' ثم اضغط تفعيل. اضغط إلغاء التفعيل للعودة إلى المظهر الافتراضي."
     },
@@ -901,10 +948,15 @@
     "backupVpkCount": "ملفات VPK",
     "browseGamePath": "Browse",
     "clearAllMods": "امسح جميع التعديلات",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "إنشاء نسخة احتياطية",
     "createCustomSetting": "إنشاء إعداد مخصص",
     "createCustomSettingDescription": "أضف إعدادًا مخصصًا إلى اللعبة. سيتم إضافة هذه إلى اللعبة كخيارات تشغيل.",
@@ -920,11 +972,13 @@
     "description": "الوصف",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "فشل في مسح التعديلات",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "فلاش بانج",
     "flashbangDescription": "يفرض الوضع الفاتح بين الساعة 8 مساءً و 8 صباحاً، بغض النظر عن المظهر المحدد",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "اللعبة",
     "gameConfigDescription": "إدارة النسخ الاحتياطي لملف gameinfo.gi واستعادته والتحقق من صحته من أجل تعديل آمن.",
     "gameConfigManagement": "إدارة تكوين اللعبة",
@@ -955,6 +1009,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "افتح مجلد التعديلات",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "الخصوصية",
@@ -968,7 +1024,9 @@
     "selectDefaultSort": "اختر الفرز الافتراضي",
     "selectType": "اختر النوع",
     "settingCreated": "تم إنشاء الإعداد",
+    "settingRemoved": "Setting removed",
     "settingType": "نوع الإعداد",
+    "settingUpdated": "Setting updated",
     "systemSettings": "إعدادات النظام",
     "systemSettingsDescription": "إعدادات مدير التعديلات. هذه لا تؤثر على اللعبة.",
     "theme": "المظهر",

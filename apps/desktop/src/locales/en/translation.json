@@ -98,14 +98,20 @@
     "openDownloadFolder": "Open Download Folder",
     "noDownloadsFound": "No downloads found",
     "noDownloadsMatchFilter": "There are no downloads matching your current filter.",
-    "viewAllDownloads": "View all downloads"
+    "viewAllDownloads": "View all downloads",
+    "selectFilesToDownload": "Select Files to Download",
+    "selectAll": "Select All",
+    "selectNone": "Select None",
+    "total": "Total",
+    "filesSelected": "{{selected}} of {{total}} files selected"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
     "failedToInstallMod": "Failed to install mod",
     "installationCanceled": "Installation canceled",
     "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
-    "failedToPerformAction": "Failed to perform action"
+    "failedToPerformAction": "Failed to perform action",
+    "failedToOpenForumPost": "Failed to open forum post"
   },
   "warnings": {
     "obsoleteLabel": "Obsolete",
@@ -253,6 +259,17 @@
     "description": "Description",
     "addSetting": "Add Setting",
     "settingCreated": "Setting created",
+    "settingUpdated": "Setting updated",
+    "settingRemoved": "Setting removed",
+    "copiedToClipboard": "Copied to clipboard",
+    "commandKeyRequired": "Command key is required",
+    "commandValueRequired": "Command value is required",
+    "editCustomOptionTitle": "Edit custom option",
+    "commandLabel": "Command",
+    "copyToClipboardTooltip": "Copy to clipboard",
+    "placeholderFov": "e.g. 110 FOV",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "information": "Information",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
@@ -300,7 +317,14 @@
     "restoreBackup": "Restore Backup",
     "resetToVanilla": "Reset to Vanilla",
     "validateConfiguration": "Validate Configuration",
-    "openInEditor": "Open in Editor"
+    "openInEditor": "Open in Editor",
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
+    "validationPassed": "gameinfo.gi validation passed",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings."
   },
   "privacy": {
     "title": "Privacy & Content",
@@ -443,7 +467,8 @@
     "noVpkFoundInContent": "No VPK files found in the uploaded content",
     "archiveWillBeProcessed": "Archive will be processed during mod installation",
     "noVpkFoundStored": "No VPK found - archive stored for manual processing",
-    "addedSuccess": "Added: {{name}}"
+    "addedSuccess": "Added: {{name}}",
+    "unsupportedImageType": "Unsupported image type"
   },
   "progress": {
     "pleaseWait": "Please wait..."
@@ -500,6 +525,12 @@
     "vpkContents": "VPK Contents",
     "files": "files",
     "noEntriesFound": "No entries found in VPK file",
+    "noAddonSelected": "No addon selected",
+    "failedToAddModToLibrary": "Failed to add mod to library",
+    "addToLibraryTitle": "Add to Library",
+    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "addToLibrarySuccess": "Added \"{{name}}\" to library",
+    "adding": "Adding...",
     "show": "Show details",
     "hide": "Hide details",
     "modName": "Mod Name",
@@ -588,6 +619,7 @@
     "errorCode": "Error code:",
     "tryAgain": "Try again",
     "goBack": "Go back",
+    "unknownError": "Unknown error occurred",
     "failedToParseGameConfiguration": {
       "instruction": "Please follow these steps to resolve the issue:",
       "steps": [
@@ -595,6 +627,13 @@
         "Open Mod Manager and click 'Launch Modded'."
       ]
     }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "pleaseEnterCode": "Please enter a code",
+    "pasteCodePlaceholder": "Paste your code here...",
+    "authorizationCodeLabel": "Authorization Code"
   },
   "table": {
     "name": "Name",
@@ -880,6 +919,9 @@
       "backgroundUrlPlaceholder": "https://example.com/background.jpg",
       "noPreview": "No preview",
       "previewComingSoon": "Preview coming soon",
+      "themeIconAlt": "Theme icon",
+      "customBackgroundAlt": "Custom background",
+      "previewAlt": "Preview",
       "pickColor": "Pick color",
       "lineColorDialogTitle": "Line color",
       "lineColorDialogDescription": "Adjust color using H, S, V or paste a hex value.",
@@ -924,12 +966,14 @@
       "startHour": "Start hour (0–23)",
       "endHour": "End hour (0–23)"
     },
+
     "background": {
       "title": "Background",
       "description": "Customize application backgrounds.",
       "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
       "usageInstructions": "To use this plugin: 1) Enable the plugin using the toggle, 2) Enter an image URL or click 'Choose Image' to upload a local file, 3) Adjust opacity and blur settings as desired, 4) Optionally enable 'Include sidebar' to apply the background to the sidebar as well.",
       "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "opacity": "Opacity",
       "blur": "Blur",
       "includeSidebar": "Include sidebar",
@@ -944,7 +988,9 @@
       "optional": "(optional)",
       "applicationIdDescription": "No setup required: this plugin uses our official Discord application.",
       "details": "Details Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "state": "State Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "largeImageKey": "Large Image Key",
       "largeImageText": "Large Image Text",
       "smallImageKey": "Small Image Key",
@@ -961,6 +1007,8 @@
     "renderActive": "Plugin is active and running in the background"
   },
   "accessibility": {
+    "deadlockLogoAlt": "Deadlock",
+    "snipzteaMascotAlt": "Snipztea mascot",
     "close": "Close",
     "previousSlide": "Previous slide",
     "nextSlide": "Next slide",
@@ -1080,6 +1128,15 @@
     "modsProcessed": "Mods processed"
   },
   "modDetail": {
+    "backToMods": "Back to Mods",
+    "goBackHome": "Go back home",
+    "idLabel": "ID",
+    "authorLabel": "Author",
+    "publishedAt": "Published At",
+    "lastModifiedAt": "Last Modified At",
+    "installedAt": "Installed At",
+    "downloadsLabel": "Downloads",
+    "modStatusLabel": "Mod Status",
     "vpkReplacement": {
       "title": "Replace VPK Files",
       "description": "Replace mod files for quick iteration during development",
@@ -1159,6 +1216,7 @@
     "form": {
       "metadata": "Metadata",
       "name": "Name",
+      "hexPlaceholder": "#FFFFFF",
       "namePlaceholder": "My Awesome Crosshair",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",

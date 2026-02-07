@@ -30,7 +30,7 @@ export const FileSelectorDialog = ({
   fileTree,
   onConfirm,
   onCancel,
-  modName = "Unknown Mod",
+  modName = "Mod",
 }: FileSelectorDialogProps) => {
   const [localFileTree, setLocalFileTree] = useState<ModFileTree | null>(null);
 
