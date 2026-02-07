@@ -323,6 +323,10 @@ resources:
     evictionPolicy: allkeys-lru
 
 env:
+  - {
+      name: DATABASE_URL,
+      valueFrom: { secretKeyRef: { name: deadlock-mod-manager-app, key: uri } },
+    }
   - { name: POD_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
   - {
       name: REDIS_URL,
