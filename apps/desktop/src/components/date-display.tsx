@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -19,17 +20,22 @@ export const DateDisplay = ({
   dateFormat?: string;
   className?: string;
 }) => {
+  const { t } = useTranslation();
   if (!date) {
     return null;
   }
   const exact = format(date, dateFormat);
-  const distance = `${prefix ? `${prefix} ` : ""}${formatDistanceToNow(date)} ago`;
+  const distance = `${prefix ? `${prefix} ` : ""}${formatDistanceToNow(date)} ${t("time.ago")}`;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span className={cn("cursor-pointer", className)}>
-          {inverse ? (prefix ? `${prefix} at ${exact}` : exact) : distance}
+          {inverse
+            ? prefix
+              ? `${prefix} ${t("time.at")} ${exact}`
+              : exact
+            : distance}
         </span>
       </TooltipTrigger>
       <TooltipContent>
@@ -37,8 +43,8 @@ export const DateDisplay = ({
           {inverse
             ? distance
             : prefix
-              ? `${prefix} at ${exact}`
-              : `at ${exact}`}
+              ? `${prefix} ${t("time.at")} ${exact}`
+              : `${t("time.at")} ${exact}`}
         </span>
       </TooltipContent>
     </Tooltip>

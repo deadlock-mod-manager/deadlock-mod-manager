@@ -5,6 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
+import { cn } from "@deadlock-mods/ui/lib/utils";
 import { AlertTriangle } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -41,7 +42,7 @@ export const StaleModWarning = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge className={`cursor-help ${className}`} variant='secondary'>
+        <Badge className={cn("cursor-help", className)} variant='secondary'>
           <AlertTriangle className='mr-1 h-3 w-3' />
           {t("warnings.staleModLabel")}
         </Badge>

@@ -94,7 +94,7 @@ export const buildDownloadSignatureFromPayload = (
   return files
     .map(
       (f) =>
-        `${f._idRow}|${f._sFile}|${f._nFilesize}|${f._sMd5Checksum ?? ""}|${f._tsDateAdded}`,
+        `${f._idRow}|${f._sFile}|${f._nFilesize}|${f._sMd5Checksum ?? ""}|${f._tsDateAdded * 1000}`,
     )
     .sort()
     .join(";");

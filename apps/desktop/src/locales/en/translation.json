@@ -19,6 +19,10 @@
     "about": "About",
     "quit": "Quit"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "myMods": {
     "subtitle": "Mods you have downloaded or installed",
     "noModsTitle": "No mods installed",

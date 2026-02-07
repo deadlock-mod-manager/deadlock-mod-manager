@@ -8,6 +8,8 @@ const reportRepository = new ReportRepository(db);
 export class ModSyncHooksService {
   private static instance: ModSyncHooksService | null = null;
 
+  private constructor() {}
+
   static getInstance(): ModSyncHooksService {
     if (!ModSyncHooksService.instance) {
       ModSyncHooksService.instance = new ModSyncHooksService();
@@ -16,19 +18,26 @@ export class ModSyncHooksService {
   }
 
   async onModFilesUpdated(mod: Mod, filesUpdatedAt: Date): Promise<void> {
-    const dismissedCount = await reportRepository.dismissUnverifiedByModId(
-      mod.id,
-      "system",
-      "Mod files updated",
-    );
-    if (dismissedCount > 0) {
+    try {
+      const dismissedCount = await reportRepository.dismissUnverifiedByModId(
+        mod.id,
+        "system",
+        "Mod files updated",
+      );
+      if (dismissedCount > 0) {
+        logger
+          .withMetadata({
+            modId: mod.id,
+            modName: mod.name,
+            dismissedCount,
+          })
+          .info("Dismissed unverified reports after mod files update");
+      }
+    } catch (error) {
       logger
-        .withMetadata({
-          modId: mod.id,
-          modName: mod.name,
-          dismissedCount,
-        })
-        .info("Dismissed unverified reports after mod files update");
+        .withError(error)
+        .withMetadata({ modId: mod.id, modName: mod.name })
+        .error("Failed to dismiss unverified reports after mod files update");
     }
 
     try {

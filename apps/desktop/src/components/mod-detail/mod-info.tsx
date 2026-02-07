@@ -60,12 +60,12 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
                 <DateDisplay date={mod.remoteUpdatedAt} inverse />
               </span>
             </div>
-            {localMod && (
+            {localMod?.downloadedAt != null && (
               <div className='flex items-center gap-2'>
                 <Calendar className='text-muted-foreground' />
                 <span className='text-sm'>
                   Installed At:{" "}
-                  <DateDisplay date={localMod?.downloadedAt} inverse />
+                  <DateDisplay date={localMod.downloadedAt} inverse />
                 </span>
               </div>
             )}

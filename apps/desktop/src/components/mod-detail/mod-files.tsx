@@ -54,7 +54,7 @@ export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
                 </div>
                 <span className='ml-2 text-muted-foreground text-xs'>
                   {formatSize(file.size)}
-                  {file.md5Checksum ? `(MD5: ${file.md5Checksum})` : ""}
+                  {file.md5Checksum ? ` (MD5: ${file.md5Checksum})` : ""}
                 </span>
               </li>
             ))}
