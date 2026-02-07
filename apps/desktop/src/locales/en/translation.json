@@ -665,6 +665,14 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.14.1": {
+        "title": "Theme Toggle Improvements & Bug Fixes",
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ]
+      },
       "0.14.0": {
         "title": "Arcane Theme, Mod Updates & Improvements",
         "features": [

@@ -1,5 +1,13 @@
 # desktop
 
+## 0.14.1
+
+### Patch Changes
+
+- 89fc9be: Fix eyedropper button closing color picker modal immediately after click
+- 89fc9be: Replace plugin enable/disable button with a toggle switch and update back button to match app-wide ghost style
+- 89fc9be: Fix Arcane theme border colors not updating when accent color changes
+
 ## 0.14.0
 
 ### Minor Changes
