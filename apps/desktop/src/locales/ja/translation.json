@@ -892,7 +892,10 @@
     "verified": "確認済み",
     "verifiedCount": "{{count}}件確認済み",
     "verifiedReports": "{{count}}件の確認済み報告",
-    "verifiedReports_plural": "{{count}}件の確認済み報告"
+    "verifiedReports_plural": "{{count}}件の確認済み報告",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "openGameBananaIssues": "Report on GameBanana"
   },
   "settings": {
     "about": "アプリ情報",

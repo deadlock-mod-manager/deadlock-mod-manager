@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ReportDialog } from "./report-dialog";
 
 interface ReportButtonProps {
-  mod: Pick<ModDto, "id" | "name" | "author">;
+  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId">;
 }
 
 export const ReportButton = ({ mod }: ReportButtonProps) => {

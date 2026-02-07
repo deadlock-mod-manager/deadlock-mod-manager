@@ -1,4 +1,9 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -26,8 +31,9 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
-import { Flag } from "@deadlock-mods/ui/icons";
+import { AlertTriangle, ExternalLink, Flag } from "@deadlock-mods/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { open as openExternal } from "@tauri-apps/plugin-shell";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -50,7 +56,7 @@ const reportFormSchema = z.object({
 type ReportFormData = z.infer<typeof reportFormSchema>;
 
 interface ReportDialogProps {
-  mod: Pick<ModDto, "id" | "name" | "author">;
+  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -108,6 +114,15 @@ export const ReportDialog = ({
     }
   };
 
+  const handleOpenGameBananaIssues = async () => {
+    if (!mod.remoteId) return;
+    try {
+      await openExternal(`https://gamebanana.com/mods/issues/${mod.remoteId}`);
+    } catch (error) {
+      toast.error(t("notifications.failedToOpenForumPost"));
+    }
+  };
+
   const reportTypes = [
     { value: "broken", label: t("reports.types.broken") },
     { value: "outdated", label: t("reports.types.outdated") },
@@ -136,7 +151,7 @@ export const ReportDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className='max-h-[80vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>{t("reports.reportMod")}</DialogTitle>
           <DialogDescription>
@@ -146,6 +161,29 @@ export const ReportDialog = ({
             })}
           </DialogDescription>
         </DialogHeader>
+
+        {mod.remoteId && (
+          <Alert variant='warning' className='mb-4'>
+            <AlertTriangle className='h-4 w-4' />
+            <div className='flex-1 space-y-2'>
+              <AlertTitle className='font-semibold leading-5'>
+                {t("reports.gameBananaDisclaimer")}
+              </AlertTitle>
+              <AlertDescription className='text-sm'>
+                {t("reports.gameBananaFallback")}
+              </AlertDescription>
+              <Button
+                type='button'
+                variant='secondary'
+                size='sm'
+                icon={<ExternalLink className='h-4 w-4' />}
+                onClick={handleOpenGameBananaIssues}
+                className='mt-2'>
+                {t("reports.openGameBananaIssues")}
+              </Button>
+            </div>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>

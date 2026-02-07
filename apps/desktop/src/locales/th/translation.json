@@ -897,7 +897,10 @@
     "verified": "ตรวจสอบแล้ว",
     "verifiedCount": "{{count}} รายการที่ตรวจสอบแล้ว",
     "verifiedReports": "{{count}} รายงานที่ตรวจสอบแล้ว",
-    "verifiedReports_plural": "{{count}} รายงานที่ตรวจสอบแล้ว"
+    "verifiedReports_plural": "{{count}} รายงานที่ตรวจสอบแล้ว",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "openGameBananaIssues": "Report on GameBanana"
   },
   "settings": {
     "about": "เกี่ยวกับ",

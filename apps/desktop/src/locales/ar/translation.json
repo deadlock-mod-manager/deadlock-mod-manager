@@ -904,7 +904,10 @@
     "verified": "مُتحقق منه",
     "verifiedCount": "{{count}} مُتحقق منه",
     "verifiedReports": "{{count}} تقرير مُتحقق منه",
-    "verifiedReports_plural": "{{count}} تقارير مُتحقق منها"
+    "verifiedReports_plural": "{{count}} تقارير مُتحقق منها",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "openGameBananaIssues": "Report on GameBanana"
   },
   "settings": {
     "about": "عن التطبيق",

@@ -1191,7 +1191,10 @@
       "reasonMinLength": "Reason must be at least 5 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
       "descriptionMaxLength": "Description must be less than 2000 characters"
-    }
+    },
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "openGameBananaIssues": "Report on GameBanana"
   },
   "crosshairs": {
     "title": "Crosshairs",

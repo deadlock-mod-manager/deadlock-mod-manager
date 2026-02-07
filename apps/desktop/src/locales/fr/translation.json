@@ -894,7 +894,10 @@
     "verified": "vérifié",
     "verifiedCount": "{{count}} vérifiés",
     "verifiedReports": "{{count}} signalement vérifié",
-    "verifiedReports_plural": "{{count}} signalements vérifiés"
+    "verifiedReports_plural": "{{count}} signalements vérifiés",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "openGameBananaIssues": "Report on GameBanana"
   },
   "settings": {
     "about": "À propos",
