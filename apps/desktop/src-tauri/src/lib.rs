@@ -275,6 +275,7 @@ pub fn run() {
       commands::get_all_downloads,
       commands::replace_mod_vpks,
       commands::copy_selected_vpks_from_archive,
+      commands::copy_local_mod_vpks,
       commands::trigger_cache_scan,
       commands::start_cache_watcher,
       commands::stop_cache_watcher,

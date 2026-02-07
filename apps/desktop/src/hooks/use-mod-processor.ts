@@ -21,7 +21,7 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
+import { ModStatus, type ModFileTree } from "@/types/mods";
 
 export interface ModMetadata {
   name: string;
@@ -37,7 +37,11 @@ export interface ModMetadata {
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
-  const { addLocalMod: addMod, setModStatus } = usePersistedStore();
+  const {
+    addLocalMod: addMod,
+    setModStatus,
+    getActiveProfile,
+  } = usePersistedStore();
 
   const processArchive = async (
     file: File,
@@ -201,6 +205,30 @@ export const useModProcessor = () => {
       return;
     }
 
+    setProcessing(true, t("addMods.processingFiles"));
+    let fileTree: ModFileTree | null = null;
+    try {
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+
+      await invoke("copy_local_mod_vpks", {
+        modId: modId,
+        profileFolder,
+      });
+
+      try {
+        fileTree = (await invoke("get_mod_file_tree", {
+          modPath: modDir,
+        })) as ModFileTree;
+      } catch {
+        // File tree analysis is optional, continue if it fails
+      }
+    } catch (error) {
+      setProcessing(false);
+      toast.error(error instanceof Error ? error.message : String(error));
+      return;
+    }
+
     // Save metadata
     setProcessing(true, t("addMods.savingMetadata"));
     const modMetadata = {
@@ -252,7 +280,10 @@ export const useModProcessor = () => {
       filesUpdatedAt: null,
     };
 
-    addMod(modDto, { status: ModStatus.Downloaded });
+    addMod(modDto, {
+      status: ModStatus.Downloaded,
+      installedFileTree: fileTree ?? undefined,
+    });
     setModStatus(modId, ModStatus.Downloaded);
 
     setProcessing(true, t("addMods.modAddedSuccess"));

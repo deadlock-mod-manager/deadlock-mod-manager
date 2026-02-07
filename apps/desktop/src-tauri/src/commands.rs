@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use crate::deep_link::{strip_scheme, validate_mod_deep_link, SCHEME_PRIMARY, SCHEME_SECONDARY};
+use crate::deep_link::{SCHEME_PRIMARY, SCHEME_SECONDARY, strip_scheme, validate_mod_deep_link};
 use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
@@ -183,8 +183,12 @@ pub async fn get_deep_link_debug_info() -> Result<DeepLinkDebugInfo, Error> {
     }
   }
 
-  log::debug!("[DeepLink] Debug info: debug_mode={}, os={}, registry={:?}",
-    debug_mode, target_os, registry_status);
+  log::debug!(
+    "[DeepLink] Debug info: debug_mode={}, os={}, registry={:?}",
+    debug_mode,
+    target_os,
+    registry_status
+  );
 
   Ok(DeepLinkDebugInfo {
     debug_mode,
@@ -954,6 +958,67 @@ pub async fn copy_selected_vpks_from_archive(
 
   log::info!("Successfully copied selected VPKs for mod: {}", mod_id);
   Ok(())
+}
+
+#[tauri::command]
+pub async fn copy_local_mod_vpks(
+  mod_id: String,
+  profile_folder: Option<String>,
+) -> Result<Vec<String>, Error> {
+  use crate::mod_manager::vpk_manager::VpkManager;
+
+  log::info!(
+    "Copying VPKs from local mod files directory for mod: {} (profile: {profile_folder:?})",
+    mod_id
+  );
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  let mod_dir = mods_path.join(&mod_id);
+  let files_dir = mod_dir.join("files");
+
+  if !files_dir.exists() {
+    return Err(Error::ModFileNotFound);
+  }
+
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+
+  let addons_path = if let Some(ref folder) = profile_folder {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(folder)
+  } else {
+    game_path.join("game").join("citadel").join("addons")
+  };
+
+  if !addons_path.exists() {
+    std::fs::create_dir_all(&addons_path)?;
+  }
+
+  drop(mod_manager);
+
+  let vpk_manager = VpkManager::new();
+  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &addons_path, &mod_id)?;
+
+  if prefixed_vpks.is_empty() {
+    log::warn!("No VPK files found in mod files directory: {files_dir:?}");
+    return Err(Error::InvalidInput(
+      "No VPK files found in mod directory".to_string(),
+    ));
+  }
+
+  log::info!(
+    "Successfully copied {} VPKs for local mod: {}",
+    prefixed_vpks.len(),
+    mod_id
+  );
+  Ok(prefixed_vpks)
 }
 
 #[tauri::command]
