@@ -12,16 +12,16 @@
     "openSourceDescription": "ReactやTypeScriptをはじめ、モダンアプリを支える多くの素晴らしいオープンソース技術で構築されています。すべての貢献者とメンテナーの皆様に感謝します。",
     "poweredBy": "Powered by",
     "releaseNotes": "リリースノート",
-    "resetOnboarding": "Reset Onboarding",
-    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
-    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
+    "resetOnboarding": "オンボーディングをリセット",
+    "resetOnboardingDescription": "次回起動時にオンボーディングウィザードを再表示する。",
+    "resetOnboardingSuccess": "次回起動時にオンボーディングが表示されます",
     "shadcnDescription": "美しくアクセシブルなReactコンポーネントで、モダンなUIの基盤となっています。コピーして貼り付け、自由にカスタマイズできます",
     "tailwindDescription": "アプリのデザインをレスポンシブかつ統一的に保つユーティリティ主体のCSSフレームワークです。",
     "tauriDescription": "このクロスプラットフォームデスクトップアプリを実現する強力なフレームワークです。TauriはWeb技術の柔軟さと高い実行性能・安全性を両立します。",
     "tauriVersion": "Tauri バージョン:",
-    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
-    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
-    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
+    "thirdPartyDisclaimerDescription": "このアプリケーションを通じて利用可能なすべてのModは、コミュニティメンバーによって作成された第三者コンテンツです。Modは、Deadlock Mod Managerプロジェクトによって作成、レビュー、検証、または承認されていません。Modは自己責任でインストールしてください。",
+    "thirdPartyDisclaimerShort": "ModはDeadlock Mod Managerによって作成、レビュー、または承認されていない第三者コンテンツです。",
+    "thirdPartyDisclaimerTitle": "第三者コンテンツに関する免責事項",
     "title": "このアプリについて",
     "updateFailed": "アップデートの確認に失敗しました。手動更新が必要になる場合があります。",
     "visitGamebanana": "GameBananaを開く",
@@ -42,7 +42,7 @@
     "nextSlide": "次のスライド",
     "previous": "前へ",
     "previousSlide": "前のスライド",
-    "snipzteaMascotAlt": "Snipztea mascot"
+    "snipzteaMascotAlt": "Snipzteaのマスコット"
   },
   "addMods": {
     "add": "追加",
@@ -80,16 +80,16 @@
     "supportedFormats": "サポートファイル: .vpk/.zip/.rar/.7z",
     "title": "Modを追加",
     "unsupportedFiles": "未対応のファイルです",
-    "unsupportedImageType": "Unsupported image type",
+    "unsupportedImageType": "サポートされていない画像形式です",
     "unsupportedSelection": "未対応の選択です。",
     "validatingFiles": "Modファイルを検証中...",
     "validatingMetadata": "Modメタデータを検証中..."
   },
   "addons": {
-    "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
-    "addToLibrarySuccess": "Added \"{{name}}\" to library",
-    "addToLibraryTitle": "Add to Library",
-    "adding": "Adding...",
+    "addToLibraryDescription": "「{{fileName}}」をModライブラリに追加",
+    "addToLibrarySuccess": "「{{name}}」をライブラリに追加しました",
+    "addToLibraryTitle": "ライブラリに追加",
+    "adding": "追加中...",
     "analysisError": "ローカルアドオンの分析に失敗しました",
     "analysisResults": "ローカルアドオン分析",
     "analysisResultsDescription": "ゲームディレクトリに{{count}}個のアドオンが見つかりました",
@@ -109,7 +109,7 @@
     },
     "errors": "エラー",
     "errorsCount": "{{count}}個のエラー",
-    "failedToAddModToLibrary": "Failed to add mod to library",
+    "failedToAddModToLibrary": "Modをライブラリに追加できませんでした",
     "fileCount": "ファイル数",
     "fileSize": "サイズ",
     "files": "ファイル",
@@ -118,7 +118,7 @@
     "modAuthor": "作成者",
     "modName": "Mod名",
     "modNotFound": "データベースにModが見つかりません",
-    "noAddonSelected": "No addon selected",
+    "noAddonSelected": "アドオンが選択されていません",
     "noAddonsFound": "ゲームディレクトリにアドオンが見つかりませんでした",
     "noEntriesFound": "VPKファイルにエントリが見つかりません",
     "progress": {
@@ -148,11 +148,11 @@
     "vpkContents": "VPKコンテンツ"
   },
   "auth": {
-    "authorizationCodeLabel": "Authorization Code",
-    "pasteCodePlaceholder": "Paste your code here...",
-    "pleaseEnterCode": "Please enter a code",
-    "signIn": "Sign In",
-    "signingIn": "Signing in..."
+    "authorizationCodeLabel": "認証コード",
+    "pasteCodePlaceholder": "ここにコードを貼り付けてください...",
+    "pleaseEnterCode": "コードを入力してください",
+    "signIn": "サインイン",
+    "signingIn": "サインイン中..."
   },
   "common": {
     "actions": "操作",
@@ -332,25 +332,25 @@
     "completed": "完了",
     "downloading": "{{count}}個のModをダウンロード中...",
     "downloading_plural": "{{count}}個のModをダウンロード中...",
-    "filesSelected": "{{selected}} of {{total}} files selected",
+    "filesSelected": "{{total}}個中{{selected}}個のファイルを選択",
     "noDownloadsFound": "ダウンロードなし",
     "noDownloadsMatchFilter": "フィルターに一致するダウンロード項目はありません。",
     "openDownloadFolder": "ダウンロードフォルダを開く",
     "percentage": "{{percentage}}%",
-    "selectAll": "Select All",
-    "selectFilesToDownload": "Select Files to Download",
-    "selectNone": "Select None",
+    "selectAll": "すべて選択",
+    "selectFilesToDownload": "ダウンロードするファイルを選択",
+    "selectNone": "選択を解除",
     "title": "ダウンロード",
-    "total": "Total",
+    "total": "合計",
     "viewAllDownloads": "すべてのダウンロードを見る"
   },
   "errors": {
     "errorCode": "エラーコード:",
     "failedToParseGameConfiguration": {
-      "instruction": "Please follow these steps to resolve the issue:",
+      "instruction": "この問題を解決するには、次の手順に従ってください：",
       "steps": [
-        "Verify game files on Steam.",
-        "Open Mod Manager and click 'Launch Modded'."
+        "Steamでゲームファイルを検証してください。",
+        "Modマネージャーを開き、「Mod有効で起動」をクリックしてください。"
       ]
     },
     "genericMessage": "申し訳ございませんが、リクエストの処理中にエラーが発生しました。",
@@ -445,15 +445,15 @@
     "removing": "除外中"
   },
   "modDetail": {
-    "authorLabel": "Author",
-    "backToMods": "Back to Mods",
-    "downloadsLabel": "Downloads",
-    "goBackHome": "Go back home",
+    "authorLabel": "作者",
+    "backToMods": "Mod一覧に戻る",
+    "downloadsLabel": "ダウンロード数",
+    "goBackHome": "ホームに戻る",
     "idLabel": "ID",
-    "installedAt": "Installed At",
-    "lastModifiedAt": "Last Modified At",
-    "modStatusLabel": "Mod Status",
-    "publishedAt": "Published At",
+    "installedAt": "インストール日時",
+    "lastModifiedAt": "最終更新日時",
+    "modStatusLabel": "Modの状態",
+    "publishedAt": "公開日時",
     "vpkReplacement": {
       "currentFiles": "現在のVPKファイル",
       "description": "開発中の迅速なイテレーションのためにModファイルを置換する",
