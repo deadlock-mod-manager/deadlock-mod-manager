@@ -454,6 +454,7 @@
     "lastModifiedAt": "最終更新日時",
     "modStatusLabel": "Modの状態",
     "publishedAt": "公開日時",
+    "viewOriginalPost": "元のフォーラム投稿を表示",
     "vpkReplacement": {
       "currentFiles": "現在のVPKファイル",
       "description": "開発中の迅速なイテレーションのためにModファイルを置換する",
@@ -691,8 +692,7 @@
       "removeMod": "Modを削除",
       "removeSelectedMod": "Remove selected mod",
       "title": "スーパーユーザー",
-      "usageInstructions": "プラグインを有効にしてスーパーユーザーモードをオンにする。開発者オプションと高度なツールがアプリ全体で表示されるようになる。プラグインを無効にすると、再び非表示になる。",
-      "viewOriginalPost": "元のフォーラム投稿を表示"
+      "usageInstructions": "プラグインを有効にしてスーパーユーザーモードをオンにする。開発者オプションと高度なツールがアプリ全体で表示されるようになる。プラグインを無効にすると、再び非表示になる。"
     },
     "tea": {
       "carrd": "Carrd",
@@ -718,6 +718,8 @@
       "customThemeBuilderDescription": "色とスタイルを選択して独自のテーマを構築する。",
       "customThemes": "カスタムテーマ",
       "deactivate": "無効化",
+      "active": "アクティブ",
+      "inactive": "非アクティブ",
       "delete": "削除",
       "description": "説明",
       "descriptionPlaceholder": "短い説明",

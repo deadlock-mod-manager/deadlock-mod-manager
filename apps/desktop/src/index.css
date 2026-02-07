@@ -518,7 +518,7 @@
   border-color: transparent;
 }
 
-.arcane-theme-active [data-sidebar="sidebar"] * {
+.arcane-theme-active [data-sidebar="sidebar"] [data-slot="badge"]:hover * {
   background-color: transparent;
 }
 

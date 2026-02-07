@@ -906,6 +906,8 @@
       "activeTheme": "Active Theme",
       "activate": "Activate",
       "deactivate": "Deactivate",
+      "active": "Active",
+      "inactive": "Inactive",
       "lineColor": "Line color",
       "themeIcon": "Theme icon",
       "backgroundImage": "Background image",
@@ -1149,6 +1151,7 @@
     "installedAt": "Installed At",
     "downloadsLabel": "Downloads",
     "modStatusLabel": "Mod Status",
+    "viewOriginalPost": "View Original Post",
     "vpkReplacement": {
       "title": "Replace VPK Files",
       "description": "Replace mod files for quick iteration during development",

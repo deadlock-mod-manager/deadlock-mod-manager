@@ -22,6 +22,7 @@ export const LineColorPicker = ({
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [isEyedropperActive, setIsEyedropperActive] = useState(false);
   const [h, setH] = useState(0); // 0-360
   const [s, setS] = useState(100); // 0-100 (HSV)
   const [v, setV] = useState(100); // 0-100 (HSV)
@@ -175,8 +176,21 @@ export const LineColorPicker = ({
         />
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className='sm:max-w-[500px]'>
+      <Dialog
+        open={open}
+        onOpenChange={(newOpen) => {
+          if (!newOpen && isEyedropperActive) {
+            return;
+          }
+          setOpen(newOpen);
+        }}>
+        <DialogContent
+          className='sm:max-w-[500px]'
+          onPointerDownOutside={(e) => {
+            if (isEyedropperActive) {
+              e.preventDefault();
+            }
+          }}>
           <DialogHeader>
             <DialogTitle>
               {t("plugins.themes.lineColorDialogTitle")}
@@ -195,16 +209,22 @@ export const LineColorPicker = ({
               <Button
                 type='button'
                 variant='outline'
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.stopPropagation();
                   // @ts-expect-error EyeDropper may exist in Chromium
                   if (typeof window !== "undefined" && window.EyeDropper) {
                     try {
+                      setIsEyedropperActive(true);
                       // @ts-expect-error - browser API
                       const eye = new window.EyeDropper();
                       const res = await eye.open();
-                      if (res?.sRGBHex) onChange(res.sRGBHex.toLowerCase());
-                      setOpen(false);
-                    } catch {}
+                      setIsEyedropperActive(false);
+                      if (res?.sRGBHex) {
+                        onChange(res.sRGBHex.toLowerCase());
+                      }
+                    } catch {
+                      setIsEyedropperActive(false);
+                    }
                   }
                 }}
                 className='gap-2'>

@@ -455,6 +455,7 @@
     "lastModifiedAt": "Последна промяна на",
     "modStatusLabel": "Статус на мода",
     "publishedAt": "Публикуван на",
+    "viewOriginalPost": "View original forum post",
     "vpkReplacement": {
       "currentFiles": "Current VPK Files",
       "description": "Replace mod files for quick iteration during development",
@@ -691,8 +692,7 @@
       "removeMod": "Remove mod",
       "removeSelectedMod": "Remove selected mod",
       "title": "Superuser",
-      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again.",
-      "viewOriginalPost": "View original forum post"
+      "usageInstructions": "Enable the plugin to turn on Superuser Mode. Developer options and advanced tools become visible across the app. Disable the plugin to hide them again."
     },
     "tea": {
       "carrd": "Carrd",
@@ -718,6 +718,8 @@
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
       "customThemes": "Custom Themes",
       "deactivate": "Deactivate",
+      "active": "Active",
+      "inactive": "Inactive",
       "delete": "Delete",
       "description": "Description",
       "descriptionPlaceholder": "Short description",

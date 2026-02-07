@@ -188,7 +188,7 @@ const Mod = () => {
                       }
                     }}
                     variant='link'>
-                    {t("plugins.sudo.viewOriginalPost")}
+                    {t("modDetail.viewOriginalPost")}
                   </Button>
                 )}
               </div>

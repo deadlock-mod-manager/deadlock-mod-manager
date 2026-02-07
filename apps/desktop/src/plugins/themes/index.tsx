@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
 import { getPluginAssetUrl } from "@/lib/plugins";
@@ -117,7 +118,7 @@ const Settings = () => {
   const current = settings ?? DEFAULT_SETTINGS;
 
   return (
-    <div className='flex flex-col gap-4 pl-4 pr-4 pb-20'>
+    <div className='flex flex-col gap-4 pb-20'>
       <div className='flex gap-2 border-b pb-4'>
         <Button
           variant={
@@ -158,11 +159,39 @@ const Settings = () => {
                     : "border-border h-full flex flex-col"
                 }>
                 <CardHeader className='min-h-[120px]'>
-                  <CardTitle className='text-lg'>
-                    {"userCreated" in theme && theme.userCreated
-                      ? (theme as CustomExportedTheme).name
-                      : (theme as { name: string }).name}
-                  </CardTitle>
+                  <div className='flex items-center justify-between'>
+                    <CardTitle className='text-lg'>
+                      {"userCreated" in theme && theme.userCreated
+                        ? (theme as CustomExportedTheme).name
+                        : (theme as { name: string }).name}
+                    </CardTitle>
+                    <div className='flex items-center gap-2'>
+                      <Switch
+                        checked={current.activeTheme === theme.id}
+                        onCheckedChange={(checked) =>
+                          setSettings(manifest.id, {
+                            ...current,
+                            activeTheme: checked ? theme.id : undefined,
+                          })
+                        }
+                      />
+                      <label
+                        className='text-sm font-medium cursor-pointer'
+                        onClick={() =>
+                          setSettings(manifest.id, {
+                            ...current,
+                            activeTheme:
+                              current.activeTheme === theme.id
+                                ? undefined
+                                : theme.id,
+                          })
+                        }>
+                        {current.activeTheme === theme.id
+                          ? t("plugins.themes.active")
+                          : t("plugins.themes.inactive")}
+                      </label>
+                    </div>
+                  </div>
                   <CardDescription>
                     {"userCreated" in theme && theme.userCreated
                       ? ((theme as CustomExportedTheme).description ?? "")
@@ -306,32 +335,7 @@ const Settings = () => {
                       </div>
                     ) : null}
 
-                    <div className='flex gap-2'>
-                      {current.activeTheme === theme.id ? (
-                        <Button
-                          variant='destructive'
-                          onClick={() =>
-                            setSettings(manifest.id, {
-                              ...current,
-                              activeTheme: undefined,
-                            })
-                          }
-                          className='flex-1'>
-                          {t("plugins.themes.deactivate")}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant='default'
-                          onClick={() =>
-                            setSettings(manifest.id, {
-                              ...current,
-                              activeTheme: theme.id,
-                            })
-                          }
-                          className='flex-1'>
-                          {t("plugins.themes.activate")}
-                        </Button>
-                      )}
+                    <div className='flex items-center gap-2'>
                       {"userCreated" in theme && theme.userCreated ? (
                         <>
                           <Button
@@ -367,7 +371,35 @@ const Settings = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("plugins.themes.customThemeBuilder")}</CardTitle>
+              <div className='flex items-center justify-between'>
+                <CardTitle>{t("plugins.themes.customThemeBuilder")}</CardTitle>
+                <div className='flex items-center gap-2'>
+                  <Switch
+                    checked={current.activeTheme === "custom"}
+                    onCheckedChange={(checked) =>
+                      setSettings(manifest.id, {
+                        ...current,
+                        activeTheme: checked ? "custom" : undefined,
+                      })
+                    }
+                  />
+                  <label
+                    className='text-sm font-medium cursor-pointer'
+                    onClick={() =>
+                      setSettings(manifest.id, {
+                        ...current,
+                        activeTheme:
+                          current.activeTheme === "custom"
+                            ? undefined
+                            : "custom",
+                      })
+                    }>
+                    {current.activeTheme === "custom"
+                      ? t("plugins.themes.active")
+                      : t("plugins.themes.inactive")}
+                  </label>
+                </div>
+              </div>
               <CardDescription>
                 {t("plugins.themes.customThemeBuilderDescription")}
               </CardDescription>
@@ -535,32 +567,7 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className='mt-6 flex gap-2'>
-                {current.activeTheme === "custom" ? (
-                  <Button
-                    variant='destructive'
-                    onClick={() =>
-                      setSettings(manifest.id, {
-                        ...current,
-                        activeTheme: undefined,
-                      })
-                    }
-                    className='flex-1'>
-                    {t("plugins.themes.deactivate")}
-                  </Button>
-                ) : (
-                  <Button
-                    variant='default'
-                    onClick={() =>
-                      setSettings(manifest.id, {
-                        ...current,
-                        activeTheme: "custom",
-                      })
-                    }
-                    className='flex-1'>
-                    {t("plugins.themes.activate")}
-                  </Button>
-                )}
+              <div className='mt-6 flex items-center gap-2'>
                 <ExportCustomThemeButton />
                 <Button
                   variant='outline'

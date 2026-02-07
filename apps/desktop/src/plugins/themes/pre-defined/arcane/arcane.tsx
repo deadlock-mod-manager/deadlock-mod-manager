@@ -87,6 +87,8 @@ const ArcaneTheme = ({ accentColor }: ArcaneThemeProps) => {
     const primaryL = Math.min(l, 48);
     const accentL = Math.max(primaryL - 10, 38);
     const ringL = Math.min(l, 45);
+    const subtleS = Math.min(s, 15);
+    const borderS = Math.min(s, 30);
     return `
       .arcane-theme-active {
         --primary: ${h} ${Math.min(s, 70)}% ${primaryL}%;
@@ -94,10 +96,17 @@ const ArcaneTheme = ({ accentColor }: ArcaneThemeProps) => {
         --accent: ${h} ${Math.min(s - 20, 50)}% ${accentL}%;
         --accent-foreground: 0 0% 4%;
         --ring: ${h} ${Math.min(s - 5, 65)}% ${ringL}%;
+        --card: ${h} ${subtleS}% 6% / 0.9;
+        --popover: ${h} ${subtleS}% 6% / 0.95;
+        --secondary: ${h} ${borderS}% 10% / 0.85;
+        --muted: ${h} ${borderS}% 12% / 0.85;
+        --border: ${h} ${borderS}% 16%;
+        --input: ${h} ${borderS}% 14% / 0.7;
         --sidebar-primary: ${h} ${Math.min(s, 70)}% ${primaryL}%;
         --sidebar-primary-foreground: 0 0% 4%;
         --sidebar-accent: ${h} ${Math.min(s - 20, 50)}% ${accentL}%;
         --sidebar-accent-foreground: 0 0% 4%;
+        --sidebar-border: ${h} ${borderS}% 14%;
       }
     `;
   }, [h, s, l]);

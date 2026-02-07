@@ -1,4 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Switch } from "@deadlock-mods/ui/components/switch";
+import { ArrowLeft } from "@deadlock-mods/ui/icons";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
@@ -82,34 +84,39 @@ const PluginEntry = () => {
   return (
     <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin flex h-[calc(100vh-160px)] w-full overflow-y-auto'>
       <div className='flex w-full flex-col gap-4'>
-        <div className='flex items-center justify-between px-4 pt-4'>
-          <PageTitle title={t(plugin.manifest.nameKey)} />
-          <div className='flex items-center gap-2'>
+        <div className='flex items-center justify-between px-4 pt-4 w-full'>
+          <div className='flex items-start gap-2 flex-col py-8 w-full'>
             <Button
-              disabled={!id}
-              onClick={() => {
-                if (!id) return;
-                setEnabled(id, !isEnabled);
-              }}
-              size='default'
-              variant={isEnabled ? "default" : "outline"}>
-              {isEnabled ? t("common.disable") : t("common.enable")}
-            </Button>
-            <Button
+              className='flex items-center gap-1 my-2'
               onClick={() =>
                 navigate("/settings", { state: { activeTab: "plugin" } })
               }
-              size='default'
-              variant='outline'>
+              variant='transparent'
+              size='text'>
+              <ArrowLeft className='h-4 w-4' />
               {t("common.back")}
             </Button>
+            <div className='flex items-center gap-2 justify-between w-full'>
+              <PageTitle
+                title={t(plugin.manifest.nameKey)}
+                subtitle={t(plugin.manifest.descriptionKey)}
+              />{" "}
+              <div className='flex items-center gap-2'>
+                <span className='text-sm text-muted-foreground'>
+                  {isEnabled ? t("common.enabled") : t("common.disabled")}
+                </span>
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={(checked) => {
+                    if (!id) return;
+                    setEnabled(id, checked);
+                  }}
+                  disabled={!id}
+                  className='data-[state=checked]:bg-primary'
+                />
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className='px-4'>
-          <p className='text-muted-foreground text-sm'>
-            {t(plugin.manifest.descriptionKey)}
-          </p>
         </div>
 
         {module?.Settings && (
