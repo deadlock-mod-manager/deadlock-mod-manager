@@ -12,10 +12,16 @@
     "openSourceDescription": "تم تصميمه باستخدام تقنيات مذهلة مفتوحة المصدر بما في ذلك React و TypeScript والعديد من المكتبات الأخرى التي تجعل التطبيقات الحديثة ممكنة. شكرًا لجميع المساهمين والمشرفين.",
     "poweredBy": "مدعوم من",
     "releaseNotes": "ملاحظات الإصدار",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
     "shadcnDescription": "مكونات React جميلة ويمكن الوصول إليها والتي توفر الأساس لواجهة المستخدم الحديثة. انسخ والصق وخصصها بشكل مثالي.",
     "tailwindDescription": "إطار عمل CSS الذي يعتمد على الأداة المساعدة أولاً والذي يدعم تصميمنا المتجاوب والتصميم المتسق في جميع أنحاء التطبيق. ",
     "tauriDescription": "إطار العمل القوي الذي يتيح هذا التطبيق المكتبي متعدد المنصات. يجمع Tauri بين أفضل تقنيات الويب والأداء والأمان الأصليين.",
     "tauriVersion": "إصدار Tauri",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "title": "عن التطبيق",
     "updateFailed": "فشل التحديث. حاول مرة أخرى لاحقًا.",
     "visitGamebanana": "قم بزيارة GameBanana",
@@ -540,10 +546,6 @@
     "modContainsFiles": "{{modName}} يحتوي على {{fileCount}} ملفات. اختر الملفات التي تريد تثبيتها.",
     "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح"
   },
-  "warnings": {
-    "obsoleteLabel": "قديم",
-    "obsoleteDescription": "هذا التعديل لم يعد متوفراً في متجر التعديلات وقد لا يعمل مع الإصدار الحالي من اللعبة."
-  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",
@@ -1003,6 +1005,10 @@
     "light": "فاتح",
     "system": "النظام"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "صوت",
     "author": "المؤلف",
@@ -1037,6 +1043,16 @@
     "later": "لاحقاً",
     "newVersionAvailable": "إصدار جديد ({{version}}) متاح. أنت تستخدم حاليًا الإصدار {{currentVersion}}.",
     "releaseNotes": "ملاحظات الإصدار"
+  },
+  "warnings": {
+    "obsoleteDescription": "هذا التعديل لم يعد متوفراً في متجر التعديلات وقد لا يعمل مع الإصدار الحالي من اللعبة.",
+    "obsoleteLabel": "قديم",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
@@ -1096,6 +1112,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

@@ -12,10 +12,16 @@
     "openSourceDescription": "使用出色的开源技术构建，包括 React、TypeScript 和许多其他使现代应用程序成为可能的库。感谢所有贡献者和维护者。",
     "poweredBy": "技术支持",
     "releaseNotes": "发行说明",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
     "shadcnDescription": "美观且易于访问的 React 组件，为我们现代化的用户界面奠定了基础。可复制、粘贴并完美自定义。",
     "tailwindDescription": "实用优先的 CSS 框架，为我们在整个应用程序中的响应式设计和一致样式提供动力。",
     "tauriDescription": "强大的框架，支持此跨平台桌面应用程序。Tauri 将最佳的Web技术与原生性能和安全性相结合。",
     "tauriVersion": "Tauri 版本：",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "title": "关于",
     "updateFailed": "检查更新失败，您可能需要手动更新应用程序。",
     "visitGamebanana": "访问 GameBanana",
@@ -537,10 +543,6 @@
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 个文件。请选择要安装的文件。",
     "modInstalledSuccessfully": "模组安装成功"
   },
-  "warnings": {
-    "obsoleteLabel": "已淘汰",
-    "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。"
-  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",
@@ -993,6 +995,10 @@
     "light": "浅色",
     "system": "跟随系统"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "音频",
     "author": "作者",
@@ -1027,6 +1033,16 @@
     "later": "稍后",
     "newVersionAvailable": "新版本 ({{version}}) 可用。您当前使用的版本是 {{currentVersion}}。",
     "releaseNotes": "发行说明"
+  },
+  "warnings": {
+    "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。",
+    "obsoleteLabel": "已淘汰",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "完整发行说明",
@@ -1086,6 +1102,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [
@@ -1149,7 +1172,9 @@
         "title": "音频模组支持与启动选项"
       },
       "0.6.1": {
-        "features": ["🔗 添加了对 GameBanana 上一键安装链接的支持"],
+        "features": [
+          "🔗 添加了对 GameBanana 上一键安装链接的支持"
+        ],
         "title": "深度链接与改进"
       },
       "0.7.0": {
@@ -1177,11 +1202,16 @@
         "title": "主要功能与UI更新 + 新语言支持"
       },
       "0.8.1": {
-        "features": ["🔧 更新为对所有 API 调用使用 HTTP 插件，以提高可靠性"],
+        "features": [
+          "🔧 更新为对所有 API 调用使用 HTTP 插件，以提高可靠性"
+        ],
         "title": "技术改进"
       },
       "0.8.2": {
-        "features": ["🐛 修复了各种错误并提高了稳定性", "⚡ 性能改进和优化"],
+        "features": [
+          "🐛 修复了各种错误并提高了稳定性",
+          "⚡ 性能改进和优化"
+        ],
         "title": "错误修复与改进"
       },
       "0.9.0": {

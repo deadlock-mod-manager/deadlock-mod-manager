@@ -12,10 +12,16 @@
     "openSourceDescription": "สร้างขึ้นด้วยเทคโนโลยีโอเพนซอร์สที่น่าทึ่ง รวมถึง React, TypeScript และไลบรารีอื่น ๆ อีกมากมายที่ทำให้แอปพลิเคชันสมัยใหม่เป็นไปได้ ขอบคุณผู้มีส่วนร่วมและผู้ดูแลทุกคน",
     "poweredBy": "ขับเคลื่อนโดย",
     "releaseNotes": "บันทึกประจำรุ่น",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
     "shadcnDescription": "คอมโพเนนต์ React ที่สวยงามและเข้าถึงได้ซึ่งเป็นรากฐานสำหรับส่วนติดต่อผู้ใช้ที่ทันสมัยของเรา คัดลอก วาง และปรับแต่งให้สมบูรณ์แบบ",
     "tailwindDescription": "เฟรมเวิร์ก CSS แบบ utility-first ที่ขับเคลื่อนการออกแบบที่ตอบสนองและสไตล์ที่สอดคล้องกันทั่วทั้งแอปพลิเคชัน",
     "tauriDescription": "เฟรมเวิร์กที่ทรงพลังซึ่งช่วยให้แอปพลิเคชันเดสก์ท็อปข้ามแพลตฟอร์มนี้เป็นไปได้ Tauri ผสมผสานสิ่งที่ดีที่สุดของเทคโนโลยีเว็บเข้ากับประสิทธิภาพและความปลอดภัยแบบเนทีฟ",
     "tauriVersion": "เวอร์ชัน Tauri:",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "title": "เกี่ยวกับ",
     "updateFailed": "ไม่สามารถตรวจสอบการอัปเดตได้ คุณอาจต้องอัปเดตแอปด้วยตนเอง",
     "visitGamebanana": "เยี่ยมชม GameBanana",
@@ -540,10 +546,6 @@
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
     "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว"
   },
-  "warnings": {
-    "obsoleteLabel": "ล้าสมัย",
-    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน"
-  },
   "onboarding": {
     "addons": {
       "analyze": "วิเคราะห์ม็อด",
@@ -997,6 +999,10 @@
     "light": "สว่าง",
     "system": "ตามระบบ"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "เสียง",
     "author": "ผู้สร้าง",
@@ -1031,6 +1037,16 @@
     "later": "ไว้ทีหลัง",
     "newVersionAvailable": "มีเวอร์ชันใหม่ ({{version}}) พร้อมใช้งาน ขณะนี้คุณใช้เวอร์ชัน {{currentVersion}}",
     "releaseNotes": "บันทึกประจำรุ่น"
+  },
+  "warnings": {
+    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน",
+    "obsoleteLabel": "ล้าสมัย",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "บันทึกประจำรุ่นฉบับเต็ม",
@@ -1090,6 +1106,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

@@ -12,10 +12,16 @@
     "openSourceDescription": "React, TypeScript ve modern uygulamaları mümkün kılan birçok kütüphane dahil olmak üzere harika açık kaynak teknolojilerle oluşturuldu. Tüm katkıda bulunanlara teşekkürler.",
     "poweredBy": "Destekleyen",
     "releaseNotes": "Sürüm notları",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
     "shadcnDescription": "Modern kullanıcı arayüzümüzün temelini oluşturan güzel ve erişilebilir React bileşenleri. Kopyala, yapıştır, özelleştir.",
     "tailwindDescription": "Uygulamanın her yerinde duyarlı tasarım ve tutarlı stil sağlayan Utility-First CSS framework’ü.",
     "tauriDescription": "Bu çapraz platform masaüstü uygulamasını mümkün kılan güçlü framework. Tauri, en iyi web teknolojilerini yerel performans ve güvenlikle birleştirir.",
     "tauriVersion": "Tauri sürümü:",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "title": "Bilgi",
     "updateFailed": "Güncelleme kontrolü başarısız oldu, uygulamayı manuel güncellemeniz gerekebilir.",
     "visitGamebanana": "GameBanana’yı ziyaret et",
@@ -537,10 +543,6 @@
     "modContainsFiles": "{{modName}} {{fileCount}} dosya içeriyor. Yüklenecekleri seçin.",
     "modInstalledSuccessfully": "Mod başarıyla yüklendi"
   },
-  "warnings": {
-    "obsoleteLabel": "Kullanımdan kalkmış",
-    "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir."
-  },
   "onboarding": {
     "addons": {
       "analyze": "Analyze Mods",
@@ -993,6 +995,10 @@
     "light": "Light",
     "system": "System"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "Audio",
     "author": "Author",
@@ -1027,6 +1033,16 @@
     "later": "Sonra",
     "newVersionAvailable": "Yeni bir sürüm ({{version}}) mevcut. Şu anda {{currentVersion}} sürümünü kullanıyorsunuz.",
     "releaseNotes": "Sürüm Notları"
+  },
+  "warnings": {
+    "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir.",
+    "obsoleteLabel": "Kullanımdan kalkmış",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "Full Release Notes",
@@ -1086,6 +1102,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

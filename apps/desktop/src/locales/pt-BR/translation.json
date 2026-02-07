@@ -12,10 +12,16 @@
     "openSourceDescription": "Construído com tecnologias código aberto incríveis, incluindo React, TypeScript e muitas outras bibliotecas que tornam os aplicativos modernos possíveis. Agradecimento especial a todos os colaboradores e desenvolvedores.",
     "poweredBy": "Desenvolvido com",
     "releaseNotes": "notas de atualização",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
     "shadcnDescription": "Componentes React bonitos e acessíveis que formam a base da nossa interface moderna. Copie, cole e personalize até alcançar a perfeição.",
     "tailwindDescription": "O framework CSS orientado a utilitários que impulsiona nosso design responsivo e garante uma aparência consistente em todo o aplicativo.",
     "tauriDescription": "O poderoso framework que possibilita esse aplicativo desktop multiplataforma. O Tauri combina o melhor das tecnologias web com desempenho e segurança nativos.",
     "tauriVersion": "Versão do Tauri:",
+    "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
+    "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
+    "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "title": "Sobre",
     "updateFailed": "Falha ao procurar por atualizações, tente atualizar manualmente.",
     "visitGamebanana": "Visitar GameBanana",
@@ -537,10 +543,6 @@
     "modContainsFiles": "{{modName}} contém {{fileCount}} arquivos. Selecione quais deseja instalar.",
     "modInstalledSuccessfully": "Mod instalado com sucesso"
   },
-  "warnings": {
-    "obsoleteLabel": "Obsoleto",
-    "obsoleteDescription": "Este mod não está mais disponível na loja de mods e pode não funcionar com a versão atual do jogo."
-  },
   "onboarding": {
     "addons": {
       "analyze": "Analisar Mods",
@@ -994,6 +996,10 @@
     "light": "Claro",
     "system": "Sistema"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "Áudio",
     "author": "Autor",
@@ -1028,6 +1034,16 @@
     "later": "Later",
     "newVersionAvailable": "A new version ({{version}}) is available. You are currently on version {{currentVersion}}.",
     "releaseNotes": "Release Notes"
+  },
+  "warnings": {
+    "obsoleteDescription": "Este mod não está mais disponível na loja de mods e pode não funcionar com a versão atual do jogo.",
+    "obsoleteLabel": "Obsoleto",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "Notas de Lançamento Completas",
@@ -1087,6 +1103,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [
