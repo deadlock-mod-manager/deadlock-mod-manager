@@ -74,6 +74,8 @@
   "warnings": {
     "obsoleteLabel": "",
     "obsoleteDescription": "",
+    "staleModDescription": "",
+    "staleModLabel": "",
     "updatedRecentlyLabel": "",
     "updatedRecentlyDescription": "",
     "updateAvailableLabel": "",

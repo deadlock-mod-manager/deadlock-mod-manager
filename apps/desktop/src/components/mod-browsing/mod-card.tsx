@@ -16,12 +16,15 @@ import {
 } from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useReportCounts } from "@/hooks/use-report-counts";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";
 import {
   isModOutdated,
+  isModStale,
   isUpdateAvailable,
   isUpdatedRecently,
 } from "@/lib/utils";
@@ -32,6 +35,9 @@ import { NSFWBlur } from "./nsfw-blur";
 const ModCard = ({ mod }: { mod?: ModDto }) => {
   const { localMods, setScrollPosition } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+  const { data: reportCounts } = useReportCounts(mod?.id ?? "");
+  const staleResult =
+    mod && reportCounts ? isModStale(mod, reportCounts) : null;
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -91,10 +97,18 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           </div>
         )}
         <div className='absolute top-2 right-2 flex flex-col gap-1'>
-          {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
           {status === ModStatus.Installed && <Badge>Installed</Badge>}
           {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
-          {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+          {isModOutdated(mod) && !staleResult && (
+            <OutdatedModWarning variant='indicator' />
+          )}
+          {staleResult && (
+            <StaleModWarning
+              variant='indicator'
+              openReportCount={staleResult.openReportCount}
+              lastUpdatedAt={staleResult.lastUpdatedAt}
+            />
+          )}
           {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
             <UpdatedRecentlyBadge />
           )}
