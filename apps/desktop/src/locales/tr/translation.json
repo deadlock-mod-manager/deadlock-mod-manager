@@ -12,10 +12,16 @@
     "openSourceDescription": "React, TypeScript ve modern uygulamaları mümkün kılan birçok kütüphane dahil olmak üzere harika açık kaynak teknolojilerle oluşturuldu. Tüm katkıda bulunanlara teşekkürler.",
     "poweredBy": "Destekleyen",
     "releaseNotes": "Sürüm notları",
+    "resetOnboarding": "Karşılamayı Sıfırla",
+    "resetOnboardingDescription": "Bir sonraki başlatmada karşılama sihirbazını tekrar göster.",
+    "resetOnboardingSuccess": "Karşılama bir sonraki başlatmada gösterilecek",
     "shadcnDescription": "Modern kullanıcı arayüzümüzün temelini oluşturan güzel ve erişilebilir React bileşenleri. Kopyala, yapıştır, özelleştir.",
     "tailwindDescription": "Uygulamanın her yerinde duyarlı tasarım ve tutarlı stil sağlayan Utility-First CSS framework’ü.",
     "tauriDescription": "Bu çapraz platform masaüstü uygulamasını mümkün kılan güçlü framework. Tauri, en iyi web teknolojilerini yerel performans ve güvenlikle birleştirir.",
     "tauriVersion": "Tauri sürümü:",
+    "thirdPartyDisclaimerDescription": "Bu uygulama aracılığıyla mevcut tüm modlar, topluluk üyeleri tarafından oluşturulan üçüncü taraf içeriklerdir. Modlar Deadlock Mod Manager projesi tarafından oluşturulmaz, incelenmez, doğrulanmaz veya onaylanmaz. Modları kendi sorumluluğunuzda yükleyin.",
+    "thirdPartyDisclaimerShort": "Modlar Deadlock Mod Manager tarafından oluşturulmayan, incelenmeyen veya onaylanmayan üçüncü taraf içeriklerdir.",
+    "thirdPartyDisclaimerTitle": "Üçüncü Taraf İçerik Bildirimi",
     "title": "Bilgi",
     "updateFailed": "Güncelleme kontrolü başarısız oldu, uygulamayı manuel güncellemeniz gerekebilir.",
     "visitGamebanana": "GameBanana’yı ziyaret et",
@@ -24,17 +30,19 @@
     "visitTauri": "Tauri’yi ziyaret et"
   },
   "accessibility": {
-    "close": "Close",
-    "goToFirstPage": "Go to first page",
-    "goToLastPage": "Go to last page",
-    "goToNextPage": "Go to next page",
-    "goToPreviousPage": "Go to previous page",
-    "more": "More",
-    "morePages": "More pages",
-    "next": "Next",
-    "nextSlide": "Next slide",
-    "previous": "Previous",
-    "previousSlide": "Previous slide"
+    "close": "Kapat",
+    "deadlockLogoAlt": "Deadlock",
+    "goToFirstPage": "İlk sayfaya git",
+    "goToLastPage": "Son sayfaya git",
+    "goToNextPage": "Sonraki sayfaya git",
+    "goToPreviousPage": "Önceki sayfaya git",
+    "more": "Daha fazla",
+    "morePages": "Daha fazla sayfa",
+    "next": "Sonraki",
+    "nextSlide": "Sonraki slayt",
+    "previous": "Önceki",
+    "previousSlide": "Önceki slayt",
+    "snipzteaMascotAlt": "Snipztea maskotu"
   },
   "addMods": {
     "add": "Ekle",
@@ -72,11 +80,16 @@
     "supportedFormats": "Desteklenen: .vpk/.zip/.rar/.7z",
     "title": "Mod ekle",
     "unsupportedFiles": "Desteklenmeyen dosya(lar).",
+    "unsupportedImageType": "Unsupported image type",
     "unsupportedSelection": "Desteklenmeyen seçim.",
     "validatingFiles": "Mod dosyaları doğrulanıyor...",
     "validatingMetadata": "Mod metaverisi doğrulanıyor..."
   },
   "addons": {
+    "addToLibraryDescription": "\"{{fileName}}\" mod kütüphanenize ekleyin",
+    "addToLibrarySuccess": "\"{{name}}\" kütüphaneye eklendi",
+    "addToLibraryTitle": "Kütüphaneye Ekle",
+    "adding": "Ekleniyor...",
     "analysisError": "Yerel eklentiler analiz edilemedi",
     "analysisResults": "Yerel Eklenti Analizi",
     "analysisResultsDescription": "Oyun dizininizde {{count}} eklenti bulundu",
@@ -96,6 +109,7 @@
     },
     "errors": "Hatalar",
     "errorsCount": "{{count}} hata",
+    "failedToAddModToLibrary": "Mod kütüphaneye eklenemedi",
     "fileCount": "Dosyalar",
     "fileSize": "Boyut",
     "files": "dosyalar",
@@ -110,6 +124,7 @@
     "modAuthor": "Yazar",
     "modName": "Mod Adı",
     "modNotFound": "Mod veritabanında bulunamadı",
+    "noAddonSelected": "Hiçbir eklenti seçilmedi",
     "noAddonsFound": "Oyun dizininizde eklenti bulunamadı",
     "noEntriesFound": "VPK dosyasında giriş bulunamadı",
     "progress": {
@@ -138,6 +153,13 @@
     },
     "vpkContents": "VPK İçeriği"
   },
+  "auth": {
+    "authorizationCodeLabel": "Yetkilendirme Kodu",
+    "pasteCodePlaceholder": "Kodunuzu buraya yapıştırın...",
+    "pleaseEnterCode": "Lütfen bir kod girin",
+    "signIn": "Giriş Yap",
+    "signingIn": "Giriş yapılıyor..."
+  },
   "common": {
     "actions": "Eylemler",
     "add": "Ekle",
@@ -145,20 +167,20 @@
     "apiHealthy": "API Çevrimiçi",
     "apiOffline": "API Çevrimdışı",
     "apiUnknown": "API Durumu Bilinmiyor",
-    "back": "Back",
+    "back": "Geri",
     "cancel": "İptal",
     "close": "Kapat",
     "confirm": "Onayla",
     "copy": "Kopyala",
     "create": "Oluştur",
-    "currentValue": "Current value",
+    "currentValue": "Mevcut değer",
     "delete": "Sil",
-    "disable": "Disable",
-    "disabled": "Disabled",
+    "disable": "Devre Dışı Bırak",
+    "disabled": "Devre Dışı",
     "downloading": "indiriliyor",
     "edit": "Düzenle",
-    "enable": "Enable",
-    "enabled": "Enabled",
+    "enable": "Etkinleştir",
+    "enabled": "Etkin",
     "error": "Hata",
     "failedToFetchMods": "Modlar yüklenemedi. Daha sonra tekrar deneyin.",
     "gameDetected": "Oyun algılandı",
@@ -226,6 +248,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -315,11 +338,16 @@
     "completed": "Tamamlandı",
     "downloading": "{{count}} mod indiriliyor",
     "downloading_plural": "{{count}} mod indiriliyor",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "İndirilen dosya bulunamadı",
     "noDownloadsMatchFilter": "Mevcut filtrenizle eşleşen indirme yok.",
     "openDownloadFolder": "İndirme klasörünü aç",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "İndirilecek dosyaları seçin",
+    "selectNone": "Select None",
     "title": "İndirilenler",
+    "total": "Total",
     "viewAllDownloads": "Tüm indirmeleri görüntüle"
   },
   "errors": {
@@ -333,7 +361,8 @@
     },
     "genericMessage": "Üzgünüz, isteğinizi işlerken bir hata oluştu.",
     "goBack": "Geri dön",
-    "tryAgain": "Tekrar deneyin"
+    "tryAgain": "Tekrar deneyin",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -382,11 +411,18 @@
     "sortBy": "Sırala"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "Yedek oluştur",
     "openInEditor": "Düzenleyicide aç",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "Vanilla’ya sıfırla",
     "restoreBackup": "Yedeği geri yükle",
-    "validateConfiguration": "Yapılandırmayı doğrula"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "Yapılandırmayı doğrula",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -416,6 +452,15 @@
     "removing": "Kaldırılıyor..."
   },
   "modDetail": {
+    "authorLabel": "Yazar",
+    "backToMods": "Modlara dön",
+    "downloadsLabel": "İndirmeler",
+    "goBackHome": "Ana sayfaya dön",
+    "idLabel": "ID",
+    "installedAt": "Yükleme tarihi",
+    "lastModifiedAt": "Son değişiklik",
+    "modStatusLabel": "Mod durumu",
+    "publishedAt": "Yayın tarihi",
     "vpkReplacement": {
       "currentFiles": "Mevcut VPK Dosyaları",
       "description": "Geliştirme sırasında hızlı iterasyon için mod dosyalarını değiştirin",
@@ -532,14 +577,11 @@
   },
   "notifications": {
     "failedToInstallMod": "Mod yüklenemedi",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "İşlem gerçekleştirilemedi",
     "installationCanceled": "Yükleme iptal edildi",
     "modContainsFiles": "{{modName}} {{fileCount}} dosya içeriyor. Yüklenecekleri seçin.",
     "modInstalledSuccessfully": "Mod başarıyla yüklendi"
-  },
-  "warnings": {
-    "obsoleteLabel": "Kullanımdan kalkmış",
-    "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir."
   },
   "onboarding": {
     "addons": {
@@ -564,7 +606,7 @@
       "title": "API Connection",
       "version": "API Version"
     },
-    "back": "Back",
+    "back": "Geri",
     "disclaimer": {
       "acknowledge": "Modların üçüncü taraf içerik olduğunu anlıyorum",
       "description": "Deadlock Mod Manager aracılığıyla mevcut tüm modlar, topluluk üyeleri tarafından oluşturulan üçüncü taraf içeriklerdir.",
@@ -596,6 +638,7 @@
       "description": "Uygulama arka planlarını özelleştirin.",
       "detailedDescription": "Bu eklenti, tüm uygulama için özel arka plan görüntüleri ayarlamanıza olanak tanır. Çevrimiçi bir görüntünün URL'sini kullanabilir veya yerel bir görüntü dosyası yükleyebilirsiniz. Eklenti, görünümü özelleştirmek için şeffaflık ve bulanıklık efektlerini destekler. Ayrıca yan çubuğu arka plan efektine dahil edip etmeyeceğinizi seçebilirsiniz.",
       "imageUrl": "Görüntü URL'si",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Yan çubuğu dahil et",
       "opacity": "Şeffaflık",
       "title": "Arka Plan",
@@ -619,6 +662,7 @@
       "description": "Discord'da Deadlock etkinliğinizi gösterir.",
       "detailedDescription": "Deadlock Mod Manager etkinliğinizi Discord profilinizde Rich Presence ile gösterir. Sadece etkinleştirin ve isterseniz Detaylar ve Durum metinlerini düzenleyin.",
       "details": "Detaylar Metni",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Büyük Görsel Anahtarı",
       "largeImageText": "Büyük Görsel Metni",
       "optional": "(isteğe bağlı)",
@@ -632,6 +676,7 @@
       "smallImageKey": "Küçük Görsel Anahtarı",
       "smallImageText": "Küçük Görsel Metni",
       "state": "Durum Metni",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Eklentiyi etkinleştirin, ardından isteğe bağlı olarak Detaylar ve Durum metnini düzenleyin."
     },
@@ -650,6 +695,7 @@
       "visit": "Nightshift'i ziyaret et:"
     },
     "renderActive": "Eklenti etkin ve arka planda çalışıyor",
+
     "tea": {
       "carrd": "Carrd",
       "description": "YouTube ve Twitch yayıncısı Snipztea için oluşturulmuş sıcak bej bir tema.",
@@ -668,6 +714,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -695,6 +742,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -705,6 +753,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Temalar",
       "usageInstructions": "Eklentiyi aç, 'Önceden Tanımlı Temalar' bölümünden bir tema seç ve Etkinleştir'e bas. Varsayılan görünüme dönmek için Devre Dışı Bırak'ı kullan."
     },
@@ -889,10 +938,15 @@
     "backupVpkCount": "VPK Dosyaları",
     "browseGamePath": "Browse",
     "clearAllMods": "Tüm modları sil",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Tüm modları silmek istendiginzine emin misiniz? Bu işlem geri alınamaz.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "Yedek Oluştur",
     "createCustomSetting": "Özel ayar oluştur",
     "createCustomSettingDescription": "Oyuna özel bir ayar ekleyin. Bunlar başlatma seçeneklerine eklenir.",
@@ -908,11 +962,13 @@
     "description": "Açıklama",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "Fehler beim Löschen der Mods",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "Flashbang",
     "flashbangDescription": "Seçilen tema ne olursa olsun, 20:00 ile 8:00 arasında açık modu zorlar",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "Oyun",
     "gameConfigDescription": "gameinfo.gi dosyası için yedekleme, geri yükleme ve doğrulamayı yömetin. Güvenli modlama için.",
     "gameConfigManagement": "Oyun yapılandırma yönetimi",
@@ -943,6 +999,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "Mod klasörünü aç",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "Gizlilik",
@@ -956,7 +1014,9 @@
     "selectDefaultSort": "Varsayılan sıralama seçin",
     "selectType": "Tür seçin",
     "settingCreated": "Ayar oluşturuldu",
+    "settingRemoved": "Setting removed",
     "settingType": "Ayar türü",
+    "settingUpdated": "Setting updated",
     "systemSettings": "Sistem ayarları",
     "systemSettingsDescription": "Mod Yöneticisi. Bunlar oyunu etkilemez.",
     "theme": "Tema",
@@ -993,6 +1053,10 @@
     "light": "Light",
     "system": "System"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "Audio",
     "author": "Author",
@@ -1027,6 +1091,16 @@
     "later": "Sonra",
     "newVersionAvailable": "Yeni bir sürüm ({{version}}) mevcut. Şu anda {{currentVersion}} sürümünü kullanıyorsunuz.",
     "releaseNotes": "Sürüm Notları"
+  },
+  "warnings": {
+    "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir.",
+    "obsoleteLabel": "Kullanımdan kalkmış",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "Full Release Notes",
@@ -1086,6 +1160,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

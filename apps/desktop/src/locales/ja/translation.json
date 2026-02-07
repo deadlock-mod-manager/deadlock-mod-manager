@@ -12,10 +12,16 @@
     "openSourceDescription": "ReactやTypeScriptをはじめ、モダンアプリを支える多くの素晴らしいオープンソース技術で構築されています。すべての貢献者とメンテナーの皆様に感謝します。",
     "poweredBy": "Powered by",
     "releaseNotes": "リリースノート",
+    "resetOnboarding": "オンボーディングをリセット",
+    "resetOnboardingDescription": "次回起動時にオンボーディングウィザードを再表示する。",
+    "resetOnboardingSuccess": "次回起動時にオンボーディングが表示されます",
     "shadcnDescription": "美しくアクセシブルなReactコンポーネントで、モダンなUIの基盤となっています。コピーして貼り付け、自由にカスタマイズできます",
     "tailwindDescription": "アプリのデザインをレスポンシブかつ統一的に保つユーティリティ主体のCSSフレームワークです。",
     "tauriDescription": "このクロスプラットフォームデスクトップアプリを実現する強力なフレームワークです。TauriはWeb技術の柔軟さと高い実行性能・安全性を両立します。",
     "tauriVersion": "Tauri バージョン:",
+    "thirdPartyDisclaimerDescription": "このアプリケーションを通じて利用可能なすべてのModは、コミュニティメンバーによって作成された第三者コンテンツです。Modは、Deadlock Mod Managerプロジェクトによって作成、レビュー、検証、または承認されていません。Modは自己責任でインストールしてください。",
+    "thirdPartyDisclaimerShort": "ModはDeadlock Mod Managerによって作成、レビュー、または承認されていない第三者コンテンツです。",
+    "thirdPartyDisclaimerTitle": "第三者コンテンツに関する免責事項",
     "title": "このアプリについて",
     "updateFailed": "アップデートの確認に失敗しました。手動更新が必要になる場合があります。",
     "visitGamebanana": "GameBananaを開く",
@@ -25,6 +31,7 @@
   },
   "accessibility": {
     "close": "閉じる",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "最初のページに移動",
     "goToLastPage": "最後のページに移動",
     "goToNextPage": "次のページに移動",
@@ -34,7 +41,8 @@
     "next": "次へ",
     "nextSlide": "次のスライド",
     "previous": "前へ",
-    "previousSlide": "前のスライド"
+    "previousSlide": "前のスライド",
+    "snipzteaMascotAlt": "Snipzteaのマスコット"
   },
   "addMods": {
     "add": "追加",
@@ -72,11 +80,16 @@
     "supportedFormats": "サポートファイル: .vpk/.zip/.rar/.7z",
     "title": "Modを追加",
     "unsupportedFiles": "未対応のファイルです",
+    "unsupportedImageType": "サポートされていない画像形式です",
     "unsupportedSelection": "未対応の選択です。",
     "validatingFiles": "Modファイルを検証中...",
     "validatingMetadata": "Modメタデータを検証中..."
   },
   "addons": {
+    "addToLibraryDescription": "「{{fileName}}」をModライブラリに追加",
+    "addToLibrarySuccess": "「{{name}}」をライブラリに追加しました",
+    "addToLibraryTitle": "ライブラリに追加",
+    "adding": "追加中...",
     "analysisError": "ローカルアドオンの分析に失敗しました",
     "analysisResults": "ローカルアドオン分析",
     "analysisResultsDescription": "ゲームディレクトリに{{count}}個のアドオンが見つかりました",
@@ -96,6 +109,7 @@
     },
     "errors": "エラー",
     "errorsCount": "{{count}}個のエラー",
+    "failedToAddModToLibrary": "Modをライブラリに追加できませんでした",
     "fileCount": "ファイル数",
     "fileSize": "サイズ",
     "files": "ファイル",
@@ -104,6 +118,7 @@
     "modAuthor": "作成者",
     "modName": "Mod名",
     "modNotFound": "データベースにModが見つかりません",
+    "noAddonSelected": "アドオンが選択されていません",
     "noAddonsFound": "ゲームディレクトリにアドオンが見つかりませんでした",
     "noEntriesFound": "VPKファイルにエントリが見つかりません",
     "progress": {
@@ -131,6 +146,13 @@
       "unknown": "不明"
     },
     "vpkContents": "VPKコンテンツ"
+  },
+  "auth": {
+    "authorizationCodeLabel": "認証コード",
+    "pasteCodePlaceholder": "ここにコードを貼り付けてください...",
+    "pleaseEnterCode": "コードを入力してください",
+    "signIn": "サインイン",
+    "signingIn": "サインイン中..."
   },
   "common": {
     "actions": "操作",
@@ -220,6 +242,7 @@
       "heroes": "ヒーロー",
       "heroesSelected": "選択済み",
       "heroesValidation": "少なくとも1つのヒーロー（最大5つ）を選択してください",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "インポート",
         "description": "citadelクロスヘア形式の設定を下に貼り付けて、フォームにインポートする。",
@@ -309,25 +332,31 @@
     "completed": "完了",
     "downloading": "{{count}}個のModをダウンロード中...",
     "downloading_plural": "{{count}}個のModをダウンロード中...",
+    "filesSelected": "{{total}}個中{{selected}}個のファイルを選択",
     "noDownloadsFound": "ダウンロードなし",
     "noDownloadsMatchFilter": "フィルターに一致するダウンロード項目はありません。",
     "openDownloadFolder": "ダウンロードフォルダを開く",
     "percentage": "{{percentage}}%",
+    "selectAll": "すべて選択",
+    "selectFilesToDownload": "ダウンロードするファイルを選択",
+    "selectNone": "選択を解除",
     "title": "ダウンロード",
+    "total": "合計",
     "viewAllDownloads": "すべてのダウンロードを見る"
   },
   "errors": {
     "errorCode": "エラーコード:",
     "failedToParseGameConfiguration": {
-      "instruction": "Please follow these steps to resolve the issue:",
+      "instruction": "この問題を解決するには、次の手順に従ってください：",
       "steps": [
-        "Verify game files on Steam.",
-        "Open Mod Manager and click 'Launch Modded'."
+        "Steamでゲームファイルを検証してください。",
+        "Modマネージャーを開き、「Mod有効で起動」をクリックしてください。"
       ]
     },
     "genericMessage": "申し訳ございませんが、リクエストの処理中にエラーが発生しました。",
     "goBack": "戻る",
-    "tryAgain": "もう一度試す"
+    "tryAgain": "もう一度試す",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "実験的機能に参加して、全員にリリースされる前に新機能を試す。",
@@ -375,11 +404,18 @@
     "sortBy": "並び順"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "バックアップを作成",
     "openInEditor": "エディターで開く",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "初期化",
     "restoreBackup": "バックアップを復元",
-    "validateConfiguration": "設定を検証"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "設定を検証",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "ドキュメント",
@@ -409,6 +445,15 @@
     "removing": "除外中"
   },
   "modDetail": {
+    "authorLabel": "作者",
+    "backToMods": "Mod一覧に戻る",
+    "downloadsLabel": "ダウンロード数",
+    "goBackHome": "ホームに戻る",
+    "idLabel": "ID",
+    "installedAt": "インストール日時",
+    "lastModifiedAt": "最終更新日時",
+    "modStatusLabel": "Modの状態",
+    "publishedAt": "公開日時",
     "vpkReplacement": {
       "currentFiles": "現在のVPKファイル",
       "description": "開発中の迅速なイテレーションのためにModファイルを置換する",
@@ -525,14 +570,11 @@
   },
   "notifications": {
     "failedToInstallMod": "Modのインストールに失敗しました",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "操作を実行できませんでした",
     "installationCanceled": "インストールが中止されました",
     "modContainsFiles": "{{modName}}には{{fileCount}}個のファイルが含まれています。インストールするファイルを選択してください。",
     "modInstalledSuccessfully": "Modをインストールしました"
-  },
-  "warnings": {
-    "obsoleteLabel": "廃止",
-    "obsoleteDescription": "このModはModストアで提供終了しており、現在のゲームバージョンでは動作しない可能性があります。"
   },
   "onboarding": {
     "addons": {
@@ -590,6 +632,7 @@
       "description": "アプリケーションの背景をカスタマイズする。",
       "detailedDescription": "このプラグインでは、アプリケーション全体のカスタム背景画像を設定できます。オンライン画像のURLを使用するか、ローカル画像ファイルをアップロードできます。プラグインは不透明度とぼかし効果をサポートして、外観をカスタマイズできます。サイドバーを背景効果に含めるかどうかも選択できます。",
       "imageUrl": "画像URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "サイドバーを含める",
       "opacity": "不透明度",
       "title": "背景",
@@ -605,6 +648,7 @@
       "description": "DiscordでDeadlockのアクティビティを表示する。",
       "detailedDescription": "Rich Presenceを使用してDiscordでDeadlockのアクティビティを表示します。プラグインを有効にして、オプションでプロファイルに表示される詳細とステータステキストをカスタマイズできます。",
       "details": "詳細テキスト",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "大画像キー",
       "largeImageText": "大画像テキスト",
       "optional": "（オプション）",
@@ -618,6 +662,7 @@
       "smallImageKey": "小画像キー",
       "smallImageText": "小画像テキスト",
       "state": "ステータステキスト",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "プラグインを有効にして、オプションで詳細とステータステキストを編集する。"
     },
@@ -637,12 +682,14 @@
     },
     "renderActive": "プラグインがアクティブでバックグラウンドで実行中です",
     "sudo": {
+      "activateSelectedMod": "Activate selected mod",
       "description": "経験豊富なユーザー向けの高度なMod管理ツール。",
       "detailedDescription": "開発者向けのコントロールと実験的機能のロックを解除する。一部のアクションはファイルを変更したり、安全装置をバイパスしたりする可能性があります。注意して使用してください。",
       "importMod": "Modをインポート",
       "instructions": "左側でModを閲覧し、1つを選択してから右矢印を使用してダウンロードして有効にする。右側でインストール済みのModを選択し、左矢印を使用して削除する。両方のリストを検索できる。",
       "openAddons": "アドオンを開く",
       "removeMod": "Modを削除",
+      "removeSelectedMod": "Remove selected mod",
       "title": "スーパーユーザー",
       "usageInstructions": "プラグインを有効にしてスーパーユーザーモードをオンにする。開発者オプションと高度なツールがアプリ全体で表示されるようになる。プラグインを無効にすると、再び非表示になる。",
       "viewOriginalPost": "元のフォーラム投稿を表示"
@@ -665,6 +712,7 @@
       "chooseImage": "画像を選択",
       "choosePreview": "プレビューを選択",
       "clear": "クリア",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "好みの色とスタイルで独自のカスタムテーマを作成する。",
       "customThemeBuilder": "カスタムテーマビルダー",
       "customThemeBuilderDescription": "色とスタイルを選択して独自のテーマを構築する。",
@@ -692,6 +740,7 @@
       "pickColor": "色を選択",
       "preDefinedDescription": "体験を向上させるために設計された慎重に作成されたテーマから選択する。",
       "preDefinedThemes": "事前定義されたテーマ",
+      "previewAlt": "Preview",
       "previewComingSoon": "プレビューは近日公開",
       "previewImage": "プレビュー画像",
       "r": "R",
@@ -702,6 +751,7 @@
       "subDescriptionPlaceholder": "オプションのサブ説明",
       "themeDescription": "独自のテーマを作成するか、キュレートされたプリセットを使用する。",
       "themeIcon": "テーマアイコン",
+      "themeIconAlt": "Theme icon",
       "title": "テーマ",
       "usageInstructions": "プラグインを開き、「事前定義されたテーマ」でプリセットを選択してから、「有効化」を押す。「無効化」を押すとデフォルトの外観に戻る。"
     },
@@ -886,10 +936,15 @@
     "backupVpkCount": "VPKファイル数",
     "browseGamePath": "参照",
     "clearAllMods": "すべてのModを削除",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "すべてのModを削除してよろしいですか？この操作は取り消せません。",
     "confirmClearModsState": "Modの状態をクリアしますか？",
     "confirmClearModsStateAction": "状態をクリア",
     "confirmClearModsStateBody": "これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "バックアップを作成",
     "createCustomSetting": "カスタム設定を作成",
     "createCustomSettingDescription": "ゲームにカスタム設定を追加する。これらは起動オプションとしてゲームに適用される。",
@@ -905,11 +960,13 @@
     "description": "概要",
     "developerMode": "開発者モード",
     "developerModeDescription": "開発者モードを有効にして、高度なツールとデバッグ機能にアクセスする",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "実験的機能",
     "failedToClearMods": "Modの削除に失敗しました",
     "failedToOpenFolder": "フォルダーを開けませんでした",
     "flashbang": "フラッシュバン",
     "flashbangDescription": "テーマ設定に関係なく20時～8時はライトモードを強制適用",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "ゲーム",
     "gameConfigDescription": "gameinfo.giファイルのバックアップ・復元・検証を管理して安全にMod運用を行う",
     "gameConfigManagement": "ゲーム設定管理",
@@ -940,6 +997,8 @@
     "openInEditor": "エディターで開く",
     "openInFolder": "フォルダーで開く",
     "openModsFolder": "Modフォルダを開く",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "プラグイン",
     "pluginDescription": "デスクトップアプリのプラグインと統合機能を管理する。",
     "privacy": "プライバシー",
@@ -953,7 +1012,9 @@
     "selectDefaultSort": "デフォルトソート選択",
     "selectType": "選択の種類",
     "settingCreated": "設定を作成しました",
+    "settingRemoved": "Setting removed",
     "settingType": "設定の種類",
+    "settingUpdated": "Setting updated",
     "systemSettings": "システム設定",
     "systemSettingsDescription": "Modマネージャーの設定。ゲームには影響しない",
     "theme": "テーマ",
@@ -990,6 +1051,10 @@
     "light": "ライト",
     "system": "システム"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "オーディオ",
     "author": "作成者",
@@ -1024,6 +1089,16 @@
     "later": "後で",
     "newVersionAvailable": "新しいバージョン（{{version}}）が利用可能です。現在のバージョンは{{currentVersion}}です。",
     "releaseNotes": "リリースノート"
+  },
+  "warnings": {
+    "obsoleteDescription": "このModはModストアで提供終了しており、現在のゲームバージョンでは動作しない可能性があります。",
+    "obsoleteLabel": "廃止",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "完全なリリースノート",
@@ -1082,6 +1157,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

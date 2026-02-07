@@ -1,8 +1,13 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Music } from "@deadlock-mods/ui/icons";
-import { useRef } from "react";
-import { cn } from "@/lib/utils";
+import { useMemo, useRef } from "react";
+import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
+import {
+  UpdateAvailableBadge,
+  UpdatedRecentlyBadge,
+} from "../mod-management/mod-update-badges";
+import { usePersistedStore } from "@/lib/store";
 
 interface ModHeroProps {
   mod: ModDto;
@@ -12,6 +17,11 @@ interface ModHeroProps {
 export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasImages = mod.images && mod.images.length > 0;
+  const { localMods } = usePersistedStore();
+  const localMod = useMemo(
+    () => localMods.find((m) => m.remoteId === mod.remoteId),
+    [localMods, mod.remoteId],
+  );
 
   // Audio mod hero
   if (mod.isAudio && mod.audioUrl) {
@@ -23,7 +33,13 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
           </div>
         </div>
         <div className='absolute bottom-0 left-0 p-6'>
-          <h1 className='font-bold text-3xl text-primary'>{mod.name}</h1>
+          <h1 className='font-bold text-3xl text-primary'>
+            {mod.name}{" "}
+            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
+              <UpdatedRecentlyBadge />
+            )}
+            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+          </h1>
           <p className='mt-2 text-primary/80'>{mod.category}</p>
           <Badge className='mt-2' variant='secondary'>
             Audio Mod
@@ -54,7 +70,13 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
         )}
         <div className='absolute bottom-0 left-0 space-y-2 p-6'>
-          <h1 className='font-bold text-3xl text-white'>{mod.name}</h1>
+          <h1 className='font-bold text-3xl text-white'>
+            {mod.name}{" "}
+            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
+              <UpdatedRecentlyBadge />
+            )}
+            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+          </h1>
           <p className='text-muted-foreground'>{mod.category}</p>
         </div>
       </div>

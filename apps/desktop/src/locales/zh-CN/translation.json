@@ -12,10 +12,16 @@
     "openSourceDescription": "使用出色的开源技术构建，包括 React、TypeScript 和许多其他使现代应用程序成为可能的库。感谢所有贡献者和维护者。",
     "poweredBy": "技术支持",
     "releaseNotes": "发行说明",
+    "resetOnboarding": "重置引导",
+    "resetOnboardingDescription": "下次启动时再次显示引导向导。",
+    "resetOnboardingSuccess": "下次启动时将显示引导",
     "shadcnDescription": "美观且易于访问的 React 组件，为我们现代化的用户界面奠定了基础。可复制、粘贴并完美自定义。",
     "tailwindDescription": "实用优先的 CSS 框架，为我们在整个应用程序中的响应式设计和一致样式提供动力。",
     "tauriDescription": "强大的框架，支持此跨平台桌面应用程序。Tauri 将最佳的Web技术与原生性能和安全性相结合。",
     "tauriVersion": "Tauri 版本：",
+    "thirdPartyDisclaimerDescription": "通过此应用程序提供的所有模组均为社区成员创建的第三方内容。模组并非由 Deadlock Mod Manager 项目创建、审查、验证或认可。请自行决定是否安装模组。",
+    "thirdPartyDisclaimerShort": "模组为第三方内容，并非由 Deadlock Mod Manager 创建、审查或认可。",
+    "thirdPartyDisclaimerTitle": "第三方内容免责声明",
     "title": "关于",
     "updateFailed": "检查更新失败，您可能需要手动更新应用程序。",
     "visitGamebanana": "访问 GameBanana",
@@ -25,6 +31,7 @@
   },
   "accessibility": {
     "close": "关闭",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "转到第一页",
     "goToLastPage": "转到最后一页",
     "goToNextPage": "转到下一页",
@@ -34,7 +41,8 @@
     "next": "下一个",
     "nextSlide": "下一张",
     "previous": "上一个",
-    "previousSlide": "上一张"
+    "previousSlide": "上一张",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "添加",
@@ -72,11 +80,16 @@
     "supportedFormats": "支持格式：.vpk/.zip/.rar/.7z",
     "title": "添加模组",
     "unsupportedFiles": "不支持的文件。",
+    "unsupportedImageType": "不支持的图像类型",
     "unsupportedSelection": "不支持的选择。",
     "validatingFiles": "正在验证模组文件...",
     "validatingMetadata": "正在验证模组元数据..."
   },
   "addons": {
+    "addToLibraryDescription": "将 \"{{fileName}}\" 添加到您的模组库",
+    "addToLibrarySuccess": "已将 \"{{name}}\" 添加到库",
+    "addToLibraryTitle": "添加到库",
+    "adding": "添加中...",
     "analysisError": "分析本地插件失败",
     "analysisResults": "本地插件分析",
     "analysisResultsDescription": "在您的游戏目录中找到 {{count}} 个插件",
@@ -96,6 +109,7 @@
     },
     "errors": "错误",
     "errorsCount": "{{count}} 个错误",
+    "failedToAddModToLibrary": "添加模组到库失败",
     "fileCount": "文件数",
     "fileSize": "大小",
     "files": "个文件",
@@ -110,6 +124,7 @@
     "modAuthor": "作者",
     "modName": "模组名称",
     "modNotFound": "在数据库中未找到模组",
+    "noAddonSelected": "未选择插件",
     "noAddonsFound": "在您的游戏目录中未找到插件",
     "noEntriesFound": "在 VPK 文件中未找到任何条目",
     "progress": {
@@ -138,6 +153,13 @@
     },
     "vpkContents": "VPK 内容"
   },
+  "auth": {
+    "authorizationCodeLabel": "授权码",
+    "pasteCodePlaceholder": "在此粘贴您的代码...",
+    "pleaseEnterCode": "请输入代码",
+    "signIn": "登录",
+    "signingIn": "登录中..."
+  },
   "common": {
     "actions": "操作",
     "add": "添加",
@@ -145,20 +167,20 @@
     "apiHealthy": "API 在线",
     "apiOffline": "API 离线",
     "apiUnknown": "API 状态未知",
-    "back": "Back",
+    "back": "返回",
     "cancel": "取消",
     "close": "关闭",
     "confirm": "确认",
     "copy": "复制",
     "create": "创建",
-    "currentValue": "Current value",
+    "currentValue": "当前值",
     "delete": "删除",
-    "disable": "Disable",
-    "disabled": "Disabled",
+    "disable": "禁用",
+    "disabled": "已禁用",
     "downloading": "下载中",
     "edit": "编辑",
-    "enable": "Enable",
-    "enabled": "Enabled",
+    "enable": "启用",
+    "enabled": "已启用",
     "error": "错误",
     "failedToFetchMods": "获取模组失败，请稍后重试。",
     "gameDetected": "游戏已检测到",
@@ -173,10 +195,10 @@
     "mods": "模组",
     "never": "从不",
     "no": "否",
-    "none": "None",
-    "off": "off",
-    "on": "on",
-    "open": "Open",
+    "none": "无",
+    "off": "关",
+    "on": "开",
+    "open": "打开",
     "optional": "可选",
     "remove": "移除",
     "required": "Required",
@@ -226,6 +248,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -315,11 +338,16 @@
     "completed": "已完成",
     "downloading": "正在下载 {{count}} 个模组",
     "downloading_plural": "正在下载 {{count}} 个模组",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "未找到下载",
     "noDownloadsMatchFilter": "没有符合当前筛选条件的下载项。",
     "openDownloadFolder": "打开下载文件夹",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "选择要下载的文件",
+    "selectNone": "Select None",
     "title": "下载",
+    "total": "Total",
     "viewAllDownloads": "查看所有下载"
   },
   "errors": {
@@ -333,7 +361,8 @@
     },
     "genericMessage": "很抱歉，处理您的请求时发生错误。",
     "goBack": "返回",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -382,11 +411,18 @@
     "sortBy": "排序方式"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "创建备份",
     "openInEditor": "在编辑器中打开",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "重置为纯净版",
     "restoreBackup": "恢复备份",
-    "validateConfiguration": "验证配置"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "验证配置",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -416,6 +452,15 @@
     "removing": "移除中..."
   },
   "modDetail": {
+    "authorLabel": "作者",
+    "backToMods": "返回模组列表",
+    "downloadsLabel": "下载量",
+    "goBackHome": "返回首页",
+    "idLabel": "ID",
+    "installedAt": "安装于",
+    "lastModifiedAt": "最后修改于",
+    "modStatusLabel": "模组状态",
+    "publishedAt": "发布于",
     "vpkReplacement": {
       "currentFiles": "当前 VPK 文件",
       "description": "在开发过程中替换模组文件以快速迭代",
@@ -532,14 +577,11 @@
   },
   "notifications": {
     "failedToInstallMod": "模组安装失败",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "操作执行失败",
     "installationCanceled": "安装已取消",
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 个文件。请选择要安装的文件。",
     "modInstalledSuccessfully": "模组安装成功"
-  },
-  "warnings": {
-    "obsoleteLabel": "已淘汰",
-    "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。"
   },
   "onboarding": {
     "addons": {
@@ -564,7 +606,7 @@
       "title": "API Connection",
       "version": "API Version"
     },
-    "back": "Back",
+    "back": "返回",
     "disclaimer": {
       "acknowledge": "我理解模组是第三方内容",
       "description": "通过 Deadlock Mod Manager 提供的所有模组都是由社区成员创建的第三方内容。",
@@ -596,6 +638,7 @@
       "description": "自定义应用程序背景。",
       "detailedDescription": "此插件允许您为整个应用程序设置自定义背景图像。您可以使用在线图像的URL或上传本地图像文件。插件支持透明度和模糊效果来自定义外观。您还可以选择是否在背景效果中包含侧边栏。",
       "imageUrl": "图像URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "包含侧边栏",
       "opacity": "透明度",
       "title": "背景",
@@ -619,6 +662,7 @@
       "description": "在 Discord 上显示你的 Deadlock 活动。",
       "detailedDescription": "使用 Discord Rich Presence 在你的个人资料上显示 Deadlock Mod Manager 的活动。只需启用插件，并可选地编辑“详细信息”和“状态”文本。",
       "details": "详细信息文本",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "大图键",
       "largeImageText": "大图文本",
       "optional": "（可选）",
@@ -632,6 +676,7 @@
       "smallImageKey": "小图键",
       "smallImageText": "小图文本",
       "state": "状态文本",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord 富状态",
       "usageInstructions": "启用插件，然后可选地编辑“详细信息”和“状态”文本。"
     },
@@ -650,6 +695,7 @@
       "visit": "访问 Nightshift："
     },
     "renderActive": "插件处于活动状态并在后台运行",
+
     "tea": {
       "carrd": "Carrd",
       "description": "为 YouTuber 与 Twitch 主播 Snipztea 打造的温暖米色主题。",
@@ -668,6 +714,7 @@
       "chooseImage": "选择图像",
       "choosePreview": "选择预览",
       "clear": "清除",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "使用您喜欢的颜色和样式创建自己的自定义主题。",
       "customThemeBuilder": "主题构建器",
       "customThemeBuilderDescription": "通过选择颜色和样式来构建您自己的主题。",
@@ -695,6 +742,7 @@
       "pickColor": "选择颜色",
       "preDefinedDescription": "从精心设计的主题中选择，以增强您的体验。",
       "preDefinedThemes": "预设主题",
+      "previewAlt": "Preview",
       "previewComingSoon": "预览即将推出",
       "previewImage": "预览图像",
       "r": "R",
@@ -705,6 +753,7 @@
       "subDescriptionPlaceholder": "可选的子描述",
       "themeDescription": "创建自定义主题或使用精选预设。",
       "themeIcon": "主题图标",
+      "themeIconAlt": "Theme icon",
       "title": "主题",
       "usageInstructions": "打开插件，在\"预设主题\"中选择一个预设并点击启用。点击停用返回默认外观。"
     },
@@ -889,10 +938,15 @@
     "backupVpkCount": "VPK 文件",
     "browseGamePath": "Browse",
     "clearAllMods": "清除所有模组",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "创建备份",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
@@ -908,11 +962,13 @@
     "description": "描述",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "清除模组失败",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "闪光弹",
     "flashbangDescription": "无论选择何种主题，在晚上8点到早上8点之间强制使用浅色模式",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "游戏",
     "gameConfigDescription": "管理 gameinfo.gi 文件的备份、恢复和验证，以确保模组安装安全。",
     "gameConfigManagement": "游戏配置管理",
@@ -943,6 +999,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "打开模组文件夹",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "隐私",
@@ -956,7 +1014,9 @@
     "selectDefaultSort": "选择默认排序",
     "selectType": "选择类型",
     "settingCreated": "设置已创建",
+    "settingRemoved": "Setting removed",
     "settingType": "设置类型",
+    "settingUpdated": "Setting updated",
     "systemSettings": "系统设置",
     "systemSettingsDescription": "模组管理器设置。这些设置不影响游戏。",
     "theme": "主题",
@@ -993,6 +1053,10 @@
     "light": "浅色",
     "system": "跟随系统"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "音频",
     "author": "作者",
@@ -1027,6 +1091,16 @@
     "later": "稍后",
     "newVersionAvailable": "新版本 ({{version}}) 可用。您当前使用的版本是 {{currentVersion}}。",
     "releaseNotes": "发行说明"
+  },
+  "warnings": {
+    "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。",
+    "obsoleteLabel": "已淘汰",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "完整发行说明",
@@ -1086,6 +1160,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

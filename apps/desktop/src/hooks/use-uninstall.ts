@@ -47,7 +47,6 @@ const useUninstall = () => {
         }));
       }
       // No confirmation dialog for disabling regular mods
-
       if (!shouldUninstall) {
         return;
       }

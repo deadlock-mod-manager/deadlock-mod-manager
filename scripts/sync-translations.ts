@@ -8,6 +8,7 @@ const ENGLISH_FILE = join(LOCALES_DIR, "en/translation.json");
 
 const LANGUAGE_CODES = [
   "ar",
+  "bg",
   "de",
   "es",
   "fr",

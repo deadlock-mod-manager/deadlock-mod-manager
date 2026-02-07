@@ -166,6 +166,7 @@ export const useDeepLink = () => {
                   url: download_url,
                   name: fileInfo.name,
                   size: fileInfo.size,
+                  md5Checksum: null,
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 },

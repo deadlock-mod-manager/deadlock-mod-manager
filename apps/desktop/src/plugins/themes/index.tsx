@@ -425,7 +425,7 @@ const Settings = () => {
                     </Button>
                     {current.customTheme?.iconData ? (
                       <img
-                        alt='theme icon'
+                        alt={t("plugins.themes.themeIconAlt")}
                         src={current.customTheme.iconData}
                         className='h-8 w-8 rounded'
                       />
@@ -526,7 +526,7 @@ const Settings = () => {
                               ? current.customTheme?.backgroundData
                               : current.customTheme?.backgroundUrl
                           }
-                          alt='custom background'
+                          alt={t("plugins.themes.customBackgroundAlt")}
                           className='absolute inset-0 h-full w-full object-cover'
                         />
                       </div>

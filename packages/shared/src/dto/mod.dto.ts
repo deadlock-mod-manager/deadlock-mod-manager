@@ -11,6 +11,7 @@ export const toModDownloadDto = (mod: ModDownload[]) => {
     name: download.file,
     createdAt: download.createdAt,
     updatedAt: download.updatedAt,
+    md5Checksum: download.md5Checksum,
   }));
 };
 

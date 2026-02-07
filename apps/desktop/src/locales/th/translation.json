@@ -1,4 +1,4 @@
-﻿{
+{
   "about": {
     "checkForUpdates": "ตรวจสอบการอัปเดต",
     "close": "ปิด",
@@ -12,10 +12,16 @@
     "openSourceDescription": "สร้างขึ้นด้วยเทคโนโลยีโอเพนซอร์สที่น่าทึ่ง รวมถึง React, TypeScript และไลบรารีอื่น ๆ อีกมากมายที่ทำให้แอปพลิเคชันสมัยใหม่เป็นไปได้ ขอบคุณผู้มีส่วนร่วมและผู้ดูแลทุกคน",
     "poweredBy": "ขับเคลื่อนโดย",
     "releaseNotes": "บันทึกประจำรุ่น",
+    "resetOnboarding": "รีเซ็ตการแนะนำ",
+    "resetOnboardingDescription": "แสดงตัวช่วยการตั้งค่าอีกครั้งในการเปิดครั้งถัดไป",
+    "resetOnboardingSuccess": "การแนะนำจะแสดงในการเปิดครั้งถัดไป",
     "shadcnDescription": "คอมโพเนนต์ React ที่สวยงามและเข้าถึงได้ซึ่งเป็นรากฐานสำหรับส่วนติดต่อผู้ใช้ที่ทันสมัยของเรา คัดลอก วาง และปรับแต่งให้สมบูรณ์แบบ",
     "tailwindDescription": "เฟรมเวิร์ก CSS แบบ utility-first ที่ขับเคลื่อนการออกแบบที่ตอบสนองและสไตล์ที่สอดคล้องกันทั่วทั้งแอปพลิเคชัน",
     "tauriDescription": "เฟรมเวิร์กที่ทรงพลังซึ่งช่วยให้แอปพลิเคชันเดสก์ท็อปข้ามแพลตฟอร์มนี้เป็นไปได้ Tauri ผสมผสานสิ่งที่ดีที่สุดของเทคโนโลยีเว็บเข้ากับประสิทธิภาพและความปลอดภัยแบบเนทีฟ",
     "tauriVersion": "เวอร์ชัน Tauri:",
+    "thirdPartyDisclaimerDescription": "ม็อดทั้งหมดที่มีให้ผ่านแอปพลิเคชันนี้เป็นเนื้อหาจากบุคคลที่สามที่สร้างโดยสมาชิกชุมชน ม็อดไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดยโครงการ Deadlock Mod Manager ติดตั้งม็อดด้วยความเสี่ยงของคุณเอง",
+    "thirdPartyDisclaimerShort": "ม็อดเป็นเนื้อหาจากบุคคลที่สามที่ไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดย Deadlock Mod Manager",
+    "thirdPartyDisclaimerTitle": "ข้อจำกัดความรับผิดชอบเนื้อหาจากบุคคลที่สาม",
     "title": "เกี่ยวกับ",
     "updateFailed": "ไม่สามารถตรวจสอบการอัปเดตได้ คุณอาจต้องอัปเดตแอปด้วยตนเอง",
     "visitGamebanana": "เยี่ยมชม GameBanana",
@@ -25,6 +31,7 @@
   },
   "accessibility": {
     "close": "ปิด",
+    "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "ไปที่หน้าแรก",
     "goToLastPage": "ไปที่หน้าสุดท้าย",
     "goToNextPage": "ไปที่หน้าถัดไป",
@@ -34,7 +41,8 @@
     "next": "ถัดไป",
     "nextSlide": "สไลด์ถัดไป",
     "previous": "ก่อนหน้า",
-    "previousSlide": "สไลด์ก่อนหน้า"
+    "previousSlide": "สไลด์ก่อนหน้า",
+    "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
     "add": "เพิ่ม",
@@ -72,11 +80,16 @@
     "supportedFormats": "รองรับ: .vpk/.zip/.rar/.7z",
     "title": "เพิ่มม็อด",
     "unsupportedFiles": "ไฟล์ที่ไม่รองรับ",
+    "unsupportedImageType": "ประเภทภาพที่ไม่รองรับ",
     "unsupportedSelection": "การเลือกที่ไม่รองรับ",
     "validatingFiles": "กำลังตรวจสอบไฟล์ม็อด...",
     "validatingMetadata": "กำลังตรวจสอบข้อมูลเมตาของม็อด..."
   },
   "addons": {
+    "addToLibraryDescription": "เพิ่ม \"{{fileName}}\" ไปยังคลังม็อดของคุณ",
+    "addToLibrarySuccess": "เพิ่ม \"{{name}}\" ไปยังคลังแล้ว",
+    "addToLibraryTitle": "เพิ่มไปยังคลัง",
+    "adding": "กำลังเพิ่ม...",
     "analysisError": "ไม่สามารถวิเคราะห์ addons ในเครื่องได้",
     "analysisResults": "ผลการวิเคราะห์ Addon ในเครื่อง",
     "analysisResultsDescription": "พบ {{count}} addon ในไดเรกทอรีเกมของคุณ",
@@ -96,6 +109,7 @@
     },
     "errors": "ข้อผิดพลาด",
     "errorsCount": "{{count}} ข้อผิดพลาด",
+    "failedToAddModToLibrary": "ไม่สามารถเพิ่มม็อดไปยังคลังได้",
     "fileCount": "ไฟล์",
     "fileSize": "ขนาด",
     "files": "ไฟล์",
@@ -110,6 +124,7 @@
     "modAuthor": "ผู้สร้าง",
     "modName": "ชื่อม็อด",
     "modNotFound": "ไม่พบม็อดในฐานข้อมูล",
+    "noAddonSelected": "ไม่ได้เลือก addon",
     "noAddonsFound": "ไม่พบ addons ในไดเรกทอรีเกมของคุณ",
     "noEntriesFound": "ไม่พบรายการในไฟล์ VPK",
     "progress": {
@@ -138,6 +153,13 @@
     },
     "vpkContents": "เนื้อหา VPK"
   },
+  "auth": {
+    "authorizationCodeLabel": "รหัสการอนุญาต",
+    "pasteCodePlaceholder": "วางรหัสของคุณที่นี่...",
+    "pleaseEnterCode": "โปรดป้อนรหัส",
+    "signIn": "ลงชื่อเข้าใช้",
+    "signingIn": "กำลังลงชื่อเข้าใช้..."
+  },
   "common": {
     "actions": "การดำเนินการ",
     "add": "เพิ่ม",
@@ -145,7 +167,7 @@
     "apiHealthy": "API ออนไลน์",
     "apiOffline": "API ออฟไลน์",
     "apiUnknown": "ไม่ทราบสถานะ API",
-    "back": "Back",
+    "back": "ย้อนกลับ",
     "cancel": "ยกเลิก",
     "close": "ปิด",
     "confirm": "ยืนยัน",
@@ -230,6 +252,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -319,11 +342,16 @@
     "completed": "เสร็จสมบูรณ์",
     "downloading": "กำลังดาวน์โหลด {{count}} ม็อด",
     "downloading_plural": "กำลังดาวน์โหลด {{count}} ม็อด",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "ไม่พบการดาวน์โหลด",
     "noDownloadsMatchFilter": "ไม่มีการดาวน์โหลดที่ตรงกับตัวกรองปัจจุบันของคุณ",
     "openDownloadFolder": "เปิดโฟลเดอร์ดาวน์โหลด",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "เลือกไฟล์ที่จะดาวน์โหลด",
+    "selectNone": "Select None",
     "title": "ดาวน์โหลด",
+    "total": "Total",
     "viewAllDownloads": "ดูการดาวน์โหลดทั้งหมด"
   },
   "errors": {
@@ -337,7 +365,8 @@
     },
     "genericMessage": "ขออภัย เกิดข้อผิดพลาดขณะประมวลผลคำขอของคุณ",
     "goBack": "ย้อนกลับ",
-    "tryAgain": "ลองอีกครั้ง"
+    "tryAgain": "ลองอีกครั้ง",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -385,11 +414,18 @@
     "sortBy": "จัดเรียงตาม"
   },
   "game": {
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "สร้างข้อมูลสำรอง",
     "openInEditor": "เปิดในตัวแก้ไข",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "รีเซ็ตเป็นเวอร์ชันปกติ",
     "restoreBackup": "กู้คืนข้อมูลสำรอง",
-    "validateConfiguration": "ตรวจสอบการกำหนดค่า"
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "validateConfiguration": "ตรวจสอบการกำหนดค่า",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "เอกสารประกอบ",
@@ -419,6 +455,15 @@
     "removing": "กำลังลบ..."
   },
   "modDetail": {
+    "authorLabel": "ผู้สร้าง",
+    "backToMods": "กลับไปยังมอด",
+    "downloadsLabel": "การดาวน์โหลด",
+    "goBackHome": "กลับหน้าแรก",
+    "idLabel": "ID",
+    "installedAt": "ติดตั้งเมื่อ",
+    "lastModifiedAt": "แก้ไขล่าสุดเมื่อ",
+    "modStatusLabel": "สถานะมอด",
+    "publishedAt": "เผยแพร่เมื่อ",
     "vpkReplacement": {
       "currentFiles": "Current VPK Files",
       "description": "Replace mod files for quick iteration during development",
@@ -535,14 +580,11 @@
   },
   "notifications": {
     "failedToInstallMod": "ไม่สามารถติดตั้งม็อดได้",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "ไม่สามารถดำเนินการได้",
     "installationCanceled": "ยกเลิกการติดตั้งแล้ว",
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
     "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว"
-  },
-  "warnings": {
-    "obsoleteLabel": "ล้าสมัย",
-    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน"
   },
   "onboarding": {
     "addons": {
@@ -599,6 +641,7 @@
       "description": "Customize application backgrounds.",
       "detailedDescription": "This plugin allows you to set custom background images for the entire application. You can use either a URL to an online image or upload a local image file. The plugin supports opacity and blur effects to customize the appearance. You can also choose whether to include the sidebar in the background effect.",
       "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Include sidebar",
       "opacity": "Opacity",
       "title": "Background",
@@ -622,6 +665,7 @@
       "description": "Shows your Deadlock activity on Discord.",
       "detailedDescription": "Displays your Deadlock activity on Discord using Rich Presence. Simply enable the plugin and optionally customize the Details and State text visible on your profile.",
       "details": "Details Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Large Image Key",
       "largeImageText": "Large Image Text",
       "optional": "(optional)",
@@ -635,6 +679,7 @@
       "smallImageKey": "Small Image Key",
       "smallImageText": "Small Image Text",
       "state": "State Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Enable the plugin, then optionally edit the Details and State text."
     },
@@ -653,6 +698,7 @@
       "visit": "Visit Nightshift:"
     },
     "renderActive": "Plugin is active and running in the background",
+
     "tea": {
       "carrd": "Carrd",
       "description": "A cozy beige theme created for the YouTuber and Twitch streamer Snipztea.",
@@ -671,6 +717,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -698,6 +745,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -708,6 +756,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Themes",
       "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look."
     },
@@ -892,10 +941,15 @@
     "backupVpkCount": "ไฟล์ VPK",
     "browseGamePath": "เลือกดู",
     "clearAllMods": "ล้างม็อดทั้งหมด",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "สร้างข้อมูลสำรอง",
     "createCustomSetting": "สร้างการตั้งค่าที่กำหนดเอง",
     "createCustomSettingDescription": "เพิ่มการตั้งค่าที่กำหนดเองลงในเกม สิ่งเหล่านี้จะถูกเพิ่มเข้าไปในเกมเป็นตัวเลือกการเริ่มเกม",
@@ -911,11 +965,13 @@
     "description": "คำอธิบาย",
     "developerMode": "โหมดนักพัฒนา",
     "developerModeDescription": "เปิดใช้งานโหมดนักพัฒนาเพื่อเข้าถึงเครื่องมือขั้นสูงและคุณสมบัติการดีบัก",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
     "failedToOpenFolder": "ไม่สามารถเปิดโฟลเดอร์ได้",
     "flashbang": "แฟลชแบง",
     "flashbangDescription": "บังคับใช้โหมดสว่างระหว่างเวลา 20:00 น. ถึง 8:00 น. โดยไม่คำนึงถึงธีมที่เลือก",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "เกม",
     "gameConfigDescription": "จัดการการสำรอง, การกู้คืน และการตรวจสอบไฟล์ gameinfo.gi เพื่อการลงม็อดอย่างปลอดภัย",
     "gameConfigManagement": "การจัดการการกำหนดค่าเกม",
@@ -947,6 +1003,8 @@
     "openInFolder": "Open in Folder",
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsStore": "เปิดรายการม็อด",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "ความเป็นส่วนตัว",
@@ -960,7 +1018,9 @@
     "selectDefaultSort": "เลือกการจัดเรียงเริ่มต้น",
     "selectType": "เลือกประเภท",
     "settingCreated": "สร้างการตั้งค่าแล้ว",
+    "settingRemoved": "Setting removed",
     "settingType": "ประเภทการตั้งค่า",
+    "settingUpdated": "Setting updated",
     "systemSettings": "การตั้งค่าระบบ",
     "systemSettingsDescription": "การตั้งค่าตัวจัดการม็อด สิ่งเหล่านี้ไม่มีผลต่อเกม",
     "theme": "ธีม",
@@ -997,6 +1057,10 @@
     "light": "สว่าง",
     "system": "ตามระบบ"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "เสียง",
     "author": "ผู้สร้าง",
@@ -1031,6 +1095,16 @@
     "later": "ไว้ทีหลัง",
     "newVersionAvailable": "มีเวอร์ชันใหม่ ({{version}}) พร้อมใช้งาน ขณะนี้คุณใช้เวอร์ชัน {{currentVersion}}",
     "releaseNotes": "บันทึกประจำรุ่น"
+  },
+  "warnings": {
+    "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน",
+    "obsoleteLabel": "ล้าสมัย",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "บันทึกประจำรุ่นฉบับเต็ม",
@@ -1090,6 +1164,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

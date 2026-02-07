@@ -1,10 +1,17 @@
-import { CustomSettingType } from "@deadlock-mods/shared";
+import type { ReportCountsDto } from "@deadlock-mods/shared";
+import { CustomSettingType, ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 
 import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
-import { SortType } from "./constants";
+import {
+  STALE_MOD_DAYS,
+  STALE_MOD_REPORT_THRESHOLD,
+  SortType,
+  UPDATED_RECENTLY_MS,
+  UPDATED_RECENTLY_THRESHOLD,
+} from "./constants";
 
 export { cn } from "@deadlock-mods/ui/lib/utils";
 
@@ -96,8 +103,52 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
   });
 };
 
-export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
+export const isModOutdated = (mod: ModDto) => {
   const cutoffDate = new Date("2026-01-22"); // OldGods update
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
   return modUpdatedDate < cutoffDate;
+};
+
+export type StaleModResult = {
+  isStale: true;
+  openReportCount: number;
+  lastUpdatedAt: Date;
+};
+
+export const isModStale = (
+  mod: ModDto,
+  reportCounts: ReportCountsDto,
+  reportThreshold = STALE_MOD_REPORT_THRESHOLD,
+  staleDays = STALE_MOD_DAYS,
+): StaleModResult | null => {
+  const openReportCount = reportCounts.verified + reportCounts.unverified;
+  if (openReportCount < reportThreshold) return null;
+
+  const lastUpdatedAt = new Date(mod.remoteUpdatedAt);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - staleDays);
+  if (lastUpdatedAt >= cutoff) return null;
+
+  return { isStale: true, openReportCount, lastUpdatedAt };
+};
+
+export const isUpdatedRecently = (mod: ModDto): boolean => {
+  if (!mod.filesUpdatedAt) return false;
+  const updatedAt = new Date(mod.filesUpdatedAt).getTime();
+  return (
+    Date.now() - updatedAt < UPDATED_RECENTLY_MS &&
+    updatedAt > UPDATED_RECENTLY_THRESHOLD.getTime()
+  );
+};
+
+export const isUpdateAvailable = (
+  mod: ModDto,
+  localMod: LocalMod | null | undefined,
+): boolean => {
+  if (!localMod || !mod.filesUpdatedAt) return false;
+  const installedAt = localMod.downloadedAt;
+  if (!installedAt) return false;
+  return (
+    new Date(installedAt).getTime() < new Date(mod.filesUpdatedAt).getTime()
+  );
 };

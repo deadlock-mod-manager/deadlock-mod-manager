@@ -215,6 +215,25 @@ export class ReportRepository {
     return report || null;
   }
 
+  async dismissUnverifiedByModId(
+    modId: string,
+    dismissedBy: string,
+    dismissalReason: string,
+  ): Promise<number> {
+    const result = await this.db
+      .update(reports)
+      .set({
+        status: "dismissed",
+        dismissedAt: new Date(),
+        dismissedBy,
+        dismissalReason,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(reports.modId, modId), eq(reports.status, "unverified")))
+      .returning();
+    return result.length;
+  }
+
   async updateDiscordMessageId(
     id: string,
     discordMessageId: string,
@@ -255,5 +274,13 @@ export class ReportRepository {
       .groupBy(mods.id, mods.name, mods.author)
       .having(sql`count(${reports.id}) > 0`)
       .orderBy(desc(sql`count(${reports.id})`));
+  }
+
+  async deleteAllUnverified(): Promise<number> {
+    const deleted = await this.db
+      .delete(reports)
+      .where(eq(reports.status, "unverified"))
+      .returning({ id: reports.id });
+    return deleted.length;
   }
 }

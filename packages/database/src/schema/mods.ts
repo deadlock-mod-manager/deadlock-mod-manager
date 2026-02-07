@@ -38,6 +38,7 @@ export const mods = pgTable(
     blacklistReason: text("blacklist_reason"),
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
     blacklistedBy: text("blacklisted_by"),
+    filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
     ...timestamps,
   },
   (table) => [
@@ -63,6 +64,7 @@ export const modDownloads = pgTable(
     file: text("file").notNull(),
     url: text("url").notNull(),
     size: integer("size").notNull(),
+    md5Checksum: text("md5_checksum"),
     ...timestamps,
   },
   (table) => [

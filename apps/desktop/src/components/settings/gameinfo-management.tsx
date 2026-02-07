@@ -94,7 +94,7 @@ const GameInfoManagement = () => {
       setIsOperating(true);
       await invoke("backup_gameinfo");
       await refetch();
-      toast.success("gameinfo.gi backup created successfully");
+      toast.success(t("game.backupCreatedSuccess"));
     } catch (error) {
       toast.error(`Failed to create backup: ${error}`);
     } finally {
@@ -103,11 +103,7 @@ const GameInfoManagement = () => {
   };
 
   const handleRestoreBackup = async () => {
-    if (
-      !(await confirm(
-        "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
-      ))
-    ) {
+    if (!(await confirm(t("game.confirmRestore")))) {
       return;
     }
 
@@ -115,7 +111,7 @@ const GameInfoManagement = () => {
       setIsOperating(true);
       await invoke("restore_gameinfo_backup");
       await refetch();
-      toast.success("gameinfo.gi restored from backup successfully");
+      toast.success(t("game.restoreSuccess"));
     } catch (error) {
       toast.error(`Failed to restore backup: ${error}`);
     } finally {
@@ -124,11 +120,7 @@ const GameInfoManagement = () => {
   };
 
   const handleResetToVanilla = async () => {
-    if (
-      !(await confirm(
-        "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
-      ))
-    ) {
+    if (!(await confirm(t("game.confirmReset")))) {
       return;
     }
 
@@ -136,7 +128,7 @@ const GameInfoManagement = () => {
       setIsOperating(true);
       await invoke("reset_to_vanilla");
       await refetch();
-      toast.success("gameinfo.gi reset to vanilla state successfully");
+      toast.success(t("game.resetSuccess"));
     } catch (error) {
       toast.error(`Failed to reset to vanilla: ${error}`);
     } finally {
@@ -150,7 +142,7 @@ const GameInfoManagement = () => {
       const isVanilla = !status?.has_mod_paths;
       await invoke("validate_gameinfo_patch", { expectedVanilla: isVanilla });
       await refetch();
-      toast.success("gameinfo.gi validation passed");
+      toast.success(t("game.validationPassed"));
     } catch (error) {
       toast.error(`Validation failed: ${error}`);
     } finally {
@@ -162,7 +154,7 @@ const GameInfoManagement = () => {
     try {
       setIsOperating(true);
       await invoke("open_gameinfo_editor");
-      toast.success("Opened gameinfo.gi with system editor");
+      toast.success(t("game.openedInEditor"));
     } catch (error) {
       toast.error(`Failed to open editor: ${error}`);
     } finally {

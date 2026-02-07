@@ -159,7 +159,7 @@ export const ExportCustomThemeButton = () => {
                 {previewData ? (
                   <img
                     src={previewData}
-                    alt='preview'
+                    alt={t("plugins.themes.previewAlt")}
                     className='h-10 w-16 object-cover rounded'
                   />
                 ) : null}

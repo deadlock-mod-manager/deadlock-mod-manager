@@ -23,6 +23,19 @@ export const initializeApiUrl = async (): Promise<void> => {
   }
 };
 
+const handleHttpError = (status: number) => {
+  const messages: Record<number, string> = {
+    404: "Some mods may be missing from the database. Please try again later. If the issue persists, try using a VPN or a different network.",
+    500: "An internal server error occurred. Please try again later and check the status page at status.deadlockmods.app",
+    403: "You are not authorized to access this resource.",
+  };
+
+  throw new Error(
+    messages[status] ??
+      `Something went wrong. Please try again later. Status: ${status}`,
+  );
+};
+
 const apiRequest = async <T>(
   endpoint: string,
   body?: unknown,
@@ -47,7 +60,7 @@ const apiRequest = async <T>(
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[API] Error ${response.status}:`, errorText);
-    throw new Error(`HTTP error! status: ${response.status}`);
+    return handleHttpError(response.status);
   }
 
   return response.json();

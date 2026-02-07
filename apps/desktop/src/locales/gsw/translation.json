@@ -12,10 +12,16 @@
     "openSourceDescription": "Erstellt mit erstundliche Open Source-Technologie mit React, TypeScript und vielne andere Bibliotheke, die modern Awendig ermöglicht. Viele  Dank a alli Mittwürkende und Beträuer.",
     "poweredBy": "Unterstützt vo",
     "releaseNotes": "Release-Notize",
+    "resetOnboarding": "Reset Onboarding",
+    "resetOnboardingDescription": "Zeigt de Irichtigassistent bim nöchste Start wieder aa.",
+    "resetOnboardingSuccess": "Onboarding wird bim nöchste Start aazeigt",
     "shadcnDescription": "Schöni und zuegänglichi React-Komponente, wo Grundlage für üsi moderni Benutzeroberflächi bildet. Kopiered, ifüeged und perfekt apassed.",
     "tailwindDescription": "Das Utility-First CSS-Framework, wo üsi responsives Design und konsistentes Styling i de gsamte Awendig unterstützt.",
     "tauriDescription": "s'leistungsstarke Framework, das die plattformübergriifende Desktop-Awendig ermöglicht. Tauri kombiniert di besten Web-Technologie mit nativer Leistig und Sicherheit.",
     "tauriVersion": "Tauri-Version:",
+    "thirdPartyDisclaimerDescription": "Alli Mods, wo dur dise Awendig verfüegbar sind, sind Inhalt vo Drittaabietere, wo vo Community-Mitgliider erstellt worde sind. Mods werde nöd vom Deadlock Mod Manager-Projekt erstellt, überprüeft, verifiziert oder unterstützt. Installier Mods uf eigeni Verantwortig.",
+    "thirdPartyDisclaimerShort": "Mods sind Inhalt vo Drittaabietere und werde nöd vom Deadlock Mod Manager erstellt, überprüeft oder unterstützt.",
+    "thirdPartyDisclaimerTitle": "Hinwis zu Inhalt vo Drittaabietere",
     "title": "Informatione",
     "updateFailed": "Update-Prüefe fehgschlage, Sie müend d'App möglicherwiis manuell aktualliesiere.",
     "visitGamebanana": "GameBanana bsuche",
@@ -24,17 +30,19 @@
     "visitTauri": "Tauri bsuechen"
   },
   "accessibility": {
-    "close": "Close",
-    "goToFirstPage": "Go to first page",
-    "goToLastPage": "Go to last page",
-    "goToNextPage": "Go to next page",
-    "goToPreviousPage": "Go to previous page",
-    "more": "More",
-    "morePages": "More pages",
-    "next": "Next",
-    "nextSlide": "Next slide",
-    "previous": "Previous",
-    "previousSlide": "Previous slide"
+    "close": "Schlüsse",
+    "deadlockLogoAlt": "Deadlock",
+    "goToFirstPage": "Zur erschte Siite",
+    "goToLastPage": "Zur letschte Siite",
+    "goToNextPage": "Zur nöchste Siite",
+    "goToPreviousPage": "Zur vordere Siite",
+    "more": "Meh",
+    "morePages": "Meh Siitene",
+    "next": "Nöchscht",
+    "nextSlide": "Nöchschts Bild",
+    "previous": "Vorig",
+    "previousSlide": "Vorigs Bild",
+    "snipzteaMascotAlt": "Snipztea Maskottli"
   },
   "addMods": {
     "add": "Hinzufüge",
@@ -72,65 +80,79 @@
     "supportedFormats": "Unterstützt: .vpk/.zip/.rar/.7z",
     "title": "Mods hinzufüge",
     "unsupportedFiles": "Nöd unterstützti Datei.",
+    "unsupportedImageType": "Nöd unterstützte Bildtyp",
     "unsupportedSelection": "Nöd unterstützti Uswahl.",
     "validatingFiles": "Mod-Dateie validiere...",
     "validatingMetadata": "Mod-Metadate validieren..."
   },
   "addons": {
-    "analysisError": "Failed to analyze local addons",
-    "analysisResults": "Local Addon Analysis",
-    "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
-    "analysisSuccess": "Analysis complete! Found {{count}} addon(s)",
-    "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added to current profile",
-    "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}} and added to current profile",
-    "analysisWarning": "Analysis complete! Found {{count}} addon(s) with {{errors}} error(s)",
-    "analyzeLocal": "Analyze Local Addons",
-    "analyzeLocalTooltip": "Scan your Deadlock game directory to find and identify existing addon files that may not be managed by this mod manager",
-    "analyzing": "Analyzing...",
-    "confidence": "Confidence",
-    "contentHash": "Content Hash",
+    "addToLibraryDescription": "Füeg \"{{fileName}}\" zu dinere Mod-Bibliothek hinzue",
+    "addToLibrarySuccess": "\"{{name}}\" zur Bibliothek hinzuegfüegt",
+    "addToLibraryTitle": "Zur Bibliothek hinzuefüege",
+    "adding": "Wird hinzuegfüegt...",
+    "analysisError": "Fehler bi de Analyse vo lokale Addons",
+    "analysisResults": "Lokali Addon-Analyse",
+    "analysisResultsDescription": "{{count}} Addon(s) i dim Spiel-Verzeichnis gfunde",
+    "analysisSuccess": "Analyse abgschlosse! {{count}} Addon(s) gfunde",
+    "analysisSuccessAllIdentified": "Analyse abgschlosse! Alli {{identified}} Addon(s) sind automatisch identifiziert und zum aktuelle Profil hinzuegfüegt worde",
+    "analysisSuccessWithIdentified": "Analyse abgschlosse! {{count}} Addon(s) gfunde, {{identified}} identifiziert und zum aktuelle Profil hinzuegfüegt",
+    "analysisWarning": "Analyse abgschlosse! {{count}} Addon(s) mit {{errors}} Fehler gfunde",
+    "analyzeLocal": "Lokali Addons analysiere",
+    "analyzeLocalTooltip": "Dursüech dis Deadlock-Spielverzeichnis zum bestehendi Addon-Dateie z finde und z identifiziere, wo vilicht nöd vo disem Mod-Manager verwaltet werde",
+    "analyzing": "Am Analysiere...",
+    "confidence": "Vertraue",
+    "contentHash": "Inhalt-Hash",
     "emptyStates": {
-      "allIdentified": "All addons were identified!",
-      "noIdentified": "No mods were identified",
-      "noIdentifiedDesc": "These addons might be custom or not in our database"
+      "allIdentified": "Alli Addons sind identifiziert worde!",
+      "noIdentified": "Kei Mods sind identifiziert worde",
+      "noIdentifiedDesc": "Die Addons sind vilicht benutzerdefiniert oder nöd i üsere Datebak"
     },
-    "errors": "Errors",
-    "errorsCount": "{{count}} error(s)",
-    "fileCount": "Files",
-    "fileSize": "Size",
-    "files": "files",
-    "foundAddons": "Found Addons",
-    "hide": "Hide details",
-    "modAuthor": "Author",
-    "modName": "Mod Name",
-    "modNotFound": "Mod not found in database",
-    "noAddonsFound": "No addons found in your game directory",
-    "noEntriesFound": "No entries found in VPK file",
+    "errors": "Fehler",
+    "errorsCount": "{{count}} Fehler",
+    "failedToAddModToLibrary": "Fehler bim Hinzuefüege vo de Mod zur Bibliothek",
+    "fileCount": "Dateie",
+    "fileSize": "Grössi",
+    "files": "Dateie",
+    "foundAddons": "Gfundeni Addons",
+    "hide": "Details usblende",
+    "modAuthor": "Autor",
+    "modName": "Mod-Name",
+    "modNotFound": "Mod i de Datebak nöd gfunde",
+    "noAddonSelected": "Kei Addon usgwählt",
+    "noAddonsFound": "Kei Addons i dim Spielverzeichnis gfunde",
+    "noEntriesFound": "Kei Iitreeg i de VPK-Datei gfunde",
     "progress": {
-      "analyzing_hashes": "Identifying mods...",
-      "complete": "Analysis complete!",
-      "parsing": "Parsing VPK files...",
-      "scanning": "Scanning addons directory..."
+      "analyzing_hashes": "Mods identifiziere...",
+      "complete": "Analyse abgschlosse!",
+      "parsing": "VPK-Dateie verarbeite...",
+      "scanning": "Addons-Verzeichnis dursüeche..."
     },
     "progressDetails": {
-      "currentFile": "Processing {{current}} of {{total}}",
-      "currentFileName": "Processing: {{fileName}}",
-      "filesFound": "Found {{count}} files"
+      "currentFile": "Verarbeite {{current}} vo {{total}}",
+      "currentFileName": "Verarbeite: {{fileName}}",
+      "filesFound": "{{count}} Dateie gfunde"
     },
-    "remoteId": "Remote ID",
-    "show": "Show details",
+    "remoteId": "Remote-ID",
+    "show": "Details aazeige",
     "stats": {
-      "errors": "Errors",
-      "identified": "Identified",
-      "unknown": "Unknown"
+      "errors": "Fehler",
+      "identified": "Identifiziert",
+      "unknown": "Unbekannt"
     },
     "tabs": {
-      "all": "All",
-      "errors": "Errors",
-      "identified": "Identified",
-      "unknown": "Unknown"
+      "all": "Alli",
+      "errors": "Fehler",
+      "identified": "Identifiziert",
+      "unknown": "Unbekannt"
     },
-    "vpkContents": "VPK Contents"
+    "vpkContents": "VPK-Inhalt"
+  },
+  "auth": {
+    "authorizationCodeLabel": "Autorisierigscode",
+    "pasteCodePlaceholder": "Din Code da iifüege...",
+    "pleaseEnterCode": "Bitte gib en Code ii",
+    "signIn": "Aamelde",
+    "signingIn": "Melde aa..."
   },
   "common": {
     "actions": "Aktione",
@@ -139,20 +161,20 @@
     "apiHealthy": "API Online",
     "apiOffline": "API Offline",
     "apiUnknown": "API Status unbekannt",
-    "back": "Back",
+    "back": "Zrugg",
     "cancel": "Abbreche",
     "close": "Schließe",
     "confirm": "Bestätige",
     "copy": "Kopiere",
     "create": "Erstelle",
-    "currentValue": "Current value",
+    "currentValue": "Aktuelle Wert",
     "delete": "Lösche",
-    "disable": "Disable",
-    "disabled": "Disabled",
+    "disable": "Deaktiviere",
+    "disabled": "Deaktiviert",
     "downloading": "am lade",
     "edit": "Bearbeite",
-    "enable": "Enable",
-    "enabled": "Enabled",
+    "enable": "Aktiviere",
+    "enabled": "Aktiviert",
     "error": "Fehler",
     "failedToFetchMods": "Fehler bim Lade vo de Mods. Versuche Si es später nomal.",
     "gameDetected": "Spiel erkännt",
@@ -220,6 +242,7 @@
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -310,11 +333,16 @@
     "completed": "Fertig",
     "downloading": "Lad {{count}} Mod abe",
     "downloading_plural": "Lad {{count}} Mods abe",
+    "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "Kei Downloads gfunde",
     "noDownloadsMatchFilter": "Es git kei Downloads wo zu dim aktuelle Filter passed.",
     "openDownloadFolder": "Download-Ordner öffne",
     "percentage": "{{percentage}}%",
+    "selectAll": "Select All",
+    "selectFilesToDownload": "Dateie zum Abelade wähle",
+    "selectNone": "Select None",
     "title": "Downloads",
+    "total": "Total",
     "viewAllDownloads": "Alli Downloads azeige"
   },
   "errors": {
@@ -328,7 +356,8 @@
     },
     "genericMessage": "Es tuet ois leid, aber es isch en Fehler ufträte bi de Verarbeitig vo dinere Aafrogg.",
     "goBack": "Zrugg gah",
-    "tryAgain": "No einisch probiere"
+    "tryAgain": "No einisch probiere",
+    "unknownError": "Unknown error occurred"
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
@@ -380,6 +409,7 @@
     "addonsBackup": "Addons-Sicherig",
     "addonsBackupDescription": "Erstelled und Wiederherstellä vo Sicherige vo Ihrenä installierte Addons. Sicherige werdä als komprimierti Archive gspeicheret.",
     "backupCreated": "Sicherig erfolgriich erstellt",
+    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
     "backupCreationFailed": "Fähler bim Erstellä vo dä Sicherig",
     "backupDate": "Datum",
     "backupDeleteFailed": "Fähler bim Löschä vo dä Sicherig",
@@ -388,6 +418,8 @@
     "backupRestored": "Sicherig erfolgriich wiederhergestellt",
     "backupSize": "Grössi",
     "backupVpkCount": "VPK-Dateie",
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings.",
+    "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "createBackup": "Sicherig erstelle",
     "creatingBackup": "Sicherig wird erstellt...",
     "deleteBackup": "Lösche",
@@ -395,14 +427,18 @@
     "noBackupsFound": "Käi Sicherige gfunde",
     "openBackupsFolder": "Sicherigordner öffne",
     "openInEditor": "Im Editor öffne",
+    "openedInEditor": "Opened gameinfo.gi with system editor",
+    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
     "resetToVanilla": "uf Vanilla zrugsetze",
     "restoreBackup": "Wiederherstellä",
     "restoreStrategy": "Wiederherstelligstrategie",
     "restoreStrategyMerge": "Zämeführe - Vorhandeni Addons behalte",
     "restoreStrategyReplace": "Ersetze - Addons-Ordner zerscht leere",
     "restoreStrategyWarning": "Dä Aktion chann nöd rückgängig gmacht werdä. Bitte wähled Sie sorgfältig.",
+    "restoreSuccess": "gameinfo.gi restored from backup successfully",
     "restoringBackup": "Sicherig wird wiederhergestellt...",
-    "validateConfiguration": "Konfiguration validiere"
+    "validateConfiguration": "Konfiguration validiere",
+    "validationPassed": "gameinfo.gi validation passed"
   },
   "help": {
     "documentation": "Documentation",
@@ -432,6 +468,15 @@
     "removing": "Am Entferne..."
   },
   "modDetail": {
+    "authorLabel": "Autor",
+    "backToMods": "Zrugg zu de Mods",
+    "downloadsLabel": "Abeladige",
+    "goBackHome": "Zrugg zur Startseite",
+    "idLabel": "ID",
+    "installedAt": "Installiert am",
+    "lastModifiedAt": "Zletscht gänderet am",
+    "modStatusLabel": "Mod-Status",
+    "publishedAt": "Veröffentlicht am",
     "vpkReplacement": {
       "currentFiles": "Aktuelli VPK-Dateie",
       "description": "Mod-Dateie für schnälli Iteration währed dr Entwicklig ersetze",
@@ -548,14 +593,11 @@
   },
   "notifications": {
     "failedToInstallMod": "Mod het nöd chönne installiert werde",
+    "failedToOpenForumPost": "Failed to open forum post",
     "failedToPerformAction": "Aktion het nöd chönne usgführt werde",
     "installationCanceled": "Installation abbrochen",
     "modContainsFiles": "{{modName}} enthaltet {{fileCount}} Dateie. Wähle si us, welli installiert werde söll.",
     "modInstalledSuccessfully": "Mod erfolgriich installiert"
-  },
-  "warnings": {
-    "obsoleteLabel": "Veraltet",
-    "obsoleteDescription": "De Mod isch im Mod-Store nüme verfüegbar und funktioniert vilicht nöd mit dr aktuelle Spiilversion."
   },
   "onboarding": {
     "addons": {
@@ -580,7 +622,7 @@
       "title": "API Connection",
       "version": "API Version"
     },
-    "back": "Back",
+    "back": "Zrugg",
     "disclaimer": {
       "acknowledge": "Ich verstand, dass Mods Inhalt vo Drittaabietere sind",
       "description": "Alli Mods, wo dur de Deadlock Mod Manager verfüegbar sind, sind Inhalt vo Drittaabietere, wo vo Community-Mitgliider erstellt worde sind.",
@@ -612,6 +654,7 @@
       "description": "Anwendigshintergründ aapasse.",
       "detailedDescription": "Das Plugin erlaubt dir, benutzerdefinierti Hintergrundbilder für d'ganz Aawendig z'definiere. Du chasch entweder e URL zu meim Online-Bild verwände oder e lokali Bilddatei ufelade. S'Plugin unterstützt Deckkraft- und Unschärfe-Effekt zum Aapasse vom Erscheinigbild. Du chasch au wähle, ob d'Siteleiste im Hintergrund-Effekt iibezoge söll wärde.",
       "imageUrl": "Bild-URL",
+      "imageUrlPlaceholder": "https://example.com/background.jpg",
       "includeSidebar": "Siteleiste iibeziehe",
       "opacity": "Deckkraft",
       "title": "Hintergrund",
@@ -635,6 +678,7 @@
       "description": "Zeigt dini Deadlock‑Aktivität uf Discord.",
       "detailedDescription": "Zeigt dini Aktivität im Deadlock Mod Manager als Rich Presence uf dim Discord‑Profil. Einfach aktiviere und optional Details‑ und Status‑Text apasse.",
       "details": "Details‑Text",
+      "detailsPlaceholder": "Managing Deadlock Mods",
       "largeImageKey": "Grosses Bild‑Schlüssel",
       "largeImageText": "Grosses Bild‑Text",
       "optional": "(optional)",
@@ -648,6 +692,7 @@
       "smallImageKey": "Chliines Bild‑Schlüssel",
       "smallImageText": "Chliines Bild‑Text",
       "state": "Status‑Text",
+      "statePlaceholder": "Using Deadlock Mod Manager",
       "title": "Discord Rich Presence",
       "usageInstructions": "Plugin aktiviere, denn optional Details‑ und Status‑Text bearbeite."
     },
@@ -666,6 +711,7 @@
       "visit": "Nightshift bsueche:"
     },
     "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund",
+
     "tea": {
       "carrd": "Carrd",
       "description": "Es gmüetlichs beige Theme für de YouTuber und Twitch-Streamer Snipztea.",
@@ -684,6 +730,7 @@
       "chooseImage": "Choose Image",
       "choosePreview": "Choose Preview",
       "clear": "Clear",
+      "customBackgroundAlt": "Custom background",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -711,6 +758,7 @@
       "pickColor": "Pick color",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
       "preDefinedThemes": "Pre-defined Themes",
+      "previewAlt": "Preview",
       "previewComingSoon": "Preview coming soon",
       "previewImage": "Preview image",
       "r": "R",
@@ -721,6 +769,7 @@
       "subDescriptionPlaceholder": "Optional sub description",
       "themeDescription": "Create your own themes or use curated presets.",
       "themeIcon": "Theme icon",
+      "themeIconAlt": "Theme icon",
       "title": "Themes",
       "usageInstructions": "Plugin öffne, unter 'Vordefiniert' es Preset uswähle und 'Aktiviere' drücke. Mit 'Deaktiviere' zum Standard zrugg."
     },
@@ -905,10 +954,15 @@
     "backupVpkCount": "VPK Files",
     "browseGamePath": "Browse",
     "clearAllMods": "Alli Mods lösche",
+    "commandKeyRequired": "Command key is required",
+    "commandLabel": "Command",
+    "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alli Mods lösche möchted? Die Aktion chann nöd rückgängig gmacht werde.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyToClipboardTooltip": "Copy to clipboard",
     "createBackup": "Create Backup",
     "createCustomSetting": "Benutzerdefinierti Istellung erstelle",
     "createCustomSettingDescription": "Füged Sie ei benutzerdefinierti Istellung zum Spiel hinzue. Die werded als Startoptione zum Spiel hinzuegfüegt.",
@@ -924,11 +978,13 @@
     "description": "Beschriebig",
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
+    "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
     "failedToClearMods": "Fehler bim Lösche vo de Mods",
     "failedToOpenFolder": "Failed to open folder",
     "flashbang": "Flashbang",
     "flashbangDescription": "Erzwingt Light Mode zwüsched 20:00 und 8:00 Uhr, unabhängig vom usgewählte Theme",
+    "formatCommandHint": "Format: +cvar value (leading + is optional)",
     "game": "Spiel",
     "gameConfigDescription": "Verwalted Sie gameinfo.gi Datei-Backup, Wiederherstellig und Validierig für sichers Modding.",
     "gameConfigManagement": "Spielkonfigurationsverwaltig",
@@ -959,6 +1015,8 @@
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
     "openModsFolder": "Mods-Ordner öffne",
+    "placeholderCommand": "+r_aspectratio 2.7",
+    "placeholderFov": "e.g. 110 FOV",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
     "privacy": "Dateschutz",
@@ -972,7 +1030,9 @@
     "selectDefaultSort": "Standard-Sortierig uswähle",
     "selectType": "Typ uswähle",
     "settingCreated": "Istellig erstellt",
+    "settingRemoved": "Setting removed",
     "settingType": "Îstellungstyp",
+    "settingUpdated": "Setting updated",
     "systemSettings": "Systemeinstellungen",
     "systemSettingsDescription": "Mod Manager Instellifge. Die beeinflussed das Spiel nöd.",
     "theme": "Design",
@@ -1009,6 +1069,10 @@
     "light": "Light",
     "system": "System"
   },
+  "time": {
+    "ago": "ago",
+    "at": "at"
+  },
   "ui": {
     "audio": "Audio",
     "author": "Author",
@@ -1043,6 +1107,16 @@
     "later": "Spöter",
     "newVersionAvailable": "Ä neui Version ({{version}}) isch verfüegbar. Sie verwended momentan d'Version {{currentVersion}}.",
     "releaseNotes": "Release-Notize"
+  },
+  "warnings": {
+    "obsoleteDescription": "De Mod isch im Mod-Store nüme verfüegbar und funktioniert vilicht nöd mit dr aktuelle Spiilversion.",
+    "obsoleteLabel": "Veraltet",
+    "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
+    "staleModLabel": "Stale",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "updateAvailableLabel": "Update available",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updatedRecentlyLabel": "Updated recently"
   },
   "whatsNew": {
     "fullReleaseNotes": "Full Release Notes",
@@ -1102,6 +1176,13 @@
           "🔧 Ensure we identify logged in users using their USER ID"
         ],
         "title": "Bug Fixes & Improvements"
+      },
+      "0.13.1": {
+        "features": [
+          "📋 Add third-party content disclaimer as first onboarding step to meet code signing requirements",
+          "🌐 Add Bulgarian language support"
+        ],
+        "title": "Third-Party Content Disclaimer & Improvements"
       },
       "0.2.0": {
         "features": [

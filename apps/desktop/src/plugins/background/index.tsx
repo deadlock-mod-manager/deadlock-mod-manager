@@ -60,7 +60,7 @@ const Settings = () => {
               imageUrl: e.target.value,
             })
           }
-          placeholder='https://example.com/background.jpg'
+          placeholder={t("plugins.background.imageUrlPlaceholder")}
           value={current.sourceType === "url" ? current.imageUrl : ""}
         />
       </div>

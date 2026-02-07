@@ -17,6 +17,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth, oidcListenerManager } from "@/hooks/use-auth";
 import { initiateOIDCLogin } from "@/lib/auth/oidc";
 
@@ -25,6 +26,7 @@ type AuthStep = "idle" | "redirecting" | "code-entry";
 const FALLBACK_TIMEOUT_MS = 5000;
 
 const AuthModal = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<AuthStep>("idle");
@@ -76,7 +78,7 @@ const AuthModal = () => {
 
   const handleCodeSubmit = () => {
     if (!code.trim()) {
-      toast.error("Please enter a code");
+      toast.error(t("auth.pleaseEnterCode"));
       return;
     }
 
@@ -91,7 +93,7 @@ const AuthModal = () => {
         icon={<LogInIcon className='size-4' />}
         disabled={isLoading}
         onClick={handleSignInClick}>
-        Sign In
+        {t("auth.signIn")}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -139,10 +141,12 @@ const AuthModal = () => {
               </DialogHeader>
               <div className='grid gap-4 py-4'>
                 <div className='grid gap-2'>
-                  <Label htmlFor='auth-code'>Authorization Code</Label>
+                  <Label htmlFor='auth-code'>
+                    {t("auth.authorizationCodeLabel")}
+                  </Label>
                   <Input
                     id='auth-code'
-                    placeholder='Paste your code here...'
+                    placeholder={t("auth.pasteCodePlaceholder")}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     onKeyDown={(e) => {
@@ -156,12 +160,14 @@ const AuthModal = () => {
               </div>
               <DialogFooter>
                 <Button variant='outline' onClick={handleClose}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   onClick={handleCodeSubmit}
                   disabled={exchangeCodeMutation.isPending}>
-                  {exchangeCodeMutation.isPending ? "Signing in..." : "Sign In"}
+                  {exchangeCodeMutation.isPending
+                    ? t("auth.signingIn")
+                    : t("auth.signIn")}
                 </Button>
               </DialogFooter>
             </>

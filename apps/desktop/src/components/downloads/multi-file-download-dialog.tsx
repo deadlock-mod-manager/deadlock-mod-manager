@@ -9,10 +9,16 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Download, HardDrive } from "@deadlock-mods/ui/icons";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatSize } from "@/lib/utils";
 import type { ModDownloadItem } from "@/types/mods";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 
 interface MultiFileDownloadDialogProps {
   isOpen: boolean;
@@ -31,6 +37,7 @@ export function MultiFileDownloadDialog({
   modName,
   isDownloading = false,
 }: MultiFileDownloadDialogProps) {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   const handleFileToggle = (fileName: string, e?: React.MouseEvent) => {
@@ -86,26 +93,28 @@ export function MultiFileDownloadDialog({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Download className='h-5 w-5' />
-            Select Files to Download
+            {t("downloads.selectFilesToDownload")}
           </DialogTitle>
           <DialogDescription>
-            {modName} contains {files.length} downloadable files. Select which
-            ones you want to download.
+            {t("notifications.modContainsFiles", {
+              modName,
+              fileCount: files.length,
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className='flex items-center justify-between py-2'>
           <div className='flex gap-2'>
             <Button onClick={handleSelectAll} size='sm' variant='outline'>
-              Select All
+              {t("downloads.selectAll")}
             </Button>
             <Button onClick={handleSelectNone} size='sm' variant='outline'>
-              Select None
+              {t("downloads.selectNone")}
             </Button>
           </div>
           <div className='flex items-center gap-2 text-muted-foreground text-sm'>
             <HardDrive className='h-4 w-4' />
-            Total: {formatSize(totalSize)}
+            {t("downloads.total")}: {formatSize(totalSize)}
           </div>
         </div>
 
@@ -145,9 +154,22 @@ export function MultiFileDownloadDialog({
                       </div>
                       {(file.updatedAt || file.createdAt) && (
                         <div className='text-muted-foreground text-xs'>
-                          {file.updatedAt
-                            ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
-                            : `Created ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span className='text-muted-foreground text-xs'>
+                                {file.updatedAt
+                                  ? `Updated ${formatDistanceToNow(file.updatedAt)} ago`
+                                  : `Created ${formatDistanceToNow(file.createdAt!)} ago`}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span className='text-muted-foreground text-xs'>
+                                {file.updatedAt
+                                  ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
+                                  : `Created at ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
+                              </span>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       )}
                     </div>
@@ -157,9 +179,12 @@ export function MultiFileDownloadDialog({
             ))}
         </div>
 
-        <DialogFooter className='flex-col space-y-2'>
-          <div className='text-muted-foreground text-sm'>
-            {selectedFiles.size} of {files.length} files selected
+        <DialogFooter className='flex-col space-y-2 items-center'>
+          <div className='text-muted-foreground text-sm w-full'>
+            {t("downloads.filesSelected", {
+              selected: selectedFiles.size,
+              total: files.length,
+            })}
           </div>
           <div className='flex w-full justify-end gap-2'>
             <Button

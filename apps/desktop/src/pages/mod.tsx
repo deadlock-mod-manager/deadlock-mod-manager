@@ -19,16 +19,18 @@ import { ModInfo } from "@/components/mod-detail/mod-info";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useMod } from "@/hooks/use-mod";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
+import { useReportCounts } from "@/hooks/use-report-counts";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { usePersistedStore } from "@/lib/store";
-import { isModOutdated } from "@/lib/utils";
+import { isModOutdated, isModStale } from "@/lib/utils";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
 const Mod = () => {
@@ -60,6 +62,10 @@ const Mod = () => {
 
   const { localMods, developerMode } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+
+  const { data: reportCounts } = useReportCounts(mod?.id ?? "");
+  const staleResult =
+    mod && reportCounts ? isModStale(mod, reportCounts) : null;
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -96,7 +102,7 @@ const Mod = () => {
                 size='sm'
                 variant='ghost'>
                 <ArrowLeft className='h-4 w-4' />
-                Back to Mods
+                {t("modDetail.backToMods")}
               </Button>
             </div>
 
@@ -107,7 +113,7 @@ const Mod = () => {
                   <p>{t("errors.genericMessage")}</p>
                   <pre className='text-sm'>
                     {t("errors.errorCode")}{" "}
-                    {(error as Error)?.message ?? "Unknown error occurred"}
+                    {(error as Error)?.message ?? t("errors.unknownError")}
                   </pre>
                 </div>
                 <div className='flex flex-col items-center justify-center gap-2'>
@@ -115,7 +121,7 @@ const Mod = () => {
                     {t("errors.tryAgain")}
                   </Button>
                   <Button onClick={() => navigate("/mods")} variant='ghost'>
-                    Go Back Home
+                    {t("modDetail.goBackHome")}
                   </Button>
                 </div>
               </AlertDescription>
@@ -151,16 +157,24 @@ const Mod = () => {
               <ObsoleteModWarning variant='alert' />
             </div>
           )}
-          {isModOutdated(mod) && (
+          {isModOutdated(mod) && !staleResult && (
             <div className='mb-4'>
               <OutdatedModWarning variant='alert' />
             </div>
           )}
+          {staleResult && (
+            <div className='mb-4'>
+              <StaleModWarning
+                variant='alert'
+                openReportCount={staleResult.openReportCount}
+                lastUpdatedAt={staleResult.lastUpdatedAt}
+              />
+            </div>
+          )}
 
-          <Card className='overflow-hidde space-y-4'>
+          <Card className='overflow-hidden space-y-4'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
-
             <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
               <div className='flex flex-col gap-2'>
                 {mod.remoteUrl && (
@@ -170,11 +184,11 @@ const Mod = () => {
                       try {
                         await open(mod.remoteUrl);
                       } catch (_error) {
-                        toast.error("Failed to open forum post");
+                        toast.error(t("notifications.failedToOpenForumPost"));
                       }
                     }}
                     variant='link'>
-                    View original forum post
+                    {t("plugins.sudo.viewOriginalPost")}
                   </Button>
                 )}
               </div>

@@ -54,7 +54,7 @@ const Settings = () => {
               details: e.target.value,
             })
           }
-          placeholder='Managing Deadlock Mods'
+          placeholder={t("plugins.discord.detailsPlaceholder")}
           value={current.details || ""}
         />
       </div>
@@ -71,7 +71,7 @@ const Settings = () => {
               state: e.target.value,
             })
           }
-          placeholder='Using Deadlock Mod Manager'
+          placeholder={t("plugins.discord.statePlaceholder")}
           value={current.state || ""}
         />
       </div>

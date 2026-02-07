@@ -24,6 +24,7 @@ export const ModDtoSchema = z.object({
   audioUrl: z.string().nullable(),
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),
+  filesUpdatedAt: coercedDateNullable,
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
 });

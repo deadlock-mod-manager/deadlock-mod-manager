@@ -10,7 +10,7 @@ pub enum Error {
   GameNotFound,
   #[error("Game path not set - initialize game first")]
   GamePathNotSet,
-  #[error("Failed to parse game configuration: {0}")]
+  #[error("Failed to parse game configuration. Try resetting the gameinfo.gi to Vanilla in game settings and restart the mod manager.")]
   GameConfigParse(String),
   #[error("Mod file not found at path")]
   ModFileNotFound,

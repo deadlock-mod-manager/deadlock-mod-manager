@@ -8,22 +8,38 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
+import {
+  UpdateAvailableBadge,
+  UpdatedRecentlyBadge,
+} from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useReportCounts } from "@/hooks/use-report-counts";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";
-import { isModOutdated } from "@/lib/utils";
+import {
+  isModOutdated,
+  isModStale,
+  isUpdateAvailable,
+  isUpdatedRecently,
+} from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
 const ModCard = ({ mod }: { mod?: ModDto }) => {
+  const { t } = useTranslation();
   const { localMods, setScrollPosition } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+  const { data: reportCounts } = useReportCounts(mod?.id ?? "");
+  const staleResult =
+    mod && reportCounts ? isModStale(mod, reportCounts) : null;
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -78,15 +94,29 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           <div className='flex h-48 w-full items-center justify-center rounded-t-xl bg-muted'>
             <div className='text-center text-muted-foreground'>
               <DownloadIcon className='mx-auto mb-2 h-12 w-12' />
-              <p className='text-sm'>No preview available</p>
+              <p className='text-sm'>{t("mods.noPreviewAvailable")}</p>
             </div>
           </div>
         )}
         <div className='absolute top-2 right-2 flex flex-col gap-1'>
-          {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
-          {status === ModStatus.Installed && <Badge>Installed</Badge>}
+          {status === ModStatus.Installed && (
+            <Badge>{t("modStatus.installed")}</Badge>
+          )}
           {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
-          {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+          {isModOutdated(mod) && !staleResult && (
+            <OutdatedModWarning variant='indicator' />
+          )}
+          {staleResult && (
+            <StaleModWarning
+              variant='indicator'
+              openReportCount={staleResult.openReportCount}
+              lastUpdatedAt={staleResult.lastUpdatedAt}
+            />
+          )}
+          {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
+            <UpdatedRecentlyBadge />
+          )}
+          {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
         </div>
       </div>
       <CardHeader className='px-3 py-4'>
@@ -101,7 +131,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
               <CardDescription
                 className='overflow-clip text-ellipsis text-nowrap'
                 title={mod.author}>
-                By {mod.author}
+                {t("mods.by")} {mod.author}
               </CardDescription>
             </div>
 

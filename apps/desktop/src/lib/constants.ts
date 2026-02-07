@@ -37,3 +37,9 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.MODEL_REPLACEMENT,
   ModCategory.OTHER_MISC,
 ] as const;
+
+export const UPDATED_RECENTLY_DAYS = 3;
+export const UPDATED_RECENTLY_MS = UPDATED_RECENTLY_DAYS * 24 * 60 * 60 * 1000;
+export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");
+export const STALE_MOD_REPORT_THRESHOLD = 5;
+export const STALE_MOD_DAYS = 30;

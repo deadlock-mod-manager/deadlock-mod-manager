@@ -299,6 +299,7 @@ const UnknownAddonsTab = ({
 };
 
 const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
+  const { t } = useTranslation();
   const { processLocalAddon } = useModProcessor();
   const [isProcessing, setIsProcessing] = useState(false);
   const [category, setCategory] = useState(ModCategory.SKINS);
@@ -322,7 +323,7 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
 
   const handleAdd = async () => {
     if (!addon) {
-      toast.error("No addon selected");
+      toast.error(t("addons.noAddonSelected"));
       return;
     }
 
@@ -335,11 +336,11 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
     try {
       // Use a custom processMod for already-installed local addons
       await processLocalAddon(metadata, category, addon.filePath);
-      toast.success(`Added "${metadata.name}" to library`);
+      toast.success(t("addons.addToLibrarySuccess", { name: metadata.name }));
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to add mod:", error);
-      toast.error("Failed to add mod to library");
+      toast.error(t("addons.failedToAddModToLibrary"));
     } finally {
       setIsProcessing(false);
     }
@@ -351,9 +352,9 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
-          <DialogTitle>Add to Library</DialogTitle>
+          <DialogTitle>{t("addons.addToLibraryTitle")}</DialogTitle>
           <DialogDescription>
-            Add "{addon.fileName}" to your mod library
+            {t("addons.addToLibraryDescription", { fileName: addon.fileName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -361,12 +362,12 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
 
         <div className='space-y-4'>
           <div className='space-y-2'>
-            <Label htmlFor='category'>Category</Label>
+            <Label htmlFor='category'>{t("addMods.category")}</Label>
             <Select
               value={category}
               onValueChange={(value) => setCategory(value as ModCategory)}>
               <SelectTrigger>
-                <SelectValue placeholder='Select a category' />
+                <SelectValue placeholder={t("addMods.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {Object.values(ModCategory).map((cat) => (
@@ -403,10 +404,10 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
             variant='ghost'
             onClick={() => onOpenChange(false)}
             disabled={isProcessing}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleAdd} disabled={isProcessing}>
-            {isProcessing ? "Adding..." : "Add to Library"}
+            {isProcessing ? t("addons.adding") : t("addons.addToLibraryTitle")}
           </Button>
         </div>
       </DialogContent>
