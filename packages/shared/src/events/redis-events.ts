@@ -43,7 +43,22 @@ export const ReportStatusUpdatedEventSchema = z.object({
   data: ReportEventDataSchema,
 });
 
-export const ModEventSchema = z.union([NewModEventSchema]);
+export const ModFilesUpdatedEventDataSchema = z.object({
+  modId: z.string(),
+  remoteId: z.string(),
+  modName: z.string(),
+  filesUpdatedAt: z.string().datetime(),
+});
+
+export const ModFilesUpdatedEventSchema = z.object({
+  type: z.literal("mod_files_updated"),
+  data: ModFilesUpdatedEventDataSchema,
+});
+
+export const ModEventSchema = z.union([
+  NewModEventSchema,
+  ModFilesUpdatedEventSchema,
+]);
 export const ReportEventSchema = z.union([
   NewReportEventSchema,
   ReportStatusUpdatedEventSchema,
@@ -62,6 +77,10 @@ export type ReportStatusUpdatedEvent = z.infer<
   typeof ReportStatusUpdatedEventSchema
 >;
 export type ReportEvent = z.infer<typeof ReportEventSchema>;
+export type ModFilesUpdatedEventData = z.infer<
+  typeof ModFilesUpdatedEventDataSchema
+>;
+export type ModFilesUpdatedEvent = z.infer<typeof ModFilesUpdatedEventSchema>;
 
 /**
  * Redis channel constants for pub/sub communication
@@ -70,6 +89,7 @@ export const REDIS_CHANNELS = {
   NEW_MODS: "deadlock:new_mods",
   NEW_REPORTS: "deadlock:new_reports",
   REPORT_STATUS_UPDATED: "deadlock:report_status_updated",
+  MOD_FILES_UPDATED: "deadlock:mod_files_updated",
 } as const;
 
 export type RedisChannel = (typeof REDIS_CHANNELS)[keyof typeof REDIS_CHANNELS];
@@ -97,4 +117,10 @@ export const parseReportStatusUpdatedEvent = (
   data: unknown,
 ): ReportStatusUpdatedEvent => {
   return ReportStatusUpdatedEventSchema.parse(data);
+};
+
+export const parseModFilesUpdatedEvent = (
+  data: unknown,
+): ModFilesUpdatedEvent => {
+  return ModFilesUpdatedEventSchema.parse(data);
 };

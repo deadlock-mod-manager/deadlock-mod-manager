@@ -73,7 +73,11 @@
   },
   "warnings": {
     "obsoleteLabel": "",
-    "obsoleteDescription": ""
+    "obsoleteDescription": "",
+    "updatedRecentlyLabel": "",
+    "updatedRecentlyDescription": "",
+    "updateAvailableLabel": "",
+    "updateAvailableDescription": ""
   },
   "common": {
     "loading": "",

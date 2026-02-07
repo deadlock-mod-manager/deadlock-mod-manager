@@ -9,10 +9,15 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Download, HardDrive } from "@deadlock-mods/ui/icons";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { formatSize } from "@/lib/utils";
 import type { ModDownloadItem } from "@/types/mods";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 
 interface MultiFileDownloadDialogProps {
   isOpen: boolean;
@@ -145,9 +150,22 @@ export function MultiFileDownloadDialog({
                       </div>
                       {(file.updatedAt || file.createdAt) && (
                         <div className='text-muted-foreground text-xs'>
-                          {file.updatedAt
-                            ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
-                            : `Created ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span className='text-muted-foreground text-xs'>
+                                {file.updatedAt
+                                  ? `Updated ${formatDistanceToNow(file.updatedAt)} ago`
+                                  : `Created ${formatDistanceToNow(file.createdAt!)} ago`}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span className='text-muted-foreground text-xs'>
+                                {file.updatedAt
+                                  ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
+                                  : `Created at ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
+                              </span>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       )}
                     </div>
@@ -157,8 +175,8 @@ export function MultiFileDownloadDialog({
             ))}
         </div>
 
-        <DialogFooter className='flex-col space-y-2'>
-          <div className='text-muted-foreground text-sm'>
+        <DialogFooter className='flex-col space-y-2 items-center'>
+          <div className='text-muted-foreground text-sm w-full'>
             {selectedFiles.size} of {files.length} files selected
           </div>
           <div className='flex w-full justify-end gap-2'>

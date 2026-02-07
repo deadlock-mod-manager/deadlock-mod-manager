@@ -157,10 +157,9 @@ const Mod = () => {
             </div>
           )}
 
-          <Card className='overflow-hidde space-y-4'>
+          <Card className='overflow-hidden space-y-4'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
-
             <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
               <div className='flex flex-col gap-2'>
                 {mod.remoteUrl && (

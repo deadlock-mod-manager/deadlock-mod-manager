@@ -1,10 +1,10 @@
-import { CustomSettingType } from "@deadlock-mods/shared";
+import { CustomSettingType, ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 
 import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
-import { SortType } from "./constants";
+import { SortType, UPDATED_RECENTLY_MS } from "./constants";
 
 export { cn } from "@deadlock-mods/ui/lib/utils";
 
@@ -101,3 +101,23 @@ export const isModOutdated = (mod: { remoteUpdatedAt: string | Date }) => {
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
   return modUpdatedDate < cutoffDate;
 };
+
+export function isUpdatedRecently(mod: {
+  filesUpdatedAt?: string | Date | null;
+}): boolean {
+  if (!mod.filesUpdatedAt) return false;
+  const updatedAt = new Date(mod.filesUpdatedAt).getTime();
+  return Date.now() - updatedAt < UPDATED_RECENTLY_MS;
+}
+
+export function isUpdateAvailable(
+  mod: ModDto,
+  localMod: LocalMod | null | undefined,
+): boolean {
+  if (!localMod || !mod.filesUpdatedAt) return false;
+  const installedAt = localMod.downloadedAt;
+  if (!installedAt) return false;
+  return (
+    new Date(installedAt).getTime() < new Date(mod.filesUpdatedAt).getTime()
+  );
+}

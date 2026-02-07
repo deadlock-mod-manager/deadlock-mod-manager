@@ -249,6 +249,7 @@ export const useModProcessor = () => {
       blacklistedBy: null,
       isObsolete: false,
       category,
+      filesUpdatedAt: null,
     };
 
     addMod(modDto, { status: ModStatus.Downloaded });
@@ -331,6 +332,7 @@ export const useModProcessor = () => {
       blacklistedAt: null,
       blacklistedBy: null,
       category,
+      filesUpdatedAt: null,
     };
 
     // Set status to Installed since this addon is already in the game directory

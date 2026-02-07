@@ -105,7 +105,11 @@
   },
   "warnings": {
     "obsoleteLabel": "Obsolete",
-    "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version."
+    "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version.",
+    "updatedRecentlyLabel": "Updated recently",
+    "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
+    "updateAvailableLabel": "Update available",
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files."
   },
   "common": {
     "loading": "Loading...",

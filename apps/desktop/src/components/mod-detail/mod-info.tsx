@@ -14,8 +14,8 @@ import {
   Tag,
   User,
 } from "@deadlock-mods/ui/icons";
-import { format } from "date-fns";
 import { usePersistedStore } from "@/lib/store";
+import { DateDisplay } from "../date-display";
 
 interface ModInfoProps {
   mod: ModDto;
@@ -50,15 +50,25 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
             <div className='flex items-center gap-2'>
               <Calendar className='text-muted-foreground' />
               <span className='text-sm'>
-                Added: {format(new Date(mod.remoteAddedAt), "PPP")}
+                Published At: <DateDisplay date={mod.remoteAddedAt} inverse />
               </span>
             </div>
             <div className='flex items-center gap-2'>
               <Calendar className='text-muted-foreground' />
               <span className='text-sm'>
-                Updated: {format(new Date(mod.remoteUpdatedAt), "PPP")}
+                Last Modified At:{" "}
+                <DateDisplay date={mod.remoteUpdatedAt} inverse />
               </span>
             </div>
+            {localMod && (
+              <div className='flex items-center gap-2'>
+                <Calendar className='text-muted-foreground' />
+                <span className='text-sm'>
+                  Installed At:{" "}
+                  <DateDisplay date={localMod?.downloadedAt} inverse />
+                </span>
+              </div>
+            )}
             <div className='flex items-center gap-2'>
               <Download className='text-muted-foreground' />
               <span className='text-sm'>Downloads: {mod.downloadCount}</span>

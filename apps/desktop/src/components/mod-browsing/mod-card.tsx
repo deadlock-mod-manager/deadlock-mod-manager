@@ -10,13 +10,21 @@ import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
+import {
+  UpdateAvailableBadge,
+  UpdatedRecentlyBadge,
+} from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";
-import { isModOutdated } from "@/lib/utils";
+import {
+  isModOutdated,
+  isUpdateAvailable,
+  isUpdatedRecently,
+} from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
@@ -87,6 +95,10 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
           {status === ModStatus.Installed && <Badge>Installed</Badge>}
           {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
           {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+          {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
+            <UpdatedRecentlyBadge />
+          )}
+          {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
         </div>
       </div>
       <CardHeader className='px-3 py-4'>

@@ -6,116 +6,20 @@ import {
   type NewMod,
 } from "@deadlock-mods/database";
 import { type GameBanana, guessHero } from "@deadlock-mods/shared";
+import { cache } from "../../lib/redis";
+import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
+import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
+import { DEADLOCK_GAME_ID, GAME_BANANA_BASE_URL } from "./constants";
+import {
+  buildDownloadSignature,
+  buildDownloadSignatureFromPayload,
+  classifyNSFW,
+  parseTags,
+} from "./utils";
 
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
-
-export const DEADLOCK_GAME_ID = 20_948; // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
-export const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";
-export const ACCEPTED_MODELS = ["Mod", "Sound"];
-const MILLISECONDS_PER_SECOND = 1000;
-
-const parseTags = (
-  tags: GameBanana.GameBananaSubmission["_aTags"],
-): string[] => {
-  if (!Array.isArray(tags)) {
-    return [];
-  }
-  return tags.map((tag) =>
-    typeof tag === "string" ? tag : `${tag._sTitle} ${tag._sValue}`,
-  );
-};
-
-// NSFW detection keywords - case insensitive
-const NSFW_KEYWORDS = [
-  "nsfw",
-  "adult",
-  "18+",
-  "nude",
-  "nudity",
-  "full nudity",
-  "partial nudity",
-  "lewd",
-  "skimpy",
-  "sex",
-  "sexual",
-  "explicit",
-];
-
-// Direct content rating flags from GameBanana
-const NSFW_CONTENT_RATINGS = {
-  st: "Sexual Themes",
-  sa: "Skimpy Attire",
-  lp: "Lewd Angles & Poses",
-  pn: "Partial Nudity",
-  nu: "Full Nudity",
-};
-
-/**
- * Classify if a GameBanana mod contains NSFW content
- * @param mod GameBanana mod submission data
- * @returns boolean indicating if the mod is NSFW
- */
-const classifyNSFW = (
-  mod:
-    | GameBananaSubmission
-    | GameBanana.GameBananaModProfile
-    | GameBanana.GameBananaSoundProfile,
-): boolean => {
-  // Check if mod has extended fields (full mod profile)
-  const extendedMod = mod as GameBanana.GameBananaModProfile;
-
-  // 1. Direct flags (authoritative) - check _aContentRatings
-  if (extendedMod._aContentRatings) {
-    for (const key of Object.keys(extendedMod._aContentRatings)) {
-      if (NSFW_CONTENT_RATINGS[key as keyof typeof NSFW_CONTENT_RATINGS]) {
-        return true; // Any content rating flag = NSFW
-      }
-    }
-  }
-
-  // 2. Secondary hints (soft indicators)
-  let hintScore = 0;
-
-  // Check _sInitialVisibility
-  if (extendedMod._sInitialVisibility === "hide") {
-    hintScore += 1;
-  }
-
-  // Check text content for NSFW keywords
-  const hasName = "_sName" in mod;
-  const hasTags = "_aTags" in mod;
-  const tags = hasTags ? (mod as { _aTags: unknown })._aTags : [];
-  const modName = hasName ? (mod as { _sName: string })._sName : "";
-
-  const textContent = [
-    modName,
-    extendedMod._sDescription || "",
-    extendedMod._sText || "",
-    ...parseTags(tags as GameBanana.GameBananaSubmission["_aTags"]),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  const foundKeywords = NSFW_KEYWORDS.filter((keyword) =>
-    textContent.includes(keyword.toLowerCase()),
-  );
-
-  if (foundKeywords.length > 0) {
-    hintScore += 1;
-  }
-
-  // Return true if hint score >= 2 (medium confidence threshold)
-  return hintScore >= 2;
-};
-
-export type GameBananaSubmissionSource = "featured" | "top" | "all" | "sound";
-export type GameBananaSubmission =
-  | GameBanana.GameBananaSubmission
-  | GameBanana.GameBananaTopSubmission
-  | GameBanana.GameBananaIndexSubmission
-  | GameBanana.GameBananaSoundSubmission;
 
 export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getAllSubmissions(
@@ -329,12 +233,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     this.logger.info("Starting GameBanana synchronization");
     const mods = this.getMods();
     let count = 0;
+    let anyFilesUpdated = false;
     const startTime = Date.now();
 
     try {
       for await (const { submission, source } of mods) {
         count++;
-        const mod = await this.createMod(submission, source);
+        const { mod, filesChanged } = await this.createMod(submission, source);
+        if (filesChanged) {
+          anyFilesUpdated = true;
+        }
         if (mod) {
           this.logger
             .withMetadata({
@@ -354,12 +262,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         }
       }
 
+      if (anyFilesUpdated) {
+        await cache.del("mods:listing");
+      }
+
       const duration = Date.now() - startTime;
       this.logger
         .withMetadata({
           count,
           durationMs: duration,
-          modsPerSecond: count / (duration / MILLISECONDS_PER_SECOND),
+          modsPerSecond: count / (duration / 1000),
         })
         .info("Completed GameBanana synchronization");
     } catch (error) {
@@ -395,12 +307,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         remoteUrl: featuredSubmission._sProfileUrl,
         category: featuredSubmission._sModelName,
         downloadable: featuredSubmission._bHasFiles,
-        remoteAddedAt: new Date(
-          submission._tsDateAdded * MILLISECONDS_PER_SECOND,
-        ),
-        remoteUpdatedAt: new Date(
-          submission._tsDateModified * MILLISECONDS_PER_SECOND,
-        ),
+        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
+        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
@@ -427,12 +335,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         remoteUrl: topSubmission._sProfileUrl,
         category: topSubmission._sModelName,
         downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(
-          submission._tsDateAdded * MILLISECONDS_PER_SECOND,
-        ),
-        remoteUpdatedAt: new Date(
-          submission._tsDateModified * MILLISECONDS_PER_SECOND,
-        ),
+        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
+        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
@@ -455,12 +359,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         remoteUrl: submission._sProfileUrl,
         category: submission._aCategory._sName,
         downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(
-          submission._tsDateAdded * MILLISECONDS_PER_SECOND,
-        ),
-        remoteUpdatedAt: new Date(
-          submission._tsDateModified * MILLISECONDS_PER_SECOND,
-        ),
+        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
+        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
         images: submission._aPreviewMedia._aImages.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`,
         ),
@@ -483,12 +383,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         remoteUrl: submission._sProfileUrl,
         category: submission._aCategory._sName,
         downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(
-          submission._tsDateAdded * MILLISECONDS_PER_SECOND,
-        ),
-        remoteUpdatedAt: new Date(
-          submission._tsDateModified * MILLISECONDS_PER_SECOND,
-        ),
+        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
+        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
         images: [],
         isAudio: true,
         audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
@@ -503,7 +399,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createMod(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<Mod | undefined> {
+  ): Promise<{ mod: Mod | undefined; filesChanged: boolean }> {
     this.logger
       .withMetadata({
         modId: mod._idRow.toString(),
@@ -513,16 +409,26 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     try {
       const payload = await this.createModPayload(mod, source);
 
-      // Upsert mod using repository
       const dbMod = await modRepository.upsertByRemoteId(payload);
 
       this.logger
         .withMetadata({ modId: dbMod.id })
         .debug("Mod upserted successfully");
 
-      await this.refreshModDownloads(dbMod);
+      const { filesChanged } = await this.refreshModDownloads(dbMod);
+      if (filesChanged) {
+        const filesUpdatedAt = new Date();
+        await modRepository.update(dbMod.id, {
+          filesUpdatedAt,
+        });
+        await cache.del(`mod:${dbMod.remoteId}`);
+        await ModSyncHooksService.getInstance().onModFilesUpdated(
+          dbMod,
+          filesUpdatedAt,
+        );
+      }
 
-      return dbMod;
+      return { mod: dbMod, filesChanged };
     } catch (error) {
       this.logger
         .withError(error)
@@ -532,10 +438,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           source,
         })
         .error("Failed to create/update mod");
+      return { mod: undefined, filesChanged: false };
     }
   }
 
-  async refreshModDownloads(dbMod: Mod): Promise<void> {
+  async refreshModDownloads(dbMod: Mod): Promise<{ filesChanged: boolean }> {
     try {
       const download = await this.getModDownload(
         dbMod.remoteId,
@@ -549,8 +456,17 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
             remoteId: dbMod.remoteId,
           })
           .warn("No download found for mod");
-        return;
+        return { filesChanged: false };
       }
+
+      const existingDownloads = await modDownloadRepository.findByModId(
+        dbMod.id,
+      );
+      const existingSignature = buildDownloadSignature(existingDownloads);
+      const newSignature = buildDownloadSignatureFromPayload(download._aFiles);
+
+      const filesChanged =
+        existingDownloads.length > 0 && existingSignature !== newSignature;
 
       this.logger
         .withMetadata({
@@ -559,18 +475,17 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         })
         .debug("Processing mod downloads");
 
-      // Store all downloadable files for the mod
       const downloadEntries = download._aFiles.map((file) => ({
         remoteId: file._idRow.toString(),
         url: file._sDownloadUrl,
         file: file._sFile,
         size: file._nFilesize,
         modId: dbMod.id,
-        createdAt: new Date(file._tsDateAdded * MILLISECONDS_PER_SECOND),
-        updatedAt: new Date(file._tsDateAdded * MILLISECONDS_PER_SECOND),
+        md5Checksum: file._sMd5Checksum ?? null,
+        createdAt: new Date(file._tsDateAdded * 1000),
+        updatedAt: new Date(file._tsDateAdded * 1000),
       }));
 
-      // Upsert all mod downloads using repository
       await modDownloadRepository.upsertMultipleByModId(
         dbMod.id,
         downloadEntries,
@@ -590,6 +505,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           downloadCount: downloadEntries.length,
         })
         .info("Refreshed mod downloads successfully");
+
+      return { filesChanged };
     } catch (error) {
       this.logger
         .withError(error)
@@ -607,66 +524,6 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getModById(modId: string): Promise<Mod | null> {
     return await modRepository.findById(modId);
   }
-
-  // Public method to refresh all mods' downloads
-  async refreshAllModDownloads(): Promise<void> {
-    const allMods = await modRepository.findAll();
-
-    this.logger
-      .withMetadata({
-        count: allMods.length,
-      })
-      .info("Starting refresh of all mod downloads");
-
-    for (const mod of allMods) {
-      try {
-        await this.refreshModDownloads(mod);
-        this.logger
-          .withMetadata({
-            modId: mod.id,
-            name: mod.name,
-          })
-          .info("Refreshed mod downloads");
-      } catch (error) {
-        this.logger
-          .withError(error)
-          .withMetadata({
-            error,
-            modId: mod.id,
-            name: mod.name,
-          })
-          .error("Failed to refresh mod downloads");
-        // Continue with other mods even if one fails
-      }
-    }
-
-    this.logger
-      .withMetadata({
-        count: allMods.length,
-      })
-      .info("Completed refreshing all mod downloads");
-  }
 }
 
 providerRegistry.registerProvider("gamebanana", GameBananaProvider);
-
-// Add a public method to refresh downloads for mods
-export async function refreshModDownloads(modId?: string): Promise<void> {
-  const provider = providerRegistry.getProvider(
-    "gamebanana",
-  ) as GameBananaProvider;
-
-  if (modId) {
-    // Refresh a specific mod's downloads
-    const mod = await provider.getModById(modId);
-
-    if (!mod) {
-      throw new Error(`Mod with ID ${modId} not found`);
-    }
-
-    await provider.refreshModDownloads(mod);
-  } else {
-    // Refresh all mods' downloads
-    await provider.refreshAllModDownloads();
-  }
-}

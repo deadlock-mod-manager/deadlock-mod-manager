@@ -37,3 +37,6 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.MODEL_REPLACEMENT,
   ModCategory.OTHER_MISC,
 ] as const;
+
+export const UPDATED_RECENTLY_DAYS = 7;
+export const UPDATED_RECENTLY_MS = UPDATED_RECENTLY_DAYS * 24 * 60 * 60 * 1000;
