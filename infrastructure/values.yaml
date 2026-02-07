@@ -288,6 +288,29 @@ deployments:
     port: 3004
 
 resources:
+  postgres:
+    replicas: 3
+    memory: 1Gi
+    cpu: 500m
+    disk: 30Gi
+    extensions:
+      - vector
+    config:
+      max_connections: "30"
+      shared_buffers: 256MB
+      effective_cache_size: 768MB
+      maintenance_work_mem: 64MB
+      checkpoint_completion_target: "0.9"
+      wal_buffers: 7864kB
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "300"
+      work_mem: 6898kB
+      huge_pages: "off"
+      min_wal_size: 1GB
+      max_wal_size: 4GB
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: top
   redis:
     sentinels: 3
     sentinel:

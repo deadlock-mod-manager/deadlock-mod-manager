@@ -4,17 +4,10 @@ kind: Cluster
 metadata:
   name: {{ .Chart.Name }}
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16.3
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: false
   instances: {{ .Values.resources.postgres.replicas }}
-
-  # Faster failure detection and recovery
-  startDelay: 300        # 5 min instead of default 1h - detect startup failures faster
-  stopDelay: 300         # 5 min instead of default 30m - faster graceful shutdown
-  switchoverDelay: 60    # 1 min instead of default 1h - faster manual switchovers
-  maxStartupDelay: 300   # 5 min instead of default 1h - faster startup failure detection
-
   resources:
     requests:
       memory: {{ .Values.resources.postgres.memory }}
@@ -49,6 +42,6 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
-              - key: node-role.kubernetes.io/database
+              - key: node-role.kubernetes.io/database-prio
                 operator: Exists
 {{- end }}
