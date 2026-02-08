@@ -190,9 +190,10 @@ export class ZipExtractor extends ArchiveExtractor {
                     `Extracted ${entry.fileName} to ${targetPath}`,
                   );
                 } catch (error) {
-                  const errorMsg =
-                    error instanceof Error ? error.message : String(error);
-                  result.errors.push({ file: entry.fileName, error: errorMsg });
+                  result.errors.push({
+                    file: entry.fileName,
+                    error: (error as Error)?.message || "Unknown error",
+                  });
                   this.logger
                     .withError(error)
                     .warn(`Failed to extract ${entry.fileName}`);
@@ -212,9 +213,10 @@ export class ZipExtractor extends ArchiveExtractor {
                 }
               });
             } catch (error) {
-              const errorMsg =
-                error instanceof Error ? error.message : String(error);
-              result.errors.push({ file: entry.fileName, error: errorMsg });
+              result.errors.push({
+                file: entry.fileName,
+                error: (error as Error)?.message || "Unknown error",
+              });
               this.logger
                 .withError(error)
                 .warn(`Failed to process ${entry.fileName}`);
@@ -411,9 +413,10 @@ export class ZipExtractor extends ArchiveExtractor {
                     `Extracted ${entry.fileName} to ${targetPath}`,
                   );
                 } catch (error) {
-                  const errorMsg =
-                    error instanceof Error ? error.message : String(error);
-                  result.errors.push({ file: entry.fileName, error: errorMsg });
+                  result.errors.push({
+                    file: entry.fileName,
+                    error: (error as Error)?.message || "Unknown error",
+                  });
                   this.logger
                     .withError(error)
                     .warn(`Failed to extract ${entry.fileName}`);
@@ -429,9 +432,10 @@ export class ZipExtractor extends ArchiveExtractor {
                 }
               });
             } catch (error) {
-              const errorMsg =
-                error instanceof Error ? error.message : String(error);
-              result.errors.push({ file: entry.fileName, error: errorMsg });
+              result.errors.push({
+                file: entry.fileName,
+                error: (error as Error)?.message || "Unknown error",
+              });
               this.logger
                 .withError(error)
                 .warn(`Failed to process ${entry.fileName}`);

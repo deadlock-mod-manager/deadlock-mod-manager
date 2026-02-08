@@ -225,7 +225,7 @@ export const useModProcessor = () => {
       }
     } catch (error) {
       setProcessing(false);
-      toast.error(error instanceof Error ? error.message : String(error));
+      toast.error((error as Error)?.message || "Unknown error");
       return;
     }
 

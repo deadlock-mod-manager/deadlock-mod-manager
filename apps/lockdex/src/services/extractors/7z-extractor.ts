@@ -118,9 +118,10 @@ export class SevenZipExtractor extends ArchiveExtractor {
         }
       } catch (error) {
         for (const entry of filteredEntries) {
-          const errorMsg =
-            error instanceof Error ? error.message : String(error);
-          result.errors.push({ file: entry.path, error: errorMsg });
+          result.errors.push({
+            file: entry.path,
+            error: (error as Error)?.message || "Unknown error",
+          });
         }
       }
 
@@ -253,17 +254,19 @@ export class SevenZipExtractor extends ArchiveExtractor {
 
               this.logger.debug(`Extracted ${filePath} to ${targetPath}`);
             } catch (error) {
-              const errorMsg =
-                error instanceof Error ? error.message : String(error);
-              result.errors.push({ file: filePath, error: errorMsg });
+              result.errors.push({
+                file: filePath,
+                error: (error as Error)?.message || "Unknown error",
+              });
               this.logger
                 .withError(error)
                 .warn(`Failed to extract ${filePath}`);
             }
           } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            result.errors.push({ file: filePath, error: errorMsg });
+            result.errors.push({
+              file: filePath,
+              error: (error as Error)?.message || "Unknown error",
+            });
             this.logger.withError(error).warn(`Failed to extract ${filePath}`);
           }
         }

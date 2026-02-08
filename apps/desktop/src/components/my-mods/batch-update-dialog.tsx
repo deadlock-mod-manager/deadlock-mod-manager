@@ -24,8 +24,8 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation } from "@tanstack/react-query";
 import { DateDisplay } from "@/components/date-display";
 import { formatSize } from "@/lib/utils";
 import logger from "@/lib/logger";
@@ -54,28 +54,21 @@ export const BatchUpdateDialog = ({
     executeBatchUpdate,
     updateProgress,
   } = useBatchUpdate();
-  const [isUpdating, setIsUpdating] = useState(false);
+
+  const batchUpdateMutation = useMutation({
+    mutationFn: executeBatchUpdate,
+    onSuccess: () => {
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      logger.withError(error as Error).error("Failed to update mods");
+      toast.error(`${t("myMods.batchUpdate.error")}`);
+    },
+  });
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !isUpdating) {
+    if (!newOpen && !batchUpdateMutation.isPending) {
       onOpenChange(false);
-    }
-  };
-
-  const handleConfirmUpdate = async () => {
-    setIsUpdating(true);
-    try {
-      await executeBatchUpdate();
-      onOpenChange(false);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to update mods");
-      toast.error(`${t("myMods.batchUpdate.error")}: ${errorMessage}`);
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -144,13 +137,13 @@ export const BatchUpdateDialog = ({
               <Button
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                disabled={isUpdating}
+                disabled={batchUpdateMutation.isPending}
                 icon={<X className='h-4 w-4' />}>
                 {t("common.cancel")}
               </Button>
               <Button
-                onClick={handleConfirmUpdate}
-                disabled={isUpdating}
+                onClick={() => batchUpdateMutation.mutate()}
+                disabled={batchUpdateMutation.isPending}
                 icon={<RefreshCw className='h-4 w-4' />}>
                 {isSingleMod ? t("modDetail.updateMod") : t("myMods.updateAll")}
               </Button>

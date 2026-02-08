@@ -138,9 +138,10 @@ export class TempCleanupService {
               }
             }
           } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            result.errors.push({ path: fullPath, error: errorMsg });
+            result.errors.push({
+              path: fullPath,
+              error: (error as Error)?.message || "Unknown error",
+            });
             this.logger
               .withError(error)
               .warn(`Failed to clean up temp directory: ${entry}`);
@@ -198,9 +199,10 @@ export class TempCleanupService {
               result.freedBytes += dirSize;
             }
           } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            result.errors.push({ path: fullPath, error: errorMsg });
+            result.errors.push({
+              path: fullPath,
+              error: (error as Error)?.message || "Unknown error",
+            });
             this.logger
               .withError(error)
               .warn(`Failed startup cleanup: ${entry}`);
@@ -254,9 +256,10 @@ export class TempCleanupService {
               result.freedBytes += dirSize;
             }
           } catch (error) {
-            const errorMsg =
-              error instanceof Error ? error.message : String(error);
-            result.errors.push({ path: fullPath, error: errorMsg });
+            result.errors.push({
+              path: fullPath,
+              error: (error as Error)?.message || "Unknown error",
+            });
             this.logger
               .withError(error)
               .warn(`Failed emergency cleanup: ${entry}`);
