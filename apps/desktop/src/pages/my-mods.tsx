@@ -28,6 +28,7 @@ import {
   LayoutGrid,
   LayoutList,
   Loader2,
+  RefreshCw,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
@@ -41,9 +42,11 @@ import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalyzeAddonsButton } from "@/components/my-mods/analyze-addons-button";
+import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
@@ -364,8 +367,10 @@ const MyMods = () => {
     isRefetching: isVpkScanRefetching,
     refetch: refetchVpkScan,
   } = useVpkScan();
+  const { updatableMods, updatableCount } = useCheckUpdates();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
+  const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
 
@@ -445,7 +450,7 @@ const MyMods = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full gap-4 overflow-y-auto px-4'
+      className='w-full gap-4 overflow-y-auto px-4'
       onScroll={(e) => {
         scrollPositionRef.current = e.currentTarget.scrollTop;
       }}>
@@ -497,12 +502,19 @@ const MyMods = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <p className='text-muted-foreground mt-2'>
-                {t("myMods.subtitle")}
-              </p>
+              <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
             </div>
 
             <div className='flex gap-2 items-center'>
+              {updatableCount > 0 && (
+                <Button
+                  size='lg'
+                  variant='default'
+                  onClick={() => setShowBatchUpdateDialog(true)}
+                  icon={<RefreshCw className='h-4 w-4' />}>
+                  {t("myMods.updateAll")} ({updatableCount})
+                </Button>
+              )}
               <Button
                 size='lg'
                 variant='outline'
@@ -600,6 +612,11 @@ const MyMods = () => {
             </div>
           )}
         </Tabs>
+        <BatchUpdateDialog
+          open={showBatchUpdateDialog}
+          onOpenChange={setShowBatchUpdateDialog}
+          updates={updatableMods}
+        />
       </ErrorBoundary>
     </div>
   );

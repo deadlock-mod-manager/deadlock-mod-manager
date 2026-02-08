@@ -190,7 +190,7 @@ const GetModsData = () => {
         </Empty>
       ) : (
         <div
-          className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto'
+          className='h-[calc(100vh-280px)] overflow-auto'
           ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
         >
           <div

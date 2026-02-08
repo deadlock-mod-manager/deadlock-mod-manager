@@ -190,9 +190,7 @@ const CrosshairLibraryData = () => {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div
-          className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto'
-          ref={parentRef}>
+        <div className='h-[calc(100vh-280px)] overflow-auto' ref={parentRef}>
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
@@ -248,7 +246,7 @@ const CrosshairLibraryData = () => {
 const CrosshairLibrarySkeleton = () => {
   return (
     <div className='flex flex-col gap-4'>
-      <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin h-[calc(100vh-280px)] overflow-auto'>
+      <div className='h-[calc(100vh-280px)] overflow-auto'>
         <div className='grid grid-cols-1 gap-4 px-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
           {Array.from({ length: 12 }, () => (
             <div
