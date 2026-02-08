@@ -17,7 +17,7 @@ const Crosshairs = () => {
   };
 
   return (
-    <div className='scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full overflow-y-auto pl-4 pr-2'>
+    <div className='w-full overflow-y-auto pl-4 pr-2'>
       <div className='mb-6 flex items-center justify-between'>
         <PageTitle
           title={t("crosshairs.title")}

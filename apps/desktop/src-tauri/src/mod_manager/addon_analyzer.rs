@@ -111,6 +111,7 @@ impl AddonAnalyzer {
   }
 
   /// Emit progress event to frontend
+  #[allow(clippy::too_many_arguments)]
   fn emit_progress(
     &self,
     app_handle: &Option<AppHandle>,

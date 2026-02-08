@@ -3,15 +3,19 @@ import type {
   CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
-  ModDownloadDto,
   ModDto,
   PublishedCrosshairDto,
   SharedProfile,
 } from "@deadlock-mods/shared";
+import type { z } from "zod";
+import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
+
+type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 import { invoke } from "@tauri-apps/api/core";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
+import logger from "./logger";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
 
@@ -19,7 +23,9 @@ export const initializeApiUrl = async (): Promise<void> => {
   try {
     await invoke("set_api_url", { apiUrl: BASE_URL });
   } catch (error) {
-    console.error("Failed to set API URL in Rust backend:", error);
+    logger
+      .withError(error instanceof Error ? error : new Error(String(error)))
+      .error("Failed to set API URL in Rust backend");
   }
 };
 
@@ -59,7 +65,9 @@ const apiRequest = async <T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`[API] Error ${response.status}:`, errorText);
+    logger
+      .withMetadata({ status: response.status, errorText })
+      .error("API request failed");
     return handleHttpError(response.status);
   }
 
@@ -86,9 +94,20 @@ export const getModDownload = async (remoteId: string) => {
 
 export const getModDownloads = async (remoteId: string) => {
   return await apiRequest<{
-    downloads: ModDownloadDto;
+    downloads: ModDownloadDto[];
     count: number;
   }>(`/api/v2/mods/${remoteId}/downloads`);
+};
+
+export const checkModUpdates = async (
+  mods: Array<{ remoteId: string; installedAt: Date }>,
+) => {
+  return await apiRequest<{
+    updates: Array<{
+      mod: ModDto;
+      downloads: ModDownloadDto[];
+    }>;
+  }>("/api/v2/mods/check-updates", { mods });
 };
 
 export const getCustomSettings = async () => {

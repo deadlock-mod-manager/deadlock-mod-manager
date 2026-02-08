@@ -41,7 +41,9 @@ import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 interface ModOrderingDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface SortableModItemProps {
@@ -114,7 +116,11 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
   );
 };
 
-export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
+export const ModOrderingDialog = ({
+  children,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: ModOrderingDialogProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
   const {
@@ -126,8 +132,14 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
   } = usePersistedStore();
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled
+    ? (controlledOnOpenChange ?? (() => {}))
+    : setInternalOpen;
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
@@ -209,12 +221,14 @@ export const ModOrderingDialog = ({ children }: ModOrderingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>{children}</DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
-      </Tooltip>
+      {children && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
+        </Tooltip>
+      )}
       <DialogContent className='max-w-2xl max-h-[80vh] flex flex-col'>
         <DialogHeader>
           <DialogTitle>{t("modOrdering.title")}</DialogTitle>

@@ -209,7 +209,7 @@ export const CrosshairForm = () => {
         onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
         className='flex flex-col gap-6 h-full'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-          <div className='space-y-6  pr-2 overflow-y-auto custom-scrollbar scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin w-full max-h-[70vh]'>
+          <div className='space-y-6 pr-2 overflow-y-auto w-full max-h-[70vh]'>
             <div>
               <CrosshairControls
                 config={currentConfig}

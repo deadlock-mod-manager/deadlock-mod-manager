@@ -4,6 +4,8 @@ import {
   ModRepository,
 } from "@deadlock-mods/database";
 import {
+  CheckUpdatesInputSchema,
+  CheckUpdatesResponseSchema,
   ModDownloadsResponseSchema,
   ModDownloadsV2ResponseSchema,
   ModIdParamSchema,
@@ -113,6 +115,55 @@ export const modsRouter = {
         }));
 
       return toModDownloadDto(sortedDownloads);
+    }),
+
+  checkModUpdates: publicProcedure
+    .route({ method: "POST", path: "/v2/mods/check-updates" })
+    .input(CheckUpdatesInputSchema)
+    .output(CheckUpdatesResponseSchema)
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      const isModDownloadMirroringEnabled =
+        await featureFlagsService.isFeatureEnabled(
+          "mod-download-mirroring",
+          userId,
+        );
+
+      const remoteIds = input.mods.map((m) => m.remoteId);
+      const installedModsMap = new Map(
+        input.mods.map((m) => [m.remoteId, m.installedAt]),
+      );
+
+      const mods = await modRepository.findByRemoteIds(remoteIds);
+
+      const updates = [];
+
+      for (const mod of mods) {
+        const installedAt = installedModsMap.get(mod.remoteId);
+        if (!installedAt || !mod.filesUpdatedAt) {
+          continue;
+        }
+
+        if (mod.filesUpdatedAt.getTime() > installedAt.getTime()) {
+          const downloads = await modDownloadRepository.findByModId(mod.id);
+
+          const sortedDownloads = downloads
+            .sort((a, b) => b.size - a.size)
+            .map((download) => ({
+              ...download,
+              url: isModDownloadMirroringEnabled.unwrapOr(false)
+                ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
+                : download.url,
+            }));
+
+          updates.push({
+            mod: toModDto(mod),
+            downloads: toModDownloadDto(sortedDownloads),
+          });
+        }
+      }
+
+      return { updates };
     }),
 
   forceSyncV2: publicProcedure
