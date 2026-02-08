@@ -29,7 +29,7 @@
     "fs:allow-applocaldata-read-recursive",
     "fs:allow-applocaldata-write-recursive",
     "fs:allow-applocaldata-meta-recursive",
-    "shell:allow-open",
+    "opener:default",
     "deep-link:default",
     "machine-uid:default",
     {

@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { ArrowSquareOut, Sparkle } from "@phosphor-icons/react";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
@@ -69,7 +69,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
       <DialogFooter className='flex flex-row items-center justify-between'>
         <Button
           className='gap-2'
-          onClick={() => open(`${GITHUB_REPO}/releases/tag/v${version}`)}
+          onClick={() => openUrl(`${GITHUB_REPO}/releases/tag/v${version}`)}
           size='sm'
           variant='outline'>
           <ArrowSquareOut className='h-4 w-4' />

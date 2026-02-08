@@ -7,7 +7,7 @@ import {
   type TokenResponse,
 } from "@deadlock-mods/shared/auth";
 import { fetch } from "@tauri-apps/plugin-http";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { AUTH_URL } from "../config";
 
 const CLIENT_ID = "deadlockmods-desktop";
@@ -35,7 +35,7 @@ export async function initiateOIDCLogin(): Promise<void> {
   });
 
   const authUrl = `${AUTH_URL}/api/auth/oauth2/authorize?${params}`;
-  await open(authUrl);
+  await openUrl(authUrl);
 }
 
 export async function exchangeCodeForTokens(

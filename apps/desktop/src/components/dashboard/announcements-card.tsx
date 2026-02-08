@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { Info, Megaphone, Warning, Wrench } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { format, formatDistanceToNow } from "date-fns";
 import { Markup } from "interweave";
 import { useState } from "react";
@@ -151,7 +151,7 @@ export const AnnouncementsCard = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        open(announcement.linkUrl!);
+                        openUrl(announcement.linkUrl!);
                       }}
                       size='sm'
                       variant='outline'
@@ -234,7 +234,7 @@ export const AnnouncementsCard = () => {
               {selectedAnnouncement.linkUrl && (
                 <DialogFooter>
                   <Button
-                    onClick={() => open(selectedAnnouncement.linkUrl!)}
+                    onClick={() => openUrl(selectedAnnouncement.linkUrl!)}
                     variant='default'>
                     {selectedAnnouncement.linkLabel || "Learn More"}
                   </Button>
