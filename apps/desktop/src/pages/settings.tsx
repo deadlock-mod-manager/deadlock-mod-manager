@@ -371,7 +371,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsTrigger>
           </TabsList>
 
-          <div className='scrollbar-thin scrollbar-thumb-primary scrollbar-track-secondary flex-1 overflow-y-auto pr-4'>
+          <div className='flex-1 overflow-y-auto pr-4'>
             <TabsContent className='mt-0 space-y-2' value='launch-options'>
               <Suspense
                 fallback={

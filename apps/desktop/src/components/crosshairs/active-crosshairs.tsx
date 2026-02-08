@@ -111,7 +111,7 @@ export const ActiveCrosshairs = () => {
       <h2 className='text-lg font-semibold mb-4'>
         {t("crosshairs.activeCrosshairs")}
       </h2>
-      <div className='flex gap-4 overflow-x-auto scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin pb-2'>
+      <div className='flex gap-4 overflow-x-auto pb-2'>
         {activeCrosshairHistory.map(
           (config: CrosshairConfig, index: number) => (
             <div

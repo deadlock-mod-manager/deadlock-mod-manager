@@ -57,7 +57,7 @@ export const WhatsNewCard = () => {
             </span>
             <span className='font-medium text-sm'>{update.title}</span>
           </div>
-          <ul className='space-y-1 pl-4 overflow-y-scroll max-h-24 scrollbar-thumb-primary scrollbar-track-secondary scrollbar-thin custom-scrollbar'>
+          <ul className='space-y-1 pl-4 overflow-y-scroll max-h-24'>
             {update.features.map((feature) => (
               <li key={feature} className='text-muted-foreground text-sm'>
                 {feature}

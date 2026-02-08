@@ -33,6 +33,21 @@
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
     "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum",
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount": "{{count}} updates available",
+    "batchUpdate": {
+      "title": "Update All Mods",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "currentVersion": "Installed",
+      "newVersion": "Available Update",
+      "selectVariant": "Select variant",
+      "backupNote": "A backup will be created automatically before updating",
+      "updating": "Updating mods...",
+      "complete": "Update complete",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "error": "Failed to update mods"
+    },
     "tabs": {
       "all": "All",
       "installed": "Installed",

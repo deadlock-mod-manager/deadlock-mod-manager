@@ -1,8 +1,10 @@
-import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
+import type { ModDto } from "@deadlock-mods/shared";
+import type { z } from "zod";
+import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import type { VpkParsed } from "@deadlock-mods/vpk-parser";
 
-// Individual download item type extracted from ModDownloadDto array
-export type ModDownloadItem = ModDownloadDto[number];
+// Individual download item type extracted from ModDownloadDto schema
+export type ModDownloadItem = z.infer<typeof ModDownloadDtoSchema>;
 
 export type Progress = {
   progress: number;
@@ -131,6 +133,38 @@ export interface InstalledModInfo {
 export interface ProfileImportResult {
   profileFolder: string;
   succeeded: string[];
-  failed: Array<[string, string]>; // [mod_id, error_message]
-  installedMods: InstalledModInfo[]; // Mods that were successfully installed
+  failed: Array<[string, string]>;
+  installedMods: InstalledModInfo[];
+}
+
+export interface BatchUpdateResult {
+  backupName: string;
+  succeeded: string[];
+  failed: Array<[string, string]>;
+  installedMods: InstalledModInfo[];
+}
+
+export interface BatchUpdateProgressEvent {
+  currentStep: string;
+  currentModIndex: number;
+  totalMods: number;
+  currentModName: string;
+  overallProgress: number;
+}
+
+export interface UpdateProgress {
+  currentStep: string;
+  currentMod?: string;
+  completedMods: number;
+  totalMods: number;
+  overallProgress: number;
+  isDownloading: boolean;
+  isInstalling: boolean;
+}
+
+export interface UpdatableMod {
+  mod: ModDto;
+  downloads: ModDownloadItem[];
+  selectedDownload?: ModDownloadItem;
+  selectedFileTree?: ModFileTree;
 }

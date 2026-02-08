@@ -1,4 +1,6 @@
-import type { ModDownloadDto, ModDto } from "@deadlock-mods/shared";
+import type { ModDto } from "@deadlock-mods/shared";
+import type { z } from "zod";
+import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { downloadManager } from "@/lib/download/manager";
@@ -6,9 +8,11 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
+type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
+
 export const useDownload = (
   mod: Pick<ModDto, "remoteId" | "name"> | undefined,
-  availableFiles: ModDownloadDto,
+  availableFiles: ModDownloadDto[],
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {

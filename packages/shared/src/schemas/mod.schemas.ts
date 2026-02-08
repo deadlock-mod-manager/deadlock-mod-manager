@@ -36,6 +36,7 @@ export const ModDownloadDtoSchema = z.object({
   name: z.string(), // This comes from the 'file' field in the database
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
+  md5Checksum: z.string().nullable(),
 });
 
 // CustomSettingDto schema (matches the raw CustomSetting type from database)
@@ -67,6 +68,25 @@ export const ModDownloadsV2ResponseSchema = z.object({
 
 export const ErrorResponseSchema = z.object({
   error: z.string(),
+});
+
+// Check updates schemas
+export const CheckUpdatesInputSchema = z.object({
+  mods: z.array(
+    z.object({
+      remoteId: z.string(),
+      installedAt: coercedDate,
+    }),
+  ),
+});
+
+export const CheckUpdatesResponseSchema = z.object({
+  updates: z.array(
+    z.object({
+      mod: ModDtoSchema,
+      downloads: z.array(ModDownloadDtoSchema),
+    }),
+  ),
 });
 
 export const ModSchema = ModDtoSchema;
