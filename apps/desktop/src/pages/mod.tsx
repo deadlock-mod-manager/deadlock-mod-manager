@@ -2,7 +2,7 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { ArrowLeft, Trash } from "@deadlock-mods/ui/icons";
+import { ArrowLeft, RefreshCw, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useRef, useState } from "react";
@@ -20,6 +20,7 @@ import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-s
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
+import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -30,6 +31,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { usePersistedStore } from "@/lib/store";
+import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
@@ -71,6 +73,11 @@ const Mod = () => {
   const { localMods, developerMode } = usePersistedStore();
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
+  const { updatableMods } = useCheckUpdates();
+  const hasUpdate = updatableMods.some(
+    (update) => update.mod.remoteId === mod?.remoteId,
+  );
+
   const { data: reportCounts } = useReportCounts(mod?.id ?? "");
   const staleResult =
     mod && reportCounts ? isModStale(mod, reportCounts) : null;
@@ -82,6 +89,12 @@ const Mod = () => {
   const hasHero = !!mod?.hero || !!mod?.isAudio;
   const [deleting, setDeleting] = useState(false);
   const { uninstall } = useUninstall();
+
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+  const currentModUpdate = updatableMods.filter(
+    (update) => update.mod.remoteId === mod?.remoteId,
+  );
 
   const deleteMod = async () => {
     if (!localMod) {
@@ -204,6 +217,15 @@ const Mod = () => {
               <div className='flex items-center gap-2'>
                 <ReportButton mod={mod} />
                 <ModButton remoteMod={mod} variant='default' />
+                {hasUpdate && (
+                  <Button
+                    icon={<RefreshCw className='h-4 w-4' />}
+                    onClick={() => setUpdateDialogOpen(true)}
+                    size='lg'
+                    variant='default'>
+                    {t("modDetail.updateMod")}
+                  </Button>
+                )}
                 {!!localMod?.status && (
                   <Button
                     icon={<Trash className='h-4 w-4' />}
@@ -251,6 +273,13 @@ const Mod = () => {
             />
           )}
         </div>
+
+        <BatchUpdateDialog
+          isSingleMod={true}
+          onOpenChange={setUpdateDialogOpen}
+          open={updateDialogOpen}
+          updates={currentModUpdate}
+        />
       </div>
     </ErrorBoundary>
   );

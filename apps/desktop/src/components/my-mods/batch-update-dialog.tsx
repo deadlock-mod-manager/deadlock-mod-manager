@@ -16,12 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { AlertCircle, Loader2 } from "@deadlock-mods/ui/icons";
+import {
+  AlertCircle,
+  Calendar,
+  Loader2,
+  RefreshCw,
+  X,
+} from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DateDisplay } from "@/components/date-display";
 import { formatSize } from "@/lib/utils";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import { useBatchUpdate } from "@/hooks/use-batch-update";
 import type { ModDownloadItem, UpdatableMod } from "@/types/mods";
 
@@ -29,12 +37,14 @@ interface BatchUpdateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>;
+  isSingleMod?: boolean;
 }
 
 export const BatchUpdateDialog = ({
   open,
   onOpenChange,
   updates,
+  isSingleMod = false,
 }: BatchUpdateDialogProps) => {
   const { t } = useTranslation();
   const {
@@ -77,7 +87,11 @@ export const BatchUpdateDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
         <DialogHeader>
-          <DialogTitle>{t("myMods.batchUpdate.title")}</DialogTitle>
+          <DialogTitle>
+            {isSingleMod
+              ? t("modDetail.updateMod")
+              : t("myMods.batchUpdate.title")}
+          </DialogTitle>
           <DialogDescription>
             {t("myMods.batchUpdate.description")}
           </DialogDescription>
@@ -130,11 +144,15 @@ export const BatchUpdateDialog = ({
               <Button
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                disabled={isUpdating}>
+                disabled={isUpdating}
+                icon={<X className='h-4 w-4' />}>
                 {t("common.cancel")}
               </Button>
-              <Button onClick={handleConfirmUpdate} disabled={isUpdating}>
-                {t("myMods.updateAll")}
+              <Button
+                onClick={handleConfirmUpdate}
+                disabled={isUpdating}
+                icon={<RefreshCw className='h-4 w-4' />}>
+                {isSingleMod ? t("modDetail.updateMod") : t("myMods.updateAll")}
               </Button>
             </>
           )}
@@ -151,6 +169,8 @@ interface UpdateModCardProps {
 
 const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
   const { t } = useTranslation();
+  const localMods = usePersistedStore((state) => state.localMods);
+  const localMod = localMods.find((m) => m.remoteId === update.mod.remoteId);
 
   return (
     <div className='flex items-start gap-4 rounded-lg border p-4'>
@@ -175,15 +195,15 @@ const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
         </div>
 
         <div className='flex items-center gap-4 text-sm'>
-          <div className='flex items-center gap-2'>
-            <span className='text-muted-foreground'>
-              {t("myMods.batchUpdate.currentVersion")}:
-            </span>
-            <span>
-              {update.mod.filesUpdatedAt
-                ? new Date(update.mod.filesUpdatedAt).toLocaleDateString()
-                : "N/A"}
-            </span>
+          <div className='flex items-center gap-1.5 text-muted-foreground'>
+            <Calendar className='h-3.5 w-3.5' />
+            <span>{t("myMods.batchUpdate.installedAt")}:</span>
+            <DateDisplay date={localMod?.downloadedAt} inverse />
+          </div>
+          <div className='flex items-center gap-1.5 text-muted-foreground'>
+            <RefreshCw className='h-3.5 w-3.5' />
+            <span>{t("myMods.batchUpdate.updatedAt")}:</span>
+            <DateDisplay date={update.mod.filesUpdatedAt} inverse />
           </div>
         </div>
 
