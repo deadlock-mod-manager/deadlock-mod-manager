@@ -25,6 +25,7 @@ import { Markup } from "interweave";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAnnouncements } from "@/lib/api";
+import { transformMarkupLinks } from "@/lib/markup-transform";
 import { DashboardCard } from "./dashboard-card";
 
 const getCategoryIcon = (category: string) => {
@@ -144,7 +145,10 @@ export const AnnouncementsCard = () => {
                       </span>
                     </div>
                     <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
-                      <Markup content={announcement.content} />
+                      <Markup
+                        content={announcement.content}
+                        transform={transformMarkupLinks}
+                      />
                     </div>
                   </div>
                   {announcement.linkUrl && (
@@ -229,7 +233,10 @@ export const AnnouncementsCard = () => {
                 </div>
               </DialogHeader>
               <div className='prose prose-sm dark:prose-invert max-w-none text-sm'>
-                <Markup content={selectedAnnouncement.content} />
+                <Markup
+                  content={selectedAnnouncement.content}
+                  transform={transformMarkupLinks}
+                />
               </div>
               {selectedAnnouncement.linkUrl && (
                 <DialogFooter>

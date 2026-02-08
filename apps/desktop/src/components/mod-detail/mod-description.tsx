@@ -5,6 +5,7 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { Markup } from "interweave";
+import { transformMarkupLinks } from "@/lib/markup-transform";
 
 interface ModDescriptionProps {
   description: string;
@@ -25,6 +26,7 @@ export const ModDescription = ({ description }: ModDescriptionProps) => {
           <Markup
             className='whitespace-pre-line text-sm leading-relaxed'
             content={description}
+            transform={transformMarkupLinks}
           />
         </div>
       </CardContent>

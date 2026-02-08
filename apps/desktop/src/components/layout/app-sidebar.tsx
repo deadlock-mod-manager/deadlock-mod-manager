@@ -209,7 +209,7 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
 
   return (
     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-      <Link to={item.url}>
+      <Link to={item.url} draggable='false'>
         {item.icon ? (
           <item.icon weight='duotone' />
         ) : item.iconUrl ? (
