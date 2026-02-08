@@ -26,7 +26,7 @@ import {
   Package,
   Question,
 } from "@phosphor-icons/react";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
@@ -332,7 +332,7 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => open("https://docs.deadlockmods.app/")}>
+                  onClick={() => openUrl("https://docs.deadlockmods.app/")}>
                   <Question weight='duotone' />
                   <span>{t("help.documentation")}</span>
                 </SidebarMenuButton>
@@ -340,7 +340,7 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => open(DISCORD_URL)}>
+                  onClick={() => openUrl(DISCORD_URL)}>
                   <DiscordLogo weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>

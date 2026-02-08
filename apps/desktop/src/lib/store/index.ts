@@ -169,12 +169,12 @@ export const usePersistedStore = create<State>()(
           };
         }
 
-        // Migration from version 7 to 8: Add linuxGpuOptimization field
+        // Migration from version 7 to 8: Add linuxGpuOptimization field (on by default)
         if (version <= 7) {
           console.log(
             "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
           );
-          state.linuxGpuOptimization = false;
+          state.linuxGpuOptimization = true;
         }
 
         return state;

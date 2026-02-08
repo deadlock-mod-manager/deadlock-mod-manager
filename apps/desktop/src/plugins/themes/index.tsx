@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { Switch } from "@deadlock-mods/ui/components/switch";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
@@ -241,7 +241,7 @@ const Settings = () => {
                           className='text-primary hover:underline inline-flex items-center mr-3'
                           onClick={(e) => {
                             e.stopPropagation();
-                            void open("https://www.twitch.tv/snipztea");
+                            void openUrl("https://www.twitch.tv/snipztea");
                           }}
                           type='button'>
                           {t("plugins.tea.twitch")}
@@ -250,7 +250,7 @@ const Settings = () => {
                           className='text-primary hover:underline inline-flex items-center'
                           onClick={(e) => {
                             e.stopPropagation();
-                            void open("https://snipztea.carrd.co/");
+                            void openUrl("https://snipztea.carrd.co/");
                           }}
                           type='button'>
                           {t("plugins.tea.carrd")}
@@ -287,7 +287,7 @@ const Settings = () => {
                           className='text-primary hover:underline'
                           onClick={(e) => {
                             e.stopPropagation();
-                            void open("https://github.com/Skeptic-systems");
+                            void openUrl("https://github.com/Skeptic-systems");
                           }}
                           type='button'>
                           Skeptic
@@ -305,7 +305,9 @@ const Settings = () => {
                             className='text-primary hover:underline'
                             onClick={(e) => {
                               e.stopPropagation();
-                              void open("https://github.com/Skeptic-systems");
+                              void openUrl(
+                                "https://github.com/Skeptic-systems",
+                              );
                             }}
                             type='button'>
                             Skeptic

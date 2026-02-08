@@ -36,7 +36,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
@@ -576,7 +576,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       </p>
                       <Button
                         className='mt-2 w-fit'
-                        onClick={() => open("https://gamebanana.com/")}
+                        onClick={() => openUrl("https://gamebanana.com/")}
                         size='sm'
                         variant='outline'>
                         {t("about.visitGamebanana")}
@@ -592,7 +592,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       </p>
                       <Button
                         className='mt-2 w-fit'
-                        onClick={() => open("https://tauri.app/")}
+                        onClick={() => openUrl("https://tauri.app/")}
                         size='sm'
                         variant='outline'>
                         {t("about.visitTauri")}
@@ -608,7 +608,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       </p>
                       <Button
                         className='mt-2 w-fit'
-                        onClick={() => open("https://ui.shadcn.com/")}
+                        onClick={() => openUrl("https://ui.shadcn.com/")}
                         size='sm'
                         variant='outline'>
                         {t("about.visitShadcn")}
@@ -626,7 +626,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       </p>
                       <Button
                         className='mt-2 w-fit'
-                        onClick={() => open("https://tailwindcss.com/")}
+                        onClick={() => openUrl("https://tailwindcss.com/")}
                         size='sm'
                         variant='outline'>
                         {t("about.visitTailwind")}

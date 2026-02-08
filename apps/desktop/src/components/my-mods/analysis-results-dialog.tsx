@@ -32,7 +32,7 @@ import {
   Search,
   XCircle,
 } from "@deadlock-mods/ui/icons";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModMetadataForm, {
@@ -173,7 +173,7 @@ const AddonSummaryCard = ({
       try {
         // Construct GameBanana URL from remoteId
         const gameBananaUrl = `https://gamebanana.com/mods/${addon.remoteId}`;
-        await open(gameBananaUrl);
+        await openUrl(gameBananaUrl);
       } catch (error) {
         console.error("Failed to open GameBanana link:", error);
       }

@@ -22,7 +22,7 @@ tauri-build = { version = "2.5.1", features = [] }
 
 [dependencies]
 tauri = { version = "2.9.2", features = ["devtools"] }
-tauri-plugin-shell = "2.3"
+tauri-plugin-opener = "2"
 tauri-plugin-http = "2.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -58,6 +58,7 @@ notify = "8.2.0"
 discord-rich-presence = "0.2"
 clap = { version = "4.5", features = ["derive"] }
 urlencoding = "2.1"
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 
 [dev-dependencies]
 tempfile = "3.23.0"

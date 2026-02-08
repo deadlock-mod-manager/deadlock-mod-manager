@@ -12,7 +12,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { exit } from "@tauri-apps/plugin-process";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -156,15 +156,15 @@ export const Titlebar = () => {
   };
 
   const handleDocumentation = () => {
-    open("https://docs.deadlockmods.app/");
+    openUrl("https://docs.deadlockmods.app/");
   };
 
   const handleAskForHelp = () => {
-    open("https://deadlockmods.app/discord");
+    openUrl("https://deadlockmods.app/discord");
   };
 
   const handleReportIssue = () => {
-    open(`${GITHUB_REPO}/issues/new/choose`);
+    openUrl(`${GITHUB_REPO}/issues/new/choose`);
   };
 
   const handleAbout = () => {

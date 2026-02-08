@@ -33,7 +33,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
 import { AlertTriangle, ExternalLink, Flag } from "@deadlock-mods/ui/icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { open as openExternal } from "@tauri-apps/plugin-shell";
+import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

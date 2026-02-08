@@ -9,27 +9,25 @@
       "source.fixAll.oxc": "always",
     },
     "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.experimental.useTsgo": false,
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "typescript.preferences.importModuleSpecifier": "shortest",
     "typescript.preferences.importModuleSpecifierEnding": "auto",
     "editor.defaultFormatter": "oxc.oxc-vscode",
-    "[typescript]": {
-      "editor.defaultFormatter": "oxc.oxc-vscode",
-    },
     "oxc.path.oxfmt": "./node_modules/.bin/oxfmt",
     "oxc.path.oxlint": "./node_modules/.bin/oxlint",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    "emmet.showExpandedAbbreviation": "never",
+
     // TypeScript performance optimizations
     "typescript.disableAutomaticTypeAcquisition": true,
-    "typescript.enablePromptUseWorkspaceTsdk": true,
     "typescript.preferences.includePackageJsonAutoImports": "off",
     "typescript.suggest.autoImports": true,
     "typescript.updateImportsOnFileMove.enabled": "always",
     "typescript.suggest.completeFunctionCalls": false,
     "typescript.suggest.jsdoc.generateReturns": false,
     "typescript.workspaceSymbols.scope": "currentProject",
+
     // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,

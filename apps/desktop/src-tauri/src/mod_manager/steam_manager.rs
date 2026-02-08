@@ -73,31 +73,6 @@ impl SteamManager {
     Ok(())
   }
 
-  /// Get the current Steam directory if available
-  pub fn get_steam_dir(&self) -> Option<&steamlocate::SteamDir> {
-    self.steam_dir.as_ref()
-  }
-
-  /// Get the Steam executable path for launching games
-  pub fn get_steam_executable(&self) -> Result<PathBuf, Error> {
-    let steam_dir = self.get_steam_dir().ok_or(Error::SteamNotFound)?;
-
-    #[cfg(target_os = "windows")]
-    let steam_exe = steam_dir.path().join("steam.exe");
-
-    #[cfg(target_os = "linux")]
-    let steam_exe = steam_dir.path().join("steam.sh");
-
-    #[cfg(target_os = "macos")]
-    let steam_exe = steam_dir.path().join("steam");
-
-    if steam_exe.exists() {
-      Ok(steam_exe)
-    } else {
-      Err(Error::SteamNotFound)
-    }
-  }
-
   /// Launch Deadlock through Steam with optional arguments
   pub fn launch_game(&self, additional_args: &str) -> Result<(), Error> {
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");

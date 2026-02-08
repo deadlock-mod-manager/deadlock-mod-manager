@@ -7,7 +7,7 @@ import {
   TagIcon,
   UserIcon,
 } from "@deadlock-mods/ui/icons";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -165,7 +165,7 @@ export const PluginList = () => {
                                   className='text-primary hover:underline'
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    void open(url);
+                                    void openUrl(url);
                                   }}
                                   type='button'>
                                   {name}
@@ -183,7 +183,7 @@ export const PluginList = () => {
                               const url = Array.isArray(p.manifest.authorUrl)
                                 ? p.manifest.authorUrl[0]
                                 : p.manifest.authorUrl;
-                              if (url) void open(url);
+                              if (url) void openUrl(url);
                             }}
                             type='button'>
                             {p.manifest.author}
@@ -199,7 +199,7 @@ export const PluginList = () => {
                             className='text-primary hover:underline'
                             onClick={(e) => {
                               e.stopPropagation();
-                              void open(p.manifest.homepageUrl!);
+                              void openUrl(p.manifest.homepageUrl!);
                             }}
                             type='button'>
                             Homepage

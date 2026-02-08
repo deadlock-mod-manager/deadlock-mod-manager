@@ -16,7 +16,7 @@ import {
   RedditLogo,
   XLogo,
 } from "@phosphor-icons/react";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import useUpdateManager from "@/hooks/use-update-manager";
@@ -53,7 +53,9 @@ export const AboutDialog = () => {
               (
               <button
                 className='cursor-pointer text-primary hover:underline'
-                onClick={() => open(`${GITHUB_REPO}/releases/tag/v${version}`)}
+                onClick={() =>
+                  openUrl(`${GITHUB_REPO}/releases/tag/v${version}`)
+                }
                 type='button'>
                 {t("about.releaseNotes")}
               </button>
@@ -77,7 +79,7 @@ export const AboutDialog = () => {
             Project created and maintained by{" "}
             <button
               className='cursor-pointer font-medium text-primary hover:underline'
-              onClick={() => open("https://x.com/stormix_dev")}
+              onClick={() => openUrl("https://x.com/stormix_dev")}
               type='button'>
               Stormix
             </button>
@@ -90,19 +92,19 @@ export const AboutDialog = () => {
         <div className='mr-auto flex flex-row gap-2'>
           <GithubLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open(GITHUB_REPO)}
+            onClick={() => openUrl(GITHUB_REPO)}
           />
           <DiscordLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open(DISCORD_URL)}
+            onClick={() => openUrl(DISCORD_URL)}
           />
           <RedditLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open(REDDIT_URL)}
+            onClick={() => openUrl(REDDIT_URL)}
           />
           <XLogo
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => open(X_URL)}
+            onClick={() => openUrl(X_URL)}
           />
         </div>
 

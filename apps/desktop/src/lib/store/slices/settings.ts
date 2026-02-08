@@ -77,7 +77,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   ingestToolEnabled: true,
   autoUpdateEnabled: true,
   crosshairsEnabled: true,
-  linuxGpuOptimization: false,
+  linuxGpuOptimization: true,
   enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({

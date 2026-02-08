@@ -49,3 +49,4 @@ target/
 
 .cursor/mcp.json
 .cursor/plans
+.pnpm-store
