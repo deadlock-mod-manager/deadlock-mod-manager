@@ -5,12 +5,16 @@ import { HealthService } from "../../services/health";
 import { StatsService } from "../../services/stats";
 import type { ReleasesResponse } from "../../types/github-releases";
 import type { HealthResponse } from "../../types/health";
-import type { StatsResponse } from "../../types/stats";
+import type {
+  StatsResponse,
+  TransparencyStatsResponse,
+} from "../../types/stats";
 import {
   HealthResponseSchema,
   ReleasesResponseSchema,
   StatsResponseSchema,
   StatusResponseSchema,
+  TransparencyStatsResponseSchema,
   VersionResponseSchema,
 } from "../../validation/www";
 import { version } from "../../version";
@@ -112,5 +116,13 @@ export const publicRouter = {
     .handler(async (): Promise<StatsResponse> => {
       const service = StatsService.getInstance();
       return await service.getStats();
+    }),
+
+  getTransparencyStats: publicProcedure
+    .route({ method: "GET", path: "/transparency-stats" })
+    .output(TransparencyStatsResponseSchema)
+    .handler(async (): Promise<TransparencyStatsResponse> => {
+      const service = StatsService.getInstance();
+      return await service.getTransparencyStats();
     }),
 };

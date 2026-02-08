@@ -10,7 +10,7 @@ import {
 } from "@deadlock-mods/database";
 import { CACHE_TTL } from "@/lib/constants";
 import { cache } from "@/lib/redis";
-import type { StatsResponse } from "../types/stats";
+import type { StatsResponse, TransparencyStatsResponse } from "../types/stats";
 import { GitHubReleasesService } from "./github-releases";
 
 export class StatsService {
@@ -53,6 +53,47 @@ export class StatsService {
           totalMods: modStats[0].totalMods || 0,
           modDownloads: Number(modStats[0].modDownloads) || 0,
           appDownloads,
+        };
+      },
+      CACHE_TTL.STATS,
+    );
+  }
+
+  async getTransparencyStats(): Promise<TransparencyStatsResponse> {
+    return cache.wrap(
+      "stats:transparency",
+      async () => {
+        const [modStats, releases, userCount, modFilesCount] =
+          await Promise.all([
+            db
+              .select({
+                totalMods: count(mods.id),
+                modDownloads: sum(mods.downloadCount),
+              })
+              .from(mods),
+            GitHubReleasesService.getInstance().fetchReleases(),
+            db.select({ count: count(user.id) }).from(user),
+            db
+              .select({ count: count(schema.modDownloads.id) })
+              .from(schema.modDownloads),
+          ]);
+
+        const appDownloads = releases.allVersions.reduce((total, version) => {
+          return (
+            total +
+            version.downloads.reduce(
+              (versionTotal, download) => versionTotal + download.downloadCount,
+              0,
+            )
+          );
+        }, 0);
+
+        return {
+          totalMods: modStats[0].totalMods || 0,
+          modDownloads: Number(modStats[0].modDownloads) || 0,
+          appDownloads,
+          totalUsers: userCount[0].count || 0,
+          totalModFiles: modFilesCount[0].count || 0,
         };
       },
       CACHE_TTL.STATS,

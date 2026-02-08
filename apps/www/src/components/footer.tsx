@@ -121,6 +121,12 @@ export const Footer = () => {
                 to='/terms'>
                 Terms of Service
               </Link>
+              <span className='hidden sm:inline'>•</span>
+              <Link
+                className='hover:opacity-100 transition-opacity'
+                to='/transparency'>
+                Transparency
+              </Link>
             </div>
 
             <p className='text-sm text-center'>

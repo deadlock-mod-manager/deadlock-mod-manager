@@ -58,6 +58,14 @@ export const StatsResponseSchema = z.object({
   appDownloads: z.number(),
 });
 
+export const TransparencyStatsResponseSchema = z.object({
+  totalMods: z.number(),
+  modDownloads: z.number(),
+  appDownloads: z.number(),
+  totalUsers: z.number(),
+  totalModFiles: z.number(),
+});
+
 export const AnalyticsDataPointSchema = z.object({
   date: z.string(),
   mods: z.number(),

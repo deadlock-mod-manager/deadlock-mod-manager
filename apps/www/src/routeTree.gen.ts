@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
+import { Route as TransparencyRouteImport } from './routes/transparency'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
@@ -36,6 +37,11 @@ import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
   id: '/vpk-analyzer',
   path: '/vpk-analyzer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransparencyRoute = TransparencyRouteImport.update({
+  id: '/transparency',
+  path: '/transparency',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
+  '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
+    | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/dashboard/announcements'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
+    | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/dashboard/announcements'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
+    | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/dashboard/announcements'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
+  TransparencyRoute: typeof TransparencyRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   ModIdRoute: typeof ModIdRoute
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/vpk-analyzer'
       fullPath: '/vpk-analyzer'
       preLoaderRoute: typeof VpkAnalyzerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transparency': {
+      id: '/transparency'
+      path: '/transparency'
+      fullPath: '/transparency'
+      preLoaderRoute: typeof TransparencyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -531,6 +551,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
+  TransparencyRoute: TransparencyRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   ModIdRoute: ModIdRoute,

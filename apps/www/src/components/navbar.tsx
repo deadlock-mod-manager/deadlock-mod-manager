@@ -34,8 +34,8 @@ const routeList: RouteProps[] = [
     label: "Browse Mods",
   },
   {
-    href: "/crosshair-generator",
-    label: "Crosshair Generator",
+    href: "/transparency",
+    label: "Transparency",
   },
   {
     href: "/status",
@@ -98,6 +98,13 @@ export const Navbar = () => {
                 className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
                 <Link to='/kv-parser' className='w-full font-medium'>
                   KeyValues Parser
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                asChild
+                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
+                <Link to='/crosshair-generator' className='w-full font-medium'>
+                  Crosshair Generator
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
