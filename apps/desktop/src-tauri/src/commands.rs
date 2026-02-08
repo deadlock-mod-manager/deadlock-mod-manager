@@ -1800,6 +1800,44 @@ pub async fn import_profile_batch(
   })
 }
 
+// Register Analyzed Mod Command
+// ============================================================================
+
+#[tauri::command]
+pub async fn register_analyzed_mod(
+  mod_id: String,
+  mod_name: String,
+  installed_vpks: Vec<String>,
+) -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+
+  if mod_manager
+    .get_mod_repository()
+    .get_mod(&mod_id)
+    .is_none()
+  {
+    log::info!(
+      "Registering analyzed mod in repository: {} ({}) with {} VPKs",
+      mod_name,
+      mod_id,
+      installed_vpks.len()
+    );
+    let deadlock_mod = Mod {
+      id: mod_id,
+      name: mod_name,
+      installed_vpks,
+      file_tree: None,
+      install_order: None,
+      original_vpk_names: Vec::new(),
+    };
+    mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
+  } else {
+    log::debug!("Mod {} already registered in repository, skipping", mod_id);
+  }
+
+  Ok(())
+}
+
 // Batch Update Types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1809,6 +1847,8 @@ pub struct BatchUpdateMod {
   pub download_files: Vec<DownloadFileDto>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
+  #[serde(default)]
+  pub installed_vpks: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1977,21 +2017,60 @@ pub async fn batch_update_mods(
       }
     };
 
-    match installed_vpk_cleanup_result {
-      Ok(count) if count > 0 => log::info!(
-        "Removed {} currently installed VPKs for mod {}",
-        count,
-        mod_data.mod_id
-      ),
-      Ok(_) => log::debug!(
-        "No currently installed VPKs to remove for mod {}",
-        mod_data.mod_id
-      ),
-      Err(e) => log::warn!(
-        "Error during installed VPK cleanup for mod {}: {:?}",
+    let repo_cleanup_count = match installed_vpk_cleanup_result {
+      Ok(count) if count > 0 => {
+        log::info!(
+          "Removed {} currently installed VPKs for mod {}",
+          count,
+          mod_data.mod_id
+        );
+        count
+      }
+      Ok(_) => {
+        log::debug!(
+          "No currently installed VPKs to remove for mod {}",
+          mod_data.mod_id
+        );
+        0
+      }
+      Err(e) => {
+        log::warn!(
+          "Error during installed VPK cleanup for mod {}: {:?}",
+          mod_data.mod_id,
+          e
+        );
+        0
+      }
+    };
+
+    // 2a-fallback. If neither prefixed nor repository cleanup removed anything,
+    // use the frontend-provided installed_vpks as a last resort
+    let prefixed_cleanup_count = cleanup_result.unwrap_or(0);
+    if prefixed_cleanup_count == 0 && repo_cleanup_count == 0 && !mod_data.installed_vpks.is_empty()
+    {
+      log::info!(
+        "Using frontend-provided VPK list for cleanup of mod {} ({} VPKs)",
         mod_data.mod_id,
-        e
-      ),
+        mod_data.installed_vpks.len()
+      );
+      for vpk in &mod_data.installed_vpks {
+        let vpk_filename = std::path::Path::new(vpk)
+          .file_name()
+          .map(|f| f.to_string_lossy().to_string())
+          .unwrap_or_else(|| vpk.clone());
+        let vpk_path = addons_path_for_profile.join(&vpk_filename);
+        if vpk_path.exists() {
+          if let Err(e) = std::fs::remove_file(&vpk_path) {
+            log::error!(
+              "Failed to remove frontend-provided VPK {:?}: {:?}",
+              vpk_path,
+              e
+            );
+          } else {
+            log::info!("Removed frontend-provided installed VPK: {:?}", vpk_path);
+          }
+        }
+      }
     }
 
     // 2b. Download the new mod files

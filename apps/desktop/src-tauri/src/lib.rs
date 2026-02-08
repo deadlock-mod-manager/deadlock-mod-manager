@@ -290,6 +290,7 @@ pub fn run() {
       commands::list_profile_folders,
       commands::get_profile_installed_vpks,
       commands::import_profile_batch,
+      commands::register_analyzed_mod,
       commands::batch_update_mods,
       commands::get_autoexec_config,
       commands::update_autoexec_config,

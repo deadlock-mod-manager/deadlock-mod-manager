@@ -115,24 +115,28 @@ export const useBatchUpdate = () => {
       isInstalling: false,
     });
 
-    const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => ({
-      modId: um.mod.remoteId,
-      modName: um.mod.name,
-      downloadFiles: um.selectedDownload
-        ? [
-            {
-              url: um.selectedDownload.url,
-              name: um.selectedDownload.name,
-              size: um.selectedDownload.size,
-            },
-          ]
-        : um.downloads.map((d) => ({
-            url: d.url,
-            name: d.name,
-            size: d.size,
-          })),
-      fileTree: um.selectedFileTree,
-    }));
+    const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => {
+      const localMod = localMods.find((m) => m.remoteId === um.mod.remoteId);
+      return {
+        modId: um.mod.remoteId,
+        modName: um.mod.name,
+        downloadFiles: um.selectedDownload
+          ? [
+              {
+                url: um.selectedDownload.url,
+                name: um.selectedDownload.name,
+                size: um.selectedDownload.size,
+              },
+            ]
+          : um.downloads.map((d) => ({
+              url: d.url,
+              name: d.name,
+              size: d.size,
+            })),
+        fileTree: um.selectedFileTree,
+        installedVpks: localMod?.installedVpks ?? [],
+      };
+    });
 
     try {
       const rawResult = await invoke("batch_update_mods", {

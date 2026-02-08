@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { AlertCircle } from "@deadlock-mods/ui/icons";
+import { AlertCircle, Loader2 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -86,8 +86,11 @@ export const BatchUpdateDialog = ({
         {updateProgress ? (
           <div className='space-y-4 py-4'>
             <div className='flex items-center justify-between'>
-              <span className='text-sm font-medium capitalize'>
-                {updateProgress.currentStep}
+              <span className='text-sm font-medium capitalize flex items-center gap-2'>
+                {updateProgress.currentStep}{" "}
+                {updateProgress.currentStep === "downloading" && (
+                  <Loader2 className='size-3.5 animate-spin' />
+                )}
               </span>
               <span className='text-sm text-muted-foreground'>
                 {updateProgress.completedMods} / {updateProgress.totalMods}
