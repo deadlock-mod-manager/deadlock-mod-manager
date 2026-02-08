@@ -41,9 +41,17 @@ const Mod = () => {
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
-  const handleBackClick = useCallback(() => {
-    navigate("/mods");
+  const goBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/mods");
+    }
   }, [navigate]);
+
+  const handleBackClick = useCallback(() => {
+    goBack();
+  }, [goBack]);
 
   useScrollBackButton({
     threshold: 100,
@@ -98,7 +106,7 @@ const Mod = () => {
             <div className='mb-4 flex items-center justify-between'>
               <Button
                 className='flex items-center gap-1'
-                onClick={() => navigate("/mods")}
+                onClick={goBack}
                 size='sm'
                 variant='ghost'>
                 <ArrowLeft className='h-4 w-4' />
@@ -120,7 +128,7 @@ const Mod = () => {
                   <Button onClick={() => window.location.reload()}>
                     {t("errors.tryAgain")}
                   </Button>
-                  <Button onClick={() => navigate("/mods")} variant='ghost'>
+                  <Button onClick={goBack} variant='ghost'>
                     {t("modDetail.goBackHome")}
                   </Button>
                 </div>
@@ -145,7 +153,7 @@ const Mod = () => {
           <div className='mb-4 flex items-center justify-between'>
             <Button
               className='flex items-center gap-1'
-              onClick={() => navigate("/mods")}
+              onClick={goBack}
               size='sm'
               variant='ghost'>
               <ArrowLeft className='h-4 w-4' />
