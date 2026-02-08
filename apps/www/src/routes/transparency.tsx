@@ -54,24 +54,39 @@ function TransparencyComponent() {
       service: "Cloudflare",
       description: "SSL, CDN, DNS, and DDoS protection",
       cost: 10,
+      since: new Date(2024, 11, 1),
     },
     {
       service: "PlanetScale",
       description: "Serverless database (deprecated as of 2026-02-08)",
       cost: 25,
+      since: new Date(2026, 0, 1),
+      until: new Date(2026, 1, 1),
     },
     {
       service: "VPS Hosting",
       description:
         "Kubernetes cluster (3 control planes, 6 workers) + Storage Volumes",
       cost: 100,
+      since: new Date(2024, 11, 1),
     },
-    { service: "Domain", description: "deadlockmods.app", cost: 25 / 12 },
-    { service: "Domain", description: "deadlockmods.com", cost: 30 / 12 },
+    {
+      service: "Domain",
+      description: "deadlockmods.app",
+      cost: 25 / 12,
+      since: new Date(2024, 11, 1),
+    },
+    {
+      service: "Domain",
+      description: "deadlockmods.com",
+      cost: 30 / 12,
+      since: new Date(2024, 11, 1),
+    },
     {
       service: "Cursor AI",
       description: "AI-powered coding assistant",
       cost: 70,
+      since: new Date(2025, 5, 1),
     },
   ];
 
@@ -79,6 +94,24 @@ function TransparencyComponent() {
     (sum, item) => sum + item.cost,
     0,
   );
+
+  const projectStartDate = new Date(2024, 11, 1); // December 2024
+  const now = new Date();
+  const monthsRunning =
+    (now.getFullYear() - projectStartDate.getFullYear()) * 12 +
+    (now.getMonth() - projectStartDate.getMonth());
+
+  const totalInvested = infrastructureCosts.reduce((sum, item) => {
+    const startMonth =
+      (item.since.getFullYear() - projectStartDate.getFullYear()) * 12 +
+      (item.since.getMonth() - projectStartDate.getMonth());
+    const endMonth = item.until
+      ? (item.until.getFullYear() - projectStartDate.getFullYear()) * 12 +
+        (item.until.getMonth() - projectStartDate.getMonth())
+      : monthsRunning;
+    const activeMonths = Math.max(0, endMonth - startMonth);
+    return sum + item.cost * activeMonths;
+  }, 0);
 
   const projectValues = [
     {
@@ -101,9 +134,9 @@ function TransparencyComponent() {
     },
     {
       icon: PhosphorIcons.XCircleIcon,
-      title: "No VC Funding",
+      title: "No External Funding",
       description:
-        "Self-funded with no investors or venture capital. No pressure to monetize or compromise values.",
+        "Self-funded with no external funding. No pressure to monetize or compromise values.",
     },
     {
       icon: PhosphorIcons.InfinityIcon,
@@ -264,7 +297,7 @@ function TransparencyComponent() {
                   <div className='divide-y divide-border'>
                     {infrastructureCosts.map((item) => (
                       <div
-                        key={item.service}
+                        key={`${item.service}-${item.description}`}
                         className='flex items-center justify-between p-4 hover:bg-muted/50 transition-colors'>
                         <div className='flex-1'>
                           <h3 className='font-semibold text-foreground'>
@@ -312,21 +345,35 @@ function TransparencyComponent() {
                 <h2 className='text-2xl font-semibold border-b border-border pb-2 mb-6'>
                   4. Revenue & Funding
                 </h2>
-                <div className='rounded-lg border bg-card p-6'>
-                  <div className='flex items-center gap-4 mb-4'>
+
+                <div className='grid gap-4 sm:grid-cols-2 mb-6'>
+                  <div className='rounded-lg border bg-card p-6 text-center'>
                     <PhosphorIcons.CurrencyDollarIcon
-                      className='h-12 w-12 text-muted-foreground'
+                      className='h-10 w-10 text-muted-foreground mx-auto mb-3'
                       weight='duotone'
                     />
-                    <div>
-                      <h3 className='font-bold text-2xl text-foreground'>
-                        €0 Revenue
-                      </h3>
-                      <p className='text-muted-foreground'>
-                        No ads, no tracking, no monetization
-                      </p>
-                    </div>
+                    <p className='font-bold font-primary text-3xl text-foreground tracking-tight'>
+                      €0
+                    </p>
+                    <p className='text-muted-foreground text-sm mt-1'>
+                      Revenue generated
+                    </p>
                   </div>
+                  <div className='rounded-lg border bg-card p-6 text-center'>
+                    <PhosphorIcons.WalletIcon
+                      className='h-10 w-10 text-primary mx-auto mb-3'
+                      weight='duotone'
+                    />
+                    <p className='font-bold font-primary text-3xl text-primary tracking-tight'>
+                      ~€{totalInvested.toFixed(0)}
+                    </p>
+                    <p className='text-muted-foreground text-sm mt-1'>
+                      Estimated total invested ({monthsRunning} months)
+                    </p>
+                  </div>
+                </div>
+
+                <div className='rounded-lg border bg-card p-6'>
                   <p className='text-muted-foreground leading-relaxed mb-4'>
                     Deadlock Mod Manager generates zero revenue. There are no
                     advertisements, premium features, data tracking, or any form
@@ -337,9 +384,10 @@ function TransparencyComponent() {
                     <strong className='text-foreground'>
                       Self-Funded Since December 2024:
                     </strong>{" "}
-                    All infrastructure costs are paid out of pocket. This
-                    ensures the project remains independent, free from external
-                    influence, and aligned with community interests.
+                    All infrastructure costs have been paid out of pocket for{" "}
+                    {monthsRunning} months. This ensures the project remains
+                    independent, free from external influence, and aligned with
+                    community interests.
                   </p>
                 </div>
               </section>
@@ -401,7 +449,7 @@ function TransparencyComponent() {
                         </strong>{" "}
                         Show your support by starring the{" "}
                         <a
-                          href='https://github.com/Stormix/deadlock-modmanager'
+                          href='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
                           target='_blank'
                           rel='noopener noreferrer'
                           className='text-primary hover:underline'>
@@ -427,7 +475,7 @@ function TransparencyComponent() {
                         </strong>{" "}
                         Help improve the project by contributing on{" "}
                         <a
-                          href='https://github.com/Stormix/deadlock-modmanager'
+                          href='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
                           target='_blank'
                           rel='noopener noreferrer'
                           className='text-primary hover:underline'>
