@@ -98,7 +98,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             </div>
           </div>
         )}
-        <div className='absolute top-2 right-2 flex flex-col gap-1'>
+        <div className='absolute top-2 right-2 flex flex-col gap-1 items-end'>
           {status === ModStatus.Installed && (
             <Badge>{t("modStatus.installed")}</Badge>
           )}
