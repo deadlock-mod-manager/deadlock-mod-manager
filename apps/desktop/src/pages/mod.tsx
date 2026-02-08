@@ -4,7 +4,7 @@ import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
-import { open } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
@@ -182,7 +182,7 @@ const Mod = () => {
                     className='px-0'
                     onClick={async () => {
                       try {
-                        await open(mod.remoteUrl);
+                        await openUrl(mod.remoteUrl);
                       } catch (_error) {
                         toast.error(t("notifications.failedToOpenForumPost"));
                       }

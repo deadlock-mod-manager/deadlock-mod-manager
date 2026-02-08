@@ -28,6 +28,74 @@ Before you begin, ensure you have the following installed:
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
 - **Git** - For version control
 
+#### Linux System Dependencies
+
+For Tauri development on Linux, you'll need additional system dependencies:
+
+**Arch Linux / CachyOS / Manjaro:**
+
+```bash
+sudo pacman -S --needed \
+  webkit2gtk-4.1 \
+  base-devel \
+  curl \
+  wget \
+  file \
+  openssl \
+  gtk3 \
+  libappindicator \
+  librsvg \
+  xdotool \
+  gst-plugins-base \
+  gst-plugins-good
+```
+
+**Note for Linux users:**
+
+The application automatically sets WebKitGTK environment variables on Linux to handle:
+
+- NVIDIA GPU rendering issues (GBM buffer errors)
+- Blank page rendering on X11
+- Wayland compatibility (including Hyprland)
+
+These fixes are configured in `src-tauri/src/lib.rs` and applied automatically:
+
+```bash
+pnpm dev
+```
+
+**Performance Note:** To ensure compatibility across different GPU drivers and display servers, hardware acceleration is partially disabled. This may result in reduced UI performance, which is a known trade-off for webkit2gtk compatibility on Linux.
+
+The above packages include GStreamer plugins needed for media playback in webkit2gtk.
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev \
+  build-essential \
+  curl \
+  wget \
+  file \
+  libssl-dev \
+  libgtk-3-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev
+```
+
+**Fedora:**
+
+```bash
+sudo dnf install webkit2gtk4.1-devel \
+  openssl-devel \
+  curl \
+  wget \
+  file \
+  gtk3-devel
+```
+
+See [Tauri Prerequisites](https://tauri.app/start/prerequisites/) for other distributions.
+
 ### Quick Start
 
 1. **Fork the repository** on GitHub
@@ -465,9 +533,13 @@ Contributors are recognized in:
 
 **Tauri Issues:**
 
-- Ensure Rust is installed and up to date
+- Ensure Rust is installed and up to date: `rustup update`
 - Check Tauri v2 compatibility for any new dependencies
-- Verify system dependencies for your platform
+- **Linux users**: Verify system dependencies are installed (see [Linux System Dependencies](#linux-system-dependencies) above)
+- Common missing dependencies on Linux:
+  - `webkit2gtk-4.1`: Required for webview rendering
+  - `libgtk-3-dev` / `gtk3`: Required for GTK integration
+  - `openssl-dev` / `libssl-dev`: Required for HTTPS/TLS support
 
 **Database Issues:**
 

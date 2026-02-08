@@ -10,9 +10,12 @@ pub struct CliArgs {
   #[arg(long, help = "Disable automatic updates on startup")]
   pub disable_auto_update: bool,
 
-  /// Enable Linux GPU optimizations
-  #[arg(long, help = "Enable Linux GPU optimizations (fixes rendering issues on some hardware)")]
-  pub linux_gpu_fix: bool,
+  /// Disable Linux GPU optimizations (enabled by default on Linux)
+  #[arg(
+    long,
+    help = "Disable Linux GPU optimizations (enabled by default on Linux)"
+  )]
+  pub disable_linux_gpu_optimization: bool,
 
   /// Deep link URL or other trailing arguments (passed by Windows when opening via protocol handler)
   #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true)]
