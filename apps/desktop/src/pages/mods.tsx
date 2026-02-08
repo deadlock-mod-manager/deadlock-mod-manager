@@ -230,7 +230,7 @@ const GetMods = () => {
   return (
     <div className='w-full px-4'>
       <PageTitle
-        className='mb-4'
+        className='mb-8'
         subtitle={t("mods.subtitle")}
         title={t("navigation.getMods")}
       />

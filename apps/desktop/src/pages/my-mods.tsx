@@ -7,6 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@deadlock-mods/ui/components/dropdown-menu";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
@@ -24,11 +30,13 @@ import {
   ArrowUpDown,
   Check,
   Download,
+  EllipsisVertical,
   FolderOpen,
   LayoutGrid,
   LayoutList,
   Loader2,
   RefreshCw,
+  ScanSearch,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
@@ -41,11 +49,13 @@ import AudioPlayerPreview from "@/components/mod-management/audio-player-preview
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
-import { AnalyzeAddonsButton } from "@/components/my-mods/analyze-addons-button";
+import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
+import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
@@ -368,9 +378,20 @@ const MyMods = () => {
     refetch: refetchVpkScan,
   } = useVpkScan();
   const { updatableMods, updatableCount } = useCheckUpdates();
+  const {
+    progress: analysisProgress,
+    showProgressToast,
+    analysisResult,
+    dialogOpen: analysisDialogOpen,
+    setDialogOpen: setAnalysisDialogOpen,
+    isPending: isAnalysisPending,
+    startAnalysis,
+    dismissProgressToast,
+  } = useAddonAnalysis();
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
+  const [showModOrdering, setShowModOrdering] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
 
@@ -508,7 +529,6 @@ const MyMods = () => {
             <div className='flex gap-2 items-center'>
               {updatableCount > 0 && (
                 <Button
-                  size='lg'
                   variant='default'
                   onClick={() => setShowBatchUpdateDialog(true)}
                   icon={<RefreshCw className='h-4 w-4' />}>
@@ -522,16 +542,29 @@ const MyMods = () => {
                 icon={<UploadSimple className='h-4 w-4' />}>
                 {t("navigation.addMods")}
               </Button>
-              <AnalyzeAddonsButton size='lg' />
-              <ModOrderingDialog>
-                <Button
-                  size='lg'
-                  variant='outline'
-                  disabled={installedMods.length === 0}
-                  icon={<ArrowUpDown className='h-4 w-4' />}>
-                  {t("mods.manageOrder")}
-                </Button>
-              </ModOrderingDialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size='icon' variant='outline'>
+                    <EllipsisVertical className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    onClick={startAnalysis}
+                    disabled={isAnalysisPending}>
+                    <ScanSearch className='h-4 w-4' />
+                    {isAnalysisPending
+                      ? t("addons.analyzing")
+                      : t("addons.analyzeLocal")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowModOrdering(true)}
+                    disabled={installedMods.length === 0}>
+                    <ArrowUpDown className='h-4 w-4' />
+                    {t("mods.manageOrder")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <VpkScanAlert
@@ -616,6 +649,22 @@ const MyMods = () => {
           open={showBatchUpdateDialog}
           onOpenChange={setShowBatchUpdateDialog}
           updates={updatableMods}
+        />
+        <ModOrderingDialog
+          open={showModOrdering}
+          onOpenChange={setShowModOrdering}
+        />
+        {analysisProgress && (
+          <AnalysisProgressToast
+            progress={analysisProgress}
+            isVisible={showProgressToast}
+            onDismiss={dismissProgressToast}
+          />
+        )}
+        <AnalysisResultsDialog
+          open={analysisDialogOpen}
+          onOpenChange={setAnalysisDialogOpen}
+          result={analysisResult}
         />
       </ErrorBoundary>
     </div>
