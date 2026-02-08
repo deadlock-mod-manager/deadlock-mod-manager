@@ -133,16 +133,29 @@ export const AnnouncementsCard = () => {
                           {getCategoryLabel(announcement.category)}
                         </Badge>
                       </div>
-                      <span className='text-xs text-muted-foreground whitespace-nowrap'>
-                        {formatDistanceToNow(
-                          new Date(
-                            announcement.publishedAt ||
-                              announcement.createdAt ||
-                              new Date(),
-                          ),
-                          { addSuffix: true },
+                      <div className='flex items-center gap-2 shrink-0'>
+                        <span className='text-xs text-muted-foreground whitespace-nowrap'>
+                          {formatDistanceToNow(
+                            new Date(
+                              announcement.publishedAt ||
+                                announcement.createdAt ||
+                                new Date(),
+                            ),
+                            { addSuffix: true },
+                          )}
+                        </span>
+                        {announcement.linkUrl && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openUrl(announcement.linkUrl!);
+                            }}
+                            size='sm'
+                            variant='outline'>
+                            {announcement.linkLabel || "Learn More"}
+                          </Button>
                         )}
-                      </span>
+                      </div>
                     </div>
                     <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
                       <Markup
@@ -151,18 +164,6 @@ export const AnnouncementsCard = () => {
                       />
                     </div>
                   </div>
-                  {announcement.linkUrl && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openUrl(announcement.linkUrl!);
-                      }}
-                      size='sm'
-                      variant='outline'
-                      className='mt-2'>
-                      {announcement.linkLabel || "Learn More"}
-                    </Button>
-                  )}
                 </div>
               </div>
             ))
