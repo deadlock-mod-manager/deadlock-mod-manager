@@ -52,6 +52,7 @@ import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
+import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -421,6 +422,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   <AutoUpdateToggle />
                   <DeveloperModeToggle />
                   <IngestToolToggle />
+                  <LinuxGpuToggle />
                 </div>
               </Section>
 

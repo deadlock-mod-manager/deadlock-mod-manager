@@ -94,6 +94,21 @@ pub async fn is_auto_update_disabled() -> Result<bool, Error> {
   Ok(disabled)
 }
 
+#[tauri::command]
+pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
+  #[cfg(target_os = "linux")]
+  {
+    let active = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_ok();
+    log::info!("Linux GPU optimization active: {active}");
+    Ok(active)
+  }
+
+  #[cfg(not(target_os = "linux"))]
+  {
+    Ok(false)
+  }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeepLinkData {
   pub download_url: String,
