@@ -113,6 +113,7 @@ export interface ProfileImportMod {
     size: number;
   }>;
   fileTree?: ModFileTree;
+  installedVpks?: string[];
 }
 
 export interface ProfileImportProgressEvent {
