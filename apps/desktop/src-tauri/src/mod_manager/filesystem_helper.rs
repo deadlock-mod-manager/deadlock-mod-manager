@@ -147,9 +147,10 @@ impl FileSystemHelper {
     // Fall back to junction (doesn't require admin privileges)
     // Uses the junction crate which calls Windows APIs directly (no shell invocation)
     junction::create(target, link).map_err(|e| {
-      Error::Io(std::io::Error::other(
-        format!("Failed to create junction: {}", e),
-      ))
+      Error::Io(std::io::Error::other(format!(
+        "Failed to create junction: {}",
+        e
+      )))
     })?;
 
     log::info!("Created junction successfully");

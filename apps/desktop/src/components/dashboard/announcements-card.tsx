@@ -17,7 +17,13 @@ import {
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
-import { Info, Megaphone, Warning, Wrench } from "@phosphor-icons/react";
+import {
+  ArrowSquareOut,
+  Info,
+  Megaphone,
+  Warning,
+  Wrench,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { format, formatDistanceToNow } from "date-fns";
@@ -116,53 +122,54 @@ export const AnnouncementsCard = () => {
                     />
                   )}
                   <div className='flex-1 min-w-0 space-y-2'>
-                    <div className='flex items-start justify-between gap-2'>
-                      <div className='flex items-center gap-2 flex-1 min-w-0'>
-                        <h3 className='font-semibold text-sm leading-tight'>
-                          {announcement.title}
-                        </h3>
-                        <Badge
-                          variant={
-                            announcement.category === "maintenance"
-                              ? "default"
-                              : announcement.category === "downtime"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className='shrink-0 text-xs'>
-                          {getCategoryLabel(announcement.category)}
-                        </Badge>
-                      </div>
-                      <span className='text-xs text-muted-foreground whitespace-nowrap'>
-                        {formatDistanceToNow(
-                          new Date(
-                            announcement.publishedAt ||
-                              announcement.createdAt ||
-                              new Date(),
-                          ),
-                          { addSuffix: true },
-                        )}
-                      </span>
+                    <div className='flex items-center gap-2 flex-wrap'>
+                      <h3 className='font-semibold text-sm leading-tight'>
+                        {announcement.title}
+                      </h3>
+                      <Badge
+                        variant={
+                          announcement.category === "maintenance"
+                            ? "default"
+                            : announcement.category === "downtime"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className='shrink-0 text-xs'>
+                        {getCategoryLabel(announcement.category)}
+                      </Badge>
                     </div>
+                    <span className='text-xs text-muted-foreground'>
+                      {formatDistanceToNow(
+                        new Date(
+                          announcement.publishedAt ||
+                            announcement.createdAt ||
+                            new Date(),
+                        ),
+                        { addSuffix: true },
+                      )}
+                    </span>
                     <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
                       <Markup
                         content={announcement.content}
                         transform={transformMarkupLinks}
                       />
                     </div>
+                    {announcement.linkUrl && (
+                      <div className='flex justify-end'>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openUrl(announcement.linkUrl!);
+                          }}
+                          size='sm'
+                          variant='outline'
+                          className='gap-1.5'>
+                          {announcement.linkLabel || "Learn More"}
+                          <ArrowSquareOut className='h-3.5 w-3.5' />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  {announcement.linkUrl && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openUrl(announcement.linkUrl!);
-                      }}
-                      size='sm'
-                      variant='outline'
-                      className='mt-2'>
-                      {announcement.linkLabel || "Learn More"}
-                    </Button>
-                  )}
                 </div>
               </div>
             ))

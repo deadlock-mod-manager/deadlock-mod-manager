@@ -613,6 +613,20 @@
     "overrideSuccess": ""
   },
   "modDetail": {
+    "backToMods": "",
+    "goBackHome": "",
+    "idLabel": "",
+    "authorLabel": "",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
+    "downloadsLabel": "",
+    "modStatusLabel": "",
+    "viewOriginalPost": "",
+    "updateMod": "",
+    "checkingForUpdate": "",
+    "noUpdateAvailable": "",
+    "checkUpdateError": "",
     "vpkReplacement": {
       "title": "",
       "description": "",

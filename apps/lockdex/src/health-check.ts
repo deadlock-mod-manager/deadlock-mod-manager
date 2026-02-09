@@ -28,7 +28,7 @@ export async function healthCheck(): Promise<{
   } catch (error) {
     checks.redis = {
       status: "unhealthy",
-      message: `Redis ping failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Redis ping failed: ${error as Error}`,
     };
   }
 
@@ -45,7 +45,7 @@ export async function healthCheck(): Promise<{
   } catch (error) {
     checks.redis = {
       status: "unhealthy",
-      message: `Redis read/write test failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Redis read/write test failed: ${error as Error}`,
     };
   }
 
@@ -76,7 +76,7 @@ export async function healthCheck(): Promise<{
   } catch (error) {
     checks.disk = {
       status: "unhealthy",
-      message: `Disk health check failed: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Disk health check failed: ${error as Error}`,
       details: undefined,
     };
   }

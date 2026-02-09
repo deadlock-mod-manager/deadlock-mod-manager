@@ -1,4 +1,4 @@
-import { and, desc, eq } from "@deadlock-mods/database";
+import { and, desc, eq, inArray } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";
@@ -41,6 +41,19 @@ export class ModRepository {
       .where(eq(mods.remoteId, remoteId))
       .limit(1);
     return result.length > 0 ? result[0] : null;
+  }
+
+  async findByRemoteIds(remoteIds: string[]): Promise<Mod[]> {
+    if (remoteIds.length === 0) {
+      return [];
+    }
+    return await this.db
+      .select()
+      .from(mods)
+      .where(
+        and(inArray(mods.remoteId, remoteIds), eq(mods.isBlacklisted, false)),
+      )
+      .orderBy(desc(mods.remoteUpdatedAt));
   }
 
   async create(mod: NewMod): Promise<Mod> {

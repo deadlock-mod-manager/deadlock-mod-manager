@@ -223,7 +223,7 @@ export class DocumentationSyncService {
         "error",
         contentHash,
         0,
-        error instanceof Error ? error.message : String(error),
+        (error as Error)?.message || "Unknown error",
       );
       if (errorUpdateResult.isErr()) {
         logger

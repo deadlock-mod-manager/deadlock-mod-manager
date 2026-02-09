@@ -265,12 +265,9 @@ impl ModManager {
             .unwrap_or_else(|| v.clone())
         })
         .collect();
-      self.vpk_manager.disable_vpks(
-        &addons_path,
-        &mod_id,
-        &vpk_filenames,
-        &vpk_filenames,
-      )?;
+      self
+        .vpk_manager
+        .disable_vpks(&addons_path, &mod_id, &vpk_filenames, &vpk_filenames)?;
       log::info!("Disabled {} VPKs for mod {mod_id}", vpk_filenames.len());
     } else {
       log::warn!("Mod not found in repository and no VPKs provided");
@@ -573,6 +570,16 @@ impl ModManager {
   /// Get a mutable reference to the config manager
   pub fn get_config_manager_mut(&mut self) -> &mut GameConfigManager {
     &mut self.config_manager
+  }
+
+  /// Get a reference to the mod repository
+  pub fn get_mod_repository(&self) -> &ModRepository {
+    &self.mod_repository
+  }
+
+  /// Get a mutable reference to the mod repository
+  pub fn get_mod_repository_mut(&mut self) -> &mut ModRepository {
+    &mut self.mod_repository
   }
 
   /// Get the mods store path

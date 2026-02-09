@@ -1,5 +1,6 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -103,6 +104,13 @@ export const useAddonAnalysis = () => {
               // This is a fully identified mod (has matchInfo) - add as installed
               addIdentifiedLocalMod(modDetails, addon.filePath);
               processedIdentifiedCount++;
+
+              // Register in Rust-side ModRepository so batch update cleanup can find it
+              await invoke("register_analyzed_mod", {
+                modId: addon.remoteId,
+                modName: modDetails.name,
+                installedVpks: [addon.fileName],
+              });
             } else {
               // This is a prefixed VPK (no matchInfo) - add as downloaded but not installed
               // Path can be empty since install_mod will find and rename the prefixed VPKs in addons
