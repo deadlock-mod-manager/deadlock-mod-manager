@@ -532,7 +532,7 @@ const MyMods = () => {
                   variant='default'
                   onClick={() => setShowBatchUpdateDialog(true)}
                   icon={<RefreshCw className='h-4 w-4' />}>
-                  {t("myMods.updateAll")} ({updatableCount})
+                  {t("myMods.updateAvailableCount", { count: updatableCount })}
                 </Button>
               )}
               <Button

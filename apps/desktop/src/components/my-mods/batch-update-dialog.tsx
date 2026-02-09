@@ -206,9 +206,9 @@ const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
               {t("myMods.batchUpdate.selectVariant")}
             </label>
             <Select
-              value={update.selectedDownload?.name}
-              onValueChange={(name) => {
-                const download = update.downloads.find((d) => d.name === name);
+              value={update.selectedDownload?.url}
+              onValueChange={(url) => {
+                const download = update.downloads.find((d) => d.url === url);
                 if (download) {
                   onSelectDownload(update.mod.remoteId, download);
                 }
@@ -218,7 +218,7 @@ const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
               </SelectTrigger>
               <SelectContent>
                 {update.downloads.map((download) => (
-                  <SelectItem key={download.name} value={download.name}>
+                  <SelectItem key={download.url} value={download.url}>
                     {download.name} ({formatSize(download.size)})
                   </SelectItem>
                 ))}

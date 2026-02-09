@@ -1,5 +1,5 @@
 import { EntityNotFoundError, mapDrizzleError } from "@deadlock-mods/common";
-import { and, eq } from "@deadlock-mods/database";
+import { and, eq, inArray } from "@deadlock-mods/database";
 import { err, ok } from "neverthrow";
 import type { Database } from "../client";
 import type { ModDownload, NewModDownload } from "../schema/mods";
@@ -41,6 +41,14 @@ export class ModDownloadRepository {
       .select()
       .from(modDownloads)
       .where(eq(modDownloads.modId, modId));
+  }
+
+  async findByModIds(modIds: string[]): Promise<ModDownload[]> {
+    if (modIds.length === 0) return [];
+    return await this.db
+      .select()
+      .from(modDownloads)
+      .where(inArray(modDownloads.modId, modIds));
   }
 
   async findByRemoteId(remoteId: string): Promise<ModDownload | null> {

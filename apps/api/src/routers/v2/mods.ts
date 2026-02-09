@@ -11,12 +11,11 @@ import {
   ModIdParamSchema,
   ModSchema,
   ModsListResponseSchema,
-  toModDownloadDto,
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
-import { env } from "@/lib/env";
 import { featureFlagsService } from "@/services/feature-flags";
+import { formatModDownloads } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../services/mod-sync";
 import { ForceSyncOutputSchema } from "../../validation/mods";
@@ -67,18 +66,13 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      const sortedDownloads = downloads
-        .sort((a, b) => b.size - a.size)
-        .map((download) => ({
-          ...download,
-          url: isModDownloadMirroringEnabled.unwrapOr(false)
-            ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
-            : download.url,
-        }));
-
       return {
-        downloads: toModDownloadDto(sortedDownloads),
-        count: sortedDownloads.length,
+        downloads: formatModDownloads(
+          downloads,
+          mod.id,
+          isModDownloadMirroringEnabled.unwrapOr(false),
+        ),
+        count: downloads.length,
       };
     }),
 
@@ -104,17 +98,11 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      // V2: Return all downloads even on the old endpoint
-      const sortedDownloads = downloads
-        .sort((a, b) => b.size - a.size)
-        .map((download) => ({
-          ...download,
-          url: isModDownloadMirroringEnabled.unwrapOr(false)
-            ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
-            : download.url,
-        }));
-
-      return toModDownloadDto(sortedDownloads);
+      return formatModDownloads(
+        downloads,
+        mod.id,
+        isModDownloadMirroringEnabled.unwrapOr(false),
+      );
     }),
 
   checkModUpdates: publicProcedure
@@ -136,32 +124,29 @@ export const modsRouter = {
 
       const mods = await modRepository.findByRemoteIds(remoteIds);
 
-      const updates = [];
-
-      for (const mod of mods) {
+      const modsNeedingUpdate = mods.filter((mod) => {
         const installedAt = installedModsMap.get(mod.remoteId);
-        if (!installedAt || !mod.filesUpdatedAt) {
-          continue;
-        }
+        return (
+          installedAt &&
+          mod.filesUpdatedAt &&
+          mod.filesUpdatedAt.getTime() > installedAt.getTime()
+        );
+      });
 
-        if (mod.filesUpdatedAt.getTime() > installedAt.getTime()) {
-          const downloads = await modDownloadRepository.findByModId(mod.id);
+      const allDownloads = await modDownloadRepository.findByModIds(
+        modsNeedingUpdate.map((mod) => mod.id),
+      );
 
-          const sortedDownloads = downloads
-            .sort((a, b) => b.size - a.size)
-            .map((download) => ({
-              ...download,
-              url: isModDownloadMirroringEnabled.unwrapOr(false)
-                ? `${env.MIRROR_SERVICE_URL}/download/${mod.id}/${download.id}`
-                : download.url,
-            }));
+      const downloadsByModId = Map.groupBy(allDownloads, (d) => d.modId);
 
-          updates.push({
-            mod: toModDto(mod),
-            downloads: toModDownloadDto(sortedDownloads),
-          });
-        }
-      }
+      const updates = modsNeedingUpdate.map((mod) => ({
+        mod: toModDto(mod),
+        downloads: formatModDownloads(
+          downloadsByModId.get(mod.id) ?? [],
+          mod.id,
+          isModDownloadMirroringEnabled.unwrapOr(false),
+        ),
+      }));
 
       return { updates };
     }),

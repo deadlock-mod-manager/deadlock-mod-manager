@@ -97,7 +97,11 @@ export const useBatchUpdate = () => {
 
   const executeBatchUpdate = async (): Promise<void> => {
     const activeProfile = getActiveProfile();
-    const profileFolder = activeProfile?.folderName ?? "";
+    const profileFolder = activeProfile?.folderName;
+
+    if (!profileFolder) {
+      throw new Error("Cannot batch update mods: no active profile selected");
+    }
 
     logger
       .withMetadata({
@@ -195,7 +199,6 @@ export const useBatchUpdate = () => {
         .withError(error instanceof Error ? error : new Error(String(error)))
         .error("Batch mod update failed");
       setUpdateProgress(null);
-      toast.error(t("myMods.batchUpdate.error"));
       throw error;
     }
   };
