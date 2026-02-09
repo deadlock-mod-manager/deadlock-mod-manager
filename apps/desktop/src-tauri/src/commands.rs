@@ -333,7 +333,6 @@ pub async fn show_mod_in_game(
     return Err(Error::GamePathNotSet);
   }
 
-  // Show the first VPK file if available, otherwise show the addons folder
   if let Some(first_vpk) = vpk_files.first() {
     let vpk_path = addons_path.join(first_vpk);
     if vpk_path.exists() {
@@ -436,7 +435,6 @@ pub async fn restore_gameinfo_backup() -> Result<(), Error> {
 pub async fn reset_to_vanilla() -> Result<(), Error> {
   let api_url = get_api_url();
 
-  // Get game path first
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
     mod_manager
@@ -446,7 +444,6 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
       .clone()
   };
 
-  // Download vanilla gameinfo.gi
   let vanilla_content = {
     let url = format!("{api_url}/artifacts/deadlock/gameinfo.gi");
     log::info!("Downloading vanilla gameinfo.gi from: {url}");
@@ -528,23 +525,19 @@ pub async fn extract_archive(
   let archive_path = PathBuf::from(&archive_path);
   let target_path = PathBuf::from(&target_path);
 
-  // Validate paths
   if !archive_path.exists() {
     return Err(Error::ModFileNotFound);
   }
 
-  // Validate that target path is within the allowed mods directory
   let mod_manager = MANAGER.lock().unwrap();
   let validated_target_path = mod_manager.validate_extract_target_path(&target_path)?;
   drop(mod_manager); // Release the lock before the potentially long-running extraction
 
-  // Create target directory if it doesn't exist
   std::fs::create_dir_all(&validated_target_path)?;
 
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &validated_target_path)?;
 
-  // Find all VPK files in the extracted directory
   let mut vpk_files = Vec::new();
   find_vpk_files(&validated_target_path, &mut vpk_files)?;
 
@@ -574,7 +567,6 @@ pub async fn remove_mod_folder(mod_path: String) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let path = PathBuf::from(&mod_path);
 
-  // ModManager now handles path validation and canonicalization
   mod_manager.remove_mod_folder(&path)?;
   Ok(())
 }
@@ -589,13 +581,11 @@ pub fn parse_vpk_file(
 
   let path = PathBuf::from(&file_path);
 
-  // Read the VPK file
   let vpk_data = std::fs::read(&path).map_err(|e| {
     log::error!("Failed to read VPK file {file_path}: {e}");
     e
   })?;
 
-  // Get file metadata
   let metadata = std::fs::metadata(&path).map_err(|e| {
     log::error!("Failed to get metadata for {file_path}: {e}");
     e
@@ -667,7 +657,6 @@ pub async fn analyze_local_addons(
   app_handle: AppHandle,
   profile_folder: Option<String>,
 ) -> Result<AnalyzeAddonsResult, Error> {
-  // Get the game path first, then release the lock
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
     match mod_manager.get_steam_manager().get_game_path() {
@@ -755,7 +744,6 @@ pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
 pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup, Error> {
   log::info!("Creating addons backup");
 
-  // Get backup manager and paths - release lock quickly
   let (addons_path, backup_dir, filename) = {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.set_backup_manager_app_handle(app_handle.clone());
@@ -768,7 +756,6 @@ pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup,
     (addons_path, backup_dir, filename)
   }; // Lock released here
 
-  // Run the backup creation in a blocking task WITHOUT holding the lock
   tokio::task::spawn_blocking(move || {
     crate::mod_manager::addons_backup_manager::AddonsBackupManager::create_backup_async(
       addons_path,
@@ -899,7 +886,6 @@ pub async fn copy_selected_vpks_from_archive(
   let mods_path = mod_manager.get_mods_store_path()?;
   let mod_dir = mods_path.join(&mod_id);
 
-  // Check if we have an already-extracted directory
   let extracted_dir = mod_dir.join("extracted");
 
   if !extracted_dir.exists() {
@@ -928,7 +914,6 @@ pub async fn copy_selected_vpks_from_archive(
     log::info!("Using already-extracted directory: {extracted_dir:?}");
   }
 
-  // Get game path and addons path
   let game_path = mod_manager
     .get_steam_manager()
     .get_game_path()
@@ -945,14 +930,12 @@ pub async fn copy_selected_vpks_from_archive(
     game_path.join("game").join("citadel").join("addons")
   };
 
-  // Create addons directory if it doesn't exist
   if !addons_path.exists() {
     std::fs::create_dir_all(&addons_path)?;
   }
 
   drop(mod_manager); // Release lock before file operations
 
-  // Copy selected VPKs from the already-extracted directory
   let vpk_manager = VpkManager::new();
   vpk_manager.copy_selected_vpks_with_prefix(&extracted_dir, &addons_path, &mod_id, &file_tree)?;
 
@@ -960,7 +943,6 @@ pub async fn copy_selected_vpks_from_archive(
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
 
-  // Delete archive after copying
   let extractor = ArchiveExtractor::new();
   for entry in std::fs::read_dir(&mod_dir)? {
     let entry = entry?;
@@ -1051,7 +1033,6 @@ pub async fn replace_mod_vpks(
 
   let source_paths: Vec<PathBuf> = source_vpk_paths.iter().map(PathBuf::from).collect();
 
-  // Validate all source files exist and are VPK files
   for path in &source_paths {
     if !path.exists() {
       return Err(Error::ModFileNotFound);
@@ -1383,7 +1364,6 @@ pub async fn get_ingest_status() -> Result<IngestStatus, Error> {
 pub async fn initialize_ingest_tool() -> Result<(), Error> {
   log::info!("Initializing ingest tool on startup");
 
-  // Check if already running
   if INGEST_WATCHER_RUNNING.load(Ordering::Relaxed) {
     log::warn!("Cache watcher is already running, skipping initialization");
     return Ok(());
@@ -1543,7 +1523,6 @@ pub async fn import_profile_batch(
     ));
   }
 
-  // Step 1: Create/validate profile folder
   let final_profile_folder = if import_type == "create" {
     // Generate a profile ID matching the pattern used by createProfile (profile_timestamp_random)
     // Use milliseconds timestamp + nanoseconds for uniqueness (similar to TypeScript's Date.now() + random)
@@ -1579,7 +1558,6 @@ pub async fn import_profile_batch(
     profile_folder
   };
 
-  // Step 2: Download all mods sequentially
   let mut download_results: Vec<Result<(), String>> = Vec::new();
 
   for (index, mod_data) in mods.iter().enumerate() {
@@ -1597,7 +1575,6 @@ pub async fn import_profile_batch(
       )
       .ok();
 
-    // Queue the download
     let app_local_data_dir = app_handle
       .path()
       .app_local_data_dir()
@@ -1627,15 +1604,12 @@ pub async fn import_profile_batch(
 
       match manager.get_download_status(&mod_data.mod_id).await {
         Ok(Some(status)) => {
-          // Download is still in progress
           if status.status == "downloading" {
             continue;
           }
-          // Download completed (status removed from active downloads)
           download_complete = true;
         }
         Ok(None) => {
-          // Download completed (status removed from active downloads)
           download_complete = true;
         }
         Err(e) => {
@@ -1645,10 +1619,7 @@ pub async fn import_profile_batch(
       }
     }
 
-    // Check if download actually completed by verifying files exist
-    // Add retry logic to wait for file processing to complete
     if download_complete && download_error.is_none() {
-      // Get game path and addons path (drop lock before await)
       let addons_path = MANAGER
         .lock()
         .unwrap()
@@ -1660,7 +1631,6 @@ pub async fn import_profile_batch(
         .join("addons")
         .join(&final_profile_folder);
 
-      // Retry logic to wait for VPKs to appear (file processing happens asynchronously)
       let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
       let mut vpks_found = false;
       let max_retries = 10;
@@ -1680,7 +1650,6 @@ pub async fn import_profile_batch(
             break;
           }
           Ok(_) => {
-            // No VPKs found yet, wait and retry
             if attempt < max_retries - 1 {
               log::debug!(
                 "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
@@ -1690,14 +1659,13 @@ pub async fn import_profile_batch(
                 retry_delay_ms
               );
               tokio::time::sleep(std::time::Duration::from_millis(retry_delay_ms)).await;
-              // Exponential backoff: double the delay each time (capped at 1 second)
               retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
             }
           }
           Err(e) => {
             log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
             download_results.push(Err(format!("Failed to verify download: {:?}", e)));
-            vpks_found = true; // Mark as handled to avoid duplicate error
+            vpks_found = true;
             break;
           }
         }
@@ -1724,13 +1692,11 @@ pub async fn import_profile_batch(
     }
   }
 
-  // Step 3: Install all successfully downloaded mods
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
 
   for (index, (mod_data, download_result)) in mods.iter().zip(download_results.iter()).enumerate() {
-    // Emit batch progress event
     app_handle
       .emit(
         "profile-import-progress",
@@ -1752,7 +1718,6 @@ pub async fn import_profile_batch(
       continue;
     }
 
-    // Install the mod
     let install_result = {
       let mut mod_manager = MANAGER.lock().unwrap();
       let deadlock_mod = Mod {
@@ -1772,7 +1737,6 @@ pub async fn import_profile_batch(
         log::info!("Successfully installed mod: {}", mod_data.mod_id);
         succeeded.push(mod_data.mod_id.clone());
 
-        // Collect installed mod information
         installed_mods.push(InstalledModInfo {
           mod_id: installed_mod.id.clone(),
           mod_name: installed_mod.name.clone(),
@@ -1787,7 +1751,6 @@ pub async fn import_profile_batch(
     }
   }
 
-  // Emit completion event
   app_handle
     .emit(
       "profile-import-progress",
@@ -1815,8 +1778,6 @@ pub async fn import_profile_batch(
   })
 }
 
-// Register Analyzed Mod Command
-// ============================================================================
 
 #[tauri::command]
 pub async fn register_analyzed_mod(
@@ -1853,7 +1814,6 @@ pub async fn register_analyzed_mod(
   Ok(())
 }
 
-// Batch Update Types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchUpdateMod {
@@ -1904,7 +1864,6 @@ pub async fn batch_update_mods(
     ));
   }
 
-  // Step 1: Create addons backup
   log::info!("Creating addons backup before updating mods");
 
   let (addons_path, backup_dir, filename) = {
@@ -1945,7 +1904,6 @@ pub async fn batch_update_mods(
     }
   }
 
-  // Step 2: For each mod: remove old VPKs, download new ones, install
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
@@ -1953,7 +1911,6 @@ pub async fn batch_update_mods(
   for (index, mod_data) in mods.iter().enumerate() {
     let progress_pct = (index as f64 / total_mods as f64) * 100.0;
 
-    // 2a. Remove old prefixed VPKs BEFORE downloading (the backup is already taken)
     app_handle
       .emit(
         "batch-update-progress",
@@ -2003,7 +1960,6 @@ pub async fn batch_update_mods(
       }
     }
 
-    // Also remove currently installed (enabled) VPKs for this mod
     let installed_vpk_cleanup_result: Result<usize, Error> = {
       let mut mod_manager = MANAGER.lock().unwrap();
       if let Some(existing_mod) = mod_manager
@@ -2058,8 +2014,6 @@ pub async fn batch_update_mods(
       }
     };
 
-    // 2a-fallback. If neither prefixed nor repository cleanup removed anything,
-    // use the frontend-provided installed_vpks as a last resort
     let prefixed_cleanup_count = cleanup_result.unwrap_or(0);
     if prefixed_cleanup_count == 0 && repo_cleanup_count == 0 && !mod_data.installed_vpks.is_empty()
     {
@@ -2088,7 +2042,6 @@ pub async fn batch_update_mods(
       }
     }
 
-    // 2b. Download the new mod files
     app_handle
       .emit(
         "batch-update-progress",
@@ -2156,7 +2109,6 @@ pub async fn batch_update_mods(
       continue;
     }
 
-    // 2c. Verify the download produced VPKs in the addons folder
     let mut vpks_found = false;
     let max_retries = 10;
     let mut retry_delay_ms = 100;
@@ -2212,7 +2164,6 @@ pub async fn batch_update_mods(
       continue;
     }
 
-    // 2d. Install the new mod (renames prefixed VPKs to pak##_dir.vpk)
     app_handle
       .emit(
         "batch-update-progress",

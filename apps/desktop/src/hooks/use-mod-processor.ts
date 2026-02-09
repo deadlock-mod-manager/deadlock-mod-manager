@@ -31,9 +31,6 @@ export interface ModMetadata {
   imageFile?: File | null;
 }
 
-/**
- * Custom hook for processing and installing mods
- */
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
@@ -165,20 +162,17 @@ export const useModProcessor = () => {
     const modDir = await join(modsRoot, modId);
     const filesDir = await join(modDir, "files");
 
-    // Create directories
     setProcessing(true, t("addMods.creatingDirectories"));
     await ensureDirectory(modsRoot);
     await ensureDirectory(modDir);
     await ensureDirectory(filesDir);
 
-    // Process preview image
     setProcessing(true, t("addMods.processingPreview"));
     const { previewName, imageDataUrl } = await processPreviewImage(
       metadata,
       modDir,
     );
 
-    // Process files
     setProcessing(true, t("addMods.processingFiles"));
     try {
       if (detectedSource.kind === "vpk") {
@@ -197,7 +191,6 @@ export const useModProcessor = () => {
       );
     }
 
-    // Validate files
     setProcessing(true, t("addMods.validatingFiles"));
     const isValid = await validateFiles(filesDir, detectedSource);
     if (!isValid) {
@@ -220,16 +213,13 @@ export const useModProcessor = () => {
         fileTree = (await invoke("get_mod_file_tree", {
           modPath: modDir,
         })) as ModFileTree;
-      } catch {
-        // File tree analysis is optional, continue if it fails
-      }
+      } catch {}
     } catch (error) {
       setProcessing(false);
       toast.error((error as Error)?.message || "Unknown error");
       return;
     }
 
-    // Save metadata
     setProcessing(true, t("addMods.savingMetadata"));
     const modMetadata = {
       id: modId,
@@ -249,7 +239,6 @@ export const useModProcessor = () => {
       JSON.stringify(modMetadata, null, 2),
     );
 
-    // Add to library
     setProcessing(true, t("addMods.addingToLibrary"));
     const modDto: ModDto = {
       id: modId,
@@ -303,19 +292,16 @@ export const useModProcessor = () => {
     const modsRoot = await join(base, "mods");
     const modDir = await join(modsRoot, modId);
 
-    // Create directories
     setProcessing(true, t("addMods.creatingDirectories"));
     await ensureDirectory(modsRoot);
     await ensureDirectory(modDir);
 
-    // Process preview image
     setProcessing(true, t("addMods.processingPreview"));
     const { previewName, imageDataUrl } = await processPreviewImage(
       metadata,
       modDir,
     );
 
-    // Save metadata
     setProcessing(true, t("addMods.savingMetadata"));
     const modMetadata = {
       id: modId,
@@ -335,7 +321,6 @@ export const useModProcessor = () => {
       JSON.stringify(modMetadata, null, 2),
     );
 
-    // Add to library
     setProcessing(true, t("addMods.addingToLibrary"));
     const modDto: ModDto = {
       id: modId,
@@ -366,10 +351,9 @@ export const useModProcessor = () => {
       filesUpdatedAt: null,
     };
 
-    // Set status to Installed since this addon is already in the game directory
     addMod(modDto, {
-      status: ModStatus.Installed, // Already installed
-      installedVpks: [existingPath], // Reference to the existing VPK
+      status: ModStatus.Installed,
+      installedVpks: [existingPath],
     });
     setModStatus(modId, ModStatus.Installed);
 
