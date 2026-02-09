@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { ArrowSquareOut, Sparkle } from "@phosphor-icons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";

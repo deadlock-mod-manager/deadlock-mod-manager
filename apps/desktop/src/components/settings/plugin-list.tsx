@@ -7,7 +7,7 @@ import {
   TagIcon,
   UserIcon,
 } from "@deadlock-mods/ui/icons";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";

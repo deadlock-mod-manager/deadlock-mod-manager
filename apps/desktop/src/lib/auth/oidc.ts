@@ -7,7 +7,7 @@ import {
   type TokenResponse,
 } from "@deadlock-mods/shared/auth";
 import { fetch } from "@tauri-apps/plugin-http";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { AUTH_URL } from "../config";
 
 const CLIENT_ID = "deadlockmods-desktop";

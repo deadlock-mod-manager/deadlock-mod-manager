@@ -16,7 +16,7 @@ import {
   RedditLogo,
   XLogo,
 } from "@phosphor-icons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import useUpdateManager from "@/hooks/use-update-manager";

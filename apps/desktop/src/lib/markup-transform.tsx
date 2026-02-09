@@ -1,4 +1,4 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import type { ReactNode } from "react";
 
 export const transformMarkupLinks = (

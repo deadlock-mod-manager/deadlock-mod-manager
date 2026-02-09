@@ -36,7 +36,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";

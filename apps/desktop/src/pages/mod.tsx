@@ -4,7 +4,7 @@ import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, RefreshCw, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";

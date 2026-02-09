@@ -296,6 +296,20 @@ pub async fn show_in_folder(path: String) -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn open_url(url: String) -> Result<(), Error> {
+  #[cfg(target_os = "linux")]
+  {
+    crate::utils_linux::open_url_linux(&url)
+  }
+
+  #[cfg(not(target_os = "linux"))]
+  {
+    tauri_plugin_opener::open_url(&url, None::<&str>)
+      .map_err(|e| Error::InvalidInput(format!("Failed to open URL: {e}")))
+  }
+}
+
+#[tauri::command]
 pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let mods_path = mod_manager.get_mods_store_path()?;
@@ -1778,7 +1792,6 @@ pub async fn import_profile_batch(
   })
 }
 
-
 #[tauri::command]
 pub async fn register_analyzed_mod(
   mod_id: String,
@@ -1787,11 +1800,7 @@ pub async fn register_analyzed_mod(
 ) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
 
-  if mod_manager
-    .get_mod_repository()
-    .get_mod(&mod_id)
-    .is_none()
-  {
+  if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
     log::info!(
       "Registering analyzed mod in repository: {} ({}) with {} VPKs",
       mod_name,

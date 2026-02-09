@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { Switch } from "@deadlock-mods/ui/components/switch";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { useTranslation } from "react-i18next";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";

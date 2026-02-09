@@ -25,7 +25,7 @@ import {
   Wrench,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from "@/lib/open-url";
 import { format, formatDistanceToNow } from "date-fns";
 import { Markup } from "interweave";
 import { useState } from "react";

@@ -15,6 +15,9 @@ mod mod_manager;
 mod reports;
 mod utils;
 
+#[cfg(target_os = "linux")]
+mod utils_linux;
+
 use tauri::Manager;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -232,6 +235,7 @@ pub fn run() {
       commands::stop_game,
       commands::start_game,
       commands::show_in_folder,
+      commands::open_url,
       commands::show_mod_in_store,
       commands::show_mod_in_game,
       commands::clear_mods,

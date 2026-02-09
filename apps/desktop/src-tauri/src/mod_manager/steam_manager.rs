@@ -114,12 +114,7 @@ impl SteamManager {
 
     #[cfg(target_os = "linux")]
     {
-      std::process::Command::new("xdg-open")
-        .arg(&steam_uri)
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+      crate::utils_linux::launch_steam_uri_linux(&steam_uri)?;
     }
 
     #[cfg(target_os = "macos")]
