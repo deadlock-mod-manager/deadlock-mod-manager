@@ -19,6 +19,7 @@
 	Localize
 	{
 		DuplicateTokensAssert	1
+		DisallowTokenContexts	1
 	}
 
 	SupportedLanguages
