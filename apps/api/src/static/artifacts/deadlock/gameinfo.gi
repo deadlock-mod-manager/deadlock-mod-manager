@@ -509,6 +509,9 @@
 		"cl_usesocketsforloopback" "1"
 		"cl_poll_network_early" "0"
 
+		// Perf/Parallelism
+		"iv_parallel_restore" "1"
+
 		// For perf reasons, since we don't use source-based DSP:
 		"disable_source_soundscape_trace"       "1"
 		
