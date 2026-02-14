@@ -346,6 +346,16 @@
 			GameOutputPath	"resource/localization/citadel_vdata"
 			TokenPrefix		"Citadel_VData_"
 		}
+		
+		TextureCompiler
+		{
+			//Compressor              "lz4"
+			//CompressMipsOnDisk      "1"
+			//CompressMinRatio        "95"
+			AllowNP2Textures		"1"
+			AllowPanoramaMipGeneration	"1"
+			//PublicToolsDefaultMaxRes "2048"
+		}
 	}
 
 	Source1Import
