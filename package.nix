@@ -1,23 +1,43 @@
 {
-  pkgs,
   lib,
-  version,
+  rustPlatform,
+  rustToolchain,
   src,
-  cargoHash,
-  pnpmHash,
+  nodejs_22,
+  pnpm_9,
+  fetchPnpmDeps,
+  pnpmConfigHook,
+  pkg-config,
+  wrapGAppsHook3,
+  desktop-file-utils,
+  webkitgtk_4_1,
+  cairo,
+  gdk-pixbuf,
+  glib,
+  glib-networking,
+  gtk3,
+  libsoup_3,
+  pango,
+  openssl,
+  bzip2,
+  gst_all_1,
+  makeDesktopItem,
+  fontconfig,
 }:
 
-pkgs.rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "deadlock-mod-manager";
-  inherit version src;
+  version = "nightly";
+  inherit src;
 
+  # Build from apps/desktop directory
   cargoRoot = "apps/desktop";
-  buildAndTestSubdir = "apps/desktop";
-  inherit cargoHash;
+  buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  nativeBuildInputs = with pkgs; [
-    rustPlatform.cargoSetupHook
-    cargo-tauri.hook
+  cargoHash = "sha256-Cex0Kqbzso0IPmbjtlEF5UZsnnwsUKS4Eq+danRkBc8=";
+
+  nativeBuildInputs = [
+    rustToolchain
     nodejs_22
     pnpmConfigHook
     pnpm_9
@@ -25,7 +45,8 @@ pkgs.rustPlatform.buildRustPackage {
     wrapGAppsHook3
   ];
 
-  buildInputs = with pkgs; [
+  buildInputs = [
+    # GTK and WebKit dependencies
     webkitgtk_4_1
     cairo
     gdk-pixbuf
@@ -34,9 +55,13 @@ pkgs.rustPlatform.buildRustPackage {
     gtk3
     libsoup_3
     pango
+    
+    # System libraries
     openssl
     bzip2
     desktop-file-utils
+    
+    # GStreamer for media playback in WebKit
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
@@ -44,44 +69,36 @@ pkgs.rustPlatform.buildRustPackage {
   ];
 
   pnpmRoot = ".";
-  pnpmDeps = pkgs.fetchPnpmDeps {
-    pname = "deadlock-mod-manager";
-    inherit version src;
-    pnpm = pkgs.pnpm_9;
+  pnpmDeps = fetchPnpmDeps {
+    inherit (finalAttrs)
+      pname
+      version
+      src
+      ;
+    pnpm = pnpm_9;
     fetcherVersion = 2;
     sourceRoot = "source";
-    hash = pnpmHash;
+    hash = "sha256-9GX/waeZU8/+be/bZlVztaR5y+iiRjYEx14Q69iG5z0=";
   };
 
-  # Fetch patch from nixpkgs to disable updater artifacts (avoids need for signing key)
-  patches = [
-    (pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/NixOS/nixpkgs/master/pkgs/by-name/de/deadlock-mod-manager/no-updater-artifacts.patch";
-      hash = "sha256-Ve0WIq4noldm1CwkEv9JelKsnY8kBjX3cpuv3R83quc=";
-    })
-  ];
-
-  VITE_API_URL = "https://api.deadlockmods.app";
+  # Environment variables
+  env.VITE_API_URL = "https://api.deadlockmods.app";
 
   # Skip tests that require network access
-  checkFlags = [
-    "--skip=download_manager::downloader::tests::test_download_file"
-  ];
+  doCheck = false;
 
   preFixup = ''
     gappsWrapperArgs+=(
-      --set FONTCONFIG_FILE "${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
+      --set FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf"
       --set TAURI_DIST_DIR "$out/share/deadlock-modmanager/dist"
-      --set WEBKIT_DISABLE_COMPOSITING_MODE 1
-      --set WEBKIT_DISABLE_DMABUF_RENDERER 1
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
-      --prefix PATH : ${lib.makeBinPath [ pkgs.desktop-file-utils ]}
+      --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
       --add-flags "--disable-auto-update"
     )
   '';
 
   desktopItems = [
-    (pkgs.makeDesktopItem {
+    (makeDesktopItem {
       desktopName = "deadlock-mod-manager";
       name = "Deadlock Mod Manager";
       exec = "deadlock-mod-manager %u";
@@ -96,15 +113,15 @@ pkgs.rustPlatform.buildRustPackage {
     })
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Mod manager for the Valve game Deadlock";
     homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager";
-    license = licenses.gpl3Plus;
-    maintainers = with maintainers; [
+    license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [
       mistyttm
       schromp
     ];
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
     mainProgram = "deadlock-mod-manager";
   };
-}
+})
