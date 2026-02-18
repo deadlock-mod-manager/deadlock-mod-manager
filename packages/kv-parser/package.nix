@@ -30,8 +30,6 @@ rustPlatform.buildRustPackage {
     # Copy the shared library (works for .so on Linux, .dylib on macOS)
     if [ -f target/release/libkv_parser.so ]; then
       cp target/release/libkv_parser.so $out/lib/
-    elif [ -f target/release/libkv_parser.dylib ]; then
-      cp target/release/libkv_parser.dylib $out/lib/
     fi
     
     # Also copy the .a file if it exists

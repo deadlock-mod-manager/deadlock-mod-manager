@@ -90,9 +90,12 @@ jobs:
               echo "Current cargo outputHashes: $CURRENT_CARGO_HASH"
               echo "Computed cargo hash: $CARGO_HASH"
               
-              # Note: This is a placeholder - you'll need to update the specific git dependency hash
-              # For now, we just log it for manual review
-              echo "::warning::Cargo hash may need updating. Check build logs."
+              # Fail the build to alert maintainers that manual hash update is required
+              echo "::error::Cargo git dependency hash mismatch detected in package.nix. Expected hash: $CARGO_HASH"
+              echo "::error::Please update the outputHashes block in package.nix with the correct hash from the build output above."
+              echo "BUILD_OUTPUT with full details:"
+              echo "$BUILD_OUTPUT"
+              exit 1
             fi
           fi
           echo "::endgroup::"
@@ -125,6 +128,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -167,6 +172,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -197,6 +203,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27

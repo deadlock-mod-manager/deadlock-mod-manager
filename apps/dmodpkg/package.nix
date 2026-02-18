@@ -2,13 +2,11 @@
   lib,
   stdenv,
   bun,
-  bun2nix,
   makeWrapper,
   dmodpkg,
 }:
 
 let
-  # Use bun2nix to handle Bun dependencies
   bunApp = stdenv.mkDerivation {
     pname = "dmodpkg-cli";
     version = "0.1.0";
@@ -36,9 +34,8 @@ let
       mkdir -p $out/bin
       mkdir -p $out/share/dmodpkg-cli
 
-      # Copy the built files and source (for runtime imports)
+      # Copy the built files
       cp -r dist $out/share/dmodpkg-cli/
-      cp -r src $out/share/dmodpkg-cli/
       cp package.json $out/share/dmodpkg-cli/
 
       # Create wrapper script that:
@@ -46,7 +43,7 @@ let
       # 2. Runs the CLI with bun
       makeWrapper ${bun}/bin/bun $out/bin/dmodpkg \
         --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ dmodpkg ]} \
-        --add-flags "run $out/share/dmodpkg-cli/src/index.ts"
+        --add-flags "run $out/share/dmodpkg-cli/dist/index.js"
 
       runHook postInstall
     '';

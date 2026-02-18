@@ -203,6 +203,11 @@ For Linux users, we provide a complete Nix flake that sets up your entire develo
 
 1. **Clone the repository**:
 
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/deadlock-mod-manager.git
+   cd deadlock-mod-manager
+   ```
+
 2. **Enable the Nix environment**:
 
    **With direnv** (automatic):

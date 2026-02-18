@@ -26,7 +26,7 @@ Nix provides several advantages for development:
 - **Isolated**: Doesn't interfere with your system packages or other projects
 - **Automatic**: With direnv, the environment activates when you enter the project directory
 
-## Quick Start
+## Installation
 
 <Steps>
 
@@ -38,8 +38,11 @@ If you don't have Nix installed, follow the [official installation guide](https:
 
 <Callout type='warn'>
   Make sure to enable experimental features (flakes and nix-command) by adding
-  this to `~/.config/nix/nix.conf`: ``` experimental-features = nix-command
-  flakes ```
+  this to `~/.config/nix/nix.conf`:
+
+```
+experimental-features = nix-command flakes
+```
 </Callout>
 
 </Step>
@@ -51,8 +54,20 @@ If you don't have Nix installed, follow the [official installation guide](https:
 direnv automatically loads and unloads environment variables based on your current directory:
 
 <Tabs items={["Debian/Ubuntu", "Arch Linux", "Using Nix"]}>
-  <Tab value='Debian/Ubuntu'>```bash sudo apt install direnv ```</Tab>
-  <Tab value='Arch Linux'>```bash sudo pacman -S direnv ```</Tab>
+  <Tab value='Debian/Ubuntu'>
+
+```bash
+sudo apt install direnv
+```
+
+  </Tab>
+  <Tab value='Arch Linux'>
+
+```bash
+sudo pacman -S direnv
+```
+
+  </Tab>
   <Tab value='Using Nix'>Install through your config or nix-shell</Tab>
 </Tabs>
 
@@ -60,13 +75,28 @@ Then add the hook to your shell config:
 
 <Tabs items={["bash", "zsh", "fish"]}>
   <Tab value='bash'>
-    Add to `~/.bashrc`: ```bash eval "$(direnv hook bash)" ```
+    Add to `~/.bashrc`:
+
+```bash
+eval "$(direnv hook bash)"
+```
+
   </Tab>
   <Tab value='zsh'>
-    Add to `~/.zshrc`: ```bash eval "$(direnv hook zsh)" ```
+    Add to `~/.zshrc`:
+
+```bash
+eval "$(direnv hook zsh)"
+```
+
   </Tab>
   <Tab value='fish'>
-    Add to `~/.config/fish/config.fish`: ```fish direnv hook fish | source ```
+    Add to `~/.config/fish/config.fish`:
+
+```fish
+direnv hook fish | source
+```
+
   </Tab>
 </Tabs>
 
@@ -91,12 +121,22 @@ cd deadlock-mod-manager
 
 <Tabs items={["With direnv", "Without direnv"]}>
   <Tab value='With direnv'>
-    ```bash direnv allow ``` The environment will be automatically loaded when
-    you enter the directory. All system dependencies are now available!
+
+```bash
+direnv allow
+```
+
+The environment will be automatically loaded when you enter the directory. All system dependencies are now available!
+
   </Tab>
   <Tab value='Without direnv'>
-    ```bash nix develop ``` This opens a new shell with all dependencies
-    available. Run this every time you want to work on the project.
+
+```bash
+nix develop
+```
+
+This opens a new shell with all dependencies available. Run this every time you want to work on the project.
+
   </Tab>
 </Tabs>
 
@@ -245,9 +285,9 @@ See [`.github/workflows/nix-test.yml`](https://github.com/deadlock-mod-manager/d
 ## Additional Resources
 
 - [NixOS Manual](https://nixos.org/manual/nix/stable/)
-- [Nix Flakes Documentation](https://nixos.wiki/wiki/Flakes)
+- [Nix Flakes Documentation](https://nix.dev/concepts/flakes)
 - [direnv Documentation](https://direnv.net/)
-- [Tauri Prerequisites](https://tauri.app/v2/guides/prerequisites/)
+- [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
 
 ## Contributing to the Nix Setup
 

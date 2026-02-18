@@ -30,13 +30,18 @@ rustPlatform.buildRustPackage {
     # Copy the shared library (works for .so on Linux, .dylib on macOS)
     if [ -f target/release/libvpk_parser.so ]; then
       cp target/release/libvpk_parser.so $out/lib/
-    elif [ -f target/release/libvpk_parser.dylib ]; then
-      cp target/release/libvpk_parser.dylib $out/lib/
     fi
     
     # Also copy the .a file if it exists
     if [ -f target/release/libvpk_parser.a ]; then
       cp target/release/libvpk_parser.a $out/lib/
+    fi
+
+    # Verify at least one artifact was copied
+    if [ ! -f $out/lib/libvpk_parser.* ]; then
+      echo "Error: No library artifacts found in target/release/" >&2
+      echo "Expected libvpk_parser.so or libvpk_parser.a" >&2
+      exit 1
     fi
 
     runHook postInstall

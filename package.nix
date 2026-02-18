@@ -99,8 +99,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   desktopItems = [
     (makeDesktopItem {
-      desktopName = "deadlock-mod-manager";
-      name = "Deadlock Mod Manager";
+      name = "deadlock-mod-manager";
+      desktopName = "Deadlock Mod Manager";
       exec = "deadlock-mod-manager %u";
       terminal = false;
       type = "Application";

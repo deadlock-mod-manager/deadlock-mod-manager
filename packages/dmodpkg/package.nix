@@ -30,8 +30,6 @@ rustPlatform.buildRustPackage {
     # Copy the shared library (works for .so on Linux, .dylib on macOS)
     if [ -f target/release/libdmodpkg.so ]; then
       cp target/release/libdmodpkg.so $out/lib/
-    elif [ -f target/release/libdmodpkg.dylib ]; then
-      cp target/release/libdmodpkg.dylib $out/lib/
     fi
     
     # Also copy the .a file if it exists
