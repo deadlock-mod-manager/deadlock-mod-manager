@@ -39,8 +39,12 @@
           extensions = [
             "rust-src"
             "rust-analyzer"
+            "clippy"
           ];
-          targets = [ "x86_64-unknown-linux-gnu" ];
+          targets = 
+            if system == "x86_64-linux" then [ "x86_64-unknown-linux-gnu" ]
+            else if system == "aarch64-linux" then [ "aarch64-unknown-linux-gnu" ]
+            else [ ];
         };
 
         # System libraries needed for Tauri
@@ -54,6 +58,11 @@
           openssl
           librsvg
           libsoup_3
+          # GStreamer for media playback
+          gst_all_1.gstreamer
+          gst_all_1.gst-plugins-base
+          gst_all_1.gst-plugins-good
+          gst_all_1.gst-plugins-bad
         ];
 
         # Build inputs for native development
@@ -89,13 +98,10 @@
         # Packages only available on Linux (Tauri with GTK/WebKit)
         packages = pkgs.lib.optionalAttrs isLinux {
           # Nightly build from the current source
+          # cargoHash is managed by CI workflow
           default = pkgs.callPackage ./package.nix {
-            version = "nightly-${self.shortRev or "dirty"}";
+            inherit rustToolchain;
             src = self;
-            # These hashes need to be updated when dependencies change
-            # Run `nix build .#nightly` and update hashes from error messages
-            cargoHash = "sha256-PeY59bvL/JGl8KyE0X+nPY3XC4TNa15lGcG2i///bCI=";
-            pnpmHash = "sha256-dS9s5oy8GtRek7OwiGDwv7280zZuyjxIhiA6BqH8C1w=";
           };
 
           nightly = self.packages.${system}.default;
@@ -129,6 +135,7 @@
 
               # Database tools
               postgresql
+              redis
 
               # Build tools
               gnumake
@@ -145,16 +152,25 @@
               export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
               export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
 
+              # Rust environment
+              export CARGO_HOME="$PWD/.cargo"
+              export RUSTUP_HOME="$PWD/.rustup"
+
               # Set up pnpm
               export PNPM_HOME="$HOME/.local/share/pnpm"
               export PATH="$PNPM_HOME:$PATH"
+
+              # Development environment defaults
+              export DATABASE_URL="postgresql://turborepo:123456789@localhost:5435/turborepo"
+              export REDIS_URL="redis://localhost:6379"
+              export NODE_ENV="development"
 
               # Verify pnpm installation
               if ! command -v pnpm &> /dev/null; then
                 echo "Installing pnpm..."
                 npm install -g pnpm
               fi
-            '';
+             '';
 
             # Environment variables for Tauri development
             WEBKIT_DISABLE_COMPOSITING_MODE = "1";
