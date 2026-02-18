@@ -110,6 +110,12 @@
           };
 
           nightly = self.packages.${system}.default;
+
+          # Native FFI libraries for Bun
+          vpk-parser = pkgs.callPackage ./packages/vpk-parser/package.nix {
+            inherit rustToolchain;
+            src = self;
+          };
         };
 
         # Dev shell only available on Linux (requires GTK/WebKit)
