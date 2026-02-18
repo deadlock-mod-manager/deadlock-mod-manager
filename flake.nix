@@ -135,7 +135,6 @@
           # CLI tool for mod package management
           dmodpkg-cli = pkgs.callPackage ./apps/dmodpkg/package.nix {
             inherit (self.packages.${system}) dmodpkg;
-            inherit (bun2nix.packages.${system}) bun2nix;
           };
         };
 
