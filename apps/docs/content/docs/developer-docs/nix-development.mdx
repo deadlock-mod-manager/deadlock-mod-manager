@@ -1,0 +1,257 @@
+---
+title: Development with Nix
+description: Set up a reproducible development environment using Nix flakes
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+# Development with Nix
+
+For Linux users, we provide a complete Nix flake that sets up your entire development environment with all required dependencies in a reproducible way.
+
+<Callout type='info'>
+  This setup is currently only available on Linux due to Tauri's dependency on
+  GTK and WebKit. After setting up Nix, follow the general [Development
+  Setup](/docs/developer-docs/development-setup) guide for the remaining steps.
+</Callout>
+
+## Why Use Nix?
+
+Nix provides several advantages for development:
+
+- **Reproducible**: Everyone gets exactly the same environment, eliminating "works on my machine" issues
+- **Complete**: All system libraries, tools, and dependencies are automatically managed
+- **Isolated**: Doesn't interfere with your system packages or other projects
+- **Automatic**: With direnv, the environment activates when you enter the project directory
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Install Nix
+
+If you don't have Nix installed, follow the [official installation guide](https://nixos.org/download.html):
+
+<Callout type='warn'>
+  Make sure to enable experimental features (flakes and nix-command) by adding
+  this to `~/.config/nix/nix.conf`: ``` experimental-features = nix-command
+  flakes ```
+</Callout>
+
+</Step>
+
+<Step>
+
+### Install direnv (Recommended)
+
+direnv automatically loads and unloads environment variables based on your current directory:
+
+<Tabs items={["Debian/Ubuntu", "Arch Linux", "Using Nix"]}>
+  <Tab value='Debian/Ubuntu'>```bash sudo apt install direnv ```</Tab>
+  <Tab value='Arch Linux'>```bash sudo pacman -S direnv ```</Tab>
+  <Tab value='Using Nix'>```bash nix-env -iA nixpkgs.direnv ```</Tab>
+</Tabs>
+
+Then add the hook to your shell config:
+
+<Tabs items={["bash", "zsh", "fish"]}>
+  <Tab value='bash'>
+    Add to `~/.bashrc`: ```bash eval "$(direnv hook bash)" ```
+  </Tab>
+  <Tab value='zsh'>
+    Add to `~/.zshrc`: ```bash eval "$(direnv hook zsh)" ```
+  </Tab>
+  <Tab value='fish'>
+    Add to `~/.config/fish/config.fish`: ```fish direnv hook fish | source ```
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Clone and Enable
+
+Clone the repository and enable the Nix environment:
+
+```bash
+git clone https://github.com/deadlock-mod-manager/deadlock-mod-manager.git
+cd deadlock-mod-manager
+```
+
+<Tabs items={["With direnv", "Without direnv"]}>
+  <Tab value='With direnv'>
+    ```bash direnv allow ``` The environment will be automatically loaded when
+    you enter the directory. All system dependencies are now available!
+  </Tab>
+  <Tab value='Without direnv'>
+    ```bash nix develop ``` This opens a new shell with all dependencies
+    available. Run this every time you want to work on the project.
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step>
+
+### Continue with General Setup
+
+Now follow the [Development Setup](/docs/developer-docs/development-setup) guide for:
+
+- Installing pnpm dependencies
+- Setting up the database
+- Starting the development server
+
+All system dependencies (Rust, Node.js, GTK, WebKit, etc.) are already provided by Nix!
+
+</Step>
+
+</Steps>
+
+## What's Included?
+
+The Nix flake automatically provides:
+
+### Development Tools
+
+- **Rust toolchain** (stable latest) with rust-analyzer and clippy
+- **Node.js 22** with pnpm 9 and bun
+- **Code quality tools**: biome, turbo, lefthook
+
+### System Libraries
+
+All required libraries for Tauri development:
+
+- GTK3 and WebKit2GTK 4.1
+- GStreamer (for media playback)
+- Cairo, Pango, GDK-PixBuf
+- OpenSSL, bzip2
+
+### Database & Services
+
+- PostgreSQL client tools
+- Redis client tools
+- Docker & Docker Compose
+
+### Build Tools
+
+- gcc, make, pkg-config
+- cargo-watch, cargo-edit
+- CLI utilities: ripgrep, fd, jq
+
+## Building the Nix Package
+
+You can build a standalone Nix package of the desktop application:
+
+```bash
+# Build the nightly package
+nix build .#nightly
+
+# The built application is available in ./result
+./result/bin/deadlock-mod-manager
+
+# Or build and run directly
+nix run .#nightly
+```
+
+This produces a fully self-contained package with all dependencies included.
+
+## Formatting Nix Files
+
+Format all Nix files in the project using:
+
+```bash
+nix fmt
+```
+
+This uses `nixpkgs-fmt` to ensure consistent formatting.
+
+## Environment Variables
+
+The Nix development shell automatically sets up several environment variables:
+
+| Variable                          | Value                                                       | Purpose                |
+| --------------------------------- | ----------------------------------------------------------- | ---------------------- |
+| `DATABASE_URL`                    | `postgresql://turborepo:123456789@localhost:5435/turborepo` | Database connection    |
+| `REDIS_URL`                       | `redis://localhost:6379`                                    | Redis connection       |
+| `NODE_ENV`                        | `development`                                               | Node.js environment    |
+| `CARGO_HOME`                      | `$PWD/.cargo`                                               | Cargo cache directory  |
+| `RUST_BACKTRACE`                  | `1`                                                         | Enable Rust backtraces |
+| `WEBKIT_DISABLE_COMPOSITING_MODE` | `1`                                                         | WebKit optimization    |
+
+## Troubleshooting
+
+### Environment Not Loading
+
+<Callout type='error'>
+  **Problem**: The environment isn't activating automatically
+</Callout>
+
+**Solution**:
+
+- Ensure you ran `direnv allow` in the project directory
+- Verify direnv is properly hooked in your shell config
+- Try running `direnv reload` to force a refresh
+
+### Hash Mismatch Errors
+
+<Callout type='error'>
+  **Problem**: Build fails with "hash mismatch" errors
+</Callout>
+
+**Solution**:
+
+- The dependency hashes in `package.nix` may need updating
+- Check the GitHub Actions CI logs for the correct hashes
+- The CI automatically updates hashes when dependencies change
+
+### Nix Store Out of Space
+
+<Callout type='error'>
+  **Problem**: Nix store is consuming too much disk space
+</Callout>
+
+**Solution**:
+
+```bash
+# Remove old generations and collect garbage
+nix-collect-garbage -d
+
+# For more aggressive cleanup
+nix store gc --verbose
+```
+
+## CI/CD Integration
+
+The project uses GitHub Actions to:
+
+- Automatically update dependency hashes (pnpm)
+- Test the Nix build on every PR
+- Verify the development shell loads correctly
+- Build and cache the nightly package
+
+See [`.github/workflows/nix-test.yml`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/.github/workflows/nix-test.yml) for the complete CI configuration.
+
+## Additional Resources
+
+- [NixOS Manual](https://nixos.org/manual/nix/stable/)
+- [Nix Flakes Documentation](https://nixos.wiki/wiki/Flakes)
+- [direnv Documentation](https://direnv.net/)
+- [Tauri Prerequisites](https://tauri.app/v2/guides/prerequisites/)
+
+## Contributing to the Nix Setup
+
+If you find issues or want to improve the Nix configuration:
+
+1. Open an issue describing the problem or enhancement
+2. Submit a PR with changes to `flake.nix` or `package.nix`
+3. Ensure `nix flake check` passes
+4. Test both development shell and package builds
+
+The Nix configuration is actively maintained and we welcome contributions!

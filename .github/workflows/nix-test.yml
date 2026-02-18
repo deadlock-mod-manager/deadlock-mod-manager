@@ -49,20 +49,20 @@ jobs:
         run: |
           set -euo pipefail
           UPDATED="false"
-          
+
           # Install prefetch tools from nixpkgs
           echo "::group::Installing prefetch tools"
           nix profile install nixpkgs#prefetch-npm-deps
           echo "::endgroup::"
-          
+
           # Compute pnpm hash using prefetch-npm-deps
           echo "::group::Computing pnpm hash"
           PNPM_HASH=$(prefetch-npm-deps pnpm-lock.yaml 2>/dev/null | tail -1 || echo "")
           CURRENT_PNPM_HASH=$(grep -oP 'hash = "\Ksha256-[^"]+' package.nix | head -1 || echo "")
-          
+
           echo "Current pnpm hash: $CURRENT_PNPM_HASH"
           echo "Computed pnpm hash: $PNPM_HASH"
-          
+
           if [ -n "$PNPM_HASH" ] && [ "$PNPM_HASH" != "$CURRENT_PNPM_HASH" ]; then
             echo "Updating pnpmHash in package.nix..."
             # Update the first hash occurrence (which is the pnpmDeps hash)
@@ -70,7 +70,7 @@ jobs:
             UPDATED="true"
           fi
           echo "::endgroup::"
-          
+
           # Compute cargo hash by attempting to build and extracting the expected hash
           echo "::group::Computing cargo hash"
           CARGO_LOCK_FILE="apps/desktop/src-tauri/Cargo.lock"
@@ -96,10 +96,10 @@ jobs:
             fi
           fi
           echo "::endgroup::"
-          
-          
+
+
           echo "updated=$UPDATED" >> $GITHUB_OUTPUT
-          
+
           if [ "$UPDATED" = "true" ]; then
             echo "::notice::Hashes were updated"
             grep "hash =" package.nix | head -1
@@ -110,10 +110,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           git add package.nix
           git diff --staged --quiet && exit 0
-          
+
           git commit -m "chore(nix): update dependency hashes [skip ci]"
           git push
 
@@ -150,7 +150,7 @@ jobs:
           echo "::group::Disk space before cleanup"
           df -h
           echo "::endgroup::"
-          
+
           echo "::group::Removing unnecessary software"
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
@@ -158,7 +158,7 @@ jobs:
           sudo rm -rf /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
           echo "::endgroup::"
-          
+
           echo "::group::Disk space after cleanup"
           df -h
           echo "::endgroup::"

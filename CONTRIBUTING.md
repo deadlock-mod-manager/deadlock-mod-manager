@@ -206,11 +206,13 @@ For Linux users, we provide a complete Nix flake that sets up your entire develo
 2. **Enable the Nix environment**:
 
    **With direnv** (automatic):
+
    ```bash
    direnv allow
    ```
 
    **Without direnv** (manual):
+
    ```bash
    nix develop
    ```
@@ -265,14 +267,17 @@ nix run .#nightly
 #### Troubleshooting
 
 **Q: The environment isn't loading automatically**
+
 - Make sure you ran `direnv allow` in the project directory
 - Check that direnv is properly hooked in your shell config
 
 **Q: Build fails with "hash mismatch"**
+
 - The dependency hashes in `flake.nix` may need updating
 - Check the GitHub Actions CI logs for the correct hashes
 
 **Q: Docker isn't working**
+
 - Make sure your user is in the `docker` group: `sudo usermod -aG docker $USER`
 - You may need to log out and back in for group changes to take effect
 
