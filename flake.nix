@@ -116,6 +116,11 @@
             inherit rustToolchain;
             src = self;
           };
+
+          kv-parser = pkgs.callPackage ./packages/kv-parser/package.nix {
+            inherit rustToolchain;
+            src = self;
+          };
         };
 
         # Dev shell only available on Linux (requires GTK/WebKit)
