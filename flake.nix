@@ -8,6 +8,10 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    bun2nix = {
+      url = "github:nix-community/bun2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -16,6 +20,7 @@
       nixpkgs,
       flake-utils,
       rust-overlay,
+      bun2nix,
     }:
     let
       # Package only supports Linux (Tauri with GTK/WebKit)
