@@ -85,23 +85,8 @@
           makeWrapper
         ];
 
-        # Development libraries for linking
-        libraries = with pkgs; [
-          webkitgtk_4_1
-          gtk3
-          cairo
-          gdk-pixbuf
-          glib
-          dbus
-          openssl
-          librsvg
-          libsoup_3
-          # GStreamer for media playback
-          gst_all_1.gstreamer
-          gst_all_1.gst-plugins-base
-          gst_all_1.gst-plugins-good
-          gst_all_1.gst-plugins-bad
-        ];
+        # Development libraries for linking (reuse tauriLibraries)
+        libraries = tauriLibraries;
 
       in
       {

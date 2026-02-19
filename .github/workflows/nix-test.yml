@@ -66,7 +66,7 @@ jobs:
           if [ -n "$PNPM_HASH" ] && [ "$PNPM_HASH" != "$CURRENT_PNPM_HASH" ]; then
             echo "Updating pnpmHash in package.nix..."
             # Update the first hash occurrence (which is the pnpmDeps hash)
-            sed -i "0,/hash = \"[^\"]*\"/s//hash = \"$PNPM_HASH\"/" package.nix
+            sed -i "0,|hash = \"[^\"]*\"|s||hash = \"$PNPM_HASH\"|" package.nix
             UPDATED="true"
           fi
           echo "::endgroup::"

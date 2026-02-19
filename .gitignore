@@ -54,3 +54,7 @@ target/
 .pnpm-store
 
 result
+
+# Nix development environment
+.cargo/
+.rustup/

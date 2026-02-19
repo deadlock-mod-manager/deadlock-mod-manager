@@ -38,7 +38,7 @@ rustPlatform.buildRustPackage {
     fi
 
     # Verify at least one artifact was copied
-    if [ ! -f $out/lib/libvpk_parser.* ]; then
+    if ! ls "$out/lib/libvpk_parser."* >/dev/null 2>&1; then
       echo "Error: No library artifacts found in target/release/" >&2
       echo "Expected libvpk_parser.so or libvpk_parser.a" >&2
       exit 1

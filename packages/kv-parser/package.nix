@@ -27,7 +27,7 @@ rustPlatform.buildRustPackage {
 
     mkdir -p $out/lib
     
-    # Copy the shared library (works for .so on Linux, .dylib on macOS)
+    # Copy the shared library (.so on Linux)
     if [ -f target/release/libkv_parser.so ]; then
       cp target/release/libkv_parser.so $out/lib/
     fi
