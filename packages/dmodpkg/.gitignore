@@ -1,6 +1,7 @@
 # Rust build artifacts
 target/
-Cargo.lock
+# Cargo.lock is tracked for Nix reproducibility
+# Cargo.lock
 
 # TypeScript build
 dist/

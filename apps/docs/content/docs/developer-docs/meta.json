@@ -4,6 +4,7 @@
   "pages": [
     "index",
     "development-setup",
+    "nix-development",
     "project-structure",
     "architecture",
     "auth-service",

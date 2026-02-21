@@ -91,6 +91,29 @@ For development setup, project architecture, contributing guidelines, and API in
 - **[Developer Documentation](https://docs.deadlockmods.app/developer-docs)** - Development setup and architecture
 - **[API Reference](https://docs.deadlockmods.app/api)** - Interactive API documentation
 
+### Development with Nix (Linux only)
+
+[![Built with Nix](https://img.shields.io/badge/Built_With-Nix-5277C3.svg?logo=nixos&labelColor=73C3D5)](https://nixos.org)
+
+For Linux developers, we provide a complete Nix development environment:
+
+```bash
+# Clone and enter the project
+git clone https://github.com/deadlock-mod-manager/deadlock-mod-manager.git
+cd deadlock-mod-manager
+
+# Start development shell (or use direnv for automatic loading)
+nix develop
+
+# Install dependencies and start
+pnpm install
+pnpm desktop:dev
+```
+
+The Nix environment includes everything you need: Rust, Node.js, pnpm, Docker, system libraries, and all development tools.
+
+For detailed Nix setup instructions, see [CONTRIBUTING.md](CONTRIBUTING.md#development-with-nix).
+
 ## Translation & Localization
 
 🌍 **Help us translate Deadlock Mod Manager!**

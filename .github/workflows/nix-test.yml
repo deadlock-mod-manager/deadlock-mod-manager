@@ -1,0 +1,235 @@
+name: Test Nix Build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "package.nix"
+      - "apps/desktop/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/nix-test.yml"
+  push:
+    branches: [main]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "package.nix"
+      - "apps/desktop/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/nix-test.yml"
+  workflow_dispatch:
+
+jobs:
+  update-hashes:
+    name: Update Nix Hashes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      hashes_updated: ${{ steps.update.outputs.updated }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Compute and update hashes
+        id: update
+        run: |
+          set -euo pipefail
+          UPDATED="false"
+
+          # Install prefetch tools from nixpkgs
+          echo "::group::Installing prefetch tools"
+          nix profile install nixpkgs#prefetch-npm-deps
+          echo "::endgroup::"
+
+          # Compute pnpm hash using prefetch-npm-deps
+          echo "::group::Computing pnpm hash"
+          PNPM_HASH=$(prefetch-npm-deps pnpm-lock.yaml 2>/dev/null | tail -1 || echo "")
+          CURRENT_PNPM_HASH=$(grep -oP 'hash = "\Ksha256-[^"]+' package.nix | head -1 || echo "")
+
+          echo "Current pnpm hash: $CURRENT_PNPM_HASH"
+          echo "Computed pnpm hash: $PNPM_HASH"
+
+          if [ -n "$PNPM_HASH" ] && [ "$PNPM_HASH" != "$CURRENT_PNPM_HASH" ]; then
+            echo "Updating pnpmHash in package.nix..."
+            # Update the first hash occurrence (which is the pnpmDeps hash)
+            sed -i "0,|hash = \"[^\"]*\"|s||hash = \"$PNPM_HASH\"|" package.nix
+            UPDATED="true"
+          fi
+          echo "::endgroup::"
+
+          # Compute cargo hash by attempting to build and extracting the expected hash
+          echo "::group::Computing cargo hash"
+          CARGO_LOCK_FILE="apps/desktop/src-tauri/Cargo.lock"
+          if [ -f "$CARGO_LOCK_FILE" ]; then
+            # Try to build and capture the error message with the expected hash
+            BUILD_OUTPUT=$(nix build .#nightly --impure --no-link 2>&1 || true)
+            
+            # Extract the expected hash from the error message
+            CARGO_HASH=$(echo "$BUILD_OUTPUT" | grep -oP 'got:\s+\Ksha256-[a-zA-Z0-9+/=]+' | head -1 || echo "")
+            
+            if [ -z "$CARGO_HASH" ]; then
+              # If build succeeded or no hash error, check if we need to update by comparing lock file hash
+              echo "No cargo hash error found - dependencies may already be correct"
+            else
+              CURRENT_CARGO_HASH=$(grep -oP 'outputHashes = \{[^}]*\}' package.nix || echo "")
+              
+              echo "Current cargo outputHashes: $CURRENT_CARGO_HASH"
+              echo "Computed cargo hash: $CARGO_HASH"
+              
+              # Fail the build to alert maintainers that manual hash update is required
+              echo "::error::Cargo git dependency hash mismatch detected in package.nix. Expected hash: $CARGO_HASH"
+              echo "::error::Please update the outputHashes block in package.nix with the correct hash from the build output above."
+              echo "BUILD_OUTPUT with full details:"
+              echo "$BUILD_OUTPUT"
+              exit 1
+            fi
+          fi
+          echo "::endgroup::"
+
+
+          echo "updated=$UPDATED" >> $GITHUB_OUTPUT
+
+          if [ "$UPDATED" = "true" ]; then
+            echo "::notice::Hashes were updated"
+            grep "hash =" package.nix | head -1
+          fi
+
+      - name: Commit and push updated hashes
+        if: steps.update.outputs.updated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add package.nix
+          git diff --staged --quiet && exit 0
+
+          git commit -m "chore(nix): update dependency hashes [skip ci]"
+          git push
+
+  check-flake:
+    name: Check Flake
+    runs-on: ubuntu-latest
+    needs: [update-hashes]
+    if: always() && !failure() && !cancelled()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Check flake
+        run: nix flake check --all-systems --show-trace
+
+      - name: Show flake metadata
+        run: nix flake metadata
+
+  build-nightly:
+    name: Build Nightly Package
+    runs-on: ubuntu-latest
+    needs: check-flake
+    if: always() && needs.check-flake.result == 'success'
+    steps:
+      - name: Free disk space
+        run: |
+          echo "::group::Disk space before cleanup"
+          df -h
+          echo "::endgroup::"
+
+          echo "::group::Removing unnecessary software"
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          echo "::endgroup::"
+
+          echo "::group::Disk space after cleanup"
+          df -h
+          echo "::endgroup::"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Build nightly package
+        run: |
+          nix build .#nightly --print-build-logs
+
+      - name: Check binary
+        run: |
+          nix run .#nightly -- --version || true
+          nix path-info .#nightly
+
+      - name: Show package info
+        run: |
+          nix eval .#nightly.meta.description --json
+          nix eval .#nightly.version --json || echo "Version info not available"
+
+  build-dev-shell:
+    name: Test Development Shell
+    runs-on: ubuntu-latest
+    needs: check-flake
+    if: always() && needs.check-flake.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Build development shell
+        run: |
+          nix develop --command echo "Development shell loaded successfully"
+
+      - name: Check dev tools availability
+        run: |
+          nix develop --command bash -c "
+            echo 'Checking Rust toolchain...'
+            rustc --version
+            cargo --version
+
+            echo 'Checking Node.js tools...'
+            node --version
+            pnpm --version
+            bun --version
+
+            echo 'Checking development tools...'
+            biome --version || echo 'biome not in PATH'
+            turbo --version
+          "

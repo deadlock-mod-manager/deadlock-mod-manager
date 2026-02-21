@@ -47,6 +47,14 @@ yarn-error.log*
 temp
 target/
 
+.direnv/
+
 .cursor/mcp.json
 .cursor/plans
 .pnpm-store
+
+result
+
+# Nix development environment
+.cargo/
+.rustup/

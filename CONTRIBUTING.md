@@ -22,11 +22,22 @@ Thank you for your interest in contributing to Deadlock Mod Manager! This guide 
 
 Before you begin, ensure you have the following installed:
 
+**Option 1: Traditional Setup**
+
 - **Node.js** (>= 24.8.0) - [Download here](https://nodejs.org/) or use nvm
 - **pnpm** (>= 10.18.2) - Install with `npm install -g pnpm`
 - **Docker** - For local database development
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
 - **Git** - For version control
+
+**Option 2: Nix Development Environment (Recommended for Linux)**
+
+If you're on Linux, you can use Nix to automatically set up a complete development environment with all dependencies:
+
+- **Nix** (with flakes enabled) - [Install here](https://nixos.org/download.html)
+- **direnv** (optional but recommended) - For automatic environment loading
+
+See [Development with Nix](#development-with-nix) section below for setup instructions.
 
 #### Linux System Dependencies
 
@@ -163,6 +174,117 @@ pnpm db:push
 # Seed with initial data (optional)
 pnpm db:seed
 ```
+
+### Development with Nix
+
+For Linux users, we provide a complete Nix flake that sets up your entire development environment with all required dependencies.
+
+#### Why Use Nix?
+
+- **Reproducible**: Everyone gets exactly the same environment
+- **Complete**: Includes Rust, Node.js, pnpm, Docker, PostgreSQL, Redis, and all system libraries
+- **Isolated**: Doesn't interfere with your system packages
+- **Automatic**: With direnv, the environment activates automatically when you enter the project
+
+#### Prerequisites
+
+1. **Install Nix** (if not already installed):
+
+   Follow the [official instructions](https://nixos.org/download.html).
+
+2. **Install direnv** (optional but highly recommended):
+   Then add this to your shell config (`~/.bashrc` or `~/.zshrc`):
+
+   ```bash
+   eval "$(direnv hook bash)"  # or 'zsh' for zsh
+   ```
+
+#### Quick Start with Nix
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/deadlock-mod-manager.git
+   cd deadlock-mod-manager
+   ```
+
+2. **Enable the Nix environment**:
+
+   **With direnv** (automatic):
+
+   ```bash
+   direnv allow
+   ```
+
+   **Without direnv** (manual):
+
+   ```bash
+   nix develop
+   ```
+
+3. **Install JavaScript dependencies**:
+
+   ```bash
+   pnpm install
+   ```
+
+4. **Set up the database**:
+
+   ```bash
+   docker compose up -d
+   pnpm db:push
+   ```
+
+5. **Start developing**:
+
+   ```bash
+   pnpm desktop:dev
+   ```
+
+#### What's Included in the Nix Environment?
+
+The Nix flake automatically provides:
+
+- **Rust toolchain** with rust-analyzer and clippy
+- **Node.js 22** with pnpm and bun
+- **System libraries** for Tauri (GTK, WebKit, etc.)
+- **Development tools** (biome, turbo, lefthook, oxlint, oxfmt)
+- **Database tools** (PostgreSQL, Redis)
+- **Docker & Docker Compose**
+- **Build tools** (gcc, make, pkg-config)
+- **CLI utilities** (ripgrep, fd, jq)
+
+#### Building the Nix Package
+
+To build the desktop app as a Nix package:
+
+```bash
+# Build the nightly package
+nix build .#nightly
+
+# Run the built package
+./result/bin/deadlock-mod-manager
+
+# Or build and run directly
+nix run .#nightly
+```
+
+#### Troubleshooting
+
+**Q: The environment isn't loading automatically**
+
+- Make sure you ran `direnv allow` in the project directory
+- Check that direnv is properly hooked in your shell config
+
+**Q: Build fails with "hash mismatch"**
+
+- The dependency hashes in `flake.nix` may need updating
+- Check the GitHub Actions CI logs for the correct hashes
+
+**Q: Docker isn't working**
+
+- Make sure your user is in the `docker` group: `sudo usermod -aG docker $USER`
+- You may need to log out and back in for group changes to take effect
 
 ### Available Commands
 
