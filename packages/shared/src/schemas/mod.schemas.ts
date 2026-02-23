@@ -34,6 +34,7 @@ export const ModDownloadDtoSchema = z.object({
   url: z.string(),
   size: z.number().int(),
   name: z.string(), // This comes from the 'file' field in the database
+  description: z.string().nullable().optional(),
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
   md5Checksum: z.string().nullable(),

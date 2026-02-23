@@ -480,6 +480,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         url: file._sDownloadUrl,
         file: file._sFile,
         size: file._nFilesize,
+        description: file._sDescription || null,
         modId: dbMod.id,
         md5Checksum: file._sMd5Checksum ?? null,
         createdAt: new Date(file._tsDateAdded * 1000),

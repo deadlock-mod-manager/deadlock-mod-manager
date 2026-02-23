@@ -9,6 +9,7 @@ export const toModDownloadDto = (mod: ModDownload[]) => {
     url: download.url,
     size: download.size,
     name: download.file,
+    description: download.description,
     createdAt: download.createdAt,
     updatedAt: download.updatedAt,
     md5Checksum: download.md5Checksum,

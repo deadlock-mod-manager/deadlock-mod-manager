@@ -316,6 +316,13 @@
       "when": 1770412274286,
       "tag": "0044_nebulous_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1771879712015,
+      "tag": "0045_heavy_masked_marvel",
+      "breakpoints": true
     }
   ]
 }

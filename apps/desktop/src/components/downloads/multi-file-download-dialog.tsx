@@ -145,6 +145,11 @@ export function MultiFileDownloadDialog({
                       {file.name}
                     </span>
                   </div>
+                  {file.description && (
+                    <p className='text-muted-foreground text-xs mt-0.5 line-clamp-2'>
+                      {file.description}
+                    </p>
+                  )}
                   <div className='flex flex-col gap-1'>
                     <div className='flex items-center justify-between'>
                       <div className='text-muted-foreground text-sm'>

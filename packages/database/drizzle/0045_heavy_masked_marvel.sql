@@ -1,0 +1,1 @@
+ALTER TABLE "mod_download" ADD COLUMN "description" text;

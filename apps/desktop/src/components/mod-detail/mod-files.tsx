@@ -42,23 +42,28 @@ export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
           {files
             .sort((a, b) => b.size - a.size)
             .map((file) => (
-              <li
-                className='flex items-center justify-between text-sm'
-                key={file.name}>
-                <div className='flex min-w-0 flex-1 items-center gap-2'>
-                  <span className='truncate ' title={file.name}>
-                    {file.name}{" "}
-                    <DateDisplay
-                      date={file.createdAt}
-                      prefix='added'
-                      className='text-xs text-muted-foreground'
-                    />
+              <li className='flex flex-col gap-0.5 text-sm' key={file.name}>
+                <div className='flex items-center justify-between'>
+                  <div className='flex min-w-0 flex-1 items-center gap-2'>
+                    <span className='truncate ' title={file.name}>
+                      {file.name}{" "}
+                      <DateDisplay
+                        date={file.createdAt}
+                        prefix='added'
+                        className='text-xs text-muted-foreground'
+                      />
+                    </span>
+                  </div>
+                  <span className='ml-2 text-muted-foreground text-xs'>
+                    {formatSize(file.size)}
+                    {file.md5Checksum ? ` (MD5: ${file.md5Checksum})` : ""}
                   </span>
                 </div>
-                <span className='ml-2 text-muted-foreground text-xs'>
-                  {formatSize(file.size)}
-                  {file.md5Checksum ? ` (MD5: ${file.md5Checksum})` : ""}
-                </span>
+                {file.description && (
+                  <p className='text-muted-foreground text-xs line-clamp-2'>
+                    {file.description}
+                  </p>
+                )}
               </li>
             ))}
         </ul>

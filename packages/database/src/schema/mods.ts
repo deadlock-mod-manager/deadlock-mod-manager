@@ -64,6 +64,7 @@ export const modDownloads = pgTable(
     file: text("file").notNull(),
     url: text("url").notNull(),
     size: integer("size").notNull(),
+    description: text("description"),
     md5Checksum: text("md5_checksum"),
     ...timestamps,
   },
