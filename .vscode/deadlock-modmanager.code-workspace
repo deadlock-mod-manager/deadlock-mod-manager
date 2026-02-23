@@ -18,7 +18,6 @@
     "oxc.path.oxlint": "./node_modules/.bin/oxlint",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-
     // TypeScript performance optimizations
     "typescript.disableAutomaticTypeAcquisition": true,
     "typescript.preferences.includePackageJsonAutoImports": "off",
@@ -27,7 +26,6 @@
     "typescript.suggest.completeFunctionCalls": false,
     "typescript.suggest.jsdoc.generateReturns": false,
     "typescript.workspaceSymbols.scope": "currentProject",
-
     // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,
@@ -66,5 +64,6 @@
     "[xml]": {
       "editor.defaultFormatter": "redhat.vscode-xml",
     },
+    "cSpell.words": ["dlmm", "modmanager"],
   },
 }
