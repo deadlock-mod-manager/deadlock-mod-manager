@@ -2,6 +2,7 @@ use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use log;
 use regex::Regex;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
@@ -22,8 +23,8 @@ impl VpkManager {
       return Ok(1);
     }
 
-    let vpk_pattern = Regex::new(r"pak(\d+)_dir\.vpk").unwrap();
-    let mut used_numbers = std::collections::HashSet::new();
+    let vpk_pattern = Regex::new(r"^pak(\d+)_[^.]+\.vpk$").unwrap();
+    let mut used_numbers = HashSet::new();
 
     for entry in fs::read_dir(addons_path)? {
       let entry = entry?;
@@ -46,6 +47,41 @@ impl VpkManager {
     }
 
     Ok(next_number)
+  }
+
+  fn parse_enabled_vpk_parts(filename: &str) -> Option<(String, String)> {
+    let file_stem = filename.strip_suffix(".vpk")?;
+    let remainder = file_stem.strip_prefix("pak")?;
+    let (number, suffix) = remainder.split_once('_')?;
+
+    if number.is_empty() || suffix.is_empty() || !number.chars().all(|c| c.is_ascii_digit()) {
+      return None;
+    }
+
+    Some((format!("pak{number}"), suffix.to_string()))
+  }
+
+  fn build_reordered_vpk_name(
+    filename: &str,
+    set_number_mapping: &mut HashMap<String, u32>,
+    current_number: &mut u32,
+  ) -> String {
+    if let Some((set_key, suffix)) = Self::parse_enabled_vpk_parts(filename) {
+      let assigned_number = if let Some(existing_number) = set_number_mapping.get(&set_key) {
+        *existing_number
+      } else {
+        let next_number = *current_number;
+        set_number_mapping.insert(set_key, next_number);
+        *current_number += 1;
+        next_number
+      };
+
+      return format!("pak{assigned_number:02}_{suffix}.vpk");
+    }
+
+    let assigned_number = *current_number;
+    *current_number += 1;
+    format!("pak{assigned_number:02}_dir.vpk")
   }
 
   pub fn reorder_vpks(
@@ -98,6 +134,7 @@ impl VpkManager {
 
     // Step 2: Place VPKs back with sequential numbering starting from pak01 based on order
     let mut current_number = 1u32;
+    let mut set_number_mapping: HashMap<String, u32> = HashMap::new();
 
     for (mod_id, old_vpk_names) in mod_vpk_mapping {
       let mut new_vpk_names = Vec::new();
@@ -114,12 +151,15 @@ impl VpkManager {
         let temp_vpk_path = temp_dir.join(&filename);
 
         if temp_vpk_path.exists() {
-          let new_name = format!("pak{:02}_dir.vpk", current_number);
+          let new_name = Self::build_reordered_vpk_name(
+            &filename,
+            &mut set_number_mapping,
+            &mut current_number,
+          );
           let new_path = addons_path.join(&new_name);
 
           std::fs::rename(&temp_vpk_path, &new_path)?;
           new_vpk_names.push(new_name.clone());
-          current_number += 1;
 
           log::info!("Reordered {filename} -> {new_name} for mod {mod_id}");
         } else {
@@ -133,22 +173,36 @@ impl VpkManager {
     // Step 3: Restore any orphaned VPKs (VPKs not managed by our mod system)
     if temp_dir.exists() {
       // Move any remaining VPKs back to addons directory with sequential numbering
+      let mut orphaned_filenames = Vec::new();
       for entry in std::fs::read_dir(&temp_dir)? {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
-          // Find next available number for orphaned VPK
-          let orphaned_name = format!("pak{:02}_dir.vpk", current_number);
-          let orphaned_path = addons_path.join(&orphaned_name);
-
-          std::fs::rename(&path, &orphaned_path)?;
-          current_number += 1;
-
-          if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-            log::info!("Restored orphaned VPK file: {filename} -> {orphaned_name}");
-          }
+        if path.is_file()
+          && path.extension().is_some_and(|ext| ext == "vpk")
+          && let Some(filename) = path.file_name().and_then(|n| n.to_str())
+        {
+          orphaned_filenames.push(filename.to_string());
         }
+      }
+
+      orphaned_filenames.sort();
+
+      for filename in orphaned_filenames {
+        let source_path = temp_dir.join(&filename);
+        if !source_path.exists() {
+          continue;
+        }
+
+        let orphaned_name = Self::build_reordered_vpk_name(
+          &filename,
+          &mut set_number_mapping,
+          &mut current_number,
+        );
+        let orphaned_path = addons_path.join(&orphaned_name);
+
+        std::fs::rename(&source_path, &orphaned_path)?;
+        log::info!("Restored orphaned VPK file: {filename} -> {orphaned_name}");
       }
 
       std::fs::remove_dir_all(&temp_dir)?;
@@ -364,6 +418,8 @@ impl VpkManager {
     }
 
     let mut new_vpk_names = Vec::new();
+    let mut set_number_mapping: HashMap<String, u32> = HashMap::new();
+    let mod_prefix = format!("{mod_id}_");
 
     for prefixed_name in prefixed_vpks {
       let old_path = addons_path.join(prefixed_name);
@@ -372,9 +428,21 @@ impl VpkManager {
         continue;
       }
 
-      // Find next available number (fills gaps)
-      let next_number = self.find_next_available_vpk_number(addons_path)?;
-      let new_name = format!("pak{next_number:02}_dir.vpk");
+      let original_name = prefixed_name.strip_prefix(&mod_prefix).unwrap_or(prefixed_name);
+      let new_name = if let Some((set_key, suffix)) = Self::parse_enabled_vpk_parts(original_name) {
+        let next_number = if let Some(existing_number) = set_number_mapping.get(&set_key) {
+          *existing_number
+        } else {
+          let available_number = self.find_next_available_vpk_number(addons_path)?;
+          set_number_mapping.insert(set_key, available_number);
+          available_number
+        };
+
+        format!("pak{next_number:02}_{suffix}.vpk")
+      } else {
+        let next_number = self.find_next_available_vpk_number(addons_path)?;
+        format!("pak{next_number:02}_dir.vpk")
+      };
       let new_path = addons_path.join(&new_name);
 
       fs::rename(&old_path, &new_path)?;
@@ -410,7 +478,7 @@ impl VpkManager {
       let original_name = original_names
         .get(index)
         .map(|s| s.as_str())
-        .unwrap_or("addon.vpk");
+        .unwrap_or(vpk_name);
 
       let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
@@ -562,5 +630,139 @@ impl VpkManager {
 impl Default for VpkManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::VpkManager;
+  use std::fs;
+  use std::path::Path;
+  use tempfile::TempDir;
+
+  fn create_vpk_file(addons_path: &Path, filename: &str) {
+    let file_path = addons_path.join(filename);
+    fs::write(&file_path, b"test").expect("Failed to create test VPK file");
+  }
+
+  fn assert_vpk_exists(addons_path: &Path, filename: &str) {
+    assert!(
+      addons_path.join(filename).exists(),
+      "Expected VPK file to exist: {filename}"
+    );
+  }
+
+  #[test]
+  fn enable_vpks_keeps_multipart_files_aligned() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let addons_path = temp_dir.path();
+    let manager = VpkManager::new();
+
+    create_vpk_file(addons_path, "123_pak01_000.vpk");
+    create_vpk_file(addons_path, "123_pak01_dir.vpk");
+    create_vpk_file(addons_path, "123_pak02_000.vpk");
+    create_vpk_file(addons_path, "123_pak02_dir.vpk");
+
+    let prefixed_vpks = vec![
+      "123_pak01_000.vpk".to_string(),
+      "123_pak01_dir.vpk".to_string(),
+      "123_pak02_000.vpk".to_string(),
+      "123_pak02_dir.vpk".to_string(),
+    ];
+
+    let enabled_vpks = manager
+      .enable_vpks(addons_path, "123", &prefixed_vpks)
+      .expect("Failed to enable VPKs");
+
+    assert_eq!(enabled_vpks.len(), 4);
+    assert_vpk_exists(addons_path, "pak01_000.vpk");
+    assert_vpk_exists(addons_path, "pak01_dir.vpk");
+    assert_vpk_exists(addons_path, "pak02_000.vpk");
+    assert_vpk_exists(addons_path, "pak02_dir.vpk");
+  }
+
+  #[test]
+  fn disable_vpks_restores_multipart_original_names() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let addons_path = temp_dir.path();
+    let manager = VpkManager::new();
+
+    create_vpk_file(addons_path, "pak01_dir.vpk");
+    create_vpk_file(addons_path, "pak01_000.vpk");
+
+    let installed_vpks = vec!["pak01_dir.vpk".to_string(), "pak01_000.vpk".to_string()];
+    let original_names = vec!["pak77_dir.vpk".to_string(), "pak77_000.vpk".to_string()];
+
+    let prefixed_vpks = manager
+      .disable_vpks(addons_path, "123", &installed_vpks, &original_names)
+      .expect("Failed to disable VPKs");
+
+    assert_eq!(
+      prefixed_vpks,
+      vec!["123_pak77_dir.vpk".to_string(), "123_pak77_000.vpk".to_string()]
+    );
+    assert_vpk_exists(addons_path, "123_pak77_dir.vpk");
+    assert_vpk_exists(addons_path, "123_pak77_000.vpk");
+  }
+
+  #[test]
+  fn reorder_vpks_keeps_multipart_sets_together() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let addons_path = temp_dir.path();
+    let manager = VpkManager::new();
+
+    create_vpk_file(addons_path, "pak05_dir.vpk");
+    create_vpk_file(addons_path, "pak05_000.vpk");
+    create_vpk_file(addons_path, "pak09_dir.vpk");
+    create_vpk_file(addons_path, "pak09_000.vpk");
+
+    let mod_vpk_mapping = vec![
+      (
+        "mod-a".to_string(),
+        vec!["pak09_dir.vpk".to_string(), "pak09_000.vpk".to_string()],
+      ),
+      (
+        "mod-b".to_string(),
+        vec!["pak05_dir.vpk".to_string(), "pak05_000.vpk".to_string()],
+      ),
+    ];
+
+    let updated_mappings = manager
+      .reorder_vpks(&mod_vpk_mapping, addons_path)
+      .expect("Failed to reorder VPKs");
+
+    assert_eq!(
+      updated_mappings[0].1,
+      vec!["pak01_dir.vpk".to_string(), "pak01_000.vpk".to_string()]
+    );
+    assert_eq!(
+      updated_mappings[1].1,
+      vec!["pak02_dir.vpk".to_string(), "pak02_000.vpk".to_string()]
+    );
+
+    assert_vpk_exists(addons_path, "pak01_dir.vpk");
+    assert_vpk_exists(addons_path, "pak01_000.vpk");
+    assert_vpk_exists(addons_path, "pak02_dir.vpk");
+    assert_vpk_exists(addons_path, "pak02_000.vpk");
+  }
+
+  #[test]
+  fn reorder_vpks_restores_orphaned_chunks_with_same_set_number() {
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+    let addons_path = temp_dir.path();
+    let manager = VpkManager::new();
+
+    create_vpk_file(addons_path, "pak05_dir.vpk");
+    create_vpk_file(addons_path, "pak05_000.vpk");
+
+    let mod_vpk_mapping = vec![("mod-a".to_string(), vec!["pak05_dir.vpk".to_string()])];
+
+    manager
+      .reorder_vpks(&mod_vpk_mapping, addons_path)
+      .expect("Failed to reorder VPKs");
+
+    assert_vpk_exists(addons_path, "pak01_dir.vpk");
+    assert_vpk_exists(addons_path, "pak01_000.vpk");
+    assert!(!addons_path.join("pak02_dir.vpk").exists());
   }
 }
