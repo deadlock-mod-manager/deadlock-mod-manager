@@ -8,8 +8,9 @@ export type FilterMode = "include" | "exclude";
 export type ModsFilters = {
   selectedCategories: string[];
   selectedHeroes: string[];
-  showAudioOnly: boolean;
-  showNSFW: boolean;
+  hideAudio: boolean;
+  hideNSFW: boolean;
+  hideOutdated: boolean;
   currentSort: SortType;
   filterMode: FilterMode;
   searchQuery: string;
@@ -51,8 +52,9 @@ export type UIState = {
 const DEFAULT_MODS_FILTERS: ModsFilters = {
   selectedCategories: [],
   selectedHeroes: [],
-  showAudioOnly: false,
-  showNSFW: false,
+  hideAudio: false,
+  hideNSFW: false,
+  hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,
   filterMode: "include",
   searchQuery: "",

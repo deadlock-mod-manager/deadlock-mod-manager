@@ -23,6 +23,7 @@ import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
 import { ModCategory } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import { isModOutdated } from "@/lib/utils";
 
 const GetModsData = () => {
   const { t } = useTranslation();
@@ -35,8 +36,9 @@ const GetModsData = () => {
   const {
     selectedCategories,
     selectedHeroes,
-    showAudioOnly,
-    showNSFW,
+    hideAudio,
+    hideNSFW,
+    hideOutdated,
     filterMode,
   } = modsFilters;
   const { results, query, setQuery, sortType, setSortType } = useSearch({
@@ -94,19 +96,18 @@ const GetModsData = () => {
     filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
   }
 
-  if (showNSFW) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isNSFW = mod.isNSFW;
-      return filterMode === "include" ? isNSFW : !isNSFW;
-    });
+  if (hideNSFW) {
+    filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
   }
 
-  if (showAudioOnly) {
-    filteredResults = filteredResults.filter((mod) => {
-      const isAudio = mod.isAudio;
-      // Return based on filter mode
-      return filterMode === "include" ? isAudio : !isAudio;
-    });
+  if (hideAudio) {
+    filteredResults = filteredResults.filter((mod) => !mod.isAudio);
+  }
+
+  if (hideOutdated) {
+    filteredResults = filteredResults.filter(
+      (mod) => !mod.isObsolete && !isModOutdated(mod),
+    );
   }
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -149,17 +150,19 @@ const GetModsData = () => {
         onHeroesChange={(selectedHeroes) =>
           updateModsFilters({ selectedHeroes })
         }
-        onShowAudioOnlyChange={(showAudioOnly) =>
-          updateModsFilters({ showAudioOnly })
+        onHideAudioChange={(hideAudio) => updateModsFilters({ hideAudio })}
+        onHideNSFWChange={(hideNSFW) => updateModsFilters({ hideNSFW })}
+        onHideOutdatedChange={(hideOutdated) =>
+          updateModsFilters({ hideOutdated })
         }
-        onShowNSFWChange={(showNSFW) => updateModsFilters({ showNSFW })}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
         setQuery={setQuery}
         setSortType={setSortType}
-        showAudioOnly={showAudioOnly}
-        showNSFW={showNSFW}
+        hideAudio={hideAudio}
+        hideNSFW={hideNSFW}
+        hideOutdated={hideOutdated}
         sortType={sortType}
       />
       {filteredResults.length === 0 ? (
@@ -173,15 +176,17 @@ const GetModsData = () => {
               {query.trim() ||
               selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
-              !nsfwSettings.hideNSFW ||
-              showAudioOnly
+              hideAudio ||
+              hideNSFW ||
+              hideOutdated
                 ? t("mods.noModsMatchFilters")
                 : t("mods.noModsAvailable")}
             </EmptyDescription>
             {(selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
-              !nsfwSettings.hideNSFW ||
-              showAudioOnly) && (
+              hideAudio ||
+              hideNSFW ||
+              hideOutdated) && (
               <EmptyDescription className='text-xs'>
                 Try clearing some filters to see more results
               </EmptyDescription>

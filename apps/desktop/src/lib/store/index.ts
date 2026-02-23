@@ -30,7 +30,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 8,
+      version: 9,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -175,6 +175,29 @@ export const usePersistedStore = create<State>()(
             "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
           );
           state.linuxGpuOptimization = true;
+        }
+
+        // Migration from version 8 to 9: Rename showAudioOnly/showNSFW to hideAudio/hideNSFW, add hideOutdated
+        if (version <= 8) {
+          console.log(
+            "Migrating from version 8 to 9: Renaming filter fields and adding hideOutdated",
+          );
+          const modsFilters = state.modsFilters as
+            | Record<string, unknown>
+            | undefined;
+          if (modsFilters) {
+            // Rename showAudioOnly → hideAudio (invert semantics: old "show audio only" in exclude mode = hide)
+            if ("showAudioOnly" in modsFilters) {
+              modsFilters.hideAudio = false;
+              delete modsFilters.showAudioOnly;
+            }
+            // Rename showNSFW → hideNSFW
+            if ("showNSFW" in modsFilters) {
+              modsFilters.hideNSFW = false;
+              delete modsFilters.showNSFW;
+            }
+            modsFilters.hideOutdated = false;
+          }
         }
 
         return state;

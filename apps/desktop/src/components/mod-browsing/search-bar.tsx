@@ -25,10 +25,12 @@ type SearchBarProps = {
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
-  showNSFW: boolean;
-  onShowNSFWChange: (showNSFW: boolean) => void;
-  showAudioOnly: boolean;
-  onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
+  hideNSFW: boolean;
+  onHideNSFWChange: (hideNSFW: boolean) => void;
+  hideAudio: boolean;
+  onHideAudioChange: (hideAudio: boolean) => void;
+  hideOutdated: boolean;
+  onHideOutdatedChange: (hideOutdated: boolean) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
 };
@@ -43,10 +45,12 @@ const SearchBar = ({
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
-  showNSFW,
-  onShowNSFWChange,
-  showAudioOnly,
-  onShowAudioOnlyChange,
+  hideNSFW,
+  onHideNSFWChange,
+  hideAudio,
+  onHideAudioChange,
+  hideOutdated,
+  onHideOutdatedChange,
   filterMode,
   onFilterModeChange,
 }: SearchBarProps) => {
@@ -84,15 +88,17 @@ const SearchBar = ({
   const clearAllFilters = () => {
     onCategoriesChange([]);
     onHeroesChange([]);
-    onShowNSFWChange(false);
-    onShowAudioOnlyChange(false);
+    onHideNSFWChange(false);
+    onHideAudioChange(false);
+    onHideOutdatedChange(false);
   };
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
-    showNSFW ||
-    showAudioOnly;
+    hideNSFW ||
+    hideAudio ||
+    hideOutdated;
 
   return (
     <div className='flex flex-col gap-3'>
@@ -111,12 +117,14 @@ const SearchBar = ({
             onCategoriesChange={onCategoriesChange}
             onFilterModeChange={onFilterModeChange}
             onHeroesChange={onHeroesChange}
-            onShowAudioOnlyChange={onShowAudioOnlyChange}
-            onShowNSFWChange={onShowNSFWChange}
+            onHideAudioChange={onHideAudioChange}
+            onHideNSFWChange={onHideNSFWChange}
+            onHideOutdatedChange={onHideOutdatedChange}
             selectedCategories={selectedCategories}
             selectedHeroes={selectedHeroes}
-            showAudioOnly={showAudioOnly}
-            showNSFW={showNSFW}
+            hideAudio={hideAudio}
+            hideNSFW={hideNSFW}
+            hideOutdated={hideOutdated}
           />
         </div>
         <div className='flex items-center gap-4'>
@@ -180,29 +188,38 @@ const SearchBar = ({
           ))}
 
           {/* NSFW filter badge */}
-          {showNSFW && (
+          {hideNSFW && (
             <Badge className='flex items-center gap-1' variant='destructive'>
-              {filterMode === "include"
-                ? t("filters.showNSFW")
-                : t("filters.hideNSFW")}
+              {t("filters.hideNSFW")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onShowNSFWChange(false)}
+                onClick={() => onHideNSFWChange(false)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>
             </Badge>
           )}
 
-          {/* Audio only filter badge */}
-          {showAudioOnly && (
+          {/* Audio filter badge */}
+          {hideAudio && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {filterMode === "include"
-                ? t("filters.audioOnly")
-                : t("filters.hideAudio")}
+              {t("filters.hideAudio")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onShowAudioOnlyChange(false)}
+                onClick={() => onHideAudioChange(false)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
+
+          {/* Broken/Outdated filter badge */}
+          {hideOutdated && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {t("filters.hideOutdated")}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onHideOutdatedChange(false)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>

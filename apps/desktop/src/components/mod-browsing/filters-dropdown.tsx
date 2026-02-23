@@ -20,10 +20,12 @@ type FiltersDropdownProps = {
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
-  showNSFW: boolean;
-  onShowNSFWChange: (showNSFW: boolean) => void;
-  showAudioOnly: boolean;
-  onShowAudioOnlyChange: (showAudioOnly: boolean) => void;
+  hideNSFW: boolean;
+  onHideNSFWChange: (hideNSFW: boolean) => void;
+  hideAudio: boolean;
+  onHideAudioChange: (hideAudio: boolean) => void;
+  hideOutdated: boolean;
+  onHideOutdatedChange: (hideOutdated: boolean) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
 };
@@ -34,10 +36,12 @@ const FiltersDropdown = ({
   onCategoriesChange,
   selectedHeroes,
   onHeroesChange,
-  showNSFW,
-  onShowNSFWChange,
-  showAudioOnly,
-  onShowAudioOnlyChange,
+  hideNSFW,
+  onHideNSFWChange,
+  hideAudio,
+  onHideAudioChange,
+  hideOutdated,
+  onHideOutdatedChange,
   filterMode,
   onFilterModeChange,
 }: FiltersDropdownProps) => {
@@ -45,13 +49,15 @@ const FiltersDropdown = ({
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
-    showNSFW ||
-    showAudioOnly;
+    hideNSFW ||
+    hideAudio ||
+    hideOutdated;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
-    (showNSFW ? 1 : 0) +
-    (showAudioOnly ? 1 : 0);
+    (hideNSFW ? 1 : 0) +
+    (hideAudio ? 1 : 0) +
+    (hideOutdated ? 1 : 0);
 
   return (
     <DropdownMenu>
@@ -104,27 +110,33 @@ const FiltersDropdown = ({
             {t("filters.quickFilters")}
           </Label>
           <div className='flex items-center justify-between'>
-            <Label className='font-normal text-sm' htmlFor='showNsfwSwitch'>
-              {filterMode === "include"
-                ? t("filters.showNSFWContent")
-                : t("filters.hideNSFWContent")}
+            <Label className='font-normal text-sm' htmlFor='hideNsfwSwitch'>
+              {t("filters.hideNSFWContent")}
             </Label>
             <Switch
-              checked={showNSFW}
-              id='showNsfwSwitch'
-              onCheckedChange={onShowNSFWChange}
+              checked={hideNSFW}
+              id='hideNsfwSwitch'
+              onCheckedChange={onHideNSFWChange}
             />
           </div>
           <div className='flex items-center justify-between'>
-            <Label className='font-normal text-sm' htmlFor='audioOnlySwitch'>
-              {filterMode === "include"
-                ? t("filters.audioModsOnly")
-                : t("filters.excludeAudioMods")}
+            <Label className='font-normal text-sm' htmlFor='hideAudioSwitch'>
+              {t("filters.excludeAudioMods")}
             </Label>
             <Switch
-              checked={showAudioOnly}
-              id='audioOnlySwitch'
-              onCheckedChange={onShowAudioOnlyChange}
+              checked={hideAudio}
+              id='hideAudioSwitch'
+              onCheckedChange={onHideAudioChange}
+            />
+          </div>
+          <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
+              {t("filters.hideOutdated")}
+            </Label>
+            <Switch
+              checked={hideOutdated}
+              id='hideOutdatedSwitch'
+              onCheckedChange={onHideOutdatedChange}
             />
           </div>
         </div>
