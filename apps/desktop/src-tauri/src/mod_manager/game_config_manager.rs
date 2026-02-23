@@ -112,6 +112,14 @@ impl GameConfigManager {
       return search_paths.to_string();
     }
 
+    if !search_paths.contains("{") {
+      let excerpt = search_paths.chars().take(120).collect::<String>();
+      log::debug!(
+        "Skipping Game_Language injection: search_paths.replacen(\"{{\", ...) found no insertion point. excerpt={excerpt:?}"
+      );
+      return search_paths.to_string();
+    }
+
     search_paths.replacen(
       "{",
       "{  \n            Game_Language       citadel_*LANGUAGE*",
