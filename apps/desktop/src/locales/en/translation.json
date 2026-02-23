@@ -25,6 +25,8 @@
   },
   "myMods": {
     "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
+    "allModsUpToDate": "All mods are up to date",
     "subtitle": "Mods you have downloaded or installed",
     "noModsTitle": "No mods installed",
     "noModsDescription": "You haven't installed any mods yet. Get started by browsing available mods or analyzing your local addons folder.",

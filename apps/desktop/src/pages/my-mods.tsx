@@ -382,7 +382,19 @@ const MyMods = () => {
     updatableCount,
     refetch: refetchUpdates,
     isFetching: isCheckingUpdates,
-  } = useCheckUpdates();
+  } = useCheckUpdates({
+    onSuccess: (data) => {
+      const count = data.updates?.length ?? 0;
+      if (count > 0) {
+        toast.success(t("myMods.updateAvailableCount", { count }));
+      } else {
+        toast.success(t("myMods.allModsUpToDate"));
+      }
+    },
+    onError: () => {
+      toast.error(t("myMods.checkForUpdatesError"));
+    },
+  });
   const {
     progress: analysisProgress,
     showProgressToast,

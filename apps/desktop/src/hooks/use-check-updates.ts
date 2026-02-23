@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { checkModUpdates } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 
-export const useCheckUpdates = () => {
+type CheckUpdatesData = Awaited<ReturnType<typeof checkModUpdates>>;
+
+export const useCheckUpdates = (options?: {
+  onSuccess?: (data: CheckUpdatesData) => void;
+  onError?: (error: Error) => void;
+}) => {
   const localMods = usePersistedStore((state) => state.localMods);
 
   const installedMods = localMods.filter(
@@ -31,6 +37,16 @@ export const useCheckUpdates = () => {
     refetchOnWindowFocus: true,
   });
 
+  const refetch = useCallback(async () => {
+    const result = await query.refetch();
+    if (result.isError && result.error && options?.onError) {
+      options.onError(result.error);
+    } else if (!result.isError && result.data && options?.onSuccess) {
+      options.onSuccess(result.data);
+    }
+    return result;
+  }, [query.refetch, options?.onSuccess, options?.onError]);
+
   return {
     updatableMods: query.data?.updates ?? [],
     updatableCount: query.data?.updates.length ?? 0,
@@ -38,6 +54,6 @@ export const useCheckUpdates = () => {
     isFetching: query.isFetching,
     isError: query.isError,
     error: query.error,
-    refetch: query.refetch,
+    refetch,
   };
 };

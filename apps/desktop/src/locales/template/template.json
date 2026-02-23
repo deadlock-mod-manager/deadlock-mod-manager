@@ -20,6 +20,8 @@
   },
   "myMods": {
     "checkForUpdates": "",
+    "checkForUpdatesError": "",
+    "allModsUpToDate": "",
     "subtitle": "",
     "noModsTitle": "",
     "noModsDescription": "",
