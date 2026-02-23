@@ -1,5 +1,12 @@
 # api
 
+## 2.8.0
+
+### Minor Changes
+
+- 6f1a1bb: Add transparency page with financial information and platform statistics
+- 5dc0961: Add "Update All" button to mass update all mods with automatic backup and new check-updates API endpoint
+
 ## 2.7.0
 
 ### Minor Changes

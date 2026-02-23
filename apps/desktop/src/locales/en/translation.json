@@ -690,6 +690,19 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.15.0": {
+        "title": "Mod Updates, OTA Updates & Bug Fixes",
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ]
+      },
       "0.14.1": {
         "title": "Theme Toggle Improvements & Bug Fixes",
         "features": [

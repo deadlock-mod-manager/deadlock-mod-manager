@@ -1,5 +1,21 @@
 # desktop
 
+## 0.15.0
+
+### Minor Changes
+
+- 609d464: Add opt-in Linux GPU optimization setting to improve WebKit rendering compatibility on Linux systems with specific hardware/driver combinations
+- 5dc0961: Add individual mod update button on mod detail page
+- a833006: Add polling and separate install flow for app updates with visual indicator in bottom bar
+- 5dc0961: Add "Update All" button to mass update all mods with automatic backup and new check-updates API endpoint
+
+### Patch Changes
+
+- 7f22230: Fix opening folders, URLs, and browser flows on Linux AppImage by restoring proper PATH with fix-path-env and migrating from deprecated tauri-plugin-shell to tauri-plugin-opener
+- 8dc4d25: Keep Game_Language in gameinfo.gi SearchPaths rewrites
+- e5c33c0: Fix security issue where embedded links in mod descriptions and announcements could navigate the webview away from the app
+- 4308745: Fix "Back to Mods" button navigation to return to the previous page (Mods Library or Mods Store) instead of always going to Mods Store
+
 ## 0.14.1
 
 ### Patch Changes

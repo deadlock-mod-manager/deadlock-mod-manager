@@ -18,6 +18,11 @@ export const WhatsNewCard = () => {
 
   const recentUpdates = [
     {
+      version: "0.15.0",
+      title: t("whatsNew.versions.0.15.0.title"),
+      features: getFeatures("0.15.0"),
+    },
+    {
       version: "0.14.1",
       title: t("whatsNew.versions.0.14.1.title"),
       features: getFeatures("0.14.1"),
@@ -36,11 +41,6 @@ export const WhatsNewCard = () => {
       version: "0.12.0",
       title: t("whatsNew.versions.0.12.0.title"),
       features: getFeatures("0.12.0"),
-    },
-    {
-      version: "0.11.1",
-      title: t("whatsNew.versions.0.11.1.title"),
-      features: getFeatures("0.11.1"),
     },
   ];
 

@@ -1,5 +1,11 @@
 # web
 
+## 0.3.0
+
+### Minor Changes
+
+- 6f1a1bb: Add transparency page with financial information and platform statistics
+
 ## 0.2.0
 
 ### Minor Changes
