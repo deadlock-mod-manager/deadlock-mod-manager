@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const MODDED_SEARCH_PATHS: &str = r#"
 		SearchPaths
         {  
+            Game_Language       citadel_*LANGUAGE*
             Game                citadel/addons
             Mod                 citadel
             Write               citadel          
@@ -23,6 +24,7 @@ const MODDED_SEARCH_PATHS: &str = r#"
 const VANILLA_SEARCH_PATHS: &str = r#"
 		SearchPaths
         {  
+            Game_Language       citadel_*LANGUAGE*
             Game                citadel
             Write               citadel          
             Game                citadel
@@ -103,6 +105,26 @@ impl GameConfigManager {
   /// Check if content contains mod manager markers
   fn has_mod_manager_markers(&self, content: &str) -> bool {
     content.contains(MOD_MANAGER_MARKER_START) && content.contains(MOD_MANAGER_MARKER_END)
+  }
+
+  fn ensure_game_language_search_path(search_paths: &str) -> String {
+    if search_paths.contains("Game_Language") {
+      return search_paths.to_string();
+    }
+
+    if !search_paths.contains("{") {
+      let excerpt = search_paths.chars().take(120).collect::<String>();
+      log::debug!(
+        "Skipping Game_Language injection: search_paths.replacen(\"{{\", ...) found no insertion point. excerpt={excerpt:?}"
+      );
+      return search_paths.to_string();
+    }
+
+    search_paths.replacen(
+      "{",
+      "{  \n            Game_Language       citadel_*LANGUAGE*",
+      1,
+    )
   }
 
   /// Validate gameinfo.gi syntax and structure
@@ -660,10 +682,11 @@ impl GameConfigManager {
     } else {
       MODDED_SEARCH_PATHS
     };
+    let base_search_paths = Self::ensure_game_language_search_path(base_search_paths);
 
     // Create the replacement content
     let replacement_content = if vanilla {
-      base_search_paths.to_string()
+      base_search_paths
     } else {
       format!("\n{MOD_MANAGER_MARKER_START}\n{base_search_paths}\n{MOD_MANAGER_MARKER_END}")
     };
@@ -808,10 +831,11 @@ impl GameConfigManager {
       "citadel/addons".to_string()
     };
 
-    format!(
+    let search_paths = format!(
       r#"
 		SearchPaths
         {{  
+            Game_Language       citadel_*LANGUAGE*
             Game                {}
             Mod                 citadel
             Write               citadel          
@@ -821,7 +845,9 @@ impl GameConfigManager {
             Game                core        
         }}"#,
       addons_path
-    )
+    );
+
+    Self::ensure_game_language_search_path(&search_paths)
   }
 
   /// Update the mod path in gameinfo.gi for profile switching
