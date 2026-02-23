@@ -377,7 +377,12 @@ const MyMods = () => {
     isRefetching: isVpkScanRefetching,
     refetch: refetchVpkScan,
   } = useVpkScan();
-  const { updatableMods, updatableCount } = useCheckUpdates();
+  const {
+    updatableMods,
+    updatableCount,
+    refetch: refetchUpdates,
+    isFetching: isCheckingUpdates,
+  } = useCheckUpdates();
   const {
     progress: analysisProgress,
     showProgressToast,
@@ -535,6 +540,22 @@ const MyMods = () => {
                   {t("myMods.updateAvailableCount", { count: updatableCount })}
                 </Button>
               )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    disabled={isCheckingUpdates}
+                    onClick={() => refetchUpdates()}
+                    icon={
+                      <RefreshCw
+                        className={`h-4 w-4 ${isCheckingUpdates ? "animate-spin" : ""}`}
+                      />
+                    }
+                  />
+                </TooltipTrigger>
+                <TooltipContent>{t("myMods.checkForUpdates")}</TooltipContent>
+              </Tooltip>
               <Button
                 size='lg'
                 variant='outline'

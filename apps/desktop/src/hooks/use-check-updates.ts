@@ -9,14 +9,17 @@ export const useCheckUpdates = () => {
   const installedMods = localMods.filter(
     (mod) =>
       mod.status === ModStatus.Installed &&
-      mod.downloadedAt &&
       mod.remoteId &&
       !mod.remoteId.startsWith("local://"),
   );
 
   const modsToCheck = installedMods.map((mod) => ({
     remoteId: mod.remoteId,
-    installedAt: mod.downloadedAt!,
+    installedAt:
+      mod.downloadedAt ??
+      mod.selectedDownload?.createdAt ??
+      mod.createdAt ??
+      new Date(0),
   }));
 
   const query = useQuery({
@@ -32,6 +35,7 @@ export const useCheckUpdates = () => {
     updatableMods: query.data?.updates ?? [],
     updatableCount: query.data?.updates.length ?? 0,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

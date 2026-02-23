@@ -146,7 +146,10 @@ export const isUpdateAvailable = (
   localMod: LocalMod | null | undefined,
 ): boolean => {
   if (!localMod || !mod.filesUpdatedAt) return false;
-  const installedAt = localMod.downloadedAt;
+  const installedAt =
+    localMod.downloadedAt ??
+    localMod.selectedDownload?.createdAt ??
+    localMod.createdAt;
   if (!installedAt) return false;
   return (
     new Date(installedAt).getTime() < new Date(mod.filesUpdatedAt).getTime()

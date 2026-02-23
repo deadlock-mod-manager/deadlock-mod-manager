@@ -203,14 +203,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     }
 
     return set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        status: mod.remoteId === remoteId ? status : mod.status,
-        downloadedAt:
-          status === ModStatus.Downloaded && mod.status !== ModStatus.Installed
-            ? new Date()
-            : undefined,
-      })),
+      localMods: state.localMods.map((mod) => {
+        if (mod.remoteId !== remoteId) return mod;
+        return {
+          ...mod,
+          status,
+          downloadedAt:
+            status === ModStatus.Downloaded &&
+            mod.status !== ModStatus.Installed
+              ? new Date()
+              : mod.downloadedAt,
+        };
+      }),
     }));
   },
 

@@ -96,6 +96,17 @@ const Mod = () => {
     (update) => update.mod.remoteId === mod?.remoteId,
   );
 
+  const forceUpdate = () => {
+    if (!mod || !availableFiles?.length) return;
+    setUpdateDialogOpen(true);
+  };
+
+  const forceUpdateData =
+    mod && availableFiles?.length ? [{ mod, downloads: availableFiles }] : [];
+
+  const effectiveUpdateData =
+    currentModUpdate.length > 0 ? currentModUpdate : forceUpdateData;
+
   const deleteMod = async () => {
     if (!localMod) {
       return;
@@ -226,6 +237,15 @@ const Mod = () => {
                     {t("modDetail.updateMod")}
                   </Button>
                 )}
+                {isInstalled && !hasUpdate && availableFiles?.length > 0 && (
+                  <Button
+                    icon={<RefreshCw className='h-4 w-4' />}
+                    onClick={forceUpdate}
+                    size='lg'
+                    variant='outline'>
+                    {t("modDetail.forceUpdate")}
+                  </Button>
+                )}
                 {!!localMod?.status && (
                   <Button
                     icon={<Trash className='h-4 w-4' />}
@@ -278,7 +298,7 @@ const Mod = () => {
           isSingleMod={true}
           onOpenChange={setUpdateDialogOpen}
           open={updateDialogOpen}
-          updates={currentModUpdate}
+          updates={effectiveUpdateData}
         />
       </div>
     </ErrorBoundary>

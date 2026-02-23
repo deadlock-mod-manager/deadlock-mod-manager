@@ -24,6 +24,7 @@
     "at": "at"
   },
   "myMods": {
+    "checkForUpdates": "Check for updates",
     "subtitle": "Mods you have downloaded or installed",
     "noModsTitle": "No mods installed",
     "noModsDescription": "You haven't installed any mods yet. Get started by browsing available mods or analyzing your local addons folder.",
@@ -1183,6 +1184,8 @@
     "modStatusLabel": "Mod Status",
     "viewOriginalPost": "View Original Post",
     "updateMod": "Update Mod",
+    "forceUpdate": "Force Update",
+    "checkForUpdate": "Check for update",
     "checkingForUpdate": "Checking...",
     "noUpdateAvailable": "No update available",
     "checkUpdateError": "Failed to check for updates",
