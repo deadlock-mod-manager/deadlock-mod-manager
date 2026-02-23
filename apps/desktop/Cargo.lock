@@ -1084,6 +1084,7 @@ dependencies = [
  "tauri-plugin-machine-uid",
  "tauri-plugin-opener",
  "tauri-plugin-os",
+ "tauri-plugin-ota-updater",
  "tauri-plugin-process",
  "tauri-plugin-sentry",
  "tauri-plugin-single-instance",
@@ -2239,7 +2240,7 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
- "windows-registry 0.6.1",
+ "windows-registry 0.5.3",
 ]
 
 [[package]]
@@ -5675,6 +5676,27 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "tauri-plugin-ota-updater"
+version = "2.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e49440da84d883cc02d49e57006182fb40bc591107359f61bc39d4fbfd345071"
+dependencies = [
+ "base64 0.22.1",
+ "log",
+ "minisign-verify",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tar",
+ "tauri",
+ "tauri-plugin",
+ "tempfile",
+ "thiserror 1.0.69",
+ "time",
+ "walkdir",
 ]
 
 [[package]]

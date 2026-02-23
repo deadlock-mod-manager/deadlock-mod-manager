@@ -1,7 +1,6 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Separator } from "@deadlock-mods/ui/components/separator";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CheckCircle,
   CloudArrowDown,
@@ -15,19 +14,23 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiStatus } from "@/hooks/use-api-status";
-import useUpdateManager from "@/hooks/use-update-manager";
+import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { isGameRunning } from "@/lib/api";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
-
 export const BottomBar = () => {
   const { t } = useTranslation();
   const localMods = usePersistedStore((state) => state.localMods);
   const { gamePath } = usePersistedStore();
-  const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
+  const {
+    updateAvailable,
+    checkForUpdates,
+    installUpdate,
+    isCheckingForUpdates,
+    isInstallingUpdate,
+  } = useCheckForUpdates();
   const { status: apiStatus } = useApiStatus();
-
   const { data: isRunning } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: () => isGameRunning(),
@@ -67,7 +70,6 @@ export const BottomBar = () => {
 
         {downloadingMods > 0 && (
           <>
-            l
             <Separator className='mx-1 h-3' orientation='vertical' />
             <div className='flex items-center gap-1'>
               <DownloadSimple className='h-3 w-3 animate-pulse text-blue-500' />
@@ -126,24 +128,26 @@ export const BottomBar = () => {
             </Badge>
           </>
         )}
+        {updateAvailable && (
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <Badge className='h-5 px-2 py-0 text-xs' variant='secondary'>
+              {t("update.available")}
+            </Badge>
+          </>
+        )}
         <Button
           className='h-5 gap-1 px-2 text-xs'
-          onClick={async () => {
-            try {
-              if (await checkForUpdates()) {
-                toast.loading(t("about.downloadingUpdate"));
-                await updateAndRelaunch();
-              } else {
-                toast.info(t("about.latestVersion"));
-              }
-            } catch (_e) {
-              toast.error(t("about.updateFailed"));
-            }
-          }}
+          disabled={isCheckingForUpdates || isInstallingUpdate}
+          onClick={() =>
+            updateAvailable ? installUpdate() : checkForUpdates()
+          }
           size='sm'
-          variant='ghost'>
+          variant={updateAvailable ? "default" : "ghost"}>
           <CloudArrowDown className='h-3 w-3' />
-          {t("about.checkForUpdates")}
+          {updateAvailable
+            ? t("about.installUpdate")
+            : t("about.checkForUpdates")}
         </Button>
       </div>
     </div>

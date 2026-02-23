@@ -154,6 +154,8 @@ pub fn run() {
       }
     }));
   }
+  let context = tauri::generate_context!();
+  let (ota_plugin, context) = tauri_plugin_ota_updater::init(context);
 
   builder = builder
     .plugin(tauri_plugin_deep_link::init())
@@ -179,7 +181,8 @@ pub fn run() {
         .filter(|metadata| metadata.target() != "tracing")
         .build(),
     )
-    .plugin(tauri_plugin_machine_uid::init());
+    .plugin(tauri_plugin_machine_uid::init())
+    .plugin(ota_plugin);
 
   builder
     .manage(discord_rpc::DiscordState::new())
@@ -300,6 +303,6 @@ pub fn run() {
       commands::apply_crosshair_to_autoexec,
       commands::remove_crosshair_from_autoexec
     ])
-    .run(tauri::generate_context!())
+    .run(context)
     .expect("error while running tauri application");
 }

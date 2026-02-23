@@ -24,6 +24,7 @@ export const useCheckUpdates = () => {
     queryFn: () => checkModUpdates(modsToCheck),
     enabled: modsToCheck.length > 0,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
