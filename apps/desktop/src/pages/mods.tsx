@@ -22,6 +22,7 @@ import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
 import { ModCategory } from "@/lib/constants";
+import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { isModOutdated } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ const GetModsData = () => {
   const { data, error } = useSuspenseQuery({
     queryKey: ["mods"],
     queryFn: getMods,
+    staleTime: STALE_TIME_API,
     retry: 3,
   });
   const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();

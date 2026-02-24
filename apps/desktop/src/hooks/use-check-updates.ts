@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { checkModUpdates } from "@/lib/api";
+import {
+  REFETCH_INTERVAL_MOD_UPDATES,
+  STALE_TIME_API,
+} from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 
@@ -32,9 +36,10 @@ export const useCheckUpdates = (options?: {
     queryKey: ["check-mod-updates", modsToCheck],
     queryFn: () => checkModUpdates(modsToCheck),
     enabled: modsToCheck.length > 0,
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    refetchOnWindowFocus: true,
+    staleTime: STALE_TIME_API,
+    refetchInterval: REFETCH_INTERVAL_MOD_UPDATES,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const refetch = useCallback(async () => {

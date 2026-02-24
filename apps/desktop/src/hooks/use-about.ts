@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { app } from "@tauri-apps/api";
 import logger from "@/lib/logger";
+import { STALE_TIME_API } from "@/lib/query-constants";
 
 export const fetchAboutData = async () => {
   try {
@@ -22,6 +23,8 @@ const useAbout = () => {
   const result = useQuery({
     queryKey: ["about"],
     queryFn: fetchAboutData,
+    staleTime: STALE_TIME_API,
+    refetchOnWindowFocus: false,
   });
   return {
     ...result,

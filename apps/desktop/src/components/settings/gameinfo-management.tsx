@@ -22,6 +22,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { STALE_TIME_POLL } from "@/lib/query-constants";
 
 type GameInfoStatus = {
   current_hash: string;
@@ -41,6 +42,7 @@ const GameInfoManagement = () => {
   const { data: status, refetch } = useQuery<GameInfoStatus>({
     queryKey: ["gameinfo-status"],
     queryFn: () => invoke("get_gameinfo_status"),
+    staleTime: STALE_TIME_POLL,
     refetchInterval: 5000,
   });
 

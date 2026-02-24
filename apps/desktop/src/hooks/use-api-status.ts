@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { getApiHealth } from "@/lib/api";
+import {
+  REFETCH_INTERVAL_API_HEALTH,
+  STALE_TIME_API,
+} from "@/lib/query-constants";
 
 export type ApiStatus = "healthy" | "degraded" | "offline" | "unknown";
 
@@ -15,7 +19,9 @@ export const useApiStatus = () => {
   const { data, isLoading, error, isError } = useQuery({
     queryKey: ["api-health"],
     queryFn: getApiHealth,
-    refetchInterval: 30000, // Check every 30 seconds
+    staleTime: STALE_TIME_API,
+    refetchInterval: REFETCH_INTERVAL_API_HEALTH,
+    refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 5000,
   });

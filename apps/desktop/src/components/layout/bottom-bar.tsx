@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { useApiStatus } from "@/hooks/use-api-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { isGameRunning } from "@/lib/api";
+import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -106,6 +107,7 @@ export const BottomBar = () => {
   const { data: isRunning } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: () => isGameRunning(),
+    staleTime: STALE_TIME_POLL,
     refetchInterval: 5000,
     retry: false,
     enabled: !!gamePath,

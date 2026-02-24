@@ -16,6 +16,7 @@ import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-contex
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useLaunch } from "@/hooks/use-launch";
 import { isGameRunning } from "@/lib/api";
+import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ProfileShareDialog } from "../profiles/profile-share-dialog";
@@ -34,6 +35,7 @@ export const Toolbar = () => {
   const { data: isRunning, refetch } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: () => isGameRunning(),
+    staleTime: STALE_TIME_POLL,
     refetchInterval: 5000,
   });
 

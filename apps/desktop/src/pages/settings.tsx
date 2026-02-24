@@ -69,6 +69,7 @@ import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
+import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
@@ -99,6 +100,7 @@ const CustomSettingsData = () => {
   const { data: autoexecConfig } = useQuery({
     queryKey: ["autoexec-config"],
     queryFn: getAutoexecConfig,
+    staleTime: STALE_TIME_LOCAL,
     retry: false,
     refetchOnWindowFocus: false,
   });

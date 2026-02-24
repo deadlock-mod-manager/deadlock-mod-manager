@@ -24,6 +24,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import logger from "@/lib/logger";
+import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import Section from "./section";
 
 interface ReadonlySection {
@@ -54,6 +55,8 @@ export const AutoexecSettings = () => {
   const { data: config, isLoading } = useQuery({
     queryKey: ["autoexec-config"],
     queryFn: getAutoexecConfig,
+    staleTime: STALE_TIME_LOCAL,
+    refetchOnWindowFocus: false,
     retry: 3,
   });
 

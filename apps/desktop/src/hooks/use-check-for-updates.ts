@@ -8,6 +8,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { createLogger } from "@/lib/logger";
+import {
+  GC_TIME_UPDATER,
+  STALE_TIME_MANUAL_CHECK,
+  STALE_TIME_UPDATER,
+} from "@/lib/query-constants";
 
 const logger = createLogger("check-for-updates");
 
@@ -47,9 +52,9 @@ export const useCheckForUpdates = () => {
   } = useQuery({
     queryKey: APP_UPDATES_QUERY_KEY,
     queryFn: fetchAppUpdates,
-    staleTime: 15 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchInterval: 15 * 60 * 1000,
+    staleTime: STALE_TIME_UPDATER,
+    gcTime: GC_TIME_UPDATER,
+    refetchInterval: STALE_TIME_UPDATER,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 2,
@@ -99,7 +104,7 @@ export const useCheckForUpdates = () => {
       const result = await queryClient.fetchQuery({
         queryKey: APP_UPDATES_QUERY_KEY,
         queryFn: fetchAppUpdates,
-        staleTime: 60 * 1000,
+        staleTime: STALE_TIME_MANUAL_CHECK,
       });
       return result;
     },

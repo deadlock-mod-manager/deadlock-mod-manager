@@ -31,6 +31,7 @@ import { Markup } from "interweave";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAnnouncements } from "@/lib/api";
+import { STALE_TIME_API } from "@/lib/query-constants";
 import { transformMarkupLinks } from "@/lib/markup-transform";
 import { DashboardCard } from "./dashboard-card";
 
@@ -86,6 +87,8 @@ export const AnnouncementsCard = () => {
   const { data: announcements, isLoading } = useQuery({
     queryKey: ["announcements"],
     queryFn: getAnnouncements,
+    staleTime: STALE_TIME_API,
+    refetchOnWindowFocus: false,
   });
 
   return (

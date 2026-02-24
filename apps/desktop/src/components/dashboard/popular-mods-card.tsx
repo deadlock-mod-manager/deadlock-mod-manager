@@ -4,6 +4,7 @@ import { Fire } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getMods } from "@/lib/api";
+import { STALE_TIME_API } from "@/lib/query-constants";
 import { DashboardCard } from "./dashboard-card";
 import { PopularModItem } from "./popular-mod-item";
 
@@ -12,6 +13,8 @@ export const PopularModsCard = () => {
   const { data: mods, isPending } = useQuery({
     queryKey: ["mods"],
     queryFn: getMods,
+    staleTime: STALE_TIME_API,
+    refetchOnWindowFocus: false,
   });
 
   const popularMods = mods
