@@ -47,7 +47,11 @@ export const useCheckForUpdates = () => {
   } = useQuery({
     queryKey: APP_UPDATES_QUERY_KEY,
     queryFn: fetchAppUpdates,
-    refetchInterval: 30000,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 2,
     retryDelay: 5000,
   });
@@ -95,6 +99,7 @@ export const useCheckForUpdates = () => {
       const result = await queryClient.fetchQuery({
         queryKey: APP_UPDATES_QUERY_KEY,
         queryFn: fetchAppUpdates,
+        staleTime: 60 * 1000,
       });
       return result;
     },
