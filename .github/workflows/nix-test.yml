@@ -25,6 +25,9 @@ on:
       - ".github/workflows/nix-test.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-hashes:
     name: Update Nix Hashes
