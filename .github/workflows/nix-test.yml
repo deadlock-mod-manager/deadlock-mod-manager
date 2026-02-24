@@ -8,6 +8,7 @@ on:
       - "flake.lock"
       - "package.nix"
       - "apps/desktop/**"
+      - "apps/dmodpkg/**"
       - "packages/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/nix-test.yml"
@@ -18,6 +19,7 @@ on:
       - "flake.lock"
       - "package.nix"
       - "apps/desktop/**"
+      - "apps/dmodpkg/**"
       - "packages/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/nix-test.yml"
@@ -55,7 +57,7 @@ jobs:
           nix profile install nixpkgs#prefetch-npm-deps
           echo "::endgroup::"
 
-          # Compute pnpm hash using prefetch-npm-deps
+          # --- Update pnpm hash in package.nix ---
           echo "::group::Computing pnpm hash"
           PNPM_HASH=$(prefetch-npm-deps pnpm-lock.yaml 2>/dev/null | tail -1 || echo "")
           CURRENT_PNPM_HASH=$(grep -oP 'hash = "\Ksha256-[^"]+' package.nix | head -1 || echo "")
@@ -65,40 +67,59 @@ jobs:
 
           if [ -n "$PNPM_HASH" ] && [ "$PNPM_HASH" != "$CURRENT_PNPM_HASH" ]; then
             echo "Updating pnpmHash in package.nix..."
-            # Update the first hash occurrence (which is the pnpmDeps hash)
             sed -i "0,|hash = \"[^\"]*\"|s||hash = \"$PNPM_HASH\"|" package.nix
             UPDATED="true"
           fi
           echo "::endgroup::"
 
-          # Compute cargo hash by attempting to build and extracting the expected hash
-          echo "::group::Computing cargo hash"
-          CARGO_LOCK_FILE="apps/desktop/src-tauri/Cargo.lock"
-          if [ -f "$CARGO_LOCK_FILE" ]; then
-            # Try to build and capture the error message with the expected hash
-            BUILD_OUTPUT=$(nix build .#nightly --impure --no-link 2>&1 || true)
-            
-            # Extract the expected hash from the error message
-            CARGO_HASH=$(echo "$BUILD_OUTPUT" | grep -oP 'got:\s+\Ksha256-[a-zA-Z0-9+/=]+' | head -1 || echo "")
-            
-            if [ -z "$CARGO_HASH" ]; then
-              # If build succeeded or no hash error, check if we need to update by comparing lock file hash
-              echo "No cargo hash error found - dependencies may already be correct"
-            else
-              CURRENT_CARGO_HASH=$(grep -oP 'outputHashes = \{[^}]*\}' package.nix || echo "")
-              
-              echo "Current cargo outputHashes: $CURRENT_CARGO_HASH"
-              echo "Computed cargo hash: $CARGO_HASH"
-              
-              # Fail the build to alert maintainers that manual hash update is required
-              echo "::error::Cargo git dependency hash mismatch detected in package.nix. Expected hash: $CARGO_HASH"
-              echo "::error::Please update the outputHashes block in package.nix with the correct hash from the build output above."
-              echo "BUILD_OUTPUT with full details:"
-              echo "$BUILD_OUTPUT"
-              exit 1
+          # --- Update cargoHash for all Rust packages ---
+          # Each entry: "package_name:nix_attr:package_nix_path"
+          RUST_PACKAGES=(
+            "desktop:default:package.nix"
+            "vpk-parser:vpk-parser:packages/vpk-parser/package.nix"
+            "kv-parser:kv-parser:packages/kv-parser/package.nix"
+            "dmodpkg:dmodpkg:packages/dmodpkg/package.nix"
+          )
+
+          for pkg_entry in "${RUST_PACKAGES[@]}"; do
+            IFS=':' read -r PKG_NAME NIX_ATTR PKG_NIX_PATH <<< "$pkg_entry"
+
+            echo "::group::Computing cargoHash for $PKG_NAME ($PKG_NIX_PATH)"
+
+            if [ ! -f "$PKG_NIX_PATH" ]; then
+              echo "Skipping $PKG_NAME: $PKG_NIX_PATH not found"
+              echo "::endgroup::"
+              continue
             fi
-          fi
-          echo "::endgroup::"
+
+            CURRENT_CARGO_HASH=$(grep -oP 'cargoHash = "\Ksha256-[^"]+' "$PKG_NIX_PATH" || echo "")
+            echo "Current cargoHash: $CURRENT_CARGO_HASH"
+
+            # Set cargoHash to a known-invalid value to force nix to report the correct one
+            if [ -n "$CURRENT_CARGO_HASH" ]; then
+              sed -i "s|cargoHash = \"sha256-[^\"]*\"|cargoHash = \"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"|" "$PKG_NIX_PATH"
+
+              BUILD_OUTPUT=$(nix build ".#${NIX_ATTR}" --no-link 2>&1 || true)
+
+              # Extract the correct hash from the error output
+              NEW_CARGO_HASH=$(echo "$BUILD_OUTPUT" | grep -oP 'got:\s+\Ksha256-[a-zA-Z0-9+/=]+' | head -1 || echo "")
+
+              if [ -n "$NEW_CARGO_HASH" ]; then
+                echo "Computed cargoHash: $NEW_CARGO_HASH"
+                sed -i "s|cargoHash = \"sha256-[^\"]*\"|cargoHash = \"$NEW_CARGO_HASH\"|" "$PKG_NIX_PATH"
+
+                if [ "$NEW_CARGO_HASH" != "$CURRENT_CARGO_HASH" ]; then
+                  echo "Updated cargoHash for $PKG_NAME"
+                  UPDATED="true"
+                fi
+              else
+                echo "Could not determine new cargoHash for $PKG_NAME, restoring original"
+                sed -i "s|cargoHash = \"sha256-[^\"]*\"|cargoHash = \"$CURRENT_CARGO_HASH\"|" "$PKG_NIX_PATH"
+              fi
+            fi
+
+            echo "::endgroup::"
+          done
 
 
           echo "updated=$UPDATED" >> $GITHUB_OUTPUT
@@ -114,7 +135,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add package.nix
+          git add package.nix packages/*/package.nix apps/*/package.nix
           git diff --staged --quiet && exit 0
 
           git commit -m "chore(nix): update dependency hashes [skip ci]"
