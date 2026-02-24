@@ -34,7 +34,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-Cex0Kqbzso0IPmbjtlEF5UZsnnwsUKS4Eq+danRkBc8=";
+  cargoHash = "sha256-YNPduSJT30Hu75vY9OubAeVsW5cV4PptD/RPNH5SCaY=";
 
   nativeBuildInputs = [
     rustToolchain
