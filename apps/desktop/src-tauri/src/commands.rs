@@ -782,7 +782,9 @@ pub async fn restore_addons_backup(file_name: String, strategy: String) -> Resul
   let backup_manager = mod_manager.get_addons_backup_manager();
   let restore_strategy =
     crate::mod_manager::addons_backup_manager::RestoreStrategy::from_str(&strategy)?;
-  backup_manager.restore_backup(&file_name, restore_strategy)
+  backup_manager
+    .restore_backup(&file_name, restore_strategy)
+    .inspect_err(|e| log::error!("Failed to restore addons backup '{file_name}': {e}"))
 }
 
 #[tauri::command]

@@ -43,7 +43,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 10,
+      version: 11,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -296,6 +296,35 @@ export const usePersistedStore = create<State>()(
               .warn(
                 "Skipping v9→v10 migration: persisted state did not match expected shape",
               );
+          }
+        }
+
+        // Migration from version 10 to 11: selectedDownload -> selectedDownloads
+        if (version <= 10) {
+          logger
+            .withMetadata({
+              migrationFrom: 10,
+              migrationTo: 11,
+              action: "selectedDownload-to-selectedDownloads",
+            })
+            .info(
+              "Migrating from version 10 to 11: Converting selectedDownload to selectedDownloads",
+            );
+
+          if (Array.isArray(state.localMods)) {
+            state.localMods = state.localMods.map(
+              (mod: Record<string, unknown>) => {
+                const selectedDownload = mod.selectedDownload;
+                if (selectedDownload && !mod.selectedDownloads) {
+                  return {
+                    ...mod,
+                    selectedDownloads: [selectedDownload],
+                    selectedDownload: undefined,
+                  };
+                }
+                return mod;
+              },
+            );
           }
         }
 

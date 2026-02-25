@@ -30,7 +30,7 @@ export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
   downloads?: ModDownloadItem[];
-  selectedDownload?: ModDownloadItem;
+  selectedDownloads?: ModDownloadItem[];
   installedVpks?: string[];
   installedFileTree?: ModFileTree;
   installOrder?: number; // Order in which the mod should be loaded (lower numbers load first)
@@ -166,6 +166,6 @@ export interface UpdateProgress {
 export interface UpdatableMod {
   mod: ModDto;
   downloads: ModDownloadItem[];
-  selectedDownload?: ModDownloadItem;
+  selectedDownloads: ModDownloadItem[];
   selectedFileTree?: ModFileTree;
 }

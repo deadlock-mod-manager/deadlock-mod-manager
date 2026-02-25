@@ -43,7 +43,10 @@ export type ModsState = {
     vpks: string[],
     fileTree?: ModFileTree,
   ) => void;
-  setSelectedDownload: (remoteId: string, download: ModDownloadItem) => void;
+  setSelectedDownloads: (
+    remoteId: string,
+    downloads: ModDownloadItem[],
+  ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
@@ -79,11 +82,17 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           : -1;
       const installOrder = additional?.installOrder ?? maxOrder + 1;
 
+      const effectiveStatus = additional?.status ?? ModStatus.Downloading;
       const newMod = {
         ...mod,
         status: ModStatus.Downloading,
         installOrder,
         ...additional,
+        downloadedAt:
+          additional?.downloadedAt ??
+          (effectiveStatus !== ModStatus.Downloading ? new Date() : undefined),
+        selectedDownloads:
+          additional?.downloads ?? additional?.selectedDownloads ?? undefined,
       };
 
       const { activeProfileId, profiles } = state;
@@ -209,8 +218,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ...mod,
           status,
           downloadedAt:
-            status === ModStatus.Downloaded &&
-            mod.status !== ModStatus.Installed
+            (status === ModStatus.Downloaded &&
+              mod.status !== ModStatus.Installed) ||
+            (status === ModStatus.Installed && !mod.downloadedAt)
               ? new Date()
               : mod.downloadedAt,
         };
@@ -281,12 +291,12 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       })),
     })),
 
-  setSelectedDownload: (remoteId: string, download: ModDownloadItem) =>
+  setSelectedDownloads: (remoteId: string, downloads: ModDownloadItem[]) =>
     set((state) => ({
       localMods: state.localMods.map((mod) => ({
         ...mod,
-        selectedDownload:
-          mod.remoteId === remoteId ? download : mod.selectedDownload,
+        selectedDownloads:
+          mod.remoteId === remoteId ? downloads : mod.selectedDownloads,
       })),
     })),
 

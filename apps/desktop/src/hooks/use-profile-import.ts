@@ -71,6 +71,12 @@ export const useProfileImport = () => {
         url: string;
         size: number;
       };
+      selectedDownloads?: Array<{
+        remoteId: string;
+        file: string;
+        url: string;
+        size: number;
+      }>;
     }>,
     modsData: ModDto[],
   ): Promise<void> => {
@@ -128,12 +134,14 @@ export const useProfileImport = () => {
         const downloadsResponse = await getModDownloads(modData.remoteId);
         const downloadFiles = downloadsResponse.downloads || [];
 
-        // Use selectedDownload if available, otherwise use all downloads
+        const selectedFileNames = importedMod.selectedDownloads?.length
+          ? importedMod.selectedDownloads.map((d) => d.file)
+          : importedMod.selectedDownload
+            ? [importedMod.selectedDownload.file]
+            : null;
         const selectedFiles =
-          importedMod.selectedDownload && downloadFiles.length > 0
-            ? downloadFiles.filter(
-                (d) => d.name === importedMod.selectedDownload!.file,
-              )
+          selectedFileNames && downloadFiles.length > 0
+            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
             : downloadFiles;
 
         return {
@@ -292,6 +300,12 @@ export const useProfileImport = () => {
         url: string;
         size: number;
       };
+      selectedDownloads?: Array<{
+        remoteId: string;
+        file: string;
+        url: string;
+        size: number;
+      }>;
     }>,
     modsData: ModDto[],
   ): Promise<void> => {
@@ -328,12 +342,14 @@ export const useProfileImport = () => {
         const downloadsResponse = await getModDownloads(modData.remoteId);
         const downloadFiles = downloadsResponse.downloads || [];
 
-        // Use selectedDownload if available, otherwise use all downloads
+        const selectedFileNames = importedMod.selectedDownloads?.length
+          ? importedMod.selectedDownloads.map((d) => d.file)
+          : importedMod.selectedDownload
+            ? [importedMod.selectedDownload.file]
+            : null;
         const selectedFiles =
-          importedMod.selectedDownload && downloadFiles.length > 0
-            ? downloadFiles.filter(
-                (d) => d.name === importedMod.selectedDownload!.file,
-              )
+          selectedFileNames && downloadFiles.length > 0
+            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
             : downloadFiles;
 
         return {

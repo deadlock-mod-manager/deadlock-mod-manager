@@ -27,7 +27,7 @@ export const useCheckUpdates = (options?: {
     remoteId: mod.remoteId,
     installedAt:
       mod.downloadedAt ??
-      mod.selectedDownload?.createdAt ??
+      mod.selectedDownloads?.[0]?.createdAt ??
       mod.createdAt ??
       new Date(0),
   }));
