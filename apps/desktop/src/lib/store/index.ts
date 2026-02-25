@@ -311,20 +311,34 @@ export const usePersistedStore = create<State>()(
               "Migrating from version 10 to 11: Converting selectedDownload to selectedDownloads",
             );
 
+          const migrateModDownload = (mod: Record<string, unknown>) => {
+            const selectedDownload = mod.selectedDownload;
+            if (selectedDownload && !mod.selectedDownloads) {
+              return {
+                ...mod,
+                selectedDownloads: [selectedDownload],
+                selectedDownload: undefined,
+              };
+            }
+            return mod;
+          };
+
           if (Array.isArray(state.localMods)) {
-            state.localMods = state.localMods.map(
-              (mod: Record<string, unknown>) => {
-                const selectedDownload = mod.selectedDownload;
-                if (selectedDownload && !mod.selectedDownloads) {
-                  return {
-                    ...mod,
-                    selectedDownloads: [selectedDownload],
-                    selectedDownload: undefined,
-                  };
-                }
-                return mod;
-              },
-            );
+            state.localMods = state.localMods.map(migrateModDownload);
+          }
+
+          if (
+            state.profiles &&
+            typeof state.profiles === "object" &&
+            !Array.isArray(state.profiles)
+          ) {
+            for (const profile of Object.values(
+              state.profiles as Record<string, Record<string, unknown>>,
+            )) {
+              if (Array.isArray(profile.mods)) {
+                profile.mods = profile.mods.map(migrateModDownload);
+              }
+            }
           }
         }
 

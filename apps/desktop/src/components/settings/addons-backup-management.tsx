@@ -142,17 +142,10 @@ export const AddonsBackupManagement = () => {
         .info("Backup restored");
     } catch (error) {
       toast.dismiss();
-      const errorMessage = (() => {
-        if (error instanceof Error) return error.message;
-        if (error !== null && typeof error === "object") {
-          const desc = Object.getOwnPropertyDescriptor(error, "message");
-          if (desc?.value != null && typeof desc.value === "string")
-            return desc.value;
-        }
-        return String(error);
-      })();
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger
-        .withError(new Error(errorMessage))
+        .withError(error instanceof Error ? error : new Error(errorMessage))
         .error("Failed to restore backup");
       toast.error(`${t("settings.backupRestoreFailed")}: ${errorMessage}`);
     } finally {

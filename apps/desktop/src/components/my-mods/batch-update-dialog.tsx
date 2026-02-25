@@ -160,20 +160,21 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = localMods.find((m) => m.remoteId === update.mod.remoteId);
 
+  const sortedDownloads = [...update.downloads].sort(
+    (a, b) => (b.size || 0) - (a.size || 0),
+  );
   const selectedSet = new Set(update.selectedDownloads.map((d) => d.name));
   const handleFileToggle = (download: ModDownloadItem, checked: boolean) => {
     const newSelected = checked
       ? [...update.selectedDownloads, download]
       : update.selectedDownloads.filter((d) => d.name !== download.name);
-    if (newSelected.length > 0) {
-      onSelectDownloads(update.mod.remoteId, newSelected);
-    }
+    onSelectDownloads(update.mod.remoteId, newSelected);
   };
   const handleSelectAll = () => {
     onSelectDownloads(update.mod.remoteId, update.downloads);
   };
   const handleSelectNone = () => {
-    onSelectDownloads(update.mod.remoteId, [update.downloads[0]]);
+    onSelectDownloads(update.mod.remoteId, [sortedDownloads[0]]);
   };
 
   const totalSize = update.selectedDownloads.reduce(
@@ -236,37 +237,35 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
               </Button>
             </div>
             <div className='space-y-2 max-h-40 overflow-y-auto'>
-              {update.downloads
-                .sort((a, b) => (b.size || 0) - (a.size || 0))
-                .map((download) => (
-                  <div
-                    className='flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50'
-                    key={download.name}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFileToggle(
-                        download,
-                        !selectedSet.has(download.name),
-                      );
-                    }}>
-                    <Checkbox
-                      checked={selectedSet.has(download.name)}
-                      onCheckedChange={(checked) =>
-                        handleFileToggle(download, !!checked)
-                      }
-                    />
-                    <div className='min-w-0 flex-1'>
-                      <span
-                        className='truncate font-medium text-foreground'
-                        title={download.name}>
-                        {download.name}
-                      </span>
-                      <span className='text-muted-foreground text-sm ml-2'>
-                        {formatSize(download.size)}
-                      </span>
-                    </div>
+              {sortedDownloads.map((download) => (
+                <div
+                  className='flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50'
+                  key={download.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFileToggle(download, !selectedSet.has(download.name));
+                  }}>
+                  <Checkbox
+                    checked={selectedSet.has(download.name)}
+                    disabled={
+                      selectedSet.has(download.name) && selectedSet.size === 1
+                    }
+                    onCheckedChange={(checked) =>
+                      handleFileToggle(download, !!checked)
+                    }
+                  />
+                  <div className='min-w-0 flex-1'>
+                    <span
+                      className='truncate font-medium text-foreground'
+                      title={download.name}>
+                      {download.name}
+                    </span>
+                    <span className='text-muted-foreground text-sm ml-2'>
+                      {formatSize(download.size)}
+                    </span>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
         )}

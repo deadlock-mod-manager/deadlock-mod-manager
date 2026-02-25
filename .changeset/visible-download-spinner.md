@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Fix loading spinner visibility on primary buttons in multi-file download dialog and show download percentage during multi-file mod downloads
+Show download progress percentage in multi-file download dialog

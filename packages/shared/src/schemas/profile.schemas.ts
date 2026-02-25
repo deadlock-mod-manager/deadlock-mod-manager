@@ -41,3 +41,4 @@ export const v1ProfileSchema = z.object({
 export const profileSchema = z.union([v1ProfileSchema]);
 
 export type SharedProfile = z.infer<typeof profileSchema>;
+export type ProfileModDownload = z.infer<typeof profileModDownloadSchema>;

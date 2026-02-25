@@ -124,7 +124,9 @@
     "selectAll": "Select All",
     "selectNone": "Select None",
     "total": "Total",
-    "filesSelected": "{{selected}} of {{total}} files selected"
+    "filesSelected": "{{selected}} of {{total}} files selected",
+    "downloadingPercent": "Downloading {{percent}}%...",
+    "downloadSelected": "Download Selected"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",

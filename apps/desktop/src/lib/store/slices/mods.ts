@@ -91,8 +91,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         downloadedAt:
           additional?.downloadedAt ??
           (effectiveStatus !== ModStatus.Downloading ? new Date() : undefined),
-        selectedDownloads:
-          additional?.downloads ?? additional?.selectedDownloads ?? undefined,
+        selectedDownloads: additional?.selectedDownloads,
       };
 
       const { activeProfileId, profiles } = state;

@@ -1,4 +1,8 @@
-import { profileSchema, type SharedProfile } from "@deadlock-mods/shared";
+import {
+  profileSchema,
+  type ProfileModDownload,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -39,12 +43,7 @@ export const ProfileShareDialog = () => {
       const baseModData: {
         remoteId: string;
         fileTree?: ModFileTree;
-        selectedDownloads?: Array<{
-          remoteId: string;
-          file: string;
-          url: string;
-          size: number;
-        }>;
+        selectedDownloads?: ProfileModDownload[];
       } = {
         remoteId: mod.remoteId,
       };

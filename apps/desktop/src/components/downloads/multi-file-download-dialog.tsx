@@ -210,8 +210,10 @@ export function MultiFileDownloadDialog({
               isLoading={isDownloading}
               onClick={handleDownload}>
               {isDownloading
-                ? `Downloading ${Math.round(downloadPercentage)}%...`
-                : "Download Selected"}
+                ? t("downloads.downloadingPercent", {
+                    percent: Math.round(downloadPercentage),
+                  })
+                : t("downloads.downloadSelected")}
             </Button>
           </div>
         </DialogFooter>
