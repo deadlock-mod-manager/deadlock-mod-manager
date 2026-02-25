@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { z } from "zod";
+import logger from "@/lib/logger";
 import { type CrosshairState, createCrosshairSlice } from "./slices/crosshair";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
@@ -8,6 +10,17 @@ import { createScrollSlice, type ScrollState } from "./slices/scroll";
 import { createSettingsSlice, type SettingsState } from "./slices/settings";
 import { createUISlice, type UIState } from "./slices/ui";
 import storage from "./storage";
+
+const PersistedModSchema = z.object({ status: z.string() }).passthrough();
+
+const PersistedProfileSchema = z
+  .object({ mods: z.array(PersistedModSchema).default([]) })
+  .passthrough();
+
+const MigrationV10StateSchema = z.object({
+  localMods: z.array(PersistedModSchema).default([]),
+  profiles: z.record(z.string(), PersistedProfileSchema).default({}),
+});
 
 export type State = ModsState &
   ProfilesState &
@@ -38,7 +51,13 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 1 to 2: Add profiles system
         if (version === 1) {
-          console.log("Migrating from version 1 to 2");
+          logger
+            .withMetadata({
+              migrationFrom: 1,
+              migrationTo: 2,
+              action: "add-profiles-system",
+            })
+            .info("Migrating from version 1 to 2");
           const now = new Date();
 
           // Build enabledMods from currently installed mods
@@ -79,9 +98,15 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 2 to 3: Add folderName to profiles
         if (version <= 2) {
-          console.log(
-            "Migrating from version 2 to 3: Adding folderName to profiles",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 2,
+              migrationTo: 3,
+              action: "add-foldername-to-profiles",
+            })
+            .info(
+              "Migrating from version 2 to 3: Adding folderName to profiles",
+            );
           const profiles = state.profiles as Record<string, unknown>;
 
           if (profiles && typeof profiles === "object") {
@@ -113,9 +138,15 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 3 to 4: Add mods array to each profile
         if (version <= 3) {
-          console.log(
-            "Migrating from version 3 to 4: Adding mods array to profiles",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 3,
+              migrationTo: 4,
+              action: "add-mods-array-to-profiles",
+            })
+            .info(
+              "Migrating from version 3 to 4: Adding mods array to profiles",
+            );
           const profiles = state.profiles as Record<string, unknown>;
           const activeProfileId = state.activeProfileId as string;
           const localMods = state.localMods as unknown[];
@@ -139,17 +170,27 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 4 to 5: Add crosshair history
         if (version <= 4) {
-          console.log(
-            "Migrating from version 4 to 5: Adding crosshair history",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 4,
+              migrationTo: 5,
+              action: "add-crosshair-history",
+            })
+            .info("Migrating from version 4 to 5: Adding crosshair history");
           state.activeCrosshairHistory = [];
         }
 
         // Migration from version 5 to 6: Add activeCrosshair field
         if (version <= 5) {
-          console.log(
-            "Migrating from version 5 to 6: Adding activeCrosshair field",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 5,
+              migrationTo: 6,
+              action: "add-active-crosshair-field",
+            })
+            .info(
+              "Migrating from version 5 to 6: Adding activeCrosshair field",
+            );
           const history = state.activeCrosshairHistory as unknown[];
           state.activeCrosshair =
             Array.isArray(history) && history.length > 0 ? history[0] : null;
@@ -157,9 +198,15 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 6 to 7: Add crosshairFilters field
         if (version <= 6) {
-          console.log(
-            "Migrating from version 6 to 7: Adding crosshairFilters field",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 6,
+              migrationTo: 7,
+              action: "add-crosshair-filters-field",
+            })
+            .info(
+              "Migrating from version 6 to 7: Adding crosshairFilters field",
+            );
           state.crosshairFilters = {
             selectedHeroes: [],
             selectedTags: [],
@@ -171,17 +218,29 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 7 to 8: Add linuxGpuOptimization field (on by default)
         if (version <= 7) {
-          console.log(
-            "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 7,
+              migrationTo: 8,
+              action: "add-linux-gpu-optimization-field",
+            })
+            .info(
+              "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
+            );
           state.linuxGpuOptimization = true;
         }
 
         // Migration from version 8 to 9: Rename showAudioOnly/showNSFW to hideAudio/hideNSFW, add hideOutdated
         if (version <= 8) {
-          console.log(
-            "Migrating from version 8 to 9: Renaming filter fields and adding hideOutdated",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 8,
+              migrationTo: 9,
+              action: "rename-filter-fields-add-hide-outdated",
+            })
+            .info(
+              "Migrating from version 8 to 9: Renaming filter fields and adding hideOutdated",
+            );
           const modsFilters = state.modsFilters as
             | Record<string, unknown>
             | undefined;
@@ -200,37 +259,43 @@ export const usePersistedStore = create<State>()(
 
         // Migration from version 9 to 10: Reset stuck installing mods to downloaded
         if (version <= 9) {
-          console.log(
-            "Migrating from version 9 to 10: Resetting stuck installing mods",
-          );
+          logger
+            .withMetadata({
+              migrationFrom: 9,
+              migrationTo: 10,
+              action: "reset-stuck-installing-mods",
+            })
+            .info(
+              "Migrating from version 9 to 10: Resetting stuck installing mods",
+            );
 
-          const resetInstallingStatus = (mod: unknown) => {
-            if (!mod || typeof mod !== "object") {
-              return;
-            }
-
-            const modObj = mod as Record<string, unknown>;
-            if (modObj.status === "installing") {
-              modObj.status = "downloaded";
-            }
-          };
-
-          if (Array.isArray(state.localMods)) {
-            state.localMods.forEach(resetInstallingStatus);
-          }
-
-          const profiles = state.profiles as Record<string, unknown>;
-          if (profiles && typeof profiles === "object") {
-            for (const profile of Object.values(profiles)) {
-              if (!profile || typeof profile !== "object") {
-                continue;
+          const parsed = MigrationV10StateSchema.safeParse(state);
+          if (parsed.success) {
+            const resetInstallingStatus = (
+              mod: z.infer<typeof PersistedModSchema>,
+            ) => {
+              if (mod.status === "installing") {
+                mod.status = "downloaded";
               }
+            };
 
-              const profileObj = profile as Record<string, unknown>;
-              if (Array.isArray(profileObj.mods)) {
-                profileObj.mods.forEach(resetInstallingStatus);
+            for (const mod of parsed.data.localMods) {
+              resetInstallingStatus(mod);
+            }
+            state.localMods = parsed.data.localMods;
+
+            for (const profile of Object.values(parsed.data.profiles)) {
+              for (const mod of profile.mods) {
+                resetInstallingStatus(mod);
               }
             }
+            state.profiles = parsed.data.profiles;
+          } else {
+            logger
+              .withMetadata({ errors: parsed.error.flatten() })
+              .warn(
+                "Skipping v9→v10 migration: persisted state did not match expected shape",
+              );
           }
         }
 
