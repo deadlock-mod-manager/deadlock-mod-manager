@@ -30,7 +30,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -186,17 +186,51 @@ export const usePersistedStore = create<State>()(
             | Record<string, unknown>
             | undefined;
           if (modsFilters) {
-            // Rename showAudioOnly → hideAudio (invert semantics: old "show audio only" in exclude mode = hide)
             if ("showAudioOnly" in modsFilters) {
               modsFilters.hideAudio = false;
               delete modsFilters.showAudioOnly;
             }
-            // Rename showNSFW → hideNSFW
             if ("showNSFW" in modsFilters) {
               modsFilters.hideNSFW = false;
               delete modsFilters.showNSFW;
             }
             modsFilters.hideOutdated = false;
+          }
+        }
+
+        // Migration from version 9 to 10: Reset stuck installing mods to downloaded
+        if (version <= 9) {
+          console.log(
+            "Migrating from version 9 to 10: Resetting stuck installing mods",
+          );
+
+          const resetInstallingStatus = (mod: unknown) => {
+            if (!mod || typeof mod !== "object") {
+              return;
+            }
+
+            const modObj = mod as Record<string, unknown>;
+            if (modObj.status === "installing") {
+              modObj.status = "downloaded";
+            }
+          };
+
+          if (Array.isArray(state.localMods)) {
+            state.localMods.forEach(resetInstallingStatus);
+          }
+
+          const profiles = state.profiles as Record<string, unknown>;
+          if (profiles && typeof profiles === "object") {
+            for (const profile of Object.values(profiles)) {
+              if (!profile || typeof profile !== "object") {
+                continue;
+              }
+
+              const profileObj = profile as Record<string, unknown>;
+              if (Array.isArray(profileObj.mods)) {
+                profileObj.mods.forEach(resetInstallingStatus);
+              }
+            }
           }
         }
 
