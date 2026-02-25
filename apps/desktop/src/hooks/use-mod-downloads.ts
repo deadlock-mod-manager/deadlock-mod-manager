@@ -40,8 +40,11 @@ export const useModDownloads = ({
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 10 minutes after component unmounts
     gcTime: 10 * 60 * 1000,
-    // Retry failed requests up to 2 times
-    retry: 2,
+    // Avoid noisy repeated requests for missing download metadata
+    retry: false,
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
     throwOnError: false,
   });
 

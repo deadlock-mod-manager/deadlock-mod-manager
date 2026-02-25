@@ -139,6 +139,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           );
           break;
         case ModStatus.Downloaded:
+        case ModStatus.FailedToInstall:
           await install(localMod, {
             onStart: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Installing);
@@ -161,7 +162,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               });
             },
             onError: (mod, error) => {
-              setModStatus(mod.remoteId, ModStatus.Error);
+              setModStatus(mod.remoteId, ModStatus.FailedToInstall);
               toast.error(
                 error.message || t("notifications.failedToInstallMod"),
               );

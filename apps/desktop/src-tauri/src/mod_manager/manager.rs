@@ -160,9 +160,30 @@ impl ModManager {
     };
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
-    let prefixed_vpks = self
+    let mut prefixed_vpks = self
       .vpk_manager
       .find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
+
+    // Recover older local imports that were added before prefixed VPKs were copied.
+    if prefixed_vpks.is_empty() && deadlock_mod.id.starts_with("local-") {
+      let local_files_dir = self
+        .filesystem
+        .get_mods_store_path()?
+        .join(&deadlock_mod.id)
+        .join("files");
+
+      if local_files_dir.exists() {
+        log::info!(
+          "No prefixed VPKs found for local mod {}, restoring from {:?}",
+          deadlock_mod.id,
+          local_files_dir
+        );
+        prefixed_vpks =
+          self
+            .vpk_manager
+            .copy_vpks_with_prefix(&local_files_dir, &addons_path, &deadlock_mod.id)?;
+      }
+    }
 
     if prefixed_vpks.is_empty() {
       log::error!("No prefixed VPKs found for mod {}", deadlock_mod.id);
