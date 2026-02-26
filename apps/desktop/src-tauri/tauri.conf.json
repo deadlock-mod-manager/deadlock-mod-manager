@@ -33,13 +33,14 @@
           "--socket=wayland",
           "--socket=fallback-x11",
           "--socket=session-bus",
-          "--device=dri",
+          "--device=all",
           "--filesystem=~/.steam",
           "--filesystem=~/.local/share/Steam",
           "--filesystem=xdg-data/Steam",
           "--filesystem=home/.steam",
           "--talk-name=org.freedesktop.Notifications",
-          "--talk-name=org.kde.StatusNotifierWatcher"
+          "--talk-name=org.kde.StatusNotifierWatcher",
+          "--env=WEBKIT_DISABLE_DMABUF_RENDERER=1"
         ]
       }
     },

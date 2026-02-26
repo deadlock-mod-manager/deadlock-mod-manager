@@ -268,7 +268,11 @@ jobs:
         if: matrix.platform == 'ubuntu-24.04'
         run: |
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+          flatpak install --user -y flathub \
+            org.freedesktop.Platform//24.08 \
+            org.freedesktop.Sdk//24.08 \
+            org.freedesktop.Platform.GL.default//24.08 \
+            org.freedesktop.Platform.GL32.default//24.08
 
       - name: Install pnpm
         run: npm install -g pnpm
