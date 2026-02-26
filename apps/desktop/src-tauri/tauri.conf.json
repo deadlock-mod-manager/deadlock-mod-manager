@@ -26,13 +26,26 @@
   },
   "bundle": {
     "linux": {
-      "appimage": {
-        "bundleMediaFramework": true
+      "flatpak": {
+        "finishArgs": [
+          "--share=network",
+          "--share=ipc",
+          "--socket=wayland",
+          "--socket=fallback-x11",
+          "--socket=session-bus",
+          "--device=dri",
+          "--filesystem=~/.steam",
+          "--filesystem=~/.local/share/Steam",
+          "--filesystem=xdg-data/Steam",
+          "--filesystem=home/.steam",
+          "--talk-name=org.freedesktop.Notifications",
+          "--talk-name=org.kde.StatusNotifierWatcher"
+        ]
       }
     },
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "flatpak"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
