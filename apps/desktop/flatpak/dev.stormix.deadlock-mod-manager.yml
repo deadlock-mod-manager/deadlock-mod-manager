@@ -38,10 +38,6 @@ modules:
 
       - install -Dm755 deb-extract/usr/bin/deadlock-mod-manager /app/bin/deadlock-mod-manager
 
-      - mkdir -p /app/lib/deadlock-mod-manager
-      - cp -r deb-extract/usr/lib/deadlock-mod-manager/. /app/lib/deadlock-mod-manager
-      - find /app/lib/deadlock-mod-manager -type f -exec chmod 644 {} \;
-
       - install -Dm644 dev.stormix.deadlock-mod-manager.desktop /app/share/applications/dev.stormix.deadlock-mod-manager.desktop
 
       - install -Dm644 deb-extract/usr/share/icons/hicolor/32x32/apps/deadlock-mod-manager.png /app/share/icons/hicolor/32x32/apps/dev.stormix.deadlock-mod-manager.png
