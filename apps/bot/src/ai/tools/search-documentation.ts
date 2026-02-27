@@ -24,7 +24,8 @@ export function createDocumentationSearchTool(
     description:
       "Search the Deadlock Mod Manager documentation to find relevant information about features, troubleshooting, API usage, or common issues. Use this when users ask questions about how to use the mod manager, encounter errors, or need technical information.",
     schema: searchDocumentationSchema,
-    func: async ({ query, numResults }) => {
+    func: async (input) => {
+      const { query, numResults } = searchDocumentationSchema.parse(input);
       const result = await retriever.retrieve(query, numResults);
 
       return result.match(
