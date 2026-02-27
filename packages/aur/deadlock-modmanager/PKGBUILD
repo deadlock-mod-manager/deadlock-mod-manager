@@ -1,0 +1,31 @@
+# Maintainer: stormix <contact@stormix.co>
+pkgname=deadlock-modmanager
+_pkgver=0.15.0
+pkgver=${_pkgver}
+pkgrel=1
+pkgdesc="A mod manager for the Valve game Deadlock, built with Tauri"
+arch=('x86_64')
+url="https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+license=('GPL-3.0-only')
+depends=(
+    'webkit2gtk-4.1'
+    'gtk3'
+    'libappindicator-gtk3'
+    'xdg-utils'
+)
+options=('!strip')
+source=("${pkgname}-${pkgver}.deb::https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/v${_pkgver}/deadlock-mod-manager_${_pkgver}_amd64.deb")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}"
+
+    # Extract the .deb archive
+    ar x "${pkgname}-${pkgver}.deb"
+    tar -xf data.tar.* -C "${pkgdir}/"
+
+    # Register the dlmm:// URI scheme handler
+    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/deadlock-mod-manager || true
+    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/deadlock-modmanager || true
+    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/dlmm || true
+}

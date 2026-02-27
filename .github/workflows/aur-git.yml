@@ -8,17 +8,21 @@ on:
       - "docs/**"
       - ".github/**"
       - "!.github/workflows/aur-git.yml"
+      - "packages/aur/**"
   workflow_dispatch:
 
 jobs:
   aur-git-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get new pkgver
         id: get_version
@@ -27,15 +31,21 @@ jobs:
           echo "pkgver=$NEW_PKGVER" >> $GITHUB_OUTPUT
           echo "New pkgver: $NEW_PKGVER"
 
-      - name: Clone from AUR
-        run: git clone https://aur.archlinux.org/deadlock-modmanager-git.git
-
-      - name: Update pkgver in PKGBUILD
+      - name: Prepare PKGBUILD
         run: |
-          cd deadlock-modmanager-git
-          sed -i "s/^pkgver=.*/pkgver=${{ steps.get_version.outputs.pkgver }}/" PKGBUILD
-          # Also reset pkgrel to 1 when pkgver changes
-          sed -i -E "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          # Update the source PKGBUILD in-repo
+          sed -i "s/^pkgver=.*/pkgver=${{ steps.get_version.outputs.pkgver }}/" packages/aur/deadlock-modmanager-git/PKGBUILD
+          sed -i -E "s/^pkgrel=.*/pkgrel=1/" packages/aur/deadlock-modmanager-git/PKGBUILD
+          # Copy for AUR deploy
+          cp -r packages/aur/deadlock-modmanager-git ./deadlock-modmanager-git
+
+      - name: Commit updated PKGBUILD
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git add packages/aur/deadlock-modmanager-git/PKGBUILD
+          git diff --staged --quiet || git commit -m "chore(aur): update deadlock-modmanager-git pkgver to ${{ steps.get_version.outputs.pkgver }} [skip ci]"
+          git push origin main
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
