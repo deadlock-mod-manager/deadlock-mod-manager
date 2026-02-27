@@ -1,11 +1,11 @@
 name: Install Flatpak SDK
-description: Adds the Flathub remote and installs the freedesktop Platform/SDK runtimes required for Flatpak builds.
+description: Adds the Flathub remote and installs the GNOME Platform/SDK runtimes required for Flatpak builds of Tauri apps.
 
 inputs:
-  sdk-version:
-    description: "Freedesktop SDK/Platform runtime version (e.g. 24.08)"
+  runtime-version:
+    description: "GNOME Platform/SDK runtime version (e.g. 47)"
     required: false
-    default: "24.08"
+    default: "47"
 
 runs:
   using: composite
@@ -14,11 +14,9 @@ runs:
       shell: bash
       run: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-    - name: Install Freedesktop runtimes
+    - name: Install GNOME runtimes
       shell: bash
       run: |
         flatpak install --user -y flathub \
-          org.freedesktop.Platform//${{ inputs.sdk-version }} \
-          org.freedesktop.Sdk//${{ inputs.sdk-version }} \
-          org.freedesktop.Platform.GL.default//${{ inputs.sdk-version }} \
-          org.freedesktop.Platform.GL32.default//${{ inputs.sdk-version }}
+          org.gnome.Platform//${{ inputs.runtime-version }} \
+          org.gnome.Sdk//${{ inputs.runtime-version }}

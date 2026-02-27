@@ -1,0 +1,50 @@
+id: dev.stormix.deadlock-mod-manager
+
+runtime: org.gnome.Platform
+runtime-version: "47"
+sdk: org.gnome.Sdk
+
+command: deadlock-mod-manager
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=~/.steam
+  - --filesystem=~/.local/share/Steam
+  - --filesystem=xdg-data/Steam
+  - --filesystem=home/.steam
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --env=WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+modules:
+  - name: deadlock-mod-manager
+    buildsystem: simple
+    sources:
+      - type: file
+        path: deadlock-mod-manager.deb
+      - type: file
+        path: dev.stormix.deadlock-mod-manager.metainfo.xml
+    build-commands:
+      - set -e
+      - mkdir -p deb-extract
+      - ar -x deadlock-mod-manager.deb --output deb-extract
+      - tar -C deb-extract -xf deb-extract/data.tar.gz
+
+      - install -Dm755 deb-extract/usr/bin/deadlock-mod-manager /app/bin/deadlock-mod-manager
+
+      - mkdir -p /app/lib/deadlock-mod-manager
+      - cp -r deb-extract/usr/lib/deadlock-mod-manager/. /app/lib/deadlock-mod-manager
+      - find /app/lib/deadlock-mod-manager -type f -exec chmod 644 {} \;
+
+      - sed -i 's/^Icon=.*/Icon=dev.stormix.deadlock-mod-manager/' deb-extract/usr/share/applications/deadlock-mod-manager.desktop
+      - install -Dm644 deb-extract/usr/share/applications/deadlock-mod-manager.desktop /app/share/applications/dev.stormix.deadlock-mod-manager.desktop
+
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/32x32/apps/deadlock-mod-manager.png /app/share/icons/hicolor/32x32/apps/dev.stormix.deadlock-mod-manager.png
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/128x128/apps/deadlock-mod-manager.png /app/share/icons/hicolor/128x128/apps/dev.stormix.deadlock-mod-manager.png
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/256x256@2/apps/deadlock-mod-manager.png /app/share/icons/hicolor/256x256@2/apps/dev.stormix.deadlock-mod-manager.png
+
+      - install -Dm644 dev.stormix.deadlock-mod-manager.metainfo.xml /app/share/metainfo/dev.stormix.deadlock-mod-manager.metainfo.xml

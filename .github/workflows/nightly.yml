@@ -268,7 +268,7 @@ jobs:
         if: matrix.platform == 'ubuntu-24.04'
         uses: ./.github/actions/install-flatpak-sdk
         with:
-          sdk-version: "24.08"
+          runtime-version: "47"
 
       - name: Install pnpm
         run: npm install -g pnpm
@@ -298,6 +298,35 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
+
+      - name: Build Flatpak bundle (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          DEB_PATH=$(find apps/desktop/target/release/bundle/deb -name '*.deb' | head -1)
+          cp "$DEB_PATH" apps/desktop/flatpak/deadlock-mod-manager.deb
+          cp apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml apps/desktop/flatpak/
+
+          flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.yml
+          flatpak build-bundle flatpak-repo deadlock-mod-manager.flatpak dev.stormix.deadlock-mod-manager
+
+      - name: Upload Flatpak to release (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const content = fs.readFileSync('deadlock-mod-manager.flatpak');
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: 'deadlock-mod-manager.flatpak',
+              data: content
+            });
+            console.log('Successfully uploaded Flatpak bundle');
 
       # Windows build - don't upload to release yet, need to code-sign first
       - name: Build the app (Windows)
