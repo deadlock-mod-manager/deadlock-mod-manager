@@ -37,7 +37,7 @@
     "croner": "^9.1.0",
     "dotenv-cli": "^7.4.4",
     "genversion": "^3.2.0",
-    "hono": "^4.10.3",
+    "hono": "^4.12.3",
     "ioredis": "^5.8.0",
     "neverthrow": "^8.2.0",
     "prom-client": "^15.1.3",
