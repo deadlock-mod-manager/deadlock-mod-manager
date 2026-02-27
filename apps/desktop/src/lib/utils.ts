@@ -148,7 +148,7 @@ export const isUpdateAvailable = (
   if (!localMod || !mod.filesUpdatedAt) return false;
   const installedAt =
     localMod.downloadedAt ??
-    localMod.selectedDownload?.createdAt ??
+    localMod.selectedDownloads?.[0]?.createdAt ??
     localMod.createdAt;
   if (!installedAt) return false;
   return (

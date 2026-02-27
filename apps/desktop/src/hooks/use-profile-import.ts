@@ -1,4 +1,4 @@
-import type { ModDto } from "@deadlock-mods/shared";
+import type { ModDto, ProfileModDownload } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -26,6 +26,23 @@ export interface ImportProgress {
   isDownloading: boolean;
   isInstalling: boolean;
 }
+
+interface ImportedMod {
+  remoteId: string;
+  fileTree?: ModFileTree;
+  selectedDownload?: ProfileModDownload;
+  selectedDownloads?: ProfileModDownload[];
+}
+
+const resolveSelectedFileNames = (
+  selectedDownloads?: ProfileModDownload[],
+  selectedDownload?: ProfileModDownload,
+): string[] | null =>
+  selectedDownloads?.length
+    ? selectedDownloads.map((d) => d.file)
+    : selectedDownload
+      ? [selectedDownload.file]
+      : null;
 
 export const useProfileImport = () => {
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(
@@ -62,16 +79,7 @@ export const useProfileImport = () => {
   }, []);
 
   const createProfileFromImport = async (
-    importedMods: Array<{
-      remoteId: string;
-      fileTree?: ModFileTree;
-      selectedDownload?: {
-        remoteId: string;
-        file: string;
-        url: string;
-        size: number;
-      };
-    }>,
+    importedMods: ImportedMod[],
     modsData: ModDto[],
   ): Promise<void> => {
     logger
@@ -124,16 +132,16 @@ export const useProfileImport = () => {
           throw new Error(`Mod ${importedMod.remoteId} not available`);
         }
 
-        // Fetch downloads for this mod
         const downloadsResponse = await getModDownloads(modData.remoteId);
         const downloadFiles = downloadsResponse.downloads || [];
 
-        // Use selectedDownload if available, otherwise use all downloads
+        const selectedFileNames = resolveSelectedFileNames(
+          importedMod.selectedDownloads,
+          importedMod.selectedDownload,
+        );
         const selectedFiles =
-          importedMod.selectedDownload && downloadFiles.length > 0
-            ? downloadFiles.filter(
-                (d) => d.name === importedMod.selectedDownload!.file,
-              )
+          selectedFileNames && downloadFiles.length > 0
+            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
             : downloadFiles;
 
         return {
@@ -144,16 +152,14 @@ export const useProfileImport = () => {
             name: d.name,
             size: d.size || 0,
           })),
-          // If fileTree exists, ensure at least one file is selected
-          // (fallback for older profiles that may not have selection info)
           fileTree: importedMod.fileTree
             ? {
                 ...importedMod.fileTree,
                 files: importedMod.fileTree.files.some((f) => f.is_selected)
-                  ? importedMod.fileTree.files // Use existing selections if any
+                  ? importedMod.fileTree.files
                   : importedMod.fileTree.files.map((f) => ({
                       ...f,
-                      is_selected: true, // Select all if none selected
+                      is_selected: true,
                     })),
               }
             : undefined,
@@ -283,16 +289,7 @@ export const useProfileImport = () => {
   };
 
   const addToCurrentProfile = async (
-    importedMods: Array<{
-      remoteId: string;
-      fileTree?: ModFileTree;
-      selectedDownload?: {
-        remoteId: string;
-        file: string;
-        url: string;
-        size: number;
-      };
-    }>,
+    importedMods: ImportedMod[],
     modsData: ModDto[],
   ): Promise<void> => {
     const activeProfile = getActiveProfile();
@@ -324,16 +321,16 @@ export const useProfileImport = () => {
           throw new Error(`Mod ${importedMod.remoteId} not available`);
         }
 
-        // Fetch downloads for this mod
         const downloadsResponse = await getModDownloads(modData.remoteId);
         const downloadFiles = downloadsResponse.downloads || [];
 
-        // Use selectedDownload if available, otherwise use all downloads
+        const selectedFileNames = resolveSelectedFileNames(
+          importedMod.selectedDownloads,
+          importedMod.selectedDownload,
+        );
         const selectedFiles =
-          importedMod.selectedDownload && downloadFiles.length > 0
-            ? downloadFiles.filter(
-                (d) => d.name === importedMod.selectedDownload!.file,
-              )
+          selectedFileNames && downloadFiles.length > 0
+            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
             : downloadFiles;
 
         return {
@@ -344,16 +341,14 @@ export const useProfileImport = () => {
             name: d.name,
             size: d.size || 0,
           })),
-          // If fileTree exists, ensure at least one file is selected
-          // (fallback for older profiles that may not have selection info)
           fileTree: importedMod.fileTree
             ? {
                 ...importedMod.fileTree,
                 files: importedMod.fileTree.files.some((f) => f.is_selected)
-                  ? importedMod.fileTree.files // Use existing selections if any
+                  ? importedMod.fileTree.files
                   : importedMod.fileTree.files.map((f) => ({
                       ...f,
-                      is_selected: true, // Select all if none selected
+                      is_selected: true,
                     })),
               }
             : undefined,

@@ -27,6 +27,7 @@ interface MultiFileDownloadDialogProps {
   files: ModDownloadItem[];
   modName: string;
   isDownloading?: boolean;
+  downloadPercentage?: number;
 }
 
 export function MultiFileDownloadDialog({
@@ -36,6 +37,7 @@ export function MultiFileDownloadDialog({
   files,
   modName,
   isDownloading = false,
+  downloadPercentage = 0,
 }: MultiFileDownloadDialogProps) {
   const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -204,18 +206,14 @@ export function MultiFileDownloadDialog({
             <Button
               className='min-w-24'
               disabled={selectedFiles.size === 0 || isDownloading}
+              icon={<Download className='h-4 w-4' />}
+              isLoading={isDownloading}
               onClick={handleDownload}>
-              {isDownloading ? (
-                <>
-                  <div className='mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white' />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className='mr-2 h-4 w-4' />
-                  Download Selected
-                </>
-              )}
+              {isDownloading
+                ? t("downloads.downloadingPercent", {
+                    percent: Math.round(downloadPercentage),
+                  })
+                : t("downloads.downloadSelected")}
             </Button>
           </div>
         </DialogFooter>

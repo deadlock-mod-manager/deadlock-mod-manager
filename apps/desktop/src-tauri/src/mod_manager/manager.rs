@@ -459,6 +459,13 @@ impl ModManager {
       .vpk_manager
       .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
 
+    for (remote_id, new_vpks) in &updated_mappings {
+      if let Some(mut mod_entry) = self.mod_repository.remove_mod(remote_id) {
+        mod_entry.installed_vpks = new_vpks.clone();
+        self.mod_repository.add_mod(mod_entry);
+      }
+    }
+
     log::info!("Mod reordering by remote ID completed successfully");
     Ok(updated_mappings)
   }

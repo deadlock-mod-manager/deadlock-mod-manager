@@ -142,10 +142,12 @@ export const AddonsBackupManagement = () => {
         .info("Backup restored");
     } catch (error) {
       toast.dismiss();
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error instanceof Error ? error : new Error(errorMessage))
         .error("Failed to restore backup");
-      toast.error(t("settings.backupRestoreFailed"));
+      toast.error(`${t("settings.backupRestoreFailed")}: ${errorMessage}`);
     } finally {
       setSelectedBackup(null);
     }

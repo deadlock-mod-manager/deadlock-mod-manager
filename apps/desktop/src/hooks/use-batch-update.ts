@@ -23,7 +23,12 @@ export const useBatchUpdate = () => {
   );
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const { t } = useTranslation();
-  const { getActiveProfile, setInstalledVpks, localMods } = usePersistedStore();
+  const {
+    getActiveProfile,
+    setInstalledVpks,
+    setSelectedDownloads: setStoreSelectedDownloads,
+    localMods,
+  } = usePersistedStore();
 
   useEffect(() => {
     const unlistenPromise = listen<BatchUpdateProgressEvent>(
@@ -55,22 +60,26 @@ export const useBatchUpdate = () => {
         (m) => m.remoteId === update.mod.remoteId,
       );
 
-      let selectedDownload: ModDownloadItem | undefined;
+      let selectedDownloads: ModDownloadItem[];
       if (update.downloads.length === 1) {
-        selectedDownload = update.downloads[0];
-      } else if (localMod?.selectedDownload) {
-        selectedDownload =
-          update.downloads.find(
-            (d) => d.name === localMod.selectedDownload!.name,
-          ) || update.downloads[0];
+        selectedDownloads = update.downloads;
+      } else if (
+        localMod?.selectedDownloads &&
+        localMod.selectedDownloads.length > 0
+      ) {
+        const savedSelections = localMod.selectedDownloads;
+        const matched = update.downloads.filter((d) =>
+          savedSelections.some((sd) => sd.name === d.name),
+        );
+        selectedDownloads = matched.length > 0 ? matched : update.downloads;
       } else {
-        selectedDownload = update.downloads[0];
+        selectedDownloads = update.downloads;
       }
 
       return {
         mod: update.mod,
         downloads: update.downloads,
-        selectedDownload,
+        selectedDownloads,
         selectedFileTree: localMod?.installedFileTree,
       };
     });
@@ -79,10 +88,15 @@ export const useBatchUpdate = () => {
     return prepared;
   };
 
-  const setSelectedDownload = (remoteId: string, download: ModDownloadItem) => {
+  const setSelectedDownloads = (
+    remoteId: string,
+    downloads: ModDownloadItem[],
+  ) => {
     setUpdatableMods((mods) =>
       mods.map((m) =>
-        m.mod.remoteId === remoteId ? { ...m, selectedDownload: download } : m,
+        m.mod.remoteId === remoteId
+          ? { ...m, selectedDownloads: downloads }
+          : m,
       ),
     );
   };
@@ -120,19 +134,11 @@ export const useBatchUpdate = () => {
       return {
         modId: um.mod.remoteId,
         modName: um.mod.name,
-        downloadFiles: um.selectedDownload
-          ? [
-              {
-                url: um.selectedDownload.url,
-                name: um.selectedDownload.name,
-                size: um.selectedDownload.size,
-              },
-            ]
-          : um.downloads.map((d) => ({
-              url: d.url,
-              name: d.name,
-              size: d.size,
-            })),
+        downloadFiles: um.selectedDownloads.map((d) => ({
+          url: d.url,
+          name: d.name,
+          size: d.size,
+        })),
         fileTree: um.selectedFileTree,
         installedVpks: localMod?.installedVpks ?? [],
       };
@@ -156,6 +162,10 @@ export const useBatchUpdate = () => {
             installedModInfo.modId,
             installedModInfo.installedVpks,
             installedModInfo.fileTree,
+          );
+          setStoreSelectedDownloads(
+            installedModInfo.modId,
+            updatableMod.selectedDownloads,
           );
 
           usePersistedStore.setState((state) => ({
@@ -201,7 +211,7 @@ export const useBatchUpdate = () => {
 
   return {
     updatableMods,
-    setSelectedDownload,
+    setSelectedDownloads,
     setSelectedFileTree,
     prepareUpdates,
     executeBatchUpdate,

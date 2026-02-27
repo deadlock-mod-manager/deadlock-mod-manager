@@ -114,6 +114,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   } = useInstallWithCollection();
   const { uninstall } = useUninstall();
   const {
+    getModProgress,
     setInstalledVpks,
     removeMod,
     setModStatus,
@@ -357,6 +358,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
       />
 
       <MultiFileDownloadDialog
+        downloadPercentage={
+          getModProgress(remoteMod?.remoteId ?? "")?.percentage ?? 0
+        }
         files={availableFiles}
         isDownloading={localMod?.status === ModStatus.Downloading}
         isOpen={isDialogOpen}

@@ -9,21 +9,17 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deadlock-mods/ui/components/select";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   AlertCircle,
   Calendar,
+  HardDrive,
   Loader2,
   RefreshCw,
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { DateDisplay } from "@/components/date-display";
@@ -49,7 +45,7 @@ export const BatchUpdateDialog = ({
   const { t } = useTranslation();
   const {
     updatableMods,
-    setSelectedDownload,
+    setSelectedDownloads,
     prepareUpdates,
     executeBatchUpdate,
     updateProgress,
@@ -72,9 +68,11 @@ export const BatchUpdateDialog = ({
     }
   };
 
-  if (open && updatableMods.length === 0 && updates.length > 0) {
-    prepareUpdates(updates);
-  }
+  useEffect(() => {
+    if (open && updates.length > 0) {
+      prepareUpdates(updates);
+    }
+  }, [open, updates, prepareUpdates]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -124,7 +122,7 @@ export const BatchUpdateDialog = ({
                 <UpdateModCard
                   key={update.mod.remoteId}
                   update={update}
-                  onSelectDownload={setSelectedDownload}
+                  onSelectDownloads={setSelectedDownloads}
                 />
               ))}
             </div>
@@ -157,13 +155,35 @@ export const BatchUpdateDialog = ({
 
 interface UpdateModCardProps {
   update: UpdatableMod;
-  onSelectDownload: (remoteId: string, download: ModDownloadItem) => void;
+  onSelectDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
 }
 
-const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
+const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
   const { t } = useTranslation();
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = localMods.find((m) => m.remoteId === update.mod.remoteId);
+
+  const sortedDownloads = [...update.downloads].sort(
+    (a, b) => (b.size || 0) - (a.size || 0),
+  );
+  const selectedSet = new Set(update.selectedDownloads.map((d) => d.name));
+  const handleFileToggle = (download: ModDownloadItem, checked: boolean) => {
+    const newSelected = checked
+      ? [...update.selectedDownloads, download]
+      : update.selectedDownloads.filter((d) => d.name !== download.name);
+    onSelectDownloads(update.mod.remoteId, newSelected);
+  };
+  const handleSelectAll = () => {
+    onSelectDownloads(update.mod.remoteId, update.downloads);
+  };
+  const handleSelectNone = () => {
+    onSelectDownloads(update.mod.remoteId, [sortedDownloads[0]]);
+  };
+
+  const totalSize = update.selectedDownloads.reduce(
+    (sum, d) => sum + (d.size || 0),
+    0,
+  );
 
   return (
     <div className='flex items-start gap-4 rounded-lg border p-4'>
@@ -201,29 +221,58 @@ const UpdateModCard = ({ update, onSelectDownload }: UpdateModCardProps) => {
         </div>
 
         {update.downloads.length > 1 && (
-          <div className='space-y-1'>
-            <label className='text-sm font-medium'>
-              {t("myMods.batchUpdate.selectVariant")}
-            </label>
-            <Select
-              value={update.selectedDownload?.url}
-              onValueChange={(url) => {
-                const download = update.downloads.find((d) => d.url === url);
-                if (download) {
-                  onSelectDownload(update.mod.remoteId, download);
-                }
-              }}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {update.downloads.map((download) => (
-                  <SelectItem key={download.url} value={download.url}>
-                    {download.name} ({formatSize(download.size)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className='space-y-2'>
+            <div className='flex items-center justify-between'>
+              <label className='text-sm font-medium'>
+                {t("myMods.batchUpdate.selectVariant")}
+              </label>
+              <div className='flex items-center gap-2 text-muted-foreground text-sm'>
+                <HardDrive className='h-4 w-4' />
+                {formatSize(totalSize)}
+              </div>
+            </div>
+            <div className='flex gap-2'>
+              <Button size='sm' variant='outline' onClick={handleSelectAll}>
+                {t("downloads.selectAll")}
+              </Button>
+              <Button size='sm' variant='outline' onClick={handleSelectNone}>
+                {t("downloads.selectNone")}
+              </Button>
+            </div>
+            <div className='space-y-2 max-h-40 overflow-y-auto'>
+              {sortedDownloads.map((download) => (
+                <div
+                  className='flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50'
+                  key={download.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const isOnlySelected =
+                      selectedSet.has(download.name) && selectedSet.size === 1;
+                    if (isOnlySelected) return;
+                    handleFileToggle(download, !selectedSet.has(download.name));
+                  }}>
+                  <Checkbox
+                    checked={selectedSet.has(download.name)}
+                    disabled={
+                      selectedSet.has(download.name) && selectedSet.size === 1
+                    }
+                    onCheckedChange={(checked) =>
+                      handleFileToggle(download, !!checked)
+                    }
+                  />
+                  <div className='min-w-0 flex-1'>
+                    <span
+                      className='truncate font-medium text-foreground'
+                      title={download.name}>
+                      {download.name}
+                    </span>
+                    <span className='text-muted-foreground text-sm ml-2'>
+                      {formatSize(download.size)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

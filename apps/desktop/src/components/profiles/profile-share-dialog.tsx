@@ -1,4 +1,8 @@
-import { profileSchema, type SharedProfile } from "@deadlock-mods/shared";
+import {
+  profileSchema,
+  type ProfileModDownload,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -39,12 +43,7 @@ export const ProfileShareDialog = () => {
       const baseModData: {
         remoteId: string;
         fileTree?: ModFileTree;
-        selectedDownload?: {
-          remoteId: string;
-          file: string;
-          url: string;
-          size: number;
-        };
+        selectedDownloads?: ProfileModDownload[];
       } = {
         remoteId: mod.remoteId,
       };
@@ -70,17 +69,15 @@ export const ProfileShareDialog = () => {
 
       // Add selected download information if available
       if (localMod?.downloads && localMod.downloads.length > 0) {
-        // Use the tracked selected download if available, otherwise fall back to first download
-        const selectedDownload =
-          localMod.selectedDownload || localMod.downloads[0];
-        if (selectedDownload) {
-          baseModData.selectedDownload = {
-            remoteId: mod.remoteId, // Using mod remoteId as download identifier
-            file: selectedDownload.name,
-            url: selectedDownload.url,
-            size: selectedDownload.size,
-          };
-        }
+        const selected = localMod.selectedDownloads?.length
+          ? localMod.selectedDownloads
+          : [localMod.downloads[0]];
+        baseModData.selectedDownloads = selected.map((d) => ({
+          remoteId: mod.remoteId,
+          file: d.name,
+          url: d.url,
+          size: d.size,
+        }));
       }
 
       return baseModData;
@@ -129,7 +126,7 @@ export const ProfileShareDialog = () => {
         enabledMods: enabledMods.map((mod) => ({
           remoteId: mod.remoteId,
           hasFileTree: !!mod.fileTree,
-          hasSelectedDownload: !!mod.selectedDownload,
+          hasSelectedDownloads: !!mod.selectedDownloads?.length,
         })),
       })
       .info("Creating profile with enhanced mod data");

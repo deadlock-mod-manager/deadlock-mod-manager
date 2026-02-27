@@ -23,8 +23,10 @@ export const profileModDownloadSchema = z.object({
 
 export const profileModSchema = z.object({
   remoteId: z.string(),
-  // Optional: specific download file if mod has multiple downloads
+  // Optional: specific download file if mod has multiple downloads (legacy, single file)
   selectedDownload: profileModDownloadSchema.optional(),
+  // Optional: specific download files if mod has multiple downloads
+  selectedDownloads: z.array(profileModDownloadSchema).optional(),
   // Optional: specific VPK file selections if mod has multiple files
   fileTree: profileModFileTreeSchema.optional(),
 });
@@ -39,3 +41,4 @@ export const v1ProfileSchema = z.object({
 export const profileSchema = z.union([v1ProfileSchema]);
 
 export type SharedProfile = z.infer<typeof profileSchema>;
+export type ProfileModDownload = z.infer<typeof profileModDownloadSchema>;

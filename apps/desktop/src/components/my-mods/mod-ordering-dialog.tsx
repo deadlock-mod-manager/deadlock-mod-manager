@@ -34,7 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
@@ -141,12 +141,15 @@ export const ModOrderingDialog = ({
     ? (controlledOnOpenChange ?? (() => {}))
     : setInternalOpen;
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
+  useEffect(() => {
+    if (open) {
       migrateLegacyMods();
       setOrderedMods(getOrderedMods());
       setReorderStartTime(Date.now());
     }
+  }, [open]);
+
+  const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
   };
 
