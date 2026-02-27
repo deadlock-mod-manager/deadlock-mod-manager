@@ -94,17 +94,14 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
     if (name.endsWith(".rpm.sig")) {
       return `Linux RPM sig (${architecture})`;
     }
-    if (name.endsWith(".appimage.sig")) {
-      return `Linux AppImage sig (${architecture})`;
-    }
     if (installerType === "deb" || name.includes(".deb")) {
       return `Linux .deb (${architecture})`;
     }
     if (installerType === "rpm" || name.includes(".rpm")) {
       return `Linux RPM (${architecture})`;
     }
-    if (installerType === "appimage" || name.includes(".appimage")) {
-      return `Linux AppImage (${architecture})`;
+    if (installerType === "flatpak" || name.includes(".flatpak")) {
+      return `Linux Flatpak (${architecture})`;
     }
     return `Linux (${architecture})`;
   }

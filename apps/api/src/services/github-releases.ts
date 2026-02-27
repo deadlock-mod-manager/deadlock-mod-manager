@@ -40,7 +40,7 @@ export class GitHubReleasesService {
   private parsePlatformFromFilename(filename: string): {
     platform: "windows" | "macos" | "linux";
     architecture: "x64" | "arm64" | "universal";
-    installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "appimage" | "sig";
+    installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "flatpak" | "sig";
   } | null {
     const name = filename.toLowerCase();
 
@@ -85,12 +85,6 @@ export class GitHubReleasesService {
     }
 
     // Linux patterns - check .sig files first
-    if (name.endsWith(".appimage.sig")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch, installerType: "sig" };
-    }
-
     if (name.endsWith(".deb.sig")) {
       const arch =
         name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
@@ -103,13 +97,13 @@ export class GitHubReleasesService {
       return { platform: "linux", architecture: arch, installerType: "sig" };
     }
 
-    if (name.endsWith(".appimage")) {
+    if (name.endsWith(".flatpak")) {
       const arch =
         name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
       return {
         platform: "linux",
         architecture: arch,
-        installerType: "appimage",
+        installerType: "flatpak",
       };
     }
 
@@ -131,7 +125,7 @@ export class GitHubReleasesService {
       return {
         platform: "linux",
         architecture: arch,
-        installerType: "appimage",
+        installerType: "deb",
       };
     }
 
