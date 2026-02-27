@@ -66,7 +66,14 @@
     "overrides": {
       "react": "19.2.0",
       "react-dom": "19.2.0",
-      "keyv": "^5.6.0"
+      "keyv": "^5.6.0",
+      "fast-xml-parser": ">=5.3.6",
+      "minimatch": ">=10.2.4",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "tar": ">=7.5.8",
+      "seroval": ">=1.4.1",
+      "h3": ">=1.15.5",
+      "rollup": ">=4.59.0"
     },
     "onlyBuiltDependencies": [
       "@parcel/watcher",
