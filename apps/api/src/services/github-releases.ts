@@ -120,13 +120,8 @@ export class GitHubReleasesService {
     }
 
     if (name.includes("linux")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return {
-        platform: "linux",
-        architecture: arch,
-        installerType: undefined,
-      };
+      // Unknown linux artifact — no recognised installer type, skip it
+      return null;
     }
 
     return null;
