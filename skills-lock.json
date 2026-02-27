@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "skills": {
+    "agents-md": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "3396f2a758bca4adab4fcfff070105da71732b7da38fdc1402d5e3994f3b0a02"
+    },
+    "code-simplifier": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "ff9cb10181e31daf1f1644754c491601a7849dff4b4536a1d0ec4f97f680348e"
+    },
+    "find-bugs": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "7bf00be700d1d205b747126aa96d3587bbc2855cd09897614676e179eebe35ed"
+    },
+    "iterate-pr": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "8df552b852faf36d258aa23d228306950df04568f0955f19a6e0c34993a0a91f"
+    },
+    "security-review": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "cc631e7761e4bb8f844e931e3019e9abf8a36520137480ee60b897314776b0de"
+    },
+    "skill-creator": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "2d45c6e41218d27749151b09b59dab5fb902f93b97c15fe1e33bd042cb7bb9fd"
+    },
+    "skill-scanner": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "f0f77c2f8f971ddd220a59d3f65d342070a167f749435287872d3386198ed51b"
+    }
+  }
+}
