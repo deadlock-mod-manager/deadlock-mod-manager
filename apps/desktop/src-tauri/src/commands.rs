@@ -298,8 +298,7 @@ pub async fn show_in_folder(path: String) -> Result<(), Error> {
 #[tauri::command]
 pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  let mod_folder = mods_path.join(&mod_id);
+  let mod_folder = mod_manager.get_validated_mod_folder_path(&mod_id)?;
 
   if mod_folder.exists() {
     crate::utils::show_in_folder(mod_folder.to_string_lossy().as_ref())
@@ -1122,6 +1121,13 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
     ));
   }
 
+  if profile_folder.contains("..") || profile_folder.contains('/') || profile_folder.contains('\\')
+  {
+    return Err(Error::InvalidInput(
+      "Invalid profile folder name".to_string(),
+    ));
+  }
+
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
     .get_steam_manager()
@@ -1136,14 +1142,24 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
     return Ok(());
   }
 
-  if !profile_path.starts_with(&addons_path) {
-    return Err(Error::InvalidInput(
+  let addons_canonical = addons_path
+    .canonicalize()
+    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addons directory".to_string()))?;
+  let profile_canonical = profile_path.canonicalize().map_err(|_| {
+    Error::UnauthorizedPath(format!(
+      "Unable to resolve profile path: {}",
+      profile_path.display()
+    ))
+  })?;
+
+  if !profile_canonical.starts_with(&addons_canonical) {
+    return Err(Error::UnauthorizedPath(
       "Profile folder must be within addons directory".to_string(),
     ));
   }
 
-  std::fs::remove_dir_all(&profile_path)?;
-  log::info!("Deleted profile folder: {profile_path:?}");
+  std::fs::remove_dir_all(&profile_canonical)?;
+  log::info!("Deleted profile folder: {profile_canonical:?}");
 
   Ok(())
 }
@@ -1778,7 +1794,6 @@ pub async fn import_profile_batch(
   })
 }
 
-
 #[tauri::command]
 pub async fn register_analyzed_mod(
   mod_id: String,
@@ -1787,11 +1802,7 @@ pub async fn register_analyzed_mod(
 ) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
 
-  if mod_manager
-    .get_mod_repository()
-    .get_mod(&mod_id)
-    .is_none()
-  {
+  if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
     log::info!(
       "Registering analyzed mod in repository: {} ({}) with {} VPKs",
       mod_name,

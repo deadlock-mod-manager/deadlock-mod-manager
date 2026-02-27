@@ -178,10 +178,11 @@ impl ModManager {
           deadlock_mod.id,
           local_files_dir
         );
-        prefixed_vpks =
-          self
-            .vpk_manager
-            .copy_vpks_with_prefix(&local_files_dir, &addons_path, &deadlock_mod.id)?;
+        prefixed_vpks = self.vpk_manager.copy_vpks_with_prefix(
+          &local_files_dir,
+          &addons_path,
+          &deadlock_mod.id,
+        )?;
       }
     }
 
@@ -704,6 +705,22 @@ impl ModManager {
   /// Public method to validate extract target paths for use by commands
   pub fn validate_extract_target_path(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     self.validate_path_within_mods_root(path)
+  }
+
+  /// Validate and resolve a mod folder path, rejecting path traversal in mod_id.
+  pub fn get_validated_mod_folder_path(&self, mod_id: &str) -> Result<PathBuf, Error> {
+    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
+      return Err(Error::InvalidInput(
+        "Invalid mod ID: path traversal not allowed".to_string(),
+      ));
+    }
+    let mods_root = self.filesystem.get_mods_store_path()?;
+    let mod_folder = mods_root.join(mod_id);
+    if mod_folder.exists() {
+      self.validate_path_within_mods_root(&mod_folder)
+    } else {
+      Ok(mod_folder)
+    }
   }
 
   /// Remove a mod folder from the filesystem
