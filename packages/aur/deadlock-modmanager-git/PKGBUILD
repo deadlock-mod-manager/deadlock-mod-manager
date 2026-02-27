@@ -51,7 +51,7 @@ package() {
     local _tauri="${_srcroot}/apps/desktop/src-tauri"
 
     # Binary
-    install -Dm755 "${_srcroot}/apps/desktop/target/release/deadlock-mod-manager" \
+    install -Dm755 "${_tauri}/target/release/deadlock-mod-manager" \
         "${pkgdir}/usr/bin/deadlock-mod-manager"
 
     # Icons

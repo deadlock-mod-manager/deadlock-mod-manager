@@ -24,8 +24,9 @@ package() {
     ar x "${pkgname}-${pkgver}.deb"
     tar -xf data.tar.* -C "${pkgdir}/"
 
-    # Register the dlmm:// URI scheme handler
-    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/deadlock-mod-manager || true
-    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/deadlock-modmanager || true
-    xdg-mime default deadlock-mod-manager.desktop x-scheme-handler/dlmm || true
+    # Patch .desktop to declare URI scheme handlers (avoids side-effect xdg-mime calls)
+    local _desktop="${pkgdir}/usr/share/applications/deadlock-mod-manager.desktop"
+    if ! grep -q '^MimeType=' "${_desktop}"; then
+        echo 'MimeType=x-scheme-handler/deadlock-mod-manager;x-scheme-handler/deadlock-modmanager;x-scheme-handler/dlmm;' >> "${_desktop}"
+    fi
 }

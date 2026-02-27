@@ -125,7 +125,7 @@ export class GitHubReleasesService {
       return {
         platform: "linux",
         architecture: arch,
-        installerType: "deb",
+        installerType: undefined,
       };
     }
 

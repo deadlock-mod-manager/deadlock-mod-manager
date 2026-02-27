@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "Deadlock Mod Manager",
   "version": "../package.json",
   "identifier": "dev.stormix.deadlock-mod-manager",
@@ -32,8 +32,7 @@
           "--share=ipc",
           "--socket=wayland",
           "--socket=fallback-x11",
-          "--socket=session-bus",
-          "--device=all",
+          "--device=dri",
           "--filesystem=~/.steam",
           "--filesystem=~/.local/share/Steam",
           "--filesystem=xdg-data/Steam",

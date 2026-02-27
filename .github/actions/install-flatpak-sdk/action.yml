@@ -1,0 +1,24 @@
+name: Install Flatpak SDK
+description: Adds the Flathub remote and installs the freedesktop Platform/SDK runtimes required for Flatpak builds.
+
+inputs:
+  sdk-version:
+    description: "Freedesktop SDK/Platform runtime version (e.g. 24.08)"
+    required: false
+    default: "24.08"
+
+runs:
+  using: composite
+  steps:
+    - name: Add Flathub remote
+      shell: bash
+      run: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+    - name: Install Freedesktop runtimes
+      shell: bash
+      run: |
+        flatpak install --user -y flathub \
+          org.freedesktop.Platform//${{ inputs.sdk-version }} \
+          org.freedesktop.Sdk//${{ inputs.sdk-version }} \
+          org.freedesktop.Platform.GL.default//${{ inputs.sdk-version }} \
+          org.freedesktop.Platform.GL32.default//${{ inputs.sdk-version }}

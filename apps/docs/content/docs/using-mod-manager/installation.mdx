@@ -115,7 +115,7 @@ sudo apt-get install -f  # Fix any dependency issues
 
 ```bash
 # Install from the Flatpak bundle
-flatpak install deadlock-mod-manager-*.flatpak
+flatpak install ./deadlock-mod-manager-*.flatpak
 
 # Or, once published on Flathub:
 flatpak install flathub dev.stormix.deadlock-mod-manager
@@ -136,7 +136,7 @@ makepkg -si
 <Callout type="info" title="Linux Compatibility Note">
 If you experience issues with the application not displaying correctly or crashing on Wayland, particularly with NVIDIA GPUs, the Flatpak distribution already includes the required `WEBKIT_DISABLE_DMABUF_RENDERER=1` workaround automatically.
 
-For non-Flatpak installs (.deb / AUR), you can apply it manually:
+For non-Flatpak installs (.deb / AUR / RPM), you can apply it manually:
 
 ```bash
 WEBKIT_DISABLE_DMABUF_RENDERER=1 deadlock-mod-manager

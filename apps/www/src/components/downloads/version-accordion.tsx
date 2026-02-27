@@ -100,6 +100,9 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
     if (installerType === "rpm" || name.includes(".rpm")) {
       return `Linux RPM (${architecture})`;
     }
+    if (name.endsWith(".flatpak.sig") || /\.flatpak\.sig$/i.test(name)) {
+      return `Linux Flatpak Signature (${architecture})`;
+    }
     if (installerType === "flatpak" || name.includes(".flatpak")) {
       return `Linux Flatpak (${architecture})`;
     }

@@ -1,6 +1,11 @@
 ---
-"@deadlock-mods/desktop": minor
+"@deadlock-mods/desktop": major
 ---
+
+> **Breaking change (Linux distribution):** AppImage is removed as a supported
+> distribution format. Linux users must migrate to Flatpak, `.deb`, or `.rpm`.
+> This constitutes a breaking distribution change and justifies a major semver
+> bump per semantic-versioning conventions.
 
 Deprecate AppImage distribution in favour of Flatpak on Linux.
 
