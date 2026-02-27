@@ -53,6 +53,11 @@
   
 </div>
 
+> [!WARNING]
+> **Linux Support - Limited**
+>
+> Linux support is provided on a **best-effort basis**. Due to a lack of contributors with Linux expertise and the maintainer's limited experience distributing software across the many Linux distributions, you may encounter packaging issues, missing dependencies, or platform-specific bugs. If you're a Linux user and want to help improve support, contributions are very welcome! Please reach out on [Discord](https://deadlockmods.app/discord) or open a PR.
+
 <br />
 
 <!-- TABLE OF CONTENTS -->
