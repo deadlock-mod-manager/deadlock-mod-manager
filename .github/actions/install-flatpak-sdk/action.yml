@@ -5,7 +5,7 @@ inputs:
   runtime-version:
     description: "GNOME Platform/SDK runtime version (e.g. 47)"
     required: false
-    default: "47"
+    default: "49"
 
 runs:
   using: composite

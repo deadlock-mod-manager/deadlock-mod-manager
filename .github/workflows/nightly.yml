@@ -268,7 +268,7 @@ jobs:
         if: matrix.platform == 'ubuntu-24.04'
         uses: ./.github/actions/install-flatpak-sdk
         with:
-          runtime-version: "47"
+          runtime-version: "49"
 
       - name: Install pnpm
         run: npm install -g pnpm

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Deadlock Mod Manager
+Comment=A mod manager for the Valve game Deadlock
+Categories=Game;Utility;
+Exec=deadlock-mod-manager %u
+Icon=dev.stormix.deadlock-mod-manager
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/dlmm;x-scheme-handler/deadlock-mod-manager;x-scheme-handler/deadlock-modmanager;

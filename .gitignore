@@ -58,3 +58,5 @@ result
 # Nix development environment
 .cargo/
 .rustup/
+
+opensrc/
