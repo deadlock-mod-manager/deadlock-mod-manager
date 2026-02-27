@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "Deadlock Mod Manager",
   "version": "../package.json",
   "identifier": "dev.stormix.deadlock-mod-manager",
@@ -26,13 +26,26 @@
   },
   "bundle": {
     "linux": {
-      "appimage": {
-        "bundleMediaFramework": true
+      "flatpak": {
+        "finishArgs": [
+          "--share=network",
+          "--share=ipc",
+          "--socket=wayland",
+          "--socket=fallback-x11",
+          "--device=dri",
+          "--filesystem=~/.steam",
+          "--filesystem=~/.local/share/Steam",
+          "--filesystem=xdg-data/Steam",
+          "--filesystem=home/.steam",
+          "--talk-name=org.freedesktop.Notifications",
+          "--talk-name=org.kde.StatusNotifierWatcher",
+          "--env=WEBKIT_DISABLE_DMABUF_RENDERER=1"
+        ]
       }
     },
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "flatpak"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

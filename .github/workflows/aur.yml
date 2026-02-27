@@ -10,25 +10,63 @@ on:
         description: "Release tag to publish to AUR (e.g., v0.5.0)"
         required: true
         type: string
+      allow_backfill:
+        description: "Allow publishing even if the new version is not newer than the current PKGBUILD version"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   aur-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Clone from AUR
-        run: git clone https://aur.archlinux.org/deadlock-modmanager.git
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update pkgver
+      - name: Resolve version
+        id: version
         run: |
-          cd deadlock-modmanager
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION=${{ github.event.inputs.release_tag }}
             VERSION=${VERSION#v}
           else
             VERSION=${GITHUB_REF##*/v}
           fi
-          sed -i "s/^_pkgver=.*/_pkgver=${VERSION}/" PKGBUILD
-          sed -i -E "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if version is newer
+        id: check_version
+        run: |
+          CURRENT=$(grep '^_pkgver=' packages/aur/deadlock-modmanager/PKGBUILD | cut -d= -f2)
+          NEW=${{ steps.version.outputs.version }}
+          if [ "$(printf '%s\n%s' "$CURRENT" "$NEW" | sort -V | tail -n1)" = "$NEW" ] && [ "$NEW" != "$CURRENT" ]; then
+            echo "is_newer=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare PKGBUILD
+        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
+        run: |
+          # Update the source PKGBUILD in-repo
+          sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" packages/aur/deadlock-modmanager/PKGBUILD
+          sed -i -E "s/^pkgrel=.*/pkgrel=1/" packages/aur/deadlock-modmanager/PKGBUILD
+          # Copy for AUR deploy
+          cp -r packages/aur/deadlock-modmanager ./deadlock-modmanager
+
+      - name: Commit updated PKGBUILD
+        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git add packages/aur/deadlock-modmanager/PKGBUILD
+          git diff --staged --quiet || git commit -m "chore(aur): update deadlock-modmanager to v${{ steps.version.outputs.version }} [skip ci]"
+          git push origin main
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1

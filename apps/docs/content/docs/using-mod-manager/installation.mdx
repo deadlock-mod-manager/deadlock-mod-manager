@@ -32,7 +32,7 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
   />
   <Card
     title='Download for Linux'
-    description='Ubuntu/Debian (.deb) or universal (.AppImage)'
+    description='Ubuntu/Debian (.deb), RPM, or Flatpak'
     href='https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest'
   />
 </Cards>
@@ -111,14 +111,14 @@ sudo dpkg -i deadlock-modmanager_*.deb
 sudo apt-get install -f  # Fix any dependency issues
 ```
 
-#### Universal (.AppImage)
+#### Flatpak
 
 ```bash
-# Make the AppImage executable
-chmod +x deadlock-modmanager-*.AppImage
+# Install from the Flatpak bundle
+flatpak install ./deadlock-mod-manager-*.flatpak
 
-# Run the application
-./deadlock-modmanager-*.AppImage
+# Or, once published on Flathub:
+flatpak install flathub dev.stormix.deadlock-mod-manager
 ```
 
 #### Arch Linux (AUR)
@@ -134,13 +134,15 @@ makepkg -si
 ```
 
 <Callout type="info" title="Linux Compatibility Note">
-If you experience issues with the application not displaying correctly or crashing on Wayland with NVIDIA GPUs or AMD GPUs, run the application with:
+If you experience issues with the application not displaying correctly or crashing on Wayland, particularly with NVIDIA GPUs, the Flatpak distribution already includes the required `WEBKIT_DISABLE_DMABUF_RENDERER=1` workaround automatically.
+
+For non-Flatpak installs (.deb / AUR / RPM), you can apply it manually:
 
 ```bash
-WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-modmanager
+WEBKIT_DISABLE_DMABUF_RENDERER=1 deadlock-mod-manager
 ```
 
-AUR users have this automatically handled in the .desktop file.
+AUR users have this automatically handled via the `.desktop` file.
 
 </Callout>
 

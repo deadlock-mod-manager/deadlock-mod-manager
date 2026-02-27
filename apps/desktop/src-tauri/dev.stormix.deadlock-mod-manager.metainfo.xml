@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.stormix.deadlock-mod-manager</id>
+
+  <name>Deadlock Mod Manager</name>
+  <summary>A mod manager for the Valve game Deadlock</summary>
+
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <description>
+    <p>
+      Deadlock Mod Manager is a desktop application for managing mods for the
+      Valve game Deadlock. It allows you to browse, install, update, and remove
+      mods from deadlockmods.app directly within the app.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Browse and install mods from deadlockmods.app</li>
+      <li>Automatic mod updates</li>
+      <li>Enable and disable individual mods</li>
+      <li>Reorder and prioritize conflicting mods</li>
+      <li>Crosshair preview and import</li>
+      <li>Deep link support via dlmm:// URI scheme</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">dev.stormix.deadlock-mod-manager.desktop</launchable>
+
+  <url type="homepage">https://deadlockmods.app</url>
+  <url type="bugtracker">https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues</url>
+  <url type="vcs-browser">https://github.com/deadlock-mod-manager/deadlock-mod-manager</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main mod library view</caption>
+      <image>https://raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/main/docs/assets/screenshot-library.png</image>
+    </screenshot>
+  </screenshots>
+
+  <provides>
+    <binary>deadlock-mod-manager</binary>
+  </provides>
+
+  <releases>
+    <release version="0.15.0" date="2026-02-26">
+      <description>
+        <p>See the full release notes at https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases</p>
+      </description>
+    </release>
+    <release version="0.14.1" date="2026-01-01">
+      <description>
+        <p>Bug fixes and stability improvements.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1" />
+</component>

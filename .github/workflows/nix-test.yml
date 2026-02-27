@@ -1,17 +1,6 @@
 name: Test Nix Build
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "package.nix"
-      - "apps/desktop/**"
-      - "apps/dmodpkg/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/nix-test.yml"
   push:
     branches: [main]
     paths:
