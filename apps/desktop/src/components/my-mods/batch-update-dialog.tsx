@@ -69,10 +69,10 @@ export const BatchUpdateDialog = ({
   };
 
   useEffect(() => {
-    if (open && updatableMods.length === 0 && updates.length > 0) {
+    if (open && updates.length > 0) {
       prepareUpdates(updates);
     }
-  }, [open, updates, updatableMods.length, prepareUpdates]);
+  }, [open, updates, prepareUpdates]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
