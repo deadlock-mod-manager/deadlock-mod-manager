@@ -67,8 +67,9 @@ export const useBatchUpdate = () => {
         localMod?.selectedDownloads &&
         localMod.selectedDownloads.length > 0
       ) {
+        const savedSelections = localMod.selectedDownloads;
         const matched = update.downloads.filter((d) =>
-          localMod.selectedDownloads!.some((sd) => sd.name === d.name),
+          savedSelections.some((sd) => sd.name === d.name),
         );
         selectedDownloads = matched.length > 0 ? matched : update.downloads;
       } else {

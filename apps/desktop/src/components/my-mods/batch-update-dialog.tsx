@@ -19,6 +19,7 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { DateDisplay } from "@/components/date-display";
@@ -67,9 +68,11 @@ export const BatchUpdateDialog = ({
     }
   };
 
-  if (open && updatableMods.length === 0 && updates.length > 0) {
-    prepareUpdates(updates);
-  }
+  useEffect(() => {
+    if (open && updatableMods.length === 0 && updates.length > 0) {
+      prepareUpdates(updates);
+    }
+  }, [open, updates, updatableMods.length, prepareUpdates]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -243,6 +246,9 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
                   key={download.name}
                   onClick={(e) => {
                     e.stopPropagation();
+                    const isOnlySelected =
+                      selectedSet.has(download.name) && selectedSet.size === 1;
+                    if (isOnlySelected) return;
                     handleFileToggle(download, !selectedSet.has(download.name));
                   }}>
                   <Checkbox
