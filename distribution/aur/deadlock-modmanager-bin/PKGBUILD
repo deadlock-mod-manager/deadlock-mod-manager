@@ -1,0 +1,52 @@
+# Maintainer: stormix <hello@stormix.co>
+pkgname=deadlock-modmanager-bin
+pkgdesc='A mod manager for the Valve game Deadlock (binary)'
+_pkgver=0.15.0
+pkgver=${_pkgver}
+pkgrel=1
+arch=('x86_64')
+url='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
+license=('GPL-3.0-only')
+depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
+         'glib2' 'gtk3' 'libsoup3' 'pango' 'openssl' 'bzip2' 'hicolor-icon-theme'
+         'gst-plugins-good')
+provides=('deadlock-modmanager')
+conflicts=('deadlock-modmanager' 'deadlock-modmanager-git')
+options=('!strip')
+source=("deadlock-modmanager-${pkgver}.deb::https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/v${_pkgver}/deadlock-mod-manager_${_pkgver}_amd64.deb")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}"
+
+    # Extract the .deb archive
+    ar x "deadlock-modmanager-${pkgver}.deb"
+    tar -xf data.tar.*
+
+    # Binary
+    install -Dm755 "usr/bin/deadlock-mod-manager" \
+        "${pkgdir}/usr/bin/deadlock-modmanager"
+
+    # Icons — rename to match package name
+    for icon in usr/share/icons/hicolor/*/apps/deadlock-mod-manager.png; do
+        [ -f "${icon}" ] || continue
+        local _size="${icon#usr/share/icons/hicolor/}"
+        _size="${_size%%/*}"
+        install -Dm644 "${icon}" \
+            "${pkgdir}/usr/share/icons/hicolor/${_size}/apps/deadlock-modmanager.png"
+    done
+
+    # Desktop entry
+    install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop" <<EOF
+[Desktop Entry]
+Categories=Game;Utility;
+Comment=A mod manager for the Valve game Deadlock
+Exec=deadlock-modmanager %u
+Icon=deadlock-modmanager
+Name=Deadlock Mod Manager
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/deadlock-mod-manager;x-scheme-handler/deadlock-modmanager;x-scheme-handler/dlmm;
+StartupWMClass=deadlock-modmanager
+EOF
+}

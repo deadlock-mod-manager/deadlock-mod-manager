@@ -1,4 +1,4 @@
-name: Update AUR PKGBUILD for new release
+name: Update AUR PKGBUILDs for new release
 
 on:
   push:
@@ -21,6 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      matrix:
+        include:
+          - pkgname: deadlock-modmanager
+            pkgbuild_dir: distribution/aur/deadlock-modmanager
+          - pkgname: deadlock-modmanager-bin
+            pkgbuild_dir: distribution/aur/deadlock-modmanager-bin
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,7 +49,7 @@ jobs:
       - name: Check if version is newer
         id: check_version
         run: |
-          CURRENT=$(grep '^_pkgver=' packages/aur/deadlock-modmanager/PKGBUILD | cut -d= -f2)
+          CURRENT=$(grep '^_pkgver=' ${{ matrix.pkgbuild_dir }}/PKGBUILD | cut -d= -f2)
           NEW=${{ steps.version.outputs.version }}
           if [ "$(printf '%s\n%s' "$CURRENT" "$NEW" | sort -V | tail -n1)" = "$NEW" ] && [ "$NEW" != "$CURRENT" ]; then
             echo "is_newer=true" >> $GITHUB_OUTPUT
@@ -54,25 +61,27 @@ jobs:
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
         run: |
           # Update the source PKGBUILD in-repo
-          sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" packages/aur/deadlock-modmanager/PKGBUILD
-          sed -i -E "s/^pkgrel=.*/pkgrel=1/" packages/aur/deadlock-modmanager/PKGBUILD
+          sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
           # Copy for AUR deploy
-          cp -r packages/aur/deadlock-modmanager ./deadlock-modmanager
+          cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 
       - name: Commit updated PKGBUILD
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@github.com"
-          git add packages/aur/deadlock-modmanager/PKGBUILD
-          git diff --staged --quiet || git commit -m "chore(aur): update deadlock-modmanager to v${{ steps.version.outputs.version }} [skip ci]"
+          git pull --rebase origin main
+          git add ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          git diff --staged --quiet || git commit -m "chore(aur): update ${{ matrix.pkgname }} to v${{ steps.version.outputs.version }} [skip ci]"
           git push origin main
 
       - name: Publish to AUR
+        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
         with:
-          pkgname: deadlock-modmanager
-          pkgbuild: deadlock-modmanager/PKGBUILD
+          pkgname: ${{ matrix.pkgname }}
+          pkgbuild: ${{ matrix.pkgname }}/PKGBUILD
           commit_username: GitHub Actions
           commit_email: github-actions@github.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
