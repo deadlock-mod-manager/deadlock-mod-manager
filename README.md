@@ -221,17 +221,50 @@ This project was only possible thanks to the amazing open source community, espe
 ### Special Thanks
 
 - **[GameBanana](https://gamebanana.com/)** - Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible. This project would not exist without their excellent platform and community-driven content.
+- **[RapidRAW](https://github.com/CyberTimon/RapidRAW/)** - A Tauri project that inspired our CI pipelines, Linux optimizations, and packaging/distribution approach. Thank you for sharing your setup and best practices.
 
-### Open Source Libraries
+<details>
+  <summary><strong>Open Source Libraries</strong></summary>
 
+**Framework & Build**
+
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/)
+- [Tauri](https://tauri.app/)
+- [Turborepo](https://turbo.build/)
+- [pnpm](https://pnpm.io/)
+
+**Backend**
+
+- [Bun](https://bun.sh/)
+- [Hono](https://hono.dev/)
+- [oRPC](https://orpc.unnoq.com/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [Zod](https://zod.dev/)
+
+**UI & Styling**
+
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Radix UI](https://www.radix-ui.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
 - [Phosphor Icons](https://phosphoricons.com/)
 - [React Icons](https://react-icons.github.io/react-icons/search)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Tauri](https://tauri.app/)
-- [Hono](https://hono.dev/)
-- [Bun](https://bun.sh/)
-- [Drizzle ORM](https://orm.drizzle.team/)
-- [shadcn/ui](https://ui.shadcn.com/)
+
+**TanStack**
+
+- [TanStack Query](https://tanstack.com/query)
+- [TanStack Router](https://tanstack.com/router)
+- [TanStack Table](https://tanstack.com/table)
+- [TanStack Form](https://tanstack.com/form)
+- [TanStack Virtual](https://tanstack.com/virtual)
+
+**Other**
+
+- [Sentry](https://sentry.io/)
+- [react-i18next](https://react.i18next.com/)
+
+</details>
 
 ## Sponsors
 
