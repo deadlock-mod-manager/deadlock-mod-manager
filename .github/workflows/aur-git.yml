@@ -1,51 +1,22 @@
 name: Update AUR PKGBUILD for git package
+
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "README*.md"
-      - "docs/**"
-      - ".github/**"
-      - "!.github/workflows/aur-git.yml"
-      - "distribution/aur/**"
+    paths:
+      - "distribution/aur/deadlock-modmanager-git/**"
   workflow_dispatch:
 
 jobs:
   aur-git-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get new pkgver
-        id: get_version
-        run: |
-          NEW_PKGVER=$(git describe --tags --long --abbrev=7 --match 'v[0-9]*' | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g')
-          echo "pkgver=$NEW_PKGVER" >> $GITHUB_OUTPUT
-          echo "New pkgver: $NEW_PKGVER"
-
-      - name: Prepare PKGBUILD
-        run: |
-          # Update the source PKGBUILD in-repo
-          sed -i "s/^pkgver=.*/pkgver=${{ steps.get_version.outputs.pkgver }}/" distribution/aur/deadlock-modmanager-git/PKGBUILD
-          sed -i -E "s/^pkgrel=.*/pkgrel=1/" distribution/aur/deadlock-modmanager-git/PKGBUILD
-          # Copy for AUR deploy
-          cp -r distribution/aur/deadlock-modmanager-git ./deadlock-modmanager-git
-
-      - name: Commit updated PKGBUILD
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "github-actions@github.com"
-          git add distribution/aur/deadlock-modmanager-git/PKGBUILD
-          git diff --staged --quiet || git commit -m "chore(aur): update deadlock-modmanager-git pkgver to ${{ steps.get_version.outputs.pkgver }} [skip ci]"
-          git push origin main
+      - name: Copy PKGBUILD for deploy
+        run: cp -r distribution/aur/deadlock-modmanager-git ./deadlock-modmanager-git
 
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
@@ -55,5 +26,5 @@ jobs:
           commit_username: GitHub Actions
           commit_email: github-actions@github.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: "Update to latest git commit: ${{ github.sha }}"
+          commit_message: "Sync PKGBUILD from repo"
           updpkgsums: true
