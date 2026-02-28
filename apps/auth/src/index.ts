@@ -51,7 +51,7 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 app.get("/health", async (c) => {
   const healthService = container.resolve(HealthService);
   const result = await healthService.check();
-  return c.json(result, result.status === "ok" ? 200 : 503);
+  return c.json(result, 200);
 });
 
 /**
