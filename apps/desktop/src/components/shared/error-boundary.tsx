@@ -7,7 +7,7 @@ import {
 } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
-const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
+const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();
 
   return (
@@ -44,11 +44,6 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
     </Alert>
   );
 };
-
-// Wrap fallbackRender in a proper React component so hooks (useTranslation) are
-// valid. react-error-boundary calls `fallbackRender` as a plain function, which
-// violates Rules of Hooks — the FallbackComponent prop renders it as JSX instead.
-const FallbackComponent = (props: FallbackProps) => fallbackRender(props);
 
 const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
   return (
