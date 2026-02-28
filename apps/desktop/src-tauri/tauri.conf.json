@@ -43,7 +43,7 @@
         "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest.json"
       ]
     },
-    "deepLink": {
+    "deep-link": {
       "desktop": {
         "schemes": ["deadlock-mod-manager", "deadlock-modmanager", "dlmm"]
       }

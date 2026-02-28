@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use crate::deep_link::{SCHEME_PRIMARY, SCHEME_SECONDARY, strip_scheme, validate_mod_deep_link};
+use crate::deep_link::{scheme_names, strip_scheme, validate_mod_deep_link};
 use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
@@ -123,8 +123,8 @@ pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
 
   let data_part = strip_scheme(&url).ok_or_else(|| {
     Error::InvalidInput(format!(
-      "Invalid deep link format. Expected schemes: {}, {}",
-      SCHEME_PRIMARY, SCHEME_SECONDARY
+      "Invalid deep link format. Expected schemes: {}",
+      scheme_names().join(", ")
     ))
   })?;
 
@@ -157,11 +157,7 @@ pub async fn get_deep_link_debug_info() -> Result<DeepLinkDebugInfo, Error> {
 
   let debug_mode = cfg!(debug_assertions);
   let target_os = std::env::consts::OS.to_string();
-  let registered_schemes = vec![
-    "deadlock-mod-manager".to_string(),
-    "deadlock-modmanager".to_string(),
-    "dlmm".to_string(),
-  ];
+  let registered_schemes = scheme_names();
 
   let mut registry_status = std::collections::HashMap::new();
 

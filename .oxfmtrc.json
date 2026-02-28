@@ -13,6 +13,7 @@
   "endOfLine": "lf",
   "insertFinalNewline": true,
   "ignorePatterns": [
+    ".cursor/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/build/**",

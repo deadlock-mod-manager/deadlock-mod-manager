@@ -15,102 +15,8 @@ mod mod_manager;
 mod reports;
 mod utils;
 
-use tauri::Manager;
-use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
-
-use crate::deep_link::{
-  EVENT_AUTH_CALLBACK, EVENT_AUTH_ERROR, EVENT_DEEP_LINK_RECEIVED, EVENT_OIDC_CALLBACK,
-  EVENT_OIDC_ERROR, PATH_LEGACY_AUTH_CALLBACK, PATH_OIDC_CALLBACK, SCHEME_PRIMARY,
-  SCHEME_SECONDARY, SCHEME_SHORT, emit_to_main_window, is_deep_link, parse_query_params,
-  strip_scheme, validate_mod_deep_link,
-};
-
-fn handle_deep_link_url(
-  app_handle: &tauri::AppHandle,
-  url: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-  log::info!("[DeepLink] Processing deep link URL: {url}");
-
-  let data_part = match strip_scheme(url) {
-    Some(part) => part,
-    None => {
-      log::error!(
-        "[DeepLink] Invalid deep link format - no matching scheme found. Expected: {}, {}, {}",
-        SCHEME_PRIMARY,
-        SCHEME_SECONDARY,
-        SCHEME_SHORT
-      );
-      return Ok(());
-    }
-  };
-
-  if data_part.starts_with(PATH_OIDC_CALLBACK) {
-    if let Some(query_start) = data_part.find('?') {
-      let query = &data_part[query_start + 1..];
-      let params = parse_query_params(query);
-
-      if let Some(code) = params.get("code") {
-        let state = params.get("state").cloned();
-        emit_to_main_window(
-          app_handle,
-          EVENT_OIDC_CALLBACK,
-          serde_json::json!({ "code": code, "state": state }),
-        )?;
-        return Ok(());
-      }
-
-      if let Some(error) = params.get("error") {
-        let error_description = params.get("error_description").cloned();
-        log::error!("OIDC callback error: {error}");
-        emit_to_main_window(
-          app_handle,
-          EVENT_OIDC_ERROR,
-          serde_json::json!({ "error": error, "error_description": error_description }),
-        )?;
-        return Ok(());
-      }
-    }
-
-    log::error!("OIDC callback deep link missing code or error parameter");
-    return Ok(());
-  }
-
-  if data_part.starts_with(PATH_LEGACY_AUTH_CALLBACK) {
-    if let Some(query_start) = data_part.find('?') {
-      let query = &data_part[query_start + 1..];
-      let params = parse_query_params(query);
-
-      if let Some(token) = params.get("token") {
-        emit_to_main_window(app_handle, EVENT_AUTH_CALLBACK, token)?;
-        return Ok(());
-      }
-
-      if let Some(error) = params.get("error") {
-        log::error!("Auth callback error: {error}");
-        emit_to_main_window(app_handle, EVENT_AUTH_ERROR, error)?;
-        return Ok(());
-      }
-    }
-
-    log::error!("Auth callback deep link missing token or error parameter");
-    return Ok(());
-  }
-
-  if let Some((download_url, mod_type, mod_id)) = validate_mod_deep_link(data_part) {
-    let parsed_data = commands::DeepLinkData {
-      download_url,
-      mod_type,
-      mod_id,
-    };
-    emit_to_main_window(app_handle, EVENT_DEEP_LINK_RECEIVED, parsed_data)?;
-  } else {
-    log::error!("Invalid mod installation deep link format");
-  }
-
-  Ok(())
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -131,28 +37,9 @@ pub fn run() {
 
   #[cfg(desktop)]
   {
-    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _| {
-      log::info!(
-        "[DeepLink] Single instance callback triggered with argv: {:?}",
-        argv
-      );
-
-      for arg in argv {
-        if is_deep_link(&arg) {
-          if let Err(e) = handle_deep_link_url(app, &arg) {
-            log::error!("[DeepLink] Failed to handle deep link from single instance: {e}");
-          }
-
-          if let Some(window) = app.get_webview_window("main") {
-            let _ = window.set_focus();
-            let _ = window.show();
-            let _ = window.unminimize();
-          } else {
-            log::warn!("[DeepLink] Could not find main window to focus");
-          }
-        }
-      }
-    }));
+    builder = builder.plugin(tauri_plugin_single_instance::init(
+      deep_link::on_second_instance,
+    ));
   }
   let context = tauri::generate_context!();
   let (ota_plugin, context) = tauri_plugin_ota_updater::init(context);
@@ -175,7 +62,7 @@ pub fn run() {
             file_name: Some("deadlock-mod-manager".into()),
           }),
         ])
-        .max_file_size(1_000_000) // 1MB
+        .max_file_size(1_000_000)
         .level(log::LevelFilter::Info)
         .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
         .filter(|metadata| metadata.target() != "tracing")
@@ -187,43 +74,8 @@ pub fn run() {
   builder
     .manage(discord_rpc::DiscordState::new())
     .setup(|app| {
-      let handle = app.app_handle();
-
-      let _store = handle.store("state.json")?;
-
-      log::info!("[DeepLink] Registering deep link protocols...");
-
-      #[cfg(desktop)]
-      {
-        if let Err(e) = app
-          .deep_link()
-          .register(SCHEME_PRIMARY.trim_end_matches(':'))
-        {
-          log::error!("[DeepLink] Failed to register {}: {e}", SCHEME_PRIMARY);
-        }
-      }
-
-      // Register all schemes on Linux and Windows (including debug mode)
-      #[cfg(any(target_os = "linux", windows))]
-      {
-        if let Err(e) = app.deep_link().register_all() {
-          log::error!("[DeepLink] Failed to register_all: {e}");
-        }
-      }
-
-      // Handle deep links only for app startup (when launched by deep link)
-      // The single instance handler will take care of deep links when app is already running
-      let start_urls = app.deep_link().get_current()?;
-
-      if let Some(urls) = start_urls {
-        log::info!("[DeepLink] App started with deep link URLs: {:?}", urls);
-        for url in urls {
-          if let Err(e) = handle_deep_link_url(handle, url.as_ref()) {
-            log::error!("[DeepLink] Failed to handle startup deep link: {e}");
-          }
-        }
-      }
-
+      let _store = app.store("state.json")?;
+      deep_link::setup(app)?;
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
