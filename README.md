@@ -13,6 +13,7 @@
 [![GitHub Release][release-status]][release-url]
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/deadlock-mod-manager/deadlock-mod-manager)
 [![License][license-status]][license-url]
 ![Discord](https://img.shields.io/discord/1322369530386710568?label=discord)
 [![Built with Tauri][tauri-status]][tauri-url]
@@ -48,13 +49,6 @@
   
 </div>
 
-> [!WARNING]
-> **Linux Support - Limited**
->
-> Linux support is provided on a **best-effort basis**. Due to a lack of contributors with Linux expertise and the maintainer's limited experience distributing software across the many Linux distributions, you may encounter packaging issues, missing dependencies, or platform-specific bugs. If you're a Linux user and want to help improve support, contributions are very welcome! Please reach out on [Discord](https://deadlockmods.app/discord) or open a PR.
-
-<br />
-
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -83,6 +77,13 @@ For help and support:
 - [Full Documentation](https://docs.deadlockmods.app/)
 - [Discord Community](https://deadlockmods.app/discord)
 - [Report Issues](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues)
+
+> [!WARNING]
+> **Linux Support - Limited**
+>
+> Linux support is provided on a **best-effort basis**. Due to a lack of contributors with Linux expertise and the maintainer's limited experience distributing software across the many Linux distributions, you may encounter packaging issues, missing dependencies, or platform-specific bugs. If you're a Linux user and want to help improve support, contributions are very welcome! Please reach out on [Discord](https://deadlockmods.app/discord) or open a PR.
+
+<br />
 
 ## Development
 
@@ -184,6 +185,8 @@ For comprehensive contributing guidelines, development setup, code style standar
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**
 - **[Contributing Documentation](https://docs.deadlockmods.app/developer-docs/contributing)**
+
+> **AI-Assisted Contributions:** We welcome AI-assisted contributions! Please review our [AI Policy](./AI_POLICY.md) for guidelines on disclosure and quality expectations.
 
 ### Top contributors:
 

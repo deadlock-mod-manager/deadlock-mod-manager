@@ -2,8 +2,18 @@
 
 Thank you for your interest in contributing to Deadlock Mod Manager! This guide will help you get started with contributing to the project, whether you're fixing bugs, adding features, improving documentation, or helping with translations.
 
+## AI-Assisted Contributions
+
+We encourage the use of AI tools to help you contribute — we use them ourselves (our Cursor config is in the repo!). Please review our [AI Policy](./AI_POLICY.md) for the full details, but the essentials are:
+
+1. **You own your code.** Understand and be able to explain everything you submit.
+2. **Disclose significant AI usage** in your PR description.
+3. **PRs must address real issues.** No drive-by AI-generated refactors or bug reports.
+4. **Quality is what matters.** Good code is good code, regardless of how it was written.
+
 ## Table of Contents
 
+- [AI-Assisted Contributions](#ai-assisted-contributions)
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
 - [Project Structure](#project-structure)

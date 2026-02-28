@@ -18,6 +18,13 @@ Brief description of the changes introduced by this PR.
 - Fixes #
 - Related to #
 
+## AI Disclosure
+
+<!-- If AI tools were used significantly (beyond autocomplete), note the tool and what it helped with -->
+
+- [ ] No significant AI assistance used
+- [ ] AI-assisted — Tool: [name], Used for: [what it helped with]
+
 ## Testing
 
 - [ ] I have tested these changes locally
@@ -31,6 +38,7 @@ Brief description of the changes introduced by this PR.
 
 ## Checklist
 
+- [ ] I have read the [Contributing Guidelines](./CONTRIBUTING.md) and [AI Policy](./AI_POLICY.md)
 - [ ] My code follows the style guidelines of this project (`pnpm lint` passes)
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
