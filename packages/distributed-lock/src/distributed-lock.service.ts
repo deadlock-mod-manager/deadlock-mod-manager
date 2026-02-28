@@ -29,6 +29,7 @@ export class DistributedLockService {
   private readonly db: Database;
   private readonly logger: Logger;
   private readonly heartbeatTimers = new Map<string, NodeJS.Timeout>();
+  private readonly lockTimeouts = new Map<string, number>();
   private readonly instanceId: string;
 
   constructor(
@@ -112,7 +113,7 @@ export class DistributedLockService {
         .info(`Successfully acquired lock for job: ${jobName}`);
 
       // Set up automatic heartbeat
-      this.startHeartbeat(acquiredLock.id, jobName, heartbeatInterval);
+      this.startHeartbeat(acquiredLock.id, jobName, heartbeatInterval, timeout);
 
       const lock: AcquiredLock = {
         jobName,
@@ -166,10 +167,20 @@ export class DistributedLockService {
    * Update heartbeat for a specific lock
    */
   private async updateHeartbeat(lockId: string): Promise<void> {
+    const timeoutMs = this.lockTimeouts.get(lockId);
+    if (timeoutMs === undefined) {
+      this.logger.warn(
+        `No timeout found for lock ${lockId}, skipping heartbeat`,
+      );
+      return;
+    }
+
     try {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + timeoutMs);
       await this.db
         .update(jobLocks)
-        .set({ heartbeatAt: new Date() })
+        .set({ heartbeatAt: now, expiresAt })
         .where(eq(jobLocks.id, lockId));
     } catch (error) {
       this.logger
@@ -212,9 +223,10 @@ export class DistributedLockService {
     lockId: string,
     jobName: string,
     interval: number,
+    timeout: number,
   ): void {
-    // Clear any existing timer for this lock
     this.stopHeartbeat(lockId);
+    this.lockTimeouts.set(lockId, timeout);
 
     const timer = setInterval(async () => {
       try {
@@ -242,6 +254,7 @@ export class DistributedLockService {
       clearInterval(timer);
       this.heartbeatTimers.delete(lockId);
     }
+    this.lockTimeouts.delete(lockId);
   }
 
   /**
@@ -313,6 +326,7 @@ export class DistributedLockService {
       clearInterval(timer);
     });
     this.heartbeatTimers.clear();
+    this.lockTimeouts.clear();
     this.logger.info("Cleaned up all heartbeat timers");
   }
 }
