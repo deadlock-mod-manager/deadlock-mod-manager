@@ -7,7 +7,7 @@ import {
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Download } from "@deadlock-mods/ui/icons";
-import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
+import { FaLinux, FaWindows } from "react-icons/fa";
 import { formatFileSize } from "@/lib/os-detection";
 import type { PlatformDownload, Release } from "@/types/releases";
 
@@ -77,16 +77,6 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
     return `Windows exe (${architecture})`;
   }
 
-  if (platform === "macos") {
-    if (architecture === "universal") {
-      return "Mac Universal";
-    }
-    if (architecture === "arm64") {
-      return "Mac (ARM64)";
-    }
-    return "Mac (x64)";
-  }
-
   if (platform === "linux") {
     if (name.endsWith(".deb.sig")) {
       return `Linux .deb sig (${architecture})`;
@@ -112,15 +102,10 @@ const getDownloadDisplayName = (download: PlatformDownload): string => {
   return filename;
 };
 
-const groupDownloadsByPlatform = (downloads: PlatformDownload[]) => {
-  const grouped = {
-    macos: downloads.filter((d) => d.platform === "macos"),
-    windows: downloads.filter((d) => d.platform === "windows"),
-    linux: downloads.filter((d) => d.platform === "linux"),
-  };
-
-  return grouped;
-};
+const groupDownloadsByPlatform = (downloads: PlatformDownload[]) => ({
+  windows: downloads.filter((d) => d.platform === "windows"),
+  linux: downloads.filter((d) => d.platform === "linux"),
+});
 
 export const VersionAccordion = ({ releases }: VersionAccordionProps) => {
   return (
@@ -157,12 +142,7 @@ export const VersionAccordion = ({ releases }: VersionAccordionProps) => {
                 </AccordionTrigger>
 
                 <AccordionContent className='px-4 pb-4 py-4'>
-                  <div className='grid gap-4 md:grid-cols-3'>
-                    <PlatformColumn
-                      downloads={platformGroups.macos}
-                      icon={<FaApple className='h-5 w-5' />}
-                      title='macOS'
-                    />
+                  <div className='grid gap-4 md:grid-cols-2'>
                     <PlatformColumn
                       downloads={platformGroups.windows}
                       icon={<FaWindows className='h-5 w-5' />}
@@ -211,12 +191,7 @@ export const VersionAccordion = ({ releases }: VersionAccordionProps) => {
                 </AccordionTrigger>
 
                 <AccordionContent className='px-4 pb-4'>
-                  <div className='grid gap-4 md:grid-cols-3'>
-                    <PlatformColumn
-                      downloads={platformGroups.macos}
-                      icon={<FaApple className='h-5 w-5' />}
-                      title='macOS'
-                    />
+                  <div className='grid gap-4 md:grid-cols-2'>
                     <PlatformColumn
                       downloads={platformGroups.windows}
                       icon={<FaWindows className='h-5 w-5' />}

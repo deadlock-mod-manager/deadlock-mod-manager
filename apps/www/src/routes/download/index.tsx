@@ -8,7 +8,7 @@ export const Route = createFileRoute("/download/")({
     seo({
       title: "Download | Deadlock Mod Manager",
       description:
-        "Download Deadlock Mod Manager for Windows, macOS, or Linux. Cross-platform mod management for Valve's Deadlock game.",
+        "Download Deadlock Mod Manager for Windows or Linux. Cross-platform mod management for Valve's Deadlock game.",
     }),
 });
 

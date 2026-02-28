@@ -8,10 +8,6 @@
 <!-- Project Stats -->
 <div align="center">
 
-[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/README.md)
-[![de](https://img.shields.io/badge/lang-de-yellow.svg)](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/README.de.md)
-[![fr](https://img.shields.io/badge/lang-fr-blue.svg)](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/README.fr.md)
-
 [![Downloads][downloads-status]][downloads-url]
 [![Contributors][contributors-status]][contributors-url]
 [![GitHub Release][release-status]][release-url]
@@ -45,7 +41,6 @@
   
 <!-- Distribution & Platforms -->
 [![Windows][windows-status]][windows-url]
-[![macOS][macos-status]][macos-url]
 [![Linux][linux-status]][linux-url]
 [![AUR][aur-status]][aur-url]
 
@@ -278,7 +273,5 @@ This project was only possible thanks to the amazing open source community, espe
 [forks-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/network/members
 [windows-status]: https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white
 [windows-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
-[macos-status]: https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white
-[macos-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
 [linux-status]: https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black
 [linux-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest

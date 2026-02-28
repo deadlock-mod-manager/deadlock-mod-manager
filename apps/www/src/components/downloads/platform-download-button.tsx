@@ -2,7 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Download } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { FaApple, FaLinux, FaWindows } from "react-icons/fa";
+import { FaLinux, FaWindows } from "react-icons/fa";
 import { useAnalyticsContext } from "@/components/analytics-provider";
 import { DOWNLOAD_URL } from "@/lib/constants";
 import { detectOS } from "@/lib/os-detection";
@@ -27,15 +27,13 @@ interface PlatformIconProps {
 }
 
 const PlatformIcon = ({ os }: PlatformIconProps) => {
-  if (os === "unknown") {
+  if (os === "unknown" || os === "macos") {
     return <Download className='h-4 w-4' />;
   }
 
   switch (os) {
     case "windows":
       return <FaWindows className='h-4 w-4' />;
-    case "macos":
-      return <FaApple className='h-4 w-4' />;
     case "linux":
       return <FaLinux className='h-4 w-4' />;
     default:
@@ -48,15 +46,13 @@ interface PlatformButtonTextProps {
 }
 
 const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
-  if (os === "unknown") {
+  if (os === "unknown" || os === "macos") {
     return "Download";
   }
 
   switch (os) {
     case "windows":
       return "Download for Windows";
-    case "macos":
-      return "Download for macOS";
     case "linux":
       return "Download for Linux";
     default:
