@@ -87,15 +87,14 @@ export class MirrorService {
       }
     }
 
-    // Handle stale files or files not found in database
     if (mirroredFile.isOk() && mirroredFile.value.isStale) {
       this.logger
         .withMetadata({ modId, fileId, s3Key: mirroredFile.value.s3Key })
         .info("File marked as stale, treating as cache miss");
+      await MetricsService.instance.incrementCacheMiss();
+    } else if (mirroredFile.isErr()) {
+      await MetricsService.instance.incrementCacheMiss();
     }
-
-    // Track cache miss (for files not found or stale files)
-    await MetricsService.instance.incrementCacheMiss();
 
     const result = await this.modDownloadRepository.findByModIdAndFileId(
       modId,
