@@ -27,7 +27,7 @@ Options:
   --bin-only    Only test deadlock-modmanager-bin (fastest)
   -h, --help    Show this help message
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
     --lint-only) MODE="lint"; shift ;;
     --bin-only)  BIN_ONLY=true; shift ;;
     -h|--help)   usage ;;
-    *)           echo "Unknown option: $1" >&2; usage ;;
+    *)           echo "Unknown option: $1" >&2; usage 2 ;;
   esac
 done
 

@@ -21,6 +21,7 @@ jobs:
     permissions:
       contents: write
     strategy:
+      max-parallel: 1
       matrix:
         include:
           - pkgname: deadlock-modmanager
