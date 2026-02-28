@@ -1,3 +1,4 @@
+import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
@@ -34,8 +35,8 @@ export class HealthService {
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
-      logger.withError(error as Error).error("DB health check failed");
-      return { alive: false, error: (error as Error).message };
+      logger.withError(error).error("DB health check failed");
+      return { alive: false, error: toErrorMessage(error) };
     }
   }
 
@@ -48,11 +49,11 @@ export class HealthService {
 
       return { alive: true, configured: true };
     } catch (error) {
-      logger.withError(error as Error).error("Redis health check failed");
+      logger.withError(error).error("Redis health check failed");
       return {
         alive: false,
         configured: true,
-        error: (error as Error).message,
+        error: toErrorMessage(error),
       };
     }
   }
@@ -65,8 +66,8 @@ export class HealthService {
 
       return { alive: true };
     } catch (error) {
-      logger.withError(error as Error).error("Discord health check failed");
-      return { alive: false, error: (error as Error).message };
+      logger.withError(error).error("Discord health check failed");
+      return { alive: false, error: toErrorMessage(error) };
     }
   }
 
@@ -112,7 +113,7 @@ export class HealthService {
       this.cacheTimestamp = now;
       return health;
     } catch (error) {
-      logger.withError(error as Error).error("Health check failed");
+      logger.withError(error).error("Health check failed");
 
       if (this.cachedHealth) {
         return this.cachedHealth;

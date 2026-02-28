@@ -1,3 +1,4 @@
+import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
@@ -36,9 +37,8 @@ export class HealthService {
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.withError(err).error("DB health check failed");
-      return { alive: false, error: err.message };
+      logger.withError(error).error("DB health check failed");
+      return { alive: false, error: toErrorMessage(error) };
     }
   }
 
@@ -50,12 +50,11 @@ export class HealthService {
       }
       return { alive: true, configured: true };
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.withError(err).error("Redis health check failed");
+      logger.withError(error).error("Redis health check failed");
       return {
         alive: false,
         configured: true,
-        error: err.message,
+        error: toErrorMessage(error),
       };
     }
   }
@@ -70,11 +69,10 @@ export class HealthService {
       }
       return { alive: true };
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.withError(err).error("S3 health check failed");
+      logger.withError(error).error("S3 health check failed");
       return {
         alive: false,
-        error: err.message,
+        error: toErrorMessage(error),
       };
     }
   }
@@ -125,8 +123,7 @@ export class HealthService {
       this.cacheTimestamp = now;
       return health;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.withError(err).error("Health check failed");
+      logger.withError(error).error("Health check failed");
 
       if (this.cachedHealth) {
         return this.cachedHealth;

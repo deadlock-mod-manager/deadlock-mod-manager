@@ -19,10 +19,7 @@ export interface CronJobDefinition {
   enabled?: boolean;
 }
 
-export interface CronServiceQueueOptions extends Pick<
-  QueueConfig,
-  "defaultJobOptions"
-> {}
+export type CronServiceQueueOptions = Pick<QueueConfig, "defaultJobOptions">;
 
 export class CronService {
   private queue: CronQueue;
