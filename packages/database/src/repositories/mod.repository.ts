@@ -1,3 +1,4 @@
+import { EntityNotFoundError } from "@deadlock-mods/common";
 import { and, desc, eq, inArray } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
@@ -67,6 +68,9 @@ export class ModRepository {
       .set({ ...mod, updatedAt: new Date() })
       .where(eq(mods.id, id))
       .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", id);
+    }
     return result[0];
   }
 
@@ -76,6 +80,9 @@ export class ModRepository {
       .set({ ...mod, updatedAt: new Date() })
       .where(eq(mods.remoteId, remoteId))
       .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", remoteId);
+    }
     return result[0];
   }
 
@@ -147,6 +154,9 @@ export class ModRepository {
       })
       .where(eq(mods.remoteId, remoteId))
       .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", remoteId);
+    }
     return result[0];
   }
 
@@ -162,6 +172,9 @@ export class ModRepository {
       })
       .where(eq(mods.remoteId, remoteId))
       .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", remoteId);
+    }
     return result[0];
   }
 }
