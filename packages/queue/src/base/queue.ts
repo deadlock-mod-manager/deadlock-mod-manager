@@ -1,6 +1,19 @@
-import { type JobsOptions, type QueueOptions, Queue } from "bullmq";
+import {
+  type JobsOptions,
+  type QueueOptions,
+  type DefaultJobOptions,
+  Queue,
+} from "bullmq";
 import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
+
+function isQueueOptions(
+  opts: Omit<QueueOptions, "connection"> | DefaultJobOptions | undefined,
+): opts is Omit<QueueOptions, "connection"> {
+  if (opts === undefined || typeof opts !== "object") return false;
+  const key: keyof QueueOptions = "defaultJobOptions";
+  return key in opts && opts.defaultJobOptions !== undefined;
+}
 
 export class BaseQueue<T extends BaseJobData = BaseJobData> {
   protected queue: Queue<T>;
@@ -8,12 +21,15 @@ export class BaseQueue<T extends BaseJobData = BaseJobData> {
   constructor(
     name: string,
     redis: Redis,
-    options?: Omit<QueueOptions, "connection">,
+    options?: Omit<QueueOptions, "connection"> | DefaultJobOptions,
   ) {
-    this.queue = new Queue<T>(name, {
-      connection: redis,
-      ...options,
-    });
+    const queueOptions: QueueOptions = isQueueOptions(options)
+      ? { connection: redis, ...options }
+      : options
+        ? { connection: redis, defaultJobOptions: options }
+        : { connection: redis };
+
+    this.queue = new Queue<T>(name, queueOptions);
   }
 
   async add(jobName: string, data: T, options?: JobsOptions) {
