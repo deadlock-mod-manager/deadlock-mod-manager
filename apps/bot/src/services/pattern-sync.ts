@@ -237,7 +237,13 @@ export class PatternSyncService {
   }
 
   async syncPeriodically(intervalHours: number) {
-    await this.sync();
+    try {
+      await this.sync();
+    } catch (error) {
+      logger
+        .withError(error)
+        .warn("Initial pattern sync failed, will retry periodically");
+    }
 
     setInterval(
       async () => {
