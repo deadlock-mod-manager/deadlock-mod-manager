@@ -1,6 +1,6 @@
 ---
-"@deadlock-mods/desktop": minor
-"@deadlock-mods/shared": patch
+"@deadlock-mods/feature-flags": patch
+"@deadlock-mods/common": patch
 ---
 
-Allow selecting multiple files when updating multi-file mods
+Invalidate Redis cache when feature flags are updated, created, deleted, or when user/segment overrides are modified

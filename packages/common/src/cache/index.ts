@@ -47,6 +47,8 @@ export const createNoOpCache = (): Cache => {
     set: async <T>(_key: string, _value: T, _ttl?: number): Promise<T> =>
       _value,
     del: async (_key: string): Promise<boolean> => true,
+    mdel: async (_keys: string[]): Promise<boolean> => true,
+    clear: async (): Promise<boolean> => true,
   } as unknown as Cache;
 };
 

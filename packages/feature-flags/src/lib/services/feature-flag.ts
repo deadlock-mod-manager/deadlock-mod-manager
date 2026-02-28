@@ -13,6 +13,33 @@ export class FeatureFlagService {
     private readonly segmentService?: SegmentService,
   ) {}
 
+  private async invalidateAllCache(): Promise<void> {
+    try {
+      await this.cache.clear();
+    } catch (error) {
+      this.logger
+        .withError(error)
+        .warn("Failed to invalidate feature flag cache");
+    }
+  }
+
+  private async invalidateUserCache(
+    userId: string,
+    featureFlagName: string,
+  ): Promise<void> {
+    try {
+      await this.cache.mdel([
+        `feature-flag-value-${featureFlagName}-${userId}`,
+        `all-feature-flags-${userId}`,
+        `client-feature-flags-${userId}`,
+      ]);
+    } catch (error) {
+      this.logger
+        .withError(error)
+        .warn("Failed to invalidate user feature flag cache");
+    }
+  }
+
   /**
    * Create a new feature flag
    *
@@ -20,7 +47,11 @@ export class FeatureFlagService {
    * @returns The created feature flag
    */
   async createFeatureFlag(featureFlag: NewFeatureFlag) {
-    return this.featureFlagRepository.create(featureFlag);
+    const result = await this.featureFlagRepository.create(featureFlag);
+    if (result.isOk()) {
+      await this.invalidateAllCache();
+    }
+    return result;
   }
 
   /**
@@ -34,7 +65,14 @@ export class FeatureFlagService {
     featureFlagId: string,
     featureFlag: Partial<NewFeatureFlag>,
   ) {
-    return this.featureFlagRepository.update(featureFlagId, featureFlag);
+    const result = await this.featureFlagRepository.update(
+      featureFlagId,
+      featureFlag,
+    );
+    if (result.isOk()) {
+      await this.invalidateAllCache();
+    }
+    return result;
   }
 
   /**
@@ -44,7 +82,11 @@ export class FeatureFlagService {
    * @returns The deleted feature flag
    */
   async deleteFeatureFlag(featureFlagId: string) {
-    return this.featureFlagRepository.delete(featureFlagId);
+    const result = await this.featureFlagRepository.delete(featureFlagId);
+    if (result.isOk()) {
+      await this.invalidateAllCache();
+    }
+    return result;
   }
 
   /**
@@ -238,11 +280,21 @@ export class FeatureFlagService {
    * @returns The created/updated override
    */
   async setUserOverride(userId: string, featureFlagId: string, value: unknown) {
-    return this.featureFlagRepository.setUserOverride(
+    const result = await this.featureFlagRepository.setUserOverride(
       userId,
       featureFlagId,
       value,
     );
+    if (result.isOk()) {
+      const flagResult =
+        await this.featureFlagRepository.findById(featureFlagId);
+      if (flagResult.isOk()) {
+        await this.invalidateUserCache(userId, flagResult.value.name);
+      } else {
+        await this.invalidateAllCache();
+      }
+    }
+    return result;
   }
 
   /**
@@ -253,7 +305,20 @@ export class FeatureFlagService {
    * @returns The deletion result
    */
   async deleteUserOverride(userId: string, featureFlagId: string) {
-    return this.featureFlagRepository.deleteUserOverride(userId, featureFlagId);
+    const result = await this.featureFlagRepository.deleteUserOverride(
+      userId,
+      featureFlagId,
+    );
+    if (result.isOk()) {
+      const flagResult =
+        await this.featureFlagRepository.findById(featureFlagId);
+      if (flagResult.isOk()) {
+        await this.invalidateUserCache(userId, flagResult.value.name);
+      } else {
+        await this.invalidateAllCache();
+      }
+    }
+    return result;
   }
 
   /**
