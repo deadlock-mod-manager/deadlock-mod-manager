@@ -1,0 +1,54 @@
+name: Test AUR PKGBUILDs
+
+on:
+  pull_request:
+    paths:
+      - "distribution/aur/**"
+  push:
+    paths:
+      - "distribution/aur/**"
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  namcap-lint:
+    name: Lint PKGBUILDs (namcap)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install namcap
+        run: pacman -Sy --noconfirm namcap
+
+      - name: Lint deadlock-modmanager
+        run: namcap distribution/aur/deadlock-modmanager/PKGBUILD
+
+      - name: Lint deadlock-modmanager-bin
+        run: namcap distribution/aur/deadlock-modmanager-bin/PKGBUILD
+
+      - name: Lint deadlock-modmanager-git
+        run: namcap distribution/aur/deadlock-modmanager-git/PKGBUILD
+
+  build-bin:
+    name: Build deadlock-modmanager-bin
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install base-devel
+        run: pacman -Syu --noconfirm base-devel
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder distribution/aur/deadlock-modmanager-bin
+
+      - name: Build package
+        working-directory: distribution/aur/deadlock-modmanager-bin
+        run: su builder -c "makepkg -sf --noconfirm"

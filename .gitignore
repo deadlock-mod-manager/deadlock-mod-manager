@@ -55,6 +55,15 @@ target/
 
 result
 
+# makepkg build artifacts
+distribution/aur/*/src/
+distribution/aur/*/pkg/
+distribution/aur/*/*.tar.gz
+distribution/aur/*/*.tar.zst
+distribution/aur/*/*.deb
+distribution/aur/*/*.log
+distribution/aur/deadlock-modmanager-git/deadlock-modmanager-git/
+
 # Nix development environment
 .cargo/
 .rustup/

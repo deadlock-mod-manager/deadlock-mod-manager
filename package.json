@@ -47,7 +47,8 @@
     "db:migrate": "pnpm --filter database db:migrate",
     "db:generate": "pnpm --filter database db:generate",
     "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle",
-    "clean": "rimraf --glob **/node_modules"
+    "clean": "rimraf --glob **/node_modules",
+    "aur:test": "bash scripts/test-aur-packages.sh"
   },
   "dependencies": {
     "@changesets/cli": "^2.29.7"

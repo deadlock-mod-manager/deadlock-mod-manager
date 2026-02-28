@@ -1,9 +1,8 @@
 name: Update AUR PKGBUILDs for new release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  release:
+    types: [released]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -40,10 +39,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION=${{ github.event.inputs.release_tag }}
-            VERSION=${VERSION#v}
           else
-            VERSION=${GITHUB_REF##*/v}
+            VERSION=${{ github.event.release.tag_name }}
           fi
+          VERSION=${VERSION#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if version is newer
@@ -85,5 +84,5 @@ jobs:
           commit_username: GitHub Actions
           commit_email: github-actions@github.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.ref_name }}
+          commit_message: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
           updpkgsums: true

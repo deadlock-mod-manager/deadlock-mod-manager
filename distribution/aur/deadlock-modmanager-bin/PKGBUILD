@@ -13,8 +13,10 @@ depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
 provides=('deadlock-modmanager')
 conflicts=('deadlock-modmanager' 'deadlock-modmanager-git')
 options=('!strip')
-source=("deadlock-modmanager-${pkgver}.deb::https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/v${_pkgver}/deadlock-mod-manager_${_pkgver}_amd64.deb")
-sha256sums=('SKIP')
+source=("deadlock-modmanager-${pkgver}.deb::https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/v${_pkgver}/Deadlock.Mod.Manager_${_pkgver}_amd64.deb"
+        'dev.stormix.deadlock-mod-manager.metainfo.xml')
+sha256sums=('SKIP'
+            'SKIP')
 
 package() {
     cd "${srcdir}"
@@ -49,4 +51,8 @@ Type=Application
 MimeType=x-scheme-handler/deadlock-mod-manager;x-scheme-handler/deadlock-modmanager;x-scheme-handler/dlmm;
 StartupWMClass=deadlock-modmanager
 EOF
+
+    # AppStream metainfo
+    install -Dm644 "${srcdir}/dev.stormix.deadlock-mod-manager.metainfo.xml" \
+        "${pkgdir}/usr/share/metainfo/dev.stormix.deadlock-mod-manager.metainfo.xml"
 }
