@@ -9,7 +9,6 @@ export const redis = new IORedis(env.REDIS_URL, {
 
 redis.on("error", (error) => {
   logger.withError(error).error("Redis error");
-  process.exit(1);
 });
 
 redis.on("connect", () => {

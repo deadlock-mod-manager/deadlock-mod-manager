@@ -20,6 +20,7 @@ import downloadRouter from "./routers/download";
 import healthRouter from "./routers/health";
 import metricsRouter from "./routers/metrics";
 import { cronService } from "./services/cron";
+import { HealthService } from "./services/health";
 
 const app = new Hono();
 
@@ -78,6 +79,8 @@ const main = async () => {
       cleanupRetentionDays: env.CLEANUP_RETENTION_DAYS,
     })
     .info("Background workers initialized");
+
+  HealthService.getInstance().markAsReady();
 
   Bun.serve({
     port: env.PORT,
