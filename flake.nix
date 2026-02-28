@@ -63,6 +63,8 @@
           gst_all_1.gst-plugins-base
           gst_all_1.gst-plugins-good
           gst_all_1.gst-plugins-bad
+          # TLS support for WebKitGTK (needed for HTTPS in WebView)
+          glib-networking
         ];
 
         # Build inputs for native development
@@ -160,6 +162,7 @@
 
             shellHook = ''
               export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH
+              export GIO_EXTRA_MODULES="${pkgs.glib-networking}/lib/gio/modules"
               export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
               export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
 
@@ -182,9 +185,6 @@
                 npm install -g pnpm
               fi
              '';
-
-            # Environment variables for Tauri development
-            WEBKIT_DISABLE_COMPOSITING_MODE = "1";
 
             # Rust environment
             RUST_BACKTRACE = "1";

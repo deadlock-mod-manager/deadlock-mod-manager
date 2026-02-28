@@ -199,7 +199,11 @@ const GetModsData = () => {
         <div
           className='h-[calc(100vh-280px)] overflow-auto'
           ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
-        >
+          // will-change: transform forces WebKit to allocate a dedicated compositing
+          // layer for this scroll container. Without it, webkit2gtk on Linux doesn't
+          // properly track damage regions for the absolutely-positioned virtualizer
+          // children (position:absolute + translateY), causing blank tiles on scroll.
+          style={{ willChange: "transform" }}>
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,

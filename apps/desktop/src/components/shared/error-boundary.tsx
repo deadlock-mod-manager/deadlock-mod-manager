@@ -7,7 +7,7 @@ import {
 } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 
-const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
+const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();
 
   return (
@@ -16,7 +16,7 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
       <AlertDescription className='flex flex-grow flex-row items-center justify-between gap-2'>
         <div className='flex flex-col gap-2'>
           <p>{t("errors.genericMessage")}</p>
-          {error.message.includes("Failed to parse game configuration") && (
+          {error?.message?.includes("Failed to parse game configuration") && (
             <div className='flex flex-col gap-2'>
               <p>{t("errors.failedToParseGameConfiguration.instruction")}</p>
               <ol className='list-decimal list-inside'>
@@ -31,7 +31,7 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
             </div>
           )}
           <pre>
-            {t("errors.errorCode")} {error.message}
+            {t("errors.errorCode")} {error?.message ?? String(error)}
           </pre>
         </div>
         <div className='flex flex-col items-center justify-center gap-2'>
@@ -47,7 +47,7 @@ const fallbackRender = ({ error, resetErrorBoundary }: FallbackProps) => {
 
 const ErrorBoundary = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ReactErrorBoundary fallbackRender={fallbackRender}>
+    <ReactErrorBoundary FallbackComponent={FallbackComponent}>
       {children}
     </ReactErrorBoundary>
   );

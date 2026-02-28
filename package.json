@@ -7,7 +7,7 @@
     "db:seed": "turbo run db:seed",
     "api:dev": "pnpm --filter api dev",
     "www:dev": "pnpm --filter www dev",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --concurrency=20",
     "desktop:dev": "pnpm --filter desktop tauri dev",
     "desktop:build": "pnpm --filter desktop tauri build",
     "desktop:build:dev": "pnpm --filter desktop build:dev",
