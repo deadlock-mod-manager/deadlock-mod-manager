@@ -329,7 +329,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               ? await ctx.context.options.trustedOrigins(ctx.request)
               : ctx.context.options.trustedOrigins || [];
 
-          const isMatch = wildcardMatch(trustedOrigins);
+          const isMatch = wildcardMatch(trustedOrigins, { separator: "." });
           const callbackOrigin = new URL(callbackURL).origin;
 
           if (!isMatch(callbackOrigin)) {
