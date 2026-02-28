@@ -2,6 +2,7 @@ import type { Logger } from "@deadlock-mods/logging";
 import type { Redis } from "ioredis";
 import type { BaseProcessor } from "../base/processor";
 import type { CronJobData } from "../types/jobs";
+import type { QueueConfig } from "../types/queues";
 import { CronQueue } from "./queue";
 import { CronWorker } from "./worker";
 
@@ -18,6 +19,11 @@ export interface CronJobDefinition {
   enabled?: boolean;
 }
 
+export interface CronServiceQueueOptions extends Pick<
+  QueueConfig,
+  "defaultJobOptions"
+> {}
+
 export class CronService {
   private queue: CronQueue;
   private workers: Map<string, CronWorker> = new Map();
@@ -33,8 +39,11 @@ export class CronService {
     redis: Redis,
     logger: Logger,
     concurrency = 1,
+    queueOptions?: CronServiceQueueOptions,
   ) {
-    this.queue = new CronQueue(queueName, redis);
+    this.queue = new CronQueue(queueName, redis, {
+      defaultJobOptions: queueOptions?.defaultJobOptions,
+    });
     this.defaultConcurrency = concurrency;
     this.logger = logger.child().withContext({
       service: "CronService",
@@ -125,10 +134,6 @@ export class CronService {
     const template = {
       name: jobName,
       data: cronJobData,
-      opts: {
-        removeOnComplete: 50,
-        removeOnFail: 100,
-      },
     };
 
     await this.queue.scheduleRecurring(jobName, cronPattern, template);
@@ -259,10 +264,6 @@ export class CronService {
     const template = {
       name: jobName,
       data: cronJobData,
-      opts: {
-        removeOnComplete: 50,
-        removeOnFail: 100,
-      },
     };
 
     await this.queue.scheduleInterval(jobName, intervalMs, template, {

@@ -7,4 +7,6 @@ export const cronService = new CronService(
   queueConfigs.cron.name,
   redis,
   logger,
+  1,
+  { defaultJobOptions: queueConfigs.cron.defaultJobOptions },
 );

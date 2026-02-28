@@ -1,4 +1,4 @@
-import { type BaseJobOptions, type JobsOptions, Queue } from "bullmq";
+import { type JobsOptions, type QueueOptions, Queue } from "bullmq";
 import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
 
@@ -8,7 +8,7 @@ export class BaseQueue<T extends BaseJobData = BaseJobData> {
   constructor(
     name: string,
     redis: Redis,
-    options?: Omit<BaseJobOptions, "connection">,
+    options?: Omit<QueueOptions, "connection">,
   ) {
     this.queue = new Queue<T>(name, {
       connection: redis,
