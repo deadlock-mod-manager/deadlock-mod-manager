@@ -100,7 +100,7 @@ pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
   #[cfg(target_os = "linux")]
   {
     let active = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_ok();
-    log::info!("Linux GPU optimization active: {active}");
+    log::info!("Linux GPU compat workaround active: {active}");
     Ok(active)
   }
 
