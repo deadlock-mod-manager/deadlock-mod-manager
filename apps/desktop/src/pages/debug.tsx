@@ -112,7 +112,7 @@ const Debug = () => {
   };
 
   return (
-    <div className='p-4 space-y-4'>
+    <div className='p-4 space-y-4 h-full overflow-y-auto'>
       <h1 className='text-2xl font-bold'>{t("debug.title")}</h1>
 
       <div className='space-y-2'>
