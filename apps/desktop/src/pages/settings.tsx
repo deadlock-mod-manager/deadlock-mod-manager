@@ -278,6 +278,38 @@ const CustomSettings = ({ value }: { value?: string }) => {
     });
   }, [activeTab, analytics]);
 
+  const clearDownloadCache = async () => {
+    if (!(await confirm(t("settings.confirmClearDownloadCache")))) {
+      return;
+    }
+    try {
+      const freedBytes = await invoke<number>("clear_download_cache");
+      const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
+      toast.success(`${t("settings.clearDownloadCache")}: ${freedMB} MB freed`);
+    } catch (error) {
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      toast.error(t("common.error"));
+    }
+  };
+
+  const clearAllModsData = async () => {
+    if (!(await confirm(t("settings.confirmClearAllModsData")))) {
+      return;
+    }
+    try {
+      const freedBytes = await invoke<number>("clear_all_mods_data");
+      const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
+      toast.success(`${t("settings.clearAllModsData")}: ${freedMB} MB freed`);
+    } catch (error) {
+      logger.errorOnly(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      toast.error(t("common.error"));
+    }
+  };
+
   const clearAllMods = async () => {
     if (!(await confirm(t("settings.confirmClearAllMods")))) {
       return;
@@ -513,6 +545,27 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     variant='outline'>
                     <FolderOpen className='h-4 w-4' />
                     {t("settings.openModsFolder")}
+                  </Button>
+                  <Button
+                    className='w-fit'
+                    onClick={() => invoke("open_mods_data_folder")}
+                    variant='outline'>
+                    <FolderOpen className='h-4 w-4' />
+                    {t("settings.openModsDataFolder")}
+                  </Button>
+                  <Button
+                    className='w-fit'
+                    onClick={clearDownloadCache}
+                    variant='destructive'>
+                    <TrashIcon className='h-4 w-4' />
+                    {t("settings.clearDownloadCache")}
+                  </Button>
+                  <Button
+                    className='w-fit'
+                    onClick={clearAllModsData}
+                    variant='destructive'>
+                    <TrashIcon className='h-4 w-4' />
+                    {t("settings.clearAllModsData")}
                   </Button>
                   <Button onClick={clearModsState} variant='destructive'>
                     <TrashIcon className='h-4 w-4 mr-2' />

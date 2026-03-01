@@ -588,6 +588,51 @@ impl ModManager {
       .open_folder(game_path.to_string_lossy().as_ref())
   }
 
+  pub fn open_mods_data_folder(&self) -> Result<(), Error> {
+    let mods_path = self.get_mods_store_path()?;
+    self.filesystem.create_directories(&mods_path)?;
+    self
+      .filesystem
+      .open_folder(mods_path.to_string_lossy().as_ref())
+  }
+
+  pub fn clear_download_cache(&self) -> Result<u64, Error> {
+    let mods_path = self.get_mods_store_path()?;
+    if !mods_path.exists() {
+      return Ok(0);
+    }
+
+    let mut freed = 0u64;
+    for entry in std::fs::read_dir(&mods_path)? {
+      let entry = entry?;
+      let path = entry.path();
+      if !path.is_dir() {
+        continue;
+      }
+      if entry.file_name().to_string_lossy().starts_with("local-") {
+        continue;
+      }
+      freed += dir_size(&path);
+      self.filesystem.remove_directory_recursive(&path)?;
+    }
+
+    log::info!("Cleared download cache: {freed} bytes freed");
+    Ok(freed)
+  }
+
+  pub fn clear_all_mods_data(&self) -> Result<u64, Error> {
+    let mods_path = self.get_mods_store_path()?;
+    if !mods_path.exists() {
+      return Ok(0);
+    }
+
+    let size = dir_size(&mods_path);
+    self.filesystem.remove_directory_recursive(&mods_path)?;
+    self.filesystem.create_directories(&mods_path)?;
+    log::info!("Cleared all mods data: {size} bytes freed");
+    Ok(size)
+  }
+
   /// Get a reference to the steam manager
   pub fn get_steam_manager(&self) -> &SteamManager {
     &self.steam_manager
@@ -617,7 +662,6 @@ impl ModManager {
     self.app_handle = Some(app_handle);
   }
 
-  /// Get the mods store path using Tauri's cross-platform app_local_data_dir
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
     let app_handle = self.app_handle.as_ref().ok_or(Error::GamePathNotSet)?;
     let app_local_data_dir = app_handle
@@ -790,4 +834,22 @@ impl Default for ModManager {
   fn default() -> Self {
     Self::new()
   }
+}
+
+fn dir_size(path: &std::path::Path) -> u64 {
+  std::fs::read_dir(path)
+    .map(|entries| {
+      entries
+        .filter_map(|e| e.ok())
+        .map(|e| {
+          let meta = e.metadata().ok();
+          if e.path().is_dir() {
+            dir_size(&e.path())
+          } else {
+            meta.map_or(0, |m| m.len())
+          }
+        })
+        .sum()
+    })
+    .unwrap_or(0)
 }
