@@ -55,16 +55,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Get the mods storage directory
-  pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
-    let local_appdata = std::env::var("LOCALAPPDATA").map_err(|_| Error::GamePathNotSet)?;
-    Ok(
-      std::path::PathBuf::from(local_appdata)
-        .join("dev.stormix.deadlock-mod-manager")
-        .join("mods"),
-    )
-  }
-
   /// Get all files in a directory with a specific extension
   pub fn get_files_with_extension(
     &self,

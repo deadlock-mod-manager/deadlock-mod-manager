@@ -76,6 +76,12 @@ pub fn run() {
     .setup(|app| {
       let _store = app.store("state.json")?;
       deep_link::setup(app)?;
+
+      {
+        let mut mod_manager = commands::MANAGER.lock().unwrap();
+        mod_manager.set_app_handle(app.handle().clone());
+      }
+
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })

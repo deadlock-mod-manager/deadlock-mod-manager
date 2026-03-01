@@ -1,5 +1,5 @@
 import { type HTMLProps, useEffect, useState } from "react";
-import { cn, getOsType } from "@/lib/utils";
+import { cn, getOsType, isMacOS } from "@/lib/utils";
 import { Windows } from "./windows";
 
 export function WindowTitlebar({
@@ -11,7 +11,7 @@ export function WindowTitlebar({
 
   useEffect(() => {
     getOsType().then((osname) => {
-      setShowControls(osname !== "darwin");
+      setShowControls(!isMacOS(osname));
     });
   }, []);
 

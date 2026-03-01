@@ -16,10 +16,17 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
   const { gamePath, setGamePath } = usePersistedStore();
 
   useEffect(() => {
-    if (!gamePath) {
-      invoke("find_game_path").then((path) => setGamePath(path as string));
+    if (gamePath) {
+      invoke<string>("set_game_path", { path: gamePath }).catch(() => {
+        setGamePath("");
+        invoke<string>("find_game_path").then((path) => setGamePath(path));
+      });
+    } else {
+      invoke<string>("find_game_path")
+        .then((path) => setGamePath(path))
+        .catch(() => {});
     }
-  }, [gamePath, setGamePath]);
+  }, []);
 
   return (
     <AppProviderContext.Provider {...props} value={{}}>

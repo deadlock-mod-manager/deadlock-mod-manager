@@ -12,6 +12,7 @@ use crate::mod_manager::{
 };
 use log;
 use std::path::PathBuf;
+use tauri::Manager;
 
 pub struct ModManager {
   steam_manager: SteamManager,
@@ -23,6 +24,7 @@ pub struct ModManager {
   mod_repository: ModRepository,
   addons_backup_manager: AddonsBackupManager,
   autoexec_manager: AutoexecManager,
+  app_handle: Option<tauri::AppHandle>,
 }
 
 impl ModManager {
@@ -37,6 +39,7 @@ impl ModManager {
       mod_repository: ModRepository::new(),
       addons_backup_manager: AddonsBackupManager::new(),
       autoexec_manager: AutoexecManager::new(),
+      app_handle: None,
     };
 
     // Try to find the game path on initialization
@@ -167,7 +170,6 @@ impl ModManager {
     // Recover older local imports that were added before prefixed VPKs were copied.
     if prefixed_vpks.is_empty() && deadlock_mod.id.starts_with("local-") {
       let local_files_dir = self
-        .filesystem
         .get_mods_store_path()?
         .join(&deadlock_mod.id)
         .join("files");
@@ -349,7 +351,7 @@ impl ModManager {
     }
 
     // Remove the mod's folder from user's local app data
-    let mods_path = self.filesystem.get_mods_store_path()?;
+    let mods_path = self.get_mods_store_path()?;
     let user_mod_dir = mods_path.join(&mod_id);
 
     if user_mod_dir.exists() {
@@ -611,9 +613,18 @@ impl ModManager {
     &mut self.mod_repository
   }
 
-  /// Get the mods store path
+  pub fn set_app_handle(&mut self, app_handle: tauri::AppHandle) {
+    self.app_handle = Some(app_handle);
+  }
+
+  /// Get the mods store path using Tauri's cross-platform app_local_data_dir
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
-    self.filesystem.get_mods_store_path()
+    let app_handle = self.app_handle.as_ref().ok_or(Error::GamePathNotSet)?;
+    let app_local_data_dir = app_handle
+      .path()
+      .app_local_data_dir()
+      .map_err(Error::Tauri)?;
+    Ok(app_local_data_dir.join("mods"))
   }
 
   /// Replace VPK files for a mod
@@ -676,8 +687,7 @@ impl ModManager {
 
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory
   fn validate_path_within_mods_root(&self, path: &PathBuf) -> Result<PathBuf, Error> {
-    // Get the mods root directory and canonicalize it
-    let mods_root = self.filesystem.get_mods_store_path()?;
+    let mods_root = self.get_mods_store_path()?;
     let canonical_mods_root = mods_root
       .canonicalize()
       .map_err(|_| Error::UnauthorizedPath("Unable to resolve mods directory".to_string()))?;
@@ -721,7 +731,7 @@ impl ModManager {
         "Invalid mod ID: path traversal not allowed".to_string(),
       ));
     }
-    let mods_root = self.filesystem.get_mods_store_path()?;
+    let mods_root = self.get_mods_store_path()?;
     let mod_folder = mods_root.join(mod_id);
     if mod_folder.exists() {
       self.validate_path_within_mods_root(&mod_folder)
