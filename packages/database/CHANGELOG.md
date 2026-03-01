@@ -1,5 +1,15 @@
 # @deadlock-mods/database
 
+## 1.8.1
+
+### Patch Changes
+
+- c61de94: Fix mirror service cache miss double-counting and DB/S3 hash desynchronization
+- 3da6533: Fix ModRepository update methods returning undefined when no rows match WHERE clause
+- 3da6533: Fix TOCTOU race causing server crashes when announcements deleted mid-update
+- Updated dependencies [87fa249]
+  - @deadlock-mods/common@1.2.1
+
 ## 1.8.0
 
 ### Minor Changes

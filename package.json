@@ -42,6 +42,7 @@
     "version:generate": "turbo run version:generate",
     "version:nightly": "bun run scripts/update-nightly-version.ts",
     "release-notes": "bun run scripts/generate-release-notes.ts",
+    "version:without-desktop": "bun run scripts/version-without-desktop.ts",
     "db:studio": "pnpm --filter database db:studio",
     "db:migrate": "pnpm --filter database db:migrate",
     "db:generate": "pnpm --filter database db:generate",

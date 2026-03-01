@@ -1,5 +1,17 @@
 # @deadlock-mods/feature-flags
 
+## 0.2.5
+
+### Patch Changes
+
+- 87fa249: Invalidate Redis cache when feature flags or user/segment overrides change
+- Updated dependencies [87fa249]
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/database@1.8.1
+
 ## 0.2.4
 
 ### Patch Changes

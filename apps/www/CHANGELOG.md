@@ -1,5 +1,15 @@
 # web
 
+## 0.3.1
+
+### Patch Changes
+
+- 3da6533: Fix race where concurrent token refresh could unexpectedly log users out
+- e7342a2: Throttle React Query usage: shared constants, remove unused OTA hook, and sensible defaults to avoid rate-limiting and excessive refetches
+- Updated dependencies [87fa249]
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/shared@1.8.0
+
 ## 0.3.0
 
 ### Minor Changes

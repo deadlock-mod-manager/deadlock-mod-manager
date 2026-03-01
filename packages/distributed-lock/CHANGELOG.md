@@ -1,5 +1,15 @@
 # @deadlock-mods/distributed-lock
 
+## 1.0.7
+
+### Patch Changes
+
+- 3da6533: Fix distributed locks expiring despite active heartbeats; extend expiresAt correctly
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/database@1.8.1
+
 ## 1.0.6
 
 ### Patch Changes
