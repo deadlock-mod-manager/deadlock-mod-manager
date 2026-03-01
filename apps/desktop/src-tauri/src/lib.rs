@@ -78,7 +78,9 @@ pub fn run() {
       deep_link::setup(app)?;
 
       {
-        let mut mod_manager = commands::MANAGER.lock().unwrap();
+        let mut mod_manager = commands::MANAGER
+          .lock()
+          .map_err(|e| format!("Failed to acquire mod manager lock: {e}"))?;
         mod_manager.set_app_handle(app.handle().clone());
       }
 

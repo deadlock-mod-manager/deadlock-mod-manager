@@ -5,6 +5,7 @@ export type ErrorKind = {
     | "steamNotFound"
     | "gameNotFound"
     | "gamePathNotSet"
+    | "appHandleNotInitialized"
     | "gameConfigParse"
     | "modAlreadyInstalled"
     | "modFileNotFound"

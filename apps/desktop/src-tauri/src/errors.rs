@@ -10,6 +10,8 @@ pub enum Error {
   GameNotFound,
   #[error("Game path not set - initialize game first")]
   GamePathNotSet,
+  #[error("App handle not initialized")]
+  AppHandleNotInitialized,
   #[error(
     "Failed to parse game configuration. Try resetting the gameinfo.gi to Vanilla in game settings and restart the mod manager."
   )]
@@ -73,6 +75,7 @@ impl serde::Serialize for Error {
       Error::SteamNotFound => "steamNotFound",
       Error::GameNotFound => "gameNotFound",
       Error::GamePathNotSet => "gamePathNotSet",
+      Error::AppHandleNotInitialized => "appHandleNotInitialized",
       Error::GameConfigParse(_) => "gameConfigParse",
       Error::ModFileNotFound => "modFileNotFound",
       Error::KeyValues(_) => "keyValues",

@@ -663,7 +663,10 @@ impl ModManager {
   }
 
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
-    let app_handle = self.app_handle.as_ref().ok_or(Error::GamePathNotSet)?;
+    let app_handle = self
+      .app_handle
+      .as_ref()
+      .ok_or(Error::AppHandleNotInitialized)?;
     let app_local_data_dir = app_handle
       .path()
       .app_local_data_dir()
@@ -732,6 +735,7 @@ impl ModManager {
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory
   fn validate_path_within_mods_root(&self, path: &PathBuf) -> Result<PathBuf, Error> {
     let mods_root = self.get_mods_store_path()?;
+    self.filesystem.create_directories(&mods_root)?;
     let canonical_mods_root = mods_root
       .canonicalize()
       .map_err(|_| Error::UnauthorizedPath("Unable to resolve mods directory".to_string()))?;
