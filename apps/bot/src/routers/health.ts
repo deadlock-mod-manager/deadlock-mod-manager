@@ -6,7 +6,7 @@ const healthRouter = new Hono();
 healthRouter.get("/health", async (c: Context) => {
   const service = HealthService.getInstance();
   const result = await service.check();
-  return c.json(result, result.status === "ok" ? 200 : 503);
+  return c.json(result, 200);
 });
 
 export default healthRouter;

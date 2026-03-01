@@ -55,6 +55,7 @@ export class ReportService {
           modId: report.modId,
         })
         .error("Failed to publish new report event");
+      throw error;
     }
   }
 
@@ -104,6 +105,7 @@ export class ReportService {
           status: report.status,
         })
         .error("Failed to publish report status updated event");
+      throw error;
     }
   }
 }

@@ -1,9 +1,23 @@
+import type { Cache } from "@deadlock-mods/common";
 import type { NewSegment, Segment } from "@deadlock-mods/database";
 import { err, ok, type Result } from "neverthrow";
 import type { SegmentRepository } from "../repositories/segment";
 
 export class SegmentService {
-  constructor(private readonly segmentRepository: SegmentRepository) {}
+  constructor(
+    private readonly segmentRepository: SegmentRepository,
+    private readonly cache?: Cache,
+  ) {}
+
+  private async invalidateCache(): Promise<void> {
+    if (this.cache) {
+      try {
+        await this.cache.clear();
+      } catch {
+        // Swallow - stale cache is preferable to failing the mutation
+      }
+    }
+  }
 
   /**
    * Create a new segment
@@ -23,7 +37,14 @@ export class SegmentService {
    * @returns The created segment member
    */
   async addUserToSegment(segmentId: string, userId: string) {
-    return this.segmentRepository.addUserToSegment(segmentId, userId);
+    const result = await this.segmentRepository.addUserToSegment(
+      segmentId,
+      userId,
+    );
+    if (result.isOk()) {
+      await this.invalidateCache();
+    }
+    return result;
   }
 
   /**
@@ -34,7 +55,14 @@ export class SegmentService {
    * @returns The deleted segment member
    */
   async removeUserFromSegment(segmentId: string, userId: string) {
-    return this.segmentRepository.removeUserFromSegment(segmentId, userId);
+    const result = await this.segmentRepository.removeUserFromSegment(
+      segmentId,
+      userId,
+    );
+    if (result.isOk()) {
+      await this.invalidateCache();
+    }
+    return result;
   }
 
   /**
@@ -59,19 +87,22 @@ export class SegmentService {
       return existingResult;
     }
 
-    if (existingResult.value) {
-      return this.segmentRepository.updateSegmentFeatureFlag(
-        segmentId,
-        featureFlagId,
-        value,
-      );
-    }
+    const result = existingResult.value
+      ? await this.segmentRepository.updateSegmentFeatureFlag(
+          segmentId,
+          featureFlagId,
+          value,
+        )
+      : await this.segmentRepository.createSegmentFeatureFlag(
+          segmentId,
+          featureFlagId,
+          value,
+        );
 
-    return this.segmentRepository.createSegmentFeatureFlag(
-      segmentId,
-      featureFlagId,
-      value,
-    );
+    if (result.isOk()) {
+      await this.invalidateCache();
+    }
+    return result;
   }
 
   /**

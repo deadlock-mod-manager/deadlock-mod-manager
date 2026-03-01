@@ -10,22 +10,26 @@ export class MirroredFileRepository extends BaseRepository {
       const [result] = await this.db
         .insert(mirroredFiles)
         .values(mirroredFile)
-        .onConflictDoNothing()
+        .onConflictDoUpdate({
+          target: [mirroredFiles.modDownloadId, mirroredFiles.modId],
+          set: {
+            remoteId: mirroredFile.remoteId,
+            filename: mirroredFile.filename,
+            s3Key: mirroredFile.s3Key,
+            s3Bucket: mirroredFile.s3Bucket,
+            fileHash: mirroredFile.fileHash,
+            fileSize: mirroredFile.fileSize,
+            mirroredAt: mirroredFile.mirroredAt,
+            lastDownloadedAt: mirroredFile.lastDownloadedAt,
+            lastValidated: mirroredFile.lastValidated,
+            isStale: mirroredFile.isStale,
+            updatedAt: new Date(),
+          },
+        })
         .returning();
 
-      // If no result returned (conflict occurred), fetch the existing record
       if (!result) {
-        const existingRecord = await this.findByModIdAndFileId(
-          mirroredFile.modId,
-          mirroredFile.modDownloadId,
-        );
-        if (existingRecord.isOk()) {
-          return existingRecord;
-        }
-        // If we can't find the existing record, something went wrong
-        return err(
-          new Error("Conflict occurred but existing record not found"),
-        );
+        return err(new Error("Upsert did not return a row"));
       }
 
       return ok(result);

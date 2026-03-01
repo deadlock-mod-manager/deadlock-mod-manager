@@ -42,16 +42,7 @@ export class BotStartupService {
   private async initializePatternSync(): Promise<void> {
     logger.info("Syncing triage patterns");
     const patternSync = new PatternSyncService();
-
-    try {
-      await patternSync.sync();
-    } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .warn("Pattern sync failed, will retry periodically");
-    }
-
-    patternSync.syncPeriodically(6);
+    await patternSync.syncPeriodically(6);
   }
 
   private async setupCronJobs(): Promise<void> {

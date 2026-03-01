@@ -211,5 +211,15 @@ pub fn setup<R: tauri::Runtime>(app: &tauri::App<R>) -> Result<(), Box<dyn std::
     }
   }
 
+  let deep_link_handle = app.app_handle().clone();
+  app.deep_link().on_open_url(move |event| {
+    for url in event.urls() {
+      log::info!("[DeepLink] Received open URL event: {url}");
+      if let Err(e) = handle_deep_link_url(&deep_link_handle, url.as_ref()) {
+        log::error!("[DeepLink] Failed to handle open URL: {e}");
+      }
+    }
+  });
+
   Ok(())
 }

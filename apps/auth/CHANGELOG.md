@@ -1,5 +1,22 @@
 # @deadlock-mods/auth
 
+## 1.0.4
+
+### Patch Changes
+
+- 3da6533: Fix Steam trusted origins wildcard to restrict single-level subdomains only
+- 60cee2e: Fix critical and high security vulnerabilities by updating direct dependencies (hono, react-router, @langchain/core, langchain, next) and adding pnpm overrides for vulnerable transitive dependencies (fast-xml-parser, minimatch, tar, seroval, h3, rollup, @isaacs/brace-expansion)
+- 3da6533: Fix health endpoint 503 on degraded status causing unnecessary Kubernetes restarts
+- Updated dependencies [87fa249]
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/feature-flags@0.2.5
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/database@1.8.1
+  - @deadlock-mods/instrumentation@0.1.7
+  - @deadlock-mods/shared@1.8.0
+
 ## 1.0.3
 
 ### Patch Changes

@@ -6,7 +6,6 @@ import { sentry } from "@hono/sentry";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { etag } from "hono/etag";
-import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
@@ -20,6 +19,7 @@ import downloadRouter from "./routers/download";
 import healthRouter from "./routers/health";
 import metricsRouter from "./routers/metrics";
 import { cronService } from "./services/cron";
+import { HealthService } from "./services/health";
 
 const app = new Hono();
 
@@ -36,9 +36,6 @@ app.use(
     ...SENTRY_OPTIONS,
   }),
   etag(),
-  loggerMiddleware((message: string, ...rest: string[]) => {
-    logger.info(message, ...rest);
-  }),
   secureHeaders(),
   trimTrailingSlash(),
 );
@@ -78,6 +75,8 @@ const main = async () => {
       cleanupRetentionDays: env.CLEANUP_RETENTION_DAYS,
     })
     .info("Background workers initialized");
+
+  HealthService.getInstance().markAsReady();
 
   Bun.serve({
     port: env.PORT,

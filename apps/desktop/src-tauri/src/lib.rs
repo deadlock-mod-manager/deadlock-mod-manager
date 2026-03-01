@@ -76,6 +76,14 @@ pub fn run() {
     .setup(|app| {
       let _store = app.store("state.json")?;
       deep_link::setup(app)?;
+
+      {
+        let mut mod_manager = commands::MANAGER
+          .lock()
+          .map_err(|e| format!("Failed to acquire mod manager lock: {e}"))?;
+        mod_manager.set_app_handle(app.handle().clone());
+      }
+
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
@@ -92,6 +100,9 @@ pub fn run() {
       commands::clear_mods,
       commands::open_mods_folder,
       commands::open_game_folder,
+      commands::open_mods_data_folder,
+      commands::clear_download_cache,
+      commands::clear_all_mods_data,
       commands::uninstall_mod,
       commands::purge_mod,
       commands::reorder_mods,

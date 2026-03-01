@@ -2,7 +2,6 @@
 import "./instrument";
 
 import { Hono } from "hono";
-import { logger as loggerMiddleware } from "hono/logger";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { ProcessManager } from "@/lib/process-manager";
@@ -13,13 +12,6 @@ import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
 
 const app = new Hono();
-
-app.use(
-  "*",
-  loggerMiddleware((message: string, ...rest: string[]) => {
-    logger.info(message, ...rest);
-  }),
-);
 
 app.route("/", healthRouter);
 

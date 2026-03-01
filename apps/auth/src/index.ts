@@ -9,7 +9,6 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { etag } from "hono/etag";
-import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
@@ -37,9 +36,6 @@ app.use(
     ...SENTRY_OPTIONS,
   }),
   etag(),
-  loggerMiddleware((message: string, ...rest: string[]) => {
-    logger.info(message, ...rest);
-  }),
   secureHeaders(),
   trimTrailingSlash(),
 );
@@ -51,7 +47,7 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 app.get("/health", async (c) => {
   const healthService = container.resolve(HealthService);
   const result = await healthService.check();
-  return c.json(result, result.status === "ok" ? 200 : 503);
+  return c.json(result, 200);
 });
 
 /**

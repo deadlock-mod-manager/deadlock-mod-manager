@@ -5,7 +5,7 @@ import {
   REDIS_CHANNELS,
 } from "@deadlock-mods/shared";
 import { logger as mainLogger } from "@/lib/logger";
-import { redis } from "@/lib/redis";
+import { redisPublisher } from "@/lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "redis-publisher",
@@ -42,7 +42,7 @@ export class RedisPublisherService {
         })
         .info("Publishing new mod event");
 
-      const subscriberCount = await redis.publish(
+      const subscriberCount = await redisPublisher.publish(
         REDIS_CHANNELS.NEW_MODS,
         message,
       );

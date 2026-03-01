@@ -1,5 +1,30 @@
 # api
 
+## 2.8.1
+
+### Patch Changes
+
+- 3da6533: Fix RedisPublisherService using wrong Redis client that crashes API on connection errors
+- 3da6533: Add 10MB max size limit to KV parse endpoint to mitigate DoS attacks
+- 60cee2e: Fix critical and high security vulnerabilities by updating direct dependencies (hono, react-router, @langchain/core, langchain, next) and adding pnpm overrides for vulnerable transitive dependencies (fast-xml-parser, minimatch, tar, seroval, h3, rollup, @isaacs/brace-expansion)
+- 3da6533: Fix health endpoint 503 on degraded status causing unnecessary Kubernetes restarts
+- 3da6533: Fix TOCTOU race causing server crashes when announcements deleted mid-update
+- 3da6533: Fix ReportService swallowing Redis publish errors; rethrow so callers can handle
+- Updated dependencies [3da6533]
+- Updated dependencies [87fa249]
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/queue@0.1.1
+  - @deadlock-mods/feature-flags@0.2.5
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/database@1.8.1
+  - @deadlock-mods/distributed-lock@1.0.7
+  - @deadlock-mods/instrumentation@0.1.7
+  - @deadlock-mods/shared@1.8.0
+
 ## 2.8.0
 
 ### Minor Changes

@@ -41,20 +41,20 @@ export class AnnouncementRepository {
   async update(
     id: string,
     updates: Partial<NewAnnouncement>,
-  ): Promise<Announcement> {
+  ): Promise<Announcement | null> {
     const result = await this.db
       .update(announcements)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(announcements.id, id))
       .returning();
-    return result[0];
+    return result[0] ?? null;
   }
 
   async delete(id: string): Promise<void> {
     await this.db.delete(announcements).where(eq(announcements.id, id));
   }
 
-  async publish(id: string): Promise<Announcement> {
+  async publish(id: string): Promise<Announcement | null> {
     const result = await this.db
       .update(announcements)
       .set({
@@ -64,10 +64,10 @@ export class AnnouncementRepository {
       })
       .where(eq(announcements.id, id))
       .returning();
-    return result[0];
+    return result[0] ?? null;
   }
 
-  async archive(id: string): Promise<Announcement> {
+  async archive(id: string): Promise<Announcement | null> {
     const result = await this.db
       .update(announcements)
       .set({
@@ -76,7 +76,7 @@ export class AnnouncementRepository {
       })
       .where(eq(announcements.id, id))
       .returning();
-    return result[0];
+    return result[0] ?? null;
   }
 
   async exists(id: string): Promise<boolean> {

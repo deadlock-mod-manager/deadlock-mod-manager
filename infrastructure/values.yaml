@@ -10,7 +10,7 @@ deployments:
     healthCheck:
       readiness:
         enabled: true
-        path: /
+        path: /health
         port: 3002
         initialDelaySeconds: 5
         periodSeconds: 5
@@ -20,7 +20,7 @@ deployments:
 
       liveness:
         enabled: true
-        path: /
+        path: /health
         port: 3002
         initialDelaySeconds: 15
         periodSeconds: 10
@@ -30,7 +30,7 @@ deployments:
 
       startup:
         enabled: true
-        path: /
+        path: /health
         port: 3002
         initialDelaySeconds: 15
         periodSeconds: 5

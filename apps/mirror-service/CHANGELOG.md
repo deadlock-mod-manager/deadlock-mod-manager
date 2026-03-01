@@ -1,5 +1,27 @@
 # @deadlock-mods/mirror-service
 
+## 1.1.5
+
+### Patch Changes
+
+- c61de94: Fix mirror service cache miss double-counting and DB/S3 hash desynchronization
+- 60cee2e: Fix critical and high security vulnerabilities by updating direct dependencies (hono, react-router, @langchain/core, langchain, next) and adding pnpm overrides for vulnerable transitive dependencies (fast-xml-parser, minimatch, tar, seroval, h3, rollup, @isaacs/brace-expansion)
+- 3da6533: Fix health endpoints to validate Redis, S3, DB connectivity before reporting healthy
+- Updated dependencies [3da6533]
+- Updated dependencies [87fa249]
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/queue@0.1.1
+  - @deadlock-mods/feature-flags@0.2.5
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/database@1.8.1
+  - @deadlock-mods/distributed-lock@1.0.7
+  - @deadlock-mods/instrumentation@0.1.7
+  - @deadlock-mods/shared@1.8.0
+
 ## 1.1.4
 
 ### Patch Changes

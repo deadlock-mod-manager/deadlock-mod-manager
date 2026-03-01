@@ -24,6 +24,10 @@ export async function getOsType(): Promise<string> {
   }
 }
 
+export function isMacOS(osType: string): boolean {
+  return osType === "darwin" || osType === "macos";
+}
+
 export const formatSize = (size: number) => {
   const units = ["B", "KB", "MB", "GB"];
   let formattedSize = size;

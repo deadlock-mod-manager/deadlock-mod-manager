@@ -1,25 +1,21 @@
+import type { Context } from "hono";
 import { Hono } from "hono";
-import { version } from "../version";
+import { HealthService } from "@/services/health";
 
 const healthRouter = new Hono();
 
-healthRouter.get("/", (c) => {
-  return c.json({
-    status: "ok",
-    service: "mirror-service",
-    version,
-    timestamp: new Date().toISOString(),
-  });
+healthRouter.get("/", async (c: Context) => {
+  const service = HealthService.getInstance();
+  const result = await service.check();
+  const statusCode = result.status === "ok" ? 200 : 503;
+  return c.json(result, statusCode);
 });
 
-healthRouter.get("/health", (c) => {
-  return c.json({
-    status: "healthy",
-    service: "mirror-service",
-    version,
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
+healthRouter.get("/health", async (c: Context) => {
+  const service = HealthService.getInstance();
+  const result = await service.check();
+  const statusCode = result.status === "ok" ? 200 : 503;
+  return c.json(result, statusCode);
 });
 
 export default healthRouter;

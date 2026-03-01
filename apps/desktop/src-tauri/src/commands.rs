@@ -359,6 +359,24 @@ pub async fn open_game_folder() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn open_mods_data_folder() -> Result<(), Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.open_mods_data_folder()
+}
+
+#[tauri::command]
+pub async fn clear_download_cache() -> Result<u64, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.clear_download_cache()
+}
+
+#[tauri::command]
+pub async fn clear_all_mods_data() -> Result<u64, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.clear_all_mods_data()
+}
+
+#[tauri::command]
 pub async fn uninstall_mod(
   mod_id: String,
   vpks: Vec<String>,

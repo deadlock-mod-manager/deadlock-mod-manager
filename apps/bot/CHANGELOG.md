@@ -1,5 +1,26 @@
 # @deadlock-mods/bot
 
+## 1.2.5
+
+### Patch Changes
+
+- 3da6533: Fix Kubernetes liveness probe causing unnecessary pod restarts on dependency degradation
+- 60cee2e: Fix critical and high security vulnerabilities by updating direct dependencies (hono, react-router, @langchain/core, langchain, next) and adding pnpm overrides for vulnerable transitive dependencies (fast-xml-parser, minimatch, tar, seroval, h3, rollup, @isaacs/brace-expansion)
+- c817f44: Propagate Redis publish errors in report status updates instead of swallowing
+- 3da6533: Fix unhandled rejection in pattern sync crashing bot on transient failures
+- Updated dependencies [3da6533]
+- Updated dependencies [87fa249]
+- Updated dependencies [c61de94]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+- Updated dependencies [3da6533]
+  - @deadlock-mods/queue@0.1.1
+  - @deadlock-mods/feature-flags@0.2.5
+  - @deadlock-mods/common@1.2.1
+  - @deadlock-mods/database@1.8.1
+  - @deadlock-mods/instrumentation@0.1.7
+  - @deadlock-mods/shared@1.8.0
+
 ## 1.2.4
 
 ### Patch Changes

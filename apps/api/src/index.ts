@@ -6,7 +6,6 @@ import { sentry } from "@hono/sentry";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { etag } from "hono/etag";
-import { logger as loggerMiddleware } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
@@ -49,9 +48,6 @@ app.use(
     ...SENTRY_OPTIONS,
   }),
   etag(),
-  loggerMiddleware((message: string, ...rest: string[]) => {
-    logger.info(message, ...rest);
-  }),
   secureHeaders(),
   trimTrailingSlash(),
 );

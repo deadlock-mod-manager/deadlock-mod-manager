@@ -111,6 +111,11 @@ export const announcementsRouter = {
       if (updates.status !== undefined) updateData.status = updates.status;
 
       const announcement = await announcementRepository.update(id, updateData);
+      if (!announcement) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Announcement not found",
+        });
+      }
       return toAnnouncementDto(announcement);
     }),
 
@@ -143,6 +148,11 @@ export const announcementsRouter = {
       }
 
       const announcement = await announcementRepository.publish(input.id);
+      if (!announcement) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Announcement not found",
+        });
+      }
       return toAnnouncementDto(announcement);
     }),
 
@@ -159,6 +169,11 @@ export const announcementsRouter = {
       }
 
       const announcement = await announcementRepository.archive(input.id);
+      if (!announcement) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Announcement not found",
+        });
+      }
       return toAnnouncementDto(announcement);
     }),
 };

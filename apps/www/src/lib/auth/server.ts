@@ -159,6 +159,8 @@ export function isTokenExpired(): boolean {
   return Date.now() >= expiresAt - 60000; // 1 minute buffer
 }
 
+let inflightRefresh: Promise<TokenResponse> | null = null;
+
 export async function refreshTokens(): Promise<TokenResponse> {
   const refreshToken = getRefreshToken();
 
@@ -202,12 +204,21 @@ export async function ensureValidToken(): Promise<string> {
     throw new UnauthorizedError("Authentication required");
   }
 
+  if (inflightRefresh) {
+    const tokenResponse = await inflightRefresh;
+    return tokenResponse.access_token;
+  }
+
+  inflightRefresh = refreshTokens();
+
   try {
-    const tokenResponse = await refreshTokens();
+    const tokenResponse = await inflightRefresh;
     return tokenResponse.access_token;
   } catch {
     clearAuthCookies();
     throw new UnauthorizedError("Authentication required");
+  } finally {
+    inflightRefresh = null;
   }
 }
 

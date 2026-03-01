@@ -1,3 +1,3 @@
-export type { BaseJobOptions, JobsOptions } from "bullmq";
+export type { JobsOptions, QueueOptions } from "bullmq";
 export * from "./base";
 export * from "./types";

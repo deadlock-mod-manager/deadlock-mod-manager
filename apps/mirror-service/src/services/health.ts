@@ -2,14 +2,16 @@ import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
+import { S3Service } from "@/services/s3";
 import type {
   DbHealth,
-  DiscordHealth,
   HealthResponse,
   RedisHealth,
+  S3Health,
 } from "@/types/health";
 import { version } from "@/version";
-import client from "../lib/discord";
+
+const HEALTH_CHECK_SENTINEL_KEY = "__health_check__";
 
 export class HealthService {
   private static singleton: HealthService;
@@ -46,7 +48,6 @@ export class HealthService {
       if (pong !== "PONG") {
         throw new Error("Redis ping failed");
       }
-
       return { alive: true, configured: true };
     } catch (error) {
       logger.withError(error).error("Redis health check failed");
@@ -58,34 +59,41 @@ export class HealthService {
     }
   }
 
-  async checkDiscord(): Promise<DiscordHealth> {
+  async checkS3(): Promise<S3Health> {
     try {
-      if (!client.isReady()) {
-        return { alive: false, error: "Discord client not ready" };
+      const result = await S3Service.instance.fileExists(
+        HEALTH_CHECK_SENTINEL_KEY,
+      );
+      if (result.isErr()) {
+        throw result.error;
       }
-
       return { alive: true };
     } catch (error) {
-      logger.withError(error).error("Discord health check failed");
-      return { alive: false, error: toErrorMessage(error) };
+      logger.withError(error).error("S3 health check failed");
+      return {
+        alive: false,
+        error: toErrorMessage(error),
+      };
     }
   }
 
   private async performHealthChecks(): Promise<HealthResponse> {
-    const [dbHealth, redisHealth, discordHealth] = await Promise.all([
+    const [dbHealth, redisHealth, s3Health] = await Promise.all([
       this.checkDb(),
       this.checkRedis(),
-      this.checkDiscord(),
+      this.checkS3(),
     ]);
 
-    const healthy = dbHealth.alive && redisHealth.alive && discordHealth.alive;
+    const healthy = dbHealth.alive && redisHealth.alive && s3Health.alive;
 
     return {
       status: healthy ? "ok" : "degraded",
       db: dbHealth,
       redis: redisHealth,
-      discord: discordHealth,
+      s3: s3Health,
       version,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -95,8 +103,10 @@ export class HealthService {
         status: "degraded",
         db: { alive: false, error: "Starting up" },
         redis: { alive: false, configured: true, error: "Starting up" },
-        discord: { alive: false, error: "Starting up" },
+        s3: { alive: false, error: "Starting up" },
         version,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
       };
     }
 
@@ -123,8 +133,10 @@ export class HealthService {
         status: "degraded",
         db: { alive: false, error: "Health check error" },
         redis: { alive: false, configured: true, error: "Health check error" },
-        discord: { alive: false, error: "Health check error" },
+        s3: { alive: false, error: "Health check error" },
         version,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
       };
     }
   }

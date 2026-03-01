@@ -25,7 +25,7 @@ export class FeatureFlagsServiceSingleton {
     const featureFlagRepository = new FeatureFlagRepository(db, logger);
     const segmentRepository = new SegmentRepository(db, logger);
 
-    this.segmentService = new SegmentService(segmentRepository);
+    this.segmentService = new SegmentService(segmentRepository, cache);
     this.featureFlagService = new FeatureFlagService(
       logger,
       featureFlagRepository,

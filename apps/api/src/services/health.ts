@@ -1,3 +1,4 @@
+import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { version } from "@/version";
 import { logger } from "../lib/logger";
@@ -19,8 +20,8 @@ export class HealthService {
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
-      logger.withError(error as Error).error("DB health check failed");
-      return { alive: false, error: (error as Error).message };
+      logger.withError(error).error("DB health check failed");
+      return { alive: false, error: toErrorMessage(error) };
     }
   }
 
@@ -33,11 +34,11 @@ export class HealthService {
 
       return { alive: true, configured: true };
     } catch (error) {
-      logger.withError(error as Error).error("Redis health check failed");
+      logger.withError(error).error("Redis health check failed");
       return {
         alive: false,
         configured: true,
-        error: (error as Error).message,
+        error: toErrorMessage(error),
       };
     }
   }
