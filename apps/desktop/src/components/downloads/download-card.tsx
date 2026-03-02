@@ -3,7 +3,7 @@ import { Progress } from "@deadlock-mods/ui/components/progress";
 import { useMemo } from "react";
 import { usePersistedStore } from "@/lib/store";
 import { formatSize, formatSpeed } from "@/lib/utils";
-import type { LocalMod } from "@/types/mods";
+import { ModStatus, type LocalMod } from "@/types/mods";
 
 type DownloadCardProps = {
   download: LocalMod;
@@ -12,8 +12,9 @@ type DownloadCardProps = {
 const DownloadCard = ({ download }: DownloadCardProps) => {
   const { getModProgress } = usePersistedStore();
   const modProgress = getModProgress(download.remoteId);
-  const percentage = modProgress?.percentage ?? 0;
-  const speed = modProgress?.speed ?? 0;
+  const isDownloading = download.status === ModStatus.Downloading;
+  const percentage = isDownloading ? (modProgress?.percentage ?? 0) : 100;
+  const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
   const totalSize = useMemo(() => {
     if (!download.downloads || download.downloads.length === 0) {
       return 0;
