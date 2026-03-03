@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install namcap
-        run: pacman -Sy --noconfirm namcap
+        run: pacman -Syu --noconfirm namcap
 
       - name: Lint deadlock-modmanager
         run: namcap distribution/aur/deadlock-modmanager/PKGBUILD

@@ -13,10 +13,8 @@ depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
 provides=("${pkgname%-git}")
 conflicts=("${pkgname%-git}" "${pkgname%-git}-bin")
 options=('!lto')
-source=("${pkgname}::git+https://github.com/deadlock-mod-manager/deadlock-mod-manager.git"
-        'deadlock-modmanager.desktop')
-sha256sums=('SKIP'
-            'SKIP')
+source=("${pkgname}::git+https://github.com/deadlock-mod-manager/deadlock-mod-manager.git")
+sha256sums=('SKIP')
 
 pkgver() {
     cd "${srcdir}/${pkgname}"
@@ -46,11 +44,11 @@ build() {
 }
 
 package() {
-    install -Dm644 "${srcdir}/deadlock-modmanager.desktop" \
-        "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop"
-
     local _srcroot="${srcdir}/${pkgname}"
     local _tauri="${_srcroot}/apps/desktop/src-tauri"
+
+    install -Dm644 "${_srcroot}/distribution/aur/deadlock-modmanager.desktop" \
+        "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop"
 
     install -Dm755 "${_tauri}/target/release/deadlock-mod-manager" \
         "${pkgdir}/usr/bin/deadlock-modmanager"

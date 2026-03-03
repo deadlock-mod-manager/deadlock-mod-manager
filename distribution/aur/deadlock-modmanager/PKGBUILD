@@ -13,12 +13,8 @@ depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
          'gst-plugins-good')
 conflicts=('deadlock-modmanager-bin' 'deadlock-modmanager-git')
 options=('!lto')
-source=("${pkgname}-${_pkgver}.tar.gz::https://github.com/deadlock-mod-manager/deadlock-mod-manager/archive/refs/tags/v${_pkgver}.tar.gz"
-        'deadlock-modmanager.desktop'
-        'dev.stormix.deadlock-mod-manager.metainfo.xml')
-sha256sums=('SKIP'
-            'SKIP'
-            'SKIP')
+source=("${pkgname}-${_pkgver}.tar.gz::https://github.com/deadlock-mod-manager/deadlock-mod-manager/archive/refs/tags/v${_pkgver}.tar.gz")
+sha256sums=('SKIP')
 
 prepare() {
     cd "${srcdir}/deadlock-mod-manager-${_pkgver}/apps/desktop"
@@ -42,22 +38,23 @@ build() {
 }
 
 package() {
-    install -Dm644 "${srcdir}/deadlock-modmanager.desktop" \
+    local _srcroot="${srcdir}/deadlock-mod-manager-${_pkgver}"
+    local _tauri="${_srcroot}/apps/desktop/src-tauri"
+
+    install -Dm644 "${_srcroot}/distribution/aur/deadlock-modmanager.desktop" \
         "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop"
 
-    cd "${srcdir}/deadlock-mod-manager-${_pkgver}/apps/desktop/src-tauri"
-
-    install -Dm755 "target/release/deadlock-mod-manager" \
+    install -Dm755 "${_tauri}/target/release/deadlock-mod-manager" \
         "${pkgdir}/usr/bin/deadlock-modmanager"
-    install -Dm644 "icons/32x32.png" \
+    install -Dm644 "${_tauri}/icons/32x32.png" \
         "${pkgdir}/usr/share/icons/hicolor/32x32/apps/deadlock-modmanager.png"
-    install -Dm644 "icons/128x128.png" \
+    install -Dm644 "${_tauri}/icons/128x128.png" \
         "${pkgdir}/usr/share/icons/hicolor/128x128/apps/deadlock-modmanager.png"
-    install -Dm644 "icons/128x128@2x.png" \
+    install -Dm644 "${_tauri}/icons/128x128@2x.png" \
         "${pkgdir}/usr/share/icons/hicolor/256x256/apps/deadlock-modmanager.png"
-    install -Dm644 "icons/icon.png" \
+    install -Dm644 "${_tauri}/icons/icon.png" \
         "${pkgdir}/usr/share/icons/hicolor/512x512/apps/deadlock-modmanager.png"
 
-    install -Dm644 "${srcdir}/dev.stormix.deadlock-mod-manager.metainfo.xml" \
+    install -Dm644 "${_tauri}/dev.stormix.deadlock-mod-manager.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/dev.stormix.deadlock-mod-manager.metainfo.xml"
 }
