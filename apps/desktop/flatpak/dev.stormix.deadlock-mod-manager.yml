@@ -18,7 +18,6 @@ finish-args:
   - --filesystem=home/.steam
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
-  - --env=WEBKIT_DISABLE_DMABUF_RENDERER=1
 
 modules:
   - name: deadlock-mod-manager

@@ -24,7 +24,7 @@ export type SettingsState = {
   ingestToolEnabled: boolean;
   autoUpdateEnabled: boolean;
   crosshairsEnabled: boolean;
-  linuxGpuOptimization: boolean;
+  linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
 
   addSetting: (setting: LocalSetting) => void;
@@ -58,7 +58,7 @@ export type SettingsState = {
   setCrosshairsEnabled: (enabled: boolean) => void;
 
   // Linux GPU optimization management
-  setLinuxGpuOptimization: (enabled: boolean) => void;
+  setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
   // Plugin management
   togglePlugin: (pluginId: string) => void;
@@ -77,7 +77,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   ingestToolEnabled: true,
   autoUpdateEnabled: true,
   crosshairsEnabled: true,
-  linuxGpuOptimization: true,
+  linuxGpuOptimization: "auto",
   enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -193,9 +193,9 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     })),
 
   // Linux GPU optimization management
-  setLinuxGpuOptimization: (enabled: boolean) =>
+  setLinuxGpuOptimization: (value: "auto" | "on" | "off") =>
     set(() => ({
-      linuxGpuOptimization: enabled,
+      linuxGpuOptimization: value,
     })),
 
   // Plugin management

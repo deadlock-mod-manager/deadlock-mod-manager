@@ -43,7 +43,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 11,
+      version: 12,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -216,7 +216,7 @@ export const usePersistedStore = create<State>()(
           };
         }
 
-        // Migration from version 7 to 8: Add linuxGpuOptimization field (on by default)
+        // Migration from version 7 to 8: Add linuxGpuOptimization field
         if (version <= 7) {
           logger
             .withMetadata({
@@ -227,7 +227,7 @@ export const usePersistedStore = create<State>()(
             .info(
               "Migrating from version 7 to 8: Adding linuxGpuOptimization field",
             );
-          state.linuxGpuOptimization = true;
+          state.linuxGpuOptimization = "auto";
         }
 
         // Migration from version 8 to 9: Rename showAudioOnly/showNSFW to hideAudio/hideNSFW, add hideOutdated
@@ -339,6 +339,31 @@ export const usePersistedStore = create<State>()(
                 profile.mods = profile.mods.map(migrateModDownload);
               }
             }
+          }
+        }
+
+        // Migration from version 11 to 12: Convert linuxGpuOptimization from boolean to tri-state
+        if (version <= 11) {
+          logger
+            .withMetadata({
+              migrationFrom: 11,
+              migrationTo: 12,
+              action: "linux-gpu-optimization-tristate",
+            })
+            .info(
+              "Migrating from version 11 to 12: Converting linuxGpuOptimization to tri-state",
+            );
+          const current = state.linuxGpuOptimization;
+          if (current === true) {
+            state.linuxGpuOptimization = "auto";
+          } else if (current === false) {
+            state.linuxGpuOptimization = "off";
+          } else if (
+            current !== "auto" &&
+            current !== "on" &&
+            current !== "off"
+          ) {
+            state.linuxGpuOptimization = "auto";
           }
         }
 
