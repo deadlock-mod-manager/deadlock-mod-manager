@@ -17,7 +17,7 @@ interface ModHeroProps {
 export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const hasImages = mod.images && mod.images.length > 0;
-  const { localMods } = usePersistedStore();
+  const localMods = usePersistedStore((state) => state.localMods);
   const localMod = useMemo(
     () => localMods.find((m) => m.remoteId === mod.remoteId),
     [localMods, mod.remoteId],
@@ -62,8 +62,12 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
             "h-full w-full object-cover opacity-70",
             shouldBlur && "blur-lg",
           )}
+          decoding='async'
           height='256'
           src={mod.images[0]}
+          style={
+            shouldBlur ? { willChange: "filter", contain: "strict" } : undefined
+          }
           width='1200'
         />
         {!shouldBlur && (

@@ -34,7 +34,7 @@ export const InstalledFilesDisplay = ({
   const archiveNames = Object.keys(filesByArchive);
 
   return (
-    <Card>
+    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           Installed Files

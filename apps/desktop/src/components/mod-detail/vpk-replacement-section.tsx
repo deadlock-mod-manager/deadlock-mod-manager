@@ -28,7 +28,7 @@ export const VpkReplacementSection = ({
   onSuccess,
 }: VpkReplacementSectionProps) => {
   const { t } = useTranslation();
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -183,7 +183,7 @@ export const VpkReplacementSection = ({
   }
 
   return (
-    <Card>
+    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
       <button
         type='button'
         className='w-full cursor-pointer border-border p-4 text-left transition-colors hover:bg-muted/50'

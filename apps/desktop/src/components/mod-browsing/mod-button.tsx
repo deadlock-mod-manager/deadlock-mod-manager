@@ -88,13 +88,13 @@ export const ModStatusIcon = ({
 };
 
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
+  const { t } = useTranslation();
+  const { analytics } = useAnalyticsContext();
+
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
     isDownloadable: remoteMod?.downloadable,
   });
-
-  const { t } = useTranslation();
-  const { analytics } = useAnalyticsContext();
   const {
     download,
     downloadSelectedFiles,
@@ -113,13 +113,13 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     currentMod,
   } = useInstallWithCollection();
   const { uninstall } = useUninstall();
-  const {
-    getModProgress,
-    setInstalledVpks,
-    removeMod,
-    setModStatus,
-    setModEnabledInCurrentProfile,
-  } = usePersistedStore();
+  const getModProgress = usePersistedStore((state) => state.getModProgress);
+  const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
+  const removeMod = usePersistedStore((state) => state.removeMod);
+  const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const setModEnabledInCurrentProfile = usePersistedStore(
+    (state) => state.setModEnabledInCurrentProfile,
+  );
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
 

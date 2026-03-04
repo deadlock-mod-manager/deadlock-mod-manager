@@ -41,12 +41,19 @@ export const NSFWBlur = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Blurred content */}
+      {/* Blurred content — will-change:filter promotes to GPU layer so
+          the blur is rasterised once and cached, not recalculated every frame.
+          contain:strict prevents the blur from invalidating parent layout. */}
       <div
-        className={isVisible ? "" : "transition-all duration-200"}
-        style={{
-          filter: isVisible ? "none" : `blur(${blurStrength}px)`,
-        }}>
+        style={
+          isVisible
+            ? undefined
+            : {
+                filter: `blur(${blurStrength}px)`,
+                willChange: "filter",
+                contain: "strict",
+              }
+        }>
         {children}
       </div>
 

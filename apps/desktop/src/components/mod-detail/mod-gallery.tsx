@@ -32,7 +32,7 @@ export const ModGallery = ({
   }
 
   return (
-    <Card>
+    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
       <CardHeader>
         <CardTitle>Gallery</CardTitle>
       </CardHeader>
@@ -43,7 +43,9 @@ export const ModGallery = ({
               {images.map((image, index) => (
                 <CarouselItem key={`image-${image}`}>
                   <div className='p-1'>
-                    <Card className='overflow-hidden'>
+                    <Card
+                      className='overflow-hidden shadow-none'
+                      style={{ contain: "layout style paint" }}>
                       <NSFWBlur
                         blurStrength={nsfwSettings.blurStrength}
                         className='aspect-video w-full'
@@ -53,7 +55,9 @@ export const ModGallery = ({
                         <img
                           alt={`Screenshot ${index + 1}`}
                           className='aspect-video w-full object-cover'
+                          decoding='async'
                           height='225'
+                          loading='lazy'
                           src={image}
                           width='400'
                         />

@@ -12,8 +12,13 @@ interface NSFWItem {
  * @returns shouldBlur boolean and handleNSFWToggle function
  */
 export function useNSFWBlur(item?: NSFWItem | null) {
-  const { nsfwSettings, setPerItemNSFWOverride, getPerItemNSFWOverride } =
-    usePersistedStore();
+  const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
+  const setPerItemNSFWOverride = usePersistedStore(
+    (state) => state.setPerItemNSFWOverride,
+  );
+  const getPerItemNSFWOverride = usePersistedStore(
+    (state) => state.getPerItemNSFWOverride,
+  );
 
   const shouldBlur = useMemo(() => {
     if (!item?.isNSFW) {

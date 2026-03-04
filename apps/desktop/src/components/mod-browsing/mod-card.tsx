@@ -8,6 +8,7 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
@@ -17,15 +18,11 @@ import {
 } from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
-import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
-import { useReportCounts } from "@/hooks/use-report-counts";
-import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { usePersistedStore } from "@/lib/store";
 import {
   isModOutdated,
-  isModStale,
   isUpdateAvailable,
   isUpdatedRecently,
 } from "@/lib/utils";
@@ -33,18 +30,15 @@ import { ModStatus } from "@/types/mods";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
-const ModCard = ({ mod }: { mod?: ModDto }) => {
+const ModCard = memo(({ mod }: { mod?: ModDto }) => {
   const { t } = useTranslation();
-  const { localMods, setScrollPosition } = usePersistedStore();
-  const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
-  const { data: reportCounts } = useReportCounts(mod?.id ?? "");
-  const staleResult =
-    mod && reportCounts ? isModStale(mod, reportCounts) : null;
+  const localMod = usePersistedStore((state) =>
+    state.localMods.find((m) => m.remoteId === mod?.remoteId),
+  );
 
   const status = localMod?.status;
   const navigate = useNavigate();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
-  const { saveScrollPosition } = useScrollPosition("/mods");
 
   if (!mod) {
     return <ModCardSkeleton />;
@@ -52,19 +46,12 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
 
   return (
     <Card
-      className='cursor-pointer shadow'
+      className='cursor-pointer shadow-none border'
+      style={{
+        contain: "layout style paint",
+      }}
       onClick={(e) => {
         e.stopPropagation();
-        const scrollContainer = (e.currentTarget as HTMLElement).closest(
-          ".overflow-auto",
-        );
-        if (scrollContainer) {
-          const scrollTop = scrollContainer.scrollTop;
-          setScrollPosition("/mods", scrollTop);
-        } else {
-          saveScrollPosition();
-        }
-
         navigate(`/mods/${mod.remoteId}`);
       }}>
       <div className='relative'>
@@ -84,7 +71,9 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             <img
               alt={mod.name}
               className='h-48 w-full object-cover'
+              decoding='async'
               height='192'
+              loading='lazy'
               src={mod.images[0]}
               width='320'
             />
@@ -103,16 +92,7 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
             <Badge>{t("modStatus.installed")}</Badge>
           )}
           {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
-          {isModOutdated(mod) && !staleResult && (
-            <OutdatedModWarning variant='indicator' />
-          )}
-          {staleResult && (
-            <StaleModWarning
-              variant='indicator'
-              openReportCount={staleResult.openReportCount}
-              lastUpdatedAt={staleResult.lastUpdatedAt}
-            />
-          )}
+          {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
           {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
             <UpdatedRecentlyBadge />
           )}
@@ -163,6 +143,8 @@ const ModCard = ({ mod }: { mod?: ModDto }) => {
       </CardHeader>
     </Card>
   );
-};
+});
+
+ModCard.displayName = "ModCard";
 
 export default ModCard;

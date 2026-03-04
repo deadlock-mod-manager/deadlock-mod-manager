@@ -15,13 +15,11 @@ export const useDownload = (
   availableFiles: ModDownloadDto[],
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    addLocalMod,
-    localMods,
-    setModProgress,
-    setModStatus,
-    getActiveProfile,
-  } = usePersistedStore();
+  const addLocalMod = usePersistedStore((state) => state.addLocalMod);
+  const localMods = usePersistedStore((state) => state.localMods);
+  const setModProgress = usePersistedStore((state) => state.setModProgress);
+  const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 

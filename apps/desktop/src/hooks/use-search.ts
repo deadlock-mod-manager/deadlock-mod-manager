@@ -8,11 +8,14 @@ import type { LocalMod } from "@/types/mods";
 
 type UseSearchProps<T> = {
   data: T[];
-  keys: (keyof T)[];
+  keys: FuseOptionKey<T>[];
 };
 
 export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
-  const { modsFilters, updateModsFilters } = usePersistedStore();
+  const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const updateModsFilters = usePersistedStore(
+    (state) => state.updateModsFilters,
+  );
   const query = modsFilters.searchQuery || "";
   const debouncedQuery = useDebouncedValue(query, 300);
   const sortType = modsFilters.currentSort;
@@ -20,7 +23,7 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   const fuse = useMemo(
     () =>
       new Fuse(data, {
-        keys: keys as FuseOptionKey<T>[],
+        keys,
         shouldSort: true,
         useExtendedSearch: true,
       }),
