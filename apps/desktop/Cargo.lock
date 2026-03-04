@@ -2240,7 +2240,7 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
- "windows-registry 0.5.3",
+ "windows-registry 0.6.1",
 ]
 
 [[package]]
@@ -5680,9 +5680,9 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-ota-updater"
-version = "2.0.5"
+version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e49440da84d883cc02d49e57006182fb40bc591107359f61bc39d4fbfd345071"
+checksum = "f5fec69c1d11ec6375fbf2b7fd72cb6297abbe4f01fd8cf0e1695630e30ca811"
 dependencies = [
  "base64 0.22.1",
  "log",
