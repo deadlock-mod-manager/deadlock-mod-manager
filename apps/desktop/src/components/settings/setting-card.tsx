@@ -122,7 +122,8 @@ const SettingCard = ({
 
   const openEdit = () => {
     setEditName(setting.description ?? "");
-    const cmd = `${setting.key}${setting.value ? ` ${setting.value}` : ""}`;
+    const valueStr = setting.value ? ` ${setting.value}` : "";
+    const cmd = `${setting.key}${valueStr}`;
     setEditCmd(cmd.trim());
     setEditOpen(true);
   };

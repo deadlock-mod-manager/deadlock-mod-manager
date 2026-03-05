@@ -47,12 +47,17 @@ export const Topbar = () => {
     (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
-  const themedIconSrc = isPredefinedTheme(activeTheme)
-    ? predefinedThemeIcons[activeTheme]
-    : activeTheme === "custom"
-      ? themesSettings?.customTheme?.iconData || undefined
-      : themesSettings?.userThemes?.find((t) => t.id === activeTheme)
-          ?.iconData || undefined;
+
+  let themedIconSrc: string | undefined;
+  if (isPredefinedTheme(activeTheme)) {
+    themedIconSrc = predefinedThemeIcons[activeTheme];
+  } else if (activeTheme === "custom") {
+    themedIconSrc = themesSettings?.customTheme?.iconData || undefined;
+  } else {
+    themedIconSrc =
+      themesSettings?.userThemes?.find((t) => t.id === activeTheme)?.iconData ||
+      undefined;
+  }
 
   return (
     <div

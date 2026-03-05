@@ -70,11 +70,15 @@ const CategoryFilter = ({
             size='sm'
             variant='outline'>
             <span className='truncate'>
-              {selectedCategories.length === 0
-                ? t("filters.allCategories")
-                : selectedCategories.length === 1
-                  ? selectedCategories[0]
-                  : `${selectedCategories.length} ${t("filters.selected")}`}
+              {(() => {
+                if (selectedCategories.length === 0) {
+                  return t("filters.allCategories");
+                }
+                if (selectedCategories.length === 1) {
+                  return selectedCategories[0];
+                }
+                return `${selectedCategories.length} ${t("filters.selected")}`;
+              })()}
             </span>
           </Button>
         </PopoverTrigger>
