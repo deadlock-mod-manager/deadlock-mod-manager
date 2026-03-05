@@ -77,6 +77,7 @@ export const ProfileEditDialog = ({
         toast.error(t("profiles.updateError"));
       }
     } catch (error) {
+      console.error("Failed to update profile:", error);
       toast.error(t("profiles.updateError"));
     } finally {
       setIsUpdating(false);

@@ -28,6 +28,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
         await navigator.clipboard.writeText(mod.remoteUrl);
         toast.success(t("contextMenu.urlCopied"));
       } catch (error) {
+        console.error("Failed to copy URL to clipboard:", error);
         toast.error(t("contextMenu.failedToCopyUrl"));
       }
     } else {
@@ -51,6 +52,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
         toast.success(t("contextMenu.openedGameFolder"));
       }
     } catch (error) {
+      console.error("Failed to open game folder:", error);
       toast.error(t("contextMenu.failedToOpenGameFolder"));
     }
   };

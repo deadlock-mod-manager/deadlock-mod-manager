@@ -119,6 +119,7 @@ export const ReportDialog = ({
     try {
       await openExternal(`https://gamebanana.com/mods/issues/${mod.remoteId}`);
     } catch (error) {
+      console.error("Failed to open GameBanana issues:", error);
       toast.error(t("notifications.failedToOpenForumPost"));
     }
   };
