@@ -22,10 +22,17 @@ export const PopularModItem = ({ mod, index }: PopularModItemProps) => {
   };
 
   return (
-    <button
-      type='button'
+    <div
+      role='button'
+      tabIndex={0}
       className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50 cursor-pointer'
-      onClick={handleClick}>
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}>
       <div className='flex gap-3 items-center justify-center'>
         <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground text-xs'>
           {index + 1}
@@ -87,6 +94,6 @@ export const PopularModItem = ({ mod, index }: PopularModItemProps) => {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };

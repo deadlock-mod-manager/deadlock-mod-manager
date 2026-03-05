@@ -31,6 +31,7 @@ import { Markup } from "interweave";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAnnouncements } from "@/lib/api";
+import logger from "@/lib/logger";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { transformMarkupLinks } from "@/lib/markup-transform";
 import { DashboardCard } from "./dashboard-card";
@@ -102,11 +103,18 @@ export const AnnouncementsCard = () => {
   const announcementsContent =
     announcements && announcements.length > 0 ? (
       announcements.map((announcement: AnnouncementDto) => (
-        <button
+        <div
           key={announcement.id}
-          type='button'
+          role='button'
+          tabIndex={0}
           className='w-full rounded-lg border p-3 space-y-2 text-left cursor-pointer hover:bg-muted/50 transition-colors'
-          onClick={() => setSelectedAnnouncement(announcement)}>
+          onClick={() => setSelectedAnnouncement(announcement)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setSelectedAnnouncement(announcement);
+            }
+          }}>
           <div className='flex items-start gap-3'>
             {announcement.iconUrl ? (
               <img
@@ -153,7 +161,9 @@ export const AnnouncementsCard = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (announcement.linkUrl) {
-                        openUrl(announcement.linkUrl);
+                        openUrl(announcement.linkUrl).catch((err) => {
+                          logger.error("Failed to open announcement link", err);
+                        });
                       }
                     }}
                     size='sm'
@@ -166,7 +176,7 @@ export const AnnouncementsCard = () => {
               )}
             </div>
           </div>
-        </button>
+        </div>
       ))
     ) : (
       <Empty>
@@ -257,7 +267,9 @@ export const AnnouncementsCard = () => {
                   <Button
                     onClick={() => {
                       if (selectedAnnouncement.linkUrl) {
-                        openUrl(selectedAnnouncement.linkUrl);
+                        openUrl(selectedAnnouncement.linkUrl).catch((err) => {
+                          logger.error("Failed to open announcement link", err);
+                        });
                       }
                     }}
                     variant='default'>

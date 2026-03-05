@@ -481,12 +481,15 @@ export const AnalysisResultsDialog = ({
               {t("addons.analysisResults")}
             </DialogTitle>
             <DialogDescription>
-              Found {result.totalCount} addon
-              {result.totalCount === 1 ? "" : "s"} in your game directory
+              {t("addons.analysisResultsDescription", {
+                count: result.totalCount,
+              })}
               {identifiedAddons.length > 0 && (
                 <span className='text-muted-foreground ml-2'>
-                  • {identifiedAddons.length} identified and automatically added
-                  to your library
+                  •{" "}
+                  {t("addons.identifiedAndAdded", {
+                    count: identifiedAddons.length,
+                  })}
                 </span>
               )}
             </DialogDescription>

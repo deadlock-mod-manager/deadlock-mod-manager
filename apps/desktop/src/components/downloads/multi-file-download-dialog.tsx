@@ -165,15 +165,31 @@ export function MultiFileDownloadDialog({
                             <TooltipTrigger>
                               <span className='text-muted-foreground text-xs'>
                                 {file.updatedAt
-                                  ? `Updated ${formatDistanceToNow(file.updatedAt)} ago`
-                                  : `Created ${formatDistanceToNow(file.createdAt ?? new Date())} ago`}
+                                  ? t("downloads.updatedAgo", {
+                                      when: formatDistanceToNow(file.updatedAt),
+                                    })
+                                  : t("downloads.createdAgo", {
+                                      when: formatDistanceToNow(
+                                        file.createdAt ?? new Date(),
+                                      ),
+                                    })}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
                               <span className='text-muted-foreground text-xs'>
                                 {file.updatedAt
-                                  ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
-                                  : `Created at ${format(file.createdAt ?? new Date(), "dd-MM-yyyy HH:mm")}`}
+                                  ? t("downloads.updatedAt", {
+                                      date: format(
+                                        file.updatedAt,
+                                        "dd-MM-yyyy HH:mm",
+                                      ),
+                                    })
+                                  : t("downloads.createdAt", {
+                                      date: format(
+                                        file.createdAt ?? new Date(),
+                                        "dd-MM-yyyy HH:mm",
+                                      ),
+                                    })}
                               </span>
                             </TooltipContent>
                           </Tooltip>

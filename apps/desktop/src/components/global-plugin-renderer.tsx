@@ -6,23 +6,18 @@ import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
 import type { LoadedPlugin } from "@/types/plugins";
 
+const isPluginModule = (obj: unknown): obj is PluginModule =>
+  typeof obj === "object" && obj !== null && "manifest" in obj;
+
 const resolvePluginModule = (mod: unknown): PluginModule | undefined => {
   if (typeof mod !== "object" || !mod) return undefined;
 
   const record = mod as Record<string, unknown>;
   const maybeDefault = record.default;
   const candidate =
-    maybeDefault && typeof maybeDefault === "object" ? maybeDefault : record;
+    maybeDefault && typeof maybeDefault === "object" ? maybeDefault : mod;
 
-  if (
-    typeof candidate === "object" &&
-    candidate !== null &&
-    "manifest" in candidate
-  ) {
-    return candidate as PluginModule;
-  }
-
-  return undefined;
+  return isPluginModule(candidate) ? candidate : undefined;
 };
 
 const loadPlugin = async (

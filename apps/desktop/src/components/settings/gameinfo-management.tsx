@@ -34,12 +34,15 @@ type GameInfoStatus = {
   has_mod_paths: boolean;
 };
 
-const getBackupStatusItem = (status: GameInfoStatus) => {
+const getBackupStatusItem = (
+  status: GameInfoStatus,
+  t: (key: string) => string,
+) => {
   const getBackupValue = (): string => {
     if (!status.backup_exists) {
-      return "None";
+      return t("status.none");
     }
-    return status.backup_valid ? "Valid" : "Invalid";
+    return status.backup_valid ? t("status.valid") : t("status.invalid");
   };
 
   const getBackupColor = (): "success" | "warning" | "secondary" => {
@@ -50,22 +53,25 @@ const getBackupStatusItem = (status: GameInfoStatus) => {
   };
 
   return {
-    label: "Backup",
+    label: t("settings.backup"),
     value: getBackupValue(),
     color: getBackupColor(),
     icon: status.backup_exists ? Shield : Database,
   };
 };
 
-const getModificationsStatusItem = (status: GameInfoStatus) => {
+const getModificationsStatusItem = (
+  status: GameInfoStatus,
+  t: (key: string) => string,
+) => {
   const getModificationsValue = (): string => {
     if (status.is_modified_by_mod_manager) {
-      return "Mod Manager";
+      return t("settings.modManager");
     }
     if (status.is_modified_externally) {
-      return "External";
+      return t("settings.external");
     }
-    return "None";
+    return t("status.none");
   };
 
   const getModificationsColor = (): "default" | "warning" | "success" => {
@@ -79,7 +85,7 @@ const getModificationsStatusItem = (status: GameInfoStatus) => {
   };
 
   return {
-    label: "Modifications",
+    label: t("settings.modifications"),
     value: getModificationsValue(),
     color: getModificationsColor(),
     icon: status.has_mod_paths ? FileCheck : CheckCircle,
@@ -105,17 +111,17 @@ const GameInfoManagement = () => {
 
     const items = [
       {
-        label: "Syntax",
-        value: status.syntax_valid ? "Valid" : "Invalid",
+        label: t("settings.syntax"),
+        value: status.syntax_valid ? t("status.valid") : t("status.invalid"),
         color: status.syntax_valid ? "success" : "destructive",
         icon: status.syntax_valid ? CheckCircle : AlertTriangle,
       },
-      getBackupStatusItem(status),
-      getModificationsStatusItem(status),
+      getBackupStatusItem(status, t),
+      getModificationsStatusItem(status, t),
     ];
 
     return items;
-  }, [status]);
+  }, [status, t]);
 
   const handleBackupGameInfo = async () => {
     try {

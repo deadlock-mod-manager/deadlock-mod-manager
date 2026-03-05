@@ -70,12 +70,19 @@ export const PluginList = () => {
           const isExpanded = expandedPlugins.has(p.manifest.id);
           return (
             <li key={p.manifest.id}>
-              <button
-                type='button'
+              <div
+                role='button'
+                tabIndex={0}
                 aria-expanded={isExpanded}
                 aria-controls={`plugin-detail-${p.manifest.id}`}
                 className='flex w-full items-center gap-4 p-3 cursor-pointer hover:bg-accent/50 transition-colors text-left'
-                onClick={() => toggleExpanded(p.manifest.id)}>
+                onClick={() => toggleExpanded(p.manifest.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleExpanded(p.manifest.id);
+                  }
+                }}>
                 <div className='flex items-center gap-2'>
                   {isExpanded ? (
                     <ChevronDownIcon className='h-4 w-4 text-muted-foreground' />
@@ -127,7 +134,7 @@ export const PluginList = () => {
                     {t("common.open")}
                   </button>
                 </div>
-              </button>
+              </div>
 
               {isExpanded && (
                 <div

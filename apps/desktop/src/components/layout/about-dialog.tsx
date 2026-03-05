@@ -90,22 +90,34 @@ export const AboutDialog = () => {
 
       <DialogFooter className='flex flex-row items-center justify-between gap-4 border-t pt-2 text-foreground'>
         <div className='flex flex-row gap-2'>
-          <GithubLogoIcon
-            className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => openUrl(GITHUB_REPO)}
-          />
-          <DiscordLogoIcon
-            className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => openUrl(DISCORD_URL)}
-          />
-          <RedditLogoIcon
-            className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => openUrl(REDDIT_URL)}
-          />
-          <XLogoIcon
-            className='h-5 w-5 cursor-pointer transition hover:text-foreground'
-            onClick={() => openUrl(X_URL)}
-          />
+          <button
+            type='button'
+            aria-label='GitHub'
+            className='cursor-pointer transition hover:text-foreground'
+            onClick={() => openUrl(GITHUB_REPO)}>
+            <GithubLogoIcon className='h-5 w-5' />
+          </button>
+          <button
+            type='button'
+            aria-label='Discord'
+            className='cursor-pointer transition hover:text-foreground'
+            onClick={() => openUrl(DISCORD_URL)}>
+            <DiscordLogoIcon className='h-5 w-5' />
+          </button>
+          <button
+            type='button'
+            aria-label='Reddit'
+            className='cursor-pointer transition hover:text-foreground'
+            onClick={() => openUrl(REDDIT_URL)}>
+            <RedditLogoIcon className='h-5 w-5' />
+          </button>
+          <button
+            type='button'
+            aria-label='X'
+            className='cursor-pointer transition hover:text-foreground'
+            onClick={() => openUrl(X_URL)}>
+            <XLogoIcon className='h-5 w-5' />
+          </button>
         </div>
 
         <div className='flex flex-row gap-2'>

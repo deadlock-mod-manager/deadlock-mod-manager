@@ -12,6 +12,7 @@ import {
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Archive, File, FolderOpen } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatSize } from "@/lib/utils";
 import type { ModFileTree } from "@/types/mods";
 
@@ -32,6 +33,7 @@ export const FileSelectorDialog = ({
   onCancel,
   modName = "Mod",
 }: FileSelectorDialogProps) => {
+  const { t } = useTranslation();
   const [localFileTree, setLocalFileTree] = useState<ModFileTree | null>(null);
 
   useEffect(() => {
@@ -39,6 +41,12 @@ export const FileSelectorDialog = ({
       setLocalFileTree(fileTree);
     }
   }, [fileTree, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !fileTree) {
+      setLocalFileTree(null);
+    }
+  }, [isOpen, fileTree]);
 
   const handleFileToggle = (
     fileIndex: number,
@@ -181,11 +189,14 @@ export const FileSelectorDialog = ({
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <FolderOpen className='h-5 w-5' />
-              Select Files to Install: {modName}
+              {t("fileSelector.selectFilesToInstall", { modName })}
             </DialogTitle>
             <DialogDescription>
-              Choose which VPK files you want to install from this mod.
-              {selectedCount} of {localFileTree.total_files} files selected
+              {t("fileSelector.chooseVpkFiles")}{" "}
+              {t("fileSelector.filesOfTotalSelected", {
+                selected: selectedCount,
+                total: localFileTree.total_files,
+              })}
               {selectedCount > 0 && ` (${formatSize(totalSelectedSize)})`}
             </DialogDescription>
           </DialogHeader>
@@ -201,7 +212,9 @@ export const FileSelectorDialog = ({
                 onClick={(e) => e.stopPropagation()}
               />
               <span className='font-medium text-sm'>
-                Select All ({localFileTree.total_files} files)
+                {t("fileSelector.selectAllCount", {
+                  count: localFileTree.total_files,
+                })}
               </span>
             </div>
 
@@ -332,11 +345,11 @@ export const FileSelectorDialog = ({
           <DialogFooter className='flex items-center justify-between'>
             <div className='text-muted-foreground text-sm'>
               {selectedCount === 0
-                ? "No files selected"
-                : (() => {
-                    const plural = selectedCount === 1 ? "" : "s";
-                    return `${selectedCount} file${plural} selected (${formatSize(totalSelectedSize)})`;
-                  })()}
+                ? t("fileSelector.noFilesSelected")
+                : t("fileSelector.filesSelectedWithSize", {
+                    count: selectedCount,
+                    size: formatSize(totalSelectedSize),
+                  })}
             </div>
             <div className='space-x-2'>
               <Button
@@ -345,7 +358,7 @@ export const FileSelectorDialog = ({
                   onCancel();
                 }}
                 variant='outline'>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 disabled={selectedCount === 0}
@@ -353,7 +366,7 @@ export const FileSelectorDialog = ({
                   e.stopPropagation();
                   onConfirm(localFileTree);
                 }}>
-                Install Selected
+                {t("fileSelector.installSelected")}
               </Button>
             </div>
           </DialogFooter>
@@ -361,9 +374,9 @@ export const FileSelectorDialog = ({
       ) : (
         <DialogContent className='max-h-[80vh] max-w-md'>
           <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
+            <DialogTitle>{t("common.loading")}</DialogTitle>
             <DialogDescription>
-              Analyzing mod files, please wait...
+              {t("fileSelector.analyzingModFiles")}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

@@ -61,6 +61,19 @@ const generateFallbackSVG = (): string => {
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
 
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
+
+const isAllowedImageFile = (file: File): boolean =>
+  ALLOWED_IMAGE_TYPES.includes(file.type) ||
+  IMAGE_FILE_EXTENSION_REGEX.test(file.name);
+
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
   author: z
@@ -76,21 +89,10 @@ const schema = z.object({
   link: z.url({ error: "Invalid URL" }).optional().or(z.literal("").optional()),
   imageFile: z
     .instanceof(File)
-    .refine((file) => {
-      // Validate file type
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/webp",
-        "image/gif",
-        "image/svg+xml",
-      ];
-      return (
-        allowedTypes.includes(file.type) ||
-        IMAGE_FILE_EXTENSION_REGEX.test(file.name)
-      );
-    }, "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)")
+    .refine(
+      isAllowedImageFile,
+      "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)",
+    )
     .refine((file) => {
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
@@ -169,9 +171,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         setImgOk(true);
         return;
       }
-      const ok =
-        file.type.startsWith("image/") ||
-        IMAGE_FILE_EXTENSION_REGEX.test(file.name);
+      const ok = isAllowedImageFile(file);
       if (!ok) {
         toast.error(t("addMods.unsupportedImageType"));
         e.currentTarget.value = "";
