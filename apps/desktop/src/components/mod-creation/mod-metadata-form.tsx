@@ -60,7 +60,6 @@ const generateFallbackSVG = (): string => {
 
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
-const IMAGE_MIME_TYPE_REGEX = /^image\//;
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -74,19 +73,7 @@ const schema = z.object({
     .max(4000, "Too long")
     .optional()
     .or(z.literal("").optional()),
-  link: z
-    .string()
-    .url("Invalid URL")
-    .refine((url) => {
-      try {
-        const parsed = new URL(url);
-        return parsed.protocol === "http:" || parsed.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "Only HTTP and HTTPS URLs are allowed")
-    .optional()
-    .or(z.literal("").optional()),
+  link: z.url({ error: "Invalid URL" }).optional().or(z.literal("").optional()),
   imageFile: z
     .instanceof(File)
     .refine((file) => {
@@ -183,7 +170,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         return;
       }
       const ok =
-        IMAGE_MIME_TYPE_REGEX.test(file.type) ||
+        file.type.startsWith("image/") ||
         IMAGE_FILE_EXTENSION_REGEX.test(file.name);
       if (!ok) {
         toast.error(t("addMods.unsupportedImageType"));

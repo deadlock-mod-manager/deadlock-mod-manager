@@ -110,7 +110,7 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
 
       <div className='text-muted-foreground text-xs'>
         {mod.installedVpks?.length || 0} VPK
-        {(mod.installedVpks?.length || 0) !== 1 ? "s" : ""}
+        {(mod.installedVpks?.length || 0) === 1 ? "" : "s"}
       </div>
     </div>
   );

@@ -114,7 +114,7 @@ export const Titlebar = () => {
       if (currentWindow) {
         await currentWindow.emit("tauri://reload");
       }
-      window.location.reload();
+      globalThis.location.reload();
     } catch (error) {
       logger
         .withError(error instanceof Error ? error : new Error(String(error)))
@@ -139,7 +139,7 @@ export const Titlebar = () => {
     const currentZoom = Number.parseFloat(
       getComputedStyle(document.documentElement).zoom || "1",
     );
-    const newZoom = Math.min(currentZoom + 0.1, 2.0);
+    const newZoom = Math.min(currentZoom + 0.1, 2);
     document.documentElement.style.zoom = `${newZoom}`;
   };
 
