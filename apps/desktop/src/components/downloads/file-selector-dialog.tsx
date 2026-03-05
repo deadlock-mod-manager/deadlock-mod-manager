@@ -174,16 +174,7 @@ export const FileSelectorDialog = ({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={isOpen}>
-      {!localFileTree ? (
-        <DialogContent className='max-h-[80vh] max-w-md'>
-          <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
-            <DialogDescription>
-              Analyzing mod files, please wait...
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      ) : (
+      {localFileTree ? (
         <DialogContent
           className='max-h-[80vh] max-w-3xl'
           onClick={(e) => e.stopPropagation()}>
@@ -247,8 +238,9 @@ export const FileSelectorDialog = ({
                         {filesByArchive[archiveName].map((file) => {
                           const globalIndex = localFileTree.files.indexOf(file);
                           return (
-                            <div
-                              className='flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50'
+                            <button
+                              type='button'
+                              className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                               key={file.path}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -286,7 +278,7 @@ export const FileSelectorDialog = ({
                               <span className='text-muted-foreground text-xs'>
                                 {formatSize(file.size)}
                               </span>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -296,8 +288,9 @@ export const FileSelectorDialog = ({
                   // Single archive view - flat list
                   <div className='space-y-2'>
                     {localFileTree.files.map((file, index) => (
-                      <div
-                        className='flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50'
+                      <button
+                        type='button'
+                        className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                         key={file.path}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -328,7 +321,7 @@ export const FileSelectorDialog = ({
                         <span className='text-muted-foreground text-xs'>
                           {formatSize(file.size)}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -340,9 +333,10 @@ export const FileSelectorDialog = ({
             <div className='text-muted-foreground text-sm'>
               {selectedCount === 0
                 ? "No files selected"
-                : `${selectedCount} file${
-                    selectedCount === 1 ? "" : "s"
-                  } selected (${formatSize(totalSelectedSize)})`}
+                : (() => {
+                    const plural = selectedCount === 1 ? "" : "s";
+                    return `${selectedCount} file${plural} selected (${formatSize(totalSelectedSize)})`;
+                  })()}
             </div>
             <div className='space-x-2'>
               <Button
@@ -363,6 +357,15 @@ export const FileSelectorDialog = ({
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      ) : (
+        <DialogContent className='max-h-[80vh] max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+            <DialogDescription>
+              Analyzing mod files, please wait...
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       )}
     </Dialog>

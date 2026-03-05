@@ -33,12 +33,9 @@ export const ModAudioPreview = ({
       </CardHeader>
       <CardContent>
         <div className='flex flex-col items-center space-y-6 p-8'>
-          <audio
-            className='w-full'
-            controls
-            preload='metadata'
-            src={audioUrl}
-          />
+          <audio className='w-full' controls preload='metadata' src={audioUrl}>
+            <track kind='captions' />
+          </audio>
         </div>
       </CardContent>
     </Card>

@@ -18,11 +18,11 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
-  ArrowSquareOut,
-  Info,
-  Megaphone,
-  Warning,
-  Wrench,
+  ArrowSquareOutIcon,
+  InfoIcon,
+  MegaphoneIcon,
+  WarningIcon,
+  WrenchIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -38,11 +38,11 @@ import { DashboardCard } from "./dashboard-card";
 const getCategoryIcon = (category: string) => {
   switch (category) {
     case "maintenance":
-      return Wrench;
+      return WrenchIcon;
     case "downtime":
-      return Warning;
+      return WarningIcon;
     default:
-      return Info;
+      return InfoIcon;
   }
 };
 
@@ -57,6 +57,14 @@ const getCategoryLabel = (category: string): string => {
     default:
       return "Info";
   }
+};
+
+const getCategoryVariant = (
+  category: string,
+): "default" | "destructive" | "secondary" => {
+  if (category === "maintenance") return "default";
+  if (category === "downtime") return "destructive";
+  return "secondary";
 };
 
 interface AnnouncementCategoryIconProps {
@@ -91,104 +99,104 @@ export const AnnouncementsCard = () => {
     refetchOnWindowFocus: false,
   });
 
+  const announcementsContent =
+    announcements && announcements.length > 0 ? (
+      announcements.map((announcement: AnnouncementDto) => (
+        <button
+          key={announcement.id}
+          type='button'
+          className='w-full rounded-lg border p-3 space-y-2 text-left cursor-pointer hover:bg-muted/50 transition-colors'
+          onClick={() => setSelectedAnnouncement(announcement)}>
+          <div className='flex items-start gap-3'>
+            {announcement.iconUrl ? (
+              <img
+                alt={announcement.title}
+                className='h-10 w-10 shrink-0 rounded object-cover'
+                src={announcement.iconUrl}
+              />
+            ) : (
+              <AnnouncementCategoryIcon
+                category={announcement.category}
+                size='sm'
+              />
+            )}
+            <div className='flex-1 min-w-0 space-y-2'>
+              <div className='flex items-center gap-2 flex-wrap'>
+                <h3 className='font-semibold text-sm leading-tight'>
+                  {announcement.title}
+                </h3>
+                <Badge
+                  variant={getCategoryVariant(announcement.category)}
+                  className='shrink-0 text-xs'>
+                  {getCategoryLabel(announcement.category)}
+                </Badge>
+              </div>
+              <span className='text-xs text-muted-foreground'>
+                {formatDistanceToNow(
+                  new Date(
+                    announcement.publishedAt ||
+                      announcement.createdAt ||
+                      new Date(),
+                  ),
+                  { addSuffix: true },
+                )}
+              </span>
+              <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
+                <Markup
+                  content={announcement.content}
+                  transform={transformMarkupLinks}
+                />
+              </div>
+              {announcement.linkUrl && (
+                <div className='flex justify-end'>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (announcement.linkUrl) {
+                        openUrl(announcement.linkUrl);
+                      }
+                    }}
+                    size='sm'
+                    variant='outline'
+                    className='gap-1.5'>
+                    {announcement.linkLabel || "Learn More"}
+                    <ArrowSquareOutIcon className='h-3.5 w-3.5' />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </button>
+      ))
+    ) : (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant='icon'>
+            <MegaphoneIcon className='h-6 w-6' weight='duotone' />
+          </EmptyMedia>
+          <EmptyTitle>{t("dashboard.noAnnouncementsTitle")}</EmptyTitle>
+          <EmptyDescription>
+            {t("dashboard.noAnnouncementsDescription")}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+
   return (
     <>
       <DashboardCard
-        icon={<Megaphone className='h-5 w-5' weight='duotone' />}
+        icon={<MegaphoneIcon className='h-5 w-5' weight='duotone' />}
         title={t("dashboard.announcements")}>
         <div className='space-y-3'>
-          {isLoading ? (
-            Array.from({ length: 3 }).map(() => (
-              <div key={crypto.randomUUID()} className='space-y-2'>
-                <Skeleton className='h-4 w-3/4' />
-                <Skeleton className='h-3 w-full' />
-                <Skeleton className='h-3 w-2/3' />
-              </div>
-            ))
-          ) : announcements && announcements.length > 0 ? (
-            announcements.map((announcement: AnnouncementDto) => (
-              <div
-                key={announcement.id}
-                className='rounded-lg border p-3 space-y-2 cursor-pointer hover:bg-muted/50 transition-colors'
-                onClick={() => setSelectedAnnouncement(announcement)}>
-                <div className='flex items-start gap-3'>
-                  {announcement.iconUrl ? (
-                    <img
-                      alt={announcement.title}
-                      className='h-10 w-10 shrink-0 rounded object-cover'
-                      src={announcement.iconUrl}
-                    />
-                  ) : (
-                    <AnnouncementCategoryIcon
-                      category={announcement.category}
-                      size='sm'
-                    />
-                  )}
-                  <div className='flex-1 min-w-0 space-y-2'>
-                    <div className='flex items-center gap-2 flex-wrap'>
-                      <h3 className='font-semibold text-sm leading-tight'>
-                        {announcement.title}
-                      </h3>
-                      <Badge
-                        variant={
-                          announcement.category === "maintenance"
-                            ? "default"
-                            : announcement.category === "downtime"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                        className='shrink-0 text-xs'>
-                        {getCategoryLabel(announcement.category)}
-                      </Badge>
-                    </div>
-                    <span className='text-xs text-muted-foreground'>
-                      {formatDistanceToNow(
-                        new Date(
-                          announcement.publishedAt ||
-                            announcement.createdAt ||
-                            new Date(),
-                        ),
-                        { addSuffix: true },
-                      )}
-                    </span>
-                    <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
-                      <Markup
-                        content={announcement.content}
-                        transform={transformMarkupLinks}
-                      />
-                    </div>
-                    {announcement.linkUrl && (
-                      <div className='flex justify-end'>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUrl(announcement.linkUrl!);
-                          }}
-                          size='sm'
-                          variant='outline'
-                          className='gap-1.5'>
-                          {announcement.linkLabel || "Learn More"}
-                          <ArrowSquareOut className='h-3.5 w-3.5' />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+          {isLoading
+            ? Array.from({ length: 3 }).map(() => (
+                <div key={crypto.randomUUID()} className='space-y-2'>
+                  <Skeleton className='h-4 w-3/4' />
+                  <Skeleton className='h-3 w-full' />
+                  <Skeleton className='h-3 w-2/3' />
                 </div>
-              </div>
-            ))
-          ) : (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant='icon'>
-                  <Megaphone className='h-6 w-6' weight='duotone' />
-                </EmptyMedia>
-                <EmptyTitle>{t("dashboard.noAnnouncementsTitle")}</EmptyTitle>
-                <EmptyDescription>
-                  {t("dashboard.noAnnouncementsDescription")}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          )}
+              ))
+            : announcementsContent}
         </div>
       </DashboardCard>
 
@@ -218,13 +226,9 @@ export const AnnouncementsCard = () => {
                     <div className='flex items-center gap-2 mb-1'>
                       <DialogTitle>{selectedAnnouncement.title}</DialogTitle>
                       <Badge
-                        variant={
-                          selectedAnnouncement.category === "maintenance"
-                            ? "default"
-                            : selectedAnnouncement.category === "downtime"
-                              ? "destructive"
-                              : "secondary"
-                        }
+                        variant={getCategoryVariant(
+                          selectedAnnouncement.category,
+                        )}
                         className='shrink-0'>
                         {getCategoryLabel(selectedAnnouncement.category)}
                       </Badge>
@@ -251,7 +255,11 @@ export const AnnouncementsCard = () => {
               {selectedAnnouncement.linkUrl && (
                 <DialogFooter>
                   <Button
-                    onClick={() => openUrl(selectedAnnouncement.linkUrl!)}
+                    onClick={() => {
+                      if (selectedAnnouncement.linkUrl) {
+                        openUrl(selectedAnnouncement.linkUrl);
+                      }
+                    }}
                     variant='default'>
                     {selectedAnnouncement.linkLabel || "Learn More"}
                   </Button>

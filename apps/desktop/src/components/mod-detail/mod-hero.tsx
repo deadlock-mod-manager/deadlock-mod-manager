@@ -46,7 +46,9 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
           </Badge>
         </div>
         {mod.audioUrl && (
-          <audio preload='metadata' ref={audioRef} src={mod.audioUrl} />
+          <audio preload='metadata' ref={audioRef} src={mod.audioUrl}>
+            <track kind='captions' />
+          </audio>
         )}
       </div>
     );

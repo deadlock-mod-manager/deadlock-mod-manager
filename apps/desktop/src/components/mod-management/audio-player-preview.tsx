@@ -94,8 +94,9 @@ const AudioPlayerPreview = ({
           onEnded={handleAudioEnded}
           preload='metadata'
           ref={audioRef}
-          src={audioUrl}
-        />
+          src={audioUrl}>
+          <track kind='captions' />
+        </audio>
       )}
     </div>
   );
