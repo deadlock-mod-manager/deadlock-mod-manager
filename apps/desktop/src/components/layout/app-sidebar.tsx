@@ -13,18 +13,18 @@ import {
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
-  Article,
+  ArticleIcon,
   BugBeetleIcon,
-  Code,
-  Crosshair,
-  DiscordLogo,
-  Download,
-  Gear,
-  House,
+  CodeIcon,
+  CrosshairIcon,
+  DiscordLogoIcon,
+  DownloadIcon,
+  GearIcon,
+  HouseIcon,
   type Icon,
-  MagnifyingGlass,
-  Package,
-  Question,
+  MagnifyingGlassIcon,
+  PackageIcon,
+  QuestionIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
@@ -71,7 +71,7 @@ const getSidebarItems = (
       id: "dashboard",
       title: () => <span>{t("navigation.dashboard")}</span>,
       url: "/",
-      icon: House,
+      icon: HouseIcon,
       group: "general",
     },
     {
@@ -89,14 +89,14 @@ const getSidebarItems = (
         </div>
       ),
       url: "/my-mods",
-      icon: Package,
+      icon: PackageIcon,
       group: "mods",
     },
     {
       id: "get-mods",
       title: () => <span>{t("navigation.getMods")}</span>,
       url: "/mods",
-      icon: MagnifyingGlass,
+      icon: MagnifyingGlassIcon,
       group: "mods",
     },
     {
@@ -110,28 +110,28 @@ const getSidebarItems = (
         </div>
       ),
       url: "/downloads",
-      icon: Download,
+      icon: DownloadIcon,
       group: "general",
     },
     {
       id: "crosshairs",
       title: () => <span>{t("navigation.crosshairs")}</span>,
       url: "/crosshairs",
-      icon: Crosshair,
+      icon: CrosshairIcon,
       group: t("navigation.customization"),
     },
     {
       id: "autoexec",
       title: () => <span>{t("navigation.autoexec")}</span>,
       url: "/settings/autoexec",
-      icon: Article,
+      icon: ArticleIcon,
       group: t("navigation.customization"),
     },
     {
       id: "settings",
       title: () => <span>{t("navigation.settings")}</span>,
       url: "/settings",
-      icon: Gear,
+      icon: GearIcon,
       group: "general",
     },
     ...(developerMode
@@ -140,7 +140,7 @@ const getSidebarItems = (
             id: "developer",
             title: () => <span>{t("navigation.developer")}</span>,
             url: "/developer",
-            icon: Code,
+            icon: CodeIcon,
             group: "Developer",
             bottom: true,
           },
@@ -173,6 +173,16 @@ type SidebarItemProps = {
   mods: Array<{ status: ModStatus; remoteId: string }>;
 };
 
+const renderIcon = (item: SidebarItem) => {
+  if (item.icon) {
+    return <item.icon weight='duotone' />;
+  }
+  if (item.iconUrl) {
+    return <img alt='' className='h-5 w-5' src={item.iconUrl} />;
+  }
+  return null;
+};
+
 const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -184,11 +194,7 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
           <SidebarMenuButton
             className='cursor-pointer'
             isActive={location.pathname === item.url}>
-            {item.icon ? (
-              <item.icon weight='duotone' />
-            ) : item.iconUrl ? (
-              <img alt='' className='h-5 w-5' src={item.iconUrl} />
-            ) : null}
+            {renderIcon(item)}
             {item.title({
               isActive: location.pathname === item.url,
               count: item.id === "my-mods" ? mods.length : undefined,
@@ -210,11 +216,7 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
   return (
     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
       <Link to={item.url} draggable='false'>
-        {item.icon ? (
-          <item.icon weight='duotone' />
-        ) : item.iconUrl ? (
-          <img alt='' className='h-5 w-5' src={item.iconUrl} />
-        ) : null}
+        {renderIcon(item)}
         {item.title({
           isActive: location.pathname === item.url,
           count: item.id === "my-mods" ? mods.length : undefined,
@@ -333,7 +335,7 @@ export const AppSidebar = () => {
                 <SidebarMenuButton
                   className='cursor-pointer'
                   onClick={() => openUrl("https://docs.deadlockmods.app/")}>
-                  <Question weight='duotone' />
+                  <QuestionIcon weight='duotone' />
                   <span>{t("help.documentation")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -341,7 +343,7 @@ export const AppSidebar = () => {
                 <SidebarMenuButton
                   className='cursor-pointer'
                   onClick={() => openUrl(DISCORD_URL)}>
-                  <DiscordLogo weight='duotone' />
+                  <DiscordLogoIcon weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

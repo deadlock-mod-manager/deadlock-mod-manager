@@ -32,7 +32,7 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle } from "@phosphor-icons/react";
+import { PlusCircleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -154,7 +154,7 @@ const AddSettingDialog = ({ children }: { children: React.ReactNode }) => {
             />
             <DialogFooter>
               <Button type='submit'>
-                <PlusCircle />
+                <PlusCircleIcon />
                 {t("settings.addSetting")}
               </Button>
             </DialogFooter>

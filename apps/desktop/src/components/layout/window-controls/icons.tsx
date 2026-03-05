@@ -1,5 +1,5 @@
 export const Icons = {
-  minimizeWin: (props: React.SVGProps<SVGSVGElement>) => (
+  MinimizeWin: (props: React.SVGProps<SVGSVGElement>) => (
     <svg
       width='10'
       height='1'
@@ -15,7 +15,7 @@ export const Icons = {
     </svg>
   ),
 
-  maximizeWin: (props: React.SVGProps<SVGSVGElement>) => (
+  MaximizeWin: (props: React.SVGProps<SVGSVGElement>) => (
     <svg
       width='10'
       height='10'
@@ -31,7 +31,7 @@ export const Icons = {
     </svg>
   ),
 
-  maximizeRestoreWin: (props: React.SVGProps<SVGSVGElement>) => (
+  MaximizeRestoreWin: (props: React.SVGProps<SVGSVGElement>) => (
     <svg
       width='10'
       height='11'
@@ -47,7 +47,7 @@ export const Icons = {
     </svg>
   ),
 
-  closeWin: (props: React.SVGProps<SVGSVGElement>) => (
+  CloseWin: (props: React.SVGProps<SVGSVGElement>) => (
     <svg
       width='10'
       height='10'

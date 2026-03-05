@@ -10,11 +10,11 @@ import {
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
-  CloudArrowDown,
-  DiscordLogo,
-  GithubLogo,
-  RedditLogo,
-  XLogo,
+  CloudArrowDownIcon,
+  DiscordLogoIcon,
+  GithubLogoIcon,
+  RedditLogoIcon,
+  XLogoIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
@@ -50,7 +50,7 @@ export const AboutDialog = () => {
           <span className='flex gap-1 font-medium font-mono text-xs'>
             Version {version}
             <span className='font-medium font-sans text-gray-400'>
-              (
+              {"("}
               <button
                 className='cursor-pointer text-primary hover:underline'
                 onClick={() =>
@@ -59,7 +59,7 @@ export const AboutDialog = () => {
                 type='button'>
                 {t("about.releaseNotes")}
               </button>
-              )
+              {")"}
             </span>
           </span>
           <span className='font-medium font-mono text-gray-400 text-xs'>
@@ -88,47 +88,53 @@ export const AboutDialog = () => {
         </div>
       </DialogDescription>
 
-      <DialogFooter className='flex flex-row items-center border-t pt-2 text-foreground'>
-        <div className='mr-auto flex flex-row gap-2'>
-          <GithubLogo
+      <DialogFooter className='flex flex-row items-center justify-between gap-4 border-t pt-2 text-foreground'>
+        <div className='flex flex-row gap-2'>
+          <GithubLogoIcon
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
             onClick={() => openUrl(GITHUB_REPO)}
           />
-          <DiscordLogo
+          <DiscordLogoIcon
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
             onClick={() => openUrl(DISCORD_URL)}
           />
-          <RedditLogo
+          <RedditLogoIcon
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
             onClick={() => openUrl(REDDIT_URL)}
           />
-          <XLogo
+          <XLogoIcon
             className='h-5 w-5 cursor-pointer transition hover:text-foreground'
             onClick={() => openUrl(X_URL)}
           />
         </div>
 
-        <Button
-          className='h-7 gap-1'
-          onClick={async () => {
-            try {
-              const update = await checkForUpdates();
-              if (update) {
-                toast.loading(t("about.downloadingUpdate"));
-                await updateAndRelaunch();
-              } else {
-                toast.info(t("about.latestVersion"));
+        <div className='flex flex-row gap-2'>
+          <Button
+            className='h-7 gap-1'
+            onClick={async () => {
+              try {
+                const update = await checkForUpdates();
+                if (update) {
+                  toast.loading(t("about.downloadingUpdate"));
+                  await updateAndRelaunch();
+                } else {
+                  toast.info(t("about.latestVersion"));
+                }
+              } catch (e) {
+                console.error("Failed to check for updates:", e);
+                toast.error(t("about.updateFailed"));
               }
-            } catch (_e) {
-              toast.error(t("about.updateFailed"));
-            }
-          }}
-          type='submit'
-          variant='outline'>
-          <CloudArrowDown /> {t("about.checkForUpdates")}
-        </Button>
+            }}
+            type='submit'
+            variant='outline'>
+            <CloudArrowDownIcon /> {t("about.checkForUpdates")}
+          </Button>
+        </div>
         <DialogClose
-          className={buttonVariants({ variant: "ghost", className: "h-7" })}
+          className={buttonVariants({
+            variant: "ghost",
+            className: "h-7",
+          })}
           type='submit'>
           {t("about.close")}
         </DialogClose>

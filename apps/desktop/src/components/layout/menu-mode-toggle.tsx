@@ -5,7 +5,7 @@ import {
   MenubarRadioItem,
   MenubarTrigger,
 } from "@deadlock-mods/ui/components/menubar";
-import { Laptop, Moon, Sun } from "@phosphor-icons/react";
+import { LaptopIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useTheme } from "@/components/providers/theme";
 
 export function MenuModeToggle() {
@@ -17,15 +17,15 @@ export function MenuModeToggle() {
       <MenubarContent forceMount>
         <MenubarRadioGroup value={theme}>
           <MenubarRadioItem onClick={() => setTheme("light")} value='light'>
-            <Sun className='mr-2 h-4 w-4' />
+            <SunIcon className='mr-2 h-4 w-4' />
             <span>Light</span>
           </MenubarRadioItem>
           <MenubarRadioItem onClick={() => setTheme("dark")} value='dark'>
-            <Moon className='mr-2 h-4 w-4' />
+            <MoonIcon className='mr-2 h-4 w-4' />
             <span>Dark</span>
           </MenubarRadioItem>
           <MenubarRadioItem onClick={() => setTheme("system")} value='system'>
-            <Laptop className='mr-2 h-4 w-4' />
+            <LaptopIcon className='mr-2 h-4 w-4' />
             <span>System</span>
           </MenubarRadioItem>
         </MenubarRadioGroup>

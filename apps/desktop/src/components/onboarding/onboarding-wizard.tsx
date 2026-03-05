@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import { Rocket } from "@phosphor-icons/react";
+import { RocketIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -158,7 +158,7 @@ export const OnboardingWizard = () => {
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <div className='flex items-center gap-2'>
-            <Rocket className='h-5 w-5 text-primary' />
+            <RocketIcon className='h-5 w-5 text-primary' />
             <DialogTitle>{t("onboarding.title")}</DialogTitle>
             <Badge variant='secondary'>
               {t("onboarding.stepIndicator", {

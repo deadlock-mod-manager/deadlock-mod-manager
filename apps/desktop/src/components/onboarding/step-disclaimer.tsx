@@ -1,5 +1,5 @@
 import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
-import { Info } from "@phosphor-icons/react";
+import { InfoIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -35,7 +35,7 @@ export const OnboardingStepDisclaimer = ({
       </div>
 
       <div className='flex items-start gap-3 p-4 border rounded-lg bg-blue-500/10 border-blue-500/20'>
-        <Info className='h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5' />
+        <InfoIcon className='h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5' />
         <div className='flex-1 min-w-0'>
           <p className='text-sm text-foreground'>
             {t("onboarding.disclaimer.notice")}

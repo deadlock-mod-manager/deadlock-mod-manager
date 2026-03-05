@@ -1,9 +1,9 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  CheckCircle,
-  FolderOpen,
-  MagnifyingGlass,
-  WarningCircle,
+  CheckCircleIcon,
+  FolderOpenIcon,
+  MagnifyingGlassIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -97,7 +97,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
       <div className='space-y-4'>
         {detectionState === "detecting" && (
           <div className='flex items-center gap-3 p-4 border rounded-lg bg-muted/50'>
-            <MagnifyingGlass className='h-5 w-5 animate-pulse' />
+            <MagnifyingGlassIcon className='h-5 w-5 animate-pulse' />
             <span className='text-sm'>
               {t("onboarding.gamePath.detecting")}
             </span>
@@ -107,7 +107,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
         {detectionState === "success" && (
           <div className='space-y-3'>
             <div className='flex items-start gap-3 p-4 border rounded-lg bg-green-500/10 border-green-500/20'>
-              <CheckCircle className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
+              <CheckCircleIcon className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
               <div className='flex-1 min-w-0'>
                 <p className='text-sm font-medium text-green-500'>
                   {t("onboarding.gamePath.success")}
@@ -122,7 +122,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
               size='sm'
               onClick={browseForGamePath}
               className='w-full'>
-              <FolderOpen className='h-4 w-4 mr-2' />
+              <FolderOpenIcon className='h-4 w-4 mr-2' />
               {t("onboarding.gamePath.changePath")}
             </Button>
           </div>
@@ -131,7 +131,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
         {detectionState === "error" && (
           <div className='space-y-3'>
             <div className='flex items-start gap-3 p-4 border rounded-lg bg-destructive/10 border-destructive/20'>
-              <WarningCircle className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
+              <WarningCircleIcon className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
               <div className='flex-1'>
                 <p className='text-sm font-medium text-destructive'>
                   {t("onboarding.gamePath.error")}
@@ -154,7 +154,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
                 size='sm'
                 onClick={browseForGamePath}
                 className='flex-1'>
-                <FolderOpen className='h-4 w-4 mr-2' />
+                <FolderOpenIcon className='h-4 w-4 mr-2' />
                 {t("onboarding.gamePath.browse")}
               </Button>
             </div>

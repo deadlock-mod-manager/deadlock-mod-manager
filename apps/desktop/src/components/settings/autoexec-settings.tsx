@@ -16,7 +16,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FolderOpen, PencilIcon } from "@phosphor-icons/react";
+import { FolderOpenIcon, PencilIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
@@ -208,7 +208,7 @@ export const AutoexecSettings = () => {
                 type='button'
                 variant='outline'
                 isLoading={openFolderMutation.isPending}>
-                <FolderOpen className='h-4 w-4' />
+                <FolderOpenIcon className='h-4 w-4' />
                 {t("settings.openInFolder")}
               </Button>
               <Button
