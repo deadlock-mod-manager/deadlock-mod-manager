@@ -97,7 +97,9 @@ const CrosshairSearchBar = ({
               <SelectGroup>
                 {Object.values(SortType).map((type) => (
                   <SelectItem className='capitalize' key={type} value={type}>
-                    {t(`sorting.${type.replace(/\s+/g, "").toLowerCase()}`)}
+                    {t(
+                      `sorting.${String(type).replaceAll(/\s+/g, "").toLowerCase()}`,
+                    )}
                   </SelectItem>
                 ))}
               </SelectGroup>

@@ -11,7 +11,9 @@ type UpdatedRecentlyBadgeProps = {
   className?: string;
 };
 
-export function UpdatedRecentlyBadge({ className }: UpdatedRecentlyBadgeProps) {
+export function UpdatedRecentlyBadge({
+  className,
+}: Readonly<UpdatedRecentlyBadgeProps>) {
   const { t } = useTranslation();
   return (
     <Tooltip>
@@ -32,7 +34,9 @@ type UpdateAvailableBadgeProps = {
   className?: string;
 };
 
-export function UpdateAvailableBadge({ className }: UpdateAvailableBadgeProps) {
+export function UpdateAvailableBadge({
+  className,
+}: Readonly<UpdateAvailableBadgeProps>) {
   const { t } = useTranslation();
   return (
     <Tooltip>
