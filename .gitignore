@@ -68,3 +68,7 @@ distribution/aur/deadlock-modmanager-git/deadlock-modmanager-git/
 .cargo/
 .rustup/
 opensrc/
+
+# Auto generated files
+index.mjs
+routeTree.gen.ts
