@@ -66,8 +66,11 @@ const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
+  const unitIndex = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1,
+  );
+  return `${Number.parseFloat((bytes / k ** unitIndex).toFixed(1))} ${sizes[unitIndex]}`;
 };
 
 const getFileTypeFromExtension = (ext: string): string => {

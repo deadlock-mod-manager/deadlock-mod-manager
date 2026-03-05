@@ -333,7 +333,9 @@ export const CrosshairForm = () => {
                 name='heroes'
                 render={({ field }) => {
                   const heroButtonLabel = getHeroButtonLabel(
-                    field.value,
+                    field.value.map((h) =>
+                      h === "Default" ? t("crosshairs.form.defaultHero") : h,
+                    ),
                     t("crosshairs.form.selectHeroes"),
                     t("crosshairs.form.heroesSelected"),
                   );
@@ -342,7 +344,7 @@ export const CrosshairForm = () => {
                     const isDefault = hero === "Default";
                     const isSelected = field.value.includes(hero);
                     if (isDefault) {
-                      field.onChange(isSelected ? [] : ["Default"]);
+                      field.onChange(["Default"]);
                     } else {
                       const newHeroes = toggleHeroSelection(
                         field.value,
@@ -413,7 +415,11 @@ export const CrosshairForm = () => {
                                             : "opacity-0",
                                         )}
                                       />
-                                      <span className='truncate'>{hero}</span>
+                                      <span className='truncate'>
+                                        {hero === "Default"
+                                          ? t("crosshairs.form.defaultHero")
+                                          : hero}
+                                      </span>
                                     </CommandItem>
                                   );
                                 })}
@@ -430,7 +436,10 @@ export const CrosshairForm = () => {
                               variant='secondary'
                               className='cursor-pointer'
                               onClick={() => handleHeroRemove(hero)}>
-                              {hero} ×
+                              {hero === "Default"
+                                ? t("crosshairs.form.defaultHero")
+                                : hero}{" "}
+                              ×
                             </Badge>
                           ))}
                         </div>

@@ -113,7 +113,10 @@ export const VpkReplacementSection = ({
     const expectedCount = getExpectedFileCount();
     if (paths.length !== expectedCount) {
       toast.error(
-        `${t("modDetail.vpkReplacement.error")}: Expected ${expectedCount} file${expectedCount === 1 ? "" : "s"}, got ${paths.length}`,
+        t("modDetail.vpkReplacement.countMismatch", {
+          expected: expectedCount,
+          actual: paths.length,
+        }),
       );
       return;
     }

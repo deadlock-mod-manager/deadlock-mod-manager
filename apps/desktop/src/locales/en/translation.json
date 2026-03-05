@@ -612,7 +612,8 @@
       "filesFound": "Found {{count}} files",
       "currentFile": "Processing {{current}} of {{total}}",
       "currentFileName": "Processing: {{fileName}}"
-    }
+    },
+    "total": "total"
   },
   "onboarding": {
     "title": "Welcome to Deadlock Mod Manager",
@@ -701,7 +702,8 @@
     "unknownMod": "Unknown Mod",
     "modNamePlaceholder": "Awesome Mod",
     "modPreview": "Mod preview",
-    "authorPlaceholder": "Unknown"
+    "authorPlaceholder": "Unknown",
+    "invalidUrl": "Invalid URL"
   },
   "status": {
     "enabled": "Enabled",
@@ -1120,7 +1122,8 @@
     "noAnnouncementsTitle": "No Announcements",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "checkBackLater": "Check back later for updates",
-    "noModsAvailable": "No mods available"
+    "noModsAvailable": "No mods available",
+    "learnMore": "Learn More"
   },
   "debug": {
     "title": "Debug",
@@ -1243,7 +1246,8 @@
       "replaceAll": "Replace All Files",
       "selectToReplace": "Select {{count}} file(s) to replace",
       "success": "VPK files replaced successfully",
-      "error": "Failed to replace VPK files"
+      "error": "Failed to replace VPK files",
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}"
     }
   },
   "reports": {
@@ -1328,6 +1332,7 @@
       "heroesSelected": "selected",
       "searchHeroes": "Search heroes...",
       "noHeroesFound": "No heroes found.",
+      "defaultHero": "Default",
       "preview": "Preview",
       "apply": "Apply",
       "publish": "Publish",

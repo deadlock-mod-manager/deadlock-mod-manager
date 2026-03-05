@@ -137,7 +137,7 @@ export const AboutDialog = () => {
                 toast.error(t("about.updateFailed"));
               }
             }}
-            type='submit'
+            type='button'
             variant='outline'>
             <CloudArrowDownIcon /> {t("about.checkForUpdates")}
           </Button>
@@ -147,7 +147,7 @@ export const AboutDialog = () => {
             variant: "ghost",
             className: "h-7",
           })}
-          type='submit'>
+          type='button'>
           {t("about.close")}
         </DialogClose>
       </DialogFooter>

@@ -10,6 +10,9 @@ interface AudioPlayerPreviewProps {
   variant?: AudioPlayerVariant;
   className?: string;
   onPlayClick?: (e: React.MouseEvent) => void;
+  captionsSrc?: string;
+  captionsLabel?: string;
+  captionsLang?: string;
 }
 
 const variantStyles = {
@@ -45,6 +48,9 @@ const AudioPlayerPreview = ({
   variant = "default",
   className,
   onPlayClick,
+  captionsSrc,
+  captionsLabel,
+  captionsLang,
 }: AudioPlayerPreviewProps) => {
   const { isPlaying, audioRef, togglePlayback, handleAudioEnded } = useAudio();
 
@@ -90,12 +96,21 @@ const AudioPlayerPreview = ({
         </Button>
       </div>
       {audioUrl && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
         <audio
           onEnded={handleAudioEnded}
           preload='metadata'
           ref={audioRef}
           src={audioUrl}>
-          <track kind='captions' />
+          {captionsSrc && (
+            <track
+              kind='captions'
+              src={captionsSrc}
+              label={captionsLabel}
+              srcLang={captionsLang}
+              default
+            />
+          )}
         </audio>
       )}
     </div>

@@ -403,7 +403,8 @@
       "filesFound": "",
       "currentFile": "",
       "currentFileName": ""
-    }
+    },
+    "total": ""
   },
   "errors": {
     "genericMessage": "",
@@ -429,7 +430,8 @@
     "unknownMod": "",
     "modNamePlaceholder": "",
     "modPreview": "",
-    "authorPlaceholder": ""
+    "authorPlaceholder": "",
+    "invalidUrl": ""
   },
   "status": {
     "enabled": "",
@@ -642,7 +644,8 @@
       "replaceAll": "",
       "selectToReplace": "",
       "success": "",
-      "error": ""
+      "error": "",
+      "countMismatch": ""
     }
   }
 }

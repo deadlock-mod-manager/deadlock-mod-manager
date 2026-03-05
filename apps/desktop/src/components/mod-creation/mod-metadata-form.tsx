@@ -74,34 +74,38 @@ const isAllowedImageFile = (file: File): boolean =>
   ALLOWED_IMAGE_TYPES.includes(file.type) ||
   IMAGE_FILE_EXTENSION_REGEX.test(file.name);
 
-const schema = z.object({
-  name: z.string().min(2, "Name is required"),
-  author: z
-    .string()
-    .max(128, "Too long")
-    .optional()
-    .or(z.literal("").optional()),
-  description: z
-    .string()
-    .max(4000, "Too long")
-    .optional()
-    .or(z.literal("").optional()),
-  link: z.url({ error: "Invalid URL" }).optional().or(z.literal("").optional()),
-  imageFile: z
-    .instanceof(File)
-    .refine(
-      isAllowedImageFile,
-      "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)",
-    )
-    .refine((file) => {
-      // Validate file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-      return file.size <= maxSize;
-    }, "File size must be less than 10MB")
-    .optional(),
-});
+const buildSchema = (invalidUrlMsg: string) =>
+  z.object({
+    name: z.string().min(2, "Name is required"),
+    author: z
+      .string()
+      .max(128, "Too long")
+      .optional()
+      .or(z.literal("").optional()),
+    description: z
+      .string()
+      .max(4000, "Too long")
+      .optional()
+      .or(z.literal("").optional()),
+    link: z
+      .url({ error: invalidUrlMsg })
+      .optional()
+      .or(z.literal("").optional()),
+    imageFile: z
+      .instanceof(File)
+      .refine(
+        isAllowedImageFile,
+        "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)",
+      )
+      .refine((file) => {
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        return file.size <= maxSize;
+      }, "File size must be less than 10MB")
+      .optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
   function ModMetadataForm(
@@ -109,6 +113,8 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     ref,
   ) {
     const { t } = useTranslation();
+
+    const schema = useMemo(() => buildSchema(t("modForm.invalidUrl")), [t]);
 
     const actualTitle = title || t("modForm.title");
     const actualDescription = description || t("modForm.description");

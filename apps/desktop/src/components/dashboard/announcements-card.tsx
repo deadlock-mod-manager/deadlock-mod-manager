@@ -169,7 +169,7 @@ export const AnnouncementsCard = () => {
                     size='sm'
                     variant='outline'
                     className='gap-1.5'>
-                    {announcement.linkLabel || "Learn More"}
+                    {announcement.linkLabel || t("dashboard.learnMore")}
                     <ArrowSquareOutIcon className='h-3.5 w-3.5' />
                   </Button>
                 </div>
@@ -273,7 +273,7 @@ export const AnnouncementsCard = () => {
                       }
                     }}
                     variant='default'>
-                    {selectedAnnouncement.linkLabel || "Learn More"}
+                    {selectedAnnouncement.linkLabel || t("dashboard.learnMore")}
                   </Button>
                 </DialogFooter>
               )}

@@ -226,7 +226,9 @@ export const AddonsBackupManagement = () => {
                   {t("settings.backupVpkCount")}
                 </div>
               </TableHead>
-              <TableHead className='text-right'>Actions</TableHead>
+              <TableHead className='text-right'>
+                {t("common.actions")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -280,7 +282,7 @@ export const AddonsBackupManagement = () => {
         {backups.length > 0 && (
           <div className='text-muted-foreground text-sm'>
             {backups.length} backup{backups.length === 1 ? "" : "s"} •{" "}
-            {formatFileSize(totalSize)} total
+            {formatFileSize(totalSize)} {t("addons.total")}
           </div>
         )}
       </div>
