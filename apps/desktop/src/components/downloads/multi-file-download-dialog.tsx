@@ -21,13 +21,13 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 
 interface MultiFileDownloadDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onDownload: (selectedFiles: ModDownloadItem[]) => void;
-  files: ModDownloadItem[];
-  modName: string;
-  isDownloading?: boolean;
-  downloadPercentage?: number;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onDownload: (selectedFiles: ModDownloadItem[]) => void;
+  readonly files: ModDownloadItem[];
+  readonly modName: string;
+  readonly isDownloading?: boolean;
+  readonly downloadPercentage?: number;
 }
 
 export function MultiFileDownloadDialog({
@@ -121,17 +121,17 @@ export function MultiFileDownloadDialog({
         </div>
 
         <div className='min-h-0 flex-1 space-y-3 overflow-y-auto'>
-          {files
+          {[...files]
             .sort((a, b) => b.size - a.size) // Sort by size, largest first
             .map((file) => (
-              <div
-                className='flex items-center space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50'
+              <button
+                type='button'
+                className='flex w-full items-center space-x-3 rounded-lg border p-4 text-left transition-colors hover:bg-muted/50 disabled:pointer-events-none'
                 key={file.name}
+                disabled={isDownloading}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!isDownloading) {
-                    handleFileToggle(file.name, e);
-                  }
+                  handleFileToggle(file.name, e);
                 }}>
                 <Checkbox
                   checked={selectedFiles.has(file.name)}
@@ -165,15 +165,31 @@ export function MultiFileDownloadDialog({
                             <TooltipTrigger>
                               <span className='text-muted-foreground text-xs'>
                                 {file.updatedAt
-                                  ? `Updated ${formatDistanceToNow(file.updatedAt)} ago`
-                                  : `Created ${formatDistanceToNow(file.createdAt!)} ago`}
+                                  ? t("downloads.updatedAgo", {
+                                      when: formatDistanceToNow(file.updatedAt),
+                                    })
+                                  : t("downloads.createdAgo", {
+                                      when: formatDistanceToNow(
+                                        file.createdAt ?? new Date(),
+                                      ),
+                                    })}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
                               <span className='text-muted-foreground text-xs'>
                                 {file.updatedAt
-                                  ? `Updated at ${format(file.updatedAt, "dd-MM-yyyy HH:mm")}`
-                                  : `Created at ${format(file.createdAt!, "dd-MM-yyyy HH:mm")}`}
+                                  ? t("downloads.updatedAt", {
+                                      date: format(
+                                        file.updatedAt,
+                                        "dd-MM-yyyy HH:mm",
+                                      ),
+                                    })
+                                  : t("downloads.createdAt", {
+                                      date: format(
+                                        file.createdAt ?? new Date(),
+                                        "dd-MM-yyyy HH:mm",
+                                      ),
+                                    })}
                               </span>
                             </TooltipContent>
                           </Tooltip>
@@ -182,7 +198,7 @@ export function MultiFileDownloadDialog({
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
         </div>
 

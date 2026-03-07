@@ -53,6 +53,27 @@ import { CrosshairImportDialog } from "./crosshair-import-dialog";
 
 const ALL_HEROES = ["Default", ...Object.values(DeadlockHeroes)];
 
+function getHeroButtonLabel(
+  values: string[],
+  selectLabel: string,
+  selectedLabel: string,
+): string {
+  if (values.length === 0) return selectLabel;
+  if (values.length === 1) return values[0] ?? selectLabel;
+  return `${values.length} ${selectedLabel}`;
+}
+
+function toggleHeroSelection(
+  currentValues: string[],
+  hero: string,
+  isSelected: boolean,
+): string[] {
+  if (isSelected) {
+    return currentValues.filter((h) => h !== hero);
+  }
+  return [...currentValues.filter((h) => h !== "Default"), hero];
+}
+
 const crosshairFormSchema = z.object({
   name: z
     .string()
@@ -310,117 +331,123 @@ export const CrosshairForm = () => {
                 // @ts-expect-error - react-hook-form version conflicts
                 control={form.control}
                 name='heroes'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("crosshairs.form.heroes")}{" "}
-                      <span className='text-destructive'>*</span>
-                    </FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant='outline'
-                            role='combobox'
-                            className='w-full justify-between'>
-                            <span className='truncate'>
-                              {field.value.length === 0
-                                ? t("crosshairs.form.selectHeroes")
-                                : field.value.length === 1
-                                  ? field.value[0]
-                                  : `${field.value.length} ${t("crosshairs.form.heroesSelected")}`}
-                            </span>
-                            <span className='ml-2 opacity-50'>▼</span>
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent align='start' className='w-[400px] p-0'>
-                        <Command>
-                          <CommandInput
-                            placeholder={t("crosshairs.form.searchHeroes")}
-                          />
-                          <CommandList>
-                            <CommandEmpty>
-                              {t("crosshairs.form.noHeroesFound")}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              {ALL_HEROES.map((hero) => {
-                                const isSelected = field.value.includes(hero);
-                                const isDefault = hero === "Default";
-                                const canSelect =
-                                  isSelected ||
-                                  field.value.length < 5 ||
-                                  isDefault;
+                render={({ field }) => {
+                  const heroButtonLabel = getHeroButtonLabel(
+                    field.value.map((h) =>
+                      h === "Default" ? t("crosshairs.form.defaultHero") : h,
+                    ),
+                    t("crosshairs.form.selectHeroes"),
+                    t("crosshairs.form.heroesSelected"),
+                  );
 
-                                return (
-                                  <CommandItem
-                                    key={hero}
-                                    disabled={!canSelect}
-                                    onSelect={() => {
-                                      if (isDefault) {
-                                        field.onChange(
-                                          isSelected ? [] : ["Default"],
-                                        );
-                                      } else {
-                                        const newHeroes = isSelected
-                                          ? field.value.filter(
-                                              (h) => h !== hero,
-                                            )
-                                          : [
-                                              ...field.value.filter(
-                                                (h) => h !== "Default",
-                                              ),
-                                              hero,
-                                            ];
-                                        field.onChange(
-                                          newHeroes.length === 0
-                                            ? ["Default"]
-                                            : newHeroes,
-                                        );
-                                      }
-                                    }}>
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4 flex-shrink-0",
-                                        isSelected
-                                          ? "opacity-100"
-                                          : "opacity-0",
-                                      )}
-                                    />
-                                    <span className='truncate'>{hero}</span>
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    {field.value.length > 0 && (
-                      <div className='flex flex-wrap gap-2 mt-2'>
-                        {field.value.map((hero) => (
-                          <Badge
-                            key={hero}
-                            variant='secondary'
-                            className='cursor-pointer'
-                            onClick={() => {
-                              const newHeroes = field.value.filter(
-                                (h) => h !== hero,
-                              );
-                              field.onChange(
-                                newHeroes.length === 0
-                                  ? ["Default"]
-                                  : newHeroes,
-                              );
-                            }}>
-                            {hero} ×
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
+                  const handleHeroSelect = (hero: string) => {
+                    const isDefault = hero === "Default";
+                    const isSelected = field.value.includes(hero);
+                    if (isDefault) {
+                      field.onChange(["Default"]);
+                    } else {
+                      const newHeroes = toggleHeroSelection(
+                        field.value,
+                        hero,
+                        isSelected,
+                      );
+                      field.onChange(
+                        newHeroes.length === 0 ? ["Default"] : newHeroes,
+                      );
+                    }
+                  };
+
+                  const handleHeroRemove = (hero: string) => {
+                    const newHeroes = field.value.filter((h) => h !== hero);
+                    field.onChange(
+                      newHeroes.length === 0 ? ["Default"] : newHeroes,
+                    );
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>
+                        {t("crosshairs.form.heroes")}{" "}
+                        <span className='text-destructive'>*</span>
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant='outline'
+                              role='combobox'
+                              className='w-full justify-between'>
+                              <span className='truncate'>
+                                {heroButtonLabel}
+                              </span>
+                              <span className='ml-2 opacity-50'>▼</span>
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent align='start' className='w-[400px] p-0'>
+                          <Command>
+                            <CommandInput
+                              placeholder={t("crosshairs.form.searchHeroes")}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                {t("crosshairs.form.noHeroesFound")}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {ALL_HEROES.map((hero) => {
+                                  const isSelected = field.value.includes(hero);
+                                  const isDefault = hero === "Default";
+                                  const canSelect =
+                                    isSelected ||
+                                    field.value.length < 5 ||
+                                    isDefault;
+
+                                  return (
+                                    <CommandItem
+                                      key={hero}
+                                      disabled={!canSelect}
+                                      onSelect={() => handleHeroSelect(hero)}>
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4 flex-shrink-0",
+                                          isSelected
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      <span className='truncate'>
+                                        {hero === "Default"
+                                          ? t("crosshairs.form.defaultHero")
+                                          : hero}
+                                      </span>
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {field.value.length > 0 && (
+                        <div className='flex flex-wrap gap-2 mt-2'>
+                          {field.value.map((hero) => (
+                            <Badge
+                              key={hero}
+                              variant='secondary'
+                              className='cursor-pointer'
+                              onClick={() => handleHeroRemove(hero)}>
+                              {hero === "Default"
+                                ? t("crosshairs.form.defaultHero")
+                                : hero}{" "}
+                              ×
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </div>

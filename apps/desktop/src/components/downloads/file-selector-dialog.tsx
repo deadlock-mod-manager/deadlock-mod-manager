@@ -12,6 +12,7 @@ import {
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Archive, File, FolderOpen } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatSize } from "@/lib/utils";
 import type { ModFileTree } from "@/types/mods";
 
@@ -32,6 +33,7 @@ export const FileSelectorDialog = ({
   onCancel,
   modName = "Mod",
 }: FileSelectorDialogProps) => {
+  const { t } = useTranslation();
   const [localFileTree, setLocalFileTree] = useState<ModFileTree | null>(null);
 
   useEffect(() => {
@@ -39,6 +41,12 @@ export const FileSelectorDialog = ({
       setLocalFileTree(fileTree);
     }
   }, [fileTree, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !fileTree) {
+      setLocalFileTree(null);
+    }
+  }, [isOpen, fileTree]);
 
   const handleFileToggle = (
     fileIndex: number,
@@ -174,27 +182,21 @@ export const FileSelectorDialog = ({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={isOpen}>
-      {!localFileTree ? (
-        <DialogContent className='max-h-[80vh] max-w-md'>
-          <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
-            <DialogDescription>
-              Analyzing mod files, please wait...
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      ) : (
+      {localFileTree ? (
         <DialogContent
           className='max-h-[80vh] max-w-3xl'
           onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <FolderOpen className='h-5 w-5' />
-              Select Files to Install: {modName}
+              {t("fileSelector.selectFilesToInstall", { modName })}
             </DialogTitle>
             <DialogDescription>
-              Choose which VPK files you want to install from this mod.
-              {selectedCount} of {localFileTree.total_files} files selected
+              {t("fileSelector.chooseVpkFiles")}{" "}
+              {t("fileSelector.filesOfTotalSelected", {
+                selected: selectedCount,
+                total: localFileTree.total_files,
+              })}
               {selectedCount > 0 && ` (${formatSize(totalSelectedSize)})`}
             </DialogDescription>
           </DialogHeader>
@@ -210,7 +212,9 @@ export const FileSelectorDialog = ({
                 onClick={(e) => e.stopPropagation()}
               />
               <span className='font-medium text-sm'>
-                Select All ({localFileTree.total_files} files)
+                {t("fileSelector.selectAllCount", {
+                  count: localFileTree.total_files,
+                })}
               </span>
             </div>
 
@@ -247,8 +251,9 @@ export const FileSelectorDialog = ({
                         {filesByArchive[archiveName].map((file) => {
                           const globalIndex = localFileTree.files.indexOf(file);
                           return (
-                            <div
-                              className='flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50'
+                            <button
+                              type='button'
+                              className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                               key={file.path}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -286,7 +291,7 @@ export const FileSelectorDialog = ({
                               <span className='text-muted-foreground text-xs'>
                                 {formatSize(file.size)}
                               </span>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -296,8 +301,9 @@ export const FileSelectorDialog = ({
                   // Single archive view - flat list
                   <div className='space-y-2'>
                     {localFileTree.files.map((file, index) => (
-                      <div
-                        className='flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50'
+                      <button
+                        type='button'
+                        className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                         key={file.path}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -328,7 +334,7 @@ export const FileSelectorDialog = ({
                         <span className='text-muted-foreground text-xs'>
                           {formatSize(file.size)}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -339,10 +345,11 @@ export const FileSelectorDialog = ({
           <DialogFooter className='flex items-center justify-between'>
             <div className='text-muted-foreground text-sm'>
               {selectedCount === 0
-                ? "No files selected"
-                : `${selectedCount} file${
-                    selectedCount === 1 ? "" : "s"
-                  } selected (${formatSize(totalSelectedSize)})`}
+                ? t("fileSelector.noFilesSelected")
+                : t("fileSelector.filesSelectedWithSize", {
+                    count: selectedCount,
+                    size: formatSize(totalSelectedSize),
+                  })}
             </div>
             <div className='space-x-2'>
               <Button
@@ -351,7 +358,7 @@ export const FileSelectorDialog = ({
                   onCancel();
                 }}
                 variant='outline'>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 disabled={selectedCount === 0}
@@ -359,10 +366,19 @@ export const FileSelectorDialog = ({
                   e.stopPropagation();
                   onConfirm(localFileTree);
                 }}>
-                Install Selected
+                {t("fileSelector.installSelected")}
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      ) : (
+        <DialogContent className='max-h-[80vh] max-w-md'>
+          <DialogHeader>
+            <DialogTitle>{t("common.loading")}</DialogTitle>
+            <DialogDescription>
+              {t("fileSelector.analyzingModFiles")}
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       )}
     </Dialog>

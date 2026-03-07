@@ -8,12 +8,12 @@ import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CrosshairCanvasProps {
-  config: CrosshairConfig;
-  interactive?: boolean;
-  width?: number;
-  height?: number;
-  className?: string;
-  background?: NonNullable<BackgroundKey>;
+  readonly config: CrosshairConfig;
+  readonly interactive?: boolean;
+  readonly width?: number;
+  readonly height?: number;
+  readonly className?: string;
+  readonly background?: NonNullable<BackgroundKey>;
 }
 
 export function CrosshairCanvas({

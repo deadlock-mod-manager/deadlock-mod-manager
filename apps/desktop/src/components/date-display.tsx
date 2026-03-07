@@ -25,26 +25,25 @@ export const DateDisplay = ({
     return null;
   }
   const exact = format(date, dateFormat);
-  const distance = `${prefix ? `${prefix} ` : ""}${formatDistanceToNow(date)} ${t("time.ago")}`;
+  const prefixWithSpace = prefix ? `${prefix} ` : "";
+  const distance = `${prefixWithSpace}${formatDistanceToNow(date)} ${t("time.ago")}`;
+
+  const displayText = prefix ? `${prefix} ${t("time.at")} ${exact}` : exact;
+
+  const tooltipText = prefix
+    ? `${prefix} ${t("time.at")} ${exact}`
+    : `${t("time.at")} ${exact}`;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span className={cn("cursor-pointer", className)}>
-          {inverse
-            ? prefix
-              ? `${prefix} ${t("time.at")} ${exact}`
-              : exact
-            : distance}
+          {inverse ? displayText : distance}
         </span>
       </TooltipTrigger>
       <TooltipContent>
         <span className={cn("text-muted-foreground text-xs", className)}>
-          {inverse
-            ? distance
-            : prefix
-              ? `${prefix} ${t("time.at")} ${exact}`
-              : `${t("time.at")} ${exact}`}
+          {inverse ? distance : tooltipText}
         </span>
       </TooltipContent>
     </Tooltip>

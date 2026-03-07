@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { usePersistedStore } from "@/lib/store";
 
 type AppProviderProps = {
@@ -28,8 +28,10 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
     }
   }, []);
 
+  const contextValue = useMemo<AppProviderState>(() => ({}), []);
+
   return (
-    <AppProviderContext.Provider {...props} value={{}}>
+    <AppProviderContext.Provider {...props} value={contextValue}>
       {children}
     </AppProviderContext.Provider>
   );

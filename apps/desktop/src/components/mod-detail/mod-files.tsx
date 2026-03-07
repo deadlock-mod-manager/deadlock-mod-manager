@@ -39,7 +39,7 @@ export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
       </CardHeader>
       <CardContent>
         <ul className='list-disc space-y-2'>
-          {files
+          {[...files]
             .sort((a, b) => b.size - a.size)
             .map((file) => (
               <li className='flex flex-col gap-0.5 text-sm' key={file.name}>

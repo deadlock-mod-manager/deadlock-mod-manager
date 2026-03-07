@@ -31,11 +31,8 @@ export const FeatureFlagsSettings = () => {
   if (isLoading) {
     return (
       <div className='space-y-4'>
-        {[...Array(3)].map((_) => (
-          <div
-            className='h-16 animate-pulse rounded-lg bg-muted'
-            key={crypto.randomUUID()}
-          />
+        {Array.from({ length: 3 }, (_, i) => (
+          <div className='h-16 animate-pulse rounded-lg bg-muted' key={i} />
         ))}
       </div>
     );
@@ -66,6 +63,7 @@ export const FeatureFlagsSettings = () => {
         }),
       );
     } catch (error) {
+      console.error("Failed to toggle feature flag:", error);
       toast.error(t("featureFlags.toggleError"));
     }
   };

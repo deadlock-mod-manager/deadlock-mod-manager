@@ -16,7 +16,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { CheckIcon } from "@deadlock-mods/ui/icons";
-import { Clipboard } from "@phosphor-icons/react";
+import { ClipboardTextIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
@@ -66,6 +66,7 @@ export const CrosshairPreviewDialog = ({
       await navigator.clipboard.writeText(commandString);
       toast.success(t("crosshairs.previewDialog.commandCopied"));
     } catch (error) {
+      console.error("Failed to copy crosshair command:", error);
       toast.error(t("crosshairs.previewDialog.commandCopyFailed"));
     }
   };
@@ -213,7 +214,7 @@ export const CrosshairPreviewDialog = ({
         <DialogFooter>
           <Button
             variant='outline'
-            icon={<Clipboard className='h-4 w-4' />}
+            icon={<ClipboardTextIcon className='h-4 w-4' />}
             onClick={handleCopyCommand}>
             {t("ui.copyToClipboard")}
           </Button>

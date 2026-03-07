@@ -51,7 +51,7 @@ const CrosshairHeroFilter = ({
         .flatMap((crosshair) => crosshair.heroes)
         .filter((hero): hero is string => Boolean(hero)),
     ),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const hasDefaultHeroes = crosshairs.some(
     (crosshair) =>
@@ -87,11 +87,15 @@ const CrosshairHeroFilter = ({
             size='sm'
             variant='outline'>
             <span className='truncate'>
-              {selectedHeroes.length === 0
-                ? t("filters.allHeroes")
-                : selectedHeroes.length === 1
-                  ? getHeroDisplayName(selectedHeroes[0])
-                  : `${selectedHeroes.length} ${t("filters.selected")}`}
+              {(() => {
+                if (selectedHeroes.length === 0) {
+                  return t("filters.allHeroes");
+                }
+                if (selectedHeroes.length === 1) {
+                  return getHeroDisplayName(selectedHeroes[0]);
+                }
+                return `${selectedHeroes.length} ${t("filters.selected")}`;
+              })()}
             </span>
           </Button>
         </PopoverTrigger>
@@ -137,7 +141,7 @@ const CrosshairTagFilter = ({
   const { t } = useTranslation();
   const availableTags = Array.from(
     new Set(crosshairs.flatMap((crosshair) => crosshair.tags)),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const handleTagToggle = (tag: string) => {
     const newSelectedTags = selectedTags.includes(tag)
@@ -158,11 +162,15 @@ const CrosshairTagFilter = ({
             size='sm'
             variant='outline'>
             <span className='truncate'>
-              {selectedTags.length === 0
-                ? t("crosshairs.filters.allTags")
-                : selectedTags.length === 1
-                  ? selectedTags[0]
-                  : `${selectedTags.length} ${t("filters.selected")}`}
+              {(() => {
+                if (selectedTags.length === 0) {
+                  return t("crosshairs.filters.allTags");
+                }
+                if (selectedTags.length === 1) {
+                  return selectedTags[0];
+                }
+                return `${selectedTags.length} ${t("filters.selected")}`;
+              })()}
             </span>
           </Button>
         </PopoverTrigger>

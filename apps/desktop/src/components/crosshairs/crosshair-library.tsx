@@ -7,7 +7,7 @@ import {
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {
   useMutation,
   useQueryClient,
@@ -172,7 +172,7 @@ const CrosshairLibraryData = () => {
         <Empty className='py-12'>
           <EmptyHeader>
             <EmptyMedia variant='default'>
-              <MagnifyingGlass className='h-16 w-16' />
+              <MagnifyingGlassIcon className='h-16 w-16' />
             </EmptyMedia>
             <EmptyTitle>{t("crosshairs.noCrosshairsFound")}</EmptyTitle>
             <EmptyDescription>

@@ -137,7 +137,7 @@ const SearchBar = ({
               <SelectGroup>
                 {Object.values(SortType).map((type) => (
                   <SelectItem className='capitalize' key={type} value={type}>
-                    {t(`sorting.${type.replace(/\s+/g, "").toLowerCase()}`)}
+                    {t(`sorting.${type.replaceAll(/\s+/g, "").toLowerCase()}`)}
                   </SelectItem>
                 ))}
               </SelectGroup>

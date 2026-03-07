@@ -12,7 +12,8 @@ import { AnalyzeAddonsButton } from "../my-mods/analyze-addons-button";
 interface VpkScanAlertProps {
   unmatchedVpkCount: number;
   unmatchedVpks: string[];
-  isLoading?: boolean;
+  // Currently unused
+  // isLoading?: boolean;
   isRefetching?: boolean;
   refetch: () => Promise<unknown>;
 }

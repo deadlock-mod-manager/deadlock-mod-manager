@@ -1,4 +1,10 @@
-import { createContext, type ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 
 interface ProgressContextType {
@@ -20,9 +26,13 @@ export const ProgressProvider = ({ children }: { children: ReactNode }) => {
     setProcessingStatus(status);
   };
 
+  const contextValue = useMemo(
+    () => ({ isProcessing, processingStatus, setProcessing }),
+    [isProcessing, processingStatus],
+  );
+
   return (
-    <ProgressContext.Provider
-      value={{ isProcessing, processingStatus, setProcessing }}>
+    <ProgressContext.Provider value={contextValue}>
       {children}
     </ProgressContext.Provider>
   );

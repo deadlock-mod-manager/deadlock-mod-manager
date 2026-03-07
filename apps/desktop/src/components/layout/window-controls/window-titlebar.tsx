@@ -6,7 +6,7 @@ export function WindowTitlebar({
   className,
   children,
   ...props
-}: HTMLProps<HTMLDivElement>) {
+}: Readonly<HTMLProps<HTMLDivElement>>) {
   const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {

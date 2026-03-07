@@ -21,20 +21,18 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
     navigate(`/mods/${mod.remoteId}`);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleClick();
-    }
-  };
-
   return (
     <div
+      role='button'
+      tabIndex={0}
       className='group -mx-2 w-full rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/50 cursor-pointer'
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role='button'
-      tabIndex={0}>
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}>
       <div className='flex items-start gap-3'>
         {/* Thumbnail */}
         <div className='relative h-12 w-12 shrink-0 overflow-hidden rounded-md'>

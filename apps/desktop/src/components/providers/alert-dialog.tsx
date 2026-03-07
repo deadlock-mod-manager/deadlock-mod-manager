@@ -162,7 +162,6 @@ export const AlertDialogProvider = ({
           if (!open) {
             close();
           }
-          return;
         }}
         open={state.open}>
         <AlertDialogContent asChild>

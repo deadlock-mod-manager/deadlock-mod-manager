@@ -240,38 +240,39 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
               </Button>
             </div>
             <div className='space-y-2 max-h-40 overflow-y-auto'>
-              {sortedDownloads.map((download) => (
-                <div
-                  className='flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50'
-                  key={download.name}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const isOnlySelected =
-                      selectedSet.has(download.name) && selectedSet.size === 1;
-                    if (isOnlySelected) return;
-                    handleFileToggle(download, !selectedSet.has(download.name));
-                  }}>
-                  <Checkbox
-                    checked={selectedSet.has(download.name)}
-                    disabled={
-                      selectedSet.has(download.name) && selectedSet.size === 1
-                    }
-                    onCheckedChange={(checked) =>
-                      handleFileToggle(download, !!checked)
-                    }
-                  />
-                  <div className='min-w-0 flex-1'>
-                    <span
-                      className='truncate font-medium text-foreground'
-                      title={download.name}>
-                      {download.name}
-                    </span>
-                    <span className='text-muted-foreground text-sm ml-2'>
-                      {formatSize(download.size)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {sortedDownloads.map((download) => {
+                const isOnlySelected =
+                  selectedSet.has(download.name) && selectedSet.size === 1;
+                return (
+                  <label
+                    key={download.name}
+                    htmlFor={`download-${download.name}`}
+                    className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
+                      isOnlySelected
+                        ? "cursor-not-allowed opacity-50"
+                        : "cursor-pointer"
+                    }`}>
+                    <Checkbox
+                      id={`download-${download.name}`}
+                      checked={selectedSet.has(download.name)}
+                      disabled={isOnlySelected}
+                      onCheckedChange={(checked) =>
+                        handleFileToggle(download, !!checked)
+                      }
+                    />
+                    <div className='min-w-0 flex-1'>
+                      <span
+                        className='truncate font-medium text-foreground'
+                        title={download.name}>
+                        {download.name}
+                      </span>
+                      <span className='text-muted-foreground text-sm ml-2'>
+                        {formatSize(download.size)}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
         )}

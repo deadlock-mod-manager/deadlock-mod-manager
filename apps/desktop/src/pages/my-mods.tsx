@@ -373,7 +373,6 @@ const MyMods = () => {
   const {
     unmatchedVpkCount,
     unmatchedVpks,
-    isLoading: isVpkScanLoading,
     isRefetching: isVpkScanRefetching,
     refetch: refetchVpkScan,
   } = useVpkScan();
@@ -603,7 +602,6 @@ const MyMods = () => {
           <VpkScanAlert
             unmatchedVpkCount={unmatchedVpkCount}
             unmatchedVpks={unmatchedVpks}
-            isLoading={isVpkScanLoading}
             isRefetching={isVpkScanRefetching}
             refetch={refetchVpkScan}
           />

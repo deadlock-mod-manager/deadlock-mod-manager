@@ -159,20 +159,18 @@ export const CrosshairCard = ({
               </div>
             </div>
 
-            {crosshair.heroes &&
-              crosshair.heroes.length > 0 &&
-              crosshair.heroes.some((h) => h !== "Default") && (
-                <div className='flex flex-wrap gap-1'>
-                  {crosshair.heroes
-                    .filter((h) => h !== "Default")
-                    .slice(0, 3)
-                    .map((hero) => (
-                      <Badge key={hero} variant='outline' className='text-xs'>
-                        {hero}
-                      </Badge>
-                    ))}
-                </div>
-              )}
+            {crosshair.heroes?.some((h) => h !== "Default") && (
+              <div className='flex flex-wrap gap-1'>
+                {crosshair.heroes
+                  .filter((h) => h !== "Default")
+                  .slice(0, 3)
+                  .map((hero) => (
+                    <Badge key={hero} variant='outline' className='text-xs'>
+                      {hero}
+                    </Badge>
+                  ))}
+              </div>
+            )}
             {displayTags.length > 0 && (
               <div className='flex flex-wrap gap-1'>
                 {displayTags.map((tag) => (

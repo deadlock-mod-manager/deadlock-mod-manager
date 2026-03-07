@@ -12,7 +12,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@deadlock-mods/ui/components/radio-group";
-import { ArrowsClockwise, TrashIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, TrashIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RestoreStrategy } from "@/types/backup";
@@ -84,7 +84,7 @@ export const RestoreBackupDialog = ({
                     <Label
                       htmlFor='merge'
                       className='flex items-center gap-2 font-medium cursor-pointer'>
-                      <ArrowsClockwise className='h-4 w-4 text-primary' />
+                      <ArrowsClockwiseIcon className='h-4 w-4 text-primary' />
                       {t("settings.restoreStrategyMerge")}
                     </Label>
                     <p className='text-muted-foreground text-sm'>

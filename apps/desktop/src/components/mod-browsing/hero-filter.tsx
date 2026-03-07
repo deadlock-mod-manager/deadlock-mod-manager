@@ -37,7 +37,7 @@ const HeroFilter = ({
         .map((mod) => mod.hero)
         .filter((hero): hero is string => Boolean(hero)),
     ),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   // Add "None" option for mods without specific heroes
   const hasNonHeroMods = mods.some((mod) => !mod.hero);
@@ -59,6 +59,16 @@ const HeroFilter = ({
     return hero;
   };
 
+  const getButtonDisplayText = () => {
+    if (selectedHeroes.length === 0) {
+      return t("filters.allHeroes");
+    }
+    if (selectedHeroes.length === 1) {
+      return getHeroDisplayName(selectedHeroes[0]);
+    }
+    return `${selectedHeroes.length} ${t("filters.selected")}`;
+  };
+
   return (
     <div className='flex min-w-0 flex-col gap-2'>
       <Label className='font-medium text-sm'>{t("filters.hero")}</Label>
@@ -68,13 +78,7 @@ const HeroFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {selectedHeroes.length === 0
-                ? t("filters.allHeroes")
-                : selectedHeroes.length === 1
-                  ? getHeroDisplayName(selectedHeroes[0])
-                  : `${selectedHeroes.length} ${t("filters.selected")}`}
-            </span>
+            <span className='truncate'>{getButtonDisplayText()}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>
