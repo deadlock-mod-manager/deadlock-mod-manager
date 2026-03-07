@@ -570,6 +570,8 @@
 		"cl_aggregate_particles" "true"
 		
 		"citadel_enable_vdata_sound_preload" "true"
+
+		"r_particle_allowprerender" "false"
 	}
 
 	Memory
