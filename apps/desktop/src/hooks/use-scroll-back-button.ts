@@ -56,7 +56,7 @@ export const useScrollBackButton = ({
         scrollElement.removeEventListener("scroll", handleScroll);
       }
     };
-  });
+  }, [enabled, threshold, scrollContainerRef, setShowBackButton]);
 
   useEffect(() => {
     return () => {

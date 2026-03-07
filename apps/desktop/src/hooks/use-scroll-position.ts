@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { usePersistedStore } from "@/lib/store";
 
@@ -8,21 +8,27 @@ export const useScrollPosition = (key?: string) => {
   const scrollElementRef = useRef<HTMLElement | null>(null);
   const isRestoringRef = useRef(false);
   const isNavigatingRef = useRef(false);
+  // Bumped in setScrollElement so the scroll-listener effect re-runs when the element changes.
+  const [scrollElementVersion, setScrollElementVersion] = useState(0);
 
-  const {
-    setScrollPosition,
-    getScrollPosition,
-    clearScrollPosition: clearStoreScrollPosition,
-  } = usePersistedStore();
+  // Stored in a ref to avoid Zustand store writes (and re-renders) on every scroll event.
+  const scrollTopRef = useRef(0);
 
-  // Save current scroll position
+  const setScrollPosition = usePersistedStore(
+    (state) => state.setScrollPosition,
+  );
+  const getScrollPosition = usePersistedStore(
+    (state) => state.getScrollPosition,
+  );
+  const clearStoreScrollPosition = usePersistedStore(
+    (state) => state.clearScrollPosition,
+  );
+
+  // Persist the current ref-tracked scroll position into the store.
+  // Only called on unmount, navigation, or visibility change — never mid-scroll.
   const saveScrollPosition = useCallback(() => {
-    if (scrollElementRef.current && !isNavigatingRef.current) {
-      const scrollTop = scrollElementRef.current.scrollTop;
-      // Only save if scroll position is meaningful (not 0 during navigation cleanup)
-      if (scrollTop > 0) {
-        setScrollPosition(scrollKey, scrollTop);
-      }
+    if (!isNavigatingRef.current) {
+      setScrollPosition(scrollKey, scrollTopRef.current);
     }
   }, [scrollKey, setScrollPosition]);
 
@@ -33,7 +39,6 @@ export const useScrollPosition = (key?: string) => {
       if (savedPosition > 0) {
         isRestoringRef.current = true;
         scrollElementRef.current.scrollTop = savedPosition;
-        // Reset the flag after a short delay to allow for smooth scrolling
         setTimeout(() => {
           isRestoringRef.current = false;
         }, 100);
@@ -50,24 +55,22 @@ export const useScrollPosition = (key?: string) => {
   const setScrollElement = useCallback(
     (element: HTMLElement | null) => {
       if (scrollElementRef.current && scrollElementRef.current !== element) {
-        // Save position before changing elements
         saveScrollPosition();
       }
       scrollElementRef.current = element;
+      setScrollElementVersion((v) => v + 1);
     },
     [saveScrollPosition],
   );
 
-  // Save scroll position before navigation
+  // Persist scroll position on visibility change, beforeunload, and unmount
   useEffect(() => {
-    // Save on page visibility change (before navigation)
     const handleVisibilityChange = () => {
       if (document.hidden) {
         saveScrollPosition();
       }
     };
 
-    // Save on beforeunload
     const handleBeforeUnload = () => {
       saveScrollPosition();
     };
@@ -75,38 +78,24 @@ export const useScrollPosition = (key?: string) => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Save scroll position when component unmounts or route changes
     return () => {
-      // Mark as navigating to prevent cleanup overwrites
-      isNavigatingRef.current = true;
       saveScrollPosition();
+      isNavigatingRef.current = true;
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [saveScrollPosition]);
 
-  // Save scroll position periodically while scrolling
+  // Attaches the scroll listener; re-runs via scrollElementVersion when the element changes.
   useEffect(() => {
-    if (!scrollElementRef.current) {
+    const element = scrollElementRef.current;
+    if (!element) {
       return;
     }
 
-    const element = scrollElementRef.current;
-    let timeoutId: NodeJS.Timeout;
-
     const handleScroll = () => {
-      // Save immediately on scroll (not debounced) to ensure we don't lose position
       if (!isRestoringRef.current && scrollElementRef.current) {
-        const scrollTop = scrollElementRef.current.scrollTop;
-        setScrollPosition(scrollKey, scrollTop);
-
-        // Also debounced save as backup
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          if (!isRestoringRef.current) {
-            saveScrollPosition();
-          }
-        }, 150);
+        scrollTopRef.current = scrollElementRef.current.scrollTop;
       }
     };
 
@@ -114,16 +103,11 @@ export const useScrollPosition = (key?: string) => {
 
     return () => {
       element.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeoutId);
     };
-  }, [saveScrollPosition, scrollKey, setScrollPosition]);
+  }, [scrollElementVersion]);
 
-  // Get the current saved scroll position
-  const getSavedScrollPosition = useCallback(() => {
-    return getScrollPosition(scrollKey);
-  }, [scrollKey, getScrollPosition]);
-
-  const currentScrollY = getScrollPosition(scrollKey);
+  // Read the initial scroll position from the store once on mount
+  const initialScrollY = useRef(getScrollPosition(scrollKey));
 
   // Reset navigation flag when component mounts (new page load)
   useEffect(() => {
@@ -135,7 +119,6 @@ export const useScrollPosition = (key?: string) => {
     saveScrollPosition,
     restoreScrollPosition,
     clearScrollPosition,
-    getSavedScrollPosition,
-    scrollY: currentScrollY, // For direct access like TanStack Router pattern
+    scrollY: initialScrollY.current,
   };
 };

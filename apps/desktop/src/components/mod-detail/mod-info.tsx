@@ -26,7 +26,7 @@ interface ModInfoProps {
 export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
   const { t } = useTranslation();
   const showHeader = hasHero ? false : !mod.isAudio;
-  const { localMods } = usePersistedStore();
+  const localMods = usePersistedStore((state) => state.localMods);
   const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
 
   return (
