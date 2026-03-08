@@ -11,9 +11,10 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+const LOCALES_DIR = join(process.cwd(), "apps", "desktop", "src", "locales");
 const DESKTOP_PACKAGE_JSON = join(
   process.cwd(),
   "apps",
@@ -283,6 +284,55 @@ function updateWhatsNewTranslation(
 }
 
 /**
+ * Propagate What's New content from English to all other locale files
+ */
+function propagateWhatsNewToLocales(version: string): void {
+  const enTranslation: TranslationFile = JSON.parse(
+    readFileSync(EN_TRANSLATION_PATH, "utf-8"),
+  );
+  const content = enTranslation.whatsNew?.versions?.[version];
+  if (!content) {
+    console.warn(
+      `No What's New content for ${version} in English, skipping propagation`,
+    );
+    return;
+  }
+
+  const localeDirs = readdirSync(LOCALES_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name !== "en")
+    .map((d) => d.name);
+
+  for (const locale of localeDirs) {
+    const localePath = join(LOCALES_DIR, locale, "translation.json");
+    if (!existsSync(localePath)) continue;
+
+    const translation: TranslationFile = JSON.parse(
+      readFileSync(localePath, "utf-8"),
+    );
+
+    if (translation.whatsNew?.versions?.[version]) {
+      continue;
+    }
+
+    if (!translation.whatsNew) {
+      translation.whatsNew = { versions: {} } as TranslationFile["whatsNew"];
+    }
+    if (!translation.whatsNew.versions) {
+      translation.whatsNew.versions = {};
+    }
+
+    const existingVersions = translation.whatsNew.versions;
+    translation.whatsNew.versions = {
+      [version]: content,
+      ...existingVersions,
+    };
+
+    writeFileSync(localePath, `${JSON.stringify(translation, null, 2)}\n`);
+    console.log(`Propagated What's New ${version} to ${locale}`);
+  }
+}
+
+/**
  * Get recent git commits since last tag
  */
 function getRecentCommits(): string[] {
@@ -352,9 +402,12 @@ function main(): void {
       }
 
       if (dryRun) {
-        console.log(`\n[DRY RUN] Would update translation file`);
+        console.log(
+          `\n[DRY RUN] Would update translation file and propagate to locales`,
+        );
       } else {
         updateWhatsNewTranslation(packageVersion, changelogContent);
+        propagateWhatsNewToLocales(packageVersion);
       }
     } else {
       console.log(`No changelog content found for version ${packageVersion}`);
@@ -381,9 +434,12 @@ function main(): void {
         }
 
         if (dryRun) {
-          console.log(`\n[DRY RUN] Would update translation file`);
+          console.log(
+            `\n[DRY RUN] Would update translation file and propagate to locales`,
+          );
         } else {
           updateWhatsNewTranslation(packageVersion, content);
+          propagateWhatsNewToLocales(packageVersion);
         }
       } else {
         console.log(`No commits found to generate What's New content`);

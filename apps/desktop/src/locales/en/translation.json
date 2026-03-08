@@ -718,6 +718,22 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.16.0": {
+        "title": "Bug Fixes, Developer Tools & More",
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ]
+      },
       "0.15.0": {
         "title": "Mod Updates, OTA Updates & Bug Fixes",
         "features": [
@@ -1054,7 +1070,6 @@
       "startHour": "Start hour (0–23)",
       "endHour": "End hour (0–23)"
     },
-
     "background": {
       "title": "Background",
       "description": "Customize application backgrounds.",

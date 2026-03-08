@@ -77,7 +77,9 @@ const useUninstall = () => {
                   ? purgeError
                   : new Error(String(purgeError)),
               )
-              .warn("purge_mod failed for installed mod, removing from store anyway");
+              .warn(
+                "purge_mod failed for installed mod, removing from store anyway",
+              );
           }
         } else {
           await invoke("uninstall_mod", {
@@ -108,7 +110,9 @@ const useUninstall = () => {
                 ? purgeError
                 : new Error(String(purgeError)),
             )
-            .warn("purge_mod failed for non-installed mod, removing from store anyway");
+            .warn(
+              "purge_mod failed for non-installed mod, removing from store anyway",
+            );
         }
       }
 

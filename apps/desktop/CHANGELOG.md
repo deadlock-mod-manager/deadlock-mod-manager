@@ -1,5 +1,28 @@
 # desktop
 
+## 0.16.0
+
+### Minor Changes
+
+- 6b97042: Replace AppImage with Flatpak for Linux distribution. The `.deb` and `.rpm` targets are retained.
+- 8a71272: Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA
+- 45c90ca: Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage
+
+### Patch Changes
+
+- ab3984c: Improve Flatpak packaging: bump GNOME runtime to 49, enrich metainfo with developer info and input controls, ship standalone .desktop file
+- a94cf40: Fix local mod installs getting stuck with invalid state
+- af92a10: Throttle app update checker to prevent excessive requests to the update server
+- 87fa249: Fix false update prompt right after mod installation
+- 6b97042: Show download progress percentage in multi-file download dialog
+- e591195: Update OTA plugin version
+- 6b97042: Add volume slider in bottom bar for quick audio level adjustment
+- e7342a2: Throttle React Query usage: shared constants, remove unused OTA hook, and sensible defaults to avoid rate-limiting and excessive refetches
+- 87fa249: Fix wrong mod file deletion after reordering
+- 6b97042: Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides
+- 87fa249: Fix empty Mod Load Order dialog on first open
+- a94cf40: Replace console.log with structured logging in store migrations
+
 ## 0.15.0
 
 ### Minor Changes
