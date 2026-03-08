@@ -37,7 +37,7 @@
     </ul>
   </description>
 
-  <launchable type="desktop-id">deadlock-modmanager.desktop</launchable>
+  <launchable type="desktop-id">dev.stormix.deadlock-mod-manager.desktop</launchable>
 
   <url type="homepage">https://deadlockmods.app</url>
   <url type="bugtracker">https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues</url>
@@ -51,7 +51,7 @@
   </screenshots>
 
   <provides>
-    <binary>deadlock-modmanager</binary>
+    <binary>deadlock-mod-manager</binary>
   </provides>
 
   <releases>
