@@ -41,7 +41,7 @@ export type UseInstallWithCollectionReturn = {
 };
 
 const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFileTree, setCurrentFileTree] = useState<ModFileTree | null>(
     null,

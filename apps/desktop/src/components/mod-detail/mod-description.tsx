@@ -17,7 +17,7 @@ export const ModDescription = ({ description }: ModDescriptionProps) => {
   }
 
   return (
-    <Card>
+    <Card className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
         <CardTitle>Description</CardTitle>
       </CardHeader>

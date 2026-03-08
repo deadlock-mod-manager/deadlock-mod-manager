@@ -9,12 +9,12 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const useUninstall = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const {
-    removeMod,
-    setModStatus,
-    setModEnabledInCurrentProfile,
-    getActiveProfile,
-  } = usePersistedStore();
+  const removeMod = usePersistedStore((state) => state.removeMod);
+  const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const setModEnabledInCurrentProfile = usePersistedStore(
+    (state) => state.setModEnabledInCurrentProfile,
+  );
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {

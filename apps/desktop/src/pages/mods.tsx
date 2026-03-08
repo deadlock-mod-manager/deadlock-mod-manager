@@ -1,4 +1,3 @@
-import type { ModDto } from "@deadlock-mods/shared";
 import {
   Empty,
   EmptyDescription,
@@ -10,7 +9,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useDeferredValue, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -34,7 +33,11 @@ const GetModsData = () => {
     staleTime: STALE_TIME_API,
     retry: 3,
   });
-  const { nsfwSettings, modsFilters, updateModsFilters } = usePersistedStore();
+  const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
+  const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const updateModsFilters = usePersistedStore(
+    (state) => state.updateModsFilters,
+  );
   const {
     selectedCategories,
     selectedHeroes,
@@ -43,88 +46,96 @@ const GetModsData = () => {
     hideOutdated,
     filterMode,
   } = modsFilters;
+  // Defer the mod list so background refetches (staleTime expiry) don't
+  // block the UI while Fuse.js rebuilds its index on 2600+ items.
+  const deferredData = useDeferredValue(data ?? []);
+
   const { results, query, setQuery, sortType, setSortType } = useSearch({
-    data: data ?? [],
+    data: deferredData,
     keys: ["name", "description", "author"],
   });
 
   const { setScrollElement, scrollY } = useScrollPosition("/mods");
 
-  let filteredResults = results;
+  const filteredResults = useMemo(() => {
+    let filtered = results;
 
-  // Filter by categories
-  if (selectedCategories.length > 0) {
-    filteredResults = filteredResults.filter((mod) => {
-      let matchesCategory = false;
+    // Filter by categories
+    const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
 
-      // Check if mod category is in selected categories
-      if (selectedCategories.includes(mod.category)) {
-        matchesCategory = true;
-      }
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((mod) => {
+        let matchesCategory = selectedCategories.includes(mod.category);
 
-      // If OTHER_MISC is selected, include mods with non-predefined categories
-      if (
-        !matchesCategory &&
-        selectedCategories.includes(ModCategory.OTHER_MISC)
-      ) {
-        const predefinedCategories = Object.values(ModCategory);
-        matchesCategory = !predefinedCategories.includes(
-          mod.category as ModCategory,
-        );
-      }
+        if (
+          !matchesCategory &&
+          selectedCategories.includes(ModCategory.OTHER_MISC)
+        ) {
+          matchesCategory = !predefinedCategorySet.has(mod.category);
+        }
 
-      // Return based on filter mode
-      return filterMode === "include" ? matchesCategory : !matchesCategory;
-    });
-  }
+        return filterMode === "include" ? matchesCategory : !matchesCategory;
+      });
+    }
 
-  if (selectedHeroes.length > 0) {
-    filteredResults = filteredResults.filter((mod) => {
-      let matchesHero = false;
+    if (selectedHeroes.length > 0) {
+      filtered = filtered.filter((mod) => {
+        let matchesHero = false;
 
-      if (selectedHeroes.includes("None")) {
-        matchesHero =
-          !mod.hero || (mod.hero !== null && selectedHeroes.includes(mod.hero));
-      } else {
-        matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
-      }
+        if (selectedHeroes.includes("None")) {
+          matchesHero =
+            !mod.hero ||
+            (mod.hero !== null && selectedHeroes.includes(mod.hero));
+        } else {
+          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
+        }
 
-      // Return based on filter mode
-      return filterMode === "include" ? matchesHero : !matchesHero;
-    });
-  }
+        return filterMode === "include" ? matchesHero : !matchesHero;
+      });
+    }
 
-  if (nsfwSettings.hideNSFW) {
-    filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
-  }
+    if (nsfwSettings.hideNSFW || hideNSFW) {
+      filtered = filtered.filter((mod) => !mod.isNSFW);
+    }
 
-  if (hideNSFW) {
-    filteredResults = filteredResults.filter((mod) => !mod.isNSFW);
-  }
+    if (hideAudio) {
+      filtered = filtered.filter((mod) => !mod.isAudio);
+    }
 
-  if (hideAudio) {
-    filteredResults = filteredResults.filter((mod) => !mod.isAudio);
-  }
+    if (hideOutdated) {
+      filtered = filtered.filter(
+        (mod) => !mod.isObsolete && !isModOutdated(mod),
+      );
+    }
 
-  if (hideOutdated) {
-    filteredResults = filteredResults.filter(
-      (mod) => !mod.isObsolete && !isModOutdated(mod),
-    );
-  }
+    return filtered;
+  }, [
+    results,
+    selectedCategories,
+    selectedHeroes,
+    filterMode,
+    nsfwSettings.hideNSFW,
+    hideNSFW,
+    hideAudio,
+    hideOutdated,
+  ]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const columnsPerRow = useResponsiveColumns();
 
-  const modRows: ModDto[][] = [];
-  for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
-    modRows.push(filteredResults.slice(i, i + columnsPerRow));
-  }
+  const modRows = useMemo(() => {
+    const rows: (typeof filteredResults)[] = [];
+    for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
+      rows.push(filteredResults.slice(i, i + columnsPerRow));
+    }
+    return rows;
+  }, [filteredResults, columnsPerRow]);
 
   const rowVirtualizer = useVirtualizer({
     count: modRows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 320 + 20,
-    overscan: 2,
+    overscan: 3,
     initialOffset: scrollY,
   });
 
@@ -144,7 +155,7 @@ const GetModsData = () => {
     <div className='flex flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
-        mods={data ?? []}
+        mods={deferredData}
         onCategoriesChange={(selectedCategories) =>
           updateModsFilters({ selectedCategories })
         }
@@ -197,13 +208,13 @@ const GetModsData = () => {
         </Empty>
       ) : (
         <div
-          className='h-[calc(100vh-280px)] overflow-auto'
+          className='h-[calc(100vh-280px)] overflow-auto will-change-transform'
           ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
           // will-change: transform forces WebKit to allocate a dedicated compositing
           // layer for this scroll container. Without it, webkit2gtk on Linux doesn't
           // properly track damage regions for the absolutely-positioned virtualizer
           // children (position:absolute + translateY), causing blank tiles on scroll.
-          style={{ willChange: "transform" }}>
+        >
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
@@ -220,6 +231,9 @@ const GetModsData = () => {
                   width: "100%",
                   height: `${virtualRow.size}px`,
                   transform: `translateY(${virtualRow.start}px)`,
+                  contain: "strict",
+                  contentVisibility: "auto",
+                  containIntrinsicSize: `auto ${virtualRow.size}px`,
                 }}>
                 <div className='grid grid-cols-1 gap-4 px-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                   {modRows[virtualRow.index]?.map((mod) => (
