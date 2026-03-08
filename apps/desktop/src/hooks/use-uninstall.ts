@@ -63,31 +63,53 @@ const useUninstall = () => {
           })
           .info("Uninstalling mod");
         if (remove) {
-          await invoke("purge_mod", {
-            modId: mod.remoteId,
-            vpks: mod.installedVpks ?? [],
-            profileFolder,
-          });
+          try {
+            await invoke("purge_mod", {
+              modId: mod.remoteId,
+              vpks: mod.installedVpks ?? [],
+              profileFolder,
+            });
+          } catch (purgeError) {
+            logger
+              .withMetadata({ modId: mod.remoteId })
+              .withError(
+                purgeError instanceof Error
+                  ? purgeError
+                  : new Error(String(purgeError)),
+              )
+              .warn("purge_mod failed for installed mod, removing from store anyway");
+          }
         } else {
           await invoke("uninstall_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
           });
-        }
-        setModStatus(mod.remoteId, ModStatus.Downloaded);
-        if (!remove) {
+          setModStatus(mod.remoteId, ModStatus.Downloaded);
           setModEnabledInCurrentProfile(mod.remoteId, false);
         }
       } else if (remove) {
         logger
           .withMetadata({ modId: mod.remoteId, profileFolder })
           .info("Purging disabled mod");
-        await invoke("purge_mod", {
-          modId: mod.remoteId,
-          vpks: [],
-          profileFolder,
-        });
+        try {
+          await invoke("purge_mod", {
+            modId: mod.remoteId,
+            vpks: [],
+            profileFolder,
+          });
+        } catch (purgeError) {
+          // Log but don't rethrow — mod is not installed so there are no game
+          // files to worry about. We still want to remove it from the store though.
+          logger
+            .withMetadata({ modId: mod.remoteId })
+            .withError(
+              purgeError instanceof Error
+                ? purgeError
+                : new Error(String(purgeError)),
+            )
+            .warn("purge_mod failed for non-installed mod, removing from store anyway");
+        }
       }
 
       if (remove) {
