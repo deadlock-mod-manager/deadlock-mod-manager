@@ -1,0 +1,9 @@
+{
+  "extends": "@deadlock-mods/typescript-config/base.json",
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+  ]
+}

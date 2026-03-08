@@ -18,6 +18,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
 COPY packages ./packages
 COPY tools ./tools
+COPY apps/docs/content ./apps/docs/content
 COPY apps/bot ./apps/bot
 
 RUN pnpm install
