@@ -8,6 +8,38 @@ import { STALE_TIME_API } from "@/lib/query-constants";
 import { DashboardCard } from "./dashboard-card";
 import { PopularModItem } from "./popular-mod-item";
 
+const PopularModsCardSkeleton = () => (
+  <>
+    {Array.from({ length: 5 }, (_, i) => (
+      <div key={i} className='flex items-start gap-3'>
+        <Skeleton className='h-6 w-6 rounded-full' />
+        <Skeleton className='h-12 w-12 rounded-md' />
+        <div className='flex-1 space-y-2'>
+          <Skeleton className='h-4 w-3/4' />
+          <Skeleton className='h-3 w-1/2' />
+        </div>
+      </div>
+    ))}
+  </>
+);
+
+const PopularModsEmptyState = () => {
+  const { t } = useTranslation();
+  return (
+    <p className='text-center text-muted-foreground text-sm'>
+      {t("dashboard.noModsAvailable")}
+    </p>
+  );
+};
+
+const PopularModsList = ({ mods }: { mods: ModDto[] }) => (
+  <>
+    {mods.map((mod, index) => (
+      <PopularModItem key={mod.id} mod={mod} index={index} />
+    ))}
+  </>
+);
+
 export const PopularModsCard = () => {
   const { t } = useTranslation();
   const { data: mods, isPending } = useQuery({
@@ -21,38 +53,19 @@ export const PopularModsCard = () => {
     ?.sort((a, b) => b.downloadCount - a.downloadCount)
     .slice(0, 5);
 
-  const renderContent = () => {
-    if (isPending) {
-      return Array.from({ length: 5 }).map(() => (
-        <div key={crypto.randomUUID()} className='flex items-start gap-3'>
-          <Skeleton className='h-6 w-6 rounded-full' />
-          <Skeleton className='h-12 w-12 rounded-md' />
-          <div className='flex-1 space-y-2'>
-            <Skeleton className='h-4 w-3/4' />
-            <Skeleton className='h-3 w-1/2' />
-          </div>
-        </div>
-      ));
-    }
-
-    if (popularMods && popularMods.length > 0) {
-      return popularMods.map((mod: ModDto, index: number) => (
-        <PopularModItem key={mod.id} mod={mod} index={index} />
-      ));
-    }
-
-    return (
-      <p className='text-center text-muted-foreground text-sm'>
-        {t("dashboard.noModsAvailable")}
-      </p>
-    );
-  };
-
   return (
     <DashboardCard
       icon={<FireIcon className='h-5 w-5 text-orange-500' weight='duotone' />}
       title={t("dashboard.popularMods")}>
-      <div className='space-y-3'>{renderContent()}</div>
+      <div className='space-y-3'>
+        {isPending ? (
+          <PopularModsCardSkeleton />
+        ) : popularMods && popularMods.length > 0 ? (
+          <PopularModsList mods={popularMods} />
+        ) : (
+          <PopularModsEmptyState />
+        )}
+      </div>
     </DashboardCard>
   );
 };

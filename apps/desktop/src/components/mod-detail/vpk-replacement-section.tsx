@@ -175,6 +175,17 @@ export const VpkReplacementSection = ({
     return null;
   }
 
+  const helperText =
+    hasMultipleVpks && selectedVpks.size > 0
+      ? t("modDetail.vpkReplacement.selectToReplace", {
+          count: selectedVpks.size,
+        })
+      : hasMultipleVpks
+        ? t("modDetail.vpkReplacement.selectToReplace", {
+            count: currentVpks.length,
+          })
+        : t("modDetail.vpkReplacement.selectFiles");
+
   return (
     <Card>
       <button
@@ -263,25 +274,7 @@ export const VpkReplacementSection = ({
             <p className='mb-2 font-medium'>
               {t("modDetail.vpkReplacement.dragAndDrop")}
             </p>
-            {(() => {
-              let helperText: string;
-              if (hasMultipleVpks && selectedVpks.size > 0) {
-                helperText = t("modDetail.vpkReplacement.selectToReplace", {
-                  count: selectedVpks.size,
-                });
-              } else if (hasMultipleVpks) {
-                helperText = t("modDetail.vpkReplacement.selectToReplace", {
-                  count: currentVpks.length,
-                });
-              } else {
-                helperText = t("modDetail.vpkReplacement.selectFiles");
-              }
-              return (
-                <p className='mb-4 text-muted-foreground text-sm'>
-                  {helperText}
-                </p>
-              );
-            })()}
+            <p className='mb-4 text-muted-foreground text-sm'>{helperText}</p>
             <Button
               onClick={handleFileSelect}
               disabled={isReplacing}

@@ -1,4 +1,4 @@
-import { Button, buttonVariants } from "@deadlock-mods/ui/components/button";
+import { buttonVariants } from "@deadlock-mods/ui/components/button";
 import {
   DialogClose,
   DialogContent,
@@ -8,9 +8,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Separator } from "@deadlock-mods/ui/components/separator";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
-  CloudArrowDownIcon,
   DiscordLogoIcon,
   GithubLogoIcon,
   RedditLogoIcon,
@@ -19,7 +17,6 @@ import {
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
-import useUpdateManager from "@/hooks/use-update-manager";
 import {
   APP_NAME,
   DISCORD_URL,
@@ -32,7 +29,6 @@ import Logo from "./logo";
 export const AboutDialog = () => {
   const { t } = useTranslation();
   const { data } = useAbout();
-  const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   if (!data) {
     return null;
   }
@@ -71,10 +67,7 @@ export const AboutDialog = () => {
       <DialogDescription asChild>
         <div className='flex flex-col items-center gap-4 text-center text-foreground'>
           <div>{t("about.description")}</div>
-          <div className='text-muted-foreground text-xs'>
-            {t("about.thirdPartyDisclaimerShort")}
-          </div>
-          <Separator className='w-8' />
+
           <div className='text-muted-foreground text-xs'>
             Project created and maintained by{" "}
             <button
@@ -84,12 +77,16 @@ export const AboutDialog = () => {
               Stormix
             </button>
           </div>
+          <Separator className='w-8' />
+          <div className='text-muted-foreground text-xs'>
+            {t("about.thirdPartyDisclaimerShort")}
+          </div>
           <div className='font-bold text-xs'>{t("about.copyright")}</div>
         </div>
       </DialogDescription>
 
       <DialogFooter className='flex flex-row items-center justify-between gap-4 border-t pt-2 text-foreground'>
-        <div className='flex flex-row gap-2'>
+        <div className='flex flex-row items-center gap-2'>
           <button
             type='button'
             aria-label='GitHub'
@@ -120,28 +117,6 @@ export const AboutDialog = () => {
           </button>
         </div>
 
-        <div className='flex flex-row gap-2'>
-          <Button
-            className='h-7 gap-1'
-            onClick={async () => {
-              try {
-                const update = await checkForUpdates();
-                if (update) {
-                  toast.loading(t("about.downloadingUpdate"));
-                  await updateAndRelaunch();
-                } else {
-                  toast.info(t("about.latestVersion"));
-                }
-              } catch (e) {
-                console.error("Failed to check for updates:", e);
-                toast.error(t("about.updateFailed"));
-              }
-            }}
-            type='button'
-            variant='outline'>
-            <CloudArrowDownIcon /> {t("about.checkForUpdates")}
-          </Button>
-        </div>
         <DialogClose
           className={buttonVariants({
             variant: "ghost",

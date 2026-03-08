@@ -60,6 +60,13 @@ const CategoryFilter = ({
     onCategoriesChange(newSelectedCategories);
   };
 
+  const categoryButtonLabel =
+    selectedCategories.length === 0
+      ? t("filters.allCategories")
+      : selectedCategories.length === 1
+        ? selectedCategories[0]
+        : `${selectedCategories.length} ${t("filters.selected")}`;
+
   return (
     <div className='flex min-w-0 flex-col gap-2'>
       <Label className='font-medium text-sm'>{t("filters.category")}</Label>
@@ -69,17 +76,7 @@ const CategoryFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {(() => {
-                if (selectedCategories.length === 0) {
-                  return t("filters.allCategories");
-                }
-                if (selectedCategories.length === 1) {
-                  return selectedCategories[0];
-                }
-                return `${selectedCategories.length} ${t("filters.selected")}`;
-              })()}
-            </span>
+            <span className='truncate'>{categoryButtonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>

@@ -77,6 +77,13 @@ const CrosshairHeroFilter = ({
     return hero;
   };
 
+  const heroButtonLabel =
+    selectedHeroes.length === 0
+      ? t("filters.allHeroes")
+      : selectedHeroes.length === 1
+        ? getHeroDisplayName(selectedHeroes[0])
+        : `${selectedHeroes.length} ${t("filters.selected")}`;
+
   return (
     <div className='flex min-w-0 flex-col gap-2'>
       <Label className='font-medium text-sm'>{t("filters.hero")}</Label>
@@ -86,17 +93,7 @@ const CrosshairHeroFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {(() => {
-                if (selectedHeroes.length === 0) {
-                  return t("filters.allHeroes");
-                }
-                if (selectedHeroes.length === 1) {
-                  return getHeroDisplayName(selectedHeroes[0]);
-                }
-                return `${selectedHeroes.length} ${t("filters.selected")}`;
-              })()}
-            </span>
+            <span className='truncate'>{heroButtonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>
@@ -150,6 +147,13 @@ const CrosshairTagFilter = ({
     onTagsChange(newSelectedTags);
   };
 
+  const tagButtonLabel =
+    selectedTags.length === 0
+      ? t("crosshairs.filters.allTags")
+      : selectedTags.length === 1
+        ? selectedTags[0]
+        : `${selectedTags.length} ${t("filters.selected")}`;
+
   return (
     <div className='flex min-w-0 flex-col gap-2'>
       <Label className='font-medium text-sm'>
@@ -161,17 +165,7 @@ const CrosshairTagFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {(() => {
-                if (selectedTags.length === 0) {
-                  return t("crosshairs.filters.allTags");
-                }
-                if (selectedTags.length === 1) {
-                  return selectedTags[0];
-                }
-                return `${selectedTags.length} ${t("filters.selected")}`;
-              })()}
-            </span>
+            <span className='truncate'>{tagButtonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>

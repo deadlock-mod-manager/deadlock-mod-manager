@@ -53,26 +53,26 @@ import { CrosshairImportDialog } from "./crosshair-import-dialog";
 
 const ALL_HEROES = ["Default", ...Object.values(DeadlockHeroes)];
 
-function getHeroButtonLabel(
+const getHeroButtonLabel = (
   values: string[],
   selectLabel: string,
   selectedLabel: string,
-): string {
+): string => {
   if (values.length === 0) return selectLabel;
   if (values.length === 1) return values[0] ?? selectLabel;
   return `${values.length} ${selectedLabel}`;
-}
+};
 
-function toggleHeroSelection(
+const toggleHeroSelection = (
   currentValues: string[],
   hero: string,
   isSelected: boolean,
-): string[] {
+): string[] => {
   if (isSelected) {
     return currentValues.filter((h) => h !== hero);
   }
   return [...currentValues.filter((h) => h !== "Default"), hero];
-}
+};
 
 const crosshairFormSchema = z.object({
   name: z
