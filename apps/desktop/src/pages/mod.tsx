@@ -173,8 +173,7 @@ const Mod = () => {
     <ErrorBoundary>
       <div
         ref={scrollContainerRef}
-        className='w-full overflow-y-auto overflow-x-hidden px-4'
-        style={{ willChange: "transform" }}>
+        className='w-full overflow-y-auto overflow-x-hidden px-4 will-change-transform'>
         <div className='container mx-auto max-w-6xl space-y-6 py-6'>
           <div className='mb-4 flex items-center justify-between'>
             <Button
@@ -206,9 +205,7 @@ const Mod = () => {
             </div>
           )}
 
-          <Card
-            className='overflow-hidden space-y-4 shadow-none'
-            style={{ contain: "layout style paint" }}>
+          <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
             <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>

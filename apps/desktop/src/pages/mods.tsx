@@ -67,7 +67,10 @@ const GetModsData = () => {
       filtered = filtered.filter((mod) => {
         let matchesCategory = selectedCategories.includes(mod.category);
 
-        if (!matchesCategory && selectedCategories.includes(ModCategory.OTHER_MISC)) {
+        if (
+          !matchesCategory &&
+          selectedCategories.includes(ModCategory.OTHER_MISC)
+        ) {
           matchesCategory = !predefinedCategorySet.has(mod.category);
         }
 
@@ -205,13 +208,13 @@ const GetModsData = () => {
         </Empty>
       ) : (
         <div
-          className='h-[calc(100vh-280px)] overflow-auto'
+          className='h-[calc(100vh-280px)] overflow-auto will-change-transform'
           ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
           // will-change: transform forces WebKit to allocate a dedicated compositing
           // layer for this scroll container. Without it, webkit2gtk on Linux doesn't
           // properly track damage regions for the absolutely-positioned virtualizer
           // children (position:absolute + translateY), causing blank tiles on scroll.
-          style={{ willChange: "transform" }}>
+        >
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,

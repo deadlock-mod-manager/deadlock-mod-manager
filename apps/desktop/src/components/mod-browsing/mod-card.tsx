@@ -46,10 +46,7 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
 
   return (
     <Card
-      className='cursor-pointer shadow-none border'
-      style={{
-        contain: "layout style paint",
-      }}
+      className='cursor-pointer shadow-none border [contain:layout_style_paint]'
       onClick={(e) => {
         e.stopPropagation();
         navigate(`/mods/${mod.remoteId}`);

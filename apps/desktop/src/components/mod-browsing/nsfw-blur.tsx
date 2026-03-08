@@ -2,6 +2,7 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Eye, EyeOff } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 type NSFWBlurProps = {
   children: React.ReactNode;
@@ -45,15 +46,8 @@ export const NSFWBlur = ({
           the blur is rasterised once and cached, not recalculated every frame.
           contain:strict prevents the blur from invalidating parent layout. */}
       <div
-        style={
-          isVisible
-            ? undefined
-            : {
-                filter: `blur(${blurStrength}px)`,
-                willChange: "filter",
-                contain: "strict",
-              }
-        }>
+        className={cn(!isVisible && "will-change-[filter] [contain:strict]")}
+        style={!isVisible ? { filter: `blur(${blurStrength}px)` } : undefined}>
         {children}
       </div>
 

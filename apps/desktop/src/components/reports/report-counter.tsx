@@ -94,7 +94,7 @@ export const ReportCounter = ({
   }
 
   return (
-    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
+    <Card className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2 text-xl'>
           <Flag className='h-4 w-4' />

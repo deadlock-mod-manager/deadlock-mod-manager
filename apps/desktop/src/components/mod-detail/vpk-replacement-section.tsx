@@ -183,7 +183,7 @@ export const VpkReplacementSection = ({
   }
 
   return (
-    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
+    <Card className='shadow-none [contain:layout_style_paint]'>
       <button
         type='button'
         className='w-full cursor-pointer border-border p-4 text-left transition-colors hover:bg-muted/50'

@@ -27,7 +27,7 @@ export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
   }
 
   return (
-    <Card className='shadow-none' style={{ contain: "layout style paint" }}>
+    <Card className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           {t("ui.files")}

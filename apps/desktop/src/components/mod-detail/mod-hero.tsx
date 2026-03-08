@@ -60,14 +60,11 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
           alt={`${mod.name} hero`}
           className={cn(
             "h-full w-full object-cover opacity-70",
-            shouldBlur && "blur-lg",
+            shouldBlur && "blur-lg will-change-[filter] [contain:strict]",
           )}
           decoding='async'
           height='256'
           src={mod.images[0]}
-          style={
-            shouldBlur ? { willChange: "filter", contain: "strict" } : undefined
-          }
           width='1200'
         />
         {!shouldBlur && (
