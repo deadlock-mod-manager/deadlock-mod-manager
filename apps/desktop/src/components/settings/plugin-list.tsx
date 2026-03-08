@@ -8,7 +8,7 @@ import {
   UserIcon,
 } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
@@ -26,45 +26,42 @@ export const PluginList = () => {
     new Set(),
   );
 
-  // Create a map of feature flags for quick lookup
-  const featureFlagMap = new Map<string, boolean>();
-  if (featureFlags && Array.isArray(featureFlags)) {
-    for (const flag of featureFlags) {
-      featureFlagMap.set(flag.name, flag.enabled as boolean);
+  const featureFlagMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    if (featureFlags && Array.isArray(featureFlags)) {
+      for (const flag of featureFlags) {
+        map.set(flag.name, flag.enabled as boolean);
+      }
     }
-  }
+    return map;
+  }, [featureFlags]);
 
-  // Since plugins are already filtered by feature flags, we only need to check local configuration
-  const isPluginEnabledLocally = (pluginId: string) => {
-    return isPluginEnabled(pluginId);
-  };
+  const visiblePlugins = useMemo(
+    () =>
+      plugins.filter((plugin) => {
+        const flagName = `plugin-${plugin.manifest.id}`;
+        return featureFlagMap.get(flagName) ?? true;
+      }),
+    [plugins, featureFlagMap],
+  );
 
-  // Filter plugins based on feature flags
-  const visiblePlugins = plugins.filter((plugin) => {
-    const flagName = `plugin-${plugin.manifest.id}`;
-    const flagEnabled = featureFlagMap.get(flagName) ?? true;
-    return flagEnabled;
-  });
+  const toggleExpanded = useCallback((pluginId: string) => {
+    setExpandedPlugins((prev) => {
+      const next = new Set(prev);
+      if (next.has(pluginId)) {
+        next.delete(pluginId);
+      } else {
+        next.add(pluginId);
+      }
+      return next;
+    });
+  }, []);
 
   if (visiblePlugins.length === 0) {
     return (
-      <div className='text-muted-foreground text-sm'>
-        {t("common.none") ?? ""}
-      </div>
+      <div className='text-muted-foreground text-sm'>{t("common.none")}</div>
     );
   }
-
-  const toggleExpanded = (pluginId: string) => {
-    setExpandedPlugins((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(pluginId)) {
-        newSet.delete(pluginId);
-      } else {
-        newSet.add(pluginId);
-      }
-      return newSet;
-    });
-  };
 
   return (
     <div className='rounded-md border'>
@@ -74,8 +71,18 @@ export const PluginList = () => {
           return (
             <li key={p.manifest.id}>
               <div
-                className='flex items-center gap-4 p-3 cursor-pointer hover:bg-accent/50 transition-colors'
-                onClick={() => toggleExpanded(p.manifest.id)}>
+                role='button'
+                tabIndex={0}
+                aria-expanded={isExpanded}
+                aria-controls={`plugin-detail-${p.manifest.id}`}
+                className='flex w-full items-center gap-4 p-3 cursor-pointer hover:bg-accent/50 transition-colors text-left'
+                onClick={() => toggleExpanded(p.manifest.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleExpanded(p.manifest.id);
+                  }
+                }}>
                 <div className='flex items-center gap-2'>
                   {isExpanded ? (
                     <ChevronDownIcon className='h-4 w-4 text-muted-foreground' />
@@ -109,7 +116,7 @@ export const PluginList = () => {
                 </div>
                 <div className='ml-4 flex items-center gap-2 flex-shrink-0'>
                   <Switch
-                    checked={isPluginEnabledLocally(p.manifest.id)}
+                    checked={isPluginEnabled(p.manifest.id)}
                     onCheckedChange={() => {
                       togglePlugin(p.manifest.id);
                     }}
@@ -130,7 +137,9 @@ export const PluginList = () => {
               </div>
 
               {isExpanded && (
-                <div className='px-3 pb-3 border-t bg-muted/20'>
+                <div
+                  id={`plugin-detail-${p.manifest.id}`}
+                  className='px-3 pb-3 border-t bg-muted/20'>
                   <div className='flex flex-col gap-3 mt-3 ml-6'>
                     <div className='text-sm text-muted-foreground leading-relaxed'>
                       {t(`plugins.${p.manifest.id}.detailedDescription`)}
@@ -154,11 +163,13 @@ export const PluginList = () => {
                         {Array.isArray(p.manifest.author) ? (
                           <span className='flex flex-wrap items-center gap-x-2 gap-y-1'>
                             {p.manifest.author.map((name, idx) => {
-                              const url = Array.isArray(p.manifest.authorUrl)
-                                ? p.manifest.authorUrl[idx]
-                                : typeof p.manifest.authorUrl === "string"
+                              const authorUrl =
+                                typeof p.manifest.authorUrl === "string"
                                   ? p.manifest.authorUrl
                                   : undefined;
+                              const url = Array.isArray(p.manifest.authorUrl)
+                                ? p.manifest.authorUrl[idx]
+                                : authorUrl;
                               return url ? (
                                 <button
                                   key={name}
@@ -175,37 +186,47 @@ export const PluginList = () => {
                               );
                             })}
                           </span>
-                        ) : p.manifest.authorUrl ? (
-                          <button
-                            className='text-primary hover:underline'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const url = Array.isArray(p.manifest.authorUrl)
-                                ? p.manifest.authorUrl[0]
-                                : p.manifest.authorUrl;
-                              if (url) void openUrl(url);
-                            }}
-                            type='button'>
-                            {p.manifest.author}
-                          </button>
                         ) : (
-                          <span>{p.manifest.author}</span>
+                          (() => {
+                            const authorUrl = Array.isArray(
+                              p.manifest.authorUrl,
+                            )
+                              ? p.manifest.authorUrl[0]
+                              : p.manifest.authorUrl;
+                            return authorUrl ? (
+                              <button
+                                className='text-primary hover:underline'
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void openUrl(authorUrl);
+                                }}
+                                type='button'>
+                                {p.manifest.author}
+                              </button>
+                            ) : (
+                              <span>{p.manifest.author}</span>
+                            );
+                          })()
                         )}
                       </div>
-                      {p.manifest.homepageUrl && (
-                        <div className='flex items-center gap-2 text-sm'>
-                          <ExternalLinkIcon className='h-4 w-4 text-muted-foreground' />
-                          <button
-                            className='text-primary hover:underline'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void openUrl(p.manifest.homepageUrl!);
-                            }}
-                            type='button'>
-                            Homepage
-                          </button>
-                        </div>
-                      )}
+                      {p.manifest.homepageUrl &&
+                        (() => {
+                          const homepageUrl = p.manifest.homepageUrl;
+                          return (
+                            <div className='flex items-center gap-2 text-sm'>
+                              <ExternalLinkIcon className='h-4 w-4 text-muted-foreground' />
+                              <button
+                                className='text-primary hover:underline'
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void openUrl(homepageUrl);
+                                }}
+                                type='button'>
+                                Homepage
+                              </button>
+                            </div>
+                          );
+                        })()}
                     </div>
                   </div>
                 </div>

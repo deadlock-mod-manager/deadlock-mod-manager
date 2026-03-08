@@ -3,7 +3,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@deadlock-mods/ui/components/sidebar";
-import { ArrowLineLeft } from "@phosphor-icons/react";
+import { ArrowLineLeftIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export const SidebarCollapse = () => {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton onClick={toggleSidebar}>
-        <ArrowLineLeft
+        <ArrowLineLeftIcon
           className={cn(
             "transition-all duration-150 ease-linear",
             open ? "" : "rotate-180",

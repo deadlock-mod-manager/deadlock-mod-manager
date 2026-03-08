@@ -161,7 +161,7 @@ const AddonSummaryCard = ({
 }) => {
   const localMods = usePersistedStore((state) => state.localMods);
   const isIdentified = !!addon.remoteId;
-  const hasError = !addon.vpkParsed || !addon.vpkParsed.fingerprint;
+  const hasError = !addon.vpkParsed?.fingerprint;
 
   // Check if this addon has already been added to the library
   const isAlreadyInLibrary = localMods.some((mod) =>
@@ -468,7 +468,7 @@ export const AnalysisResultsDialog = ({
     (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
   );
   const errorAddons = result.addons.filter(
-    (addon) => !addon.vpkParsed || !addon.vpkParsed.fingerprint,
+    (addon) => !addon.vpkParsed?.fingerprint,
   );
 
   return (
@@ -481,12 +481,15 @@ export const AnalysisResultsDialog = ({
               {t("addons.analysisResults")}
             </DialogTitle>
             <DialogDescription>
-              Found {result.totalCount} addon
-              {result.totalCount !== 1 ? "s" : ""} in your game directory
+              {t("addons.analysisResultsDescription", {
+                count: result.totalCount,
+              })}
               {identifiedAddons.length > 0 && (
                 <span className='text-muted-foreground ml-2'>
-                  • {identifiedAddons.length} identified and automatically added
-                  to your library
+                  •{" "}
+                  {t("addons.identifiedAndAdded", {
+                    count: identifiedAddons.length,
+                  })}
                 </span>
               )}
             </DialogDescription>

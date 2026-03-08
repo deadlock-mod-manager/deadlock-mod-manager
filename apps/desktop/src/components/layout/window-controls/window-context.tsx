@@ -1,7 +1,13 @@
 import type { Window } from "@tauri-apps/api/window";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type React from "react";
-import { createContext, useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { getOsType, isMacOS } from "@/lib/utils";
 
 interface TauriAppWindowContextType {
@@ -33,7 +39,7 @@ export const TauriAppWindowProvider: React.FC<TauriAppWindowProviderProps> = ({
   const [isWindowMaximized, setIsWindowMaximized] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (globalThis.window !== undefined) {
       setAppWindow(getCurrentWindow());
     }
   }, []);
@@ -75,19 +81,19 @@ export const TauriAppWindowProvider: React.FC<TauriAppWindowProviderProps> = ({
     };
   }, [appWindow, updateIsWindowMaximized]);
 
-  const minimizeWindow = async () => {
+  const minimizeWindow = useCallback(async () => {
     if (appWindow) {
       await appWindow.minimize();
     }
-  };
+  }, [appWindow]);
 
-  const maximizeWindow = async () => {
+  const maximizeWindow = useCallback(async () => {
     if (appWindow) {
       await appWindow.toggleMaximize();
     }
-  };
+  }, [appWindow]);
 
-  const fullscreenWindow = async () => {
+  const fullscreenWindow = useCallback(async () => {
     if (appWindow) {
       const fullscreen = await appWindow.isFullscreen();
       if (fullscreen) {
@@ -96,24 +102,35 @@ export const TauriAppWindowProvider: React.FC<TauriAppWindowProviderProps> = ({
         await appWindow.setFullscreen(true);
       }
     }
-  };
+  }, [appWindow]);
 
-  const closeWindow = async () => {
+  const closeWindow = useCallback(async () => {
     if (appWindow) {
       await appWindow.close();
     }
-  };
+  }, [appWindow]);
+
+  const contextValue = useMemo(
+    () => ({
+      appWindow,
+      isWindowMaximized,
+      minimizeWindow,
+      maximizeWindow,
+      fullscreenWindow,
+      closeWindow,
+    }),
+    [
+      appWindow,
+      isWindowMaximized,
+      minimizeWindow,
+      maximizeWindow,
+      fullscreenWindow,
+      closeWindow,
+    ],
+  );
 
   return (
-    <TauriAppWindowContext.Provider
-      value={{
-        appWindow,
-        isWindowMaximized,
-        minimizeWindow,
-        maximizeWindow,
-        fullscreenWindow,
-        closeWindow,
-      }}>
+    <TauriAppWindowContext.Provider value={contextValue}>
       {children}
     </TauriAppWindowContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { Sparkle } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { GITHUB_REPO } from "@/lib/constants";
@@ -47,7 +47,7 @@ export const WhatsNewCard = () => {
   return (
     <DashboardCard
       contentClassName='space-y-4'
-      icon={<Sparkle className='h-5 w-5 text-primary' weight='duotone' />}
+      icon={<SparkleIcon className='h-5 w-5 text-primary' weight='duotone' />}
       title={t("navigation.whatsNew")}>
       {recentUpdates.map((update) => (
         <div key={update.version} className='space-y-2'>

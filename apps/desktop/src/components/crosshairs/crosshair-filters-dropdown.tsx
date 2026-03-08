@@ -51,7 +51,7 @@ const CrosshairHeroFilter = ({
         .flatMap((crosshair) => crosshair.heroes)
         .filter((hero): hero is string => Boolean(hero)),
     ),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const hasDefaultHeroes = crosshairs.some(
     (crosshair) =>
@@ -77,6 +77,13 @@ const CrosshairHeroFilter = ({
     return hero;
   };
 
+  const heroButtonLabel =
+    selectedHeroes.length === 0
+      ? t("filters.allHeroes")
+      : selectedHeroes.length === 1
+        ? getHeroDisplayName(selectedHeroes[0])
+        : `${selectedHeroes.length} ${t("filters.selected")}`;
+
   return (
     <div className='flex min-w-0 flex-col gap-2'>
       <Label className='font-medium text-sm'>{t("filters.hero")}</Label>
@@ -86,13 +93,7 @@ const CrosshairHeroFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {selectedHeroes.length === 0
-                ? t("filters.allHeroes")
-                : selectedHeroes.length === 1
-                  ? getHeroDisplayName(selectedHeroes[0])
-                  : `${selectedHeroes.length} ${t("filters.selected")}`}
-            </span>
+            <span className='truncate'>{heroButtonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>
@@ -137,7 +138,7 @@ const CrosshairTagFilter = ({
   const { t } = useTranslation();
   const availableTags = Array.from(
     new Set(crosshairs.flatMap((crosshair) => crosshair.tags)),
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const handleTagToggle = (tag: string) => {
     const newSelectedTags = selectedTags.includes(tag)
@@ -145,6 +146,13 @@ const CrosshairTagFilter = ({
       : [...selectedTags, tag];
     onTagsChange(newSelectedTags);
   };
+
+  const tagButtonLabel =
+    selectedTags.length === 0
+      ? t("crosshairs.filters.allTags")
+      : selectedTags.length === 1
+        ? selectedTags[0]
+        : `${selectedTags.length} ${t("filters.selected")}`;
 
   return (
     <div className='flex min-w-0 flex-col gap-2'>
@@ -157,13 +165,7 @@ const CrosshairTagFilter = ({
             className='w-[180px] justify-start'
             size='sm'
             variant='outline'>
-            <span className='truncate'>
-              {selectedTags.length === 0
-                ? t("crosshairs.filters.allTags")
-                : selectedTags.length === 1
-                  ? selectedTags[0]
-                  : `${selectedTags.length} ${t("filters.selected")}`}
-            </span>
+            <span className='truncate'>{tagButtonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align='start' className='w-[240px] p-0'>

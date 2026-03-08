@@ -10,10 +10,10 @@ import {
   TableRow,
 } from "@deadlock-mods/ui/components/table";
 import {
-  Archive,
-  Clock,
-  FolderOpen,
-  HardDrives,
+  ArchiveIcon,
+  ClockIcon,
+  FolderOpenIcon,
+  HardDrivesIcon,
   PlusIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
@@ -183,6 +183,86 @@ export const AddonsBackupManagement = () => {
 
   const totalSize = backups.reduce((sum, backup) => sum + backup.file_size, 0);
 
+  const renderBackupList = () => {
+    if (loading) {
+      return (
+        <div className='flex items-center justify-center py-8'>
+          <div className='text-muted-foreground'>{t("common.loading")}...</div>
+        </div>
+      );
+    }
+
+    if (backups.length === 0) {
+      return (
+        <div className='flex flex-col items-center justify-center rounded-lg border border-dashed py-12'>
+          <ArchiveIcon className='h-12 w-12 text-muted-foreground mb-4' />
+          <p className='text-muted-foreground'>
+            {t("settings.noBackupsFound")}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className='rounded-lg border'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>
+                <div className='flex items-center gap-2'>
+                  <ClockIcon className='h-4 w-4' />
+                  {t("settings.backupDate")}
+                </div>
+              </TableHead>
+              <TableHead>
+                <div className='flex items-center gap-2'>
+                  <HardDrivesIcon className='h-4 w-4' />
+                  {t("settings.backupSize")}
+                </div>
+              </TableHead>
+              <TableHead>
+                <div className='flex items-center gap-2'>
+                  <ArchiveIcon className='h-4 w-4' />
+                  {t("settings.backupVpkCount")}
+                </div>
+              </TableHead>
+              <TableHead className='text-right'>
+                {t("common.actions")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {backups.map((backup) => (
+              <TableRow key={backup.file_name}>
+                <TableCell className='font-medium'>
+                  {formatDate(backup.created_at)}
+                </TableCell>
+                <TableCell>{formatFileSize(backup.file_size)}</TableCell>
+                <TableCell>{backup.addons_count}</TableCell>
+                <TableCell className='text-right'>
+                  <div className='flex items-center justify-end gap-2'>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      onClick={() => handleRestoreBackup(backup.file_name)}>
+                      {t("settings.restoreBackup")}
+                    </Button>
+                    <Button
+                      size='sm'
+                      variant='destructive'
+                      onClick={() => handleDeleteBackup(backup.file_name)}>
+                      <TrashIcon className='h-4 w-4' />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <div className='space-y-4'>
       <div className='flex items-center justify-between'>
@@ -195,14 +275,14 @@ export const AddonsBackupManagement = () => {
             {t("settings.createBackup")}
           </Button>
           <Button onClick={handleOpenBackupsFolder} variant='outline'>
-            <FolderOpen className='h-4 w-4' />
+            <FolderOpenIcon className='h-4 w-4' />
             {t("settings.openBackupsFolder")}
           </Button>
         </div>
         {backups.length > 0 && (
           <div className='text-muted-foreground text-sm'>
-            {backups.length} backup{backups.length !== 1 ? "s" : ""} •{" "}
-            {formatFileSize(totalSize)} total
+            {backups.length} backup{backups.length === 1 ? "" : "s"} •{" "}
+            {formatFileSize(totalSize)} {t("addons.total")}
           </div>
         )}
       </div>
@@ -226,73 +306,7 @@ export const AddonsBackupManagement = () => {
         </div>
       )}
 
-      {loading ? (
-        <div className='flex items-center justify-center py-8'>
-          <div className='text-muted-foreground'>{t("common.loading")}...</div>
-        </div>
-      ) : backups.length === 0 ? (
-        <div className='flex flex-col items-center justify-center rounded-lg border border-dashed py-12'>
-          <Archive className='h-12 w-12 text-muted-foreground mb-4' />
-          <p className='text-muted-foreground'>
-            {t("settings.noBackupsFound")}
-          </p>
-        </div>
-      ) : (
-        <div className='rounded-lg border'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  <div className='flex items-center gap-2'>
-                    <Clock className='h-4 w-4' />
-                    {t("settings.backupDate")}
-                  </div>
-                </TableHead>
-                <TableHead>
-                  <div className='flex items-center gap-2'>
-                    <HardDrives className='h-4 w-4' />
-                    {t("settings.backupSize")}
-                  </div>
-                </TableHead>
-                <TableHead>
-                  <div className='flex items-center gap-2'>
-                    <Archive className='h-4 w-4' />
-                    {t("settings.backupVpkCount")}
-                  </div>
-                </TableHead>
-                <TableHead className='text-right'>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {backups.map((backup) => (
-                <TableRow key={backup.file_name}>
-                  <TableCell className='font-medium'>
-                    {formatDate(backup.created_at)}
-                  </TableCell>
-                  <TableCell>{formatFileSize(backup.file_size)}</TableCell>
-                  <TableCell>{backup.addons_count}</TableCell>
-                  <TableCell className='text-right'>
-                    <div className='flex items-center justify-end gap-2'>
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        onClick={() => handleRestoreBackup(backup.file_name)}>
-                        {t("settings.restoreBackup")}
-                      </Button>
-                      <Button
-                        size='sm'
-                        variant='destructive'
-                        onClick={() => handleDeleteBackup(backup.file_name)}>
-                        <TrashIcon className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {renderBackupList()}
 
       {selectedBackup && (
         <RestoreBackupDialog

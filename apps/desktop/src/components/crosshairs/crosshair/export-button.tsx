@@ -6,11 +6,14 @@ import { Check, Copy, Share2 } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 
 interface ExportButtonProps {
-  config: CrosshairConfig;
-  className?: string;
+  readonly config: CrosshairConfig;
+  readonly className?: string;
 }
 
-export function ExportButton({ config, className }: ExportButtonProps) {
+export function ExportButton({
+  config,
+  className,
+}: Readonly<ExportButtonProps>) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -38,16 +41,16 @@ export function ExportButton({ config, className }: ExportButtonProps) {
 }
 
 interface ShareButtonProps {
-  config: CrosshairConfig;
-  className?: string;
+  readonly config: CrosshairConfig;
+  readonly className?: string;
 }
 
-export function ShareButton({ config, className }: ShareButtonProps) {
+export function ShareButton({ config, className }: Readonly<ShareButtonProps>) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
     const encodedConfig = encodeConfigToURL(config);
-    const url = `${window.location.origin}/crosshair-generator?edit=${encodedConfig}`;
+    const url = `${globalThis.location.origin}/crosshair-generator?edit=${encodedConfig}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);

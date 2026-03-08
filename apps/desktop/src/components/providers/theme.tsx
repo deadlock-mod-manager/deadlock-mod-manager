@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -29,9 +36,9 @@ export function ThemeProvider({
   defaultTheme = "dark",
   storageKey = "deadlock-theme",
   ...props
-}: ThemeProviderProps) {
+}: Readonly<ThemeProviderProps>) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined" && window.localStorage) {
+    if (globalThis.window !== undefined && globalThis.localStorage) {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     }
     return defaultTheme;
@@ -40,7 +47,7 @@ export function ThemeProvider({
   const [flashbangEnabled, setFlashbangEnabled] = useState<boolean>(false);
 
   useEffect(() => {
-    const root = window.document.documentElement;
+    const root = globalThis.document.documentElement;
 
     root.classList.remove("light", "dark");
 
@@ -66,7 +73,7 @@ export function ThemeProvider({
     }
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+      const systemTheme = globalThis.matchMedia("(prefers-color-scheme: dark)")
         .matches
         ? "dark"
         : "light";
@@ -84,7 +91,7 @@ export function ThemeProvider({
     }
 
     const checkFlashbang = () => {
-      const root = window.document.documentElement;
+      const root = globalThis.document.documentElement;
       const now = new Date();
       const currentHour = now.getHours();
 
@@ -108,8 +115,9 @@ export function ThemeProvider({
         root.classList.remove("light", "dark");
 
         if (theme === "system") {
-          const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-            .matches
+          const systemTheme = globalThis.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches
             ? "dark"
             : "light";
           root.classList.add(systemTheme);
@@ -126,17 +134,25 @@ export function ThemeProvider({
     return () => clearInterval(interval);
   }, [flashbangEnabled, theme]);
 
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      if (typeof window !== "undefined" && window.localStorage) {
+  const handleSetTheme = useCallback(
+    (theme: Theme) => {
+      if (globalThis.window !== undefined && globalThis.localStorage) {
         localStorage.setItem(storageKey, theme);
       }
       setTheme(theme);
     },
-    flashbangEnabled,
-    setFlashbangEnabled,
-  };
+    [storageKey],
+  );
+
+  const value = useMemo<ThemeProviderState>(
+    () => ({
+      theme,
+      setTheme: handleSetTheme,
+      flashbangEnabled,
+      setFlashbangEnabled,
+    }),
+    [theme, handleSetTheme, flashbangEnabled, setFlashbangEnabled],
+  );
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>

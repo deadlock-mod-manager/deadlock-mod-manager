@@ -52,6 +52,7 @@ interface SortableModItemProps {
 }
 
 const SortableModItem = ({ mod, index }: SortableModItemProps) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -109,8 +110,7 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
       </div>
 
       <div className='text-muted-foreground text-xs'>
-        {mod.installedVpks?.length || 0} VPK
-        {(mod.installedVpks?.length || 0) !== 1 ? "s" : ""}
+        {t("modOrdering.vpkCount", { count: mod.installedVpks?.length || 0 })}
       </div>
     </div>
   );

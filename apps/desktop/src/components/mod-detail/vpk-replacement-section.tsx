@@ -37,11 +37,11 @@ export const VpkReplacementSection = ({
   // Use remoteId for downloaded mods, or id for local mods
   const modIdentifier = mod.remoteId || mod.id;
 
+  const defaultVpks = modIdentifier ? [`${modIdentifier}_*.vpk`] : [];
+
   const currentVpks = mod.installedVpks?.length
     ? mod.installedVpks
-    : modIdentifier
-      ? [`${modIdentifier}_*.vpk`]
-      : [];
+    : defaultVpks;
 
   const hasMultipleVpks = currentVpks.length > 1;
 
@@ -98,36 +98,27 @@ export const VpkReplacementSection = ({
     }
   };
 
+  const getExpectedFileCount = (): number => {
+    if (hasMultipleVpks && selectedVpks.size > 0) return selectedVpks.size;
+    if (hasMultipleVpks) return currentVpks.length;
+    return 1;
+  };
+
   const handleVpkReplacement = async (paths: string[]) => {
     if (!modIdentifier) {
       toast.error(t("modDetail.vpkReplacement.error"));
       return;
     }
 
-    // If mod has multiple VPKs and user selected specific ones
-    if (hasMultipleVpks && selectedVpks.size > 0) {
-      if (paths.length !== selectedVpks.size) {
-        toast.error(
-          t("modDetail.vpkReplacement.error") +
-            `: Expected ${selectedVpks.size} files, got ${paths.length}`,
-        );
-        return;
-      }
-    } else if (hasMultipleVpks && selectedVpks.size === 0) {
-      // Replace all
-      if (paths.length !== currentVpks.length) {
-        toast.error(
-          t("modDetail.vpkReplacement.error") +
-            `: Expected ${currentVpks.length} files, got ${paths.length}`,
-        );
-        return;
-      }
-    } else {
-      // Single VPK
-      if (paths.length !== 1) {
-        toast.error(`${t("modDetail.vpkReplacement.error")}: Expected 1 file`);
-        return;
-      }
+    const expectedCount = getExpectedFileCount();
+    if (paths.length !== expectedCount) {
+      toast.error(
+        t("modDetail.vpkReplacement.countMismatch", {
+          expected: expectedCount,
+          actual: paths.length,
+        }),
+      );
+      return;
     }
 
     setIsReplacing(true);
@@ -148,12 +139,14 @@ export const VpkReplacementSection = ({
       onSuccess?.();
     } catch (error) {
       console.error("Failed to replace VPK files:", error);
-      const errorMessage =
-        typeof error === "string"
-          ? error
-          : error && typeof error === "object" && "message" in error
-            ? String(error.message)
-            : JSON.stringify(error);
+      let errorMessage: string;
+      if (typeof error === "string") {
+        errorMessage = error;
+      } else if (error && typeof error === "object" && "message" in error) {
+        errorMessage = String(error.message);
+      } else {
+        errorMessage = JSON.stringify(error);
+      }
       toast.error(`${t("modDetail.vpkReplacement.error")}: ${errorMessage}`);
     } finally {
       setIsReplacing(false);
@@ -161,26 +154,37 @@ export const VpkReplacementSection = ({
   };
 
   const toggleVpkSelection = (vpk: string) => {
-    const newSelection = new Set(selectedVpks);
-    if (newSelection.has(vpk)) {
-      newSelection.delete(vpk);
-    } else {
-      newSelection.add(vpk);
-    }
-    setSelectedVpks(newSelection);
+    setSelectedVpks((prev) => {
+      const next = new Set(prev);
+      if (next.has(vpk)) {
+        next.delete(vpk);
+      } else {
+        next.add(vpk);
+      }
+      return next;
+    });
   };
 
   const toggleSelectAll = () => {
-    if (selectedVpks.size === currentVpks.length) {
-      setSelectedVpks(new Set());
-    } else {
-      setSelectedVpks(new Set(currentVpks));
-    }
+    setSelectedVpks((prev) =>
+      prev.size === currentVpks.length ? new Set() : new Set(currentVpks),
+    );
   };
 
   if (currentVpks.length === 0) {
     return null;
   }
+
+  const helperText =
+    hasMultipleVpks && selectedVpks.size > 0
+      ? t("modDetail.vpkReplacement.selectToReplace", {
+          count: selectedVpks.size,
+        })
+      : hasMultipleVpks
+        ? t("modDetail.vpkReplacement.selectToReplace", {
+            count: currentVpks.length,
+          })
+        : t("modDetail.vpkReplacement.selectFiles");
 
   return (
     <Card className='shadow-none [contain:layout_style_paint]'>
@@ -251,12 +255,15 @@ export const VpkReplacementSection = ({
             </div>
           </div>
 
-          <div
-            className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+          <button
+            type='button'
+            aria-label={t("modDetail.vpkReplacement.dragAndDrop")}
+            className={`w-full rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
               isDragging
                 ? "border-primary bg-primary/10"
                 : "border-muted-foreground/25"
             }`}
+            onClick={handleFileSelect}
             onDragOver={(e) => {
               e.preventDefault();
               setIsDragging(true);
@@ -267,17 +274,7 @@ export const VpkReplacementSection = ({
             <p className='mb-2 font-medium'>
               {t("modDetail.vpkReplacement.dragAndDrop")}
             </p>
-            <p className='mb-4 text-muted-foreground text-sm'>
-              {hasMultipleVpks && selectedVpks.size > 0
-                ? t("modDetail.vpkReplacement.selectToReplace", {
-                    count: selectedVpks.size,
-                  })
-                : hasMultipleVpks
-                  ? t("modDetail.vpkReplacement.selectToReplace", {
-                      count: currentVpks.length,
-                    })
-                  : t("modDetail.vpkReplacement.selectFiles")}
-            </p>
+            <p className='mb-4 text-muted-foreground text-sm'>{helperText}</p>
             <Button
               onClick={handleFileSelect}
               disabled={isReplacing}
@@ -285,7 +282,7 @@ export const VpkReplacementSection = ({
               variant='outline'>
               {t("modDetail.vpkReplacement.selectFiles")}
             </Button>
-          </div>
+          </button>
         </CardContent>
       )}
     </Card>

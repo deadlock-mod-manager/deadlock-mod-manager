@@ -29,14 +29,22 @@ export const ProfilePreview = ({
   const { t } = useTranslation();
 
   // Calculate progress percentage
+  const calculatePercentage = (completed: number, total: number): number => {
+    if (total === 0) {
+      return 0;
+    }
+    return (completed / total) * 100;
+  };
+
   const progressPercentage = importProgress
     ? Math.min(
         100,
         Math.max(
           0,
-          importProgress.totalMods > 0
-            ? (importProgress.completedMods / importProgress.totalMods) * 100
-            : 0,
+          calculatePercentage(
+            importProgress.completedMods,
+            importProgress.totalMods,
+          ),
         ),
       )
     : 0;
@@ -44,13 +52,28 @@ export const ProfilePreview = ({
   // Determine current step info
   const isDownloading = importProgress?.isDownloading ?? false;
   const isInstalling = importProgress?.isInstalling ?? false;
-  const currentStepText = isDownloading
-    ? t("profiles.downloadingMods", { defaultValue: "Downloading mods..." })
-    : isInstalling
-      ? t("profiles.installingMods", { defaultValue: "Installing mods..." })
-      : importProgress?.currentStep || "";
 
-  const StepIcon = isDownloading ? Download : isInstalling ? Package : null;
+  let currentStepText: string;
+  if (isDownloading) {
+    currentStepText = t("profiles.downloadingMods", {
+      defaultValue: "Downloading mods...",
+    });
+  } else if (isInstalling) {
+    currentStepText = t("profiles.installingMods", {
+      defaultValue: "Installing mods...",
+    });
+  } else {
+    currentStepText = importProgress?.currentStep || "";
+  }
+
+  let StepIcon;
+  if (isDownloading) {
+    StepIcon = Download;
+  } else if (isInstalling) {
+    StepIcon = Package;
+  } else {
+    StepIcon = null;
+  }
 
   return (
     <>

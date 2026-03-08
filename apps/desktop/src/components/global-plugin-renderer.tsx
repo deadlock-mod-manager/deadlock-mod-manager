@@ -4,6 +4,29 @@ import logger from "@/lib/logger";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
+import type { LoadedPlugin } from "@/types/plugins";
+
+const isPluginModule = (obj: unknown): obj is PluginModule =>
+  typeof obj === "object" && obj !== null && "manifest" in obj;
+
+const resolvePluginModule = (mod: unknown): PluginModule | undefined => {
+  if (typeof mod !== "object" || !mod) return undefined;
+
+  const record = mod as Record<string, unknown>;
+  const maybeDefault = record.default;
+  const candidate =
+    maybeDefault && typeof maybeDefault === "object" ? maybeDefault : mod;
+
+  return isPluginModule(candidate) ? candidate : undefined;
+};
+
+const loadPlugin = async (
+  plugin: LoadedPlugin,
+): Promise<PluginModule | undefined> => {
+  if (!plugin.entryImporter) return undefined;
+  const mod: unknown = await plugin.entryImporter();
+  return resolvePluginModule(mod);
+};
 
 const GlobalPluginRenderer = () => {
   const [loadedPlugins, setLoadedPlugins] = useState<
@@ -47,38 +70,21 @@ const GlobalPluginRenderer = () => {
       const newLoadedPlugins: Record<string, PluginModule> = {};
 
       for (const plugin of plugins) {
-        if (isPluginEnabled(plugin.manifest.id) && plugin.entryImporter) {
-          try {
-            const mod: unknown = await plugin.entryImporter();
+        if (!isPluginEnabled(plugin.manifest.id)) continue;
 
-            // Attempt to resolve both ESM default export and direct export
-            const record =
-              typeof mod === "object" && mod
-                ? (mod as Record<string, unknown>)
-                : undefined;
-            const maybeDefault = record?.default as unknown;
-            const candidate =
-              maybeDefault && typeof maybeDefault === "object"
-                ? maybeDefault
-                : record;
-            const resolved =
-              candidate &&
-              typeof candidate === "object" &&
-              "manifest" in candidate
-                ? (candidate as PluginModule)
-                : undefined;
+        try {
+          const resolved = await loadPlugin(plugin);
 
-            if (!cancelled && resolved?.Render) {
-              newLoadedPlugins[plugin.manifest.id] = resolved;
-            }
-          } catch (error) {
-            logger
-              .withMetadata({ pluginId: plugin.manifest.id })
-              .withError(
-                error instanceof Error ? error : new Error(String(error)),
-              )
-              .error("Failed to load plugin for global rendering");
+          if (!cancelled && resolved?.Render) {
+            newLoadedPlugins[plugin.manifest.id] = resolved;
           }
+        } catch (error) {
+          logger
+            .withMetadata({ pluginId: plugin.manifest.id })
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .error("Failed to load plugin for global rendering");
         }
       }
 

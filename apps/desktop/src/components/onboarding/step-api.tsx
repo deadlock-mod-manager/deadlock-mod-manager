@@ -1,8 +1,8 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  CheckCircle,
-  PlugsConnected,
-  WarningCircle,
+  CheckCircleIcon,
+  PlugsConnectedIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -49,7 +49,13 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
     }
   }, [error, onError]);
 
-  const checkState = isPending ? "checking" : error ? "error" : "success";
+  const getCheckState = (): "checking" | "error" | "success" => {
+    if (isPending) return "checking";
+    if (error) return "error";
+    return "success";
+  };
+
+  const checkState = getCheckState();
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
   return (
@@ -64,14 +70,14 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
       <div className='space-y-4'>
         {checkState === "checking" && (
           <div className='flex items-center gap-3 p-4 border rounded-lg bg-muted/50'>
-            <PlugsConnected className='h-5 w-5 animate-pulse' />
+            <PlugsConnectedIcon className='h-5 w-5 animate-pulse' />
             <span className='text-sm'>{t("onboarding.api.checking")}</span>
           </div>
         )}
 
         {checkState === "success" && health && (
           <div className='flex items-start gap-3 p-4 border rounded-lg bg-green-500/10 border-green-500/20'>
-            <CheckCircle className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
+            <CheckCircleIcon className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
             <div className='flex-1'>
               <p className='text-sm font-medium text-green-500'>
                 {t("onboarding.api.success")}
@@ -86,7 +92,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
         {checkState === "error" && (
           <div className='space-y-3'>
             <div className='flex items-start gap-3 p-4 border rounded-lg bg-destructive/10 border-destructive/20'>
-              <WarningCircle className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
+              <WarningCircleIcon className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
               <div className='flex-1'>
                 <p className='text-sm font-medium text-destructive'>
                   {t("onboarding.api.error")}

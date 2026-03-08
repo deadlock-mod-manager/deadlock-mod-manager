@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { ArrowSquareOut, Sparkle } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, SparkleIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
@@ -37,7 +37,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
     <DialogContent className='max-w-md'>
       <DialogHeader>
         <div className='flex items-center gap-2'>
-          <Sparkle className='h-5 w-5 text-primary' />
+          <SparkleIcon className='h-5 w-5 text-primary' />
           <DialogTitle>{t("whatsNew.title")}</DialogTitle>
           <Badge variant='secondary'>v{version}</Badge>
         </div>
@@ -72,7 +72,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
           onClick={() => openUrl(`${GITHUB_REPO}/releases/tag/v${version}`)}
           size='sm'
           variant='outline'>
-          <ArrowSquareOut className='h-4 w-4' />
+          <ArrowSquareOutIcon className='h-4 w-4' />
           {t("whatsNew.fullReleaseNotes")}
         </Button>
         <Button onClick={onClose} size='sm'>

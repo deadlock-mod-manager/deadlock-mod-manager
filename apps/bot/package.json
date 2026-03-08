@@ -4,7 +4,6 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsc && tsc-alias",
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "dotenv -e ../../.env -- bun run --preload src/instrument.ts --watch src/index.ts",

@@ -134,6 +134,9 @@ export const ProfileManagerDialog = ({
         }),
       );
     } catch (error) {
+      logger
+        .withError(error instanceof Error ? error : new Error(String(error)))
+        .error("Failed to switch profile");
       toast.error(t("profiles.switchUnexpectedError"));
     }
   };

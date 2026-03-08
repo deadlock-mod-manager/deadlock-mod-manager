@@ -67,7 +67,8 @@
     "noMods": "No installed mods to order",
     "orderSaved": "Mod order saved successfully",
     "orderSaveFailed": "Failed to save mod order",
-    "manageOrder": "Change Mods Order"
+    "manageOrder": "Change Mods Order",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "mods": {
     "manageOrder": "Change Mods Order",
@@ -126,7 +127,11 @@
     "total": "Total",
     "filesSelected": "{{selected}} of {{total}} files selected",
     "downloadingPercent": "Downloading {{percent}}%...",
-    "downloadSelected": "Download Selected"
+    "downloadSelected": "Download Selected",
+    "updatedAgo": "Updated {{when}} ago",
+    "createdAgo": "Created {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
+    "createdAt": "Created at {{date}}"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
@@ -336,7 +341,12 @@
     "autoexecLaunchOption": "Autoexec Config",
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "customCrosshairs": "Custom Crosshairs",
-    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file."
+    "customCrosshairsDescription": "Enable or disable custom crosshair settings in the autoexec config. When disabled, the crosshair section will be removed from the autoexec file.",
+    "backup": "Backup",
+    "modifications": "Modifications",
+    "modManager": "Mod Manager",
+    "external": "External",
+    "syntax": "Syntax"
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -547,6 +557,7 @@
     "analyzing": "Analyzing...",
     "analysisResults": "Local Addon Analysis",
     "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "analysisSuccess": "Analysis complete! Found {{count}} addon(s)",
     "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}} and added to current profile",
     "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added to current profile",
@@ -601,7 +612,8 @@
       "filesFound": "Found {{count}} files",
       "currentFile": "Processing {{current}} of {{total}}",
       "currentFileName": "Processing: {{fileName}}"
-    }
+    },
+    "total": "total"
   },
   "onboarding": {
     "title": "Welcome to Deadlock Mod Manager",
@@ -690,11 +702,15 @@
     "unknownMod": "Unknown Mod",
     "modNamePlaceholder": "Awesome Mod",
     "modPreview": "Mod preview",
-    "authorPlaceholder": "Unknown"
+    "authorPlaceholder": "Unknown",
+    "invalidUrl": "Invalid URL"
   },
   "status": {
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "none": "None"
   },
   "whatsNew": {
     "title": "What's New",
@@ -1076,7 +1092,8 @@
       "setupStep4": "Paste your Application ID above and enable the plugin"
     },
     "usageInstructions": "Usage Instructions",
-    "renderActive": "Plugin is active and running in the background"
+    "renderActive": "Plugin is active and running in the background",
+    "homepage": "Homepage"
   },
   "accessibility": {
     "deadlockLogoAlt": "Deadlock",
@@ -1091,7 +1108,10 @@
     "goToLastPage": "Go to last page",
     "previous": "Previous",
     "next": "Next",
-    "morePages": "More pages"
+    "morePages": "More pages",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1102,7 +1122,8 @@
     "noAnnouncementsTitle": "No Announcements",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "checkBackLater": "Check back later for updates",
-    "noModsAvailable": "No mods available"
+    "noModsAvailable": "No mods available",
+    "learnMore": "Learn More"
   },
   "debug": {
     "title": "Debug",
@@ -1225,7 +1246,8 @@
       "replaceAll": "Replace All Files",
       "selectToReplace": "Select {{count}} file(s) to replace",
       "success": "VPK files replaced successfully",
-      "error": "Failed to replace VPK files"
+      "error": "Failed to replace VPK files",
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}"
     }
   },
   "reports": {
@@ -1310,6 +1332,7 @@
       "heroesSelected": "selected",
       "searchHeroes": "Search heroes...",
       "noHeroesFound": "No heroes found.",
+      "defaultHero": "Default",
       "preview": "Preview",
       "apply": "Apply",
       "publish": "Publish",
@@ -1364,5 +1387,15 @@
       "commandCopied": "Console command copied to clipboard!",
       "commandCopyFailed": "Failed to copy console command"
     }
+  },
+  "fileSelector": {
+    "selectFilesToInstall": "Select Files to Install: {{modName}}",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "noFilesSelected": "No files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "analyzingModFiles": "Analyzing mod files, please wait..."
   }
 }

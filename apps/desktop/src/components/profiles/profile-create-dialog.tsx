@@ -70,6 +70,7 @@ export const ProfileCreateDialog = ({
         toast.error(t("profiles.createError"));
       }
     } catch (error) {
+      console.error("Failed to create profile:", error);
       toast.error(t("profiles.createError"));
     } finally {
       setIsCreating(false);

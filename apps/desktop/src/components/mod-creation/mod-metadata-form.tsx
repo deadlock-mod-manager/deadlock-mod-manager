@@ -60,59 +60,52 @@ const generateFallbackSVG = (): string => {
 
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
-const IMAGE_MIME_TYPE_REGEX = /^image\//;
 
-const schema = z.object({
-  name: z.string().min(2, "Name is required"),
-  author: z
-    .string()
-    .max(128, "Too long")
-    .optional()
-    .or(z.literal("").optional()),
-  description: z
-    .string()
-    .max(4000, "Too long")
-    .optional()
-    .or(z.literal("").optional()),
-  link: z
-    .string()
-    .url("Invalid URL")
-    .refine((url) => {
-      try {
-        const parsed = new URL(url);
-        return parsed.protocol === "http:" || parsed.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "Only HTTP and HTTPS URLs are allowed")
-    .optional()
-    .or(z.literal("").optional()),
-  imageFile: z
-    .instanceof(File)
-    .refine((file) => {
-      // Validate file type
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/webp",
-        "image/gif",
-        "image/svg+xml",
-      ];
-      return (
-        allowedTypes.includes(file.type) ||
-        IMAGE_FILE_EXTENSION_REGEX.test(file.name)
-      );
-    }, "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)")
-    .refine((file) => {
-      // Validate file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-      return file.size <= maxSize;
-    }, "File size must be less than 10MB")
-    .optional(),
-});
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+];
 
-type FormValues = z.infer<typeof schema>;
+const isAllowedImageFile = (file: File): boolean =>
+  ALLOWED_IMAGE_TYPES.includes(file.type) ||
+  IMAGE_FILE_EXTENSION_REGEX.test(file.name);
+
+const buildSchema = (invalidUrlMsg: string) =>
+  z.object({
+    name: z.string().min(2, "Name is required"),
+    author: z
+      .string()
+      .max(128, "Too long")
+      .optional()
+      .or(z.literal("").optional()),
+    description: z
+      .string()
+      .max(4000, "Too long")
+      .optional()
+      .or(z.literal("").optional()),
+    link: z
+      .url({ error: invalidUrlMsg })
+      .optional()
+      .or(z.literal("").optional()),
+    imageFile: z
+      .instanceof(File)
+      .refine(
+        isAllowedImageFile,
+        "File must be a valid image (JPEG, PNG, WebP, GIF, or SVG)",
+      )
+      .refine((file) => {
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        return file.size <= maxSize;
+      }, "File size must be less than 10MB")
+      .optional(),
+  });
+
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
   function ModMetadataForm(
@@ -120,6 +113,8 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
     ref,
   ) {
     const { t } = useTranslation();
+
+    const schema = useMemo(() => buildSchema(t("modForm.invalidUrl")), [t]);
 
     const actualTitle = title || t("modForm.title");
     const actualDescription = description || t("modForm.description");
@@ -182,9 +177,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         setImgOk(true);
         return;
       }
-      const ok =
-        IMAGE_MIME_TYPE_REGEX.test(file.type) ||
-        IMAGE_FILE_EXTENSION_REGEX.test(file.name);
+      const ok = isAllowedImageFile(file);
       if (!ok) {
         toast.error(t("addMods.unsupportedImageType"));
         e.currentTarget.value = "";

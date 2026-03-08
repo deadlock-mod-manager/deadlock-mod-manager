@@ -79,6 +79,7 @@ export const ProfileImportDialog = () => {
       await createProfileFromImport(importedProfile.payload.mods, modsData);
       handleCancel();
     } catch (error) {
+      console.error("Failed to create profile from import:", error);
       toast.error(t("profiles.createError"));
     } finally {
       setIsImporting(false);

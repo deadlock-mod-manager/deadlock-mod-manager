@@ -3,8 +3,12 @@ import { Label } from "@deadlock-mods/ui/components/label";
 import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
-  color: { r: number; g: number; b: number };
-  onChange: (color: { r: number; g: number; b: number }) => void;
+  readonly color: {
+    readonly r: number;
+    readonly g: number;
+    readonly b: number;
+  };
+  readonly onChange: (color: { r: number; g: number; b: number }) => void;
 }
 
 export function ColorPicker({ color, onChange }: ColorPickerProps) {

@@ -17,8 +17,8 @@ import { Slider } from "@deadlock-mods/ui/components/slider";
 import { ColorPicker } from "./color-picker";
 
 interface CrosshairControlsProps {
-  config: CrosshairConfig;
-  onChange: (config: CrosshairConfig) => void;
+  readonly config: CrosshairConfig;
+  readonly onChange: (config: CrosshairConfig) => void;
 }
 
 export function CrosshairControls({

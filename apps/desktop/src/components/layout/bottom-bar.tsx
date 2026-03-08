@@ -8,17 +8,17 @@ import {
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
-  CheckCircle,
-  CloudArrowDown,
-  DownloadSimple,
-  Package,
-  SpeakerHigh,
-  SpeakerLow,
-  SpeakerSlash,
-  WifiHigh,
-  WifiMedium,
-  WifiSlash,
-  WifiX,
+  CheckCircleIcon,
+  CloudArrowDownIcon,
+  DownloadSimpleIcon,
+  PackageIcon,
+  SpeakerHighIcon,
+  SpeakerLowIcon,
+  SpeakerSlashIcon,
+  WifiHighIcon,
+  WifiMediumIcon,
+  WifiSlashIcon,
+  WifiXIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -47,12 +47,15 @@ function BottomBarVolume() {
     setOpen(next);
   };
 
-  const VolumeIcon =
-    audioVolume === 0
-      ? SpeakerSlash
-      : audioVolume < 50
-        ? SpeakerLow
-        : SpeakerHigh;
+  let VolumeIcon: typeof SpeakerSlashIcon;
+
+  if (audioVolume === 0) {
+    VolumeIcon = SpeakerSlashIcon;
+  } else if (audioVolume < 50) {
+    VolumeIcon = SpeakerLowIcon;
+  } else {
+    VolumeIcon = SpeakerHighIcon;
+  }
 
   return (
     <Popover onOpenChange={handleOpenChange} open={open}>
@@ -127,14 +130,14 @@ export const BottomBar = () => {
     <div className='z-30 flex h-7 w-full items-center justify-between border-t bg-background py-2 pl-6 text-muted-foreground text-xs pr-4'>
       <div className='flex items-center gap-4'>
         <div className='flex items-center gap-1'>
-          <Package className='h-3 w-3' />
+          <PackageIcon className='h-3 w-3' />
           <span>
             {t("common.mods")}: {totalMods}
           </span>
           {installedMods > 0 && (
             <>
               <Separator className='mx-1 h-3' orientation='vertical' />
-              <CheckCircle className='h-3 w-3 text-green-500' />
+              <CheckCircleIcon className='h-3 w-3 text-green-500' />
               <span>
                 {installedMods} {t("common.installed")}
               </span>
@@ -146,7 +149,7 @@ export const BottomBar = () => {
           <>
             <Separator className='mx-1 h-3' orientation='vertical' />
             <div className='flex items-center gap-1'>
-              <DownloadSimple className='h-3 w-3 animate-pulse text-blue-500' />
+              <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
               <span>
                 {downloadingMods} {t("common.downloading")}
               </span>
@@ -158,16 +161,16 @@ export const BottomBar = () => {
       <div className='flex items-center gap-4'>
         <div className='flex items-center gap-1'>
           {apiStatus === "healthy" && (
-            <WifiHigh className='h-3 w-3 text-green-500' />
+            <WifiHighIcon className='h-3 w-3 text-green-500' />
           )}
           {apiStatus === "degraded" && (
-            <WifiMedium className='h-3 w-3 text-yellow-500' />
+            <WifiMediumIcon className='h-3 w-3 text-yellow-500' />
           )}
           {apiStatus === "offline" && (
-            <WifiX className='h-3 w-3 text-red-500' />
+            <WifiXIcon className='h-3 w-3 text-red-500' />
           )}
           {apiStatus === "unknown" && (
-            <WifiSlash className='h-3 w-3 text-muted-foreground' />
+            <WifiSlashIcon className='h-3 w-3 text-muted-foreground' />
           )}
           <span className='text-xs'>
             {apiStatus === "healthy" && t("common.apiHealthy")}
@@ -221,7 +224,7 @@ export const BottomBar = () => {
           }
           size='sm'
           variant={updateAvailable ? "default" : "ghost"}>
-          <CloudArrowDown className='h-3 w-3' />
+          <CloudArrowDownIcon className='h-3 w-3' />
           {updateAvailable
             ? t("about.installUpdate")
             : t("about.checkForUpdates")}

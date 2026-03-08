@@ -34,6 +34,64 @@ type GameInfoStatus = {
   has_mod_paths: boolean;
 };
 
+const getBackupStatusItem = (
+  status: GameInfoStatus,
+  t: (key: string) => string,
+) => {
+  const getBackupValue = (): string => {
+    if (!status.backup_exists) {
+      return t("status.none");
+    }
+    return status.backup_valid ? t("status.valid") : t("status.invalid");
+  };
+
+  const getBackupColor = (): "success" | "warning" | "secondary" => {
+    if (!status.backup_exists) {
+      return "secondary";
+    }
+    return status.backup_valid ? "success" : "warning";
+  };
+
+  return {
+    label: t("settings.backup"),
+    value: getBackupValue(),
+    color: getBackupColor(),
+    icon: status.backup_exists ? Shield : Database,
+  };
+};
+
+const getModificationsStatusItem = (
+  status: GameInfoStatus,
+  t: (key: string) => string,
+) => {
+  const getModificationsValue = (): string => {
+    if (status.is_modified_by_mod_manager) {
+      return t("settings.modManager");
+    }
+    if (status.is_modified_externally) {
+      return t("settings.external");
+    }
+    return t("status.none");
+  };
+
+  const getModificationsColor = (): "default" | "warning" | "success" => {
+    if (status.is_modified_by_mod_manager) {
+      return "default";
+    }
+    if (status.is_modified_externally) {
+      return "warning";
+    }
+    return "success";
+  };
+
+  return {
+    label: t("settings.modifications"),
+    value: getModificationsValue(),
+    color: getModificationsColor(),
+    icon: status.has_mod_paths ? FileCheck : CheckCircle,
+  };
+};
+
 const GameInfoManagement = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -53,43 +111,17 @@ const GameInfoManagement = () => {
 
     const items = [
       {
-        label: "Syntax",
-        value: status.syntax_valid ? "Valid" : "Invalid",
+        label: t("settings.syntax"),
+        value: status.syntax_valid ? t("status.valid") : t("status.invalid"),
         color: status.syntax_valid ? "success" : "destructive",
         icon: status.syntax_valid ? CheckCircle : AlertTriangle,
       },
-      {
-        label: "Backup",
-        value: status.backup_exists
-          ? status.backup_valid
-            ? "Valid"
-            : "Invalid"
-          : "None",
-        color: status.backup_exists
-          ? status.backup_valid
-            ? "success"
-            : "warning"
-          : "secondary",
-        icon: status.backup_exists ? Shield : Database,
-      },
-      {
-        label: "Modifications",
-        value: status.is_modified_by_mod_manager
-          ? "Mod Manager"
-          : status.is_modified_externally
-            ? "External"
-            : "None",
-        color: status.is_modified_by_mod_manager
-          ? "default"
-          : status.is_modified_externally
-            ? "warning"
-            : "success",
-        icon: status.has_mod_paths ? FileCheck : CheckCircle,
-      },
+      getBackupStatusItem(status, t),
+      getModificationsStatusItem(status, t),
     ];
 
     return items;
-  }, [status]);
+  }, [status, t]);
 
   const handleBackupGameInfo = async () => {
     try {

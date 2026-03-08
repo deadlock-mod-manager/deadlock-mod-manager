@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import { CloudArrowDown } from "@phosphor-icons/react";
+import { CloudArrowDownIcon } from "@phosphor-icons/react";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { useTranslation } from "react-i18next";
 
@@ -39,7 +39,7 @@ export const UpdateDialog = ({
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
-            <CloudArrowDown className='h-5 w-5' />
+            <CloudArrowDownIcon className='h-5 w-5' />
             {t("update.available")}
           </DialogTitle>
           <DialogDescription>
@@ -82,7 +82,7 @@ export const UpdateDialog = ({
                 {t("update.later")}
               </DialogClose>
               <Button onClick={onUpdate} type='button'>
-                <CloudArrowDown className='mr-2 h-4 w-4' />
+                <CloudArrowDownIcon className='mr-2 h-4 w-4' />
                 {t("update.downloadAndInstall")}
               </Button>
             </>

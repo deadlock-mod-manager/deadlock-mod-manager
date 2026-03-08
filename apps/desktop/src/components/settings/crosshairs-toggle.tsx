@@ -28,7 +28,6 @@ export const CrosshairsToggle = () => {
           config: activeCrosshair,
         });
       }
-      return Promise.resolve();
     },
     onSuccess: (_, enabled) => {
       if (!enabled) {
