@@ -12,7 +12,7 @@ export type TelemetrySettings = {
 };
 
 const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
-  analyticsEnabled: true,
+  analyticsEnabled: false,
 };
 
 export type SettingsState = {
