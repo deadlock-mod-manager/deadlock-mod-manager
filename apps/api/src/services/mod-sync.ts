@@ -8,6 +8,8 @@ import * as Sentry from "@sentry/node";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { providerRegistry } from "../providers";
+import type { GameBananaSubmission } from "../providers/game-banana/types";
+import { cache } from "../lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "mod-sync",
@@ -30,6 +32,53 @@ export class ModSyncService {
       ModSyncService.instance = new ModSyncService();
     }
     return ModSyncService.instance;
+  }
+
+  async synchronizeMod(
+    remoteId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      logger
+        .withMetadata({ remoteId })
+        .info("Starting single mod synchronization");
+
+      const provider =
+        providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
+
+      const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
+      const result = await provider.createMod(submission, "all");
+
+      if (!result.mod) {
+        return {
+          success: false,
+          message: `Failed to synchronize mod ${remoteId}`,
+        };
+      }
+
+      if (result.filesChanged) {
+        await cache.del("mods:listing");
+      }
+
+      logger
+        .withMetadata({ remoteId })
+        .info("Single mod synchronization completed successfully");
+
+      return {
+        success: true,
+        message: `Mod ${remoteId} synchronized successfully`,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      logger.withError(error).error("Error during single mod synchronization");
+
+      Sentry.captureException(error);
+
+      return {
+        success: false,
+        message: `Synchronization failed: ${errorMessage}`,
+      };
+    }
   }
 
   async synchronizeMods(

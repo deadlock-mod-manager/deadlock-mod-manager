@@ -174,4 +174,29 @@ export const modsRouter = {
         });
       }
     }),
+
+  forceSyncModV2: publicProcedure
+    .route({ method: "POST", path: "/v2/sync/{id}" })
+    .input(ModIdParamSchema)
+    .output(ForceSyncOutputSchema)
+    .handler(async ({ input }) => {
+      try {
+        const syncService = ModSyncService.getInstance();
+        const result = await syncService.synchronizeMod(input.id);
+
+        if (!result.success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.message,
+          });
+        }
+
+        return result;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to trigger sync: ${errorMessage}`,
+        });
+      }
+    }),
 };
