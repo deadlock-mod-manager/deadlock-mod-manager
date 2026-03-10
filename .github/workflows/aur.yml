@@ -71,9 +71,9 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@github.com"
-          git pull --rebase origin main
           git add ${{ matrix.pkgbuild_dir }}/PKGBUILD
           git diff --staged --quiet || git commit -m "chore(aur): update ${{ matrix.pkgname }} to v${{ steps.version.outputs.version }} [skip ci]"
+          git pull --rebase origin main
           git push origin main
 
       - name: Publish to AUR
