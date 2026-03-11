@@ -155,24 +155,16 @@ export const modsRouter = {
     .route({ method: "POST", path: "/v2/sync" })
     .output(ForceSyncOutputSchema)
     .handler(async () => {
-      try {
-        const syncService = ModSyncService.getInstance();
-        const result = await syncService.synchronizeMods();
+      const syncService = ModSyncService.getInstance();
+      const result = await syncService.synchronizeMods();
 
-        if (!result.success) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", {
-            message: result.message,
-          });
-        }
-
-        return result;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error occurred";
+      if (!result.success) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: `Failed to trigger sync: ${errorMessage}`,
+          message: result.message,
         });
       }
+
+      return result;
     }),
 
   forceSyncModV2: publicProcedure
@@ -185,23 +177,15 @@ export const modsRouter = {
         throw new ORPCError("NOT_FOUND");
       }
 
-      try {
-        const syncService = ModSyncService.getInstance();
-        const result = await syncService.synchronizeMod(mod.remoteId);
+      const syncService = ModSyncService.getInstance();
+      const result = await syncService.synchronizeMod(mod.remoteId);
 
-        if (!result.success) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", {
-            message: result.message,
-          });
-        }
-
-        return result;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error occurred";
+      if (!result.success) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: `Failed to trigger sync: ${errorMessage}`,
+          message: result.message,
         });
       }
+
+      return result;
     }),
 };
