@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { ArrowUpDown, Clock, X } from "@deadlock-mods/ui/icons";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { ModCategory, SortType, TimePeriod } from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
@@ -280,4 +281,4 @@ const SearchBar = ({
   );
 };
 
-export default SearchBar;
+export default memo(SearchBar);
