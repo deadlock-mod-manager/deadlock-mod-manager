@@ -72,8 +72,6 @@ export class ModSyncService {
         error instanceof Error ? error.message : "Unknown error occurred";
       logger.withError(error).error("Error during single mod synchronization");
 
-      Sentry.captureException(error);
-
       return {
         success: false,
         message: `Synchronization failed: ${errorMessage}`,
@@ -145,8 +143,6 @@ export class ModSyncService {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
       logger.withError(error).error("Error during mod synchronization");
-
-      Sentry.captureException(error);
 
       // Report error to Sentry if checkInId is provided
       if (checkInId) {
