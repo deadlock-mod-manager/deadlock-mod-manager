@@ -19,7 +19,7 @@ docsRouter.get("/openapi.json", async (c) => {
     },
     servers: [
       {
-        url: "https://api.deadlock-mods.com/api",
+        url: "https://api.deadlockmods.app/api",
         description: "Production server",
       },
       {
