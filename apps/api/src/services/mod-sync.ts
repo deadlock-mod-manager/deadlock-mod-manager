@@ -8,6 +8,8 @@ import * as Sentry from "@sentry/node";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { providerRegistry } from "../providers";
+import type { GameBananaSubmission } from "../providers/game-banana/types";
+import { cache } from "../lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "mod-sync",
@@ -30,6 +32,49 @@ export class ModSyncService {
       ModSyncService.instance = new ModSyncService();
     }
     return ModSyncService.instance;
+  }
+
+  async synchronizeMod(
+    remoteId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      logger
+        .withMetadata({ remoteId })
+        .info("Starting single mod synchronization");
+
+      const provider =
+        providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
+
+      const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
+      const result = await provider.createMod(submission, "all");
+
+      if (!result.mod) {
+        return {
+          success: false,
+          message: `Failed to synchronize mod ${remoteId}`,
+        };
+      }
+
+      if (result.filesChanged) {
+        await cache.del("mods:listing");
+      }
+
+      logger
+        .withMetadata({ remoteId })
+        .info("Single mod synchronization completed successfully");
+
+      return {
+        success: true,
+        message: `Mod ${remoteId} synchronized successfully`,
+      };
+    } catch (error) {
+      logger.withError(error).error("Error during single mod synchronization");
+
+      return {
+        success: false,
+        message: "Synchronization failed",
+      };
+    }
   }
 
   async synchronizeMods(
@@ -93,11 +138,7 @@ export class ModSyncService {
         message: "Mod synchronization completed successfully",
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
       logger.withError(error).error("Error during mod synchronization");
-
-      Sentry.captureException(error);
 
       // Report error to Sentry if checkInId is provided
       if (checkInId) {
@@ -110,7 +151,7 @@ export class ModSyncService {
 
       return {
         success: false,
-        message: `Synchronization failed: ${errorMessage}`,
+        message: "Synchronization failed",
       };
     } finally {
       // Always release the lock if we acquired it
