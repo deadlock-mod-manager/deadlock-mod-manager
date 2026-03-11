@@ -576,6 +576,7 @@ const MyMods = () => {
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
   useEffect(() => {
     setPage((p) => Math.max(0, Math.min(p, Math.max(0, totalPages - 1))));
+    scrollPositionRef.current = 0;
   }, [activeTab, query, totalPages]);
 
   const handlePageChange = (newPage: number) => {
