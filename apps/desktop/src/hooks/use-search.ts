@@ -46,13 +46,13 @@ export const useSearch = <T extends ModDto = ModDto>({ data, keys }: UseSearchPr
     [search, debouncedQuery],
   );
 
-  const setQuery = (newQuery: string) => {
+  const setQuery = useCallback((newQuery: string) => {
     updateModsFilters({ searchQuery: newQuery });
-  };
+  }, [updateModsFilters]);
 
-  const setSortType = (newSortType: SortType) => {
+  const setSortType = useCallback((newSortType: SortType) => {
     updateModsFilters({ currentSort: newSortType });
-  };
+  }, [updateModsFilters]);
 
   return {
     search,
