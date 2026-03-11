@@ -2,7 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -52,7 +52,7 @@ export const useBatchUpdate = () => {
     };
   }, []);
 
-  const prepareUpdates = (
+  const prepareUpdates = useCallback((
     updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>,
   ) => {
     const prepared = updates.map((update) => {
@@ -86,7 +86,7 @@ export const useBatchUpdate = () => {
 
     setUpdatableMods(prepared);
     return prepared;
-  };
+  }, [localMods]);
 
   const setSelectedDownloads = (
     remoteId: string,
