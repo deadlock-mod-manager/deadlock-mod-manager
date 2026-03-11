@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
 import { Check } from "@deadlock-mods/ui/icons";
+import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -31,34 +32,32 @@ const CategoryFilter = ({
   onCategoriesChange,
 }: CategoryFilterProps) => {
   const { t } = useTranslation();
-  // Get categories that actually have mods available
-  const modsWithCategories = new Set(
-    mods.map((mod) => mod.category).filter(Boolean),
-  );
+  const allCategories = useMemo(() => {
+    // Get categories that actually have mods available
+    const modsWithCategories = new Set(
+      mods.map((mod) => mod.category).filter(Boolean),
+    );
+    // Use predefined category order, but only show categories that have mods
+    const available = MOD_CATEGORY_ORDER.filter((category) =>
+      modsWithCategories.has(category),
+    );
+    // Check if there are any mods with non-predefined categories
+    const predefinedCategories = Object.values(ModCategory);
+    const hasOtherMods = Array.from(modsWithCategories).some(
+      (category) => !predefinedCategories.includes(category as ModCategory),
+    );
+    // If there are mods with non-predefined categories, add OTHER_MISC to available categories
+    return hasOtherMods && !available.includes(ModCategory.OTHER_MISC)
+      ? [...available, ModCategory.OTHER_MISC]
+      : available;
+  }, [mods]);
 
-  // Use predefined category order, but only show categories that have mods
-  const availableCategories = MOD_CATEGORY_ORDER.filter((category) =>
-    modsWithCategories.has(category),
-  );
-
-  // Check if there are any mods with non-predefined categories
-  const predefinedCategories = Object.values(ModCategory);
-  const hasOtherMods = Array.from(modsWithCategories).some(
-    (category) => !predefinedCategories.includes(category as ModCategory),
-  );
-
-  // If there are mods with non-predefined categories, add OTHER_MISC to available categories
-  const allCategories =
-    hasOtherMods && !availableCategories.includes(ModCategory.OTHER_MISC)
-      ? [...availableCategories, ModCategory.OTHER_MISC]
-      : availableCategories;
-
-  const handleCategoryToggle = (category: string) => {
+  const handleCategoryToggle = useCallback((category: string) => {
     const newSelectedCategories = selectedCategories.includes(category)
       ? selectedCategories.filter((c) => c !== category)
       : [...selectedCategories, category];
     onCategoriesChange(newSelectedCategories);
-  };
+  }, [selectedCategories, onCategoriesChange]);
 
   const categoryButtonLabel =
     selectedCategories.length === 0
@@ -109,4 +108,4 @@ const CategoryFilter = ({
   );
 };
 
-export default CategoryFilter;
+export default memo(CategoryFilter);

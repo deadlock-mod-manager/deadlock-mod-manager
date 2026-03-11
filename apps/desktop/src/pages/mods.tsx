@@ -9,7 +9,14 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Suspense, useDeferredValue, useEffect, useMemo, useRef } from "react";
+import {
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -23,7 +30,11 @@ import { getMods } from "@/lib/api";
 import { ModCategory, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { getTimePeriodCutoff, isModOutdated } from "@/lib/utils";
+import { getTimePeriodCutoff } from "@/lib/utils";
+import type { FilterMode } from "@/lib/store/slices/ui";
+import { isModOutdated } from "@/lib/utils";
+
+const SEARCH_KEYS = ["name", "description", "author"];
 
 const GetModsData = () => {
   const { t } = useTranslation();
@@ -53,7 +64,7 @@ const GetModsData = () => {
 
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: deferredData,
-    keys: ["name", "description", "author"],
+    keys: SEARCH_KEYS,
   });
 
   const { setScrollElement, scrollY } = useScrollPosition("/mods");
@@ -161,25 +172,49 @@ const GetModsData = () => {
     }
   }, [error, t]);
 
+  const handleCategoriesChange = useCallback(
+    (cats: string[]) => updateModsFilters({ selectedCategories: cats }),
+    [updateModsFilters],
+  );
+  const handleFilterModeChange = useCallback(
+    (mode: FilterMode) => updateModsFilters({ filterMode: mode }),
+    [updateModsFilters],
+  );
+  const handleHeroesChange = useCallback(
+    (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
+    [updateModsFilters],
+  );
+  const handleHideAudioChange = useCallback(
+    (hideAudio: boolean) => updateModsFilters({ hideAudio }),
+    [updateModsFilters],
+  );
+  const handleHideNSFWChange = useCallback(
+    (hideNSFW: boolean) => updateModsFilters({ hideNSFW }),
+    [updateModsFilters],
+  );
+  const handleHideOutdatedChange = useCallback(
+    (hideOutdated: boolean) => updateModsFilters({ hideOutdated }),
+    [updateModsFilters],
+  );
+
+  const handleTimePeriodChange = useCallback(
+    (timePeriod: TimePeriod) => updateModsFilters({ timePeriod }),
+    [updateModsFilters],
+  );
+
   return (
     <div className='flex flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
         mods={deferredData}
-        onCategoriesChange={(selectedCategories) =>
-          updateModsFilters({ selectedCategories })
-        }
-        onFilterModeChange={(filterMode) => updateModsFilters({ filterMode })}
-        onHeroesChange={(selectedHeroes) =>
-          updateModsFilters({ selectedHeroes })
-        }
-        onHideAudioChange={(hideAudio) => updateModsFilters({ hideAudio })}
-        onHideNSFWChange={(hideNSFW) => updateModsFilters({ hideNSFW })}
-        onHideOutdatedChange={(hideOutdated) =>
-          updateModsFilters({ hideOutdated })
-        }
         timePeriod={timePeriod}
-        onTimePeriodChange={(timePeriod) => updateModsFilters({ timePeriod })}
+        onTimePeriodChange={handleTimePeriodChange}
+        onCategoriesChange={handleCategoriesChange}
+        onFilterModeChange={handleFilterModeChange}
+        onHeroesChange={handleHeroesChange}
+        onHideAudioChange={handleHideAudioChange}
+        onHideNSFWChange={handleHideNSFWChange}
+        onHideOutdatedChange={handleHideOutdatedChange}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
@@ -278,8 +313,8 @@ const GetMods = () => {
           <div className='flex flex-col gap-4'>
             <SearchBarSkeleton />
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-              {Array.from({ length: 25 }, () => (
-                <ModCard key={crypto.randomUUID()} mod={undefined} />
+              {Array.from({ length: 25 }, (_, i) => (
+                <ModCard key={i} mod={undefined} />
               ))}
             </div>
           </div>
