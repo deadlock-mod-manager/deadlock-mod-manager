@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getModDownloads } from "@/lib/api";
+import type { ModDownloadItem } from "@/types/mods";
+
+const EMPTY_DOWNLOADS: ModDownloadItem[] = [];
 
 interface UseModDownloadsOptions {
   /**
@@ -48,9 +51,11 @@ export const useModDownloads = ({
     throwOnError: false,
   });
 
+  const availableFiles: ModDownloadItem[] = query.data?.downloads ?? EMPTY_DOWNLOADS;
+
   return {
     ...query,
-    availableFiles: query.data?.downloads ?? [],
+    availableFiles,
     downloadCount: query.data?.count ?? 0,
   };
 };

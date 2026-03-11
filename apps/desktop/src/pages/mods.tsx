@@ -223,7 +223,7 @@ const GetModsData = () => {
               hideNSFW ||
               hideOutdated) && (
               <EmptyDescription className='text-xs'>
-                Try clearing some filters to see more results
+                {t("mods.emptyClearFilters")}
               </EmptyDescription>
             )}
           </EmptyHeader>

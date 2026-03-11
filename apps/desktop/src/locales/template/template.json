@@ -46,6 +46,7 @@
     "noModsFound": "",
     "noModsMatchFilters": "",
     "noModsAvailable": "",
+    "emptyClearFilters": "",
     "deleteConfirmTitle": "",
     "deleteConfirmBody": "",
     "deleteConfirmAction": "",
@@ -57,6 +58,10 @@
     "customModDisableTitle": "",
     "customModDisableBody": "",
     "customModDisableAction": ""
+  },
+  "pagination": {
+    "previous": "",
+    "next": ""
   },
   "downloads": {
     "downloading": "",
