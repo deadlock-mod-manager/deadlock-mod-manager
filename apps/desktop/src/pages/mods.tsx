@@ -250,7 +250,7 @@ const GetModsData = () => {
               hideOutdated ||
               timePeriod !== TimePeriod.ALL_TIME) && (
               <EmptyDescription className='text-xs'>
-                Try clearing some filters to see more results
+                {t("mods.emptyClearFilters")}
               </EmptyDescription>
             )}
           </EmptyHeader>

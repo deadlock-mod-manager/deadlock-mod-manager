@@ -33,7 +33,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
-import { type ModDownloadItem, ModStatus } from "@/types/mods";
+import { ModStatus } from "@/types/mods";
 
 const Mod = () => {
   const params = useParams();
@@ -62,13 +62,11 @@ const Mod = () => {
     onBackClick: handleBackClick,
   });
 
-  const { availableFiles: rawAvailableFiles } = useModDownloads({
+  const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
     enabled: !!params.id && !params.id?.includes("local"),
   });
-
-  const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
 
   const localMods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
