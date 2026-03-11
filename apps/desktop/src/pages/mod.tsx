@@ -5,7 +5,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, RefreshCw, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
@@ -33,7 +33,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
-import { type ModDownloadItem, ModStatus } from "@/types/mods";
+import { ModStatus } from "@/types/mods";
 
 const Mod = () => {
   const params = useParams();
@@ -62,13 +62,11 @@ const Mod = () => {
     onBackClick: handleBackClick,
   });
 
-  const { availableFiles: rawAvailableFiles } = useModDownloads({
+  const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
     enabled: !!params.id && !params.id?.includes("local"),
   });
-
-  const availableFiles = rawAvailableFiles as unknown as ModDownloadItem[];
 
   const localMods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
@@ -93,8 +91,9 @@ const Mod = () => {
 
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
-  const currentModUpdate = updatableMods.filter(
-    (update) => update.mod.remoteId === mod?.remoteId,
+  const currentModUpdate = useMemo(
+    () => updatableMods.filter((update) => update.mod.remoteId === mod?.remoteId),
+    [updatableMods, mod?.remoteId],
   );
 
   const forceUpdate = () => {
@@ -102,11 +101,16 @@ const Mod = () => {
     setUpdateDialogOpen(true);
   };
 
-  const forceUpdateData =
-    mod && availableFiles?.length ? [{ mod, downloads: availableFiles }] : [];
+  const forceUpdateData = useMemo(
+    () =>
+      mod && availableFiles?.length ? [{ mod, downloads: availableFiles }] : [],
+    [mod, availableFiles],
+  );
 
-  const effectiveUpdateData =
-    currentModUpdate.length > 0 ? currentModUpdate : forceUpdateData;
+  const effectiveUpdateData = useMemo(
+    () => (currentModUpdate.length > 0 ? currentModUpdate : forceUpdateData),
+    [currentModUpdate, forceUpdateData],
+  );
 
   const deleteMod = async () => {
     if (!localMod) {
