@@ -68,13 +68,11 @@ export class ModSyncService {
         message: `Mod ${remoteId} synchronized successfully`,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
       logger.withError(error).error("Error during single mod synchronization");
 
       return {
         success: false,
-        message: `Synchronization failed: ${errorMessage}`,
+        message: "Synchronization failed",
       };
     }
   }
@@ -140,8 +138,6 @@ export class ModSyncService {
         message: "Mod synchronization completed successfully",
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
       logger.withError(error).error("Error during mod synchronization");
 
       // Report error to Sentry if checkInId is provided
@@ -155,7 +151,7 @@ export class ModSyncService {
 
       return {
         success: false,
-        message: `Synchronization failed: ${errorMessage}`,
+        message: "Synchronization failed",
       };
     } finally {
       // Always release the lock if we acquired it
