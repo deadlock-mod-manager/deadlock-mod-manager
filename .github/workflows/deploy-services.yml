@@ -20,6 +20,9 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     outputs:
       api: ${{ steps.filter.outputs.api }}
       auth: ${{ steps.filter.outputs.auth }}
