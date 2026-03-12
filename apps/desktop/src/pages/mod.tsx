@@ -93,10 +93,6 @@ const Mod = () => {
 
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
-  const currentModUpdate = updatableMods.filter(
-    (update) => update.mod.remoteId === mod?.remoteId,
-  );
-
   const forceUpdate = () => {
     if (!mod || !availableFiles?.length) return;
     setUpdateDialogOpen(true);
@@ -111,6 +107,11 @@ const Mod = () => {
   const currentModUpdate = useMemo(
     () => updatableMods.filter((update) => update.mod.remoteId === mod?.remoteId),
     [updatableMods, mod?.remoteId],
+  );
+
+  const effectiveUpdateData = useMemo(
+    () => (currentModUpdate.length > 0 ? currentModUpdate : forceUpdateData),
+    [currentModUpdate, forceUpdateData],
   );
 
   const deleteMod = async () => {
