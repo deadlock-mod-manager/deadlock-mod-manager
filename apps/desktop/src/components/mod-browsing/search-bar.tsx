@@ -216,7 +216,7 @@ const SearchBar = ({
           {/* Broken/Outdated filter badge */}
           {hideOutdated && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {t("filters.hideOutdated")}
+              {t("filters.hideOutdatedBadge")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onHideOutdatedChange(false)}

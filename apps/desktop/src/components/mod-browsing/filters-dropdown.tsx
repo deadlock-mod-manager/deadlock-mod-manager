@@ -111,32 +111,46 @@ const FiltersDropdown = ({
           </Label>
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='hideNsfwSwitch'>
-              {t("filters.hideNSFWContent")}
+              {filterMode === "include"
+                ? t("filters.showNSFWContent")
+                : t("filters.hideNSFWContent")}
             </Label>
             <Switch
-              checked={hideNSFW}
+              checked={filterMode === "include" ? !hideNSFW : hideNSFW}
               id='hideNsfwSwitch'
-              onCheckedChange={onHideNSFWChange}
+              onCheckedChange={(checked) =>
+                onHideNSFWChange(filterMode === "include" ? !checked : checked)
+              }
             />
           </div>
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='hideAudioSwitch'>
-              {t("filters.excludeAudioMods")}
+              {filterMode === "include"
+                ? t("filters.audioModsOnly")
+                : t("filters.excludeAudioMods")}
             </Label>
             <Switch
-              checked={hideAudio}
+              checked={filterMode === "include" ? !hideAudio : hideAudio}
               id='hideAudioSwitch'
-              onCheckedChange={onHideAudioChange}
+              onCheckedChange={(checked) =>
+                onHideAudioChange(filterMode === "include" ? !checked : checked)
+              }
             />
           </div>
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
-              {t("filters.hideOutdated")}
+              {filterMode === "include"
+                ? t("filters.showOutdated")
+                : t("filters.hideOutdated")}
             </Label>
             <Switch
-              checked={hideOutdated}
+              checked={filterMode === "include" ? !hideOutdated : hideOutdated}
               id='hideOutdatedSwitch'
-              onCheckedChange={onHideOutdatedChange}
+              onCheckedChange={(checked) =>
+                onHideOutdatedChange(
+                  filterMode === "include" ? !checked : checked,
+                )
+              }
             />
           </div>
         </div>
