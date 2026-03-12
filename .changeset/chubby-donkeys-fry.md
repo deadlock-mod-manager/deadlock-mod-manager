@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-quick filters now respect inclusion/exclusion filters
+Make quick filters respect include/exclude mode
