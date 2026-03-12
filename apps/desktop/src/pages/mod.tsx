@@ -108,9 +108,9 @@ const Mod = () => {
     [mod, availableFiles],
   );
 
-  const effectiveUpdateData = useMemo(
-    () => (currentModUpdate.length > 0 ? currentModUpdate : forceUpdateData),
-    [currentModUpdate, forceUpdateData],
+  const currentModUpdate = useMemo(
+    () => updatableMods.filter((update) => update.mod.remoteId === mod?.remoteId),
+    [updatableMods, mod?.remoteId],
   );
 
   const deleteMod = async () => {
