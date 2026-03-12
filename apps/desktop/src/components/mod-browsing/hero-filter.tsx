@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
 import { Check } from "@deadlock-mods/ui/icons";
+import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
@@ -30,27 +31,29 @@ const HeroFilter = ({
   onHeroesChange,
 }: HeroFilterProps) => {
   const { t } = useTranslation();
-  // Get heroes that actually have mods available
-  const availableHeroes = Array.from(
-    new Set(
-      mods
-        .map((mod) => mod.hero)
-        .filter((hero): hero is string => Boolean(hero)),
-    ),
-  ).sort((a, b) => a.localeCompare(b));
 
-  // Add "None" option for mods without specific heroes
-  const hasNonHeroMods = mods.some((mod) => !mod.hero);
-  if (hasNonHeroMods && !availableHeroes.includes("None")) {
-    availableHeroes.unshift("None");
-  }
+  const availableHeroes = useMemo(() => {
+    // Get heroes that actually have mods available
+    const heroes = Array.from(
+      new Set(
+        mods
+          .map((mod) => mod.hero)
+          .filter((hero): hero is string => Boolean(hero)),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+    // Add "None" option for mods without specific heroes
+    if (mods.some((mod) => !mod.hero) && !heroes.includes("None")) {
+      heroes.unshift("None");
+    }
+    return heroes;
+  }, [mods]);
 
-  const handleHeroToggle = (hero: string) => {
+  const handleHeroToggle = useCallback((hero: string) => {
     const newSelectedHeroes = selectedHeroes.includes(hero)
       ? selectedHeroes.filter((h) => h !== hero)
       : [...selectedHeroes, hero];
     onHeroesChange(newSelectedHeroes);
-  };
+  }, [selectedHeroes, onHeroesChange]);
 
   const getHeroDisplayName = (hero: string) => {
     if (hero === "None") {
@@ -111,4 +114,4 @@ const HeroFilter = ({
   );
 };
 
-export default HeroFilter;
+export default memo(HeroFilter);

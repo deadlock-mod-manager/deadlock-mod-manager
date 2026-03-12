@@ -13,6 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+} from "@deadlock-mods/ui/components/pagination";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
@@ -29,6 +36,8 @@ import {
 import {
   ArrowUpDown,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
   EllipsisVertical,
   FolderOpen,
@@ -40,7 +49,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
@@ -64,6 +73,85 @@ import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
+
+const PAGE_SIZE = 20;
+
+function ModsPagination({
+  page,
+  totalPages,
+  onPageChange,
+  className,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Pagination className={className}>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationLink
+            aria-label={t("pagination.previous")}
+            aria-disabled={page === 0}
+            className={cn("gap-1 pl-2.5", page === 0 ? "pointer-events-none opacity-50" : "")}
+            size="default"
+            onClick={(e) => {
+              e.preventDefault();
+              if (page > 0) onPageChange(page - 1);
+            }}>
+            <ChevronLeft className="h-4 w-4" />
+            <span>{t("pagination.previous")}</span>
+          </PaginationLink>
+        </PaginationItem>
+      {Array.from({ length: totalPages }, (_, i) => i)
+        .filter((i) => {
+          if (totalPages <= 7) return true;
+          if (i === 0 || i === totalPages - 1) return true;
+          return Math.abs(i - page) <= 2;
+        })
+        .reduce<(number | "ellipsis")[]>((acc, i, idx, arr) => {
+          if (idx > 0 && arr[idx - 1] < i - 1) acc.push("ellipsis");
+          acc.push(i);
+          return acc;
+        }, [])
+        .map((item, idx) =>
+          item === "ellipsis" ? (
+            <PaginationItem key={`ellipsis-${idx}`}>
+              <PaginationEllipsis />
+            </PaginationItem>
+          ) : (
+            <PaginationItem key={item}>
+              <PaginationLink
+                isActive={item === page}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onPageChange(item);
+                }}>
+                {item + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ),
+        )}
+        <PaginationItem>
+          <PaginationLink
+            aria-label={t("pagination.next")}
+            aria-disabled={page === totalPages - 1}
+            className={cn("gap-1 pr-2.5", page === totalPages - 1 ? "pointer-events-none opacity-50" : "")}
+            size="default"
+            onClick={(e) => {
+              e.preventDefault();
+              if (page < totalPages - 1) onPageChange(page + 1);
+            }}>
+            <span>{t("pagination.next")}</span>
+            <ChevronRight className="h-4 w-4" />
+          </PaginationLink>
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+}
 
 enum ViewMode {
   GRID = "grid",
@@ -349,7 +437,14 @@ const ModsList = ({
     return (
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
         {mods.map((mod) => (
-          <GridModCard key={mod.remoteId} mod={mod} />
+          <div
+            key={mod.remoteId ?? mod.id}
+            style={{
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 220px",
+            }}>
+            <GridModCard mod={mod} />
+          </div>
         ))}
       </div>
     );
@@ -358,7 +453,14 @@ const ModsList = ({
   return (
     <div className='flex flex-col gap-3'>
       {mods.map((mod) => (
-        <ListModCard key={mod.remoteId} mod={mod} />
+        <div
+          key={mod.remoteId ?? mod.id}
+          style={{
+            contentVisibility: "auto",
+            containIntrinsicSize: "auto 80px",
+          }}>
+          <ListModCard mod={mod} />
+        </div>
       ))}
     </div>
   );
@@ -408,6 +510,7 @@ const MyMods = () => {
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
+  const [page, setPage] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
 
@@ -463,6 +566,25 @@ const MyMods = () => {
 
   const displayMods = filterModsByStatus(query.trim() ? results : sortedMods);
 
+  const totalPages = Math.ceil(displayMods.length / PAGE_SIZE);
+
+  const paginatedMods = useMemo(
+    () => displayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [displayMods, page],
+  );
+
+  // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
+  useEffect(() => {
+    setPage((p) => Math.max(0, Math.min(p, Math.max(0, totalPages - 1))));
+    scrollPositionRef.current = 0;
+  }, [activeTab, query, totalPages]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    scrollPositionRef.current = 0;
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const installedMods = getOrderedMods();
 
   const enabledModsCount = mods.filter(
@@ -487,7 +609,7 @@ const MyMods = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className='w-full gap-4 overflow-y-auto px-4'
+      className='w-full gap-4 overflow-y-auto px-4 will-change-transform'
       onScroll={(e) => {
         scrollPositionRef.current = e.currentTarget.scrollTop;
       }}>
@@ -662,17 +784,35 @@ const MyMods = () => {
                 </div>
               </div>
 
+              {totalPages > 1 && (
+                <ModsPagination
+                  className='mb-4'
+                  onPageChange={handlePageChange}
+                  page={page}
+                  totalPages={totalPages}
+                />
+              )}
+
               <TabsContent value={ModFilter.ALL}>
-                <ModsList mods={displayMods} viewMode={viewMode} />
+                <ModsList mods={paginatedMods} viewMode={viewMode} />
               </TabsContent>
 
               <TabsContent value={ModFilter.ENABLED}>
-                <ModsList mods={displayMods} viewMode={viewMode} />
+                <ModsList mods={paginatedMods} viewMode={viewMode} />
               </TabsContent>
 
               <TabsContent value={ModFilter.DISABLED}>
-                <ModsList mods={displayMods} viewMode={viewMode} />
+                <ModsList mods={paginatedMods} viewMode={viewMode} />
               </TabsContent>
+
+              {totalPages > 1 && (
+                <ModsPagination
+                  className='mt-6 pb-4'
+                  onPageChange={handlePageChange}
+                  page={page}
+                  totalPages={totalPages}
+                />
+              )}
             </div>
           )}
         </Tabs>
