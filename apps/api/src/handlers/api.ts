@@ -25,6 +25,16 @@ export const apiHandler = new OpenAPIHandler(appRouter, {
   plugins: [
     new OpenAPIReferencePlugin({
       schemaConverters: [new ZodToJsonSchemaConverter()],
+      specGenerateOptions: {
+        servers: [
+          {
+            url: "https://api.deadlockmods.app/api"
+          },
+          {
+            url: "http://localhost:9000/api"
+          },
+        ],
+      },
     }),
   ],
   interceptors: [
