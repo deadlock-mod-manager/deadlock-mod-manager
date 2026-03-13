@@ -102,7 +102,7 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
       case SortType.RELEASE_DATE:
         return compareDates(b.remoteAddedAt, a.remoteAddedAt);
       default:
-        return b.id.localeCompare(a.id);
+        return b.downloadCount - a.downloadCount;
     }
   });
 };
