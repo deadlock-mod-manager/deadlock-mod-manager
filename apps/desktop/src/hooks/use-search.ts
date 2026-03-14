@@ -1,17 +1,17 @@
 import Fuse, { type FuseOptionKey } from "fuse.js";
 import { useCallback, useMemo } from "react";
+import type { ModDto } from "@deadlock-mods/shared";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { SortType } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { sortMods } from "@/lib/utils";
-import type { LocalMod } from "@/types/mods";
 
-type UseSearchProps<T> = {
+type UseSearchProps<T extends ModDto> = {
   data: T[];
   keys: FuseOptionKey<T>[];
 };
 
-export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
+export const useSearch = <T extends ModDto = ModDto>({ data, keys }: UseSearchProps<T>) => {
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
@@ -33,10 +33,10 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   const search = useCallback(
     (q: string) => {
       if (!q || !q.trim()) {
-        return sortMods(data as LocalMod[], sortType);
+        return sortMods(data, sortType);
       }
       const results = fuse.search(q);
-      return results.map((result) => result.item) as LocalMod[];
+      return sortMods(results.map((result) => result.item), sortType);
     },
     [fuse, data, sortType],
   );
