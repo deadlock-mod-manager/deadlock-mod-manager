@@ -476,6 +476,13 @@
     "rating": "Rating",
     "releasedate": "Release Date"
   },
+  "timePeriod": {
+    "alltime": "All Time",
+    "pastweek": "Past Week",
+    "pastmonth": "Past Month",
+    "past3months": "Past 3 Months",
+    "pastyear": "Past Year"
+  },
   "addMods": {
     "title": "Add Mods",
     "subtitle": "Upload mod files. Drag & drop is supported.",
