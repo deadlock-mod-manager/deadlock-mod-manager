@@ -1,7 +1,7 @@
 import Fuse, { type FuseOptionKey } from "fuse.js";
 import { useCallback, useMemo } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import type { SortType } from "@/lib/constants";
+import { SortType } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { sortMods } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
@@ -35,8 +35,12 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
       if (!q || !q.trim()) {
         return sortMods(data as LocalMod[], sortType);
       }
-      const results = fuse.search(q);
-      return results.map((result) => result.item) as LocalMod[];
+      const results = fuse.search(q).map((result) => result.item) as LocalMod[];
+      // DEFAULT sort preserves Fuse.js relevance order during search
+      if (sortType === SortType.DEFAULT) {
+        return results;
+      }
+      return sortMods(results, sortType);
     },
     [fuse, data, sortType],
   );

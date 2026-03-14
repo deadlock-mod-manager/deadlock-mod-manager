@@ -9,9 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { ArrowUpDown, X } from "@deadlock-mods/ui/icons";
+import { ArrowUpDown, Clock, X } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { ModCategory, SortType } from "@/lib/constants";
+import { ModCategory, SortType, TimePeriod } from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";
 
@@ -31,6 +31,8 @@ type SearchBarProps = {
   onHideAudioChange: (hideAudio: boolean) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
+  timePeriod: TimePeriod;
+  onTimePeriodChange: (timePeriod: TimePeriod) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
 };
@@ -51,6 +53,8 @@ const SearchBar = ({
   onHideAudioChange,
   hideOutdated,
   onHideOutdatedChange,
+  timePeriod,
+  onTimePeriodChange,
   filterMode,
   onFilterModeChange,
 }: SearchBarProps) => {
@@ -91,6 +95,7 @@ const SearchBar = ({
     onHideNSFWChange(false);
     onHideAudioChange(false);
     onHideOutdatedChange(false);
+    onTimePeriodChange(TimePeriod.ALL_TIME);
   };
 
   const hasActiveFilters =
@@ -98,7 +103,8 @@ const SearchBar = ({
     selectedHeroes.length > 0 ||
     hideNSFW ||
     hideAudio ||
-    hideOutdated;
+    hideOutdated ||
+    timePeriod !== TimePeriod.ALL_TIME;
 
   return (
     <div className='flex flex-col gap-3'>
@@ -128,8 +134,28 @@ const SearchBar = ({
           />
         </div>
         <div className='flex items-center gap-4'>
+          <Select onValueChange={onTimePeriodChange} value={timePeriod}>
+            <SelectTrigger className='w-fit gap-1'>
+              <Clock className='mr-2 h-4 w-4' />
+              <SelectValue placeholder={t("timePeriod.alltime")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Object.values(TimePeriod).map((period) => (
+                  <SelectItem
+                    className='capitalize'
+                    key={period}
+                    value={period}>
+                    {t(
+                      `timePeriod.${period.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <Select onValueChange={setSortType} value={sortType}>
-            <SelectTrigger>
+            <SelectTrigger className='w-fit gap-1'>
               <ArrowUpDown className='mr-2 h-4 w-4' />
               <SelectValue placeholder={t("filters.sortBy")} />
             </SelectTrigger>
@@ -220,6 +246,21 @@ const SearchBar = ({
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onHideOutdatedChange(false)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
+
+          {/* Time period badge */}
+          {timePeriod !== TimePeriod.ALL_TIME && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {t(
+                `timePeriod.${timePeriod.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
+              )}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onTimePeriodChange(TimePeriod.ALL_TIME)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>
