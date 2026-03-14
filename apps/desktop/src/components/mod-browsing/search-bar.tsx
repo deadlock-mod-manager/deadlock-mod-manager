@@ -135,7 +135,7 @@ const SearchBar = ({
         </div>
         <div className='flex items-center gap-4'>
           <Select onValueChange={onTimePeriodChange} value={timePeriod}>
-            <SelectTrigger>
+            <SelectTrigger className='w-fit gap-1'>
               <Clock className='mr-2 h-4 w-4' />
               <SelectValue placeholder={t("timePeriod.alltime")} />
             </SelectTrigger>
@@ -155,7 +155,7 @@ const SearchBar = ({
             </SelectContent>
           </Select>
           <Select onValueChange={setSortType} value={sortType}>
-            <SelectTrigger>
+            <SelectTrigger className='w-fit gap-1'>
               <ArrowUpDown className='mr-2 h-4 w-4' />
               <SelectValue placeholder={t("filters.sortBy")} />
             </SelectTrigger>
