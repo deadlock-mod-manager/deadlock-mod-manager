@@ -2409,3 +2409,209 @@ pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
     .get_autoexec_manager()
     .remove_crosshair_section(game_path)
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LogFileInfo {
+  pub name: String,
+  pub path: String,
+  pub size: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LogInfo {
+  pub log_dir: String,
+  pub files: Vec<LogFileInfo>,
+  pub total_size: u64,
+}
+
+#[tauri::command]
+pub async fn get_log_info(app_handle: AppHandle) -> Result<LogInfo, Error> {
+  log::info!("Getting log info");
+
+  let log_dir = app_handle
+    .path()
+    .app_log_dir()
+    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
+
+  let mut files = Vec::new();
+  let mut total_size = 0u64;
+
+  if log_dir.exists()
+    && let Ok(entries) = std::fs::read_dir(&log_dir) {
+      for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file()
+          && let Some(name) = path.file_name() {
+            let name_str = name.to_string_lossy().to_string();
+            if name_str.starts_with("deadlock-mod-manager") && name_str.ends_with(".log")
+              && let Ok(metadata) = std::fs::metadata(&path) {
+                let size = metadata.len();
+                total_size += size;
+                files.push(LogFileInfo {
+                  name: name_str,
+                  path: path.to_string_lossy().to_string(),
+                  size,
+                });
+              }
+          }
+      }
+    }
+
+  files.sort_by(|a, b| a.name.cmp(&b.name));
+
+  Ok(LogInfo {
+    log_dir: log_dir.to_string_lossy().to_string(),
+    files,
+    total_size,
+  })
+}
+
+#[tauri::command]
+pub async fn open_logs_folder(app_handle: AppHandle) -> Result<(), Error> {
+  log::info!("Opening logs folder");
+
+  let log_dir = app_handle
+    .path()
+    .app_log_dir()
+    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
+
+  if !log_dir.exists() {
+    std::fs::create_dir_all(&log_dir)
+      .map_err(|e| Error::InvalidInput(format!("Failed to create log directory: {e}")))?;
+  }
+
+  crate::utils::show_in_folder(log_dir.to_string_lossy().as_ref())
+}
+
+#[tauri::command]
+pub async fn open_log_file(app_handle: AppHandle) -> Result<(), Error> {
+  log::info!("Opening latest log file");
+
+  let log_dir = app_handle
+    .path()
+    .app_log_dir()
+    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
+
+  let main_log = log_dir.join("deadlock-mod-manager.log");
+
+  if !main_log.exists() {
+    return Err(Error::InvalidInput("No log file found".to_string()));
+  }
+
+  crate::utils::open_file_with_editor(main_log.to_string_lossy().as_ref())
+}
+
+#[tauri::command]
+pub async fn get_game_console_log_exists() -> Result<bool, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let console_log = game_path.join("game").join("citadel").join("console.log");
+  Ok(console_log.exists())
+}
+
+#[tauri::command]
+pub async fn open_game_console_log() -> Result<(), Error> {
+  log::info!("Opening game console log");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let console_log = game_path.join("game").join("citadel").join("console.log");
+
+  if !console_log.exists() {
+    return Err(Error::InvalidInput(
+      "Console log not found. Enable -condebug launch option.".to_string(),
+    ));
+  }
+
+  crate::utils::open_file_with_editor(console_log.to_string_lossy().as_ref())
+}
+
+#[tauri::command]
+pub async fn open_game_console_log_folder() -> Result<(), Error> {
+  log::info!("Opening game console log folder");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let console_log_folder = game_path.join("game").join("citadel");
+
+  if !console_log_folder.exists() {
+    std::fs::create_dir_all(&console_log_folder)
+      .map_err(|e| Error::InvalidInput(format!("Failed to create folder: {e}")))?;
+  }
+
+  crate::utils::show_in_folder(console_log_folder.to_string_lossy().as_ref())
+}
+
+#[tauri::command]
+pub async fn get_logs_for_ai(app_handle: AppHandle, max_chars: usize) -> Result<String, Error> {
+  log::info!("Getting logs for AI assistance (max {} chars)", max_chars);
+
+  let mut output = String::new();
+  let mut remaining_chars = max_chars;
+
+  let log_dir = app_handle
+    .path()
+    .app_log_dir()
+    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
+
+  let main_log = log_dir.join("deadlock-mod-manager.log");
+  if main_log.exists()
+    && let Ok(content) = std::fs::read_to_string(&main_log) {
+      let header = "=== DEADLOCK MOD MANAGER LOG ===\n";
+      output.push_str(header);
+      remaining_chars = remaining_chars.saturating_sub(header.len());
+
+      let lines: Vec<&str> = content.lines().collect();
+      let mut log_content = String::new();
+      for line in lines.iter().rev() {
+        let line_with_newline = format!("{}\n", line);
+        if log_content.len() + line_with_newline.len() > remaining_chars / 2 {
+          break;
+        }
+        log_content = line_with_newline + &log_content;
+      }
+      output.push_str(&log_content);
+      remaining_chars = remaining_chars.saturating_sub(log_content.len());
+      output.push('\n');
+    }
+
+  let mod_manager = MANAGER.lock().unwrap();
+  if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+    let console_log = game_path.join("game").join("citadel").join("console.log");
+    if console_log.exists()
+      && let Ok(content) = std::fs::read_to_string(&console_log) {
+        let header = "=== DEADLOCK GAME CONSOLE LOG ===\n";
+        output.push_str(header);
+        remaining_chars = remaining_chars.saturating_sub(header.len());
+
+        let lines: Vec<&str> = content.lines().collect();
+        let mut log_content = String::new();
+        for line in lines.iter().rev() {
+          let line_with_newline = format!("{}\n", line);
+          if log_content.len() + line_with_newline.len() > remaining_chars {
+            break;
+          }
+          log_content = line_with_newline + &log_content;
+        }
+        output.push_str(&log_content);
+      }
+  }
+
+  if output.is_empty() {
+    return Err(Error::InvalidInput("No log files found".to_string()));
+  }
+
+  Ok(output)
+}

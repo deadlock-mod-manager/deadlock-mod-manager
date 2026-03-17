@@ -164,7 +164,14 @@ pub fn run() {
       commands::open_autoexec_folder,
       commands::open_autoexec_editor,
       commands::apply_crosshair_to_autoexec,
-      commands::remove_crosshair_from_autoexec
+      commands::remove_crosshair_from_autoexec,
+      commands::get_log_info,
+      commands::open_logs_folder,
+      commands::open_log_file,
+      commands::get_game_console_log_exists,
+      commands::open_game_console_log,
+      commands::open_game_console_log_folder,
+      commands::get_logs_for_ai
     ])
     .run(context)
     .expect("error while running tauri application");

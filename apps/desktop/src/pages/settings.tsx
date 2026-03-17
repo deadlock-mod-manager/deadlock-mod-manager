@@ -53,6 +53,7 @@ import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
+import { LoggingSettings } from "@/components/settings/logging-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -90,6 +91,7 @@ const getAutoexecConfig = async () => {
 };
 
 const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
+const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 
 const CustomSettingsData = () => {
   const { t } = useTranslation();
@@ -169,6 +171,22 @@ const CustomSettingsData = () => {
     };
   }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
 
+  const condebugLaunchOption: LocalSetting = useMemo(() => {
+    const persistedEnabled = settingStatusById[CONDEBUG_LAUNCH_OPTION_ID];
+    const enabled = persistedEnabled === undefined ? true : persistedEnabled;
+
+    return {
+      id: CONDEBUG_LAUNCH_OPTION_ID,
+      key: "-condebug",
+      value: "",
+      type: CustomSettingType.LAUNCH_OPTION,
+      description: t("settings.condebugLaunchOption"),
+      enabled,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }, [settingStatusById, t]);
+
   return (
     <>
       {Object.values(CustomSettingType).map((type: CustomSettingType) => {
@@ -176,6 +194,7 @@ const CustomSettingsData = () => {
         const settingsForType = [
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
+          ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(isLaunchOption && autoexecLaunchOption
             ? [autoexecLaunchOption]
             : []),
@@ -579,6 +598,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     {t("settings.clearAllMods")}
                   </Button>
                 </div>
+              </Section>
+              <Section
+                description={t("settings.loggingDescription")}
+                title={t("settings.logging")}>
+                <LoggingSettings />
               </Section>
               <Section
                 description={t("settings.addonsBackupDescription")}
