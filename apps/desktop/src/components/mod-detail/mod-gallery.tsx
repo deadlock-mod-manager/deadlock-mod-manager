@@ -13,6 +13,7 @@ import {
   CarouselPrevious,
 } from "@deadlock-mods/ui/components/carousel";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
+import { useTranslation } from "react-i18next";
 
 interface ModGalleryProps {
   images: string[];
@@ -27,6 +28,8 @@ export const ModGallery = ({
   nsfwSettings,
   onNSFWToggle,
 }: ModGalleryProps) => {
+  const { t } = useTranslation();
+
   if (!images || images.length === 0) {
     return null;
   }
@@ -34,7 +37,7 @@ export const ModGallery = ({
   return (
     <Card className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
-        <CardTitle>Gallery</CardTitle>
+        <CardTitle>{t("ui.gallery")}</CardTitle>
       </CardHeader>
       <CardContent>
         <Carousel className='w-full'>
@@ -65,12 +68,8 @@ export const ModGallery = ({
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <div className='-right-12 -translate-y-1/2 absolute top-1/2'>
-              <CarouselNext />
-            </div>
-            <div className='-left-12 -translate-y-1/2 absolute top-1/2'>
-              <CarouselPrevious />
-            </div>
+            <CarouselPrevious className='left-3 -translate-y-1/2 top-1/2 h-10 w-10 bg-black/50 hover:bg-black/70 border-0 text-white [&_svg]:size-5' />
+            <CarouselNext className='right-3 -translate-y-1/2 top-1/2 h-10 w-10 bg-black/50 hover:bg-black/70 border-0 text-white [&_svg]:size-5' />
           </div>
         </Carousel>
       </CardContent>
