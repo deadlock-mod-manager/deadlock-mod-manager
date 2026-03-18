@@ -54,7 +54,7 @@ export const ModGallery = ({
                         isNSFW={shouldBlur}
                         onToggleVisibility={onNSFWToggle}>
                         <img
-                          alt={`Screenshot ${index + 1}`}
+                          alt={t("ui.screenshot", { number: index + 1 })}
                           className='aspect-video w-full object-cover'
                           decoding='async'
                           height='225'
