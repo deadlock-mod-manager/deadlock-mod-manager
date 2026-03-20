@@ -35,7 +35,24 @@ interface LogInfo {
   total_size: number;
 }
 
-type AiProvider = "chatgpt" | "claude" | "gemini" | "perplexity";
+interface CrashDumpFile {
+  name: string;
+  path: string;
+  size: number;
+  modified: string | null;
+}
+
+interface CrashDumpInfo {
+  path: string;
+  exists: boolean;
+  files: CrashDumpFile[];
+  total_count: number;
+  total_size: number;
+}
+
+type AiProvider = "chatgpt" | "claude" | "gemini" | "perplexity" | "t3chat";
+
+type LogSource = "dmm" | "crash" | "combined";
 
 interface AiProviderConfig {
   name: string;
@@ -64,18 +81,37 @@ const AI_PROVIDERS: Record<AiProvider, AiProviderConfig> = {
     baseUrl: "https://www.perplexity.ai/",
     queryParam: "q",
   },
+  t3chat: {
+    name: "T3 Chat",
+    baseUrl: "https://t3.chat/",
+    queryParam: "q",
+  },
 };
 
-const PROMPT_TEXT = `I need help troubleshooting Deadlock Mod Manager.
+const getPromptText = (logSource: LogSource): string => {
+  const logContext = {
+    dmm: `The logs I'm sharing are from the Deadlock Mod Manager (DMM) application itself.
+These are NOT crash dumps from the Deadlock game, but logs from the mod manager application.`,
+    crash: `The logs I'm sharing are crash dumps from the Deadlock game (by Valve).
+These are NOT logs from the Deadlock Mod Manager application, but minidump crash reports generated when the Deadlock game crashes.`,
+    combined: `The logs I'm sharing include BOTH:
+1. Deadlock Mod Manager (DMM) application logs
+2. Deadlock game crash dumps (minidump files from when the game crashes)`,
+  }[logSource];
+
+  return `I need help troubleshooting Deadlock Mod Manager.
 
 Docs: https://docs.deadlockmods.app/
 GitHub: https://github.com/deadlock-mod-manager/deadlock-mod-manager
+
+${logContext}
 
 My issue is: [DESCRIBE YOUR ISSUE HERE]
 
 [PASTE LOGS BELOW USING Ctrl+V]
 
 `;
+};
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
@@ -90,16 +126,12 @@ export const LoggingSettings = () => {
   const confirm = useConfirm();
   const [selectedProvider, setSelectedProvider] =
     useState<AiProvider>("chatgpt");
+  const [selectedLogSource, setSelectedLogSource] =
+    useState<LogSource>("combined");
 
   const { data: logInfo } = useQuery({
     queryKey: ["log-info"],
     queryFn: () => invoke<LogInfo>("get_log_info"),
-    staleTime: STALE_TIME_LOCAL,
-  });
-
-  const { data: gameConsoleLogExists } = useQuery({
-    queryKey: ["game-console-log-exists"],
-    queryFn: () => invoke<boolean>("get_game_console_log_exists"),
     staleTime: STALE_TIME_LOCAL,
   });
 
@@ -123,23 +155,29 @@ export const LoggingSettings = () => {
     },
   });
 
-  const openGameConsoleLogMutation = useMutation({
-    mutationFn: () => invoke("open_game_console_log"),
+  const { data: crashDumpInfo } = useQuery({
+    queryKey: ["crash-dump-info"],
+    queryFn: () => invoke<CrashDumpInfo>("get_crash_dumps_info"),
+    staleTime: STALE_TIME_LOCAL,
+  });
+
+  const openCrashDumpsFolderMutation = useMutation({
+    mutationFn: () => invoke("open_crash_dumps_folder"),
     onError: (error) => {
       logger.errorOnly(
         error instanceof Error ? error : new Error(String(error)),
       );
-      toast.error(t("settings.openGameConsoleLogError"));
+      toast.error(t("settings.openCrashDumpsFolderError"));
     },
   });
 
-  const openGameConsoleLogFolderMutation = useMutation({
-    mutationFn: () => invoke("open_game_console_log_folder"),
+  const openLatestCrashDumpMutation = useMutation({
+    mutationFn: () => invoke("open_latest_crash_dump_parsed"),
     onError: (error) => {
       logger.errorOnly(
         error instanceof Error ? error : new Error(String(error)),
       );
-      toast.error(t("settings.openGameConsoleLogFolderError"));
+      toast.error(t("settings.openCrashDumpError"));
     },
   });
 
@@ -149,11 +187,12 @@ export const LoggingSettings = () => {
 
       const logs = await invoke<string>("get_logs_for_ai", {
         maxChars: 100000,
+        logSource: selectedLogSource,
       });
 
       await navigator.clipboard.writeText(logs);
 
-      const url = `${provider.baseUrl}?${provider.queryParam}=${encodeURIComponent(PROMPT_TEXT)}`;
+      const url = `${provider.baseUrl}?${provider.queryParam}=${encodeURIComponent(getPromptText(selectedLogSource))}`;
       await openUrl(url);
       return provider.name;
     },
@@ -223,36 +262,41 @@ export const LoggingSettings = () => {
 
       <div className='space-y-3'>
         <div className='space-y-1'>
-          <h4 className='font-medium text-sm'>
-            {t("settings.gameConsoleLogs")}
-          </h4>
+          <h4 className='font-medium text-sm'>{t("settings.crashDumps")}</h4>
           <p className='text-muted-foreground text-xs'>
-            {t("settings.gameConsoleLogsDescription")}
+            {t("settings.crashDumpsDescription")}
           </p>
         </div>
         <div className='flex items-center gap-4'>
           <div className='flex gap-2'>
             <Button
-              onClick={() => openGameConsoleLogFolderMutation.mutate()}
+              onClick={() => openCrashDumpsFolderMutation.mutate()}
               variant='outline'
-              isLoading={openGameConsoleLogFolderMutation.isPending}>
+              isLoading={openCrashDumpsFolderMutation.isPending}>
               <FolderOpenIcon className='h-4 w-4' />
               {t("settings.openLogsFolder")}
             </Button>
-            {gameConsoleLogExists && (
+            {crashDumpInfo && crashDumpInfo.total_count > 0 && (
               <Button
-                onClick={() => openGameConsoleLogMutation.mutate()}
+                onClick={() => openLatestCrashDumpMutation.mutate()}
                 variant='outline'
-                isLoading={openGameConsoleLogMutation.isPending}>
+                isLoading={openLatestCrashDumpMutation.isPending}>
                 <PencilIcon className='h-4 w-4' />
-                {t("settings.openInEditor")}
+                {t("settings.openLatestCrashDump")}
               </Button>
             )}
           </div>
-          {!gameConsoleLogExists && (
+          {crashDumpInfo && crashDumpInfo.total_count > 0 ? (
+            <span className='text-muted-foreground text-sm'>
+              {t("settings.crashDumpFilesCount", {
+                count: crashDumpInfo.total_count,
+              })}{" "}
+              • {formatFileSize(crashDumpInfo.total_size)}
+            </span>
+          ) : (
             <div className='flex items-center gap-2 text-muted-foreground text-sm'>
               <WarningCircleIcon className='h-4 w-4' />
-              <span>{t("settings.consoleLogNotFound")}</span>
+              <span>{t("settings.noCrashDumpsFound")}</span>
             </div>
           )}
         </div>
@@ -265,7 +309,7 @@ export const LoggingSettings = () => {
             {t("settings.askAiDescription")}
           </p>
         </div>
-        <div className='flex items-center gap-3'>
+        <div className='flex flex-wrap items-center gap-3'>
           <div className='flex items-center gap-2'>
             <Label htmlFor='ai-provider' className='text-sm'>
               {t("settings.aiProvider")}
@@ -287,11 +331,42 @@ export const LoggingSettings = () => {
               </SelectContent>
             </Select>
           </div>
+          <div className='flex items-center gap-2'>
+            <Label htmlFor='log-source' className='text-sm'>
+              {t("settings.logSource")}
+            </Label>
+            <Select
+              value={selectedLogSource}
+              onValueChange={(value) =>
+                setSelectedLogSource(value as LogSource)
+              }>
+              <SelectTrigger id='log-source' className='w-40'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='combined'>
+                  {t("settings.logSourceCombined")}
+                </SelectItem>
+                <SelectItem value='dmm'>
+                  {t("settings.logSourceDmm")}
+                </SelectItem>
+                <SelectItem value='crash'>
+                  {t("settings.logSourceCrash")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             onClick={handleAskAi}
             variant='outline'
             isLoading={askAiMutation.isPending}
-            disabled={!logInfo?.files.length}>
+            disabled={
+              (selectedLogSource === "dmm" && !logInfo?.files.length) ||
+              (selectedLogSource === "crash" && !crashDumpInfo?.total_count) ||
+              (selectedLogSource === "combined" &&
+                !logInfo?.files.length &&
+                !crashDumpInfo?.total_count)
+            }>
             <RobotIcon className='h-4 w-4' />
             {t("settings.askAiButton")}
           </Button>

@@ -168,10 +168,12 @@ pub fn run() {
       commands::get_log_info,
       commands::open_logs_folder,
       commands::open_log_file,
-      commands::get_game_console_log_exists,
-      commands::open_game_console_log,
-      commands::open_game_console_log_folder,
-      commands::get_logs_for_ai
+      commands::get_logs_for_ai,
+      commands::get_crash_dumps_info,
+      commands::open_crash_dumps_folder,
+      commands::parse_crash_dump,
+      commands::parse_latest_crash_dump,
+      commands::open_latest_crash_dump_parsed
     ])
     .run(context)
     .expect("error while running tauri application");

@@ -91,7 +91,6 @@ const getAutoexecConfig = async () => {
 };
 
 const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
-const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 
 const CustomSettingsData = () => {
   const { t } = useTranslation();
@@ -171,22 +170,6 @@ const CustomSettingsData = () => {
     };
   }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
 
-  const condebugLaunchOption: LocalSetting = useMemo(() => {
-    const persistedEnabled = settingStatusById[CONDEBUG_LAUNCH_OPTION_ID];
-    const enabled = persistedEnabled === undefined ? true : persistedEnabled;
-
-    return {
-      id: CONDEBUG_LAUNCH_OPTION_ID,
-      key: "-condebug",
-      value: "",
-      type: CustomSettingType.LAUNCH_OPTION,
-      description: t("settings.condebugLaunchOption"),
-      enabled,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }, [settingStatusById, t]);
-
   return (
     <>
       {Object.values(CustomSettingType).map((type: CustomSettingType) => {
@@ -194,7 +177,6 @@ const CustomSettingsData = () => {
         const settingsForType = [
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
-          ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(isLaunchOption && autoexecLaunchOption
             ? [autoexecLaunchOption]
             : []),
