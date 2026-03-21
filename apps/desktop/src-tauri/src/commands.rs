@@ -2,6 +2,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+pub use crate::logs::{CrashDumpInfo, LogInfo};
+
 use crate::deep_link::{scheme_names, strip_scheme, validate_mod_deep_link};
 use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
@@ -12,6 +14,7 @@ use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, AutoexecConfig, Mod, ModFileTree, ModManager,
 };
+use crate::logs::{crash_dumps, log_manager};
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -2410,95 +2413,19 @@ pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
     .remove_crosshair_section(game_path)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LogFileInfo {
-  pub name: String,
-  pub path: String,
-  pub size: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LogInfo {
-  pub log_dir: String,
-  pub files: Vec<LogFileInfo>,
-  pub total_size: u64,
-}
-
 #[tauri::command]
 pub async fn get_log_info(app_handle: AppHandle) -> Result<LogInfo, Error> {
-  log::info!("Getting log info");
-
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
-    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
-
-  let mut files = Vec::new();
-  let mut total_size = 0u64;
-
-  if log_dir.exists()
-    && let Ok(entries) = std::fs::read_dir(&log_dir) {
-      for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_file()
-          && let Some(name) = path.file_name() {
-            let name_str = name.to_string_lossy().to_string();
-            if name_str.starts_with("deadlock-mod-manager") && name_str.ends_with(".log")
-              && let Ok(metadata) = std::fs::metadata(&path) {
-                let size = metadata.len();
-                total_size += size;
-                files.push(LogFileInfo {
-                  name: name_str,
-                  path: path.to_string_lossy().to_string(),
-                  size,
-                });
-              }
-          }
-      }
-    }
-
-  files.sort_by(|a, b| a.name.cmp(&b.name));
-
-  Ok(LogInfo {
-    log_dir: log_dir.to_string_lossy().to_string(),
-    files,
-    total_size,
-  })
+  log_manager::get_log_info(&app_handle).await
 }
 
 #[tauri::command]
 pub async fn open_logs_folder(app_handle: AppHandle) -> Result<(), Error> {
-  log::info!("Opening logs folder");
-
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
-    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
-
-  if !log_dir.exists() {
-    std::fs::create_dir_all(&log_dir)
-      .map_err(|e| Error::InvalidInput(format!("Failed to create log directory: {e}")))?;
-  }
-
-  crate::utils::show_in_folder(log_dir.to_string_lossy().as_ref())
+  log_manager::open_logs_folder(&app_handle)
 }
 
 #[tauri::command]
 pub async fn open_log_file(app_handle: AppHandle) -> Result<(), Error> {
-  log::info!("Opening latest log file");
-
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
-    .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
-
-  let main_log = log_dir.join("deadlock-mod-manager.log");
-
-  if !main_log.exists() {
-    return Err(Error::InvalidInput("No log file found".to_string()));
-  }
-
-  crate::utils::open_file_with_editor(main_log.to_string_lossy().as_ref())
+  log_manager::open_log_file(&app_handle)
 }
 
 #[tauri::command]
@@ -2507,341 +2434,30 @@ pub async fn get_logs_for_ai(
   max_chars: usize,
   log_source: String,
 ) -> Result<String, Error> {
-  log::info!(
-    "Getting logs for AI assistance (max {} chars, source: {})",
-    max_chars,
-    log_source
-  );
-
-  let mut output = String::new();
-  let mut remaining_chars = max_chars;
-
-  let include_dmm = log_source == "dmm" || log_source == "combined";
-  let include_crash = log_source == "crash" || log_source == "combined";
-
-  if include_dmm {
-    let log_dir = app_handle
-      .path()
-      .app_log_dir()
-      .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
-
-    let main_log = log_dir.join("deadlock-mod-manager.log");
-    if main_log.exists()
-      && let Ok(content) = std::fs::read_to_string(&main_log)
-    {
-      let header = "=== DEADLOCK MOD MANAGER LOG ===\n";
-      output.push_str(header);
-      remaining_chars = remaining_chars.saturating_sub(header.len());
-
-      let char_limit = if include_crash {
-        remaining_chars / 2
-      } else {
-        remaining_chars
-      };
-
-      let lines: Vec<&str> = content.lines().collect();
-      let mut log_content = String::new();
-      for line in lines.iter().rev() {
-        let line_with_newline = format!("{}\n", line);
-        if log_content.len() + line_with_newline.len() > char_limit {
-          break;
-        }
-        log_content = line_with_newline + &log_content;
-      }
-      output.push_str(&log_content);
-      remaining_chars = remaining_chars.saturating_sub(log_content.len());
-      output.push('\n');
-    }
-  }
-
-  if include_crash {
-    if let Ok(crash_dumps_dir) = get_crash_dumps_dir() {
-      let files = find_deadlock_crash_dumps(&crash_dumps_dir);
-      if let Some(latest) = files.first() {
-        let options = dmp_parser::DmpParseOptions {
-          include_modules: true,
-          include_threads: true,
-          max_modules: Some(20),
-        };
-
-        if let Ok(parsed) = dmp_parser::DmpParser::parse_file(&latest.path, options) {
-          let header = format!("=== CRASH DUMP ({}) ===\n", latest.name);
-          output.push_str(&header);
-          remaining_chars = remaining_chars.saturating_sub(header.len());
-
-          let crash_content = if parsed.raw_text.len() > remaining_chars {
-            parsed.raw_text.chars().take(remaining_chars).collect::<String>()
-          } else {
-            parsed.raw_text
-          };
-
-          output.push_str(&crash_content);
-        }
-      }
-    }
-  }
-
-  if output.is_empty() {
-    return Err(Error::InvalidInput("No log files found".to_string()));
-  }
-
-  Ok(output)
-}
-
-#[derive(serde::Serialize)]
-pub struct CrashDumpInfo {
-  pub path: String,
-  pub exists: bool,
-  pub files: Vec<CrashDumpFile>,
-  pub total_count: usize,
-  pub total_size: u64,
-}
-
-#[derive(serde::Serialize)]
-pub struct CrashDumpFile {
-  pub name: String,
-  pub path: String,
-  pub size: u64,
-  pub modified: Option<String>,
-}
-
-fn get_crash_dumps_dir() -> Result<std::path::PathBuf, Error> {
-  let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  #[cfg(target_os = "windows")]
-  let bin_dir = game_path.join("game").join("bin").join("win64");
-
-  #[cfg(target_os = "linux")]
-  let bin_dir = game_path.join("game").join("bin").join("linuxsteamrt64");
-
-  #[cfg(target_os = "macos")]
-  let bin_dir = game_path.join("game").join("bin").join("osx64");
-
-  Ok(bin_dir)
-}
-
-fn find_deadlock_crash_dumps(dir: &std::path::Path) -> Vec<CrashDumpFile> {
-  let mut files: Vec<CrashDumpFile> = Vec::new();
-
-  if !dir.exists() {
-    return files;
-  }
-
-  let entries = match std::fs::read_dir(dir) {
-    Ok(e) => e,
-    Err(_) => return files,
-  };
-
-  for entry in entries.flatten() {
-    let path = entry.path();
-    if !path.is_file() {
-      continue;
-    }
-
-    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-    let name_lower = name.to_lowercase();
-
-    let is_deadlock_dump = name_lower.contains("deadlock") && name_lower.ends_with(".mdmp");
-
-    if is_deadlock_dump {
-      let metadata = std::fs::metadata(&path).ok();
-      let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
-      let modified = metadata
-        .and_then(|m| m.modified().ok())
-        .map(|t| {
-          chrono::DateTime::<chrono::Utc>::from(t)
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string()
-        });
-
-      files.push(CrashDumpFile {
-        name,
-        path: path.to_string_lossy().to_string(),
-        size,
-        modified,
-      });
-    }
-  }
-
-  files.sort_by(|a, b| b.modified.cmp(&a.modified));
-  files
+  log_manager::get_logs_for_ai(&app_handle, max_chars, &log_source).await
 }
 
 #[tauri::command]
 pub async fn get_crash_dumps_info() -> Result<CrashDumpInfo, Error> {
-  log::info!("Getting crash dumps info");
-
-  let dir = get_crash_dumps_dir()?;
-
-  let exists = dir.exists();
-  let files = if exists {
-    find_deadlock_crash_dumps(&dir)
-  } else {
-    Vec::new()
-  };
-
-  let total_size = files.iter().map(|f| f.size).sum();
-
-  Ok(CrashDumpInfo {
-    path: dir.to_string_lossy().to_string(),
-    exists,
-    total_count: files.len(),
-    total_size,
-    files,
-  })
-}
-
-fn parse_and_save_dmp(
-  dmp_path: &std::path::Path,
-  parsed_dir: &std::path::Path,
-) -> Result<std::path::PathBuf, String> {
-  let options = dmp_parser::DmpParseOptions {
-    include_modules: true,
-    include_threads: true,
-    max_modules: Some(50),
-  };
-
-  let parsed = dmp_parser::DmpParser::parse_file(dmp_path, options)
-    .map_err(|e| format!("Failed to parse {}: {e}", dmp_path.display()))?;
-
-  let file_stem = dmp_path
-    .file_stem()
-    .unwrap_or_default()
-    .to_string_lossy();
-  let txt_path = parsed_dir.join(format!("{file_stem}.txt"));
-
-  std::fs::write(&txt_path, &parsed.raw_text)
-    .map_err(|e| format!("Failed to write {}: {e}", txt_path.display()))?;
-
-  Ok(txt_path)
+  crash_dumps::get_crash_dumps_info()
 }
 
 #[tauri::command]
 pub async fn open_crash_dumps_folder() -> Result<(), Error> {
-  log::info!("Opening crash dumps folder");
-
-  let dir = get_crash_dumps_dir()?;
-
-  if !dir.exists() {
-    return Err(Error::InvalidInput(
-      "Crash dumps directory does not exist. Game may not have crashed yet.".to_string(),
-    ));
-  }
-
-  let parsed_dir = dir.join("parsed");
-  if !parsed_dir.exists() {
-    std::fs::create_dir_all(&parsed_dir)
-      .map_err(|e| Error::InvalidInput(format!("Failed to create parsed folder: {e}")))?;
-  }
-
-  let files = find_deadlock_crash_dumps(&dir);
-  for file in &files {
-    let dmp_path = std::path::Path::new(&file.path);
-    let file_stem = dmp_path.file_stem().unwrap_or_default().to_string_lossy();
-    let txt_path = parsed_dir.join(format!("{file_stem}.txt"));
-
-    if !txt_path.exists() {
-      if let Err(e) = parse_and_save_dmp(dmp_path, &parsed_dir) {
-        log::warn!("Failed to parse crash dump: {e}");
-      }
-    }
-  }
-
-  crate::utils::show_in_folder(parsed_dir.to_string_lossy().as_ref())
+  crash_dumps::open_crash_dumps_folder()
 }
 
 #[tauri::command]
 pub async fn parse_crash_dump(file_path: String) -> Result<String, Error> {
-  log::info!("Parsing crash dump: {}", file_path);
-
-  let path = std::path::Path::new(&file_path);
-  if !path.exists() {
-    return Err(Error::InvalidInput(format!("File not found: {file_path}")));
-  }
-
-  let options = dmp_parser::DmpParseOptions {
-    include_modules: true,
-    include_threads: true,
-    max_modules: Some(30),
-  };
-
-  match dmp_parser::DmpParser::parse_file(path, options) {
-    Ok(parsed) => Ok(parsed.raw_text),
-    Err(e) => Err(Error::InvalidInput(format!("Failed to parse crash dump: {e}"))),
-  }
+  crash_dumps::parse_crash_dump(&file_path)
 }
 
 #[tauri::command]
 pub async fn parse_latest_crash_dump() -> Result<String, Error> {
-  log::info!("Parsing latest crash dump");
-
-  let dir = get_crash_dumps_dir()?;
-
-  if !dir.exists() {
-    return Err(Error::InvalidInput("Crash dumps directory does not exist".to_string()));
-  }
-
-  let files = find_deadlock_crash_dumps(&dir);
-  let latest = files.first().ok_or_else(|| {
-    Error::InvalidInput("No Deadlock crash dumps found".to_string())
-  })?;
-
-  let options = dmp_parser::DmpParseOptions {
-    include_modules: true,
-    include_threads: true,
-    max_modules: Some(30),
-  };
-
-  match dmp_parser::DmpParser::parse_file(&latest.path, options) {
-    Ok(parsed) => Ok(parsed.raw_text),
-    Err(e) => Err(Error::InvalidInput(format!("Failed to parse crash dump: {e}"))),
-  }
+  crash_dumps::parse_latest_crash_dump()
 }
 
 #[tauri::command]
 pub async fn open_latest_crash_dump_parsed() -> Result<(), Error> {
-  log::info!("Opening latest crash dump parsed");
-
-  let dir = get_crash_dumps_dir()?;
-
-  if !dir.exists() {
-    return Err(Error::InvalidInput("Crash dumps directory does not exist".to_string()));
-  }
-
-  let files = find_deadlock_crash_dumps(&dir);
-  let latest = files.first().ok_or_else(|| {
-    Error::InvalidInput("No Deadlock crash dumps found".to_string())
-  })?;
-
-  let parsed_dir = dir.join("parsed");
-  if !parsed_dir.exists() {
-    std::fs::create_dir_all(&parsed_dir)
-      .map_err(|e| Error::InvalidInput(format!("Failed to create parsed folder: {e}")))?;
-  }
-
-  let file_stem = std::path::Path::new(&latest.name)
-    .file_stem()
-    .unwrap_or_default()
-    .to_string_lossy();
-  let output_file = parsed_dir.join(format!("{file_stem}.txt"));
-
-  if !output_file.exists() {
-    let options = dmp_parser::DmpParseOptions {
-      include_modules: true,
-      include_threads: true,
-      max_modules: Some(50),
-    };
-
-    let parsed = dmp_parser::DmpParser::parse_file(&latest.path, options)
-      .map_err(|e| Error::InvalidInput(format!("Failed to parse crash dump: {e}")))?;
-
-    std::fs::write(&output_file, &parsed.raw_text)
-      .map_err(|e| Error::InvalidInput(format!("Failed to write parsed output: {e}")))?;
-  }
-
-  crate::utils::open_file_with_editor(output_file.to_string_lossy().as_ref())
+  crash_dumps::open_latest_crash_dump_parsed()
 }

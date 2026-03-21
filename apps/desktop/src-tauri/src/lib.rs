@@ -6,6 +6,7 @@
 
 pub mod cli;
 mod commands;
+mod logs;
 mod deep_link;
 mod discord_rpc;
 mod download_manager;
