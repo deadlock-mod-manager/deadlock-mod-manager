@@ -38,6 +38,14 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.OTHER_MISC,
 ] as const;
 
+export enum TimePeriod {
+  ALL_TIME = "all time",
+  PAST_WEEK = "past week",
+  PAST_MONTH = "past month",
+  PAST_3_MONTHS = "past 3 months",
+  PAST_YEAR = "past year",
+}
+
 export const UPDATED_RECENTLY_DAYS = 3;
 export const UPDATED_RECENTLY_MS = UPDATED_RECENTLY_DAYS * 24 * 60 * 60 * 1000;
 export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");

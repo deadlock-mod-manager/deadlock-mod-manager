@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import { SortType } from "@/lib/constants";
+import { SortType, TimePeriod } from "@/lib/constants";
 import { getPlugins } from "@/lib/plugins";
 import type { State } from "..";
 
@@ -12,6 +12,7 @@ export type ModsFilters = {
   hideNSFW: boolean;
   hideOutdated: boolean;
   currentSort: SortType;
+  timePeriod: TimePeriod;
   filterMode: FilterMode;
   searchQuery: string;
 };
@@ -56,6 +57,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   hideNSFW: false,
   hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,
+  timePeriod: TimePeriod.ALL_TIME,
   filterMode: "include",
   searchQuery: "",
 };

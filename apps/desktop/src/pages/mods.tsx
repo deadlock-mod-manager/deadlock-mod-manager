@@ -20,10 +20,10 @@ import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
-import { ModCategory } from "@/lib/constants";
+import { ModCategory, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { isModOutdated } from "@/lib/utils";
+import { getTimePeriodCutoff, isModOutdated } from "@/lib/utils";
 
 const GetModsData = () => {
   const { t } = useTranslation();
@@ -44,6 +44,7 @@ const GetModsData = () => {
     hideAudio,
     hideNSFW,
     hideOutdated,
+    timePeriod = TimePeriod.ALL_TIME,
     filterMode,
   } = modsFilters;
   // Defer the mod list so background refetches (staleTime expiry) don't
@@ -108,6 +109,14 @@ const GetModsData = () => {
       );
     }
 
+    const cutoff = getTimePeriodCutoff(timePeriod);
+    if (cutoff) {
+      const cutoffTime = cutoff.getTime();
+      filtered = filtered.filter(
+        (mod) => new Date(mod.remoteUpdatedAt).getTime() >= cutoffTime,
+      );
+    }
+
     return filtered;
   }, [
     results,
@@ -118,6 +127,7 @@ const GetModsData = () => {
     hideNSFW,
     hideAudio,
     hideOutdated,
+    timePeriod,
   ]);
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -168,6 +178,8 @@ const GetModsData = () => {
         onHideOutdatedChange={(hideOutdated) =>
           updateModsFilters({ hideOutdated })
         }
+        timePeriod={timePeriod}
+        onTimePeriodChange={(timePeriod) => updateModsFilters({ timePeriod })}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}
@@ -191,7 +203,8 @@ const GetModsData = () => {
               selectedHeroes.length > 0 ||
               hideAudio ||
               hideNSFW ||
-              hideOutdated
+              hideOutdated ||
+              timePeriod !== TimePeriod.ALL_TIME
                 ? t("mods.noModsMatchFilters")
                 : t("mods.noModsAvailable")}
             </EmptyDescription>
@@ -199,7 +212,8 @@ const GetModsData = () => {
               selectedHeroes.length > 0 ||
               hideAudio ||
               hideNSFW ||
-              hideOutdated) && (
+              hideOutdated ||
+              timePeriod !== TimePeriod.ALL_TIME) && (
               <EmptyDescription className='text-xs'>
                 Try clearing some filters to see more results
               </EmptyDescription>

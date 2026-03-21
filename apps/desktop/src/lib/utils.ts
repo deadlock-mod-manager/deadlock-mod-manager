@@ -9,6 +9,7 @@ import {
   STALE_MOD_DAYS,
   STALE_MOD_REPORT_THRESHOLD,
   SortType,
+  TimePeriod,
   UPDATED_RECENTLY_MS,
   UPDATED_RECENTLY_THRESHOLD,
 } from "./constants";
@@ -91,7 +92,7 @@ export const compareDates = (
 };
 
 export const sortMods = (mods: LocalMod[], sortType: SortType) => {
-  return mods.sort((a, b) => {
+  return [...mods].sort((a, b) => {
     switch (sortType) {
       case SortType.LAST_UPDATED:
         return compareDates(b.remoteUpdatedAt, a.remoteUpdatedAt);
@@ -105,6 +106,21 @@ export const sortMods = (mods: LocalMod[], sortType: SortType) => {
         return b.downloadCount - a.downloadCount;
     }
   });
+};
+
+export const getTimePeriodCutoff = (period: TimePeriod): Date | null => {
+  if (period === TimePeriod.ALL_TIME) return null;
+  const now = new Date();
+  switch (period) {
+    case TimePeriod.PAST_WEEK:
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case TimePeriod.PAST_MONTH:
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case TimePeriod.PAST_3_MONTHS:
+      return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    case TimePeriod.PAST_YEAR:
+      return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  }
 };
 
 export const isModOutdated = (mod: ModDto) => {
