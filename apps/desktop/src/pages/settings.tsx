@@ -29,6 +29,7 @@ import {
   MonitorIcon,
   PlugIcon,
   PlusIcon,
+  ScrollTextIcon,
   Settings,
   ShieldIcon,
   TrashIcon,
@@ -388,6 +389,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='logging'>
+              <ScrollTextIcon className='h-5 w-5' />
+              {t("settings.logging")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='experimental'>
               <FlagIcon className='h-5 w-5' />
               {t("settings.experimental")}
@@ -582,14 +589,17 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
               </Section>
               <Section
-                description={t("settings.loggingDescription")}
-                title={t("settings.logging")}>
-                <LoggingSettings />
-              </Section>
-              <Section
                 description={t("settings.addonsBackupDescription")}
                 title={t("settings.addonsBackup")}>
                 <AddonsBackupManagement />
+              </Section>
+            </TabsContent>
+
+            <TabsContent className='mt-0 space-y-2' value='logging'>
+              <Section
+                description={t("settings.loggingDescription")}
+                title={t("settings.logging")}>
+                <LoggingSettings />
               </Section>
             </TabsContent>
 
