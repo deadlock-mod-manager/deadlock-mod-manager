@@ -24,19 +24,6 @@ impl DmpParser {
     Self::parse_minidump(&dump, path.display().to_string(), file_size, options)
   }
 
-  pub fn parse_bytes(
-    data: &[u8],
-    file_path: String,
-    options: DmpParseOptions,
-  ) -> Result<DmpParsed> {
-    let file_size = data.len() as u64;
-
-    let dump = Minidump::read(data)
-      .map_err(|e| DmpError::ParseError(format!("Failed to read minidump from bytes: {e}")))?;
-
-    Self::parse_minidump(&dump, file_path, file_size, options)
-  }
-
   fn parse_minidump<'a, T: std::ops::Deref<Target = [u8]> + 'a>(
     dump: &Minidump<'a, T>,
     file_path: String,

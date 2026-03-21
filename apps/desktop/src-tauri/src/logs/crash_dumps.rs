@@ -63,9 +63,7 @@ pub fn find_deadlock_crash_dumps(dir: &Path) -> Vec<CrashDumpFile> {
     let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
     let name_lower = name.to_lowercase();
 
-    let is_deadlock_dump = name_lower.contains("deadlock") && name_lower.ends_with(".mdmp");
-
-    if is_deadlock_dump {
+    if name_lower.contains("deadlock") && name_lower.ends_with(".mdmp") {
       let metadata = std::fs::metadata(&path).ok();
       let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
       let modified = metadata
