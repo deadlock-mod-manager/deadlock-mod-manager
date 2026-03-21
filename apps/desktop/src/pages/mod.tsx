@@ -105,7 +105,8 @@ const Mod = () => {
   );
 
   const currentModUpdate = useMemo(
-    () => updatableMods.filter((update) => update.mod.remoteId === mod?.remoteId),
+    () =>
+      updatableMods.filter((update) => update.mod.remoteId === mod?.remoteId),
     [updatableMods, mod?.remoteId],
   );
 

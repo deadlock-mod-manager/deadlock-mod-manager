@@ -204,7 +204,7 @@ const GetModsData = () => {
               hideAudio ||
               hideNSFW ||
               hideOutdated ||
-              timePeriod !== "all time"
+              timePeriod !== TimePeriod.ALL_TIME
                 ? t("mods.noModsMatchFilters")
                 : t("mods.noModsAvailable")}
             </EmptyDescription>
@@ -213,7 +213,7 @@ const GetModsData = () => {
               hideAudio ||
               hideNSFW ||
               hideOutdated ||
-              timePeriod !== "all time") && (
+              timePeriod !== TimePeriod.ALL_TIME) && (
               <EmptyDescription className='text-xs'>
                 Try clearing some filters to see more results
               </EmptyDescription>

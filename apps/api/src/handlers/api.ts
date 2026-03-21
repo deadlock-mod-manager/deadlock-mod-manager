@@ -28,10 +28,10 @@ export const apiHandler = new OpenAPIHandler(appRouter, {
       specGenerateOptions: {
         servers: [
           {
-            url: "https://api.deadlockmods.app/api"
+            url: "https://api.deadlockmods.app/api",
           },
           {
-            url: "http://localhost:9000/api"
+            url: "http://localhost:9000/api",
           },
         ],
       },

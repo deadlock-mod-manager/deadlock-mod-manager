@@ -52,41 +52,42 @@ export const useBatchUpdate = () => {
     };
   }, []);
 
-  const prepareUpdates = useCallback((
-    updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>,
-  ) => {
-    const prepared = updates.map((update) => {
-      const localMod = localMods.find(
-        (m) => m.remoteId === update.mod.remoteId,
-      );
-
-      let selectedDownloads: ModDownloadItem[];
-      if (update.downloads.length === 1) {
-        selectedDownloads = update.downloads;
-      } else if (
-        localMod?.selectedDownloads &&
-        localMod.selectedDownloads.length > 0
-      ) {
-        const savedSelections = localMod.selectedDownloads;
-        const matched = update.downloads.filter((d) =>
-          savedSelections.some((sd) => sd.name === d.name),
+  const prepareUpdates = useCallback(
+    (updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>) => {
+      const prepared = updates.map((update) => {
+        const localMod = localMods.find(
+          (m) => m.remoteId === update.mod.remoteId,
         );
-        selectedDownloads = matched.length > 0 ? matched : update.downloads;
-      } else {
-        selectedDownloads = update.downloads;
-      }
 
-      return {
-        mod: update.mod,
-        downloads: update.downloads,
-        selectedDownloads,
-        selectedFileTree: localMod?.installedFileTree,
-      };
-    });
+        let selectedDownloads: ModDownloadItem[];
+        if (update.downloads.length === 1) {
+          selectedDownloads = update.downloads;
+        } else if (
+          localMod?.selectedDownloads &&
+          localMod.selectedDownloads.length > 0
+        ) {
+          const savedSelections = localMod.selectedDownloads;
+          const matched = update.downloads.filter((d) =>
+            savedSelections.some((sd) => sd.name === d.name),
+          );
+          selectedDownloads = matched.length > 0 ? matched : update.downloads;
+        } else {
+          selectedDownloads = update.downloads;
+        }
 
-    setUpdatableMods(prepared);
-    return prepared;
-  }, [localMods]);
+        return {
+          mod: update.mod,
+          downloads: update.downloads,
+          selectedDownloads,
+          selectedFileTree: localMod?.installedFileTree,
+        };
+      });
+
+      setUpdatableMods(prepared);
+      return prepared;
+    },
+    [localMods],
+  );
 
   const setSelectedDownloads = (
     remoteId: string,

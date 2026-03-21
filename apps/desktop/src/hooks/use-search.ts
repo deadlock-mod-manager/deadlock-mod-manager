@@ -1,10 +1,12 @@
 import Fuse, { type FuseOptionKey } from "fuse.js";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { SortType } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { sortMods } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
+
+const FUSE_MOD_SEARCH_THRESHOLD = 0.35;
 
 type UseSearchProps<T> = {
   data: T[];
@@ -19,11 +21,13 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   const query = modsFilters.searchQuery || "";
   const debouncedQuery = useDebouncedValue(query, 300);
   const sortType = modsFilters.currentSort;
+  const preSearchSortRef = useRef<SortType | null>(null);
 
   const fuse = useMemo(
     () =>
       new Fuse(data, {
         keys,
+        threshold: FUSE_MOD_SEARCH_THRESHOLD,
         shouldSort: true,
         useExtendedSearch: true,
       }),
@@ -51,7 +55,20 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
   );
 
   const setQuery = (newQuery: string) => {
-    updateModsFilters({ searchQuery: newQuery });
+    const trimmed = newQuery.trim();
+    if (trimmed && sortType !== SortType.DEFAULT) {
+      preSearchSortRef.current = sortType;
+      updateModsFilters({
+        searchQuery: newQuery,
+        currentSort: SortType.DEFAULT,
+      });
+    } else if (!trimmed && preSearchSortRef.current) {
+      const restored = preSearchSortRef.current;
+      preSearchSortRef.current = null;
+      updateModsFilters({ searchQuery: newQuery, currentSort: restored });
+    } else {
+      updateModsFilters({ searchQuery: newQuery });
+    }
   };
 
   const setSortType = (newSortType: SortType) => {

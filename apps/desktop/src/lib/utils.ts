@@ -92,7 +92,7 @@ export const compareDates = (
 };
 
 export const sortMods = (mods: LocalMod[], sortType: SortType) => {
-  return mods.sort((a, b) => {
+  return [...mods].sort((a, b) => {
     switch (sortType) {
       case SortType.LAST_UPDATED:
         return compareDates(b.remoteUpdatedAt, a.remoteUpdatedAt);
