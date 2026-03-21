@@ -22,6 +22,8 @@ on:
 jobs:
   check-commits:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
       commit_count: ${{ steps.check.outputs.commit_count }}
@@ -61,6 +63,8 @@ jobs:
 
   prepare-matrix:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
