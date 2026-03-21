@@ -65,7 +65,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
