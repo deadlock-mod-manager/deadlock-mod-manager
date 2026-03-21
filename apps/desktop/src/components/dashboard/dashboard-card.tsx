@@ -7,11 +7,8 @@ import {
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { usePersistedStore } from "@/lib/store";
+import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
-
-type ThemeSettings = {
-  activeTheme?: string;
-};
 
 type DashboardCardProps = {
   title: string;
@@ -26,19 +23,15 @@ export const DashboardCard = ({
   children,
   contentClassName,
 }: DashboardCardProps) => {
-  const themesEnabled = usePersistedStore(
-    (s) => s.enabledPlugins.themes ?? false,
-  );
-  const themeSettings = usePersistedStore(
-    (s) => s.pluginSettings.themes,
-  ) as ThemeSettings | undefined;
-  
-  const isDeadlockApiTheme =
-    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
 
   if (isDeadlockApiTheme) {
     return (
-      <ElectricBorder borderRadius={12} chaos={0.06} speed={0.8} className="h-full">
+      <ElectricBorder
+        borderRadius={12}
+        chaos={0.06}
+        speed={0.8}
+        className='h-full'>
         <Card className='h-full px-8 pb-2 bg-card ns-corners shadow-none flex flex-col'>
           <CardHeader className='py-4 px-0'>
             <CardTitle className='flex items-center gap-2 border-b border-border pb-4'>

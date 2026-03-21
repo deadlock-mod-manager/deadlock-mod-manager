@@ -1,4 +1,10 @@
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 
 interface ElectricBorderProps {
   children: ReactNode;
@@ -25,7 +31,10 @@ export function ElectricBorder({
   const timeRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
 
-  const random = useCallback((x: number) => (Math.sin(x * 12.9898) * 43758.5453) % 1, []);
+  const random = useCallback(
+    (x: number) => (Math.sin(x * 12.9898) * 43758.5453) % 1,
+    [],
+  );
 
   const noise2D = useCallback(
     (x: number, y: number) => {
@@ -42,7 +51,12 @@ export function ElectricBorder({
       const ux = fx * fx * (3.0 - 2.0 * fx);
       const uy = fy * fy * (3.0 - 2.0 * fy);
 
-      return a * (1 - ux) * (1 - uy) + b * ux * (1 - uy) + c * (1 - ux) * uy + d * ux * uy;
+      return (
+        a * (1 - ux) * (1 - uy) +
+        b * ux * (1 - uy) +
+        c * (1 - ux) * uy +
+        d * ux * uy
+      );
     },
     [random],
   );
@@ -66,7 +80,9 @@ export function ElectricBorder({
       for (let i = 0; i < octaves; i++) {
         let octaveAmplitude = amplitude;
         if (i === 0) octaveAmplitude *= baseFlatness;
-        y += octaveAmplitude * noise2D(frequency * x + seed * 100, time * frequency * 0.3);
+        y +=
+          octaveAmplitude *
+          noise2D(frequency * x + seed * 100, time * frequency * 0.3);
         frequency *= lacunarity;
         amplitude *= gain;
       }
@@ -77,7 +93,14 @@ export function ElectricBorder({
   );
 
   const getCornerPoint = useCallback(
-    (centerX: number, centerY: number, radius: number, startAngle: number, arcLength: number, progress: number) => {
+    (
+      centerX: number,
+      centerY: number,
+      radius: number,
+      startAngle: number,
+      arcLength: number,
+      progress: number,
+    ) => {
       const angle = startAngle + progress * arcLength;
       return {
         x: centerX + radius * Math.cos(angle),
@@ -88,11 +111,19 @@ export function ElectricBorder({
   );
 
   const getRoundedRectPoint = useCallback(
-    (t: number, left: number, top: number, width: number, height: number, radius: number) => {
+    (
+      t: number,
+      left: number,
+      top: number,
+      width: number,
+      height: number,
+      radius: number,
+    ) => {
       const straightWidth = width - 2 * radius;
       const straightHeight = height - 2 * radius;
       const cornerArc = (Math.PI * radius) / 2;
-      const totalPerimeter = 2 * straightWidth + 2 * straightHeight + 4 * cornerArc;
+      const totalPerimeter =
+        2 * straightWidth + 2 * straightHeight + 4 * cornerArc;
       const distance = t * totalPerimeter;
 
       let accumulated = 0;
@@ -105,7 +136,14 @@ export function ElectricBorder({
 
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
-        return getCornerPoint(left + width - radius, top + radius, radius, -Math.PI / 2, Math.PI / 2, progress);
+        return getCornerPoint(
+          left + width - radius,
+          top + radius,
+          radius,
+          -Math.PI / 2,
+          Math.PI / 2,
+          progress,
+        );
       }
       accumulated += cornerArc;
 
@@ -117,7 +155,14 @@ export function ElectricBorder({
 
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
-        return getCornerPoint(left + width - radius, top + height - radius, radius, 0, Math.PI / 2, progress);
+        return getCornerPoint(
+          left + width - radius,
+          top + height - radius,
+          radius,
+          0,
+          Math.PI / 2,
+          progress,
+        );
       }
       accumulated += cornerArc;
 
@@ -132,7 +177,14 @@ export function ElectricBorder({
 
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
-        return getCornerPoint(left + radius, top + height - radius, radius, Math.PI / 2, Math.PI / 2, progress);
+        return getCornerPoint(
+          left + radius,
+          top + height - radius,
+          radius,
+          Math.PI / 2,
+          Math.PI / 2,
+          progress,
+        );
       }
       accumulated += cornerArc;
 
@@ -146,7 +198,14 @@ export function ElectricBorder({
       accumulated += straightHeight;
 
       const progress = (distance - accumulated) / cornerArc;
-      return getCornerPoint(left + radius, top + radius, radius, Math.PI, Math.PI / 2, progress);
+      return getCornerPoint(
+        left + radius,
+        top + radius,
+        radius,
+        Math.PI,
+        Math.PI / 2,
+        progress,
+      );
     },
     [getCornerPoint],
   );
@@ -207,17 +266,36 @@ export function ElectricBorder({
       const top = borderOffset;
       const borderWidth = width - 2 * borderOffset;
       const borderHeight = height - 2 * borderOffset;
+
+      if (borderWidth <= 0 || borderHeight <= 0) {
+        animationRef.current = requestAnimationFrame(drawElectricBorder);
+        return;
+      }
+
       const maxRadius = Math.min(borderWidth, borderHeight) / 2;
       const r = Math.min(borderRadius, maxRadius);
 
-      const approxPerimeter = 2 * (borderWidth + borderHeight) + 2 * Math.PI * r;
+      const approxPerimeter =
+        2 * (borderWidth + borderHeight) + 2 * Math.PI * r;
       const sampleCount = Math.floor(approxPerimeter / 2);
+
+      if (sampleCount <= 0) {
+        animationRef.current = requestAnimationFrame(drawElectricBorder);
+        return;
+      }
 
       ctx.beginPath();
 
       for (let i = 0; i <= sampleCount; i++) {
         const progress = i / sampleCount;
-        const point = getRoundedRectPoint(progress, left, top, borderWidth, borderHeight, r);
+        const point = getRoundedRectPoint(
+          progress,
+          left,
+          top,
+          borderWidth,
+          borderHeight,
+          r,
+        );
 
         const xNoise = octavedNoise(
           progress * 8,
@@ -280,17 +358,16 @@ export function ElectricBorder({
           borderRadius,
           ...style,
         } as CSSProperties
-      }
-    >
-      <div className="eb-canvas-container">
-        <canvas ref={canvasRef} className="eb-canvas" />
+      }>
+      <div className='eb-canvas-container'>
+        <canvas ref={canvasRef} className='eb-canvas' />
       </div>
-      <div className="eb-layers">
-        <div className="eb-glow-1" />
-        <div className="eb-glow-2" />
-        <div className="eb-background-glow" />
+      <div className='eb-layers'>
+        <div className='eb-glow-1' />
+        <div className='eb-glow-2' />
+        <div className='eb-background-glow' />
       </div>
-      <div className="eb-content">{children}</div>
+      <div className='eb-content'>{children}</div>
     </div>
   );
 }

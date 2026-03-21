@@ -4,8 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
+import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import { getPluginAssetUrl } from "@/lib/plugins";
-import type { ThemeSettings } from "@/plugins/themes";
 
 const deadlockApiIconUrl = getPluginAssetUrl(
   "themes",
@@ -20,15 +20,7 @@ export const IngestToolToggle = () => {
   const setIngestToolEnabled = usePersistedStore(
     (state) => state.setIngestToolEnabled,
   );
-  const themesEnabled = usePersistedStore(
-    (state) => state.enabledPlugins.themes ?? false,
-  );
-  const themeSettings = usePersistedStore(
-    (state) => state.pluginSettings.themes,
-  ) as ThemeSettings | undefined;
-
-  const isDeadlockApiTheme =
-    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
 
   useEffect(() => {
     const updateWatcher = async () => {
@@ -57,7 +49,7 @@ export const IngestToolToggle = () => {
         </div>
         {isDeadlockApiTheme && (
           <img
-            alt='Deadlock API'
+            alt={t("accessibility.deadlockApiIconAlt")}
             className='w-10 h-10 object-contain dl-electric-icon'
             src={deadlockApiIconUrl}
           />

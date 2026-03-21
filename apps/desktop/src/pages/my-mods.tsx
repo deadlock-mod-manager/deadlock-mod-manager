@@ -62,10 +62,10 @@ import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { usePersistedStore } from "@/lib/store";
+import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
-import type { ThemeSettings } from "@/plugins/themes";
 
 enum ViewMode {
   GRID = "grid",
@@ -84,15 +84,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
-  const themesEnabled = usePersistedStore(
-    (s) => s.enabledPlugins.themes ?? false,
-  );
-  const themeSettings = usePersistedStore(
-    (s) => s.pluginSettings.themes,
-  ) as ThemeSettings | undefined;
-
-  const isDeadlockApiTheme =
-    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -209,7 +201,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
 
   if (isDeadlockApiTheme) {
     return (
-      <ElectricBorder borderRadius={12} chaos={0.03} speed={0.5} className="h-full">
+      <ElectricBorder
+        borderRadius={12}
+        chaos={0.03}
+        speed={0.5}
+        className='h-full'>
         {cardContent}
       </ElectricBorder>
     );

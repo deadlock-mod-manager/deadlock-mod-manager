@@ -21,6 +21,7 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { usePersistedStore } from "@/lib/store";
+import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import {
   isModOutdated,
   isUpdateAvailable,
@@ -28,7 +29,6 @@ import {
 } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
-import type { ThemeSettings } from "@/plugins/themes";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
@@ -37,15 +37,7 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
   );
-  const themesEnabled = usePersistedStore(
-    (s) => s.enabledPlugins.themes ?? false,
-  );
-  const themeSettings = usePersistedStore(
-    (s) => s.pluginSettings.themes,
-  ) as ThemeSettings | undefined;
-
-  const isDeadlockApiTheme =
-    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -154,7 +146,11 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
 
   if (isDeadlockApiTheme) {
     return (
-      <ElectricBorder borderRadius={12} chaos={0.03} speed={0.5} className="h-full">
+      <ElectricBorder
+        borderRadius={12}
+        chaos={0.03}
+        speed={0.5}
+        className='h-full'>
         {cardContent}
       </ElectricBorder>
     );

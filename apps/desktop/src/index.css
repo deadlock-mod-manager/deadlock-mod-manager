@@ -720,11 +720,17 @@
 }
 
 .deadlock-api-theme-active .dl-electric-border::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -2px;
   border-radius: 14px;
-  background: linear-gradient(-30deg, #fa4454, transparent 40%, transparent 60%, #fa4454);
+  background: linear-gradient(
+    -30deg,
+    #fa4454,
+    transparent 40%,
+    transparent 60%,
+    #fa4454
+  );
   z-index: -1;
   filter: blur(4px);
   opacity: 0.8;
@@ -732,7 +738,7 @@
 }
 
 .deadlock-api-theme-active .dl-electric-border::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -20px;
   border-radius: 32px;
@@ -743,7 +749,8 @@
 }
 
 @keyframes dl-electric-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.6;
     filter: blur(4px);
   }
@@ -755,38 +762,57 @@
 
 /* Electric bolt flickering animation for icons */
 @keyframes dl-electric-bolt {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
-            drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+      drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
   }
-  19.9% { opacity: 1; }
+  19.9% {
+    opacity: 1;
+  }
   20% {
     opacity: 0.75;
     filter: drop-shadow(0 0 2px rgba(250, 68, 84, 0.3));
   }
-  21% { opacity: 1; }
+  21% {
+    opacity: 1;
+  }
   50% {
     filter: drop-shadow(0 0 6px rgba(250, 68, 84, 0.7))
-            drop-shadow(0 0 14px rgba(250, 68, 84, 0.3));
+      drop-shadow(0 0 14px rgba(250, 68, 84, 0.3));
   }
   54.5% {
     opacity: 0.78;
     filter: drop-shadow(0 0 2px rgba(250, 68, 84, 0.3));
   }
-  55.5% { opacity: 1; }
+  55.5% {
+    opacity: 1;
+  }
 }
 
 .deadlock-api-theme-active .dl-electric-icon {
   animation: dl-electric-bolt 3.5s linear infinite;
   filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
-          drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+    drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deadlock-api-theme-active .dl-electric-border::before,
+  .deadlock-api-theme-active .dl-electric-border::after {
+    animation: none;
+    filter: none;
+  }
+  .deadlock-api-theme-active .dl-electric-icon {
+    animation: none;
+    filter: drop-shadow(0 0 2px rgba(250, 68, 84, 0.4));
+  }
 }
 
 /* Glow effect for primary elements */
 .deadlock-api-theme-active .dl-glow {
   filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
-          drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+    drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
 }
 
 /* Card hover glow effect */
@@ -878,11 +904,16 @@
 }
 
 .deadlock-api-theme-active .dl-featured::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(250, 68, 84, 0.5), transparent 50%, rgba(255, 107, 122, 0.3));
+  background: linear-gradient(
+    135deg,
+    rgba(250, 68, 84, 0.5),
+    transparent 50%,
+    rgba(255, 107, 122, 0.3)
+  );
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -894,26 +925,38 @@
 
 /* Sidebar glow accent */
 .deadlock-api-theme-active [data-sidebar="menu-button"][data-active="true"] {
-  box-shadow: 0 0 12px rgba(250, 68, 84, 0.3), inset 0 0 8px rgba(250, 68, 84, 0.1);
+  box-shadow:
+    0 0 12px rgba(250, 68, 84, 0.3),
+    inset 0 0 8px rgba(250, 68, 84, 0.1);
 }
 
 /* Border glow on focus */
 .deadlock-api-theme-active *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(250, 68, 84, 0.5), 0 0 8px rgba(250, 68, 84, 0.3);
+  box-shadow:
+    0 0 0 2px rgba(250, 68, 84, 0.5),
+    0 0 8px rgba(250, 68, 84, 0.3);
 }
 
 /* default logo colors in Deadlock API theme */
-.deadlock-api-theme-active [data-tauri-drag-region] svg circle[fill="hsl(var(--primary))"] {
+.deadlock-api-theme-active
+  [data-tauri-drag-region]
+  svg
+  circle[fill="hsl(var(--primary))"] {
   fill: hsl(42 60% 84%) !important;
 }
-.deadlock-api-theme-active [data-tauri-drag-region] svg path[fill="hsl(var(--primary-foreground))"] {
+.deadlock-api-theme-active
+  [data-tauri-drag-region]
+  svg
+  path[fill="hsl(var(--primary-foreground))"] {
   fill: hsl(20 9% 6%) !important;
 }
-.deadlock-api-theme-active [data-tauri-drag-region] svg circle[fill="hsl(var(--secondary))"] {
+.deadlock-api-theme-active
+  [data-tauri-drag-region]
+  svg
+  circle[fill="hsl(var(--secondary))"] {
   fill: hsl(15 10% 16%) !important;
 }
-
 
 /* Scrollbar styling for Deadlock API theme */
 .deadlock-api-theme-active *::-webkit-scrollbar {
@@ -934,4 +977,3 @@
 .deadlock-api-theme-active *::-webkit-scrollbar-thumb:hover {
   background: rgba(250, 68, 84, 0.6);
 }
-

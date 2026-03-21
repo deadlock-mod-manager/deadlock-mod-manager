@@ -5,7 +5,10 @@ interface AnimatedHexeIconProps {
   size?: number;
 }
 
-export function AnimatedHexeIcon({ className, size = 44 }: AnimatedHexeIconProps) {
+export function AnimatedHexeIcon({
+  className,
+  size = 44,
+}: AnimatedHexeIconProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -68,12 +71,33 @@ export function AnimatedHexeIcon({ className, size = 44 }: AnimatedHexeIconProps
       const wobble = 0.02 * Math.sin(time * 1.5);
 
       drawHexagon(cx, cy, 18 * pulse, baseRotation + wobble, 0.3 * flicker, 1);
-      drawHexagon(cx, cy, 14 * pulse, baseRotation - wobble, 0.6 * flicker, 1.5);
-      drawHexagon(cx, cy, 8 * pulse, baseRotation + wobble * 2, 0.9 * flicker, 2);
+      drawHexagon(
+        cx,
+        cy,
+        14 * pulse,
+        baseRotation - wobble,
+        0.6 * flicker,
+        1.5,
+      );
+      drawHexagon(
+        cx,
+        cy,
+        8 * pulse,
+        baseRotation + wobble * 2,
+        0.9 * flicker,
+        2,
+      );
 
       ctx.beginPath();
       ctx.arc(cx, cy, 3 * pulse, 0, Math.PI * 2);
-      const coreGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 3 * pulse);
+      const coreGradient = ctx.createRadialGradient(
+        cx,
+        cy,
+        0,
+        cx,
+        cy,
+        3 * pulse,
+      );
       coreGradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 * flicker})`);
       coreGradient.addColorStop(0.5, `rgba(250, 68, 84, ${0.8 * flicker})`);
       coreGradient.addColorStop(1, `rgba(250, 68, 84, ${0.4 * flicker})`);
@@ -98,10 +122,23 @@ export function AnimatedHexeIcon({ className, size = 44 }: AnimatedHexeIconProps
       }
 
       time += 0.016;
-      animationId = requestAnimationFrame(draw);
     };
 
-    draw();
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) {
+      draw();
+      return;
+    }
+
+    const animate = () => {
+      draw();
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
 
     return () => {
       cancelAnimationFrame(animationId);
