@@ -227,10 +227,15 @@ export function ElectricBorder({
     const displacement = 25;
     const borderOffset = 40;
 
+    let width = 0;
+    let height = 0;
+    let isAnimating = false;
+    let resizeObserver: ResizeObserver | null = null;
+
     const updateSize = () => {
       const rect = container.getBoundingClientRect();
-      const width = rect.width + borderOffset * 2;
-      const height = rect.height + borderOffset * 2;
+      width = rect.width + borderOffset * 2;
+      height = rect.height + borderOffset * 2;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = width * dpr;
@@ -238,14 +243,10 @@ export function ElectricBorder({
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.scale(dpr, dpr);
-
-      return { width, height };
     };
 
-    let { width, height } = updateSize();
-
     const drawElectricBorder = (currentTime: number) => {
-      if (!canvas || !ctx) return;
+      if (!canvas || !ctx || !isAnimating) return;
 
       const deltaTime = (currentTime - lastFrameTimeRef.current) / 1000;
       timeRef.current += deltaTime * speed;
@@ -333,18 +334,53 @@ export function ElectricBorder({
       animationRef.current = requestAnimationFrame(drawElectricBorder);
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      const s = updateSize();
-      width = s.width;
-      height = s.height;
-    });
-    resizeObserver.observe(container);
+    const startAnimation = () => {
+      if (isAnimating) return;
+      isAnimating = true;
+      updateSize();
 
-    animationRef.current = requestAnimationFrame(drawElectricBorder);
+      resizeObserver = new ResizeObserver(() => {
+        updateSize();
+      });
+      resizeObserver.observe(container);
+
+      lastFrameTimeRef.current = performance.now();
+      animationRef.current = requestAnimationFrame(drawElectricBorder);
+    };
+
+    const stopAnimation = () => {
+      if (!isAnimating) return;
+      isAnimating = false;
+      cancelAnimationFrame(animationRef.current);
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+    };
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && document.visibilityState === "visible") {
+          startAnimation();
+        } else {
+          stopAnimation();
+        }
+      },
+      { threshold: 0 },
+    );
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stopAnimation();
+      }
+    };
+
+    intersectionObserver.observe(container);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      cancelAnimationFrame(animationRef.current);
-      resizeObserver.disconnect();
+      stopAnimation();
+      intersectionObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [color, speed, chaos, borderRadius, octavedNoise, getRoundedRectPoint]);
 

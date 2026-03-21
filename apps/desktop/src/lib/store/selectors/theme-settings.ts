@@ -8,11 +8,7 @@ type PluginState = {
 function isThemeSettings(value: unknown): value is ThemeSettings {
   if (!value || typeof value !== "object") return false;
   const obj = value as Record<string, unknown>;
-  return (
-    obj.activeSection === "pre-defined" ||
-    obj.activeSection === "custom" ||
-    obj.activeSection === undefined
-  );
+  return obj.activeSection === "pre-defined" || obj.activeSection === "custom";
 }
 
 export function selectThemeSettings(
