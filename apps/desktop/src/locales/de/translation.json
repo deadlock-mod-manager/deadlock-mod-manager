@@ -42,7 +42,8 @@
     "nextSlide": "Nächste Folie",
     "previous": "Vorherige",
     "previousSlide": "Vorherige Folie",
-    "snipzteaMascotAlt": "Snipztea-Maskottchen"
+    "snipzteaMascotAlt": "Snipztea-Maskottchen",
+    "deadlockApiIconAlt": "Deadlock API Icon"
   },
   "addMods": {
     "add": "Hinzufügen",
@@ -656,6 +657,12 @@
       "customColor": "Benutzerdefinierte Farbe",
       "customColorDescription": "Wähle eine benutzerdefinierte Akzentfarbe für das Arcane-Theme.",
       "addCustomColor": "Farbe hinzufügen"
+    },
+    "deadlockApi": {
+      "description": "OLED-Schwarz Theme mit elektrischen roten Leuchteffekten, inspiriert vom Deadlock API Design.",
+      "visit": "Besuche Deadlock API:",
+      "website": "Webseite",
+      "discord": "Discord"
     },
     "discord": {
       "applicationId": "Discord Application ID",

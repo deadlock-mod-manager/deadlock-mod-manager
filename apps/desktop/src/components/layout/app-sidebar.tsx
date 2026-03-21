@@ -61,6 +61,11 @@ const teaMascotUrl = getPluginAssetUrl(
   "public/pre-defined/tea/fumo_dog.png",
 );
 
+const deadlockApiIconUrl = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/deadlock-api/sidebar.svg",
+);
+
 const getSidebarItems = (
   t: (key: string) => string,
   developerMode: boolean,
@@ -246,6 +251,8 @@ export const AppSidebar = () => {
   });
 
   const showTeaMascot = themesEnabled && themeSettings?.activeTheme === "tea";
+  const showDeadlockApiIcon =
+    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
 
   const allItems = getSidebarItems(t, developerMode);
 
@@ -304,6 +311,15 @@ export const AppSidebar = () => {
         ) : null}
       </SidebarContent>
       <SidebarFooter>
+        {showDeadlockApiIcon ? (
+          <div className='group-data-[collapsible=icon]:hidden flex justify-center px-3 py-4'>
+            <img
+              alt={t("accessibility.deadlockApiIconAlt")}
+              className='max-w-[56px] w-full object-contain dl-electric-icon'
+              src={deadlockApiIconUrl}
+            />
+          </div>
+        ) : null}
         {bottomGroups.map((group) => {
           const groupItems = bottomItems.filter((item) => item.group === group);
           return (

@@ -27,6 +27,8 @@ import {
   isUpdatedRecently,
 } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
+import type { ThemeSettings } from "@/plugins/themes";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
@@ -35,6 +37,15 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
   );
+  const themesEnabled = usePersistedStore(
+    (s) => s.enabledPlugins.themes ?? false,
+  );
+  const themeSettings = usePersistedStore(
+    (s) => s.pluginSettings.themes,
+  ) as ThemeSettings | undefined;
+
+  const isDeadlockApiTheme =
+    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -44,9 +55,9 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
     return <ModCardSkeleton />;
   }
 
-  return (
+  const cardContent = (
     <Card
-      className='cursor-pointer shadow-none border [contain:layout_style_paint]'
+      className='cursor-pointer shadow-none border [contain:layout_style_paint] h-full'
       onClick={(e) => {
         e.stopPropagation();
         navigate(`/mods/${mod.remoteId}`);
@@ -140,6 +151,16 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
       </CardHeader>
     </Card>
   );
+
+  if (isDeadlockApiTheme) {
+    return (
+      <ElectricBorder borderRadius={12} chaos={0.03} speed={0.5} className="h-full">
+        {cardContent}
+      </ElectricBorder>
+    );
+  }
+
+  return cardContent;
 });
 
 ModCard.displayName = "ModCard";

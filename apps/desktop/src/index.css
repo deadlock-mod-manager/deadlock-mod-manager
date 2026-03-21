@@ -658,3 +658,280 @@
   background-color: transparent;
   border-color: hsl(var(--border));
 }
+
+/* Deadlock API Theme Styles */
+.deadlock-api-theme-active [data-sidebar="sidebar"] {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="sidebar"] * {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="content"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="footer"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="group"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="group-content"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="menu"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active [data-sidebar="menu-button"] {
+  background-color: transparent;
+}
+
+.deadlock-api-theme-active
+  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  background-color: hsl(220 20% 2%);
+  border-color: hsl(var(--border));
+}
+
+.deadlock-api-theme-active body,
+.deadlock-api-theme-active main,
+.deadlock-api-theme-active .group\/sidebar-wrapper,
+.deadlock-api-theme-active .group\/sidebar-wrapper > div,
+.deadlock-api-theme-active [data-topbar="true"],
+.deadlock-api-theme-active [data-titlebar="true"] {
+  background-color: hsl(var(--background));
+}
+
+/* Electric border effect for cards */
+.deadlock-api-theme-active .dl-electric-border {
+  position: relative;
+  border-radius: 12px;
+  overflow: visible;
+}
+
+.deadlock-api-theme-active .dl-electric-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: linear-gradient(-30deg, #fa4454, transparent 40%, transparent 60%, #fa4454);
+  z-index: -1;
+  filter: blur(4px);
+  opacity: 0.8;
+  animation: dl-electric-pulse 3s ease-in-out infinite;
+}
+
+.deadlock-api-theme-active .dl-electric-border::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 32px;
+  background: linear-gradient(-30deg, #fa4454, transparent, #fa4454);
+  z-index: -2;
+  filter: blur(32px);
+  opacity: 0.2;
+}
+
+@keyframes dl-electric-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 0.9;
+    filter: blur(5px);
+  }
+}
+
+/* Electric bolt flickering animation for icons */
+@keyframes dl-electric-bolt {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
+            drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+  }
+  19.9% { opacity: 1; }
+  20% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 2px rgba(250, 68, 84, 0.3));
+  }
+  21% { opacity: 1; }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(250, 68, 84, 0.7))
+            drop-shadow(0 0 14px rgba(250, 68, 84, 0.3));
+  }
+  54.5% {
+    opacity: 0.78;
+    filter: drop-shadow(0 0 2px rgba(250, 68, 84, 0.3));
+  }
+  55.5% { opacity: 1; }
+}
+
+.deadlock-api-theme-active .dl-electric-icon {
+  animation: dl-electric-bolt 3.5s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
+          drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+}
+
+/* Glow effect for primary elements */
+.deadlock-api-theme-active .dl-glow {
+  filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))
+          drop-shadow(0 0 10px rgba(250, 68, 84, 0.25));
+}
+
+/* Card hover glow effect */
+.deadlock-api-theme-active .card:hover {
+  border-color: rgba(250, 68, 84, 0.4);
+  box-shadow: 0 0 20px rgba(250, 68, 84, 0.1);
+}
+
+/* Primary button gradient */
+.deadlock-api-theme-active button[data-variant="default"],
+.deadlock-api-theme-active .btn-primary {
+  background: linear-gradient(to right, #fa4454, #ff6b7a);
+}
+
+.deadlock-api-theme-active button[data-variant="default"]:hover,
+.deadlock-api-theme-active .btn-primary:hover {
+  background: linear-gradient(to right, #e83d4c, #f05a68);
+}
+
+/* ElectricBorder component styles */
+.deadlock-api-theme-active .eb-root {
+  position: relative;
+  border-radius: inherit;
+  overflow: visible;
+  isolation: isolate;
+  height: 100%;
+}
+
+.deadlock-api-theme-active .eb-canvas-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+
+.deadlock-api-theme-active .eb-canvas {
+  display: block;
+}
+
+.deadlock-api-theme-active .eb-content {
+  position: relative;
+  border-radius: inherit;
+  height: 100%;
+  z-index: 1;
+}
+
+.deadlock-api-theme-active .eb-layers {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.deadlock-api-theme-active .eb-glow-1,
+.deadlock-api-theme-active .eb-glow-2,
+.deadlock-api-theme-active .eb-background-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.deadlock-api-theme-active .eb-glow-1 {
+  border: 1px solid rgba(250, 68, 84, 0.5);
+  filter: blur(1px);
+}
+
+.deadlock-api-theme-active .eb-glow-2 {
+  border: 2px solid rgba(250, 68, 84, 0.9);
+  filter: blur(3px);
+}
+
+.deadlock-api-theme-active .eb-background-glow {
+  z-index: -1;
+  transform: scale(1.05);
+  filter: blur(20px);
+  opacity: 0.2;
+  background: linear-gradient(-30deg, #fa4454, transparent, #fa4454);
+}
+
+/* Enhanced glow for featured elements */
+.deadlock-api-theme-active .dl-featured {
+  position: relative;
+}
+
+.deadlock-api-theme-active .dl-featured::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(250, 68, 84, 0.5), transparent 50%, rgba(255, 107, 122, 0.3));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.deadlock-api-theme-active .dl-featured:hover::before {
+  opacity: 1;
+}
+
+/* Sidebar glow accent */
+.deadlock-api-theme-active [data-sidebar="menu-button"][data-active="true"] {
+  box-shadow: 0 0 12px rgba(250, 68, 84, 0.3), inset 0 0 8px rgba(250, 68, 84, 0.1);
+}
+
+/* Border glow on focus */
+.deadlock-api-theme-active *:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(250, 68, 84, 0.5), 0 0 8px rgba(250, 68, 84, 0.3);
+}
+
+/* default logo colors in Deadlock API theme */
+.deadlock-api-theme-active [data-tauri-drag-region] svg circle[fill="hsl(var(--primary))"] {
+  fill: hsl(42 60% 84%) !important;
+}
+.deadlock-api-theme-active [data-tauri-drag-region] svg path[fill="hsl(var(--primary-foreground))"] {
+  fill: hsl(20 9% 6%) !important;
+}
+.deadlock-api-theme-active [data-tauri-drag-region] svg circle[fill="hsl(var(--secondary))"] {
+  fill: hsl(15 10% 16%) !important;
+}
+
+
+/* Scrollbar styling for Deadlock API theme */
+.deadlock-api-theme-active *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.deadlock-api-theme-active *::-webkit-scrollbar-track {
+  background: rgba(250, 68, 84, 0.05);
+  border-radius: 4px;
+}
+
+.deadlock-api-theme-active *::-webkit-scrollbar-thumb {
+  background: rgba(250, 68, 84, 0.4);
+  border-radius: 4px;
+}
+
+.deadlock-api-theme-active *::-webkit-scrollbar-thumb:hover {
+  background: rgba(250, 68, 84, 0.6);
+}
+

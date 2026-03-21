@@ -4,6 +4,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
+import { getPluginAssetUrl } from "@/lib/plugins";
+import type { ThemeSettings } from "@/plugins/themes";
+
+const deadlockApiIconUrl = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/deadlock-api/sidebar.svg",
+);
 
 export const IngestToolToggle = () => {
   const { t } = useTranslation();
@@ -13,8 +20,16 @@ export const IngestToolToggle = () => {
   const setIngestToolEnabled = usePersistedStore(
     (state) => state.setIngestToolEnabled,
   );
+  const themesEnabled = usePersistedStore(
+    (state) => state.enabledPlugins.themes ?? false,
+  );
+  const themeSettings = usePersistedStore(
+    (state) => state.pluginSettings.themes,
+  ) as ThemeSettings | undefined;
 
-  // Start or stop the cache watcher when the setting changes
+  const isDeadlockApiTheme =
+    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+
   useEffect(() => {
     const updateWatcher = async () => {
       try {
@@ -33,11 +48,20 @@ export const IngestToolToggle = () => {
 
   return (
     <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <p>{t("settings.ingestTool.title")}</p>
-        <p className='text-sm text-muted-foreground'>
-          {t("settings.ingestTool.description")}
-        </p>
+      <div className='flex items-center gap-3'>
+        <div className='space-y-1'>
+          <p>{t("settings.ingestTool.title")}</p>
+          <p className='text-sm text-muted-foreground'>
+            {t("settings.ingestTool.description")}
+          </p>
+        </div>
+        {isDeadlockApiTheme && (
+          <img
+            alt='Deadlock API'
+            className='w-10 h-10 object-contain dl-electric-icon'
+            src={deadlockApiIconUrl}
+          />
+        )}
       </div>
       <div className='flex items-center gap-2'>
         <Switch

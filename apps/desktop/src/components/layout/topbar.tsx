@@ -5,6 +5,7 @@ import { usePersistedStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
 import UserMenu from "../user/user-menu";
 import Logo from "./logo";
+import { AnimatedHexeIcon } from "@/plugins/themes/pre-defined/deadlock-api/animated-hexe-icon";
 
 type ThemesPluginSettings =
   | {
@@ -48,12 +49,14 @@ export const Topbar = () => {
   ) as ThemesPluginSettings;
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
 
+  const isDeadlockApiTheme = activeTheme === "deadlock-api";
+
   let themedIconSrc: string | undefined;
   if (isPredefinedTheme(activeTheme)) {
     themedIconSrc = predefinedThemeIcons[activeTheme];
   } else if (activeTheme === "custom") {
     themedIconSrc = themesSettings?.customTheme?.iconData || undefined;
-  } else {
+  } else if (!isDeadlockApiTheme) {
     themedIconSrc =
       themesSettings?.userThemes?.find((t) => t.id === activeTheme)?.iconData ||
       undefined;
@@ -64,7 +67,9 @@ export const Topbar = () => {
       className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'
       data-topbar='true'>
       <div className='flex items-center gap-2'>
-        {themedIconSrc ? (
+        {isDeadlockApiTheme ? (
+          <AnimatedHexeIcon size={44} />
+        ) : themedIconSrc ? (
           <img
             alt={t("accessibility.deadlockLogoAlt")}
             className='h-11 w-11 object-contain'

@@ -1062,6 +1062,12 @@
       "customColorDescription": "Choose a custom accent color for the Arcane theme.",
       "addCustomColor": "Add custom color"
     },
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "visit": "Visit Deadlock API:",
+      "website": "Website",
+      "discord": "Discord"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Force Light Mode during a scheduled time window.",
@@ -1113,6 +1119,7 @@
   "accessibility": {
     "deadlockLogoAlt": "Deadlock",
     "snipzteaMascotAlt": "Snipztea mascot",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "close": "Close",
     "previousSlide": "Previous slide",
     "nextSlide": "Next slide",
