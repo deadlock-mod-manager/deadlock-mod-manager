@@ -30,7 +30,7 @@
     "@hono/sentry": "^1.2.2",
     "@mjackson/lazy-file": "^3.4.0",
     "@orpc/client": "^1.12.3",
-    "@orpc/openapi": "^1.12.3",
+    "@orpc/openapi": "^1.13.9",
     "@orpc/server": "^1.12.3",
     "@orpc/zod": "^1.12.3",
     "@sentry/node": "catalog:",
