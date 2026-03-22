@@ -30,10 +30,9 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { DISCORD_URL } from "@/lib/constants";
-import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
-import type { ThemeSettings } from "@/plugins/themes";
 import { ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
@@ -55,16 +54,6 @@ type SidebarItem = {
   bottom?: boolean;
   group?: string;
 };
-
-const teaMascotUrl = getPluginAssetUrl(
-  "themes",
-  "public/pre-defined/tea/fumo_dog.png",
-);
-
-const deadlockApiIconUrl = getPluginAssetUrl(
-  "themes",
-  "public/pre-defined/deadlock-api/sidebar.svg",
-);
 
 const getSidebarItems = (
   t: (key: string) => string,
@@ -243,16 +232,8 @@ export const AppSidebar = () => {
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
-  const themesEnabled = usePersistedStore(
-    (state) => state.enabledPlugins.themes ?? false,
-  );
-  const themeSettings = usePersistedStore((state) => {
-    return state.pluginSettings.themes as ThemeSettings | undefined;
-  });
-
-  const showTeaMascot = themesEnabled && themeSettings?.activeTheme === "tea";
-  const showDeadlockApiIcon =
-    themesEnabled && themeSettings?.activeTheme === "deadlock-api";
+  const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
+  const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
 
   const allItems = getSidebarItems(t, developerMode);
 
@@ -300,26 +281,10 @@ export const AppSidebar = () => {
             </SidebarGroup>
           );
         })}
-        {showTeaMascot ? (
-          <div className='group-data-[collapsible=icon]:hidden mt-auto flex justify-center px-3 pb-4'>
-            <img
-              alt={t("accessibility.snipzteaMascotAlt")}
-              className='max-w-[160px] w-full rounded-md object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]'
-              src={teaMascotUrl}
-            />
-          </div>
-        ) : null}
+        {SidebarContentExtra ? <SidebarContentExtra /> : null}
       </SidebarContent>
       <SidebarFooter>
-        {showDeadlockApiIcon ? (
-          <div className='group-data-[collapsible=icon]:hidden flex justify-center px-3 py-4'>
-            <img
-              alt={t("accessibility.deadlockApiIconAlt")}
-              className='max-w-[56px] w-full object-contain dl-electric-icon'
-              src={deadlockApiIconUrl}
-            />
-          </div>
-        ) : null}
+        {SidebarFooterExtra ? <SidebarFooterExtra /> : null}
         {bottomGroups.map((group) => {
           const groupItems = bottomItems.filter((item) => item.group === group);
           return (

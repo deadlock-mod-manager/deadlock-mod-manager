@@ -11,6 +11,7 @@ import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
+import { ThemeOverridesProvider } from "./components/providers/theme-overrides";
 import { AnalyticsProvider } from "./contexts/analytics-context";
 import { useAutoUpdate } from "./hooks/use-auto-update";
 import { useDeepLink } from "./hooks/use-deep-link";
@@ -62,9 +63,11 @@ const App = () => {
               <TooltipProvider>
                 <AlertDialogProvider>
                   <TauriAppWindowProvider>
-                    <Layout>
-                      <Outlet />
-                    </Layout>
+                    <ThemeOverridesProvider>
+                      <Layout>
+                        <Outlet />
+                      </Layout>
+                    </ThemeOverridesProvider>
                     <GlobalPluginRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}

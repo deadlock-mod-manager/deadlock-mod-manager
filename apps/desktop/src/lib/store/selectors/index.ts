@@ -1,5 +1,1 @@
-export {
-  selectThemeSettings,
-  selectActiveTheme,
-  selectIsDeadlockApiTheme,
-} from "./theme-settings";
+export { selectThemeSettings, selectActiveTheme } from "./theme-settings";

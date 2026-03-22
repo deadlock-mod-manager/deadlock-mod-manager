@@ -3,14 +3,8 @@ import { Switch } from "@deadlock-mods/ui/components/switch";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
-import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
-import { getPluginAssetUrl } from "@/lib/plugins";
-
-const deadlockApiIconUrl = getPluginAssetUrl(
-  "themes",
-  "public/pre-defined/deadlock-api/sidebar.svg",
-);
 
 export const IngestToolToggle = () => {
   const { t } = useTranslation();
@@ -20,7 +14,7 @@ export const IngestToolToggle = () => {
   const setIngestToolEnabled = usePersistedStore(
     (state) => state.setIngestToolEnabled,
   );
-  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
+  const SettingsIngestExtra = useThemeOverride("settingsIngestExtra");
 
   useEffect(() => {
     const updateWatcher = async () => {
@@ -47,13 +41,7 @@ export const IngestToolToggle = () => {
             {t("settings.ingestTool.description")}
           </p>
         </div>
-        {isDeadlockApiTheme && (
-          <img
-            alt={t("accessibility.deadlockApiIconAlt")}
-            className='w-10 h-10 object-contain dl-electric-icon'
-            src={deadlockApiIconUrl}
-          />
-        )}
+        {SettingsIngestExtra ? <SettingsIngestExtra /> : null}
       </div>
       <div className='flex items-center gap-2'>
         <Switch

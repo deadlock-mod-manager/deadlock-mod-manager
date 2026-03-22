@@ -20,15 +20,14 @@ import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-war
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
-import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import {
   isModOutdated,
   isUpdateAvailable,
   isUpdatedRecently,
 } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
-import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
@@ -37,7 +36,7 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
   );
-  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
+  const CardWrapper = useThemeOverride("cardWrapper");
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -144,16 +143,8 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
     </Card>
   );
 
-  if (isDeadlockApiTheme) {
-    return (
-      <ElectricBorder
-        borderRadius={12}
-        chaos={0.03}
-        speed={0.5}
-        className='h-full'>
-        {cardContent}
-      </ElectricBorder>
-    );
+  if (CardWrapper) {
+    return <CardWrapper>{cardContent}</CardWrapper>;
   }
 
   return cardContent;

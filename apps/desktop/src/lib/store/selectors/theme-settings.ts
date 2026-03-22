@@ -25,7 +25,3 @@ export function selectActiveTheme(state: PluginState): string | undefined {
   const settings = selectThemeSettings(state);
   return settings?.activeTheme;
 }
-
-export function selectIsDeadlockApiTheme(state: PluginState): boolean {
-  return selectActiveTheme(state) === "deadlock-api";
-}

@@ -61,11 +61,10 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
-import { selectIsDeadlockApiTheme } from "@/lib/store/selectors";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
-import { ElectricBorder } from "@/plugins/themes/pre-defined/deadlock-api/electric-border";
 
 enum ViewMode {
   GRID = "grid",
@@ -84,7 +83,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
-  const isDeadlockApiTheme = usePersistedStore(selectIsDeadlockApiTheme);
+  const CardWrapper = useThemeOverride("cardWrapper");
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -199,16 +198,8 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
     </ModContextMenu>
   );
 
-  if (isDeadlockApiTheme) {
-    return (
-      <ElectricBorder
-        borderRadius={12}
-        chaos={0.03}
-        speed={0.5}
-        className='h-full'>
-        {cardContent}
-      </ElectricBorder>
-    );
+  if (CardWrapper) {
+    return <CardWrapper>{cardContent}</CardWrapper>;
   }
 
   return cardContent;
