@@ -390,6 +390,33 @@ impl AddonsBackupManager {
     Ok(())
   }
 
+  pub fn prune_old_backups(&self, max_count: u32) -> Result<u32, Error> {
+    let backups = self.list_backups()?;
+    let total = backups.len() as u32;
+
+    if max_count == 0 || total <= max_count {
+      return Ok(0);
+    }
+
+    let to_remove = &backups[max_count as usize..];
+    let mut pruned = 0u32;
+
+    for backup in to_remove {
+      match self.delete_backup(&backup.file_name) {
+        Ok(()) => {
+          log::info!("Pruned old backup: {}", backup.file_name);
+          pruned += 1;
+        }
+        Err(e) => {
+          log::error!("Failed to prune backup {}: {:?}", backup.file_name, e);
+        }
+      }
+    }
+
+    log::info!("Pruned {pruned} old backup(s), kept {max_count}");
+    Ok(pruned)
+  }
+
   pub fn get_backup_info(&self, file_name: &str) -> Result<AddonsBackup, Error> {
     let backup_dir = self.get_backup_directory()?;
     let backup_path = backup_dir.join(file_name);

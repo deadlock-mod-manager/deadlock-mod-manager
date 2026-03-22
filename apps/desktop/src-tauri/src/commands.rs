@@ -9,12 +9,12 @@ use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
 use crate::ingest_tool;
+use crate::logs::{crash_dumps, log_manager};
 use crate::mod_manager::addons_backup_manager::AddonsBackupManager;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, AutoexecConfig, Mod, ModFileTree, ModManager,
 };
-use crate::logs::{crash_dumps, log_manager};
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -825,6 +825,14 @@ pub async fn get_addons_backup_info(file_name: String) -> Result<AddonsBackup, E
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();
   backup_manager.get_backup_info(&file_name)
+}
+
+#[tauri::command]
+pub async fn prune_addons_backups(max_count: u32) -> Result<u32, Error> {
+  log::info!("Pruning addons backups to max {max_count}");
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let backup_manager = mod_manager.get_addons_backup_manager();
+  backup_manager.prune_old_backups(max_count)
 }
 
 async fn get_download_manager(app_handle: AppHandle) -> &'static DownloadManager {
@@ -1880,11 +1888,15 @@ pub async fn batch_update_mods(
   app_handle: AppHandle,
   mods: Vec<BatchUpdateMod>,
   profile_folder: String,
+  skip_backup: bool,
+  max_backups: u32,
 ) -> Result<BatchUpdateResult, Error> {
   log::info!(
-    "Starting batch mod update: {} mods, profile: {}",
+    "Starting batch mod update: {} mods, profile: {}, skip_backup: {}, max_backups: {}",
     mods.len(),
-    profile_folder
+    profile_folder,
+    skip_backup,
+    max_backups
   );
 
   let total_mods = mods.len();
@@ -1894,44 +1906,63 @@ pub async fn batch_update_mods(
     ));
   }
 
-  log::info!("Creating addons backup before updating mods");
-
-  let (addons_path, backup_dir, filename) = {
+  let (addons_path, filename) = {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.set_backup_manager_app_handle(app_handle.clone());
     let backup_manager = mod_manager.get_addons_backup_manager();
 
     let addons_path = backup_manager.get_addons_path()?;
-    let backup_dir = backup_manager.get_backup_directory()?;
     let filename = backup_manager.generate_backup_filename();
 
-    (addons_path, backup_dir, filename.clone())
+    (addons_path, filename)
   };
 
-  let backup_result = tokio::task::spawn_blocking({
-    let addons_path = addons_path.clone();
-    let filename = filename.clone();
-    let app_handle = app_handle.clone();
-    move || AddonsBackupManager::create_backup_async(addons_path, backup_dir, filename, app_handle)
-  })
-  .await;
+  if !skip_backup {
+    log::info!("Creating addons backup before updating mods");
 
-  match backup_result {
-    Ok(Ok(_)) => log::info!("Backup created successfully: {}", filename),
-    Ok(Err(e)) => {
-      log::error!("Failed to create backup: {:?}", e);
-      return Err(Error::BackupCreationFailed(format!(
-        "Failed to create backup before update: {:?}",
-        e
-      )));
+    let backup_dir = {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      let backup_manager = mod_manager.get_addons_backup_manager();
+      backup_manager.get_backup_directory()?
+    };
+
+    let backup_result = tokio::task::spawn_blocking({
+      let addons_path = addons_path.clone();
+      let filename = filename.clone();
+      let app_handle = app_handle.clone();
+      move || {
+        AddonsBackupManager::create_backup_async(addons_path, backup_dir, filename, app_handle)
+      }
+    })
+    .await;
+
+    match backup_result {
+      Ok(Ok(_)) => log::info!("Backup created successfully: {}", filename),
+      Ok(Err(e)) => {
+        log::error!("Failed to create backup: {:?}", e);
+        return Err(Error::BackupCreationFailed(format!(
+          "Failed to create backup before update: {:?}",
+          e
+        )));
+      }
+      Err(e) => {
+        log::error!("Failed to spawn backup task: {:?}", e);
+        return Err(Error::BackupCreationFailed(format!(
+          "Failed to create backup before update: {:?}",
+          e
+        )));
+      }
     }
-    Err(e) => {
-      log::error!("Failed to spawn backup task: {:?}", e);
-      return Err(Error::BackupCreationFailed(format!(
-        "Failed to create backup before update: {:?}",
-        e
-      )));
+
+    if max_backups > 0 {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      let backup_manager = mod_manager.get_addons_backup_manager();
+      if let Err(e) = backup_manager.prune_old_backups(max_backups) {
+        log::error!("Failed to prune old backups: {:?}", e);
+      }
     }
+  } else {
+    log::info!("Skipping addons backup (disabled by user)");
   }
 
   let mut succeeded = Vec::new();

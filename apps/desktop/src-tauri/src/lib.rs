@@ -6,12 +6,12 @@
 
 pub mod cli;
 mod commands;
-mod logs;
 mod deep_link;
 mod discord_rpc;
 mod download_manager;
 mod errors;
 mod ingest_tool;
+mod logs;
 mod mod_manager;
 mod reports;
 mod utils;
@@ -137,6 +137,7 @@ pub fn run() {
       commands::restore_addons_backup,
       commands::delete_addons_backup,
       commands::get_addons_backup_info,
+      commands::prune_addons_backups,
       commands::open_addons_backups_folder,
       commands::queue_download,
       commands::cancel_download,

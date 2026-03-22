@@ -903,8 +903,8 @@
   "settings": {
     "about": "Sobre",
     "addSetting": "Adicionar Configuração",
-    "addonsBackup": "Backup de Addons",
-    "addonsBackupDescription": "Criar e restaurar backups de seus addons instalados. Backups são armazenados como arquivos compactados.",
+    "addonsBackup": "Backup de mods",
+    "addonsBackupDescription": "Crie e restaure backups dos seus mods instalados.",
     "allModsCleared": "Todos os seus mods foram apagados",
     "appearance": "Aparência",
     "appearanceDescription": "Personalize a aparência da aplicação.",
@@ -1027,6 +1027,7 @@
     "theme": "Tema",
     "themeDescription": "Escolha entre tema claro, escuro ou do sistema",
     "tools": "Ferramentas",
+    "backups": "Backups",
     "toolsDescription": "Funcionalidades para gerenciar seus mods",
     "value": "Valor",
     "valuePlaceholder": "true ou false, ou qualquer outro valor"

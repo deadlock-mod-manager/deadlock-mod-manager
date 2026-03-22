@@ -28,6 +28,8 @@ export const useBatchUpdate = () => {
     setInstalledVpks,
     setSelectedDownloads: setStoreSelectedDownloads,
     localMods,
+    backupEnabled,
+    maxBackupCount,
   } = usePersistedStore();
 
   useEffect(() => {
@@ -149,6 +151,8 @@ export const useBatchUpdate = () => {
       const rawResult = await invoke("batch_update_mods", {
         mods: batchUpdateMods,
         profileFolder,
+        skipBackup: !backupEnabled,
+        maxBackups: maxBackupCount,
       });
 
       const result = BatchUpdateResultSchema.parse(rawResult);

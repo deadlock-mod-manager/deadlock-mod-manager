@@ -21,6 +21,7 @@ import {
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
 import {
+  Archive,
   FileCog,
   FlagIcon,
   FolderOpen,
@@ -389,6 +390,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='backups'>
+              <Archive className='h-5 w-5' />
+              {t("settings.backups")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='logging'>
               <ScrollTextIcon className='h-5 w-5' />
               {t("settings.logging")}
@@ -588,6 +595,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </Button>
                 </div>
               </Section>
+            </TabsContent>
+
+            <TabsContent className='mt-0 space-y-2' value='backups'>
               <Section
                 description={t("settings.addonsBackupDescription")}
                 title={t("settings.addonsBackup")}>

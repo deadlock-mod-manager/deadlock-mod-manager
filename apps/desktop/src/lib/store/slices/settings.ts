@@ -26,6 +26,8 @@ export type SettingsState = {
   crosshairsEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
+  backupEnabled: boolean;
+  maxBackupCount: number; // 0 means unlimited
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -60,6 +62,10 @@ export type SettingsState = {
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
+  // Backup settings management
+  setBackupEnabled: (enabled: boolean) => void;
+  setMaxBackupCount: (count: number) => void;
+
   // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
@@ -79,6 +85,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
+  backupEnabled: true,
+  maxBackupCount: 5,
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
@@ -196,6 +204,16 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") =>
     set(() => ({
       linuxGpuOptimization: value,
+    })),
+
+  setBackupEnabled: (enabled: boolean) =>
+    set(() => ({
+      backupEnabled: enabled,
+    })),
+
+  setMaxBackupCount: (count: number) =>
+    set(() => ({
+      maxBackupCount: count,
     })),
 
   // Plugin management

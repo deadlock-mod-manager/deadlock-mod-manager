@@ -902,8 +902,8 @@
   "settings": {
     "about": "Informazioni",
     "addSetting": "Aggiungi Impostazione",
-    "addonsBackup": "Backup Addon",
-    "addonsBackupDescription": "Crea e ripristina backup dei tuoi addon installati. I backup vengono salvati come archivi compressi.",
+    "addonsBackup": "Backup mod",
+    "addonsBackupDescription": "Crea e ripristina backup delle mod installate.",
     "allModsCleared": "Tutte le mod sono state cancellate",
     "appearance": "Aspetto",
     "appearanceDescription": "Personalizza l'aspetto dell'applicazione.",
@@ -1025,6 +1025,7 @@
     "theme": "Tema",
     "themeDescription": "Scegli tra tema chiaro, scuro o di sistema",
     "tools": "Strumenti",
+    "backups": "Backup",
     "toolsDescription": "Funzioni di utilità per gestire le tue mod",
     "value": "Valore",
     "valuePlaceholder": "true o false o qualsiasi valore"

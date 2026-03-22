@@ -903,8 +903,8 @@
   "settings": {
     "about": "Hakkında",
     "addSetting": "Ayar ekle",
-    "addonsBackup": "Eklenti Yedeği",
-    "addonsBackupDescription": "Yüklü eklentilerinizin yedeklerini oluşturun ve geri yükleyin. Yedekler sıkıştırılmış arşivler olarak saklanır.",
+    "addonsBackup": "Mod yedeği",
+    "addonsBackupDescription": "Yüklü modlarınızın yedeklerini oluşturun ve geri yükleyin.",
     "allModsCleared": "Tüm modlar silinemedi",
     "appearance": "Görünüm",
     "appearanceDescription": "Uygulamaın görünümünü özelleştirin.",
@@ -1026,6 +1026,7 @@
     "theme": "Tema",
     "themeDescription": "Açık, koyu veya sistem temasını seçin",
     "tools": "Araçlar",
+    "backups": "Yedekler",
     "toolsDescription": "Modlarınızı yönetmek için yardımıcı fonksiyonlar",
     "value": "Değer",
     "valuePlaceholder": "doğru, yanlış veya herhangi bir değer"

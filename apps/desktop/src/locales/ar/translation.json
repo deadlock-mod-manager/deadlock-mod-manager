@@ -913,8 +913,8 @@
   "settings": {
     "about": "عن التطبيق",
     "addSetting": "إضافة إعداد",
-    "addonsBackup": "نسخ احتياطي للإضافات",
-    "addonsBackupDescription": "إنشاء واستعادة النسخ الاحتياطية للإضافات المثبتة. يتم تخزين النسخ الاحتياطية كأرشيفات مضغوطة.",
+    "addonsBackup": "نسخ احتياطي للمودات",
+    "addonsBackupDescription": "إنشاء واستعادة النسخ الاحتياطية للمودات المثبتة.",
     "allModsCleared": "تم مسح جميع التعديلات",
     "appearance": "المظهر",
     "appearanceDescription": "خصص مظهر التطبيق.",
@@ -1036,6 +1036,7 @@
     "theme": "المظهر",
     "themeDescription": "اختر بين المظهر الفاتح أو الداكن أو مظهر النظام",
     "tools": "أدوات",
+    "backups": "النسخ الاحتياطية",
     "toolsDescription": "الوظائف المساعدة لإدارة التعديلات الخاصة بك",
     "value": "القيمة",
     "valuePlaceholder": "true أو false أو أي قيمة"

@@ -903,8 +903,8 @@
   "settings": {
     "about": "關於",
     "addSetting": "新增設定",
-    "addonsBackup": "插件備份",
-    "addonsBackupDescription": "建立和還原已安裝插件的備份。備份以壓縮封存形式儲存。",
+    "addonsBackup": "模組備份",
+    "addonsBackupDescription": "建立和還原已安裝模組的備份。",
     "allModsCleared": "所有模組已清除",
     "appearance": "外觀",
     "appearanceDescription": "自訂應用程式的外觀。",
@@ -1026,6 +1026,7 @@
     "theme": "主題",
     "themeDescription": "在淺色、深色或系統主題之間選擇",
     "tools": "工具",
+    "backups": "備份",
     "toolsDescription": "用於管理模組的實用功能",
     "value": "值",
     "valuePlaceholder": "true 或 false 或任意值"
