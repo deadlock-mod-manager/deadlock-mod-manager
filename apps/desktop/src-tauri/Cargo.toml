@@ -48,6 +48,7 @@ chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.2"
 vpk-parser = { path = "../../../packages/vpk-parser" }
+dmp-parser = { path = "../../../packages/dmp-parser" }
 tokio = { version = "1.48.0", features = ["full"] }
 tokio-util = "0.7"
 reqwest = { version = "0.12", features = ["json", "stream"] }
@@ -60,6 +61,7 @@ clap = { version = "4.5", features = ["derive"] }
 urlencoding = "2.1"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-ota-updater = "2.0.7"
+tauri-plugin-clipboard-manager = "2"
 
 [dev-dependencies]
 tempfile = "3.23.0"

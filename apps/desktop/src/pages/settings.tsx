@@ -29,6 +29,7 @@ import {
   MonitorIcon,
   PlugIcon,
   PlusIcon,
+  ScrollTextIcon,
   Settings,
   ShieldIcon,
   TrashIcon,
@@ -53,6 +54,7 @@ import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
+import { LoggingSettings } from "@/components/settings/logging-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -387,6 +389,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsTrigger>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='logging'>
+              <ScrollTextIcon className='h-5 w-5' />
+              {t("settings.logging")}
+            </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='experimental'>
               <FlagIcon className='h-5 w-5' />
               {t("settings.experimental")}
@@ -584,6 +592,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 description={t("settings.addonsBackupDescription")}
                 title={t("settings.addonsBackup")}>
                 <AddonsBackupManagement />
+              </Section>
+            </TabsContent>
+
+            <TabsContent className='mt-0 space-y-2' value='logging'>
+              <Section
+                description={t("settings.loggingDescription")}
+                title={t("settings.logging")}>
+                <LoggingSettings />
               </Section>
             </TabsContent>
 

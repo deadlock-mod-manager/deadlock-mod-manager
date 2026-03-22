@@ -2,6 +2,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+pub use crate::logs::{CrashDumpInfo, LogInfo};
+
 use crate::deep_link::{scheme_names, strip_scheme, validate_mod_deep_link};
 use crate::discord_rpc::{self, DiscordActivity, DiscordState};
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
@@ -12,6 +14,7 @@ use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, AutoexecConfig, Mod, ModFileTree, ModManager,
 };
+use crate::logs::{crash_dumps, log_manager};
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -2408,4 +2411,53 @@ pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
   mod_manager
     .get_autoexec_manager()
     .remove_crosshair_section(game_path)
+}
+
+#[tauri::command]
+pub async fn get_log_info(app_handle: AppHandle) -> Result<LogInfo, Error> {
+  log_manager::get_log_info(&app_handle).await
+}
+
+#[tauri::command]
+pub async fn open_logs_folder(app_handle: AppHandle) -> Result<(), Error> {
+  log_manager::open_logs_folder(&app_handle)
+}
+
+#[tauri::command]
+pub async fn open_log_file(app_handle: AppHandle) -> Result<(), Error> {
+  log_manager::open_log_file(&app_handle)
+}
+
+#[tauri::command]
+pub async fn get_logs_for_ai(
+  app_handle: AppHandle,
+  max_chars: usize,
+  log_source: String,
+) -> Result<String, Error> {
+  log_manager::get_logs_for_ai(&app_handle, max_chars, &log_source).await
+}
+
+#[tauri::command]
+pub async fn get_crash_dumps_info() -> Result<CrashDumpInfo, Error> {
+  crash_dumps::get_crash_dumps_info()
+}
+
+#[tauri::command]
+pub async fn open_crash_dumps_folder() -> Result<(), Error> {
+  crash_dumps::open_crash_dumps_folder()
+}
+
+#[tauri::command]
+pub async fn parse_crash_dump(file_path: String) -> Result<String, Error> {
+  crash_dumps::parse_crash_dump(&file_path)
+}
+
+#[tauri::command]
+pub async fn parse_latest_crash_dump() -> Result<String, Error> {
+  crash_dumps::parse_latest_crash_dump()
+}
+
+#[tauri::command]
+pub async fn open_latest_crash_dump_parsed() -> Result<(), Error> {
+  crash_dumps::open_latest_crash_dump_parsed()
 }

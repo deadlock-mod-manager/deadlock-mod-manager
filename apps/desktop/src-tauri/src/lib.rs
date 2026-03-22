@@ -6,6 +6,7 @@
 
 pub mod cli;
 mod commands;
+mod logs;
 mod deep_link;
 mod discord_rpc;
 mod download_manager;
@@ -49,6 +50,7 @@ pub fn run() {
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_opener::init())
+    .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_store::Builder::new().build())
     .plugin(tauri_plugin_fs::init())
@@ -164,7 +166,16 @@ pub fn run() {
       commands::open_autoexec_folder,
       commands::open_autoexec_editor,
       commands::apply_crosshair_to_autoexec,
-      commands::remove_crosshair_from_autoexec
+      commands::remove_crosshair_from_autoexec,
+      commands::get_log_info,
+      commands::open_logs_folder,
+      commands::open_log_file,
+      commands::get_logs_for_ai,
+      commands::get_crash_dumps_info,
+      commands::open_crash_dumps_folder,
+      commands::parse_crash_dump,
+      commands::parse_latest_crash_dump,
+      commands::open_latest_crash_dump_parsed
     ])
     .run(context)
     .expect("error while running tauri application");
