@@ -14,9 +14,9 @@ reviews:
     affected (desktop, api, bot, www, docs, shared packages). Call out any
     cross-package dependency changes, database migrations, Tauri plugin changes,
     or Rust FFI boundary changes.
-  high_level_summary_placeholder: '@coderabbitai summary'
+  high_level_summary_placeholder: "@coderabbitai summary"
   high_level_summary_in_walkthrough: false
-  auto_title_placeholder: '@coderabbitai'
+  auto_title_placeholder: "@coderabbitai"
   auto_title_instructions: >-
     Use conventional commit format: type(scope): description.
     Types: feat, fix, docs, style, refactor, test, chore, ci.
@@ -35,32 +35,32 @@ reviews:
   related_prs: true
   suggested_labels: true
   labeling_instructions:
-    - label: 'app:desktop'
-      instructions: 'Changes in apps/desktop/ or .tauri/ or Tauri Rust backend'
-    - label: 'app:api'
-      instructions: 'Changes in apps/api/'
-    - label: 'app:bot'
-      instructions: 'Changes in apps/bot/'
-    - label: 'app:www'
-      instructions: 'Changes in apps/www/'
-    - label: 'app:docs'
-      instructions: 'Changes in apps/docs/'
-    - label: 'pkg:database'
-      instructions: 'Changes in packages/database/'
-    - label: 'pkg:shared'
-      instructions: 'Changes in packages/shared/'
-    - label: 'pkg:ui'
-      instructions: 'Changes in packages/ui/'
-    - label: 'rust'
-      instructions: 'Changes to any Rust code (.rs files, Cargo.toml, Cargo.lock)'
-    - label: 'i18n'
-      instructions: 'Changes to translation/locale files'
-    - label: 'infra'
-      instructions: 'Changes to infrastructure/, docker/, Helm charts, or CI workflows'
-    - label: 'dependencies'
-      instructions: 'Changes to package.json, pnpm-lock.yaml, or Cargo.lock'
-    - label: 'database-migration'
-      instructions: 'Changes to packages/database/drizzle/ or schema files'
+    - label: "app:desktop"
+      instructions: "Changes in apps/desktop/ or .tauri/ or Tauri Rust backend"
+    - label: "app:api"
+      instructions: "Changes in apps/api/"
+    - label: "app:bot"
+      instructions: "Changes in apps/bot/"
+    - label: "app:www"
+      instructions: "Changes in apps/www/"
+    - label: "app:docs"
+      instructions: "Changes in apps/docs/"
+    - label: "pkg:database"
+      instructions: "Changes in packages/database/"
+    - label: "pkg:shared"
+      instructions: "Changes in packages/shared/"
+    - label: "pkg:ui"
+      instructions: "Changes in packages/ui/"
+    - label: "rust"
+      instructions: "Changes to any Rust code (.rs files, Cargo.toml, Cargo.lock)"
+    - label: "i18n"
+      instructions: "Changes to translation/locale files"
+    - label: "infra"
+      instructions: "Changes to infrastructure/, docker/, Helm charts, or CI workflows"
+    - label: "dependencies"
+      instructions: "Changes to package.json, pnpm-lock.yaml, or Cargo.lock"
+    - label: "database-migration"
+      instructions: "Changes to packages/database/drizzle/ or schema files"
   auto_apply_labels: true
   suggested_reviewers: true
   auto_assign_reviewers: true
@@ -69,18 +69,18 @@ reviews:
   enable_prompt_for_ai_agents: true
   path_filters:
     # Ignore generated / vendored / lock files from detailed review
-    - '!**/*.lock'
-    - '!**/pnpm-lock.yaml'
-    - '!**/*.gen.ts'
-    - '!**/*.generated.*'
-    - '!**/dist/**'
-    - '!**/target/**'
-    - '!**/.turbo/**'
-    - '!**/node_modules/**'
-    - '!apps/desktop/src/locales/*/translation.json'
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/*.gen.ts"
+    - "!**/*.generated.*"
+    - "!**/dist/**"
+    - "!**/target/**"
+    - "!**/.turbo/**"
+    - "!**/node_modules/**"
+    - "!apps/desktop/src/locales/*/translation.json"
   path_instructions:
     # ── General Conventions ───────────────────────────────────────────
-    - path: '**'
+    - path: "**"
       instructions: >-
         This is a Tauri v2 desktop app monorepo (React + Rust) for managing
         Deadlock game mods. The .cursor/rules/ files describe project conventions
@@ -97,7 +97,7 @@ reviews:
         For security-related changes, reference SECURITY.md in the repo root.
 
     # ── Tauri Desktop App ──────────────────────────────────────────────
-    - path: 'apps/desktop/src-tauri/**'
+    - path: "apps/desktop/src-tauri/**"
       instructions: >-
         This is the Tauri v2 Rust backend. Review for memory safety, proper error
         handling with anyhow/thiserror, correct use of Tauri commands and state
@@ -105,7 +105,7 @@ reviews:
         no panics in production code paths — use Result types. Watch for
         thread-safety issues with shared state.
 
-    - path: 'apps/desktop/src/**'
+    - path: "apps/desktop/src/**"
       instructions: >-
         Desktop frontend: React + TypeScript + TailwindCSS v4. Enforce strict
         TypeScript — never `any` or `unknown` without justification. Ensure all
@@ -114,14 +114,14 @@ reviews:
         not manual useState for loading state. Use Zustand for client state.
         Components should use Radix UI primitives from packages/ui.
 
-    - path: 'apps/desktop/src/locales/**'
+    - path: "apps/desktop/src/locales/**"
       instructions: >-
         Translation files. Ensure JSON is valid, keys match the English base,
         and no placeholders like {{variable}} are removed or altered. Do not
         review translation quality — that is handled by native speakers.
 
     # ── API Server ─────────────────────────────────────────────────────
-    - path: 'apps/api/**'
+    - path: "apps/api/**"
       instructions: >-
         Bun + Hono API server. Ensure proper input validation with Zod schemas,
         correct HTTP status codes, and consistent error response shapes.
@@ -129,14 +129,14 @@ reviews:
         should use Drizzle ORM — no raw SQL. Ensure OpenAPI schema stays in
         sync with route definitions.
 
-    - path: 'apps/auth/**'
+    - path: "apps/auth/**"
       instructions: >-
         Authentication service using Better Auth. Security-critical — review
         carefully for session handling, token management, and OAuth flow
         correctness. Ensure no secrets are leaked in responses.
 
     # ── Discord Bot ────────────────────────────────────────────────────
-    - path: 'apps/bot/**'
+    - path: "apps/bot/**"
       instructions: >-
         Discord.js bot with LangChain AI integration. Watch for rate limiting
         issues, proper error handling for Discord API failures, and prompt
@@ -144,90 +144,90 @@ reviews:
         correctly.
 
     # ── Web App ────────────────────────────────────────────────────────
-    - path: 'apps/www/**'
+    - path: "apps/www/**"
       instructions: >-
         TanStack Start web app. Check for SSR compatibility issues, proper
         data loading with TanStack Router loaders, and SEO metadata.
         Ensure no desktop-only Tauri APIs leak into web code.
 
-    - path: 'apps/docs/**'
+    - path: "apps/docs/**"
       instructions: >-
         Next.js documentation site with Fumadocs. Review for accuracy and
         proper MDX formatting.
 
     # ── Shared Packages ────────────────────────────────────────────────
-    - path: 'packages/database/**'
+    - path: "packages/database/**"
       instructions: >-
         Drizzle ORM PostgreSQL package. Schema changes are critical — review
         migrations for backwards compatibility, proper indexes, and data
         integrity constraints. Check that pgvector operations are correct.
         Ensure schema changes have corresponding migration files.
-    - path: 'packages/shared/**'
+    - path: "packages/shared/**"
       instructions: >-
         Shared types, Zod schemas, and constants used across all apps.
         Changes here affect everything — ensure backwards compatibility.
         Types should be precise and well-documented.
-    - path: 'packages/ui/**'
+    - path: "packages/ui/**"
       instructions: >-
         Radix UI component library. Ensure accessibility (ARIA attributes,
         keyboard navigation). Components should be composable and follow
         the existing pattern of Radix primitives + TailwindCSS.
-    - path: 'packages/common/**'
+    - path: "packages/common/**"
       instructions: >-
         Common utilities and caching. Used across multiple services — ensure
         no app-specific logic leaks in. Watch for cache invalidation issues.
-    - path: 'packages/logging/**'
+    - path: "packages/logging/**"
       instructions: >-
         Centralized logging with loglayer + Winston + Sentry. Ensure log
         levels are appropriate and no sensitive data is logged.
-    - path: 'packages/queue/**'
+    - path: "packages/queue/**"
       instructions: >-
         BullMQ job queue with cron support. Check for idempotency in job
         processors, proper retry/backoff configuration, and dead letter
         queue handling.
 
     # ── Rust FFI Parsers ───────────────────────────────────────────────
-    - path: 'packages/vpk-parser/**'
+    - path: "packages/vpk-parser/**"
       instructions: >-
         Rust VPK (Valve Pak) parser exposed via Bun FFI. Review for memory
         safety, proper error handling across the FFI boundary, and no
         undefined behavior. Ensure TypeScript bindings (ts-rs) are regenerated
         when Rust types change.
-    - path: 'packages/kv-parser/**'
+    - path: "packages/kv-parser/**"
       instructions: >-
         Rust KeyValues/VDF parser for Deadlock game files via Bun FFI.
         Same FFI safety concerns as vpk-parser. Ensure parsing handles
         malformed input gracefully without panics.
-    - path: 'packages/dmodpkg/**'
+    - path: "packages/dmodpkg/**"
       instructions: >-
         Rust library and CLI for the .dmodpkg mod package format. Review
         for correct archive handling, file integrity checks, and
         backwards-compatible format changes.
 
     # ── Infrastructure ─────────────────────────────────────────────────
-    - path: 'infrastructure/**'
+    - path: "infrastructure/**"
       instructions: >-
         Kubernetes Helm charts. Check for resource limits, security contexts,
         proper secret references, and health check configurations.
-    - path: 'docker/**'
+    - path: "docker/**"
       instructions: >-
         Docker build files. Ensure multi-stage builds are efficient, base
         images are pinned, and no secrets are baked into layers.
-    - path: '.github/workflows/**'
+    - path: ".github/workflows/**"
       instructions: >-
         GitHub Actions CI/CD. Check for pinned action versions (use SHA not
         tags), proper secret usage, and no credential exposure in logs.
         Ensure workflow permissions follow least-privilege principle.
 
     # ── Security ──────────────────────────────────────────────────────
-    - path: 'SECURITY.md'
+    - path: "SECURITY.md"
       instructions: >-
         Security policy for the project. Changes here should be reviewed
         carefully — ensure reporting channels, response timelines, and
         security measures are accurate.
 
     # ── Documentation Site ────────────────────────────────────────────
-    - path: 'apps/docs/content/docs/**'
+    - path: "apps/docs/content/docs/**"
       instructions: >-
         Project documentation source. These files are published to
         https://docs.deadlockmods.app/. Ensure links, code examples,
@@ -235,11 +235,11 @@ reviews:
         both code and docs, verify the docs reflect the code changes.
 
     # ── Configuration ──────────────────────────────────────────────────
-    - path: 'turbo.json'
+    - path: "turbo.json"
       instructions: >-
         Turborepo pipeline config. Ensure task dependencies are correct
         and cache inputs/outputs are properly specified.
-    - path: '**/package.json'
+    - path: "**/package.json"
       instructions: >-
         Check for version consistency across the monorepo. New dependencies
         should justify their addition. Prefer using pnpm catalog for
@@ -249,13 +249,13 @@ reviews:
   disable_cache: false
   auto_review:
     enabled: true
-    description_keyword: ''
+    description_keyword: ""
     auto_incremental_review: true
     auto_pause_after_reviewed_commits: 5
     ignore_title_keywords:
-      - '[skip ci]'
-      - 'WIP'
-      - 'DO NOT MERGE'
+      - "[skip ci]"
+      - "WIP"
+      - "DO NOT MERGE"
     labels: []
     drafts: false
     base_branches: []
@@ -415,11 +415,11 @@ knowledge_base:
   code_guidelines:
     enabled: true
     filePatterns:
-      - 'CONTRIBUTING.md'
-      - 'AGENTS.md'
-      - 'AI_POLICY.md'
-      - 'SECURITY.md'
-      - '.cursor/rules/**'
+      - "CONTRIBUTING.md"
+      - "AGENTS.md"
+      - "AI_POLICY.md"
+      - "SECURITY.md"
+      - ".cursor/rules/**"
   learnings:
     scope: auto
   issues:
@@ -442,12 +442,12 @@ code_generation:
     path_instructions: []
   unit_tests:
     path_instructions:
-      - path: 'apps/**'
+      - path: "apps/**"
         instructions: >-
           Use Vitest for testing. Follow AAA (Arrange, Act, Assert) pattern.
           Use @testing-library/react for component tests. Mock Tauri APIs
           when testing desktop frontend code.
-      - path: 'packages/**'
+      - path: "packages/**"
         instructions: >-
           Use Vitest or Bun test. Keep tests colocated with source files.
           Test edge cases for FFI-boundary code in Rust parsers.
@@ -461,18 +461,18 @@ issue_enrichment:
       labels: []
   labeling:
     labeling_instructions:
-      - label: 'app:desktop'
-        instructions: 'Issues related to the desktop Tauri application'
-      - label: 'app:api'
-        instructions: 'Issues related to the backend API service'
-      - label: 'app:bot'
-        instructions: 'Issues related to the Discord bot'
-      - label: 'app:www'
-        instructions: 'Issues related to the web application'
-      - label: 'bug'
-        instructions: 'Bug reports and defects'
-      - label: 'feature'
-        instructions: 'Feature requests and enhancements'
-      - label: 'i18n'
-        instructions: 'Translation and localization issues'
+      - label: "app:desktop"
+        instructions: "Issues related to the desktop Tauri application"
+      - label: "app:api"
+        instructions: "Issues related to the backend API service"
+      - label: "app:bot"
+        instructions: "Issues related to the Discord bot"
+      - label: "app:www"
+        instructions: "Issues related to the web application"
+      - label: "bug"
+        instructions: "Bug reports and defects"
+      - label: "feature"
+        instructions: "Feature requests and enhancements"
+      - label: "i18n"
+        instructions: "Translation and localization issues"
     auto_apply_labels: true

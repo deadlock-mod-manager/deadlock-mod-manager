@@ -16,42 +16,45 @@ import {
 
 const logger = createLogger("check-for-updates");
 
-const APP_UPDATES_QUERY_KEY = ["app-updates"] as const;
+const NATIVE_UPDATES_QUERY_KEY = ["app-updates", "native"] as const;
+const OTA_UPDATES_QUERY_KEY = ["app-updates", "ota"] as const;
 
 type OtaUpdate = Awaited<ReturnType<typeof checkOta>>;
+
+async function fetchNativeUpdate(): Promise<NativeUpdate | null> {
+  return checkNative().catch((err) => {
+    const error = err instanceof Error ? err : new Error(String(err));
+    logger.withError(error).warn("Native update check failed");
+    return null;
+  });
+}
+
+async function fetchOtaUpdate(): Promise<OtaUpdate | null> {
+  return checkOta().catch((err) => {
+    const error = err instanceof Error ? err : new Error(String(err));
+    logger.withError(error).warn("OTA update check failed");
+    return null;
+  });
+}
+
 type AppUpdatesData = {
   nativeUpdate: NativeUpdate | null;
-  otaUpdate: OtaUpdate;
+  otaUpdate: OtaUpdate | null;
 };
-
-async function fetchAppUpdates(): Promise<AppUpdatesData> {
-  const [nativeResult, otaResult] = await Promise.all([
-    checkNative().catch((err) => {
-      logger.withError(err as Error).warn("Native update check failed");
-      return null;
-    }),
-    checkOta().catch((err) => {
-      logger.withError(err as Error).warn("OTA update check failed");
-      return null;
-    }),
-  ]);
-
-  return { nativeUpdate: nativeResult, otaUpdate: otaResult };
-}
 
 export const useCheckForUpdates = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const {
-    data,
-    isLoading: isCheckingForUpdates,
+    data: nativeUpdate,
+    isLoading: isNativeLoading,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: APP_UPDATES_QUERY_KEY,
-    queryFn: fetchAppUpdates,
+    queryKey: NATIVE_UPDATES_QUERY_KEY,
+    queryFn: fetchNativeUpdate,
     staleTime: STALE_TIME_UPDATER,
     gcTime: GC_TIME_UPDATER,
     refetchInterval: STALE_TIME_UPDATER,
@@ -61,32 +64,43 @@ export const useCheckForUpdates = () => {
     retryDelay: 5000,
   });
 
-  const updateAvailable = !!data?.nativeUpdate || !!data?.otaUpdate;
+  const { data: otaUpdate } = useQuery({
+    queryKey: OTA_UPDATES_QUERY_KEY,
+    queryFn: fetchOtaUpdate,
+    enabled: false,
+    staleTime: STALE_TIME_MANUAL_CHECK,
+    gcTime: GC_TIME_UPDATER,
+  });
+
+  const updateAvailable = !!nativeUpdate || !!otaUpdate;
 
   const { mutate: installUpdate, isPending: isInstallingUpdate } = useMutation({
     mutationFn: async () => {
-      const updates = queryClient.getQueryData<AppUpdatesData>(
-        APP_UPDATES_QUERY_KEY,
+      const native = queryClient.getQueryData<NativeUpdate | null>(
+        NATIVE_UPDATES_QUERY_KEY,
       );
-      if (!updates?.nativeUpdate && !updates?.otaUpdate) {
+      const ota = queryClient.getQueryData<OtaUpdate | null>(
+        OTA_UPDATES_QUERY_KEY,
+      );
+      if (!native && !ota) {
         throw new Error("No update available");
       }
 
-      if (updates.nativeUpdate) {
+      if (native) {
         logger
-          .withMetadata({ version: updates.nativeUpdate.version })
+          .withMetadata({ version: native.version })
           .info("Installing native update");
         toast.loading(t("about.downloadingUpdate"));
-        await updates.nativeUpdate.downloadAndInstall(() => {});
+        await native.downloadAndInstall(() => {});
         logger.info("Native update installed, relaunching");
         await relaunch();
         return;
       }
 
-      if (updates.otaUpdate) {
+      if (ota) {
         logger.info("Applying OTA update");
         toast.loading(t("about.downloadingUpdate"));
-        await updates.otaUpdate.apply();
+        await ota.apply();
         logger.info("OTA update applied, reloading window");
         window.location.reload();
       }
@@ -99,36 +113,44 @@ export const useCheckForUpdates = () => {
     },
   });
 
-  const { mutate: checkForUpdates } = useMutation({
-    mutationFn: async () => {
-      const result = await queryClient.fetchQuery({
-        queryKey: APP_UPDATES_QUERY_KEY,
-        queryFn: fetchAppUpdates,
-        staleTime: STALE_TIME_MANUAL_CHECK,
-      });
-      return result;
-    },
-    onSuccess: (result) => {
-      if (!result.nativeUpdate && !result.otaUpdate) {
-        toast.info(t("about.latestVersion"));
-      }
-    },
-    onError: (err) => {
-      logger
-        .withError(err instanceof Error ? err : new Error(String(err)))
-        .error("Update check failed");
-      toast.error(t("about.updateFailed"));
-    },
-  });
+  const { mutate: checkForUpdates, isPending: isCheckForUpdatesPending } =
+    useMutation({
+      mutationFn: async (): Promise<AppUpdatesData> => {
+        const [nativeResult, otaResult] = await Promise.all([
+          queryClient.fetchQuery({
+            queryKey: NATIVE_UPDATES_QUERY_KEY,
+            queryFn: fetchNativeUpdate,
+            staleTime: STALE_TIME_MANUAL_CHECK,
+          }),
+          queryClient.fetchQuery({
+            queryKey: OTA_UPDATES_QUERY_KEY,
+            queryFn: fetchOtaUpdate,
+            staleTime: STALE_TIME_MANUAL_CHECK,
+          }),
+        ]);
+        return { nativeUpdate: nativeResult, otaUpdate: otaResult };
+      },
+      onSuccess: (result) => {
+        if (!result.nativeUpdate && !result.otaUpdate) {
+          toast.info(t("about.latestVersion"));
+        }
+      },
+      onError: (err) => {
+        logger
+          .withError(err instanceof Error ? err : new Error(String(err)))
+          .error("Update check failed");
+        toast.error(t("about.updateFailed"));
+      },
+    });
 
   return {
     updateAvailable,
-    isCheckingForUpdates,
+    isCheckingForUpdates: isNativeLoading || isCheckForUpdatesPending,
     isError,
     error,
+    refetch,
     installUpdate,
     isInstallingUpdate,
-    refetch,
     checkForUpdates,
   };
 };

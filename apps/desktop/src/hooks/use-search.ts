@@ -71,9 +71,12 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
     }
   };
 
-  const setSortType = useCallback((newSortType: SortType) => {
-    updateModsFilters({ currentSort: newSortType });
-  }, [updateModsFilters]);
+  const setSortType = useCallback(
+    (newSortType: SortType) => {
+      updateModsFilters({ currentSort: newSortType });
+    },
+    [updateModsFilters],
+  );
 
   return {
     search,

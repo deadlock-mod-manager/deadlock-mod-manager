@@ -48,12 +48,15 @@ const HeroFilter = ({
     return heroes;
   }, [mods]);
 
-  const handleHeroToggle = useCallback((hero: string) => {
-    const newSelectedHeroes = selectedHeroes.includes(hero)
-      ? selectedHeroes.filter((h) => h !== hero)
-      : [...selectedHeroes, hero];
-    onHeroesChange(newSelectedHeroes);
-  }, [selectedHeroes, onHeroesChange]);
+  const handleHeroToggle = useCallback(
+    (hero: string) => {
+      const newSelectedHeroes = selectedHeroes.includes(hero)
+        ? selectedHeroes.filter((h) => h !== hero)
+        : [...selectedHeroes, hero];
+      onHeroesChange(newSelectedHeroes);
+    },
+    [selectedHeroes, onHeroesChange],
+  );
 
   const getHeroDisplayName = (hero: string) => {
     if (hero === "None") {

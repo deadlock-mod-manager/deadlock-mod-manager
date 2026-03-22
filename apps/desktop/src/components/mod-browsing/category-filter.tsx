@@ -52,12 +52,15 @@ const CategoryFilter = ({
       : available;
   }, [mods]);
 
-  const handleCategoryToggle = useCallback((category: string) => {
-    const newSelectedCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter((c) => c !== category)
-      : [...selectedCategories, category];
-    onCategoriesChange(newSelectedCategories);
-  }, [selectedCategories, onCategoriesChange]);
+  const handleCategoryToggle = useCallback(
+    (category: string) => {
+      const newSelectedCategories = selectedCategories.includes(category)
+        ? selectedCategories.filter((c) => c !== category)
+        : [...selectedCategories, category];
+      onCategoriesChange(newSelectedCategories);
+    },
+    [selectedCategories, onCategoriesChange],
+  );
 
   const categoryButtonLabel =
     selectedCategories.length === 0
