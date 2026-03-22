@@ -61,6 +61,13 @@ const generateFallbackSVG = (): string => {
 // Define regex patterns at top level for performance
 const IMAGE_FILE_EXTENSION_REGEX = /\.(jpe?g|png|webp|gif|svg)$/i;
 
+const SAFE_PREVIEW_REGEX = /^(blob:|data:image\/|\/|https?:\/\/)/i;
+
+const sanitizePreviewUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  return SAFE_PREVIEW_REGEX.test(url.trim()) ? url : undefined;
+};
+
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -146,7 +153,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
             return () => URL.revokeObjectURL(url);
           }
           if (initial?.imageSrc) {
-            setPreview(initial.imageSrc);
+            setPreview(sanitizePreviewUrl(initial.imageSrc) ?? resolvedDefault);
             setImgOk(true);
           } else {
             setPreview(resolvedDefault);
@@ -162,7 +169,7 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         return () => URL.revokeObjectURL(url);
       }
       if (initial?.imageSrc) {
-        setPreview(initial.imageSrc);
+        setPreview(sanitizePreviewUrl(initial.imageSrc) ?? resolvedDefault);
       } else {
         setPreview(resolvedDefault);
       }
