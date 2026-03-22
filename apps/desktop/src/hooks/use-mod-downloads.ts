@@ -51,7 +51,8 @@ export const useModDownloads = ({
     throwOnError: false,
   });
 
-  const availableFiles: ModDownloadItem[] = query.data?.downloads ?? EMPTY_DOWNLOADS;
+  const availableFiles: ModDownloadItem[] =
+    query.data?.downloads ?? EMPTY_DOWNLOADS;
 
   return {
     ...query,
