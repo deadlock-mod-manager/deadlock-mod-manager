@@ -61,6 +61,7 @@ clap = { version = "4.5", features = ["derive"] }
 urlencoding = "2.1"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-ota-updater = "2.0.7"
+tauri-plugin-clipboard-manager = "2"
 
 [dev-dependencies]
 tempfile = "3.23.0"

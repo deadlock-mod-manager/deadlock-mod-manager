@@ -16,6 +16,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -190,7 +191,7 @@ export const LoggingSettings = () => {
         logSource: selectedLogSource,
       });
 
-      await navigator.clipboard.writeText(logs);
+      await writeText(logs);
 
       const url = `${provider.baseUrl}?${provider.queryParam}=${encodeURIComponent(getPromptText(selectedLogSource))}`;
       await openUrl(url);
