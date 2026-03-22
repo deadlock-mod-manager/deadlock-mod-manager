@@ -5,9 +5,9 @@ env:
   ENABLE_SIGNED_UPDATER: "false"
 
 on:
-  # schedule:
-  #   # Run at 2 AM UTC every day
-  #   - cron: "0 2 * * *"
+  schedule:
+    # Run at 2 AM UTC every day
+    - cron: "0 2 * * *"
   workflow_dispatch: # Allow manual triggering
     inputs:
       build_windows:
@@ -40,6 +40,9 @@ jobs:
           # Get the latest nightly release tag
           LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
 
+          # Paths to monitor for changes
+          PATHS="apps/desktop packages"
+
           if [ -z "$LAST_NIGHTLY" ]; then
             echo "No previous nightly build found, will build"
             COMMIT_COUNT=$(git rev-list --count HEAD)
@@ -47,13 +50,17 @@ jobs:
           else
             echo "Last nightly: $LAST_NIGHTLY"
             LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY)
-            COMMIT_COUNT=$(git rev-list --count ${LAST_NIGHTLY_COMMIT}..HEAD)
-            
-            if [ $COMMIT_COUNT -gt 0 ]; then
-              echo "Found $COMMIT_COUNT new commits since last nightly"
+
+            # Check if any desktop files changed
+            CHANGED_FILES=$(git diff --name-only ${LAST_NIGHTLY_COMMIT}..HEAD -- $PATHS)
+
+            if [ -n "$CHANGED_FILES" ]; then
+              COMMIT_COUNT=$(git rev-list --count ${LAST_NIGHTLY_COMMIT}..HEAD -- $PATHS)
+              echo "Found $COMMIT_COUNT new desktop commits since last nightly"
               echo "should_build=true" >> $GITHUB_OUTPUT
             else
-              echo "No new commits since last nightly"
+              COMMIT_COUNT=0
+              echo "No new desktop commits since last nightly"
               echo "should_build=false" >> $GITHUB_OUTPUT
             fi
           fi
