@@ -18,6 +18,7 @@ export interface ModProfile {
   isDefault: boolean;
   folderName: string | null;
   mods: LocalMod[];
+  favoriteMods: string[];
 }
 
 export interface ProfileSwitchResult {

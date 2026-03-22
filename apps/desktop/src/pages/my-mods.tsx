@@ -41,13 +41,14 @@ import {
   Download,
   EllipsisVertical,
   FolderOpen,
+  HeartIcon,
   LayoutGrid,
   LayoutList,
   Loader2,
   RefreshCw,
   ScanSearch,
 } from "@deadlock-mods/ui/icons";
-import { Trash, UploadSimple } from "@phosphor-icons/react";
+import { Heart, Trash, UploadSimple } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -168,6 +169,7 @@ enum ModFilter {
   ALL = "all",
   ENABLED = "enabled",
   DISABLED = "disabled",
+  FAVORITES = "favorites",
 }
 
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
@@ -176,6 +178,12 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
+  const toggleFavorite = usePersistedStore(
+    (state) => state.toggleFavoriteInCurrentProfile,
+  );
+  const isFavorite = usePersistedStore((state) =>
+    state.isFavoriteInCurrentProfile(mod.remoteId),
+  );
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -272,19 +280,39 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           </div>
         </CardHeader>
         <CardFooter className='flex justify-between px-3 py-3 pt-2'>
-          <ModButton remoteMod={mod} variant='iconOnly' />{" "}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                isLoading={deleting}
-                onClick={deleteMod}
-                size='icon'
-                variant='destructive'>
-                <Trash className='h-4 w-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-          </Tooltip>
+          <ModButton remoteMod={mod} variant='iconOnly' />
+          <div className='flex gap-1'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => toggleFavorite(mod.remoteId)}
+                  size='icon'
+                  variant='ghost'>
+                  <Heart
+                    className='h-4 w-4'
+                    weight={isFavorite ? "fill" : "regular"}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFavorite
+                  ? t("contextMenu.removeFromFavorites")
+                  : t("contextMenu.addToFavorites")}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  isLoading={deleting}
+                  onClick={deleteMod}
+                  size='icon'
+                  variant='destructive'>
+                  <Trash className='h-4 w-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
+            </Tooltip>
+          </div>
         </CardFooter>
       </Card>
     </ModContextMenu>
@@ -298,6 +326,12 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
+  const toggleFavorite = usePersistedStore(
+    (state) => state.toggleFavoriteInCurrentProfile,
+  );
+  const isFavorite = usePersistedStore((state) =>
+    state.isFavoriteInCurrentProfile(mod.remoteId),
+  );
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -393,19 +427,39 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
 
           <div className='flex flex-col items-center gap-2'>
             <ModButton remoteMod={mod} variant='iconOnly' />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  disabled={isInstalling || deleting}
-                  isLoading={deleting}
-                  onClick={deleteMod}
-                  size='icon'
-                  variant='destructive'>
-                  <Trash className='h-4 w-4' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-            </Tooltip>
+            <div className='flex gap-1'>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => toggleFavorite(mod.remoteId)}
+                    size='icon'
+                    variant='ghost'>
+                    <Heart
+                      className='h-4 w-4'
+                      weight={isFavorite ? "fill" : "regular"}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isFavorite
+                    ? t("contextMenu.removeFromFavorites")
+                    : t("contextMenu.addToFavorites")}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    disabled={isInstalling || deleting}
+                    isLoading={deleting}
+                    onClick={deleteMod}
+                    size='icon'
+                    variant='destructive'>
+                    <Trash className='h-4 w-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("mods.removeMod")}</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
       </Card>
@@ -525,6 +579,13 @@ const MyMods = () => {
     keys: ["name", "description", "author"],
   });
 
+  const isFavoriteInCurrentProfile = usePersistedStore(
+    (state) => state.isFavoriteInCurrentProfile,
+  );
+  const favoritesCount = usePersistedStore((state) =>
+    state.getFavoritesCount(),
+  );
+
   const filterModsByStatus = (modsToFilter: LocalMod[]) => {
     switch (activeTab) {
       case ModFilter.ENABLED:
@@ -540,6 +601,10 @@ const MyMods = () => {
             mod.status !== ModStatus.Installed ||
             !mod.installedVpks ||
             mod.installedVpks.length === 0,
+        );
+      case ModFilter.FAVORITES:
+        return modsToFilter.filter((mod) =>
+          isFavoriteInCurrentProfile(mod.remoteId),
         );
       default:
         return modsToFilter;
@@ -760,6 +825,13 @@ const MyMods = () => {
                         ({disabledModsCount})
                       </span>
                     </TabsTrigger>
+                    <TabsTrigger value={ModFilter.FAVORITES}>
+                      <HeartIcon className='mr-2 h-4 w-4' />
+                      {t("myMods.tabs.favorites")}
+                      <span className='ml-2 text-muted-foreground text-xs'>
+                        ({favoritesCount})
+                      </span>
+                    </TabsTrigger>
                   </TabsList>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -808,6 +880,10 @@ const MyMods = () => {
               </TabsContent>
 
               <TabsContent value={ModFilter.DISABLED}>
+                <ModsList mods={paginatedMods} viewMode={viewMode} />
+              </TabsContent>
+
+              <TabsContent value={ModFilter.FAVORITES}>
                 <ModsList mods={paginatedMods} viewMode={viewMode} />
               </TabsContent>
 

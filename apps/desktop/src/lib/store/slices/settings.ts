@@ -25,6 +25,7 @@ export type SettingsState = {
   autoUpdateEnabled: boolean;
   crosshairsEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
+  randomFavoritesEnabled: boolean;
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
 
   addSetting: (setting: LocalSetting) => void;
@@ -60,6 +61,9 @@ export type SettingsState = {
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
+  // Random favorites management
+  setRandomFavoritesEnabled: (enabled: boolean) => void;
+
   // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
@@ -78,6 +82,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   autoUpdateEnabled: true,
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
+  randomFavoritesEnabled: false,
   enabledPlugins: {},
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -196,6 +201,12 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") =>
     set(() => ({
       linuxGpuOptimization: value,
+    })),
+
+  // Random favorites management
+  setRandomFavoritesEnabled: (enabled: boolean) =>
+    set(() => ({
+      randomFavoritesEnabled: enabled,
     })),
 
   // Plugin management

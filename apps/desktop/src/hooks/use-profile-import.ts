@@ -112,6 +112,7 @@ export const useProfileImport = () => {
       isDefault: false,
       folderName: null, // Will be set after batch import creates the folder
       mods: [],
+      favoriteMods: [],
     };
 
     usePersistedStore.setState((state) => ({

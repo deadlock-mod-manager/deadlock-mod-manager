@@ -7,6 +7,7 @@ import {
 } from "@deadlock-mods/ui/components/context-menu";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { FolderOpen } from "@deadlock-mods/ui/icons";
+import { Heart } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
@@ -21,6 +22,12 @@ interface ModContextMenuProps {
 export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
   const { t } = useTranslation();
   const { getActiveProfile } = usePersistedStore();
+  const toggleFavorite = usePersistedStore(
+    (state) => state.toggleFavoriteInCurrentProfile,
+  );
+  const isFavorite = usePersistedStore((state) =>
+    state.isFavoriteInCurrentProfile(mod.remoteId),
+  );
 
   const handleShareMod = async () => {
     if (mod.remoteUrl) {
@@ -61,6 +68,15 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className='w-60'>
+        <ContextMenuItem onClick={() => toggleFavorite(mod.remoteId)}>
+          <Heart
+            className='mr-2 h-4 w-4'
+            weight={isFavorite ? "fill" : "regular"}
+          />
+          {isFavorite
+            ? t("contextMenu.removeFromFavorites")
+            : t("contextMenu.addToFavorites")}
+        </ContextMenuItem>
         {mod.remoteUrl && (
           <ContextMenuItem onClick={handleShareMod}>
             <FaShare className='mr-2 h-4 w-4' />

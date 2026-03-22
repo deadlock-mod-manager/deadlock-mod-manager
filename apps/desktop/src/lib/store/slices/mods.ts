@@ -239,6 +239,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         const updatedProfile = {
           ...currentProfile,
           mods: currentProfile.mods.filter((mod) => mod.remoteId !== remoteId),
+          favoriteMods: (currentProfile.favoriteMods ?? []).filter(
+            (id) => id !== remoteId,
+          ),
         };
 
         return {

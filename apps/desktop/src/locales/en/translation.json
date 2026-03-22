@@ -57,7 +57,8 @@
     "tabs": {
       "all": "All",
       "installed": "Installed",
-      "downloaded": "Downloaded"
+      "downloaded": "Downloaded",
+      "favorites": "Favorites"
     }
   },
   "modOrdering": {
@@ -1204,7 +1205,9 @@
     "noUrlAvailable": "No URL available for this mod",
     "openedGameFolder": "Opened game folder",
     "openedModInGame": "Opened mod files in game folder",
-    "failedToOpenGameFolder": "Failed to open game folder"
+    "failedToOpenGameFolder": "Failed to open game folder",
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites"
   },
   "profiles": {
     "share": "Share Profile",
@@ -1456,5 +1459,17 @@
     "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
     "installSelected": "Install Selected",
     "analyzingModFiles": "Analyzing mod files, please wait..."
+  },
+  "favorites": {
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites",
+    "toggleFavorite": "Toggle Favorite",
+    "randomMode": "Random Favorites",
+    "randomModeDescription": "Randomly activate a selection of your favorite mods before launching modded",
+    "randomModeEnabled": "Random favorites mode enabled",
+    "randomModeDisabled": "Random favorites mode disabled",
+    "activatingRandom": "Activating random favorites...",
+    "activatedRandom": "Activated {{count}} random favorite mods",
+    "noFavoritesToRandomize": "No favorite mods to randomize"
   }
 }

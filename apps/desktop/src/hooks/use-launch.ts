@@ -4,17 +4,27 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 import type { ErrorKind } from "@/types/tauri";
+import { useRandomFavorites } from "./use-random-favorites";
 
 export const useLaunch = () => {
   const { settings, getActiveProfile } = usePersistedStore();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
+  const { activateRandomFavorites, randomFavoritesEnabled } =
+    useRandomFavorites();
 
   /**
    * @param vanilla - Whether to launch the game in vanilla mode (no mods)
    */
   const launch = async (vanilla = false) => {
     try {
+      if (!vanilla && randomFavoritesEnabled) {
+        const count = await activateRandomFavorites();
+        if (count > 0) {
+          toast.success(`Activated ${count} random favorite mods`);
+        }
+      }
+
       const activeProfile = getActiveProfile();
       const profileFolder = vanilla
         ? null

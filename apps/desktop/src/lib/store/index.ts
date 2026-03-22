@@ -43,7 +43,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 12,
+      version: 13,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -364,6 +364,29 @@ export const usePersistedStore = create<State>()(
             current !== "off"
           ) {
             state.linuxGpuOptimization = "auto";
+          }
+        }
+
+        // Migration from version 12 to 13: Add favoriteMods to all profiles
+        if (version <= 12) {
+          logger
+            .withMetadata({
+              migrationFrom: 12,
+              migrationTo: 13,
+              action: "add-favorite-mods-to-profiles",
+            })
+            .info(
+              "Migrating from version 12 to 13: Adding favoriteMods to profiles",
+            );
+          const profiles = state.profiles as
+            | Record<string, Record<string, unknown>>
+            | undefined;
+          if (profiles && typeof profiles === "object") {
+            for (const profile of Object.values(profiles)) {
+              if (!Array.isArray(profile.favoriteMods)) {
+                profile.favoriteMods = [];
+              }
+            }
           }
         }
 

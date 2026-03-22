@@ -47,6 +47,11 @@ export interface ProfilesState {
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
   saveCurrentModsToProfile: () => void;
   loadModsFromProfile: (profileId: ProfileId) => void;
+
+  toggleFavoriteInCurrentProfile: (remoteId: string) => void;
+  isFavoriteInCurrentProfile: (remoteId: string) => boolean;
+  getFavoritesCount: () => number;
+  removeFavoriteFromCurrentProfile: (remoteId: string) => void;
 }
 
 const createDefaultProfile = (): ModProfile => ({
@@ -59,6 +64,7 @@ const createDefaultProfile = (): ModProfile => ({
   isDefault: true,
   folderName: null,
   mods: [],
+  favoriteMods: [],
 });
 
 export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
@@ -95,6 +101,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         isDefault: false,
         folderName: folderName,
         mods: [],
+        favoriteMods: [],
       };
 
       set((state) => ({
@@ -532,6 +539,58 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     }
   },
 
+  toggleFavoriteInCurrentProfile: (remoteId: string) => {
+    const { activeProfileId, profiles } = get();
+    const profile = profiles[activeProfileId];
+    if (!profile) return;
+
+    const currentFavorites = profile.favoriteMods ?? [];
+    const isFavorited = currentFavorites.includes(remoteId);
+
+    set((state) => ({
+      profiles: {
+        ...state.profiles,
+        [activeProfileId]: {
+          ...profile,
+          favoriteMods: isFavorited
+            ? currentFavorites.filter((id) => id !== remoteId)
+            : [...currentFavorites, remoteId],
+        },
+      },
+    }));
+  },
+
+  isFavoriteInCurrentProfile: (remoteId: string) => {
+    const { activeProfileId, profiles } = get();
+    const profile = profiles[activeProfileId];
+    return profile?.favoriteMods?.includes(remoteId) ?? false;
+  },
+
+  getFavoritesCount: () => {
+    const { activeProfileId, profiles } = get();
+    const profile = profiles[activeProfileId];
+    return profile?.favoriteMods?.length ?? 0;
+  },
+
+  removeFavoriteFromCurrentProfile: (remoteId: string) => {
+    const { activeProfileId, profiles } = get();
+    const profile = profiles[activeProfileId];
+    if (!profile) return;
+
+    const currentFavorites = profile.favoriteMods ?? [];
+    if (!currentFavorites.includes(remoteId)) return;
+
+    set((state) => ({
+      profiles: {
+        ...state.profiles,
+        [activeProfileId]: {
+          ...profile,
+          favoriteMods: currentFavorites.filter((id) => id !== remoteId),
+        },
+      },
+    }));
+  },
+
   syncProfilesWithFilesystem: async () => {
     try {
       const filesystemFolders = await invoke<string[]>("list_profile_folders");
@@ -623,6 +682,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             isDefault: false,
             folderName: folderName,
             mods: [],
+            favoriteMods: [],
           };
         }
 
