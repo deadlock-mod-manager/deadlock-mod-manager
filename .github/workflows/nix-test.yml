@@ -51,14 +51,14 @@ jobs:
 
           if [ -n "$CURRENT_PNPM_HASH" ]; then
             # Invalidate the hash to force nix to report the correct one
-            sed -i "0,/hash = \"sha256-[^\"]*\"/s//hash = \"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"/" package.nix
+            sed -i '0,/hash = "sha256-[^"]*"/s|hash = "sha256-[^"]*"|hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="|' package.nix
 
             BUILD_OUTPUT=$(nix build .#default --no-link 2>&1 || true)
             NEW_PNPM_HASH=$(echo "$BUILD_OUTPUT" | grep -oP 'got:\s+\Ksha256-[a-zA-Z0-9+/=]+' | head -1 || echo "")
 
             if [ -n "$NEW_PNPM_HASH" ]; then
               echo "Computed pnpm hash: $NEW_PNPM_HASH"
-              sed -i "0,/hash = \"sha256-[^\"]*\"/s//hash = \"$NEW_PNPM_HASH\"/" package.nix
+              sed -i "0,/hash = \"sha256-[^\"]*\"/s|hash = \"sha256-[^\"]*\"|hash = \"$NEW_PNPM_HASH\"|" package.nix
 
               if [ "$NEW_PNPM_HASH" != "$CURRENT_PNPM_HASH" ]; then
                 echo "Updated pnpm deps hash"
@@ -66,7 +66,7 @@ jobs:
               fi
             else
               echo "Could not determine new pnpm hash, restoring original"
-              sed -i "0,/hash = \"sha256-[^\"]*\"/s//hash = \"$CURRENT_PNPM_HASH\"/" package.nix
+              sed -i "0,/hash = \"sha256-[^\"]*\"/s|hash = \"sha256-[^\"]*\"|hash = \"$CURRENT_PNPM_HASH\"|" package.nix
             fi
           fi
           echo "::endgroup::"
