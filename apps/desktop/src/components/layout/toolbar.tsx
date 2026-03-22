@@ -37,6 +37,7 @@ export const Toolbar = () => {
     queryFn: () => isGameRunning(),
     staleTime: STALE_TIME_POLL,
     refetchInterval: 5000,
+    enabled: !!gamePath,
   });
 
   return (
@@ -90,7 +91,7 @@ export const Toolbar = () => {
           disabled={!gamePath}
           onClick={() => {
             if (isRunning) {
-              invoke("stop_game").then(() => refetch());
+              invoke("stop_game").finally(() => refetch());
             } else {
               setModdedAnimating(true);
               launch();

@@ -1,4 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -7,6 +8,7 @@ import type { ErrorKind } from "@/types/tauri";
 
 export const useLaunch = () => {
   const { settings, getActiveProfile } = usePersistedStore();
+  const queryClient = useQueryClient();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -27,6 +29,10 @@ export const useLaunch = () => {
             ? ""
             : await getAdditionalArgs(Object.values(settings)),
         profileFolder,
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["is-game-running"],
       });
     } catch (error) {
       logger.errorOnly(
