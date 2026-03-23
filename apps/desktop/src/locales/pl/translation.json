@@ -898,8 +898,8 @@
   "settings": {
     "about": "O Aplikacji",
     "addSetting": "Dodaj Ustawienie",
-    "addonsBackup": "Kopia Zapasowa Dodatków",
-    "addonsBackupDescription": "Twórz i przywracaj kopie zapasowe zainstalowanych dodatków. Kopie zapasowe są przechowywane jako skompresowane archiwa.",
+    "addonsBackup": "Kopia zapasowa modów",
+    "addonsBackupDescription": "Twórz i przywracaj kopie zapasowe zainstalowanych modów.",
     "allModsCleared": "Usunięto wszystkie mody",
     "appearance": "Wygląd",
     "appearanceDescription": "Dostosuj wygląd aplikacji.",
@@ -1021,6 +1021,7 @@
     "theme": "Motyw",
     "themeDescription": "Wybierz między jasnym, ciemnym lub motywem systemowym",
     "tools": "Narzędzia",
+    "backups": "Kopie zapasowe",
     "toolsDescription": "Narzędzia do zarządzania modami",
     "value": "Wartość",
     "valuePlaceholder": "prawda lub fałsz albo dowolna wartość"

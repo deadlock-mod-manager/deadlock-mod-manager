@@ -1,6 +1,15 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Label } from "@deadlock-mods/ui/components/label";
 import { Progress } from "@deadlock-mods/ui/components/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Table,
   TableBody,
@@ -24,6 +33,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { RestoreBackupDialog } from "@/components/settings/restore-backup-dialog";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import type { AddonsBackup, RestoreStrategy } from "@/types/backup";
 
 const formatFileSize = (bytes: number): string => {
@@ -47,6 +57,14 @@ interface BackupProgress {
   filename?: string;
 }
 
+const MAX_BACKUP_OPTIONS = [
+  { value: "1", label: "1" },
+  { value: "3", label: "3" },
+  { value: "5", label: "5" },
+  { value: "10", label: "10" },
+  { value: "0", label: "unlimited" },
+];
+
 export const AddonsBackupManagement = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -57,6 +75,12 @@ export const AddonsBackupManagement = () => {
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
   const [backupProgress, setBackupProgress] = useState<BackupProgress | null>(
     null,
+  );
+  const backupEnabled = usePersistedStore((state) => state.backupEnabled);
+  const setBackupEnabled = usePersistedStore((state) => state.setBackupEnabled);
+  const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
+  const setMaxBackupCount = usePersistedStore(
+    (state) => state.setMaxBackupCount,
   );
 
   const loadBackups = useCallback(async () => {
@@ -105,12 +129,24 @@ export const AddonsBackupManagement = () => {
   }, [t, loadBackups]);
 
   const handleCreateBackup = async () => {
+    if (maxBackupCount > 0 && backups.length >= maxBackupCount) {
+      const confirmed = await confirm({
+        title: t("settings.backupWillRemoveOldest"),
+        body: t("settings.backupWillRemoveOldestDescription", {
+          count: backups.length - maxBackupCount + 1,
+        }),
+        actionButton: t("settings.createBackup"),
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setCreating(true);
       setBackupProgress(null);
-      const backup = await invoke<AddonsBackup>("create_addons_backup");
+      const backup = await invoke<AddonsBackup>("create_addons_backup", {
+        maxBackups: maxBackupCount,
+      });
       logger.withMetadata({ backup }).info("Backup created");
-      // Progress completion is handled by the event listener
     } catch (error) {
       setCreating(false);
       setBackupProgress(null);
@@ -178,6 +214,27 @@ export const AddonsBackupManagement = () => {
         .withError(error instanceof Error ? error : new Error(String(error)))
         .error("Failed to open backups folder");
       toast.error(t("settings.failedToOpenFolder"));
+    }
+  };
+
+  const handleMaxBackupCountChange = async (value: string) => {
+    const newCount = Number.parseInt(value, 10);
+    setMaxBackupCount(newCount);
+
+    if (newCount > 0 && backups.length > newCount) {
+      try {
+        const pruned = await invoke<number>("prune_addons_backups", {
+          maxCount: newCount,
+        });
+        if (pruned > 0) {
+          toast.success(t("settings.backupsPruned", { count: pruned }));
+          await loadBackups();
+        }
+      } catch (error) {
+        logger
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .error("Failed to prune backups");
+      }
     }
   };
 
@@ -265,6 +322,56 @@ export const AddonsBackupManagement = () => {
 
   return (
     <div className='space-y-4'>
+      <div className='space-y-4 rounded-lg border p-4'>
+        <div className='flex items-center justify-between'>
+          <div className='space-y-1'>
+            <Label className='font-bold text-sm'>
+              {t("settings.autoBackupEnabled")}
+            </Label>
+            <p className='text-muted-foreground text-sm'>
+              {t("settings.autoBackupEnabledDescription")}
+            </p>
+          </div>
+          <div className='flex items-center gap-2'>
+            <Switch
+              checked={backupEnabled}
+              onCheckedChange={setBackupEnabled}
+              id='toggle-auto-backup'
+            />
+            <Label htmlFor='toggle-auto-backup'>
+              {backupEnabled ? t("status.enabled") : t("status.disabled")}
+            </Label>
+          </div>
+        </div>
+
+        <div className='flex items-center justify-between'>
+          <div className='space-y-1'>
+            <Label className='font-bold text-sm'>
+              {t("settings.maxBackupCount")}
+            </Label>
+            <p className='text-muted-foreground text-sm'>
+              {t("settings.maxBackupCountDescription")}
+            </p>
+          </div>
+          <Select
+            value={String(maxBackupCount)}
+            onValueChange={handleMaxBackupCountChange}>
+            <SelectTrigger className='w-32'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MAX_BACKUP_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.value === "0"
+                    ? t("settings.unlimitedBackups")
+                    : option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-4'>
           <Button

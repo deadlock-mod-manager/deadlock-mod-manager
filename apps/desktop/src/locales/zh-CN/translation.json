@@ -903,8 +903,8 @@
   "settings": {
     "about": "关于",
     "addSetting": "添加设置",
-    "addonsBackup": "插件备份",
-    "addonsBackupDescription": "创建和恢复已安装插件的备份。备份以压缩档案形式存储。",
+    "addonsBackup": "模组备份",
+    "addonsBackupDescription": "创建和恢复已安装模组的备份。",
     "allModsCleared": "所有模组已清除",
     "appearance": "外观",
     "appearanceDescription": "自定义应用程序的外观。",
@@ -1026,6 +1026,7 @@
     "theme": "主题",
     "themeDescription": "在浅色、深色或系统主题之间选择",
     "tools": "工具",
+    "backups": "备份",
     "toolsDescription": "用于管理模组的实用功能",
     "value": "值",
     "valuePlaceholder": "true 或 false 或任意值"

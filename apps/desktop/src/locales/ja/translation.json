@@ -903,8 +903,8 @@
   "settings": {
     "about": "アプリ情報",
     "addSetting": "設定を追加",
-    "addonsBackup": "アドオンのバックアップ",
-    "addonsBackupDescription": "インストール済みアドオンのバックアップを作成・復元する。バックアップは圧縮アーカイブとして保存されます。",
+    "addonsBackup": "モッドのバックアップ",
+    "addonsBackupDescription": "インストール済みモッドのバックアップを作成・復元します。",
     "allModsCleared": "すべてのModは削除されました",
     "appearance": "表示",
     "appearanceDescription": "アプリの表示をカスタマイズする",
@@ -1026,6 +1026,7 @@
     "theme": "テーマ",
     "themeDescription": "ライト・ダーク・システムからテーマを選択する",
     "tools": "ツール",
+    "backups": "バックアップ",
     "toolsDescription": "Modを管理するための補助機能",
     "value": "設定値",
     "valuePlaceholder": "true/false、または任意の値"

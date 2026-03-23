@@ -407,8 +407,8 @@
     "sortBy": "Sortiere nach"
   },
   "game": {
-    "addonsBackup": "Addons-Sicherig",
-    "addonsBackupDescription": "Erstelled und Wiederherstellä vo Sicherige vo Ihrenä installierte Addons. Sicherige werdä als komprimierti Archive gspeicheret.",
+    "addonsBackup": "Mods-Sicherig",
+    "addonsBackupDescription": "Erstelled und Wiederherstellä vo Sicherige vo Ihrenä installierte Mods.",
     "backupCreated": "Sicherig erfolgriich erstellt",
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
     "backupCreationFailed": "Fähler bim Erstellä vo dä Sicherig",
@@ -919,8 +919,8 @@
   "settings": {
     "about": "Über",
     "addSetting": "Istellig hinzuefüege",
-    "addonsBackup": "Addons Backup",
-    "addonsBackupDescription": "Create and restore backups of your installed addons. Backups are stored as compressed archives.",
+    "addonsBackup": "Mods-Sicherig",
+    "addonsBackupDescription": "Erstelled und Wiederherstellä vo Sicherige vo Ihrenä installierte Mods.",
     "allModsCleared": "Alli Mods si glöscht worde",
     "appearance": "Erscheinungsbild",
     "appearanceDescription": "Passed Sie s'Erschiningsbild vo de Awendig a.",
@@ -1042,6 +1042,7 @@
     "theme": "Design",
     "themeDescription": "Wähle Sie zwüsched hellem und dunklem oder System-Design",
     "tools": "Werchzüg",
+    "backups": "Backup",
     "toolsDescription": "Hilfsfunktione zur Verwaltig Ihre Mods",
     "value": "Wert",
     "valuePlaceholder": "wahr oder falsch oder en beliebige Wert"

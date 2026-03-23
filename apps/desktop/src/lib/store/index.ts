@@ -43,7 +43,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 12,
+      version: 13,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -365,6 +365,19 @@ export const usePersistedStore = create<State>()(
           ) {
             state.linuxGpuOptimization = "auto";
           }
+        }
+
+        // Migration from version 12 to 13: Add backup settings
+        if (version <= 12) {
+          logger
+            .withMetadata({
+              migrationFrom: 12,
+              migrationTo: 13,
+              action: "add-backup-settings",
+            })
+            .info("Migrating from version 12 to 13: Adding backup settings");
+          state.backupEnabled = true;
+          state.maxBackupCount = 5;
         }
 
         return state;

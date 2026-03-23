@@ -903,8 +903,8 @@
   "settings": {
     "about": "За",
     "addSetting": "Добавете настройка",
-    "addonsBackup": "Addons Backup",
-    "addonsBackupDescription": "Create and restore backups of your installed addons. Backups are stored as compressed archives.",
+    "addonsBackup": "Mods Backup",
+    "addonsBackupDescription": "Create and restore backups of your installed mods.",
     "allModsCleared": "Всички модове са изчистени",
     "appearance": "Appearance",
     "appearanceDescription": "Customize the appearance of the application.",
@@ -1027,6 +1027,7 @@
     "theme": "Theme",
     "themeDescription": "Choose between light, dark, or system theme",
     "tools": "Инструменти",
+    "backups": "Резервни копия",
     "toolsDescription": "Полезни функции за управление на вашите модове",
     "value": "Стойност",
     "valuePlaceholder": "true или false или друга стойност"
