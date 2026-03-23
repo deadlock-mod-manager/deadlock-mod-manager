@@ -290,6 +290,8 @@
     "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
     "unlimitedBackups": "Unlimited",
     "backupsPruned": "Removed {{count}} old backup(s)",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
     "failedToOpenFolder": "Failed to open folder",
     "autoReapplyMods": "Automatically reapply mods when the mod manager is launched.",
     "launchVanillaNoArgs": "Launch the game in vanilla mode without additional arguments.",

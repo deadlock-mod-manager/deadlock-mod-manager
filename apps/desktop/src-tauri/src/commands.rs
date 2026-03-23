@@ -757,7 +757,10 @@ pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup, Error> {
+pub async fn create_addons_backup(
+  app_handle: AppHandle,
+  max_backups: u32,
+) -> Result<AddonsBackup, Error> {
   log::info!("Creating addons backup");
 
   let (addons_path, backup_dir, filename) = {
@@ -772,7 +775,7 @@ pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup,
     (addons_path, backup_dir, filename)
   }; // Lock released here
 
-  tokio::task::spawn_blocking(move || {
+  let result = tokio::task::spawn_blocking(move || {
     crate::mod_manager::addons_backup_manager::AddonsBackupManager::create_backup_async(
       addons_path,
       backup_dir,
@@ -781,7 +784,17 @@ pub async fn create_addons_backup(app_handle: AppHandle) -> Result<AddonsBackup,
     )
   })
   .await
-  .map_err(|e| Error::BackupCreationFailed(format!("Task join error: {e}")))?
+  .map_err(|e| Error::BackupCreationFailed(format!("Task join error: {e}")))?;
+
+  if max_backups > 0 {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let backup_manager = mod_manager.get_addons_backup_manager();
+    if let Err(e) = backup_manager.prune_old_backups(max_backups) {
+      log::error!("Failed to prune old backups: {:?}", e);
+    }
+  }
+
+  result
 }
 
 #[tauri::command]

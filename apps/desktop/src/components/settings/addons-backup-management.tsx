@@ -129,12 +129,24 @@ export const AddonsBackupManagement = () => {
   }, [t, loadBackups]);
 
   const handleCreateBackup = async () => {
+    if (maxBackupCount > 0 && backups.length >= maxBackupCount) {
+      const confirmed = await confirm({
+        title: t("settings.backupWillRemoveOldest"),
+        body: t("settings.backupWillRemoveOldestDescription", {
+          count: backups.length - maxBackupCount + 1,
+        }),
+        actionButton: t("settings.createBackup"),
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setCreating(true);
       setBackupProgress(null);
-      const backup = await invoke<AddonsBackup>("create_addons_backup");
+      const backup = await invoke<AddonsBackup>("create_addons_backup", {
+        maxBackups: maxBackupCount,
+      });
       logger.withMetadata({ backup }).info("Backup created");
-      // Progress completion is handled by the event listener
     } catch (error) {
       setCreating(false);
       setBackupProgress(null);
