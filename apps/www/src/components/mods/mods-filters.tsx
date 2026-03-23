@@ -43,16 +43,11 @@ import {
   LuX,
 } from "react-icons/lu";
 import type { useModFilters } from "@/hooks/use-mod-filters";
+import {
+  getModCategoryDisplayName,
+  MOD_CATEGORY_ORDER,
+} from "@/lib/mod-category";
 
-enum ModCategory {
-  SKINS = "Skins",
-  GAMEPLAY_MODIFICATIONS = "Gameplay Modifications",
-  HUD = "HUD",
-  MODEL_REPLACEMENT = "Model Replacement",
-  OTHER_MISC = "Other/Misc",
-}
-
-const MOD_CATEGORIES = Object.values(ModCategory);
 const HEROES = Object.values(DeadlockHeroes).sort();
 
 interface ModsFiltersProps {
@@ -131,7 +126,7 @@ export const ModsFilters = ({ filterState }: ModsFiltersProps) => {
                   <CommandList>
                     <CommandEmpty>No categories found.</CommandEmpty>
                     <CommandGroup>
-                      {MOD_CATEGORIES.map((category) => (
+                      {MOD_CATEGORY_ORDER.map((category) => (
                         <CommandItem
                           key={category}
                           onSelect={() => toggleCategory(category)}>
@@ -146,7 +141,7 @@ export const ModsFilters = ({ filterState }: ModsFiltersProps) => {
                               <LuCheck className='h-3 w-3' />
                             )}
                           </div>
-                          {category}
+                          {getModCategoryDisplayName(category)}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -295,7 +290,7 @@ export const ModsFilters = ({ filterState }: ModsFiltersProps) => {
                   key={category}
                   variant='secondary'
                   className='gap-1 pr-1'>
-                  {category}
+                  {getModCategoryDisplayName(category)}
                   <button
                     type='button'
                     onClick={() => toggleCategory(category)}

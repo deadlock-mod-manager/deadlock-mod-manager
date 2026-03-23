@@ -12,7 +12,11 @@ import {
 import { ArrowUpDown, Clock, X } from "@deadlock-mods/ui/icons";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { ModCategory, SortType, TimePeriod } from "@/lib/constants";
+import {
+  getModCategoryDisplayName,
+  SortType,
+  TimePeriod,
+} from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";
 
@@ -65,19 +69,6 @@ const SearchBar = ({
       return "General/Other";
     }
     return hero;
-  };
-
-  const getCategoryDisplayName = (category: string) => {
-    switch (category) {
-      case ModCategory.GAMEPLAY_MODIFICATIONS:
-        return "Gameplay";
-      case ModCategory.MODEL_REPLACEMENT:
-        return "Models";
-      case ModCategory.OTHER_MISC:
-        return "Other";
-      default:
-        return category;
-    }
   };
 
   const removeCategory = (categoryToRemove: string) => {
@@ -188,7 +179,7 @@ const SearchBar = ({
               className='flex items-center gap-1'
               key={`category-${category}`}
               variant='secondary'>
-              {t("filters.categoryLabel")} {getCategoryDisplayName(category)}
+              {t("filters.categoryLabel")} {getModCategoryDisplayName(category)}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeCategory(category)}

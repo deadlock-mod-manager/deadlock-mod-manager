@@ -27,6 +27,11 @@ export enum ModCategory {
   GAMEPLAY_MODIFICATIONS = "Gameplay Modifications",
   HUD = "HUD",
   MODEL_REPLACEMENT = "Model Replacement",
+  MUSIC = "Music",
+  ABILITY_SOUNDS = "Abilities",
+  WEAPON_SOUNDS = "Weapons",
+  VOICE_LINES = "VOs",
+  KILL_SOUNDS = "Killsounds",
   OTHER_MISC = "Other/Misc",
 }
 
@@ -35,8 +40,34 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.GAMEPLAY_MODIFICATIONS,
   ModCategory.HUD,
   ModCategory.MODEL_REPLACEMENT,
+  ModCategory.MUSIC,
+  ModCategory.ABILITY_SOUNDS,
+  ModCategory.WEAPON_SOUNDS,
+  ModCategory.VOICE_LINES,
+  ModCategory.KILL_SOUNDS,
   ModCategory.OTHER_MISC,
 ] as const;
+
+export function getModCategoryDisplayName(category: string): string {
+  switch (category) {
+    case ModCategory.GAMEPLAY_MODIFICATIONS:
+      return "Gameplay";
+    case ModCategory.MODEL_REPLACEMENT:
+      return "Models";
+    case ModCategory.OTHER_MISC:
+      return "Other";
+    case ModCategory.ABILITY_SOUNDS:
+      return "Ability Sounds";
+    case ModCategory.WEAPON_SOUNDS:
+      return "Weapon Sounds";
+    case ModCategory.VOICE_LINES:
+      return "Voice Lines";
+    case ModCategory.KILL_SOUNDS:
+      return "Kill Sounds";
+    default:
+      return category;
+  }
+}
 
 export enum TimePeriod {
   ALL_TIME = "all time",

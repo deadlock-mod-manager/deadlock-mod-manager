@@ -40,7 +40,11 @@ import ModMetadataForm, {
   type ModMetadataFormHandle,
 } from "@/components/mod-creation/mod-metadata-form";
 import { useModProcessor } from "@/hooks/use-mod-processor";
-import { ModCategory } from "@/lib/constants";
+import {
+  getModCategoryDisplayName,
+  MOD_CATEGORY_ORDER,
+  ModCategory,
+} from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import type { AnalyzeAddonsResult, LocalAddonInfo } from "@/types/mods";
 import { VpkEntriesDisplay } from "./vpk-entries-display";
@@ -370,9 +374,9 @@ const AddAddonDialog = ({ open, onOpenChange, addon }: AddAddonDialogProps) => {
                 <SelectValue placeholder={t("addMods.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(ModCategory).map((cat) => (
+                {MOD_CATEGORY_ORDER.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {cat}
+                    {getModCategoryDisplayName(cat)}
                   </SelectItem>
                 ))}
               </SelectContent>

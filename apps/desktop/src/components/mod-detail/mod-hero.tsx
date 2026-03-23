@@ -2,6 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Music } from "@deadlock-mods/ui/icons";
 import { useMemo, useRef } from "react";
+import { getModCategoryDisplayName } from "@/lib/constants";
 import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
 import {
   UpdateAvailableBadge,
@@ -78,7 +79,9 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
             )}
             {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
           </h1>
-          <p className='text-muted-foreground'>{mod.category}</p>
+          <p className='text-muted-foreground'>
+            {getModCategoryDisplayName(mod.category)}
+          </p>
         </div>
       </div>
     );
