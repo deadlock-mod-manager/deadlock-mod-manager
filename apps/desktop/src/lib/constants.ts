@@ -32,6 +32,7 @@ export enum ModCategory {
   WEAPON_SOUNDS = "Weapons",
   VOICE_LINES = "VOs",
   KILL_SOUNDS = "Killsounds",
+  KILLSTREAK_MUSIC = "Killstreak Music",
   OTHER_MISC = "Other/Misc",
 }
 
@@ -45,6 +46,7 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.WEAPON_SOUNDS,
   ModCategory.VOICE_LINES,
   ModCategory.KILL_SOUNDS,
+  ModCategory.KILLSTREAK_MUSIC,
   ModCategory.OTHER_MISC,
 ] as const;
 
