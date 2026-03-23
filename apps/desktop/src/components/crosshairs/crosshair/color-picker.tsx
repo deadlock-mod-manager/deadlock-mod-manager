@@ -1,5 +1,12 @@
+import {
+  hexToRgb,
+  HsvColorPickerDialog,
+  isValidHex,
+  normalizeHex,
+  rgbToHex,
+} from "@/components/hsv-color-picker";
 import { Input } from "@deadlock-mods/ui/components/input";
-import { Label } from "@deadlock-mods/ui/components/label";
+import { type ChangeEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
@@ -11,56 +18,61 @@ interface ColorPickerProps {
   readonly onChange: (color: { r: number; g: number; b: number }) => void;
 }
 
+const DEFAULT_CROSSHAIR_HEX = "#ffffff";
+
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const hexValue = rgbToHex(color.r, color.g, color.b);
+  const displayHex = hexValue.toUpperCase();
 
-  const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const hex = e.target.value;
+  const applyHex = (hex: string) => {
     const rgb = hexToRgb(hex);
-    if (rgb) {
-      onChange(rgb);
+    onChange({ r: rgb.r, g: rgb.g, b: rgb.b });
+  };
+
+  const handleHexChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const hex = e.target.value;
+    if (isValidHex(hex)) {
+      applyHex(normalizeHex(hex, DEFAULT_CROSSHAIR_HEX));
     }
   };
 
   return (
     <div className='space-y-2'>
-      <Label htmlFor='color-picker'>Color (Hex)</Label>
       <div className='flex gap-2'>
+        <div className='inline-flex shrink-0 items-center justify-center rounded-md border border-input/70 p-1 leading-none'>
+          <button
+            type='button'
+            onClick={() => setOpen(true)}
+            className='block h-10 w-20 cursor-pointer rounded-sm bg-transparent'
+            aria-label={t("crosshairs.form.colorDialogTitle")}
+            style={{ backgroundColor: hexValue }}
+          />
+        </div>
         <Input
-          id='color-picker'
-          type='color'
-          value={hexValue}
-          onChange={handleHexChange}
-          className='w-20 h-10 cursor-pointer'
-        />
-        <Input
+          id='crosshair-color-hex'
           type='text'
-          value={hexValue}
+          value={displayHex}
           onChange={handleHexChange}
           placeholder={t("crosshairs.form.hexPlaceholder")}
-          className='flex-1 font-mono'
+          className='min-w-0 flex-1 font-mono'
           maxLength={7}
+          spellCheck={false}
+          aria-label={t("crosshairs.form.hexColorInputLabel")}
         />
       </div>
+
+      <HsvColorPickerDialog
+        open={open}
+        onOpenChange={setOpen}
+        colorHex={hexValue}
+        fallbackHex={DEFAULT_CROSSHAIR_HEX}
+        title={t("crosshairs.form.colorDialogTitle")}
+        description={t("crosshairs.form.colorDialogDescription")}
+        onApply={applyHex}
+        onEyedropperPick={applyHex}
+      />
     </div>
   );
-}
-
-function rgbToHex(r: number, g: number, b: number): string {
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  hex = hex.replace(shorthandRegex, (_m, r, g, b) => r + r + g + g + b + b);
-
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: Number.parseInt(result[1], 16),
-        g: Number.parseInt(result[2], 16),
-        b: Number.parseInt(result[3], 16),
-      }
-    : null;
 }

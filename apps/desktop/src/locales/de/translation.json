@@ -251,6 +251,10 @@
       "heroesSelected": "ausgewählt",
       "heroesValidation": "Bitte wählen Sie mindestens einen Helden (maximal 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "Hex-Farbcode",
+      "color": "Farbe",
+      "colorDialogTitle": "Benutzerdefinierte Farbe",
+      "colorDialogDescription": "Wählen Sie eine Farbe für Ihr Fadenkreuz.",
       "import": {
         "button": "Importieren",
         "description": "Fügen Sie unten Ihre Citadel-Fadenkreuz-Formateinstellungen ein, um sie in das Formular zu importieren.",

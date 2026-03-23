@@ -341,15 +341,15 @@ const CustomSettings = ({ value }: { value?: string }) => {
   };
 
   return (
-    <div className='flex w-full'>
-      <div className='flex w-full flex-col gap-4'>
-        <PageTitle className='px-4' title={t("navigation.settings")} />
-        <Tabs
-          className='flex h-full gap-6'
-          defaultValue='launch-options'
-          onValueChange={setActiveTab}
-          value={activeTab}>
-          <TabsList className='h-fit w-48 flex-col gap-1 bg-background p-3'>
+    <div className='flex h-full w-full min-h-0 flex-col gap-4 overflow-hidden'>
+      <PageTitle className='shrink-0 px-4' title={t("navigation.settings")} />
+      <Tabs
+        className='flex min-h-0 flex-1 gap-6 overflow-hidden'
+        defaultValue='launch-options'
+        onValueChange={setActiveTab}
+        value={activeTab}>
+        <div className='w-48 shrink-0 min-h-0 overflow-y-auto pr-1'>
+          <TabsList className='h-fit w-full flex-col gap-1 bg-background p-3'>
             <TabsTrigger
               className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
               value='launch-options'>
@@ -419,346 +419,349 @@ const CustomSettings = ({ value }: { value?: string }) => {
               {t("settings.information")}
             </TabsTrigger>
           </TabsList>
+        </div>
 
-          <div className='flex-1 overflow-y-auto pr-4'>
-            <TabsContent className='mt-0 space-y-2' value='launch-options'>
-              <Suspense
-                fallback={
-                  <div className='grid grid-cols-1 gap-4'>
-                    <SectionSkeleton>
-                      {Array.from({ length: 2 }, () => (
-                        <SettingCardSkeleton key={crypto.randomUUID()} />
+        <div className='min-h-0 flex-1 overflow-y-auto pr-4'>
+          <TabsContent className='mt-0 space-y-2' value='launch-options'>
+            <Suspense
+              fallback={
+                <div className='grid grid-cols-1 gap-4'>
+                  <SectionSkeleton>
+                    {Array.from({ length: 2 }, () => (
+                      <SettingCardSkeleton key={crypto.randomUUID()} />
+                    ))}
+                  </SectionSkeleton>
+                </div>
+              }>
+              <ErrorBoundary>
+                <CustomSettingsData />
+              </ErrorBoundary>
+            </Suspense>
+          </TabsContent>
+
+          {showPlugins && (
+            <TabsContent className='mt-0 space-y-2' value='plugin'>
+              <Section
+                description={t("settings.pluginDescription")}
+                title={t("settings.plugin")}>
+                <PluginList />
+              </Section>
+            </TabsContent>
+          )}
+
+          <TabsContent className='mt-0 space-y-2' value='game'>
+            <Section
+              description={t("settings.gamePathDescription")}
+              title={t("settings.gamePath")}>
+              <GamePathSettings />
+            </Section>
+
+            <Section
+              description={t("settings.gameConfigDescription")}
+              title={t("settings.gameConfigManagement")}>
+              <GameInfoManagement />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='application'>
+            <Section
+              description={t("settings.systemSettingsDescription")}
+              title={t("settings.systemSettings")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <SystemSettings />
+                <AutoUpdateToggle />
+                <DeveloperModeToggle />
+                <IngestToolToggle />
+                <LinuxGpuToggle />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.appearanceDescription")}
+              title={t("settings.appearance")}>
+              <div className='flex flex-col gap-4'>
+                <div className='flex items-center justify-between'>
+                  <div className='space-y-1'>
+                    <Label className='font-bold text-sm'>
+                      {t("settings.theme")}
+                    </Label>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("settings.themeDescription")}
+                    </p>
+                  </div>
+                  <ThemeSwitcher />
+                </div>
+
+                {null}
+                <VolumeControl />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.languageSettingsDescription")}
+              title={t("settings.languageSettings")}>
+              <LanguageSettings />
+            </Section>
+
+            <Section
+              description={t("settings.defaultSortDescription")}
+              title={t("settings.defaultSortValue")}>
+              <div className='flex flex-col gap-2'>
+                <Label className='font-bold text-sm' id='default-sort-label'>
+                  {t("settings.defaultSort")}
+                </Label>
+                <Select
+                  onValueChange={(v) => setDefaultSort(v as SortType)}
+                  value={defaultSort}>
+                  <SelectTrigger
+                    aria-labelledby='default-sort-label'
+                    className='w-36'>
+                    <SelectValue
+                      placeholder={t("settings.selectDefaultSort")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {Object.values(SortType).map((type) => (
+                        <SelectItem
+                          className='capitalize'
+                          key={type}
+                          value={type}>
+                          {t(
+                            `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
+                          )}
+                        </SelectItem>
                       ))}
-                    </SectionSkeleton>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='tools'>
+            <Section
+              description={t("settings.toolsDescription")}
+              title={t("settings.tools")}>
+              <div className='flex flex-wrap gap-4'>
+                <Button
+                  className='w-fit'
+                  onClick={() => invoke("open_game_folder")}
+                  variant='outline'>
+                  <FolderOpen className='h-4 w-4' />
+                  {t("settings.openGameFolder")}
+                </Button>
+                <Button
+                  className='w-fit'
+                  onClick={async () => {
+                    const activeProfile = getActiveProfile();
+                    const profileFolder = activeProfile?.folderName ?? null;
+                    await invoke("open_mods_folder", { profileFolder });
+                  }}
+                  variant='outline'>
+                  <FolderOpen className='h-4 w-4' />
+                  {t("settings.openModsFolder")}
+                </Button>
+                <Button
+                  className='w-fit'
+                  onClick={() => invoke("open_mods_data_folder")}
+                  variant='outline'>
+                  <FolderOpen className='h-4 w-4' />
+                  {t("settings.openModsDataFolder")}
+                </Button>
+                <Button
+                  className='w-fit'
+                  onClick={clearDownloadCache}
+                  variant='destructive'>
+                  <TrashIcon className='h-4 w-4' />
+                  {t("settings.clearDownloadCache")}
+                </Button>
+                <Button
+                  className='w-fit'
+                  onClick={clearAllModsData}
+                  variant='destructive'>
+                  <TrashIcon className='h-4 w-4' />
+                  {t("settings.clearAllModsData")}
+                </Button>
+                <Button onClick={clearModsState} variant='destructive'>
+                  <TrashIcon className='h-4 w-4 mr-2' />
+                  {t("debug.clearModsState")}
+                </Button>
+                <Button
+                  className='w-fit'
+                  onClick={clearAllMods}
+                  variant='destructive'>
+                  <TrashIcon className='h-4 w-4' />
+                  {t("settings.clearAllMods")}
+                </Button>
+              </div>
+            </Section>
+            <Section
+              description={t("settings.addonsBackupDescription")}
+              title={t("settings.addonsBackup")}>
+              <AddonsBackupManagement />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='backups'>
+            <Section
+              description={t("settings.addonsBackupDescription")}
+              title={t("settings.addonsBackup")}>
+              <AddonsBackupManagement />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='logging'>
+            <Section
+              description={t("settings.loggingDescription")}
+              title={t("settings.logging")}>
+              <LoggingSettings />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='experimental'>
+            <Section
+              description={t("featureFlags.description")}
+              title={t("featureFlags.title")}>
+              <FeatureFlagsSettings />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='privacy'>
+            <Section
+              description={t("privacy.description")}
+              title={t("privacy.title")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <PrivacySettings />
+              </div>
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='about'>
+            <div className='rounded-lg border bg-card p-4'>
+              <div className='flex flex-col gap-2'>
+                <div className='flex items-center gap-2'>
+                  <WarningCircle className='h-5 w-5 text-amber-500' />
+                  <h3 className='font-semibold text-primary'>
+                    {t("about.thirdPartyDisclaimerTitle")}
+                  </h3>
+                </div>
+                <p className='text-muted-foreground text-sm'>
+                  {t("about.thirdPartyDisclaimerDescription")}
+                </p>
+              </div>
+            </div>
+            <Section
+              description={t("about.description")}
+              title={t("about.title")}>
+              <div className='space-y-4'>
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>GameBanana</h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.gamebananaDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => openUrl("https://gamebanana.com/")}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.visitGamebanana")}
+                    </Button>
                   </div>
-                }>
-                <ErrorBoundary>
-                  <CustomSettingsData />
-                </ErrorBoundary>
-              </Suspense>
-            </TabsContent>
-
-            {showPlugins && (
-              <TabsContent className='mt-0 space-y-2' value='plugin'>
-                <Section
-                  description={t("settings.pluginDescription")}
-                  title={t("settings.plugin")}>
-                  <PluginList />
-                </Section>
-              </TabsContent>
-            )}
-
-            <TabsContent className='mt-0 space-y-2' value='game'>
-              <Section
-                description={t("settings.gamePathDescription")}
-                title={t("settings.gamePath")}>
-                <GamePathSettings />
-              </Section>
-
-              <Section
-                description={t("settings.gameConfigDescription")}
-                title={t("settings.gameConfigManagement")}>
-                <GameInfoManagement />
-              </Section>
-            </TabsContent>
-
-            <TabsContent className='mt-0 space-y-2' value='application'>
-              <Section
-                description={t("settings.systemSettingsDescription")}
-                title={t("settings.systemSettings")}>
-                <div className='grid grid-cols-1 gap-4'>
-                  <SystemSettings />
-                  <AutoUpdateToggle />
-                  <DeveloperModeToggle />
-                  <IngestToolToggle />
-                  <LinuxGpuToggle />
                 </div>
-              </Section>
 
-              <Section
-                description={t("settings.appearanceDescription")}
-                title={t("settings.appearance")}>
-                <div className='flex flex-col gap-4'>
-                  <div className='flex items-center justify-between'>
-                    <div className='space-y-1'>
-                      <Label className='font-bold text-sm'>
-                        {t("settings.theme")}
-                      </Label>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("settings.themeDescription")}
-                      </p>
-                    </div>
-                    <ThemeSwitcher />
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>Tauri</h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.tauriDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => openUrl("https://tauri.app/")}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.visitTauri")}
+                    </Button>
                   </div>
-
-                  {null}
-                  <VolumeControl />
                 </div>
-              </Section>
 
-              <Section
-                description={t("settings.languageSettingsDescription")}
-                title={t("settings.languageSettings")}>
-                <LanguageSettings />
-              </Section>
-
-              <Section
-                description={t("settings.defaultSortDescription")}
-                title={t("settings.defaultSortValue")}>
-                <div className='flex flex-col gap-2'>
-                  <Label className='font-bold text-sm' id='default-sort-label'>
-                    {t("settings.defaultSort")}
-                  </Label>
-                  <Select
-                    onValueChange={(v) => setDefaultSort(v as SortType)}
-                    value={defaultSort}>
-                    <SelectTrigger
-                      aria-labelledby='default-sort-label'
-                      className='w-36'>
-                      <SelectValue
-                        placeholder={t("settings.selectDefaultSort")}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {Object.values(SortType).map((type) => (
-                          <SelectItem
-                            className='capitalize'
-                            key={type}
-                            value={type}>
-                            {t(
-                              `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>shadcn/ui</h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.shadcnDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => openUrl("https://ui.shadcn.com/")}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.visitShadcn")}
+                    </Button>
+                  </div>
                 </div>
-              </Section>
-            </TabsContent>
 
-            <TabsContent className='mt-0 space-y-2' value='tools'>
-              <Section
-                description={t("settings.toolsDescription")}
-                title={t("settings.tools")}>
-                <div className='flex flex-wrap gap-4'>
-                  <Button
-                    className='w-fit'
-                    onClick={() => invoke("open_game_folder")}
-                    variant='outline'>
-                    <FolderOpen className='h-4 w-4' />
-                    {t("settings.openGameFolder")}
-                  </Button>
-                  <Button
-                    className='w-fit'
-                    onClick={async () => {
-                      const activeProfile = getActiveProfile();
-                      const profileFolder = activeProfile?.folderName ?? null;
-                      await invoke("open_mods_folder", { profileFolder });
-                    }}
-                    variant='outline'>
-                    <FolderOpen className='h-4 w-4' />
-                    {t("settings.openModsFolder")}
-                  </Button>
-                  <Button
-                    className='w-fit'
-                    onClick={() => invoke("open_mods_data_folder")}
-                    variant='outline'>
-                    <FolderOpen className='h-4 w-4' />
-                    {t("settings.openModsDataFolder")}
-                  </Button>
-                  <Button
-                    className='w-fit'
-                    onClick={clearDownloadCache}
-                    variant='destructive'>
-                    <TrashIcon className='h-4 w-4' />
-                    {t("settings.clearDownloadCache")}
-                  </Button>
-                  <Button
-                    className='w-fit'
-                    onClick={clearAllModsData}
-                    variant='destructive'>
-                    <TrashIcon className='h-4 w-4' />
-                    {t("settings.clearAllModsData")}
-                  </Button>
-                  <Button onClick={clearModsState} variant='destructive'>
-                    <TrashIcon className='h-4 w-4 mr-2' />
-                    {t("debug.clearModsState")}
-                  </Button>
-                  <Button
-                    className='w-fit'
-                    onClick={clearAllMods}
-                    variant='destructive'>
-                    <TrashIcon className='h-4 w-4' />
-                    {t("settings.clearAllMods")}
-                  </Button>
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>Tailwind CSS</h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.tailwindDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => openUrl("https://tailwindcss.com/")}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.visitTailwind")}
+                    </Button>
+                  </div>
                 </div>
-              </Section>
-            </TabsContent>
 
-            <TabsContent className='mt-0 space-y-2' value='backups'>
-              <Section
-                description={t("settings.addonsBackupDescription")}
-                title={t("settings.addonsBackup")}>
-                <AddonsBackupManagement />
-              </Section>
-            </TabsContent>
-
-            <TabsContent className='mt-0 space-y-2' value='logging'>
-              <Section
-                description={t("settings.loggingDescription")}
-                title={t("settings.logging")}>
-                <LoggingSettings />
-              </Section>
-            </TabsContent>
-
-            <TabsContent className='mt-0 space-y-2' value='experimental'>
-              <Section
-                description={t("featureFlags.description")}
-                title={t("featureFlags.title")}>
-                <FeatureFlagsSettings />
-              </Section>
-            </TabsContent>
-
-            <TabsContent className='mt-0 space-y-2' value='privacy'>
-              <Section
-                description={t("privacy.description")}
-                title={t("privacy.title")}>
-                <div className='grid grid-cols-1 gap-4'>
-                  <PrivacySettings />
-                </div>
-              </Section>
-            </TabsContent>
-
-            <TabsContent className='mt-0 space-y-2' value='about'>
-              <div className='rounded-lg border bg-card p-4'>
-                <div className='flex flex-col gap-2'>
-                  <div className='flex items-center gap-2'>
-                    <WarningCircle className='h-5 w-5 text-amber-500' />
-                    <h3 className='font-semibold text-primary'>
-                      {t("about.thirdPartyDisclaimerTitle")}
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold'>
+                      {t("about.openSourceCommunity")}
                     </h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.openSourceDescription")}
+                    </p>
                   </div>
-                  <p className='text-muted-foreground text-sm'>
-                    {t("about.thirdPartyDisclaimerDescription")}
-                  </p>
+                </div>
+
+                <div className='rounded-lg border bg-card p-4'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>
+                      {t("about.resetOnboarding")}
+                    </h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.resetOnboardingDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => {
+                        usePersistedStore
+                          .getState()
+                          .setHasCompletedOnboarding(false);
+                        toast.success(t("about.resetOnboardingSuccess"));
+                      }}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.resetOnboarding")}
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <Section
-                description={t("about.description")}
-                title={t("about.title")}>
-                <div className='space-y-4'>
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold text-primary'>GameBanana</h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.gamebananaDescription")}
-                      </p>
-                      <Button
-                        className='mt-2 w-fit'
-                        onClick={() => openUrl("https://gamebanana.com/")}
-                        size='sm'
-                        variant='outline'>
-                        {t("about.visitGamebanana")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold text-primary'>Tauri</h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.tauriDescription")}
-                      </p>
-                      <Button
-                        className='mt-2 w-fit'
-                        onClick={() => openUrl("https://tauri.app/")}
-                        size='sm'
-                        variant='outline'>
-                        {t("about.visitTauri")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold text-primary'>shadcn/ui</h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.shadcnDescription")}
-                      </p>
-                      <Button
-                        className='mt-2 w-fit'
-                        onClick={() => openUrl("https://ui.shadcn.com/")}
-                        size='sm'
-                        variant='outline'>
-                        {t("about.visitShadcn")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold text-primary'>
-                        Tailwind CSS
-                      </h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.tailwindDescription")}
-                      </p>
-                      <Button
-                        className='mt-2 w-fit'
-                        onClick={() => openUrl("https://tailwindcss.com/")}
-                        size='sm'
-                        variant='outline'>
-                        {t("about.visitTailwind")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold'>
-                        {t("about.openSourceCommunity")}
-                      </h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.openSourceDescription")}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className='rounded-lg border bg-card p-4'>
-                    <div className='flex flex-col gap-2'>
-                      <h3 className='font-semibold text-primary'>
-                        {t("about.resetOnboarding")}
-                      </h3>
-                      <p className='text-muted-foreground text-sm'>
-                        {t("about.resetOnboardingDescription")}
-                      </p>
-                      <Button
-                        className='mt-2 w-fit'
-                        onClick={() => {
-                          usePersistedStore
-                            .getState()
-                            .setHasCompletedOnboarding(false);
-                          toast.success(t("about.resetOnboardingSuccess"));
-                        }}
-                        size='sm'
-                        variant='outline'>
-                        {t("about.resetOnboarding")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Section>
-            </TabsContent>
-            <TabsContent className='mt-0 space-y-2' value='autoexec'>
-              <ErrorBoundary>
-                <AutoexecSettings />
-              </ErrorBoundary>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+            </Section>
+          </TabsContent>
+          <TabsContent className='mt-0 space-y-2' value='autoexec'>
+            <ErrorBoundary>
+              <AutoexecSettings />
+            </ErrorBoundary>
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };

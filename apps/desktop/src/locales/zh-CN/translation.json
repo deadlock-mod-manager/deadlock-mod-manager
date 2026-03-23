@@ -250,6 +250,10 @@
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "十六进制颜色代码",
+      "color": "颜色",
+      "colorDialogTitle": "自定义颜色",
+      "colorDialogDescription": "选择准星颜色。",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
