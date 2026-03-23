@@ -3,6 +3,24 @@ import { NSFW_CONTENT_RATINGS, NSFW_KEYWORDS } from "./constants";
 import type { GameBanana } from "@deadlock-mods/shared";
 import type { GameBananaSubmission } from "./types";
 
+type GameBananaProfileForCategory =
+  | GameBanana.GameBananaModProfile
+  | GameBanana.GameBananaSoundProfile;
+
+export function categoryFromGameBananaProfile(
+  profile: GameBananaProfileForCategory,
+): string {
+  const superName = profile._aSuperCategory?._sName;
+  if (superName !== undefined && superName.length > 0) {
+    return superName;
+  }
+  const rootName = profile._aRootCategory?._sName;
+  if (rootName !== undefined && rootName.length > 0) {
+    return rootName;
+  }
+  return profile._aCategory._sName;
+}
+
 export const parseTags = (
   tags: GameBanana.GameBananaSubmission["_aTags"],
 ): string[] => {
