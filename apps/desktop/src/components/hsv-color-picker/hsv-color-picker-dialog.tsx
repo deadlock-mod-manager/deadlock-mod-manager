@@ -13,6 +13,7 @@ import { Eyedropper } from "@phosphor-icons/react";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -25,6 +26,14 @@ import {
   rgbToHsv,
 } from "./color-model";
 import { getEyeDropperConstructor } from "./eye-dropper";
+
+function rgbChannelFromInput(raw: string, previous: number): number {
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) {
+    return previous;
+  }
+  return Math.max(0, Math.min(255, parsed));
+}
 
 export type HsvColorPickerDialogProps = {
   open: boolean;
@@ -55,13 +64,19 @@ export function HsvColorPickerDialog({
   const [r, setR] = useState(0);
   const [g, setG] = useState(0);
   const [b, setB] = useState(0);
+  const skipHsvToRgbAfterOpenSyncRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
       return;
     }
     const normalized = normalizeHex(colorHex, fallbackHex);
-    const { r: rr, g: gg, b: bb } = hexToRgb(normalized);
+    const rgb = hexToRgb(normalized);
+    if (rgb === null) {
+      return;
+    }
+    skipHsvToRgbAfterOpenSyncRef.current = true;
+    const { r: rr, g: gg, b: bb } = rgb;
     setR(rr);
     setG(gg);
     setB(bb);
@@ -72,6 +87,10 @@ export function HsvColorPickerDialog({
   }, [open, colorHex, fallbackHex]);
 
   useEffect(() => {
+    if (skipHsvToRgbAfterOpenSyncRef.current) {
+      skipHsvToRgbAfterOpenSyncRef.current = false;
+      return;
+    }
     const { r: rr, g: gg, b: bb } = hsvToRgb(h, s, v);
     setR(rr);
     setG(gg);
@@ -102,7 +121,11 @@ export function HsvColorPickerDialog({
       setIsEyedropperActive(false);
       if (res?.sRGBHex) {
         const hex = res.sRGBHex.toLowerCase();
-        const { r: rr, g: gg, b: bb } = hexToRgb(hex);
+        const rgb = hexToRgb(hex);
+        if (rgb === null) {
+          return;
+        }
+        const { r: rr, g: gg, b: bb } = rgb;
         setR(rr);
         setG(gg);
         setB(bb);
@@ -263,10 +286,7 @@ export function HsvColorPickerDialog({
                 inputMode='numeric'
                 value={r}
                 onChange={(e) => {
-                  const n = Math.max(
-                    0,
-                    Math.min(255, Number(e.target.value || 0)),
-                  );
+                  const n = rgbChannelFromInput(e.target.value, r);
                   setR(n);
                   const hsv = rgbToHsv(n, g, b);
                   setH(hsv.h);
@@ -281,10 +301,7 @@ export function HsvColorPickerDialog({
                 inputMode='numeric'
                 value={g}
                 onChange={(e) => {
-                  const n = Math.max(
-                    0,
-                    Math.min(255, Number(e.target.value || 0)),
-                  );
+                  const n = rgbChannelFromInput(e.target.value, g);
                   setG(n);
                   const hsv = rgbToHsv(r, n, b);
                   setH(hsv.h);
@@ -299,10 +316,7 @@ export function HsvColorPickerDialog({
                 inputMode='numeric'
                 value={b}
                 onChange={(e) => {
-                  const n = Math.max(
-                    0,
-                    Math.min(255, Number(e.target.value || 0)),
-                  );
+                  const n = rgbChannelFromInput(e.target.value, b);
                   setB(n);
                   const hsv = rgbToHsv(r, g, n);
                   setH(hsv.h);

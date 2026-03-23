@@ -2,7 +2,7 @@
 
 interface EyeDropperConstructor {
   new (): {
-    open(): Promise<{ sRGBHex: string }>;
+    open(options?: { signal?: AbortSignal }): Promise<{ sRGBHex: string }>;
   };
 }
 

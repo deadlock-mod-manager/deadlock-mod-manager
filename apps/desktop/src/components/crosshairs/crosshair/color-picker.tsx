@@ -28,6 +28,9 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
 
   const applyHex = (hex: string) => {
     const rgb = hexToRgb(hex);
+    if (rgb === null) {
+      return;
+    }
     onChange({ r: rgb.r, g: rgb.g, b: rgb.b });
   };
 

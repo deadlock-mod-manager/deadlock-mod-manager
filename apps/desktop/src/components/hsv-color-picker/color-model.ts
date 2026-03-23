@@ -33,8 +33,15 @@ export function normalizeHex(hex: string, fallbackHex: string): string {
   return `#${full.toLowerCase()}`;
 }
 
-export function hexToRgb(hexStr: string): Rgb {
+/**
+ * Parses `#rgb` or `#rrggbb` into channel values.
+ * Returns `null` if the string (after optional `#`) is not exactly 3 or 6 hex digits.
+ */
+export function hexToRgb(hexStr: string): Rgb | null {
   const m = hexStr.replace("#", "");
+  if (!/^[0-9A-Fa-f]+$/.test(m) || (m.length !== 3 && m.length !== 6)) {
+    return null;
+  }
   const full =
     m.length === 3
       ? m
@@ -133,8 +140,11 @@ export function hsvToRgb(h: number, s: number, v: number): Rgb {
 
 export function hexToHsv(hex: string, fallbackHex: string): Hsv {
   const normalized = normalizeHex(hex, fallbackHex);
-  const { r, g, b } = hexToRgb(normalized);
-  return rgbToHsv(r, g, b);
+  const rgb = hexToRgb(normalized);
+  if (rgb === null) {
+    return rgbToHsv(0, 0, 0);
+  }
+  return rgbToHsv(rgb.r, rgb.g, rgb.b);
 }
 
 export function hsvToHex(h: number, s: number, v: number): string {

@@ -492,7 +492,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   <ThemeSwitcher />
                 </div>
 
-                {null}
                 <VolumeControl />
               </div>
             </Section>
