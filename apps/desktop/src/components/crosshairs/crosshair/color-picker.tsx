@@ -6,7 +6,7 @@ import {
   rgbToHex,
 } from "@/components/hsv-color-picker";
 import { Input } from "@deadlock-mods/ui/components/input";
-import { type ChangeEvent, useState } from "react";
+import { type KeyboardEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
@@ -25,19 +25,37 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const hexValue = rgbToHex(color.r, color.g, color.b);
   const displayHex = hexValue.toUpperCase();
+  const [draftHex, setDraftHex] = useState(displayHex);
 
-  const applyHex = (hex: string) => {
+  useEffect(() => {
+    setDraftHex(displayHex);
+  }, [displayHex]);
+
+  const applyHex = (hex: string): boolean => {
     const rgb = hexToRgb(hex);
     if (rgb === null) {
-      return;
+      return false;
     }
     onChange({ r: rgb.r, g: rgb.g, b: rgb.b });
+    return true;
   };
 
-  const handleHexChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const hex = e.target.value;
-    if (isValidHex(hex)) {
-      applyHex(normalizeHex(hex, DEFAULT_CROSSHAIR_HEX));
+  const finalizeDraftHex = () => {
+    const trimmed = draftHex.trim();
+    if (isValidHex(trimmed)) {
+      const normalized = normalizeHex(trimmed, DEFAULT_CROSSHAIR_HEX);
+      if (applyHex(normalized)) {
+        setDraftHex(normalized.toUpperCase());
+        return;
+      }
+    }
+    setDraftHex(displayHex);
+  };
+
+  const handleHexKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      finalizeDraftHex();
     }
   };
 
@@ -56,8 +74,12 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
         <Input
           id='crosshair-color-hex'
           type='text'
-          value={displayHex}
-          onChange={handleHexChange}
+          value={draftHex}
+          onChange={(e) => {
+            setDraftHex(e.target.value);
+          }}
+          onBlur={finalizeDraftHex}
+          onKeyDown={handleHexKeyDown}
           placeholder={t("crosshairs.form.hexPlaceholder")}
           className='min-w-0 flex-1 font-mono'
           maxLength={7}
