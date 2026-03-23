@@ -240,6 +240,10 @@ export type GameBananaModProfile = BaseSubmission & {
     _idRow: number;
     _sModelName: string;
   };
+  _aSuperCategory?: BaseCategory & {
+    _idRow: number;
+    _sModelName: string;
+  };
   _aFeaturings: {
     today: {
       _sFeatureGroup: string;
@@ -351,6 +355,10 @@ export type GameBananaSoundProfile = BaseSubmission & {
     _bAccessorIsSubscribed: boolean;
   };
   _aCategory: BaseCategory & {
+    _idRow: number;
+    _sModelName: string;
+  };
+  _aSuperCategory?: BaseCategory & {
     _idRow: number;
     _sModelName: string;
   };
