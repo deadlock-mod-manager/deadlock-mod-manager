@@ -1,5 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Card,
   CardDescription,
@@ -47,6 +49,7 @@ import {
   Loader2,
   RefreshCw,
   ScanSearch,
+  Shuffle,
 } from "@deadlock-mods/ui/icons";
 import { Heart, Trash, UploadSimple } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
@@ -585,6 +588,12 @@ const MyMods = () => {
   const favoritesCount = usePersistedStore((state) =>
     state.getFavoritesCount(),
   );
+  const randomFavoritesEnabled = usePersistedStore(
+    (state) => state.randomFavoritesEnabled,
+  );
+  const setRandomFavoritesEnabled = usePersistedStore(
+    (state) => state.setRandomFavoritesEnabled,
+  );
 
   const filterModsByStatus = (modsToFilter: LocalMod[]) => {
     switch (activeTab) {
@@ -884,6 +893,31 @@ const MyMods = () => {
               </TabsContent>
 
               <TabsContent value={ModFilter.FAVORITES}>
+                <div className='mb-4 flex items-center justify-between rounded-lg border p-3'>
+                  <div className='flex items-center gap-2'>
+                    <Shuffle className='h-4 w-4 text-muted-foreground' />
+                    <div>
+                      <Label className='font-bold text-sm'>
+                        {t("favorites.randomMode")}
+                      </Label>
+                      <p className='text-muted-foreground text-xs'>
+                        {t("favorites.randomModeDescription")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <Switch
+                      checked={randomFavoritesEnabled}
+                      onCheckedChange={setRandomFavoritesEnabled}
+                      id='toggle-random-favorites'
+                    />
+                    <Label htmlFor='toggle-random-favorites'>
+                      {randomFavoritesEnabled
+                        ? t("status.enabled")
+                        : t("status.disabled")}
+                    </Label>
+                  </div>
+                </div>
                 <ModsList mods={paginatedMods} viewMode={viewMode} />
               </TabsContent>
 
