@@ -1,4 +1,11 @@
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+} from "@deadlock-mods/ui/components/pagination";
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -8,7 +15,6 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Suspense,
   useCallback,
@@ -16,6 +22,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
@@ -23,7 +30,6 @@ import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
-import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
@@ -32,9 +38,96 @@ import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getTimePeriodCutoff } from "@/lib/utils";
 import type { FilterMode } from "@/lib/store/slices/ui";
-import { isModOutdated } from "@/lib/utils";
+import { cn, isModOutdated } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
+const PAGE_SIZE = 50;
+const MODS_STORE_PAGE_KEY = "/mods:page";
+
+function ModsPagination({
+  page,
+  totalPages,
+  onPageChange,
+  className,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Pagination className={className}>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationLink
+            aria-label={t("pagination.previous")}
+            aria-disabled={page === 0}
+            className={cn(
+              "gap-1 pl-2.5",
+              page === 0 ? "pointer-events-none opacity-50" : "",
+            )}
+            size='default'
+            onClick={(e) => {
+              e.preventDefault();
+              if (page > 0) onPageChange(page - 1);
+            }}>
+            <ChevronLeft className='h-4 w-4' />
+            <span>{t("pagination.previous")}</span>
+          </PaginationLink>
+        </PaginationItem>
+        {Array.from({ length: totalPages }, (_, i) => i)
+          .filter((i) => {
+            if (totalPages <= 7) return true;
+            if (i === 0 || i === totalPages - 1) return true;
+            return Math.abs(i - page) <= 2;
+          })
+          .reduce<(number | "ellipsis")[]>((acc, i, idx, arr) => {
+            if (idx > 0 && arr[idx - 1] < i - 1) acc.push("ellipsis");
+            acc.push(i);
+            return acc;
+          }, [])
+          .map((item, idx) =>
+            item === "ellipsis" ? (
+              <PaginationItem key={`ellipsis-${idx}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={item}>
+                <PaginationLink
+                  isActive={item === page}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onPageChange(item);
+                  }}>
+                  {item + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ),
+          )}
+        <PaginationItem>
+          <PaginationLink
+            aria-label={t("pagination.next")}
+            aria-disabled={page === totalPages - 1}
+            className={cn(
+              "gap-1 pr-2.5",
+              page === totalPages - 1 ? "pointer-events-none opacity-50" : "",
+            )}
+            size='default'
+            onClick={(e) => {
+              e.preventDefault();
+              if (page < totalPages - 1) onPageChange(page + 1);
+            }}>
+            <span>{t("pagination.next")}</span>
+            <ChevronRight className='h-4 w-4' />
+          </PaginationLink>
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+}
 
 const GetModsData = () => {
   const { t } = useTranslation();
@@ -46,6 +139,12 @@ const GetModsData = () => {
   });
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const getPersistedPage = usePersistedStore(
+    (state) => state.getScrollPosition,
+  );
+  const setPersistedPage = usePersistedStore(
+    (state) => state.setScrollPosition,
+  );
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
   );
@@ -58,17 +157,25 @@ const GetModsData = () => {
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
   } = modsFilters;
+  const [page, setPage] = useState(() => getPersistedPage(MODS_STORE_PAGE_KEY));
+  const parentRef = useRef<HTMLDivElement>(null);
+  const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
   // block the UI while Fuse.js rebuilds its index on 2600+ items.
   const deferredData = useDeferredValue(data ?? []);
+  const { restoreScrollPosition, setScrollElement } =
+    useScrollPosition("/mods");
 
+  useEffect(() => {
+    if (!parentRef.current) return;
+
+    setScrollElement(parentRef.current);
+    restoreScrollPosition();
+  }, [restoreScrollPosition, setScrollElement]);
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: deferredData,
     keys: SEARCH_KEYS,
   });
-
-  const { setScrollElement, scrollY } = useScrollPosition("/mods");
-
   const filteredResults = useMemo(() => {
     let filtered = results;
 
@@ -141,36 +248,83 @@ const GetModsData = () => {
     timePeriod,
   ]);
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  const columnsPerRow = useResponsiveColumns();
-
-  const modRows = useMemo(() => {
-    const rows: (typeof filteredResults)[] = [];
-    for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
-      rows.push(filteredResults.slice(i, i + columnsPerRow));
-    }
-    return rows;
-  }, [filteredResults, columnsPerRow]);
-
-  const rowVirtualizer = useVirtualizer({
-    count: modRows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 320 + 20,
-    overscan: 3,
-    initialOffset: scrollY,
-  });
+  const totalPages = Math.ceil(filteredResults.length / PAGE_SIZE);
+  const paginatedMods = useMemo(
+    () => filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [filteredResults, page],
+  );
+  const filterSignature = useMemo(
+    () =>
+      JSON.stringify({
+        filterMode,
+        hideAudio,
+        hideNSFW,
+        hideOutdated,
+        query,
+        selectedCategories,
+        selectedHeroes,
+        timePeriod,
+      }),
+    [
+      filterMode,
+      hideAudio,
+      hideNSFW,
+      hideOutdated,
+      query,
+      selectedCategories,
+      selectedHeroes,
+      timePeriod,
+    ],
+  );
 
   useEffect(() => {
-    if (parentRef.current) {
-      setScrollElement(parentRef.current);
+    const maxPage = Math.max(totalPages - 1, 0);
+    setPage((currentPage) => {
+      const nextPage = Math.min(currentPage, maxPage);
+
+      if (nextPage !== currentPage) {
+        setPersistedPage(MODS_STORE_PAGE_KEY, nextPage);
+      }
+
+      return nextPage;
+    });
+  }, [setPersistedPage, totalPages]);
+
+  useEffect(() => {
+    if (previousFilterSignatureRef.current === null) {
+      previousFilterSignatureRef.current = filterSignature;
+      return;
     }
-  }, [setScrollElement]);
+
+    if (previousFilterSignatureRef.current === filterSignature) {
+      return;
+    }
+
+    previousFilterSignatureRef.current = filterSignature;
+
+    setPage(0);
+    setPersistedPage(MODS_STORE_PAGE_KEY, 0);
+    if (parentRef.current) {
+      parentRef.current.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [filterSignature, setPersistedPage]);
 
   useEffect(() => {
     if (error) {
       toast.error((error as Error)?.message ?? t("common.failedToFetchMods"));
     }
   }, [error, t]);
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      setPersistedPage(MODS_STORE_PAGE_KEY, newPage);
+      if (parentRef.current) {
+        parentRef.current.scrollTo({ top: 0, behavior: "auto" });
+      }
+    },
+    [setPersistedPage],
+  );
 
   const handleCategoriesChange = useCallback(
     (cats: string[]) => updateModsFilters({ selectedCategories: cats }),
@@ -256,41 +410,29 @@ const GetModsData = () => {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div
-          className='h-[calc(100vh-280px)] overflow-auto will-change-transform'
-          ref={parentRef} // Dynamic height for virtualization accounting for title + search bar
-          // will-change: transform forces WebKit to allocate a dedicated compositing
-          // layer for this scroll container. Without it, webkit2gtk on Linux doesn't
-          // properly track damage regions for the absolutely-positioned virtualizer
-          // children (position:absolute + translateY), causing blank tiles on scroll.
-        >
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative",
-            }}>
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-              <div
-                key={virtualRow.key}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                  contain: "strict",
-                  contentVisibility: "auto",
-                  containIntrinsicSize: `auto ${virtualRow.size}px`,
-                }}>
-                <div className='grid grid-cols-1 gap-4 px-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-                  {modRows[virtualRow.index]?.map((mod) => (
-                    <ModCard key={mod.id} mod={mod} />
-                  ))}
-                </div>
-              </div>
-            ))}
+        <div className='h-[calc(100vh-280px)] overflow-auto' ref={parentRef}>
+          <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
+            {totalPages > 1 && (
+              <ModsPagination
+                className='mb-4'
+                onPageChange={handlePageChange}
+                page={page}
+                totalPages={totalPages}
+              />
+            )}
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+              {paginatedMods.map((mod) => (
+                <ModCard key={mod.id} mod={mod} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <ModsPagination
+                className='mt-6 pb-12'
+                onPageChange={handlePageChange}
+                page={page}
+                totalPages={totalPages}
+              />
+            )}
           </div>
         </div>
       )}
