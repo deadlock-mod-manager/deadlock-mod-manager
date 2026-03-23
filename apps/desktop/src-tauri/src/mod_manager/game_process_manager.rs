@@ -1,3 +1,6 @@
+use std::thread;
+use std::time::Duration;
+
 use crate::errors::Error;
 use log;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
@@ -70,6 +73,14 @@ impl GameProcessManager {
 
     if stopped_count > 0 {
       log::info!("Stopped {stopped_count} game process(es)");
+      // Wait for the OS to fully reap the killed processes before returning,
+      // so the next is_game_running() call won't see stale entries.
+      thread::sleep(Duration::from_millis(500));
+      self.system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything(),
+      );
       Ok(())
     } else {
       Err(Error::GameNotRunning)
