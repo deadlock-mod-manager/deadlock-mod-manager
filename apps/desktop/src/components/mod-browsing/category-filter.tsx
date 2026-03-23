@@ -17,7 +17,11 @@ import {
 import { Check } from "@deadlock-mods/ui/icons";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
+import {
+  getModCategoryDisplayName,
+  MOD_CATEGORY_ORDER,
+  ModCategory,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type CategoryFilterProps = {
@@ -66,7 +70,7 @@ const CategoryFilter = ({
     selectedCategories.length === 0
       ? t("filters.allCategories")
       : selectedCategories.length === 1
-        ? selectedCategories[0]
+        ? getModCategoryDisplayName(selectedCategories[0])
         : `${selectedCategories.length} ${t("filters.selected")}`;
 
   return (
@@ -99,7 +103,9 @@ const CategoryFilter = ({
                           : "opacity-0",
                       )}
                     />
-                    <span className='truncate'>{category}</span>
+                    <span className='truncate'>
+                      {getModCategoryDisplayName(category)}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>

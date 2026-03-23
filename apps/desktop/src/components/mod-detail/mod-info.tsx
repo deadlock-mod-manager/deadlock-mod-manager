@@ -15,6 +15,7 @@ import {
   User,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { getModCategoryDisplayName } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
 
@@ -34,7 +35,9 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
       {showHeader && (
         <CardHeader>
           <CardTitle className='text-3xl'>{mod.name}</CardTitle>
-          <CardDescription>{mod.category}</CardDescription>
+          <CardDescription>
+            {getModCategoryDisplayName(mod.category)}
+          </CardDescription>
         </CardHeader>
       )}
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ModCategory, MOD_CATEGORY_VALUE_SET } from "@/lib/mod-category";
 
 export type SortType =
   | "default"
@@ -27,16 +28,6 @@ const defaultFilters: ModFilters = {
   filterMode: "include",
   sortBy: "default",
 };
-
-enum ModCategory {
-  SKINS = "Skins",
-  GAMEPLAY_MODIFICATIONS = "Gameplay Modifications",
-  HUD = "HUD",
-  MODEL_REPLACEMENT = "Model Replacement",
-  OTHER_MISC = "Other/Misc",
-}
-
-const MOD_CATEGORY_VALUES = Object.values(ModCategory);
 
 interface MinimalMod {
   name: string;
@@ -101,10 +92,7 @@ export function useModFilters<T extends MinimalMod>(mods: T[]) {
           !matchesCategory &&
           filters.categories.includes(ModCategory.OTHER_MISC)
         ) {
-          const predefinedCategories = MOD_CATEGORY_VALUES;
-          matchesCategory = !predefinedCategories.includes(
-            mod.category as ModCategory,
-          );
+          matchesCategory = !MOD_CATEGORY_VALUE_SET.has(mod.category);
         }
 
         return filters.filterMode === "include"

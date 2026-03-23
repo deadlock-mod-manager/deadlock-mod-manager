@@ -2,6 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Volume2 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { getModCategoryDisplayName } from "@/lib/constants";
 
 export const ProfileModCard = ({ mod }: { mod: ModDto }) => {
   const { t } = useTranslation();
@@ -34,7 +35,7 @@ export const ProfileModCard = ({ mod }: { mod: ModDto }) => {
       </div>
 
       <Badge className='h-5 rounded-full text-xs' variant='secondary'>
-        {mod.category}
+        {getModCategoryDisplayName(mod.category)}
       </Badge>
     </div>
   );

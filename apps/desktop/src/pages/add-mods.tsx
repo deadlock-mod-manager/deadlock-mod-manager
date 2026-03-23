@@ -46,7 +46,11 @@ import ModMetadataForm, {
 import PageTitle from "@/components/shared/page-title";
 import { useFileDrop } from "@/hooks/use-file-drop";
 import { useModProcessor } from "@/hooks/use-mod-processor";
-import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
+import {
+  getModCategoryDisplayName,
+  MOD_CATEGORY_ORDER,
+  ModCategory,
+} from "@/lib/constants";
 import {
   ACCEPTED_FILE_TYPES,
   ALL_SUPPORTED_PATTERN,
@@ -206,7 +210,7 @@ const AddMods = () => {
                         <SelectContent>
                           {MOD_CATEGORY_ORDER.map((c) => (
                             <SelectItem key={c} value={c}>
-                              {c}
+                              {getModCategoryDisplayName(c)}
                             </SelectItem>
                           ))}
                         </SelectContent>
