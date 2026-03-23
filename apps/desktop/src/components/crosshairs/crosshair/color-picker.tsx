@@ -40,6 +40,8 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
     return true;
   };
 
+  const handleEyedropperPick = (_hex: string) => {};
+
   const finalizeDraftHex = () => {
     const trimmed = draftHex.trim();
     if (isValidHex(trimmed)) {
@@ -62,11 +64,11 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
   return (
     <div className='space-y-2'>
       <div className='flex gap-2'>
-        <div className='inline-flex shrink-0 items-center justify-center rounded-md border border-input/70 p-1 leading-none'>
+        <div className='inline-flex h-10 shrink-0 items-stretch justify-center overflow-hidden rounded-md border border-input/70 leading-none'>
           <button
             type='button'
             onClick={() => setOpen(true)}
-            className='block h-10 w-20 cursor-pointer rounded-sm bg-transparent'
+            className='block h-full w-20 cursor-pointer bg-transparent'
             aria-label={t("crosshairs.form.colorDialogTitle")}
             style={{ backgroundColor: hexValue }}
           />
@@ -96,7 +98,7 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
         title={t("crosshairs.form.colorDialogTitle")}
         description={t("crosshairs.form.colorDialogDescription")}
         onApply={applyHex}
-        onEyedropperPick={applyHex}
+        onEyedropperPick={handleEyedropperPick}
       />
     </div>
   );
