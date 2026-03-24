@@ -58,6 +58,8 @@ pub enum Error {
   AutoexecReadFailed(String),
   #[error("Failed to write autoexec config: {0}")]
   AutoexecWriteFailed(String),
+  #[error("Operation failed and rollback was incomplete — VPK files may be in an inconsistent state: {0}")]
+  RollbackFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -98,6 +100,7 @@ impl serde::Serialize for Error {
       Error::FileWriteFailed(_) => "fileWriteFailed",
       Error::AutoexecReadFailed(_) => "autoexecReadFailed",
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
+      Error::RollbackFailed(_) => "rollbackFailed",
     };
 
     state.serialize_field("kind", kind)?;

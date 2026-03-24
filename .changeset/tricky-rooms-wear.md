@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Fix issue with the state of the mod not being real.
+Fix mod card showing stale state after enable, disable, or delete

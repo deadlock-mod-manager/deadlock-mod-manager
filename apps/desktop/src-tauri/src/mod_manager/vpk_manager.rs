@@ -398,14 +398,22 @@ impl VpkManager {
       if let Err(e) = fs::rename(&old_path, &new_path) {
         log::error!("Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)", count = renamed.len());
         // Roll back all successful renames
+        let mut rollback_failures = Vec::new();
         for (enabled_name, original_name) in renamed.into_iter().rev() {
           let from = addons_path.join(&enabled_name);
           let to = addons_path.join(&original_name);
           if let Err(rb_err) = fs::rename(&from, &to) {
             log::error!("Rollback failed for {enabled_name} -> {original_name}: {rb_err}");
+            rollback_failures.push(format!("{enabled_name} -> {original_name}: {rb_err}"));
           } else {
             log::info!("Rolled back VPK: {enabled_name} -> {original_name}");
           }
+        }
+        if !rollback_failures.is_empty() {
+          return Err(Error::RollbackFailed(format!(
+            "Original error: {e}. Failed to roll back: {}",
+            rollback_failures.join(", ")
+          )));
         }
         return Err(e.into());
       }
@@ -450,14 +458,22 @@ impl VpkManager {
       if let Err(e) = fs::rename(&old_path, &new_path) {
         log::error!("Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)", count = renamed.len());
         // Roll back all successful renames
+        let mut rollback_failures = Vec::new();
         for (disabled_name, installed_name) in renamed.into_iter().rev() {
           let from = addons_path.join(&disabled_name);
           let to = addons_path.join(&installed_name);
           if let Err(rb_err) = fs::rename(&from, &to) {
             log::error!("Rollback failed for {disabled_name} -> {installed_name}: {rb_err}");
+            rollback_failures.push(format!("{disabled_name} -> {installed_name}: {rb_err}"));
           } else {
             log::info!("Rolled back VPK: {disabled_name} -> {installed_name}");
           }
+        }
+        if !rollback_failures.is_empty() {
+          return Err(Error::RollbackFailed(format!(
+            "Original error: {e}. Failed to roll back: {}",
+            rollback_failures.join(", ")
+          )));
         }
         return Err(e.into());
       }
