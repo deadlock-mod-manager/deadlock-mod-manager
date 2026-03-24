@@ -18,7 +18,6 @@ export const InstallWithCollection: React.FC<InstallWithCollectionProps> = ({
     isAnalyzing,
     currentFileTree,
     showFileSelector,
-    setShowFileSelector,
     confirmInstallation,
     cancelInstallation,
     currentMod,
@@ -34,7 +33,11 @@ export const InstallWithCollection: React.FC<InstallWithCollectionProps> = ({
         modName={currentMod?.name}
         onCancel={cancelInstallation}
         onConfirm={confirmInstallation}
-        onOpenChange={setShowFileSelector}
+        onOpenChange={(open) => {
+          if (!open) {
+            cancelInstallation();
+          }
+        }}
       />
     </>
   );
