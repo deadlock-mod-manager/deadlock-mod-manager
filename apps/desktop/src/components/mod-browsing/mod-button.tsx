@@ -163,7 +163,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               });
             },
             onError: (mod, error) => {
-              setModStatus(mod.remoteId, ModStatus.FailedToInstall);
+              setModStatus(mod.remoteId, ModStatus.Downloaded);
               toast.error(
                 error.message || t("notifications.failedToInstallMod"),
               );
