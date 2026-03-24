@@ -63,24 +63,11 @@ const useUninstall = () => {
           })
           .info("Uninstalling mod");
         if (remove) {
-          try {
-            await invoke("purge_mod", {
-              modId: mod.remoteId,
-              vpks: mod.installedVpks ?? [],
-              profileFolder,
-            });
-          } catch (purgeError) {
-            logger
-              .withMetadata({ modId: mod.remoteId })
-              .withError(
-                purgeError instanceof Error
-                  ? purgeError
-                  : new Error(String(purgeError)),
-              )
-              .warn(
-                "purge_mod failed for installed mod, removing from store anyway",
-              );
-          }
+          await invoke("purge_mod", {
+            modId: mod.remoteId,
+            vpks: mod.installedVpks ?? [],
+            profileFolder,
+          });
         } else {
           await invoke("uninstall_mod", {
             modId: mod.remoteId,
@@ -94,26 +81,11 @@ const useUninstall = () => {
         logger
           .withMetadata({ modId: mod.remoteId, profileFolder })
           .info("Purging disabled mod");
-        try {
-          await invoke("purge_mod", {
-            modId: mod.remoteId,
-            vpks: [],
-            profileFolder,
-          });
-        } catch (purgeError) {
-          // Log but don't rethrow — mod is not installed so there are no game
-          // files to worry about. We still want to remove it from the store though.
-          logger
-            .withMetadata({ modId: mod.remoteId })
-            .withError(
-              purgeError instanceof Error
-                ? purgeError
-                : new Error(String(purgeError)),
-            )
-            .warn(
-              "purge_mod failed for non-installed mod, removing from store anyway",
-            );
-        }
+        await invoke("purge_mod", {
+          modId: mod.remoteId,
+          vpks: [],
+          profileFolder,
+        });
       }
 
       if (remove) {

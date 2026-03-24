@@ -164,6 +164,23 @@ impl VpkManager {
       return Ok(());
     }
 
+    // Pre-check: verify all files are accessible before deleting any.
+    // This prevents partial deletion when one file is locked by another process.
+    for vpk_name in vpk_names {
+      let vpk_path = addons_path.join(vpk_name);
+      if vpk_path.exists() {
+        // Opening with write access will fail with OS error 32 if file is in use
+        fs::OpenOptions::new()
+          .write(true)
+          .open(&vpk_path)
+          .map_err(|e| {
+            log::error!("Cannot access VPK for removal (file may be in use): {vpk_name}: {e}");
+            e
+          })?;
+      }
+    }
+
+    // All files are accessible, safe to delete
     for vpk_name in vpk_names {
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists() {
@@ -363,7 +380,8 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
-    let mut new_vpk_names = Vec::new();
+    // Track successful renames so we can roll back on partial failure
+    let mut renamed: Vec<(String, String)> = Vec::new();
 
     for prefixed_name in prefixed_vpks {
       let old_path = addons_path.join(prefixed_name);
@@ -377,13 +395,26 @@ impl VpkManager {
       let new_name = format!("pak{next_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
-      fs::rename(&old_path, &new_path)?;
-      new_vpk_names.push(new_name.clone());
+      if let Err(e) = fs::rename(&old_path, &new_path) {
+        log::error!("Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)", count = renamed.len());
+        // Roll back all successful renames
+        for (enabled_name, original_name) in renamed.into_iter().rev() {
+          let from = addons_path.join(&enabled_name);
+          let to = addons_path.join(&original_name);
+          if let Err(rb_err) = fs::rename(&from, &to) {
+            log::error!("Rollback failed for {enabled_name} -> {original_name}: {rb_err}");
+          } else {
+            log::info!("Rolled back VPK: {enabled_name} -> {original_name}");
+          }
+        }
+        return Err(e.into());
+      }
 
+      renamed.push((new_name.clone(), prefixed_name.clone()));
       log::info!("Enabled VPK for mod {mod_id}: {prefixed_name} -> {new_name}");
     }
 
-    Ok(new_vpk_names)
+    Ok(renamed.into_iter().map(|(new_name, _)| new_name).collect())
   }
 
   /// Disable VPKs by renaming them from sequential numbering to prefixed
@@ -398,7 +429,8 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
-    let mut prefixed_vpks = Vec::new();
+    // Track successful renames so we can roll back on partial failure
+    let mut renamed: Vec<(String, String)> = Vec::new();
 
     for (index, vpk_name) in installed_vpks.iter().enumerate() {
       let old_path = addons_path.join(vpk_name);
@@ -415,19 +447,48 @@ impl VpkManager {
       let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
 
-      fs::rename(&old_path, &new_path)?;
-      prefixed_vpks.push(prefixed_name.clone());
+      if let Err(e) = fs::rename(&old_path, &new_path) {
+        log::error!("Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)", count = renamed.len());
+        // Roll back all successful renames
+        for (disabled_name, installed_name) in renamed.into_iter().rev() {
+          let from = addons_path.join(&disabled_name);
+          let to = addons_path.join(&installed_name);
+          if let Err(rb_err) = fs::rename(&from, &to) {
+            log::error!("Rollback failed for {disabled_name} -> {installed_name}: {rb_err}");
+          } else {
+            log::info!("Rolled back VPK: {disabled_name} -> {installed_name}");
+          }
+        }
+        return Err(e.into());
+      }
 
+      renamed.push((prefixed_name.clone(), vpk_name.clone()));
       log::info!("Disabled VPK for mod {mod_id}: {vpk_name} -> {prefixed_name}");
     }
 
-    Ok(prefixed_vpks)
+    Ok(renamed.into_iter().map(|(prefixed, _)| prefixed).collect())
   }
 
   /// Remove all VPK files matching a mod ID prefix
   pub fn remove_vpks_by_mod_id(&self, addons_path: &Path, mod_id: &str) -> Result<(), Error> {
     let prefixed_vpks = self.find_prefixed_vpks(addons_path, mod_id)?;
 
+    // Pre-check: verify all files are accessible before deleting any.
+    // This prevents partial deletion when one file is locked by another process.
+    for vpk_name in &prefixed_vpks {
+      let vpk_path = addons_path.join(vpk_name);
+      if vpk_path.exists() {
+        fs::OpenOptions::new()
+          .write(true)
+          .open(&vpk_path)
+          .map_err(|e| {
+            log::error!("Cannot access prefixed VPK for removal (file may be in use): {vpk_name}: {e}");
+            e
+          })?;
+      }
+    }
+
+    // All files are accessible, safe to delete
     for vpk_name in prefixed_vpks {
       let vpk_path = addons_path.join(&vpk_name);
       if vpk_path.exists() {
