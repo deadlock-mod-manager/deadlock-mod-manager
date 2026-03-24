@@ -634,6 +634,7 @@ const MyMods = () => {
 
     return filterModsByStatus(filteredMods);
   }, [
+    activeTab,
     filterMode,
     hideAudio,
     hideNSFW,
