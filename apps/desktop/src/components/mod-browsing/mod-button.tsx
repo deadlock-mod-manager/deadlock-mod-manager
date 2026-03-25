@@ -107,7 +107,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     isAnalyzing,
     currentFileTree,
     showFileSelector,
-    setShowFileSelector,
     confirmInstallation,
     cancelInstallation,
     currentMod,
@@ -163,7 +162,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               });
             },
             onError: (mod, error) => {
-              setModStatus(mod.remoteId, ModStatus.FailedToInstall);
+              setModStatus(mod.remoteId, ModStatus.Downloaded);
               toast.error(
                 error.message || t("notifications.failedToInstallMod"),
               );
@@ -354,7 +353,11 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         modName={currentMod?.name}
         onCancel={cancelInstallation}
         onConfirm={confirmInstallation}
-        onOpenChange={setShowFileSelector}
+        onOpenChange={(open) => {
+          if (!open) {
+            cancelInstallation();
+          }
+        }}
       />
 
       <MultiFileDownloadDialog
