@@ -126,7 +126,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
           value: setting.value,
           type: setting.type,
           description: setting.description,
-          enabled: true,
+          enabled: newValue ?? true,
           key: setting.key,
           createdAt: new Date(),
           updatedAt: new Date(),

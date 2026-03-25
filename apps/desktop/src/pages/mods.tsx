@@ -15,6 +15,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Suspense,
   useCallback,
@@ -24,12 +25,14 @@ import {
   useRef,
   useState,
 } from "react";
+import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
+import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api";
@@ -44,6 +47,8 @@ import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
 const MODS_STORE_PAGE_KEY = "/mods:page";
+const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
+const MOD_ROW_ESTIMATED_HEIGHT = 340;
 
 function ModsPagination({
   page,
@@ -139,6 +144,9 @@ const GetModsData = () => {
   });
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const modsStorePaginationEnabled = usePersistedStore(
+    (state) => state.settings[MODS_STORE_PAGINATION_SETTING_ID]?.enabled,
+  );
   const getPersistedPage = usePersistedStore(
     (state) => state.getScrollPosition,
   );
@@ -157,21 +165,26 @@ const GetModsData = () => {
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
   } = modsFilters;
+  const paginationEnabled =
+    modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(MODS_STORE_PAGE_KEY));
   const parentRef = useRef<HTMLDivElement>(null);
   const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
   // block the UI while Fuse.js rebuilds its index on 2600+ items.
   const deferredData = useDeferredValue(data ?? []);
-  const { restoreScrollPosition, setScrollElement } =
+  const { restoreScrollPosition, setScrollElement, scrollY } =
     useScrollPosition("/mods");
+  const columnsPerRow = useResponsiveColumns();
 
   useEffect(() => {
     if (!parentRef.current) return;
 
     setScrollElement(parentRef.current);
-    restoreScrollPosition();
-  }, [restoreScrollPosition, setScrollElement]);
+    if (paginationEnabled) {
+      restoreScrollPosition();
+    }
+  }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
   const { results, query, setQuery, sortType, setSortType } = useSearch({
     data: deferredData,
     keys: SEARCH_KEYS,
@@ -248,11 +261,34 @@ const GetModsData = () => {
     timePeriod,
   ]);
 
-  const totalPages = Math.ceil(filteredResults.length / PAGE_SIZE);
-  const paginatedMods = useMemo(
-    () => filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [filteredResults, page],
+  const totalPages = paginationEnabled
+    ? Math.ceil(filteredResults.length / PAGE_SIZE)
+    : 1;
+  const displayedMods = useMemo(
+    () =>
+      paginationEnabled
+        ? filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        : filteredResults,
+    [filteredResults, page, paginationEnabled],
   );
+  const modRows = useMemo(() => {
+    if (paginationEnabled) {
+      return [] as typeof filteredResults[];
+    }
+
+    const rows: typeof filteredResults[] = [];
+    for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
+      rows.push(filteredResults.slice(i, i + columnsPerRow));
+    }
+    return rows;
+  }, [columnsPerRow, filteredResults, paginationEnabled]);
+  const rowVirtualizer = useVirtualizer({
+    count: modRows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => MOD_ROW_ESTIMATED_HEIGHT,
+    overscan: 3,
+    initialOffset: scrollY,
+  });
   const filterSignature = useMemo(
     () =>
       JSON.stringify({
@@ -411,29 +447,61 @@ const GetModsData = () => {
         </Empty>
       ) : (
         <div className='h-[calc(100vh-280px)] overflow-auto' ref={parentRef}>
-          <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
-            {totalPages > 1 && (
-              <ModsPagination
-                className='mb-4'
-                onPageChange={handlePageChange}
-                page={page}
-                totalPages={totalPages}
-              />
-            )}
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-              {paginatedMods.map((mod) => (
-                <ModCard key={mod.id} mod={mod} />
+          {paginationEnabled ? (
+            <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
+              {totalPages > 1 && (
+                <ModsPagination
+                  className='mb-4'
+                  onPageChange={handlePageChange}
+                  page={page}
+                  totalPages={totalPages}
+                />
+              )}
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+                {displayedMods.map((mod) => (
+                  <ModCard key={mod.id} mod={mod} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <ModsPagination
+                  className='mt-6 pb-12'
+                  onPageChange={handlePageChange}
+                  page={page}
+                  totalPages={totalPages}
+                />
+              )}
+            </div>
+          ) : (
+            <div
+              className='will-change-transform'
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                position: "relative",
+                width: "100%",
+              }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    contain: "strict",
+                    containIntrinsicSize: `auto ${virtualRow.size}px`,
+                    contentVisibility: "auto",
+                    height: `${virtualRow.size}px`,
+                    left: 0,
+                    position: "absolute",
+                    top: 0,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    width: "100%",
+                  }}>
+                  <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+                    {modRows[virtualRow.index]?.map((mod) => (
+                      <ModCard key={mod.id} mod={mod} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-            {totalPages > 1 && (
-              <ModsPagination
-                className='mt-6 pb-12'
-                onPageChange={handlePageChange}
-                page={page}
-                totalPages={totalPages}
-              />
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>
