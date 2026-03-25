@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { refreshTokens, type TokenResponse } from "./oidc";
+import { refreshTokens, TokenRefreshError, type TokenResponse } from "./oidc";
 
 interface StoredTokenData {
   accessToken: string;
@@ -10,6 +10,21 @@ interface StoredTokenData {
 let accessToken: string | null = null;
 let tokenExpiresAt: number | null = null;
 let refreshToken: string | null = null;
+
+type TokenChangeListener = (hasTokens: boolean) => void;
+const tokenChangeListeners = new Set<TokenChangeListener>();
+
+export function onTokenChange(listener: TokenChangeListener): () => void {
+  tokenChangeListeners.add(listener);
+  return () => tokenChangeListeners.delete(listener);
+}
+
+function notifyTokenChange(): void {
+  const has = !!accessToken || !!refreshToken;
+  for (const listener of tokenChangeListeners) {
+    listener(has);
+  }
+}
 
 export async function setTokens(tokenResponse: TokenResponse): Promise<void> {
   accessToken = tokenResponse.access_token;
@@ -23,6 +38,7 @@ export async function setTokens(tokenResponse: TokenResponse): Promise<void> {
   };
 
   await invoke("store_auth_token", { token: JSON.stringify(tokenData) });
+  notifyTokenChange();
 }
 
 export function getAccessToken(): string | null {
@@ -51,7 +67,12 @@ export async function ensureValidToken(): Promise<string | null> {
     const tokenResponse = await refreshTokens(refreshToken);
     await setTokens(tokenResponse);
     return accessToken;
-  } catch {
+  } catch (error) {
+    // Only clear tokens on auth failures (4xx)
+    // If we encounter a server error (5xx) our token should still be valid.
+    if (error instanceof TokenRefreshError && error.isServerError) {
+      return null;
+    }
     await clearTokens();
     return null;
   }
@@ -62,6 +83,7 @@ export async function clearTokens(): Promise<void> {
   tokenExpiresAt = null;
   refreshToken = null;
   await invoke("clear_auth_token");
+  notifyTokenChange();
 }
 
 export async function loadStoredTokens(): Promise<boolean> {

@@ -5,8 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   clearTokens,
   ensureValidToken,
-  hasTokens,
   loadStoredTokens,
+  onTokenChange,
 } from "@/lib/auth/token";
 import { AUTH_URL } from "@/lib/config";
 
@@ -23,13 +23,23 @@ interface UseOIDCSessionResult {
 export function useOIDCSession(): UseOIDCSessionResult {
   const queryClient = useQueryClient();
   const [tokensLoaded, setTokensLoaded] = useState(false);
+  const [tokensAvailable, setTokensAvailable] = useState(false);
 
   useEffect(() => {
     loadStoredTokens()
-      .catch(() => {})
+      .then((loaded) => {
+        setTokensAvailable(loaded);
+      })
+      .catch(() => {
+        setTokensAvailable(false);
+      })
       .finally(() => {
         setTokensLoaded(true);
       });
+
+    return onTokenChange((has) => {
+      setTokensAvailable(has);
+    });
   }, []);
 
   const sessionQuery = useQuery<OIDCSession | null>({
@@ -52,13 +62,18 @@ export function useOIDCSession(): UseOIDCSessionResult {
           await clearTokens();
           return null;
         }
+        if (response.status >= 500) {
+          throw new Error(
+            "Server temporarily unavailable. Please try again later.",
+          );
+        }
         throw new Error("Failed to fetch user info");
       }
 
       const userInfo = (await response.json()) as OIDCUser;
       return { user: userInfo };
     },
-    enabled: tokensLoaded && hasTokens(),
+    enabled: tokensLoaded && tokensAvailable,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
