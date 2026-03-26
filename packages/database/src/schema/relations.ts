@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
+import { authorVerification } from "./author-verification";
 import { crosshairLikes, crosshairs } from "./crosshairs";
 import { featureFlags, userFeatureFlagOverrides } from "./feature-flags";
 import { mirroredFiles } from "./mirrored-files";
@@ -49,7 +50,18 @@ export const userRelations = relations(user, ({ many }) => ({
   featureFlagOverrides: many(userFeatureFlagOverrides),
   crosshairs: many(crosshairs),
   crosshairLikes: many(crosshairLikes),
+  authorVerifications: many(authorVerification),
 }));
+
+export const authorVerificationRelations = relations(
+  authorVerification,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [authorVerification.userId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const crosshairsRelations = relations(crosshairs, ({ one, many }) => ({
   user: one(user, {

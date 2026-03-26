@@ -1,4 +1,5 @@
 export * from "./announcement-repository";
+export * from "./author-verification.repository";
 export * from "./base";
 export * from "./chat-message.repository";
 export * from "./crosshair.repository";

@@ -1,5 +1,6 @@
 export * from "./announcements";
 export * from "./auth";
+export * from "./author-verification";
 export * from "./chat-messages";
 export * from "./chat-sessions";
 export * from "./crosshairs";

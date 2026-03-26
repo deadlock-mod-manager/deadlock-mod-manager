@@ -23,6 +23,7 @@ export const mods = pgTable(
     category: text("category").notNull(),
     likes: integer("likes").notNull().default(0),
     author: text("author").notNull(),
+    authorMemberId: integer("author_member_id"),
     downloadable: boolean("downloadable").notNull().default(false),
     remoteAddedAt: timestamp("remote_added_at", { mode: "date" }).notNull(),
     remoteUpdatedAt: timestamp("remote_updated_at", { mode: "date" }).notNull(),
@@ -48,6 +49,7 @@ export const mods = pgTable(
       table.isBlacklisted,
       table.remoteUpdatedAt,
     ),
+    index("idx_mod_author_member_id").on(table.authorMemberId),
   ],
 );
 

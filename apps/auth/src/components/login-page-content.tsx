@@ -1,5 +1,6 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { useState } from "react";
+import { authClient } from "../lib/auth-client";
 import { SocialButtons } from "./social-buttons";
 import { SteamLoginForm } from "./steam-login-form";
 
@@ -15,6 +16,20 @@ export function LoginPageContent({
   error,
 }: LoginPageContentProps) {
   const [showSteamForm, setShowSteamForm] = useState(false);
+  const [discordError, setDiscordError] = useState<string>();
+
+  const handleDiscordClick = async () => {
+    setDiscordError(undefined);
+    await authClient.signIn.social({
+      provider: "discord",
+      callbackURL,
+      fetchOptions: {
+        onError(ctx) {
+          setDiscordError(ctx.error.message);
+        },
+      },
+    });
+  };
 
   if (showSteamForm) {
     return (
@@ -33,7 +48,15 @@ export function LoginPageContent({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <SocialButtons onSteamClick={() => setShowSteamForm(true)} />
+      {discordError && (
+        <Alert variant='destructive'>
+          <AlertDescription>{discordError}</AlertDescription>
+        </Alert>
+      )}
+      <SocialButtons
+        onSteamClick={() => setShowSteamForm(true)}
+        onDiscordClick={handleDiscordClick}
+      />
     </div>
   );
 }

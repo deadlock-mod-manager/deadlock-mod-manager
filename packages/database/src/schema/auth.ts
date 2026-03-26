@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -20,6 +21,7 @@ export const user = pgTable(
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     isAdmin: boolean("is_admin").notNull().default(false),
+    gamebananaMemberId: integer("gamebanana_member_id").unique(),
     ...timestamps,
   },
   (table) => [index("idx_user_created_at").on(table.createdAt)],

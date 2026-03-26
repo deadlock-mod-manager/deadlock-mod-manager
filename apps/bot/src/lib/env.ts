@@ -50,6 +50,7 @@ export const envSchema = z.object({
     .string()
     .url()
     .default("https://docs.deadlockmods.app/llms-full.txt"),
+  VERIFIED_AUTHOR_ROLE_ID: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
