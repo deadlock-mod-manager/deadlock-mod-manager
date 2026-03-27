@@ -18,7 +18,7 @@ export function categoryFromGameBananaProfile(
   if (rootName !== undefined && rootName.length > 0) {
     return rootName;
   }
-  return profile._aCategory._sName;
+  return profile._aCategory?._sName ?? "Other";
 }
 
 export const parseTags = (
