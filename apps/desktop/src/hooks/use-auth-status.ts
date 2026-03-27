@@ -16,6 +16,7 @@ export const useAuthStatus = () => {
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 5000,
+    meta: { skipGlobalErrorHandler: true },
   });
 
   const getStatus = (): AuthStatus => {
