@@ -128,6 +128,9 @@
     "apiDegraded": "",
     "apiOffline": "",
     "apiUnknown": "",
+    "authOnline": "",
+    "authOffline": "",
+    "authUnknown": "",
     "optional": ""
   },
   "settings": {
