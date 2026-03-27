@@ -13,9 +13,12 @@
 	}
 	nodegraph 0
 	perfwizard 0
-	tonemapping 0 
+	tonemapping 0
 	GameData	"citadel.fgd"
-	
+
+	DisallowGameInfoConditionals 1
+	PGIVersion "BE1202D563B3FD8CC662113947A5F19C5239983ECFEA6AB94C3621F777E96F65"
+
 	Localize
 	{
 		DuplicateTokensAssert	1
@@ -122,9 +125,9 @@
 		SwapChainSampleableDepth 1
 		VulkanMutableSwapchain 1
 		"LowLatency"								"1"
-		"VulkanOnly"								"1"	[ $LINUX || $OSX ] // No OpenGL or D3D9/11 fallback on Linux or OSX, only Vulkan is supported.
-		"VulkanRequireSubgroupWaveOpSupport"		"1"	[ !$OSX ]
-		"VulkanRequireDescriptorIndexing"			"1"	[ !$OSX ]
+		"VulkanOnly_Linux"							"1"
+		"VulkanRequireSubgroupWaveOpSupport"		"1"
+		"VulkanRequireDescriptorIndexing"			"1"
 		"VulkanSteamShaderCache" "1"
 		"VulkanSteamAppShaderCache" "1"
 		"VulkanSteamDownloadedShaderCache" "1"
