@@ -171,7 +171,11 @@ export function HsvColorPickerDialog({
           ? rect.width
           : clientX - rect.left;
     setColorState((current) =>
-      createColorStateFromHsv(Math.round((x / rect.width) * 360), current.s, current.v),
+      createColorStateFromHsv(
+        Math.round((x / rect.width) * 360),
+        current.s,
+        current.v,
+      ),
     );
   };
 
