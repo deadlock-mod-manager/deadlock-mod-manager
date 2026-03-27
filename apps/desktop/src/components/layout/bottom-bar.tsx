@@ -11,6 +11,7 @@ import {
   CheckCircleIcon,
   CloudArrowDownIcon,
   DownloadSimpleIcon,
+  LockSimpleIcon,
   PackageIcon,
   SpeakerHighIcon,
   SpeakerLowIcon,
@@ -24,6 +25,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiStatus } from "@/hooks/use-api-status";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { isGameRunning } from "@/lib/api";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
@@ -107,6 +109,7 @@ export const BottomBar = () => {
     isInstallingUpdate,
   } = useCheckForUpdates();
   const { status: apiStatus } = useApiStatus();
+  const { status: authStatus } = useAuthStatus();
   const { data: isRunning } = useQuery({
     queryKey: ["is-game-running"],
     queryFn: () => isGameRunning(),
@@ -177,6 +180,25 @@ export const BottomBar = () => {
             {apiStatus === "degraded" && t("common.apiDegraded")}
             {apiStatus === "offline" && t("common.apiOffline")}
             {apiStatus === "unknown" && t("common.apiUnknown")}
+          </span>
+        </div>
+
+        <Separator className='mx-1 h-3' orientation='vertical' />
+
+        <div className='flex items-center gap-1'>
+          {authStatus === "online" && (
+            <LockSimpleIcon className='h-3 w-3 text-green-500' />
+          )}
+          {authStatus === "offline" && (
+            <LockSimpleIcon className='h-3 w-3 text-red-500' />
+          )}
+          {authStatus === "unknown" && (
+            <LockSimpleIcon className='h-3 w-3 text-muted-foreground' />
+          )}
+          <span className='text-xs'>
+            {authStatus === "online" && t("common.authOnline")}
+            {authStatus === "offline" && t("common.authOffline")}
+            {authStatus === "unknown" && t("common.authUnknown")}
           </span>
         </div>
 

@@ -2,6 +2,7 @@ import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetch } from "@tauri-apps/plugin-http";
 import { useCallback, useEffect, useState } from "react";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 import {
   clearTokens,
   ensureValidToken,
@@ -22,6 +23,7 @@ interface UseOIDCSessionResult {
 
 export function useOIDCSession(): UseOIDCSessionResult {
   const queryClient = useQueryClient();
+  const { isAuthOnline } = useAuthStatus();
   const [tokensLoaded, setTokensLoaded] = useState(false);
   const [tokensAvailable, setTokensAvailable] = useState(false);
 
@@ -51,11 +53,16 @@ export function useOIDCSession(): UseOIDCSessionResult {
         return null;
       }
 
-      const response = await fetch(`${AUTH_URL}/api/auth/oauth2/userinfo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      let response: Response;
+      try {
+        response = await fetch(`${AUTH_URL}/api/auth/oauth2/userinfo`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch {
+        throw new Error("Unable to reach server. Check your connection.");
+      }
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -73,9 +80,10 @@ export function useOIDCSession(): UseOIDCSessionResult {
       const userInfo = (await response.json()) as OIDCUser;
       return { user: userInfo };
     },
-    enabled: tokensLoaded && tokensAvailable,
+    enabled: tokensLoaded && tokensAvailable && isAuthOnline,
     staleTime: 5 * 60 * 1000,
     retry: false,
+    refetchOnReconnect: false,
   });
 
   const signOut = useCallback(async () => {
