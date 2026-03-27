@@ -240,7 +240,7 @@ export const useDeepLink = () => {
                         processingRef.current.delete(mod_id);
                       },
                       onError: (mod, error) => {
-                        setModStatus(mod.remoteId, ModStatus.FailedToInstall);
+                        setModStatus(mod.remoteId, ModStatus.Downloaded);
                         toast.error(
                           `Failed to install ${mod.name}: ${error.message}`,
                         );
