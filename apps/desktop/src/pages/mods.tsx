@@ -273,10 +273,10 @@ const GetModsData = () => {
   );
   const modRows = useMemo(() => {
     if (paginationEnabled) {
-      return [] as typeof filteredResults[];
+      return [] as (typeof filteredResults)[];
     }
 
-    const rows: typeof filteredResults[] = [];
+    const rows: (typeof filteredResults)[] = [];
     for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
       rows.push(filteredResults.slice(i, i + columnsPerRow));
     }
