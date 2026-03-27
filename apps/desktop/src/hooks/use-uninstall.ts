@@ -42,6 +42,7 @@ const useUninstall = () => {
         shouldUninstall = !!(await confirm({
           title: t("mods.deleteConfirmTitle"),
           body: t("mods.deleteConfirmBody"),
+          tone: "destructive",
           actionButton: t("mods.deleteConfirmAction"),
           cancelButton: t("mods.deleteConfirmCancel"),
         }));
