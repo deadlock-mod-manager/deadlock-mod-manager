@@ -70,6 +70,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -176,6 +177,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
+  const CardWrapper = useThemeOverride("cardWrapper");
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -194,9 +196,9 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
     }
   };
 
-  return (
+  const cardContent = (
     <ModContextMenu mod={mod}>
-      <Card className='shadow'>
+      <Card className='shadow h-full'>
         <div className={cn("relative", isDisabled && "grayscale")}>
           <div
             className='cursor-pointer'
@@ -289,6 +291,12 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
       </Card>
     </ModContextMenu>
   );
+
+  if (CardWrapper) {
+    return <CardWrapper>{cardContent}</CardWrapper>;
+  }
+
+  return cardContent;
 };
 
 const ListModCard = ({ mod }: { mod: LocalMod }) => {

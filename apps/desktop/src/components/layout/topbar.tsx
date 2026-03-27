@@ -3,6 +3,7 @@ import useAbout from "@/hooks/use-about";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
 import { useTranslation } from "react-i18next";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import UserMenu from "../user/user-menu";
 import Logo from "./logo";
 
@@ -47,13 +48,14 @@ export const Topbar = () => {
     (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
   const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
+  const TopbarLogo = useThemeOverride("topbarLogo");
 
   let themedIconSrc: string | undefined;
   if (isPredefinedTheme(activeTheme)) {
     themedIconSrc = predefinedThemeIcons[activeTheme];
   } else if (activeTheme === "custom") {
     themedIconSrc = themesSettings?.customTheme?.iconData || undefined;
-  } else {
+  } else if (!TopbarLogo) {
     themedIconSrc =
       themesSettings?.userThemes?.find((t) => t.id === activeTheme)?.iconData ||
       undefined;
@@ -64,7 +66,9 @@ export const Topbar = () => {
       className='border-t border-border h-16 justify-between items-center flex px-4 bg-background'
       data-topbar='true'>
       <div className='flex items-center gap-2'>
-        {themedIconSrc ? (
+        {TopbarLogo ? (
+          <TopbarLogo />
+        ) : themedIconSrc ? (
           <img
             alt={t("accessibility.deadlockLogoAlt")}
             className='h-11 w-11 object-contain'

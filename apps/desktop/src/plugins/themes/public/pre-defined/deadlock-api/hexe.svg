@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <defs>
+    <linearGradient id="deadlockGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fa4454;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6b7a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="electricGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="strongGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#strongGlow)">
+    <!-- Outer hexagon -->
+    <path d="M60 10L20 33v54l40 23 40-23V33L60 10z" 
+          stroke="url(#deadlockGlow)" 
+          stroke-width="2.5" 
+          fill="none"
+          opacity="0.9"/>
+    <!-- Middle hexagon -->
+    <path d="M60 25L30 42v36l30 17 30-17V42L60 25z" 
+          stroke="url(#deadlockGlow)" 
+          stroke-width="2" 
+          fill="none"
+          opacity="0.7"/>
+    <!-- Inner hexagon -->
+    <path d="M60 40L40 51.5v23L60 86l20-11.5v-23L60 40z" 
+          stroke="url(#deadlockGlow)" 
+          stroke-width="1.5" 
+          fill="none"
+          opacity="0.5"/>
+    <!-- Center core -->
+    <circle cx="60" cy="63" r="10" fill="url(#deadlockGlow)" opacity="0.95"/>
+    <circle cx="60" cy="63" r="5" fill="#fff" opacity="0.9"/>
+    <!-- Connection lines from center to outer -->
+    <path d="M60 10v15M60 95v15M20 33l10 9M90 78l10 9M100 33l-10 9M30 78l-10 9" 
+          stroke="url(#deadlockGlow)" 
+          stroke-width="1.5" 
+          opacity="0.5"/>
+    <!-- Corner accents -->
+    <circle cx="60" cy="10" r="4" fill="url(#deadlockGlow)" opacity="0.8"/>
+    <circle cx="20" cy="33" r="3" fill="url(#deadlockGlow)" opacity="0.6"/>
+    <circle cx="100" cy="33" r="3" fill="url(#deadlockGlow)" opacity="0.6"/>
+    <circle cx="20" cy="87" r="3" fill="url(#deadlockGlow)" opacity="0.6"/>
+    <circle cx="100" cy="87" r="3" fill="url(#deadlockGlow)" opacity="0.6"/>
+    <circle cx="60" cy="110" r="4" fill="url(#deadlockGlow)" opacity="0.8"/>
+  </g>
+</svg>

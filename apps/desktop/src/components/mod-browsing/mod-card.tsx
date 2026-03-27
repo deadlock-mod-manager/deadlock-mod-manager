@@ -20,6 +20,7 @@ import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-war
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
 import {
   isModOutdated,
@@ -35,6 +36,7 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
   );
+  const CardWrapper = useThemeOverride("cardWrapper");
 
   const status = localMod?.status;
   const navigate = useNavigate();
@@ -44,9 +46,9 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
     return <ModCardSkeleton />;
   }
 
-  return (
+  const cardContent = (
     <Card
-      className='cursor-pointer shadow-none border [contain:layout_style_paint]'
+      className='cursor-pointer shadow-none border [contain:layout_style_paint] h-full'
       onClick={(e) => {
         e.stopPropagation();
         navigate(`/mods/${mod.remoteId}`);
@@ -140,6 +142,12 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
       </CardHeader>
     </Card>
   );
+
+  if (CardWrapper) {
+    return <CardWrapper>{cardContent}</CardWrapper>;
+  }
+
+  return cardContent;
 });
 
 ModCard.displayName = "ModCard";

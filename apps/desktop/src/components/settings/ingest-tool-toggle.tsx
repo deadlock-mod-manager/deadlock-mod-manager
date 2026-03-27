@@ -3,6 +3,7 @@ import { Switch } from "@deadlock-mods/ui/components/switch";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
 
 export const IngestToolToggle = () => {
@@ -13,8 +14,8 @@ export const IngestToolToggle = () => {
   const setIngestToolEnabled = usePersistedStore(
     (state) => state.setIngestToolEnabled,
   );
+  const SettingsIngestExtra = useThemeOverride("settingsIngestExtra");
 
-  // Start or stop the cache watcher when the setting changes
   useEffect(() => {
     const updateWatcher = async () => {
       try {
@@ -33,11 +34,14 @@ export const IngestToolToggle = () => {
 
   return (
     <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <p>{t("settings.ingestTool.title")}</p>
-        <p className='text-sm text-muted-foreground'>
-          {t("settings.ingestTool.description")}
-        </p>
+      <div className='flex items-center gap-3'>
+        <div className='space-y-1'>
+          <p>{t("settings.ingestTool.title")}</p>
+          <p className='text-sm text-muted-foreground'>
+            {t("settings.ingestTool.description")}
+          </p>
+        </div>
+        {SettingsIngestExtra ? <SettingsIngestExtra /> : null}
       </div>
       <div className='flex items-center gap-2'>
         <Switch

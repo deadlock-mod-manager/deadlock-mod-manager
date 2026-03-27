@@ -535,6 +535,12 @@
       "visit": "",
       "twitch": "",
       "carrd": ""
+    },
+    "deadlockApi": {
+      "description": "",
+      "visit": "",
+      "website": "",
+      "discord": ""
     }
   },
   "accessibility": {
@@ -542,6 +548,7 @@
     "previousSlide": "",
     "nextSlide": "",
     "more": "",
+    "deadlockApiIconAlt": "",
     "goToFirstPage": "",
     "goToPreviousPage": "",
     "goToNextPage": "",

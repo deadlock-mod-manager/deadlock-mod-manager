@@ -30,12 +30,17 @@ import {
 } from "./pre-defined/arcane/accent-picker.tsx";
 import ArcaneTheme from "./pre-defined/arcane/arcane.tsx";
 import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
+import DeadlockApiTheme from "./pre-defined/deadlock-api/deadlock-api.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
 const arcanePreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/arcane/preview.png",
+);
+const deadlockApiPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/deadlock-api/preview.png",
 );
 const nightshiftPreview = getPluginAssetUrl(
   "themes",
@@ -106,6 +111,14 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.arcane.description",
     component: ArcaneTheme,
     previewImage: arcanePreview,
+  },
+  {
+    id: "deadlock-api",
+    name: "Deadlock API",
+    description: "OLED black theme with electric red glow effects.",
+    descriptionKey: "plugins.deadlockApi.description",
+    component: DeadlockApiTheme,
+    previewImage: deadlockApiPreview,
   },
 ] as const;
 
@@ -334,6 +347,30 @@ const Settings = () => {
                             }
                           }}
                         />
+                      </div>
+                    ) : theme.id === "deadlock-api" ? (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-2'>
+                          {t("plugins.deadlockApi.visit")}
+                        </span>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center mr-3'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://deadlock-api.com/");
+                          }}
+                          type='button'>
+                          {t("plugins.deadlockApi.website")}
+                        </button>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://discord.gg/pqWQfTPQJu");
+                          }}
+                          type='button'>
+                          {t("plugins.deadlockApi.discord")}
+                        </button>
                       </div>
                     ) : null}
 
