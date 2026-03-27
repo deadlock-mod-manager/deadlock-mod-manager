@@ -254,6 +254,10 @@
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "รหัสสีแบบฐานสิบหก",
+      "color": "สี",
+      "colorDialogTitle": "กำหนดสี",
+      "colorDialogDescription": "เลือกสีสำหรับเป้าเล็ง",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",

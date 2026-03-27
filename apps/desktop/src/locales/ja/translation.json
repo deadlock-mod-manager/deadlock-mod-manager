@@ -244,6 +244,10 @@
       "heroesSelected": "選択済み",
       "heroesValidation": "少なくとも1つのヒーロー（最大5つ）を選択してください",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "16進数のカラーコード",
+      "color": "カラー",
+      "colorDialogTitle": "カスタムカラー",
+      "colorDialogDescription": "照準の色を選んでください。",
       "import": {
         "button": "インポート",
         "description": "citadelクロスヘア形式の設定を下に貼り付けて、フォームにインポートする。",

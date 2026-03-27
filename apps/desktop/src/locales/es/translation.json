@@ -250,6 +250,10 @@
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "Código de color hexadecimal",
+      "color": "Color",
+      "colorDialogTitle": "Color personalizado",
+      "colorDialogDescription": "Elija un color para su punto de mira.",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",

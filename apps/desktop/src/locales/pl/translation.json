@@ -244,6 +244,10 @@
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "Kod koloru szesnastkowego",
+      "color": "Kolor",
+      "colorDialogTitle": "Niestandardowy kolor",
+      "colorDialogDescription": "Wybierz kolor celownika.",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",

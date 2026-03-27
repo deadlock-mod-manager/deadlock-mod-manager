@@ -244,6 +244,10 @@
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "Hex-Farbcode",
+      "color": "Farb",
+      "colorDialogTitle": "Aapassig Farb",
+      "colorDialogDescription": "Wähl ä Farb für dis Fadenchreuz.",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",

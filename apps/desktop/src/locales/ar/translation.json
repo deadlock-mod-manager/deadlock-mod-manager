@@ -253,6 +253,10 @@
       "heroesSelected": "محدد",
       "heroesValidation": "يرجى اختيار بطل واحد على الأقل (الحد الأقصى 5)",
       "hexPlaceholder": "#FFFFFF",
+      "hexColorInputLabel": "رمز اللون السداسي",
+      "color": "اللون",
+      "colorDialogTitle": "لون مخصص",
+      "colorDialogDescription": "اختر لونًا للتصويب.",
       "import": {
         "button": "استيراد",
         "description": "الصق إعدادات تنسيق موضع citadel أدناه لاستيرادها إلى النموذج.",
