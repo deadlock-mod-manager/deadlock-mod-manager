@@ -1,5 +1,13 @@
 # @deadlock-mods/lockdex
 
+## 0.2.7
+
+### Patch Changes
+
+- e7b2601: Complete mod-file queue jobs when the ModDownload row is missing instead of failing them
+- Updated dependencies [a8a0e2c]
+  - @deadlock-mods/shared@1.8.1
+
 ## 0.2.6
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # api
 
+## 2.8.2
+
+### Patch Changes
+
+- a8a0e2c: Map GameBanana mod categories using parent category when present so skin sub-categories match the Skins filter
+- Updated dependencies [a8a0e2c]
+  - @deadlock-mods/shared@1.8.1
+
 ## 2.8.1
 
 ### Patch Changes

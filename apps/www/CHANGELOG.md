@@ -1,5 +1,17 @@
 # web
 
+## 0.4.0
+
+### Minor Changes
+
+- 76f0355: Add GameBanana sound categories as category filters with clearer labels (Ability Sounds, Weapon Sounds, Voice Lines, Kill Sounds, Music)
+
+### Patch Changes
+
+- Updated dependencies [a8a0e2c]
+  - @deadlock-mods/shared@1.8.1
+  - @deadlock-mods/crosshair@0.2.2
+
 ## 0.3.1
 
 ### Patch Changes

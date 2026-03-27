@@ -34,8 +34,8 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
     | undefined;
 
   return (
-    <DialogContent className='max-w-md'>
-      <DialogHeader>
+    <DialogContent className='max-h-[85dvh] max-w-md flex flex-col overflow-hidden'>
+      <DialogHeader className='shrink-0'>
         <div className='flex items-center gap-2'>
           <SparkleIcon className='h-5 w-5 text-primary' />
           <DialogTitle>{t("whatsNew.title")}</DialogTitle>
@@ -47,26 +47,28 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
       </DialogHeader>
 
       {currentUpdate && (
-        <div className='space-y-4'>
-          <div>
-            <h3 className='mb-2 font-semibold text-foreground text-sm'>
-              {currentUpdate.title}
-            </h3>
-            <ul className='space-y-2 text-muted-foreground text-sm'>
-              {currentUpdate.features?.map((feature, index) => (
-                <li
-                  className='flex items-start gap-2'
-                  key={`feature-${index}-${feature.slice(0, 10)}`}>
-                  <span className='mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary' />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
+        <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
+          <div className='space-y-4'>
+            <div>
+              <h3 className='mb-2 font-semibold text-foreground text-sm'>
+                {currentUpdate.title}
+              </h3>
+              <ul className='space-y-2 text-muted-foreground text-sm'>
+                {currentUpdate.features?.map((feature, index) => (
+                  <li
+                    className='flex items-start gap-2'
+                    key={`feature-${index}-${feature.slice(0, 10)}`}>
+                    <span className='mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary' />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       )}
 
-      <DialogFooter className='flex flex-row items-center justify-between'>
+      <DialogFooter className='shrink-0 flex flex-row items-center justify-between'>
         <Button
           className='gap-2'
           onClick={() => openUrl(`${GITHUB_REPO}/releases/tag/v${version}`)}

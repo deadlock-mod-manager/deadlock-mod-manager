@@ -779,6 +779,30 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.17.0": {
+        "title": "Mod store, themes, backups, logging, and fixes",
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Auth fix so you are less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ]
+      },
       "0.16.0": {
         "title": "Bug Fixes, Developer Tools & More",
         "features": [

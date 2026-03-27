@@ -1,5 +1,41 @@
 # desktop
 
+## 0.17.0
+
+### Minor Changes
+
+- a1f5cac: Add time period filtering to mod store and allow sort stacking with filters.
+- 35a5c5e: Use Deadlock game directory for crash dumps instead of Windows CrashDumps
+- 35a5c5e: Add logging settings with log file access and AI troubleshooting help
+- cdc7e96: Add an Application setting to choose between paginated and continuous scrolling in the Mods Store, with pagination enabled by default on Linux.
+- e7b2601: Add theme override system to decouple themes from base components
+- 35a5c5e: Add crash dump parsing for AI troubleshooting support
+- 14f25fb: Add configurable backup strategy with options to disable auto-backup before batch updates and limit the maximum number of backups kept on disk
+- 35a5c5e: Add log source selection for Ask AI feature with context-aware prompts
+- 1ed5477: Users should be less likely to be signed out now.
+- 76f0355: Add GameBanana sound categories as category filters with clearer labels (Ability Sounds, Weapon Sounds, Voice Lines, Kill Sounds, Music)
+- e7b2601: Add Deadlock API theme with electric border effects and red glow accents
+- e41a185: Add unified HSV color picker component.
+
+### Patch Changes
+
+- a1f5cac: Switch mod store sort to relevance while searching and restore the previous sort when the search is cleared.
+- d10b424: Fix "Stop Game" button incorrectly showing when the game is not running
+- 054a358: Make quick filters respect include/exclude mode
+- 25ee389: Fixed installation hang if user exits the install popup.
+- 14f25fb: Fix manual backup creation not enforcing retention limit, and warn users before oldest backups are removed
+- e41a185: Made settings sidebar scrollable.
+- 35a5c5e: Fix Ask AI log copy to clipboard on desktop.
+- 14f25fb: Move addons backup settings into a dedicated Backups tab in Settings
+- a1f5cac: Tighten mod store fuzzy search so fewer weak matches appear in results.
+- b2fa246: Improve gallery navigation arrows visibility and add missing translations
+- 3616512: Check for CrabNebula OTA updates only when using Check for updates; native updater still checks on a schedule
+- 35a5c5e: Add T3 Chat as AI provider option for logging
+- f3b9fed: Fix mod card showing stale state after enable, disable, or delete
+- Updated dependencies [a8a0e2c]
+  - @deadlock-mods/shared@1.8.1
+  - @deadlock-mods/crosshair@0.2.2
+
 ## 0.16.0
 
 ### Minor Changes
