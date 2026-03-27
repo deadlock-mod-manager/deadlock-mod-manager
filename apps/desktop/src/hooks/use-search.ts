@@ -11,16 +11,26 @@ const FUSE_MOD_SEARCH_THRESHOLD = 0.35;
 type UseSearchProps<T> = {
   data: T[];
   keys: FuseOptionKey<T>[];
+  queryState?: {
+    query: string;
+    setQuery: (query: string) => void;
+    sortType: SortType;
+    setSortType: (sortType: SortType) => void;
+  };
 };
 
-export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
+export const useSearch = <T = LocalMod>({
+  data,
+  keys,
+  queryState,
+}: UseSearchProps<T>) => {
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
   );
-  const query = modsFilters.searchQuery || "";
+  const query = queryState?.query ?? modsFilters.searchQuery ?? "";
   const debouncedQuery = useDebouncedValue(query, 300);
-  const sortType = modsFilters.currentSort;
+  const sortType = queryState?.sortType ?? modsFilters.currentSort;
   const preSearchSortRef = useRef<SortType | null>(null);
 
   const fuse = useMemo(
@@ -56,6 +66,27 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
 
   const setQuery = (newQuery: string) => {
     const trimmed = newQuery.trim();
+
+    if (queryState) {
+      if (trimmed && sortType !== SortType.DEFAULT) {
+        preSearchSortRef.current = sortType;
+        queryState.setSortType(SortType.DEFAULT);
+        queryState.setQuery(newQuery);
+        return;
+      }
+
+      if (!trimmed && preSearchSortRef.current) {
+        const restored = preSearchSortRef.current;
+        preSearchSortRef.current = null;
+        queryState.setSortType(restored);
+        queryState.setQuery(newQuery);
+        return;
+      }
+
+      queryState.setQuery(newQuery);
+      return;
+    }
+
     if (trimmed && sortType !== SortType.DEFAULT) {
       preSearchSortRef.current = sortType;
       updateModsFilters({
@@ -73,9 +104,14 @@ export const useSearch = <T = LocalMod>({ data, keys }: UseSearchProps<T>) => {
 
   const setSortType = useCallback(
     (newSortType: SortType) => {
+      if (queryState) {
+        queryState.setSortType(newSortType);
+        return;
+      }
+
       updateModsFilters({ currentSort: newSortType });
     },
-    [updateModsFilters],
+    [queryState, updateModsFilters],
   );
 
   return {

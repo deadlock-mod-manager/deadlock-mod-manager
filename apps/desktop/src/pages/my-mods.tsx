@@ -8,6 +8,13 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@deadlock-mods/ui/components/empty";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -20,7 +27,6 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@deadlock-mods/ui/components/pagination";
-import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tabs,
@@ -48,6 +54,7 @@ import {
   ScanSearch,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,6 +64,7 @@ import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import SearchBar from "@/components/mod-browsing/search-bar";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
@@ -71,7 +79,10 @@ import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
+import { SortType } from "@/lib/constants";
+import { ModCategory } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
+import type { FilterMode } from "@/lib/store/slices/ui";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -421,25 +432,6 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   );
 };
 
-const SimpleSearchBar = ({
-  query,
-  setQuery,
-}: {
-  query: string;
-  setQuery: (query: string) => void;
-}) => {
-  const { t } = useTranslation();
-
-  return (
-    <SearchInput
-      className='w-full max-w-sm'
-      onChange={(e) => setQuery(e.target.value)}
-      placeholder={t("mods.searchPlaceholder")}
-      value={query}
-    />
-  );
-};
-
 const ModsList = ({
   mods,
   viewMode,
@@ -525,12 +517,25 @@ const MyMods = () => {
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [page, setPage] = useState(0);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+  const [hideAudio, setHideAudio] = useState(false);
+  const [hideNSFW, setHideNSFW] = useState(false);
+  const [hideOutdated, setHideOutdated] = useState(false);
+  const [filterMode, setFilterMode] = useState<FilterMode>("include");
+  const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
 
   const { results, query, setQuery } = useSearch({
     data: mods,
     keys: ["name", "description", "author"],
+    queryState: {
+      query: librarySearchQuery,
+      setQuery: setLibrarySearchQuery,
+      sortType: SortType.DEFAULT,
+      setSortType: () => {},
+    },
   });
 
   const filterModsByStatus = (modsToFilter: LocalMod[]) => {
@@ -578,7 +583,68 @@ const MyMods = () => {
     return dateB - dateA;
   });
 
-  const displayMods = filterModsByStatus(query.trim() ? results : sortedMods);
+  const displayMods = useMemo(() => {
+    const baseMods = query.trim() ? results : sortedMods;
+    const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
+    let filteredMods = baseMods;
+
+    if (selectedCategories.length > 0) {
+      filteredMods = filteredMods.filter((mod) => {
+        const category = mod.category ?? "";
+        let matchesCategory = selectedCategories.includes(category);
+
+        if (
+          !matchesCategory &&
+          selectedCategories.includes(ModCategory.OTHER_MISC)
+        ) {
+          matchesCategory = !predefinedCategorySet.has(category);
+        }
+
+        return filterMode === "include" ? matchesCategory : !matchesCategory;
+      });
+    }
+
+    if (selectedHeroes.length > 0) {
+      filteredMods = filteredMods.filter((mod) => {
+        let matchesHero = false;
+
+        if (selectedHeroes.includes("None")) {
+          matchesHero = !mod.hero || selectedHeroes.includes(mod.hero);
+        } else {
+          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
+        }
+
+        return filterMode === "include" ? matchesHero : !matchesHero;
+      });
+    }
+
+    if (hideNSFW) {
+      filteredMods = filteredMods.filter((mod) => !mod.isNSFW);
+    }
+
+    if (hideAudio) {
+      filteredMods = filteredMods.filter((mod) => !mod.isAudio);
+    }
+
+    if (hideOutdated) {
+      filteredMods = filteredMods.filter(
+        (mod) => !mod.isObsolete && !isModOutdated(mod),
+      );
+    }
+
+    return filterModsByStatus(filteredMods);
+  }, [
+    activeTab,
+    filterMode,
+    hideAudio,
+    hideNSFW,
+    hideOutdated,
+    query,
+    results,
+    selectedCategories,
+    selectedHeroes,
+    sortedMods,
+  ]);
 
   const totalPages = Math.ceil(displayMods.length / PAGE_SIZE);
 
@@ -589,9 +655,19 @@ const MyMods = () => {
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
   useEffect(() => {
-    setPage((p) => Math.max(0, Math.min(p, Math.max(0, totalPages - 1))));
+    setPage(0);
     scrollPositionRef.current = 0;
-  }, [activeTab, query, totalPages]);
+  }, [
+    activeTab,
+    filterMode,
+    hideAudio,
+    hideNSFW,
+    hideOutdated,
+    query,
+    selectedCategories,
+    selectedHeroes,
+    totalPages,
+  ]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -745,7 +821,25 @@ const MyMods = () => {
           {mods.length > 0 && (
             <div className='flex flex-col gap-4'>
               <div className='flex items-center justify-between'>
-                <SimpleSearchBar query={query} setQuery={setQuery} />
+                <SearchBar
+                  filterMode={filterMode}
+                  hideAudio={hideAudio}
+                  hideNSFW={hideNSFW}
+                  hideOutdated={hideOutdated}
+                  mods={mods}
+                  onCategoriesChange={setSelectedCategories}
+                  onFilterModeChange={setFilterMode}
+                  onHeroesChange={setSelectedHeroes}
+                  onHideAudioChange={setHideAudio}
+                  onHideNSFWChange={setHideNSFW}
+                  onHideOutdatedChange={setHideOutdated}
+                  query={query}
+                  selectedCategories={selectedCategories}
+                  selectedHeroes={selectedHeroes}
+                  setQuery={setQuery}
+                  showSortControl={false}
+                  showTimePeriodControl={false}
+                />
                 <div className='flex items-center gap-2'>
                   <TabsList>
                     <TabsTrigger value={ModFilter.ALL}>
@@ -807,19 +901,42 @@ const MyMods = () => {
                 />
               )}
 
-              <TabsContent value={ModFilter.ALL}>
-                <ModsList mods={paginatedMods} viewMode={viewMode} />
-              </TabsContent>
+              {displayMods.length === 0 && (
+                <Empty className='py-12'>
+                  <EmptyHeader>
+                    <EmptyMedia variant='default'>
+                      <MagnifyingGlass className='h-16 w-16' />
+                    </EmptyMedia>
+                    <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
+                    <EmptyDescription>
+                      {t("mods.noModsMatchFilters")}
+                    </EmptyDescription>
+                    <EmptyDescription className='text-xs'>
+                      {t("mods.emptyClearFilters")}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
 
-              <TabsContent value={ModFilter.ENABLED}>
-                <ModsList mods={paginatedMods} viewMode={viewMode} />
-              </TabsContent>
+              {displayMods.length > 0 && (
+                <TabsContent value={ModFilter.ALL}>
+                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                </TabsContent>
+              )}
 
-              <TabsContent value={ModFilter.DISABLED}>
-                <ModsList mods={paginatedMods} viewMode={viewMode} />
-              </TabsContent>
+              {displayMods.length > 0 && (
+                <TabsContent value={ModFilter.ENABLED}>
+                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                </TabsContent>
+              )}
 
-              {totalPages > 1 && (
+              {displayMods.length > 0 && (
+                <TabsContent value={ModFilter.DISABLED}>
+                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                </TabsContent>
+              )}
+
+              {displayMods.length > 0 && totalPages > 1 && (
                 <ModsPagination
                   className='mt-6 pb-4'
                   onPageChange={handlePageChange}

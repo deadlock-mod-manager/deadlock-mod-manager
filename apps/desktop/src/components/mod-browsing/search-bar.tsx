@@ -23,8 +23,8 @@ import FiltersDropdown from "./filters-dropdown";
 type SearchBarProps = {
   query: string;
   setQuery: (query: string) => void;
-  sortType: SortType;
-  setSortType: (sortType: SortType) => void;
+  sortType?: SortType;
+  setSortType?: (sortType: SortType) => void;
   mods: ModDto[];
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
@@ -36,10 +36,12 @@ type SearchBarProps = {
   onHideAudioChange: (hideAudio: boolean) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
-  timePeriod: TimePeriod;
-  onTimePeriodChange: (timePeriod: TimePeriod) => void;
+  timePeriod?: TimePeriod;
+  onTimePeriodChange?: (timePeriod: TimePeriod) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
+  showSortControl?: boolean;
+  showTimePeriodControl?: boolean;
 };
 
 const SearchBar = ({
@@ -62,8 +64,12 @@ const SearchBar = ({
   onTimePeriodChange,
   filterMode,
   onFilterModeChange,
+  showSortControl = true,
+  showTimePeriodControl = true,
 }: SearchBarProps) => {
   const { t } = useTranslation();
+  const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
+
   const getHeroDisplayName = (hero: string) => {
     if (hero === "None") {
       return "General/Other";
@@ -87,7 +93,8 @@ const SearchBar = ({
     onHideNSFWChange(false);
     onHideAudioChange(false);
     onHideOutdatedChange(false);
-    onTimePeriodChange(TimePeriod.ALL_TIME);
+    onTimePeriodChange?.(TimePeriod.ALL_TIME);
+    onFilterModeChange("include");
   };
 
   const hasActiveFilters =
@@ -96,7 +103,7 @@ const SearchBar = ({
     hideNSFW ||
     hideAudio ||
     hideOutdated ||
-    timePeriod !== TimePeriod.ALL_TIME;
+    (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
   return (
     <div className='flex flex-col gap-3'>
@@ -125,43 +132,56 @@ const SearchBar = ({
             hideOutdated={hideOutdated}
           />
         </div>
-        <div className='flex items-center gap-4'>
-          <Select onValueChange={onTimePeriodChange} value={timePeriod}>
-            <SelectTrigger className='w-fit gap-1'>
-              <Clock className='mr-2 h-4 w-4' />
-              <SelectValue placeholder={t("timePeriod.alltime")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {Object.values(TimePeriod).map((period) => (
-                  <SelectItem
-                    className='capitalize'
-                    key={period}
-                    value={period}>
-                    {t(
-                      `timePeriod.${period.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <Select onValueChange={setSortType} value={sortType}>
-            <SelectTrigger className='w-fit gap-1'>
-              <ArrowUpDown className='mr-2 h-4 w-4' />
-              <SelectValue placeholder={t("filters.sortBy")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {Object.values(SortType).map((type) => (
-                  <SelectItem className='capitalize' key={type} value={type}>
-                    {t(`sorting.${type.replaceAll(/\s+/g, "").toLowerCase()}`)}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+        {(showTimePeriodControl || showSortControl) && (
+          <div className='flex items-center gap-4'>
+            {showTimePeriodControl && onTimePeriodChange && (
+              <Select
+                onValueChange={onTimePeriodChange}
+                value={effectiveTimePeriod}>
+                <SelectTrigger className='w-fit gap-1'>
+                  <Clock className='mr-2 h-4 w-4' />
+                  <SelectValue placeholder={t("timePeriod.alltime")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {Object.values(TimePeriod).map((period) => (
+                      <SelectItem
+                        className='capitalize'
+                        key={period}
+                        value={period}>
+                        {t(
+                          `timePeriod.${period.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            )}
+            {showSortControl && sortType && setSortType && (
+              <Select onValueChange={setSortType} value={sortType}>
+                <SelectTrigger className='w-fit gap-1'>
+                  <ArrowUpDown className='mr-2 h-4 w-4' />
+                  <SelectValue placeholder={t("filters.sortBy")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {Object.values(SortType).map((type) => (
+                      <SelectItem
+                        className='capitalize'
+                        key={type}
+                        value={type}>
+                        {t(
+                          `sorting.${type.replaceAll(/\s+/g, "").toLowerCase()}`,
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Active Filters */}
@@ -245,19 +265,20 @@ const SearchBar = ({
           )}
 
           {/* Time period badge */}
-          {timePeriod !== TimePeriod.ALL_TIME && (
-            <Badge className='flex items-center gap-1' variant='secondary'>
-              {t(
-                `timePeriod.${timePeriod.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
-              )}
-              <button
-                className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onTimePeriodChange(TimePeriod.ALL_TIME)}
-                type='button'>
-                <X className='h-3 w-3' />
-              </button>
-            </Badge>
-          )}
+          {showTimePeriodControl &&
+            effectiveTimePeriod !== TimePeriod.ALL_TIME && (
+              <Badge className='flex items-center gap-1' variant='secondary'>
+                {t(
+                  `timePeriod.${effectiveTimePeriod.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
+                )}
+                <button
+                  className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                  onClick={() => onTimePeriodChange?.(TimePeriod.ALL_TIME)}
+                  type='button'>
+                  <X className='h-3 w-3' />
+                </button>
+              </Badge>
+            )}
 
           {/* Clear all button */}
           <button
