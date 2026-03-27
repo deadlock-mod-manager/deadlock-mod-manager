@@ -1,6 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { ValidationError } from "@deadlock-mods/common";
 import {
   db,
   ModDownloadRepository,
@@ -47,11 +46,10 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         jobData.modDownloadId,
       );
       if (!modDownload) {
-        return this.handleError(
-          new ValidationError(
-            `ModDownload not found: ${jobData.modDownloadId}`,
-          ),
+        this.logger.info(
+          `Skipping mod file job: ModDownload not found (record removed or stale queue): ${jobData.modDownloadId}`,
         );
+        return this.handleSuccess(jobData);
       }
 
       // Check if this mod download has already been processed by looking for VPK entries
