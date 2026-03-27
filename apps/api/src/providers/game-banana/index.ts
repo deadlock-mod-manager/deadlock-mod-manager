@@ -37,7 +37,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data =
-        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>;
+        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission> | null;
+      if (!data || !data._aRecords) {
+        this.logger
+          .withMetadata({ page })
+          .debug("No more submissions available");
+        return {
+          _aRecords: [],
+          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
+        } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>;
+      }
       this.logger
         .withMetadata({ page, count: data._aRecords.length })
         .debug("Fetched all submissions");
@@ -65,7 +74,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data =
-        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>;
+        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission> | null;
+      if (!data || !data._aRecords) {
+        this.logger
+          .withMetadata({ page })
+          .debug("No more sound submissions available");
+        return {
+          _aRecords: [],
+          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
+        } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>;
+      }
       this.logger
         .withMetadata({ page, count: data._aRecords.length })
         .debug("Fetched all sound submissions");
@@ -110,7 +128,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data =
-        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission>;
+        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission> | null;
+      if (!data || !data._aRecords) {
+        return {
+          _aRecords: [],
+          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
+        } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission>;
+      }
       return data;
     } catch (error) {
       this.logger
