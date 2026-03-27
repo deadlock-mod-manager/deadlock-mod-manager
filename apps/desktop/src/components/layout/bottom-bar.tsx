@@ -8,28 +8,57 @@ import {
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
-  CheckCircleIcon,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import {
   CloudArrowDownIcon,
   DownloadSimpleIcon,
-  PackageIcon,
+  HardDrivesIcon,
+  LockSimpleIcon,
   SpeakerHighIcon,
   SpeakerLowIcon,
   SpeakerSlashIcon,
+  WarningIcon,
   WifiHighIcon,
   WifiMediumIcon,
   WifiSlashIcon,
   WifiXIcon,
 } from "@phosphor-icons/react";
+import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useApiStatus } from "@/hooks/use-api-status";
+import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
-import { isGameRunning } from "@/lib/api";
-import { STALE_TIME_POLL } from "@/lib/query-constants";
+import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+
+function StatusIndicator({
+  icon: Icon,
+  tooltip,
+  className,
+}: {
+  icon: PhosphorIcon;
+  tooltip: string;
+  className?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className='flex cursor-default items-center justify-center p-0.5'>
+          <Icon className={cn("h-3.5 w-3.5", className)} />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side='top' sideOffset={8}>
+        <p>{tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function BottomBarVolume() {
   const { t } = useTranslation();
@@ -95,6 +124,62 @@ function BottomBarVolume() {
   );
 }
 
+const apiStatusConfig = {
+  healthy: {
+    icon: WifiHighIcon,
+    className: "text-primary",
+    key: "common.apiHealthy",
+  },
+  degraded: {
+    icon: WifiMediumIcon,
+    className: "text-yellow-500",
+    key: "common.apiDegraded",
+  },
+  offline: {
+    icon: WifiXIcon,
+    className: "text-red-500",
+    key: "common.apiOffline",
+  },
+  unknown: {
+    icon: WifiSlashIcon,
+    className: "text-muted-foreground",
+    key: "common.apiUnknown",
+  },
+} as const;
+
+const authStatusConfig = {
+  online: {
+    className: "text-primary",
+    key: "common.authOnline",
+  },
+  offline: {
+    className: "text-red-500",
+    key: "common.authOffline",
+  },
+  unknown: {
+    className: "text-muted-foreground",
+    key: "common.authUnknown",
+  },
+} as const;
+
+const fsStatusConfig = {
+  writable: {
+    icon: HardDrivesIcon,
+    className: "text-primary",
+    key: "common.fsWritable",
+  },
+  readonly: {
+    icon: WarningIcon,
+    className: "text-red-500",
+    key: "common.fsReadonly",
+  },
+  unknown: {
+    icon: HardDrivesIcon,
+    className: "text-muted-foreground",
+    key: "common.fsUnknown",
+  },
+} as const;
+
 export const BottomBar = () => {
   const { t } = useTranslation();
   const localMods = usePersistedStore((state) => state.localMods);
@@ -107,95 +192,53 @@ export const BottomBar = () => {
     isInstallingUpdate,
   } = useCheckForUpdates();
   const { status: apiStatus } = useApiStatus();
-  const { data: isRunning } = useQuery({
-    queryKey: ["is-game-running"],
-    queryFn: () => isGameRunning(),
-    staleTime: STALE_TIME_POLL,
-    refetchInterval: 5000,
-    retry: false,
-    enabled: !!gamePath,
-  });
-
-  const installedMods = localMods.filter(
-    (mod) => mod.status === ModStatus.Installed,
-  ).length;
+  const { status: authStatus } = useAuthStatus();
+  const { status: fsStatus } = useFilesystemStatus();
 
   const downloadingMods = localMods.filter(
     (mod) => mod.status === ModStatus.Downloading,
   ).length;
 
-  const totalMods = localMods.length;
+  const apiCfg = apiStatusConfig[apiStatus];
+  const authCfg = authStatusConfig[authStatus];
+  const fsCfg = fsStatusConfig[fsStatus];
 
   return (
-    <div className='z-30 flex h-7 w-full items-center justify-between border-t bg-background py-2 pl-6 text-muted-foreground text-xs pr-4'>
+    <div className='z-30 flex h-7 w-full items-center justify-between border-t bg-background py-2 pl-6 pr-4 text-xs text-muted-foreground'>
       <div className='flex items-center gap-4'>
-        <div className='flex items-center gap-1'>
-          <PackageIcon className='h-3 w-3' />
-          <span>
-            {t("common.mods")}: {totalMods}
-          </span>
-          {installedMods > 0 && (
-            <>
-              <Separator className='mx-1 h-3' orientation='vertical' />
-              <CheckCircleIcon className='h-3 w-3 text-green-500' />
-              <span>
-                {installedMods} {t("common.installed")}
-              </span>
-            </>
-          )}
-        </div>
-
         {downloadingMods > 0 && (
           <>
-            <Separator className='mx-1 h-3' orientation='vertical' />
             <div className='flex items-center gap-1'>
               <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
               <span>
                 {downloadingMods} {t("common.downloading")}
               </span>
             </div>
-          </>
-        )}
-      </div>
-
-      <div className='flex items-center gap-4'>
-        <div className='flex items-center gap-1'>
-          {apiStatus === "healthy" && (
-            <WifiHighIcon className='h-3 w-3 text-green-500' />
-          )}
-          {apiStatus === "degraded" && (
-            <WifiMediumIcon className='h-3 w-3 text-yellow-500' />
-          )}
-          {apiStatus === "offline" && (
-            <WifiXIcon className='h-3 w-3 text-red-500' />
-          )}
-          {apiStatus === "unknown" && (
-            <WifiSlashIcon className='h-3 w-3 text-muted-foreground' />
-          )}
-          <span className='text-xs'>
-            {apiStatus === "healthy" && t("common.apiHealthy")}
-            {apiStatus === "degraded" && t("common.apiDegraded")}
-            {apiStatus === "offline" && t("common.apiOffline")}
-            {apiStatus === "unknown" && t("common.apiUnknown")}
-          </span>
-        </div>
-
-        {gamePath && (
-          <>
             <Separator className='mx-1 h-3' orientation='vertical' />
-            <div className='flex items-center gap-1'>
-              <div
-                className={cn("h-2 w-2 rounded-full", {
-                  "bg-green-500": isRunning,
-                  "bg-muted-foreground": !isRunning,
-                })}
-              />
-              <span className='text-xs'>
-                {isRunning ? t("common.gameRunning") : t("common.gameReady")}
-              </span>
-            </div>
           </>
         )}
+        <div className='flex items-center gap-1.5'>
+          <span className='text-xs text-muted-foreground'>
+            {t("common.status")}:
+          </span>
+          <StatusIndicator
+            className={apiCfg.className}
+            icon={apiCfg.icon}
+            tooltip={t(apiCfg.key)}
+          />
+          <StatusIndicator
+            className={authCfg.className}
+            icon={LockSimpleIcon}
+            tooltip={t(authCfg.key)}
+          />
+          {gamePath && (
+            <StatusIndicator
+              className={fsCfg.className}
+              icon={fsCfg.icon}
+              tooltip={t(fsCfg.key)}
+            />
+          )}
+        </div>
 
         {!gamePath && (
           <>
@@ -205,6 +248,9 @@ export const BottomBar = () => {
             </Badge>
           </>
         )}
+      </div>
+
+      <div className='flex items-center gap-4'>
         {updateAvailable && (
           <>
             <Separator className='mx-1 h-3' orientation='vertical' />

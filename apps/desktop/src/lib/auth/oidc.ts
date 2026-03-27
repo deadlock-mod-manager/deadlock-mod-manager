@@ -74,6 +74,20 @@ export async function exchangeCodeForTokens(
   return response.json() as Promise<TokenResponse>;
 }
 
+export class TokenRefreshError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "TokenRefreshError";
+  }
+
+  get isServerError(): boolean {
+    return this.status >= 500;
+  }
+}
+
 export async function refreshTokens(
   refreshToken: string,
 ): Promise<TokenResponse> {
@@ -91,7 +105,10 @@ export async function refreshTokens(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Token refresh failed: ${error}`);
+    throw new TokenRefreshError(
+      `Token refresh failed: ${error}`,
+      response.status,
+    );
   }
 
   return response.json() as Promise<TokenResponse>;

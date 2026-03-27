@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { refreshTokens, type TokenResponse } from "./oidc";
+import { refreshTokens, TokenRefreshError, type TokenResponse } from "./oidc";
 
 interface StoredTokenData {
   accessToken: string;
@@ -10,6 +10,21 @@ interface StoredTokenData {
 let accessToken: string | null = null;
 let tokenExpiresAt: number | null = null;
 let refreshToken: string | null = null;
+
+type TokenChangeListener = (hasTokens: boolean) => void;
+const tokenChangeListeners = new Set<TokenChangeListener>();
+
+export function onTokenChange(listener: TokenChangeListener): () => void {
+  tokenChangeListeners.add(listener);
+  return () => tokenChangeListeners.delete(listener);
+}
+
+function notifyTokenChange(): void {
+  const has = !!accessToken || !!refreshToken;
+  for (const listener of tokenChangeListeners) {
+    listener(has);
+  }
+}
 
 export async function setTokens(tokenResponse: TokenResponse): Promise<void> {
   accessToken = tokenResponse.access_token;
@@ -23,6 +38,7 @@ export async function setTokens(tokenResponse: TokenResponse): Promise<void> {
   };
 
   await invoke("store_auth_token", { token: JSON.stringify(tokenData) });
+  notifyTokenChange();
 }
 
 export function getAccessToken(): string | null {
@@ -51,8 +67,14 @@ export async function ensureValidToken(): Promise<string | null> {
     const tokenResponse = await refreshTokens(refreshToken);
     await setTokens(tokenResponse);
     return accessToken;
-  } catch {
-    await clearTokens();
+  } catch (error) {
+    // Only clear tokens when the server explicitly rejects them (4xx).
+    // Network errors, 5xx, and other transient failures should preserve
+    // tokens so the user isn't signed out just because they're offline
+    // or the server is temporarily down.
+    if (error instanceof TokenRefreshError && !error.isServerError) {
+      await clearTokens();
+    }
     return null;
   }
 }
@@ -62,6 +84,7 @@ export async function clearTokens(): Promise<void> {
   tokenExpiresAt = null;
   refreshToken = null;
   await invoke("clear_auth_token");
+  notifyTokenChange();
 }
 
 export async function loadStoredTokens(): Promise<boolean> {
@@ -79,7 +102,10 @@ export async function loadStoredTokens(): Promise<boolean> {
 
     if (isTokenExpired() && refreshToken) {
       const token = await ensureValidToken();
-      return !!token;
+      // Even if refresh failed due to a server error, we still have
+      // a valid refresh token stored — report tokens as available so
+      // the session query can retry later.
+      return !!token || !!refreshToken;
     }
 
     return !!accessToken;

@@ -161,6 +161,9 @@
     "apiHealthy": "API Онлайн",
     "apiOffline": "API Офлайн",
     "apiUnknown": "Състоянието на API е неизвестно",
+    "authHealthy": "Auth Онлайн",
+    "authOffline": "Auth Офлайн",
+    "authUnknown": "Състоянието на Auth е неизвестно",
     "back": "Назад",
     "cancel": "Прекрати",
     "close": "Затвори",
@@ -199,6 +202,7 @@
     "required": "Required",
     "save": "Запази",
     "settings": "Settings",
+    "status": "Статус",
     "stopGame": "Спри Играта",
     "success": "Успех",
     "type": "Type",
@@ -648,6 +652,14 @@
       "description": "A dark theme with black-red gradients and crimson accents.",
       "visit": "Theme by Skeptic"
     },
+    "arcane": {
+      "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
+      "visit": "Тема от Skeptic",
+      "accentColor": "Акцентен цвят",
+      "customColor": "Персонализиран цвят",
+      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane.",
+      "addCustomColor": "Добави цвят"
+    },
     "discord": {
       "applicationId": "Discord Application ID",
       "applicationIdDescription": "No setup required: this plugin uses our official Discord application.",
@@ -1042,16 +1054,6 @@
     "lastupdated": "Последно актуализирано",
     "rating": "Оценка",
     "releasedate": "Дата на издаване"
-  },
-  "plugins": {
-    "arcane": {
-      "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
-      "visit": "Тема от Skeptic",
-      "accentColor": "Акцентен цвят",
-      "customColor": "Персонализиран цвят",
-      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane.",
-      "addCustomColor": "Добави цвят"
-    }
   },
   "status": {
     "disabled": "Disabled",

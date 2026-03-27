@@ -2505,3 +2505,52 @@ pub async fn parse_latest_crash_dump() -> Result<String, Error> {
 pub async fn open_latest_crash_dump_parsed() -> Result<(), Error> {
   crash_dumps::open_latest_crash_dump_parsed()
 }
+
+#[derive(Serialize)]
+pub struct FilesystemWritableStatus {
+  pub addons_writable: bool,
+  pub gameinfo_writable: bool,
+}
+
+#[tauri::command]
+pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => {
+      return Ok(FilesystemWritableStatus {
+        addons_writable: false,
+        gameinfo_writable: false,
+      });
+    }
+  };
+  drop(mod_manager);
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+  let addons_writable = {
+    let test_file = addons_path.join(".write_test");
+    match std::fs::OpenOptions::new()
+      .write(true)
+      .create(true)
+      .truncate(true)
+      .open(&test_file)
+    {
+      Ok(_) => {
+        let _ = std::fs::remove_file(&test_file);
+        true
+      }
+      Err(_) => false,
+    }
+  };
+
+  let gameinfo_writable = {
+    std::fs::OpenOptions::new().append(true).open(&gameinfo_path).is_ok()
+  };
+
+  Ok(FilesystemWritableStatus {
+    addons_writable,
+    gameinfo_writable,
+  })
+}
