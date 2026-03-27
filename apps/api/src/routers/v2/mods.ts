@@ -172,13 +172,8 @@ export const modsRouter = {
     .input(ModIdParamSchema)
     .output(ForceSyncOutputSchema)
     .handler(async ({ input }) => {
-      const mod = await modRepository.findByRemoteId(input.id);
-      if (!mod) {
-        throw new ORPCError("NOT_FOUND");
-      }
-
       const syncService = ModSyncService.getInstance();
-      const result = await syncService.synchronizeMod(mod.remoteId);
+      const result = await syncService.synchronizeMod(input.id);
 
       if (!result.success) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
