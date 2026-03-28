@@ -72,24 +72,19 @@ jobs:
 
       - name: Summary
         if: always()
+        shell: bash
         run: |
           echo "## Manual WinGet Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Release Tag:** \`${{ inputs.release_tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Dry Run Mode:** ${{ inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
 
           if [[ "${{ steps.validate-release.outputs.release-validated }}" == "true" ]]; then
             echo "**Status:** ✅ Release validated successfully" >> $GITHUB_STEP_SUMMARY
             echo "**Release Name:** ${{ steps.validate-release.outputs.release-name }}" >> $GITHUB_STEP_SUMMARY
             echo "**EXE Assets:** ${{ steps.validate-release.outputs.exe-count }}" >> $GITHUB_STEP_SUMMARY
             
-            if [[ "${{ inputs.dry_run }}" == "true" ]]; then
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "🧪 **Dry run completed** - No pull request was created" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "🚀 **WinGet publication initiated** - Check for pull request in your winget-pkgs fork" >> $GITHUB_STEP_SUMMARY
-            fi
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🚀 **WinGet publication initiated** - Check for pull request in your winget-pkgs fork" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Status:** ❌ Release validation failed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
