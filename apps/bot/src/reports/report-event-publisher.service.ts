@@ -6,11 +6,7 @@ import {
 import IORedis from "ioredis";
 import { singleton } from "tsyringe";
 import { env } from "@/lib/env";
-import { logger as mainLogger } from "@/lib/logger";
-
-const logger = mainLogger.child().withContext({
-  service: "report-event-publisher",
-});
+import { logger, wideEventContext } from "@/lib/logger";
 
 @singleton()
 export class ReportEventPublisherService {
@@ -27,7 +23,7 @@ export class ReportEventPublisherService {
     });
 
     this.redisPublisher.on("connect", () => {
-      logger.debug("Redis publisher connected");
+      logger.info("Redis publisher connected");
     });
   }
 
@@ -35,6 +31,16 @@ export class ReportEventPublisherService {
     report: Report,
     mod: Mod,
   ): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "report-event-publisher",
+      reportId: report.id,
+      modId: report.modId,
+      modName: mod.name,
+      status: report.status,
+      channel: REDIS_CHANNELS.REPORT_STATUS_UPDATED,
+    });
+
     try {
       const event: ReportStatusUpdatedEvent = {
         type: "report_status_updated",
@@ -59,24 +65,9 @@ export class ReportEventPublisherService {
         JSON.stringify(event),
       );
 
-      logger
-        .withMetadata({
-          reportId: report.id,
-          modId: report.modId,
-          modName: mod.name,
-          status: report.status,
-          channel: REDIS_CHANNELS.REPORT_STATUS_UPDATED,
-        })
-        .info("Published report status updated event to Redis");
+      wide?.merge({ redisPublishOutcome: "published" });
     } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          reportId: report.id,
-          modId: report.modId,
-          status: report.status,
-        })
-        .error("Failed to publish report status updated event");
+      wide?.merge({ redisPublishOutcome: "failed" });
       throw error;
     }
   }

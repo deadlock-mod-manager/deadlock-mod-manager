@@ -5,49 +5,11 @@ import {
   REDIS_CHANNELS,
 } from "@deadlock-mods/shared";
 import IORedis from "ioredis";
-import { ZodError } from "zod";
 import { inject, singleton } from "tsyringe";
 import { env } from "@/lib/env";
-import { logger as mainLogger } from "@/lib/logger";
+import { logger, runWithWideEvent, wideEventContext } from "@/lib/logger";
 import { ForumPosterService } from "@/mods/forum-poster.service";
 import { ReportPosterService } from "@/reports/report-poster.service";
-
-const logger = mainLogger.child().withContext({
-  service: "redis-subscriber",
-});
-
-async function handleParsedMessage<T>(
-  message: string,
-  parse: (data: unknown) => T,
-  label: string,
-  processEvent: (event: T) => Promise<void>,
-): Promise<void> {
-  try {
-    const rawData: unknown = JSON.parse(message);
-    const event = parse(rawData);
-    await processEvent(event);
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      logger
-        .withError(error)
-        .withMetadata({
-          message: message.substring(0, 200),
-        })
-        .error(`Failed to parse ${label} JSON`);
-      return;
-    }
-    if (error instanceof ZodError) {
-      logger
-        .withError(error)
-        .withMetadata({
-          message: message.substring(0, 200),
-        })
-        .error(`Failed to validate ${label} schema`);
-      return;
-    }
-    logger.withError(error).error(`Error processing ${label}`);
-  }
-}
 
 @singleton()
 export class RedisSubscriberService {
@@ -63,44 +25,47 @@ export class RedisSubscriberService {
 
   async start(): Promise<void> {
     if (this.isStarted) {
-      logger.warn("Redis subscriber already started");
+      logger
+        .withMetadata({ service: "redis-subscriber" })
+        .warn("Redis subscriber already started");
       return;
     }
 
-    try {
-      logger.info("Starting Redis subscriber service");
+    await runWithWideEvent(
+      wideEventContext,
+      logger,
+      "redis_subscriber_start",
+      { service: "redis-subscriber" },
+      async (wide) => {
+        this.subscriber = new IORedis(env.REDIS_URL, {
+          maxRetriesPerRequest: null,
+          lazyConnect: false,
+        });
 
-      this.subscriber = new IORedis(env.REDIS_URL, {
-        maxRetriesPerRequest: null,
-        lazyConnect: false,
-      });
+        this.subscriber.on("error", (error) => {
+          logger.withError(error).error("Redis subscriber error");
+        });
 
-      this.subscriber.on("error", (error) => {
-        logger.withError(error).error("Redis subscriber error");
-      });
+        this.subscriber.on("connect", () => {
+          wide.merge({ redisConnection: "connected" });
+        });
 
-      this.subscriber.on("connect", () => {
-        logger.info("Redis subscriber connected");
-      });
+        this.subscriber.on("ready", () => {
+          wide.merge({ redisConnection: "ready" });
+        });
 
-      this.subscriber.on("ready", () => {
-        logger.info("Redis subscriber ready");
-      });
+        await this.subscriber.subscribe(REDIS_CHANNELS.NEW_MODS);
+        await this.subscriber.subscribe(REDIS_CHANNELS.NEW_REPORTS);
+        await this.subscriber.subscribe(REDIS_CHANNELS.REPORT_STATUS_UPDATED);
 
-      await this.subscriber.subscribe(REDIS_CHANNELS.NEW_MODS);
-      await this.subscriber.subscribe(REDIS_CHANNELS.NEW_REPORTS);
-      await this.subscriber.subscribe(REDIS_CHANNELS.REPORT_STATUS_UPDATED);
+        this.subscriber.on("message", async (channel, message) => {
+          await this.handleMessage(channel, message);
+        });
 
-      this.subscriber.on("message", async (channel, message) => {
-        await this.handleMessage(channel, message);
-      });
-
-      this.isStarted = true;
-      logger.info("Redis subscriber service started successfully");
-    } catch (error) {
-      logger.withError(error).error("Failed to start Redis subscriber service");
-      throw error;
-    }
+        this.isStarted = true;
+        wide.merge({ subscribedChannels: 3 });
+      },
+    );
   }
 
   async stop(): Promise<void> {
@@ -108,68 +73,62 @@ export class RedisSubscriberService {
       return;
     }
 
-    try {
-      logger.info("Stopping Redis subscriber service");
+    await runWithWideEvent(
+      wideEventContext,
+      logger,
+      "redis_subscriber_stop",
+      { service: "redis-subscriber" },
+      async (wide) => {
+        await this.subscriber?.unsubscribe();
+        await this.subscriber?.quit();
 
-      await this.subscriber.unsubscribe();
-      await this.subscriber.quit();
+        this.subscriber = null;
+        this.isStarted = false;
 
-      this.subscriber = null;
-      this.isStarted = false;
-
-      logger.info("Redis subscriber service stopped");
-    } catch (error) {
-      logger.withError(error).error("Error stopping Redis subscriber service");
-    }
+        wide.merge({ stopped: true });
+      },
+    );
   }
 
   private async handleMessage(channel: string, message: string): Promise<void> {
-    try {
-      logger
-        .withMetadata({
-          channel,
-          messageLength: message.length,
-        })
-        .debug("Received Redis message");
+    await runWithWideEvent(
+      wideEventContext,
+      logger,
+      "redis_message",
+      {
+        service: "redis-subscriber",
+        channel,
+        messageLength: message.length,
+      },
+      async (wide) => {
+        wide.merge({ messagePreview: message.substring(0, 200) });
 
-      switch (channel) {
-        case REDIS_CHANNELS.NEW_MODS:
-          await handleParsedMessage(
-            message,
-            parseNewModEvent,
-            "new mod event",
-            (event) => this.forumPoster.postNewMod(event),
-          );
-          break;
-        case REDIS_CHANNELS.NEW_REPORTS:
-          await handleParsedMessage(
-            message,
-            parseNewReportEvent,
-            "new report event",
-            (event) => this.reportPoster.postNewReport(event),
-          );
-          break;
-        case REDIS_CHANNELS.REPORT_STATUS_UPDATED:
-          await handleParsedMessage(
-            message,
-            parseReportStatusUpdatedEvent,
-            "report status updated event",
-            (event) => this.reportPoster.updateReportStatus(event),
-          );
-          break;
-        default:
-          logger
-            .withMetadata({ channel })
-            .warn("Received message from unknown channel");
-      }
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          channel,
-          message: message.substring(0, 200),
-        })
-        .error("Error handling Redis message");
-    }
+        switch (channel) {
+          case REDIS_CHANNELS.NEW_MODS: {
+            const rawData = JSON.parse(message);
+            const event = parseNewModEvent(rawData);
+            await this.forumPoster.postNewMod(event);
+            wide.merge({ eventKind: "new_mod" });
+            break;
+          }
+          case REDIS_CHANNELS.NEW_REPORTS: {
+            const rawData = JSON.parse(message);
+            const event = parseNewReportEvent(rawData);
+            await this.reportPoster.postNewReport(event);
+            wide.merge({ eventKind: "new_report" });
+            break;
+          }
+          case REDIS_CHANNELS.REPORT_STATUS_UPDATED: {
+            const rawData = JSON.parse(message);
+            const event = parseReportStatusUpdatedEvent(rawData);
+            await this.reportPoster.updateReportStatus(event);
+            wide.merge({ eventKind: "report_status_updated" });
+            break;
+          }
+          default:
+            wide.merge({ unknownChannel: true });
+        }
+      },
+    );
   }
 }

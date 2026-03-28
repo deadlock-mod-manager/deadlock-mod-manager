@@ -7,17 +7,13 @@ import { ChannelType, type ForumChannel } from "discord.js";
 import { inject, singleton } from "tsyringe";
 import { SapphireClient } from "@sapphire/framework";
 import { env } from "@/lib/env";
-import { logger as mainLogger } from "@/lib/logger";
+import { wideEventContext } from "@/lib/logger";
 import { TOKENS } from "@/lib/tokens";
 import {
   formatReportPost,
   getApplicableReportTags,
   getReportTypeEmoji,
 } from "@/reports/embed-builder";
-
-const logger = mainLogger.child().withContext({
-  service: "report-poster",
-});
 
 @singleton()
 export class ReportPosterService {
@@ -32,13 +28,21 @@ export class ReportPosterService {
   }
 
   async postNewReport(event: NewReportEvent): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "report-poster",
+      reportId: event.data.id,
+      modName: event.data.modName,
+      reportType: event.data.type,
+    });
+
     try {
       if (env.NODE_ENV === "development") {
-        logger.warn("Skipping Discord post in development environment");
+        wide?.merge({ reportPostOutcome: "skipped_dev" });
         return;
       }
       if (!env.REPORTS_CHANNEL_ID) {
-        logger.warn("REPORTS_CHANNEL_ID not configured, skipping Discord post");
+        wide?.merge({ reportPostOutcome: "skipped_no_channel" });
         return;
       }
 
@@ -46,25 +50,14 @@ export class ReportPosterService {
         event.data.id,
       );
       if (existingReport?.discordMessageId) {
-        logger
-          .withMetadata({
-            reportId: event.data.id,
-            existingThreadId: existingReport.discordMessageId,
-          })
-          .warn(
-            "Report already has Discord thread, skipping duplicate creation",
-          );
+        wide?.merge({
+          reportPostOutcome: "skipped_duplicate_thread",
+          existingThreadId: existingReport.discordMessageId,
+        });
         return;
       }
 
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          modName: event.data.modName,
-          reportType: event.data.type,
-          channelId: env.REPORTS_CHANNEL_ID,
-        })
-        .info("Posting new report to Discord channel");
+      wide?.merge({ channelId: env.REPORTS_CHANNEL_ID });
 
       const channel = await this.client.channels.fetch(env.REPORTS_CHANNEL_ID);
 
@@ -102,47 +95,34 @@ export class ReportPosterService {
         thread.id,
       );
 
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          threadId: thread.id,
-          modName: event.data.modName,
-        })
-        .info("Successfully posted new report to Discord");
+      wide?.merge({
+        reportPostOutcome: "posted",
+        threadId: thread.id,
+      });
     } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          reportId: event.data.id,
-          modName: event.data.modName,
-        })
-        .error("Failed to post new report to Discord");
+      wide?.merge({ reportPostOutcome: "failed" });
       throw error;
     }
   }
 
   async updateReportStatus(event: ReportStatusUpdatedEvent): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "report-poster",
+      reportId: event.data.id,
+      newStatus: event.data.status,
+      modName: event.data.modName,
+    });
+
     try {
       if (!env.REPORTS_CHANNEL_ID) {
-        logger.warn(
-          "REPORTS_CHANNEL_ID not configured, skipping Discord update",
-        );
+        wide?.merge({ reportUpdateOutcome: "skipped_no_channel" });
         return;
       }
 
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          newStatus: event.data.status,
-          modName: event.data.modName,
-        })
-        .info("Updating report status in Discord");
-
       const report = await this.reportRepository.findById(event.data.id);
       if (!report || !report.discordMessageId) {
-        logger
-          .withMetadata({ reportId: event.data.id })
-          .warn("Report not found or no Discord thread ID, skipping update");
+        wide?.merge({ reportUpdateOutcome: "skipped_no_thread" });
         return;
       }
 
@@ -154,23 +134,19 @@ export class ReportPosterService {
       const forumChannel = channel as ForumChannel;
       const thread = await forumChannel.threads.fetch(report.discordMessageId);
       if (!thread) {
-        logger
-          .withMetadata({
-            reportId: event.data.id,
-            threadId: report.discordMessageId,
-          })
-          .warn("Discord thread not found, skipping update");
+        wide?.merge({
+          reportUpdateOutcome: "skipped_thread_missing",
+          threadId: report.discordMessageId,
+        });
         return;
       }
 
       const starterMessage = await thread.fetchStarterMessage();
       if (!starterMessage) {
-        logger
-          .withMetadata({
-            reportId: event.data.id,
-            threadId: report.discordMessageId,
-          })
-          .warn("Thread starter message not found, skipping update");
+        wide?.merge({
+          reportUpdateOutcome: "skipped_no_starter_message",
+          threadId: report.discordMessageId,
+        });
         return;
       }
 
@@ -192,22 +168,13 @@ export class ReportPosterService {
       const updatedTags = getApplicableReportTags(forumChannel, event.data);
       await thread.setAppliedTags(updatedTags);
 
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          threadId: report.discordMessageId,
-          newStatus: event.data.status,
-          updatedTags: updatedTags.length,
-        })
-        .info("Successfully updated report status in Discord");
+      wide?.merge({
+        reportUpdateOutcome: "updated",
+        threadId: report.discordMessageId,
+        updatedTags: updatedTags.length,
+      });
     } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          reportId: event.data.id,
-          newStatus: event.data.status,
-        })
-        .error("Failed to update report status in Discord");
+      wide?.merge({ reportUpdateOutcome: "failed" });
       throw error;
     }
   }

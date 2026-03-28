@@ -1,3 +1,4 @@
+import { gracefulExit } from "exit-hook";
 import { singleton } from "tsyringe";
 import { logger } from "@/lib/logger";
 
@@ -33,7 +34,7 @@ export class ProcessManager {
         }
       }
 
-      process.exit(exitCode);
+      gracefulExit(exitCode);
     };
 
     process.on("SIGINT", () => {

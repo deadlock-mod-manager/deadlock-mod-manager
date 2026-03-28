@@ -6,11 +6,7 @@ import {
 import type { NewModEvent } from "@deadlock-mods/shared";
 import { singleton } from "tsyringe";
 import { parseRemoteIdFromUrl } from "@/mods/embed-builder";
-import { logger as mainLogger } from "@/lib/logger";
-
-const logger = mainLogger.child().withContext({
-  service: "mod-enricher",
-});
+import { wideEventContext } from "@/lib/logger";
 
 @singleton()
 export class ModEnricherService {
@@ -33,42 +29,53 @@ export class ModEnricherService {
       isAudio?: boolean;
     }
   > {
+    const wide = wideEventContext.get();
     try {
       const remoteId = parseRemoteIdFromUrl(eventData.link);
 
       if (!remoteId) {
-        logger
-          .withMetadata({ url: eventData.link })
-          .warn("Could not parse remote ID from URL");
+        wide?.merge({
+          enrichment: {
+            remoteIdParse: "failed",
+            url: eventData.link,
+          },
+        });
         return eventData;
       }
 
-      logger
-        .withMetadata({ remoteId, url: eventData.link })
-        .debug("Parsed remote ID from URL");
+      wide?.merge({
+        enrichment: {
+          remoteId,
+          url: eventData.link,
+        },
+      });
 
       const mod = await this.modRepository.findByRemoteId(remoteId);
 
       if (!mod) {
-        logger
-          .withMetadata({ remoteId })
-          .info("Mod not found in database, using RSS data only");
+        wide?.merge({
+          enrichment: {
+            remoteId,
+            foundInDb: false,
+          },
+        });
         return eventData;
       }
 
       const downloads = await this.modDownloadRepository.findByModId(mod.id);
       const downloadUrl = downloads.length > 0 ? downloads[0].url : undefined;
 
-      logger
-        .withMetadata({
+      wide?.merge({
+        enrichment: {
           remoteId,
           modId: mod.id,
+          foundInDb: true,
           hasDescription: !!mod.description,
           downloads: mod.downloadCount,
           likes: mod.likes,
           hasDownloadUrl: !!downloadUrl,
-        })
-        .info("Enriched mod data from database");
+        },
+      });
 
       return {
         ...eventData,
@@ -80,11 +87,13 @@ export class ModEnricherService {
         downloadUrl: downloadUrl,
         isAudio: mod.isAudio,
       };
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({ url: eventData.link })
-        .warn("Failed to enrich mod data, using RSS data only");
+    } catch {
+      wide?.merge({
+        enrichment: {
+          failed: true,
+          url: eventData.link,
+        },
+      });
       return eventData;
     }
   }

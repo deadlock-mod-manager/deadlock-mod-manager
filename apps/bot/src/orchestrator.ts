@@ -12,7 +12,12 @@ import { RedisSubscriberService } from "@/events/redis-subscriber";
 import { HealthService } from "@/health/health.service";
 import healthRouter from "@/health/health.router";
 import { env } from "@/lib/env";
-import { logger } from "@/lib/logger";
+import {
+  createWideEvent,
+  logger,
+  loggerContext,
+  wideEventContext,
+} from "@/lib/logger";
 import { ProcessManager } from "@/lib/process-manager";
 
 export class Orchestrator {
@@ -32,6 +37,33 @@ export class Orchestrator {
         credentials: true,
       }),
     );
+    this.app.use("*", async (c, next) => {
+      const requestId = crypto.randomUUID();
+      const wide = createWideEvent(logger, "http_request", {
+        method: c.req.method,
+        path: c.req.path,
+        requestId,
+      });
+
+      await loggerContext.storage.run({ requestId }, () =>
+        wideEventContext.run(wide, () =>
+          (async () => {
+            try {
+              await next();
+              wide.set("statusCode", c.res.status);
+              wide.emit("success");
+            } catch (error) {
+              wide.set("statusCode", 500);
+              wide.emit(
+                "error",
+                error instanceof Error ? error : new Error(String(error)),
+              );
+              throw error;
+            }
+          })(),
+        ),
+      );
+    });
     this.app.route("/", healthRouter);
   }
 

@@ -1,15 +1,12 @@
 import { db, ModRepository } from "@deadlock-mods/database";
 import { Command } from "@sapphire/framework";
 import { GuildMember } from "discord.js";
+import type { WideEvent } from "@deadlock-mods/logging";
 import {
   getBlacklistRequiredPermissionsDisplay,
   hasBlacklistPermission,
 } from "@/discord/permissions";
-import { logger as mainLogger } from "@/lib/logger";
-
-const logger = mainLogger.child().withContext({
-  service: "blacklist-command",
-});
+import { logger, runWithWideEvent, wideEventContext } from "@/lib/logger";
 
 const modRepository = new ModRepository(db);
 
@@ -60,44 +57,52 @@ export class BlacklistCommand extends Command {
   override async chatInputRun(
     interaction: Command.ChatInputCommandInteraction,
   ) {
-    const { user } = interaction;
-    const member =
-      interaction.member instanceof GuildMember ? interaction.member : null;
+    return runWithWideEvent(
+      wideEventContext,
+      logger,
+      "blacklist_command",
+      {
+        service: "blacklist-command",
+        userId: interaction.user.id,
+        username: interaction.user.username,
+      },
+      async (wide) => {
+        const { user } = interaction;
+        const member =
+          interaction.member instanceof GuildMember ? interaction.member : null;
 
-    if (!hasBlacklistPermission(user, member)) {
-      return interaction.reply({
-        content: `You don't have permission to use this command. Required: ${getBlacklistRequiredPermissionsDisplay()}`,
-      });
-    }
+        if (!hasBlacklistPermission(user, member)) {
+          wide.merge({ outcome: "denied_permission" });
+          return interaction.reply({
+            content: `You don't have permission to use this command. Required: ${getBlacklistRequiredPermissionsDisplay()}`,
+          });
+        }
 
-    const subcommand = interaction.options.getSubcommand();
-    const modIdOrUrl = interaction.options.getString("mod_id_or_url", true);
+        const subcommand = interaction.options.getSubcommand();
+        const modIdOrUrl = interaction.options.getString("mod_id_or_url", true);
 
-    try {
-      const modId = this.extractModId(modIdOrUrl);
+        wide.merge({ subcommand });
 
-      if (subcommand === "add") {
-        const reason = interaction.options.getString("reason", true);
-        return await this.handleAdd(interaction, modId, reason);
-      }
-      if (subcommand === "remove") {
-        return await this.handleRemove(interaction, modId);
-      }
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          userId: user.id,
-          username: user.username,
-          subcommand,
-          modIdOrUrl,
-        })
-        .error("Error in blacklist command");
+        try {
+          const modId = this.extractModId(modIdOrUrl);
 
-      return interaction.reply({
-        content: "An error occurred while processing the request.",
-      });
-    }
+          if (subcommand === "add") {
+            const reason = interaction.options.getString("reason", true);
+            return await this.handleAdd(interaction, modId, reason, wide);
+          }
+          if (subcommand === "remove") {
+            return await this.handleRemove(interaction, modId, wide);
+          }
+        } catch {
+          wide.merge({ outcome: "command_error", modIdOrUrl });
+          return interaction.reply({
+            content: "An error occurred while processing the request.",
+          });
+        }
+
+        return undefined;
+      },
+    );
   }
 
   private extractModId(input: string): string {
@@ -117,17 +122,20 @@ export class BlacklistCommand extends Command {
     interaction: Command.ChatInputCommandInteraction,
     modId: string,
     reason: string,
+    wide: WideEvent,
   ) {
     const { user } = interaction;
 
     const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
     if (!mod) {
+      wide.merge({ outcome: "mod_not_found", modId });
       return interaction.reply({
         content: `Mod with ID \`${modId}\` not found.`,
       });
     }
 
     if (mod.isBlacklisted) {
+      wide.merge({ outcome: "already_blacklisted", modId, modName: mod.name });
       return interaction.reply({
         content: `Mod \`${mod.name}\` is already blacklisted.`,
       });
@@ -135,15 +143,12 @@ export class BlacklistCommand extends Command {
 
     await modRepository.blacklistMod(modId, reason, user.id);
 
-    logger
-      .withMetadata({
-        userId: user.id,
-        username: user.username,
-        modId,
-        modName: mod.name,
-        reason,
-      })
-      .info("Mod blacklisted");
+    wide.merge({
+      outcome: "blacklisted",
+      modId,
+      modName: mod.name,
+      reason,
+    });
 
     return interaction.reply({
       content: `Successfully blacklisted mod \`${mod.name}\` (ID: \`${modId}\`)\n**Reason:** ${reason}`,
@@ -153,17 +158,18 @@ export class BlacklistCommand extends Command {
   private async handleRemove(
     interaction: Command.ChatInputCommandInteraction,
     modId: string,
+    wide: WideEvent,
   ) {
-    const { user } = interaction;
-
     const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
     if (!mod) {
+      wide.merge({ outcome: "mod_not_found", modId });
       return interaction.reply({
         content: `Mod with ID \`${modId}\` not found.`,
       });
     }
 
     if (!mod.isBlacklisted) {
+      wide.merge({ outcome: "not_blacklisted", modId, modName: mod.name });
       return interaction.reply({
         content: `Mod \`${mod.name}\` is not blacklisted.`,
       });
@@ -171,14 +177,11 @@ export class BlacklistCommand extends Command {
 
     await modRepository.unblacklistMod(modId);
 
-    logger
-      .withMetadata({
-        userId: user.id,
-        username: user.username,
-        modId,
-        modName: mod.name,
-      })
-      .info("Mod unblacklisted");
+    wide.merge({
+      outcome: "unblacklisted",
+      modId,
+      modName: mod.name,
+    });
 
     return interaction.reply({
       content: `Successfully removed mod \`${mod.name}\` (ID: \`${modId}\`) from blacklist.`,

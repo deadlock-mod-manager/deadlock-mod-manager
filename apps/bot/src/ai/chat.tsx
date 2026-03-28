@@ -4,14 +4,16 @@ import { Chat, Card, CardText as Text, Actions, Button, Divider } from "chat";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
+import { ChatLoggerAdapter } from "./chat-logger";
 
 export const chatBot = new Chat({
   userName: "Deadlock Mod Manager",
+  logger: new ChatLoggerAdapter(
+    logger.child().withContext({ service: "chat-sdk" }),
+  ),
   adapters: {
     discord: createDiscordAdapter({
-      logger: logger.child().withContext({
-        service: "chat",
-      }),
+      logger: logger.child().withContext({ service: "chat" }),
       botToken: env.BOT_TOKEN,
       applicationId: env.DISCORD_APPLICATION_ID,
       publicKey: env.DISCORD_PUBLIC_KEY,
@@ -19,9 +21,7 @@ export const chatBot = new Chat({
   },
   state: createIoRedisState({
     client: redis,
-    logger: logger.child().withContext({
-      service: "chat-state",
-    }),
+    logger: logger.child().withContext({ service: "chat-state" }),
   }),
 });
 

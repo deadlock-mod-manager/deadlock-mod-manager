@@ -3,14 +3,10 @@ import { ChannelType, type ForumChannel } from "discord.js";
 import { inject, singleton } from "tsyringe";
 import { SapphireClient } from "@sapphire/framework";
 import { env } from "@/lib/env";
-import { logger as mainLogger } from "@/lib/logger";
+import { wideEventContext } from "@/lib/logger";
 import { TOKENS } from "@/lib/tokens";
 import { buildModForumPost, getModForumTags } from "@/mods/embed-builder";
 import { ModEnricherService } from "@/mods/mod-enricher.service";
-
-const logger = mainLogger.child().withContext({
-  service: "forum-poster",
-});
 
 @singleton()
 export class ForumPosterService {
@@ -21,15 +17,15 @@ export class ForumPosterService {
   ) {}
 
   async postNewMod(event: NewModEvent): Promise<void> {
-    try {
-      logger
-        .withMetadata({
-          modTitle: event.data.title,
-          modLink: event.data.link,
-          channelId: env.FORUM_CHANNEL_ID,
-        })
-        .info("Posting new mod to forum channel");
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "forum-poster",
+      modTitle: event.data.title,
+      modLink: event.data.link,
+      channelId: env.FORUM_CHANNEL_ID,
+    });
 
+    try {
       const channel = await this.client.channels.fetch(env.FORUM_CHANNEL_ID);
 
       if (!channel) {
@@ -57,22 +53,13 @@ export class ForumPosterService {
         },
       });
 
-      logger
-        .withMetadata({
-          threadId: thread.id,
-          threadName: thread.name,
-          modTitle: event.data.title,
-          modLink: event.data.link,
-        })
-        .info("Successfully created forum post for new mod");
+      wide?.merge({
+        threadId: thread.id,
+        threadName: thread.name,
+        forumPostOutcome: "created",
+      });
     } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          modTitle: event.data.title,
-          modLink: event.data.link,
-        })
-        .error("Failed to post new mod to forum channel");
+      wide?.merge({ forumPostOutcome: "failed" });
       throw error;
     }
   }

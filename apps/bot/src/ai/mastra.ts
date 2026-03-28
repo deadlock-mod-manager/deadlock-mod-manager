@@ -6,7 +6,7 @@ import {
 } from "@mastra/hono";
 import type { Hono } from "hono";
 import { env } from "@/lib/env";
-import { logger } from "@/lib/logger";
+import { logger, runWithWideEvent, wideEventContext } from "@/lib/logger";
 
 export type MastraAppEnv = { Bindings: HonoBindings; Variables: HonoVariables };
 
@@ -17,14 +17,14 @@ export async function initializeMastra(app: Hono<MastraAppEnv>): Promise<void> {
 }
 
 export function scheduleDocsIngest(): void {
-  const docsIngestLogger = logger.child().withContext({
-    service: "docs-ingest",
-  });
-  ingestDocs(env)
-    .then(() => docsIngestLogger.info("Docs ingestion complete"))
-    .catch((err) =>
-      docsIngestLogger
-        .withError(err instanceof Error ? err : new Error(String(err)))
-        .warn("Docs ingestion failed, searchDocsTool may return empty results"),
-    );
+  void runWithWideEvent(
+    wideEventContext,
+    logger,
+    "docs_ingest",
+    { service: "docs-ingest" },
+    async (wide) => {
+      await ingestDocs(env);
+      wide.merge({ docsIngestOutcome: "complete" });
+    },
+  ).catch(() => {});
 }
