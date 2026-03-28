@@ -7,7 +7,13 @@ import type { Message } from "discord.js";
 
 const CONFIDENCE_THRESHOLD = 0.5;
 
-const GENERAL_CHANNEL_ID = "1322369721546309685";
+const TRIAGE_SOURCE_CHANNEL_IDS = new Set([
+  "1322369721546309685",
+  "1412724282534006814",
+  "1452252009687289966",
+  "1414203136939135067",
+  "1419280242870063226",
+]);
 
 const TRIAGE_CHANNEL_BY_INTENT: Partial<Record<IntentLabel, string>> = {
   "help request": "1418618964925480990",
@@ -38,7 +44,7 @@ export class MessageTriageListener extends Listener {
 
   private shouldProcess(message: Message): boolean {
     if (message.author.bot) return false;
-    if (message.channelId !== GENERAL_CHANNEL_ID) return false;
+    if (!TRIAGE_SOURCE_CHANNEL_IDS.has(message.channelId)) return false;
     if (message.channel.isThread()) return false;
     if (message.reference?.messageId) return false;
     return true;
