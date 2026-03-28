@@ -2,13 +2,9 @@ import { createApp } from "./app";
 import { env } from "./env";
 import { createServiceLogger, logger } from "./logger";
 import { ingestDocs } from "./mastra/tools/docs";
-import { smotixWorkspace } from "./mastra/workspace";
 
 try {
   const logger = createServiceLogger("server");
-
-  await smotixWorkspace.init();
-  logger.info("Workspace initialized");
 
   const appResult = await createApp();
   if (appResult.isErr()) {

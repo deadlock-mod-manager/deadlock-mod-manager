@@ -14,6 +14,7 @@ import {
   fetchCache,
   normalizeCacheKey,
   readResponseText,
+  type WebFetchCacheEntry,
   validateHttpUrl,
   withTimeout,
 } from "./shared";
@@ -115,20 +116,7 @@ async function runWebFetch(params: {
   maxRedirects: number;
   timeoutSeconds: number;
   userAgent: string;
-}): Promise<{
-  url: string;
-  finalUrl: string;
-  status: number;
-  contentType: string;
-  title?: string;
-  extractMode: ExtractMode;
-  extractor: string;
-  truncated: boolean;
-  length: number;
-  fetchedAt: string;
-  tookMs: number;
-  text: string;
-}> {
+}): Promise<WebFetchCacheEntry> {
   const start = Date.now();
   validateHttpUrl(params.url);
 

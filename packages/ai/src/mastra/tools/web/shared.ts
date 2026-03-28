@@ -12,10 +12,25 @@ export const searchCache = createTTLCache<string, Record<string, unknown>>({
   ttl: DEFAULT_CACHE_TTL_MS,
 });
 
+export type WebFetchCacheEntry = {
+  url: string;
+  finalUrl: string;
+  status: number;
+  contentType: string;
+  title?: string;
+  extractMode: "markdown" | "text";
+  extractor: string;
+  truncated: boolean;
+  length: number;
+  fetchedAt: string;
+  tookMs: number;
+  text: string;
+};
+
 /**
  * Shared cache for web fetch results
  */
-export const fetchCache = createTTLCache<string, Record<string, unknown>>({
+export const fetchCache = createTTLCache<string, WebFetchCacheEntry>({
   max: DEFAULT_CACHE_MAX_ENTRIES,
   ttl: DEFAULT_CACHE_TTL_MS,
 });

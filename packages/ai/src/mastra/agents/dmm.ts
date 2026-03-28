@@ -7,12 +7,9 @@ import { SOUL_INSTRUCTIONS } from "../memory/soul";
 import { searchDocsTool } from "../tools/docs";
 import { readSoulTool, updateSoulTool } from "../tools/soul";
 import { createWebSearchTool, createWebFetchTool } from "../tools/web";
-import { smotixWorkspace } from "../workspace";
-import { githubMcp } from "../mcp/github";
 import { discordMcp } from "../mcp/discord";
 import { env } from "../../env";
 
-const githubTools = await githubMcp.listTools();
 const discordTools = await discordMcp.listTools();
 
 const perplexitySearchTool = createWebSearchTool({ provider: "perplexity" });
@@ -38,7 +35,6 @@ export const dmmAgent = new Agent({
       perplexitySearchTool,
       braveSearchTool,
       webFetchTool,
-      ...githubTools,
       ...discordTools,
       ...dynamicTools,
     };
@@ -60,5 +56,4 @@ export const dmmAgent = new Agent({
       detectionTypes: ["injection", "jailbreak", "system-override"],
     }),
   ],
-  workspace: smotixWorkspace,
 });

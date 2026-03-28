@@ -6,11 +6,11 @@
   "scripts": {
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-    "dev": "dotenv -e ../../.env -- bun run --preload src/instrument.ts --watch src/index.ts",
-    "start": "bun run --preload src/instrument.ts src/index.ts",
-    "test:support": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/scripts/test-support.ts",
-    "test:docs-sync": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/scripts/test-documentation-sync.ts",
-    "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
+    "dev": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts --watch ./src/index.ts",
+    "start": "bun run --preload ./src/instrument.ts ./src/index.ts",
+    "test:support": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/scripts/test-support.ts",
+    "test:docs-sync": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/scripts/test-documentation-sync.ts",
+    "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
