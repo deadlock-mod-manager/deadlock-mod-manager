@@ -1,7 +1,7 @@
 import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { getServerSession, logout } from "@/lib/auth/auth.server";
+import { getServerSession, logout } from "@/lib/auth/auth";
 
 export type { OIDCSession, OIDCUser };
 

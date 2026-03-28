@@ -9,7 +9,7 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { parseKvContent } from "@/lib/kv-parser.server";
+import { parseKvContent } from "@/lib/kv-parser";
 import { JsonTreeView } from "./json-tree";
 import { SyntaxHighlighter } from "./syntax-highlighter";
 

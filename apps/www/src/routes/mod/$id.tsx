@@ -28,13 +28,13 @@ import { generateDeepLink, isDeepLinkSupported } from "@/lib/deep-link";
 import { formatDownloads } from "@/lib/utils";
 import Logo from "@/logo.svg";
 import { orpc } from "@/utils/orpc";
-import { serverClient } from "@/utils/orpc.server";
+import { getModV2 } from "@/lib/api/public";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/mod/$id")({
   component: ModDetailPage,
   loader: async ({ params }) => {
-    const mod = await serverClient.getModV2({ id: params.id });
+    const mod = await getModV2({ data: { id: params.id } });
     return mod;
   },
   head: (ctx) => {

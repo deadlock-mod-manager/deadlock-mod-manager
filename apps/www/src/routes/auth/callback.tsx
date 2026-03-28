@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Loader from "@/components/loader";
-import { handleCallback } from "@/lib/auth/auth.server";
+import { handleCallback } from "@/lib/auth/auth";
 
 export const Route = createFileRoute("/auth/callback")({
   component: OIDCCallbackComponent,

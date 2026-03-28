@@ -1,12 +1,12 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { createFileRoute } from "@tanstack/react-router";
-import { serverClient } from "@/utils/orpc.server";
+import { listModsV2 } from "@/lib/api/public";
 
 export const Route = createFileRoute("/sitemap-mods.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const mods = await serverClient.listModsV2();
+        const mods = await listModsV2();
         const xml = generateSitemapXML(mods);
 
         return new Response(xml, {

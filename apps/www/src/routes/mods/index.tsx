@@ -5,13 +5,13 @@ import { ModsFilters } from "@/components/mods/mods-filters";
 import { ModsGrid } from "@/components/mods/mods-grid";
 import { ModsPageHeader } from "@/components/mods/mods-page-header";
 import { useModFilters } from "@/hooks/use-mod-filters";
-import { serverClient } from "@/utils/orpc.server";
+import { listModsV2 } from "@/lib/api/public";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/mods/")({
   component: ModsPage,
   loader: async () => {
-    const mods = await serverClient.listModsV2();
+    const mods = await listModsV2();
     return mods;
   },
   head: () =>

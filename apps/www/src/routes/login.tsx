@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import Loader from "@/components/loader";
-import { initiateLogin } from "@/lib/auth/auth.server";
+import { initiateLogin } from "@/lib/auth/auth";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
