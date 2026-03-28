@@ -1,30 +1,28 @@
-import { createMastra, ingestDocs } from "@deadlock-mods/ai";
-import {
-  MastraServer,
-  type HonoBindings,
-  type HonoVariables,
-} from "@mastra/hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { chatBot } from "@/ai/chat";
+import {
+  type MastraAppEnv,
+  initializeMastra,
+  scheduleDocsIngest as scheduleDocsIngestJob,
+} from "@/ai/mastra";
+import { container } from "@/container";
+import { discordClient } from "@/discord/client";
+import { RedisSubscriberService } from "@/events/redis-subscriber";
+import { HealthService } from "@/health/health.service";
+import healthRouter from "@/health/health.router";
 import { env } from "@/lib/env";
-import client from "@/lib/discord";
 import { logger } from "@/lib/logger";
 import { ProcessManager } from "@/lib/process-manager";
-import healthRouter from "@/routers/health";
-import { HealthService } from "@/services/health";
-import { RedisSubscriberService } from "@/services/redis-subscriber";
-import { chatBot } from "./chat";
-
-export type AppEnv = { Bindings: HonoBindings; Variables: HonoVariables };
 
 export class Orchestrator {
-  private readonly app: Hono<AppEnv>;
+  private readonly app: Hono<MastraAppEnv>;
   private readonly processManager: ProcessManager;
-  private readonly client = client;
+  private readonly client = discordClient;
 
   constructor() {
-    this.processManager = new ProcessManager();
-    this.app = new Hono<AppEnv>();
+    this.processManager = container.resolve(ProcessManager);
+    this.app = new Hono<MastraAppEnv>();
     this.app.use(
       "*",
       cors({
@@ -42,9 +40,7 @@ export class Orchestrator {
   }
 
   async initializeMastra(): Promise<void> {
-    const mastra = await createMastra(env);
-    const mastraServer = new MastraServer({ app: this.app, mastra });
-    await mastraServer.init();
+    await initializeMastra(this.app);
   }
 
   startHttpServer(): void {
@@ -55,23 +51,8 @@ export class Orchestrator {
     });
   }
 
-  scheduleDocsIngest(): void {
-    const docsIngestLogger = logger.child().withContext({
-      service: "docs-ingest",
-    });
-    ingestDocs(env)
-      .then(() => docsIngestLogger.info("Docs ingestion complete"))
-      .catch((err) =>
-        docsIngestLogger
-          .withError(err instanceof Error ? err : new Error(String(err)))
-          .warn(
-            "Docs ingestion failed, searchDocsTool may return empty results",
-          ),
-      );
-  }
-
   private registerProcessTeardowns(): void {
-    const redisSubscriber = RedisSubscriberService.getInstance();
+    const redisSubscriber = container.resolve(RedisSubscriberService);
 
     this.processManager.registerTeardown("redis-subscriber", () =>
       redisSubscriber.stop(),
@@ -101,7 +82,7 @@ export class Orchestrator {
 
     logger.info(`Logged in as ${this.client.user?.tag}`);
 
-    const redisSubscriber = RedisSubscriberService.getInstance();
+    const redisSubscriber = container.resolve(RedisSubscriberService);
 
     try {
       await redisSubscriber.start();
@@ -114,7 +95,7 @@ export class Orchestrator {
   async run(): Promise<void> {
     await this.initializeMastra();
     this.startHttpServer();
-    this.scheduleDocsIngest();
+    scheduleDocsIngestJob();
     if (env.BOT_ENABLED) {
       this.registerProcessTeardowns();
     }
@@ -122,7 +103,7 @@ export class Orchestrator {
     if (env.BOT_ENABLED) {
       await this.initializeChat();
       logger.info("Bot is fully initialized and ready");
-      HealthService.getInstance().markAsReady();
+      container.resolve(HealthService).markAsReady();
     }
   }
 }

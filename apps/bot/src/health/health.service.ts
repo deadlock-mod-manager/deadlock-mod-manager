@@ -1,5 +1,7 @@
 import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
+import { inject, singleton } from "tsyringe";
+import { SapphireClient } from "@sapphire/framework";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
 import type {
@@ -7,23 +9,20 @@ import type {
   DiscordHealth,
   HealthResponse,
   RedisHealth,
-} from "@/types/health";
+} from "@/health/health.types";
+import { TOKENS } from "@/lib/tokens";
 import { version } from "@/version";
-import client from "../lib/discord";
 
+@singleton()
 export class HealthService {
-  private static singleton: HealthService;
   private cachedHealth: HealthResponse | null = null;
   private cacheTimestamp = 0;
   private readonly CACHE_TTL_MS = 2000;
   private isStarting = true;
 
-  static getInstance(): HealthService {
-    if (!HealthService.singleton) {
-      HealthService.singleton = new HealthService();
-    }
-    return HealthService.singleton;
-  }
+  constructor(
+    @inject(TOKENS.DiscordClient) private readonly client: SapphireClient,
+  ) {}
 
   markAsReady(): void {
     this.isStarting = false;
@@ -60,7 +59,7 @@ export class HealthService {
 
   async checkDiscord(): Promise<DiscordHealth> {
     try {
-      if (!client.isReady()) {
+      if (!this.client.isReady()) {
         return { alive: false, error: "Discord client not ready" };
       }
 

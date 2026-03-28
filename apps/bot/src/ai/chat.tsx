@@ -1,9 +1,9 @@
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createIoRedisState } from "@chat-adapter/state-ioredis";
-import { redis } from "../lib/redis";
-import { logger } from "../lib/logger";
 import { Chat, Card, CardText as Text, Actions, Button, Divider } from "chat";
-import { env } from "../lib/env";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+import { redis } from "@/lib/redis";
 
 export const chatBot = new Chat({
   userName: "Deadlock Mod Manager",

@@ -1,5 +1,7 @@
 // oxlint-disable import/no-unassigned-import
+import "reflect-metadata";
 import "./instrument";
+import "./container";
 
 import { logger } from "@/lib/logger";
 import { Orchestrator } from "./orchestrator";

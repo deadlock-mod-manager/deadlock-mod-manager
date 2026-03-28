@@ -1,7 +1,9 @@
+import { singleton } from "tsyringe";
 import { logger } from "@/lib/logger";
 
 type TeardownFn = () => void | Promise<void>;
 
+@singleton()
 export class ProcessManager {
   private readonly teardowns: { label: string; fn: TeardownFn }[] = [];
   private shuttingDown = false;

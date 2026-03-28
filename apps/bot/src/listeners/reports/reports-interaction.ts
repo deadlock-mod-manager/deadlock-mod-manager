@@ -12,12 +12,13 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
-import { logger as mainLogger } from "@/lib/logger";
+import { container } from "tsyringe";
 import {
   getRequiredRolesDisplay,
   hasReportModerationPermission,
-} from "@/lib/permissions";
-import { ReportService } from "@/services/report-service";
+} from "@/discord/permissions";
+import { logger as mainLogger } from "@/lib/logger";
+import { ReportEventPublisherService } from "@/reports/report-event-publisher.service";
 
 const logger = mainLogger.child().withContext({
   service: "interaction-listener",
@@ -26,7 +27,7 @@ const logger = mainLogger.child().withContext({
 export class ReportInteractionListener extends Listener {
   private readonly reportRepository: ReportRepository;
   private readonly modRepository: ModRepository;
-  private readonly reportService: ReportService;
+  private readonly reportPublisher: ReportEventPublisherService;
 
   constructor(context: Listener.LoaderContext, options: Listener.Options) {
     super(context, {
@@ -36,7 +37,7 @@ export class ReportInteractionListener extends Listener {
 
     this.reportRepository = new ReportRepository(db);
     this.modRepository = new ModRepository(db);
-    this.reportService = ReportService.getInstance();
+    this.reportPublisher = container.resolve(ReportEventPublisherService);
   }
 
   public async run(interaction: Interaction) {
@@ -69,7 +70,6 @@ export class ReportInteractionListener extends Listener {
       })
       .debug("Handling button interaction");
 
-    // Handle report-related button interactions
     if (
       customId.startsWith("verify_report:") ||
       customId.startsWith("dismiss_report:")
@@ -78,7 +78,6 @@ export class ReportInteractionListener extends Listener {
       return;
     }
 
-    // Add other button interaction handlers here as needed
     logger.withMetadata({ customId }).warn("Unhandled button interaction");
   }
 
@@ -93,20 +92,17 @@ export class ReportInteractionListener extends Listener {
       })
       .debug("Handling modal submit interaction");
 
-    // Handle dismiss report modal
     if (customId.startsWith("dismiss_modal:")) {
       const reportId = customId.split(":")[1];
       await this.handleDismissModal(interaction, reportId);
       return;
     }
 
-    // Add other modal interaction handlers here as needed
     logger
       .withMetadata({ customId })
       .warn("Unhandled modal submit interaction");
   }
 
-  // Handle button interactions for report verification/dismissal
   private async handleReportInteraction(interaction: ButtonInteraction) {
     if (
       !interaction.customId.startsWith("verify_report:") &&
@@ -126,7 +122,6 @@ export class ReportInteractionListener extends Listener {
       })
       .info("Processing report interaction");
 
-    // Check if user has permission to moderate reports
     const member =
       interaction.guild?.members.cache.get(interaction.user.id) || null;
     if (!hasReportModerationPermission(interaction.user, member)) {
@@ -205,14 +200,12 @@ export class ReportInteractionListener extends Listener {
         throw new Error("Failed to update report status");
       }
 
-      // Get the mod information for the Redis event
       const mod = await this.modRepository.findById(updatedReport.modId);
       if (!mod) {
         throw new Error("Mod not found for report");
       }
 
-      // Publish Redis event to update Discord message
-      await this.reportService.publishReportStatusUpdatedEvent(
+      await this.reportPublisher.publishReportStatusUpdatedEvent(
         updatedReport,
         mod,
       );
@@ -249,7 +242,6 @@ export class ReportInteractionListener extends Listener {
     interaction: ButtonInteraction,
     reportId: string,
   ) {
-    // Show modal for dismissal reason
     const modal = new ModalBuilder()
       .setCustomId(`dismiss_modal:${reportId}`)
       .setTitle("Dismiss Report");
@@ -274,7 +266,6 @@ export class ReportInteractionListener extends Listener {
     interaction: ModalSubmitInteraction,
     reportId: string,
   ) {
-    // Check if user has permission to moderate reports
     const member =
       interaction.guild?.members.cache.get(interaction.user.id) || null;
     if (!hasReportModerationPermission(interaction.user, member)) {
@@ -310,14 +301,12 @@ export class ReportInteractionListener extends Listener {
         throw new Error("Failed to update report status");
       }
 
-      // Get the mod information for the Redis event
       const mod = await this.modRepository.findById(updatedReport.modId);
       if (!mod) {
         throw new Error("Mod not found for report");
       }
 
-      // Publish Redis event to update Discord message
-      await this.reportService.publishReportStatusUpdatedEvent(
+      await this.reportPublisher.publishReportStatusUpdatedEvent(
         updatedReport,
         mod,
       );

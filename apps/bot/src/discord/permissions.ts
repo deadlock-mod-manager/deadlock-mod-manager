@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, type GuildMember, type User } from "discord.js";
-import { discordConfig } from "@/config/discord";
-import { logger as mainLogger } from "./logger";
+import { discordConfig } from "@/discord/config";
+import { logger as mainLogger } from "@/lib/logger";
 
 const logger = mainLogger.child().withContext({
   service: "permissions",

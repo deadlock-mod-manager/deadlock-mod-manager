@@ -4,18 +4,19 @@ import {
   type ReportStatusUpdatedEvent,
 } from "@deadlock-mods/shared";
 import IORedis from "ioredis";
+import { singleton } from "tsyringe";
 import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
 
 const logger = mainLogger.child().withContext({
-  service: "report-service",
+  service: "report-event-publisher",
 });
 
-export class ReportService {
-  private static instance: ReportService | null = null;
-  private redisPublisher: IORedis;
+@singleton()
+export class ReportEventPublisherService {
+  private readonly redisPublisher: IORedis;
 
-  private constructor() {
+  constructor() {
     this.redisPublisher = new IORedis(env.REDIS_URL, {
       maxRetriesPerRequest: null,
       lazyConnect: false,
@@ -28,13 +29,6 @@ export class ReportService {
     this.redisPublisher.on("connect", () => {
       logger.debug("Redis publisher connected");
     });
-  }
-
-  static getInstance(): ReportService {
-    if (!ReportService.instance) {
-      ReportService.instance = new ReportService();
-    }
-    return ReportService.instance;
   }
 
   async publishReportStatusUpdatedEvent(

@@ -33,6 +33,8 @@
     "genversion": "^3.2.0",
     "hono": "^4.12.9",
     "ioredis": "^5.10.1",
+    "reflect-metadata": "^0.2.2",
+    "tsyringe": "^4.10.0",
     "zod": "catalog:"
   },
   "devDependencies": {

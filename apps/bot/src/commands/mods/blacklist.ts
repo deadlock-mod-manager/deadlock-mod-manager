@@ -1,11 +1,11 @@
 import { db, ModRepository } from "@deadlock-mods/database";
 import { Command } from "@sapphire/framework";
-import { type GuildMember } from "discord.js";
-import { logger as mainLogger } from "../lib/logger";
+import { GuildMember } from "discord.js";
 import {
   getBlacklistRequiredPermissionsDisplay,
   hasBlacklistPermission,
-} from "../lib/permissions";
+} from "@/discord/permissions";
+import { logger as mainLogger } from "@/lib/logger";
 
 const logger = mainLogger.child().withContext({
   service: "blacklist-command",
@@ -60,10 +60,11 @@ export class BlacklistCommand extends Command {
   override async chatInputRun(
     interaction: Command.ChatInputCommandInteraction,
   ) {
-    const { user, member } = interaction;
+    const { user } = interaction;
+    const member =
+      interaction.member instanceof GuildMember ? interaction.member : null;
 
-    // Check permissions
-    if (!hasBlacklistPermission(user, member as GuildMember)) {
+    if (!hasBlacklistPermission(user, member)) {
       return interaction.reply({
         content: `You don't have permission to use this command. Required: ${getBlacklistRequiredPermissionsDisplay()}`,
       });
@@ -73,13 +74,13 @@ export class BlacklistCommand extends Command {
     const modIdOrUrl = interaction.options.getString("mod_id_or_url", true);
 
     try {
-      // Extract mod ID from URL if needed
       const modId = this.extractModId(modIdOrUrl);
 
       if (subcommand === "add") {
         const reason = interaction.options.getString("reason", true);
         return await this.handleAdd(interaction, modId, reason);
-      } else if (subcommand === "remove") {
+      }
+      if (subcommand === "remove") {
         return await this.handleRemove(interaction, modId);
       }
     } catch (error) {
@@ -100,18 +101,15 @@ export class BlacklistCommand extends Command {
   }
 
   private extractModId(input: string): string {
-    // If it's already just a number, return it
     if (/^\d+$/.test(input)) {
       return input;
     }
 
-    // Extract from GameBanana URL
     const gamebananaMatch = input.match(/gamebanana\.com\/mods\/(\d+)/i);
     if (gamebananaMatch) {
       return gamebananaMatch[1];
     }
 
-    // If we can't extract a valid ID, throw an error
     throw new Error("Invalid mod ID or URL format");
   }
 
@@ -122,7 +120,6 @@ export class BlacklistCommand extends Command {
   ) {
     const { user } = interaction;
 
-    // Check if mod exists
     const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
     if (!mod) {
       return interaction.reply({
@@ -130,14 +127,12 @@ export class BlacklistCommand extends Command {
       });
     }
 
-    // Check if already blacklisted
     if (mod.isBlacklisted) {
       return interaction.reply({
         content: `Mod \`${mod.name}\` is already blacklisted.`,
       });
     }
 
-    // Blacklist the mod
     await modRepository.blacklistMod(modId, reason, user.id);
 
     logger
@@ -161,7 +156,6 @@ export class BlacklistCommand extends Command {
   ) {
     const { user } = interaction;
 
-    // Check if mod exists
     const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
     if (!mod) {
       return interaction.reply({
@@ -169,14 +163,12 @@ export class BlacklistCommand extends Command {
       });
     }
 
-    // Check if not blacklisted
     if (!mod.isBlacklisted) {
       return interaction.reply({
         content: `Mod \`${mod.name}\` is not blacklisted.`,
       });
     }
 
-    // Unblacklist the mod
     await modRepository.unblacklistMod(modId);
 
     logger
