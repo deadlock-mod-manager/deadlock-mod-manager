@@ -1,14 +1,11 @@
-import type { GuildMember, User } from "discord.js";
-import { env } from "./env";
+import { PermissionFlagsBits, type GuildMember, type User } from "discord.js";
+import { discordConfig } from "@/config/discord";
 import { logger as mainLogger } from "./logger";
 
 const logger = mainLogger.child().withContext({
   service: "permissions",
 });
 
-/**
- * Check if a user has any of the required moderator roles for report verification
- */
 export function hasReportModerationPermission(
   user: User,
   member: GuildMember | null,
@@ -26,7 +23,7 @@ export function hasReportModerationPermission(
   }
 
   const userRoles = member.roles.cache.map((role) => role.id);
-  const hasRequiredRole = env.REPORT_MODERATOR_ROLES.some((roleId) =>
+  const hasRequiredRole = discordConfig.reportModeratorRoles.some((roleId) =>
     userRoles.includes(roleId),
   );
 
@@ -35,7 +32,7 @@ export function hasReportModerationPermission(
       userId: user.id,
       username: user.username,
       userRoles,
-      requiredRoles: env.REPORT_MODERATOR_ROLES,
+      requiredRoles: discordConfig.reportModeratorRoles,
       hasPermission: hasRequiredRole,
     })
     .debug("Checked report moderation permission");
@@ -43,20 +40,26 @@ export function hasReportModerationPermission(
   return hasRequiredRole;
 }
 
-/**
- * Get a formatted list of required roles for error messages
- */
 export function getRequiredRolesDisplay(): string {
-  return env.REPORT_MODERATOR_ROLES.map((roleId) => `<@&${roleId}>`).join(", ");
+  return discordConfig.reportModeratorRoles
+    .map((roleId) => `<@&${roleId}>`)
+    .join(", ");
 }
 
-/**
- * Check if a user has blacklist permission (server administrator or blacklist moderator role)
- */
 export function hasBlacklistPermission(
   user: User,
   member: GuildMember | null,
 ): boolean {
+  if (user.id === discordConfig.ownerId) {
+    logger
+      .withMetadata({
+        userId: user.id,
+        username: user.username,
+      })
+      .debug("User is bot owner, allowing blacklist permission");
+    return true;
+  }
+
   if (!member) {
     logger
       .withMetadata({
@@ -67,13 +70,10 @@ export function hasBlacklistPermission(
     return false;
   }
 
-  // Check if user is server administrator
-  const isAdmin = member.permissions.has("Administrator");
-
-  // Check if user has blacklist moderator role
+  const isAdmin = member.permissions.has(PermissionFlagsBits.Administrator);
   const userRoles = member.roles.cache.map((role) => role.id);
-  const hasBlacklistRole = env.BLACKLIST_MODERATOR_ROLES.some((roleId) =>
-    userRoles.includes(roleId),
+  const hasBlacklistRole = discordConfig.blacklistModeratorRoles.some(
+    (roleId) => userRoles.includes(roleId),
   );
 
   const hasPermission = isAdmin || hasBlacklistRole;
@@ -84,7 +84,7 @@ export function hasBlacklistPermission(
       username: user.username,
       isAdmin,
       userRoles,
-      blacklistModeratorRoles: env.BLACKLIST_MODERATOR_ROLES,
+      blacklistModeratorRoles: discordConfig.blacklistModeratorRoles,
       hasBlacklistRole,
       hasPermission,
     })
@@ -93,20 +93,19 @@ export function hasBlacklistPermission(
   return hasPermission;
 }
 
-/**
- * Get a formatted message for required permissions
- */
 export function getBlacklistRequiredPermissionsDisplay(): string {
+  const ownerText = "bot owner";
   const adminText = "Server Administrator";
   const roleText =
-    env.BLACKLIST_MODERATOR_ROLES.length > 0
-      ? env.BLACKLIST_MODERATOR_ROLES.map((roleId) => `<@&${roleId}>`).join(
-          ", ",
-        )
+    discordConfig.blacklistModeratorRoles.length > 0
+      ? discordConfig.blacklistModeratorRoles
+          .map((roleId) => `<@&${roleId}>`)
+          .join(", ")
       : "";
 
+  const parts = [ownerText, adminText];
   if (roleText) {
-    return `${adminText} or ${roleText}`;
+    parts.push(roleText);
   }
-  return adminText;
+  return parts.join(", or ");
 }

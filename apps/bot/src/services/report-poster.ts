@@ -44,6 +44,10 @@ export class ReportPosterService {
 
   async postNewReport(event: NewReportEvent): Promise<void> {
     try {
+      if (env.NODE_ENV === "development") {
+        logger.warn("Skipping Discord post in development environment");
+        return;
+      }
       if (!env.REPORTS_CHANNEL_ID) {
         logger.warn("REPORTS_CHANNEL_ID not configured, skipping Discord post");
         return;

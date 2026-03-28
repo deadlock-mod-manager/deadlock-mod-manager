@@ -44,10 +44,17 @@ export const envSchema = z
           .map((id) => id.trim())
           .filter(Boolean),
       ),
+    DISCORD_OWNER_ID: z.string().default("447912513653309442"),
     CORE_CONTRIBUTOR_ROLES: z
       .string()
       .default("1322369692962390119")
       .transform((val) => val.split(",").map((id) => id.trim())),
+    DISCORD_APPLICATION_ID: z.string().default("1417209944851222528"),
+    DISCORD_PUBLIC_KEY: z
+      .string()
+      .default(
+        "9b427052383a21f04923e7007d4e203483f2f714cf34ceb5f7cfaf6d8c826d78",
+      ),
   })
   .merge(aiEnvWithoutDatabaseUrl);
 
