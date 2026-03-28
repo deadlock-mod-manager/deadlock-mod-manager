@@ -7,11 +7,6 @@ on:
         description: "Release tag to publish to WinGet (e.g., v0.5.0)"
         required: true
         type: string
-      dry_run:
-        description: "Dry run mode (test without creating PR)"
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   winget-publish:
@@ -74,7 +69,6 @@ jobs:
           release-tag: ${{ inputs.release_tag }}
           max-versions-to-keep: 5
           token: ${{ secrets.WINGET_TOKEN }}
-          dry-run: ${{ inputs.dry_run }}
 
       - name: Summary
         if: always()
