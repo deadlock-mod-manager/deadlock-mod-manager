@@ -12,7 +12,7 @@
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "neverthrow": "^8.2.0"
   },
   "devDependencies": {

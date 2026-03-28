@@ -179,7 +179,7 @@ export interface FileRoutesByFullPath {
   '/mod/$id': typeof ModIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
-  '/mods': typeof ModsIndexRoute
+  '/mods/': typeof ModsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -258,7 +258,7 @@ export interface FileRouteTypes {
     | '/mod/$id'
     | '/dashboard/'
     | '/download/'
-    | '/mods'
+    | '/mods/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -450,7 +450,7 @@ declare module '@tanstack/react-router' {
     '/mods/': {
       id: '/mods/'
       path: '/mods'
-      fullPath: '/mods'
+      fullPath: '/mods/'
       preLoaderRoute: typeof ModsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }

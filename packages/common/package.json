@@ -12,11 +12,11 @@
     "@keyv/redis": "catalog:",
     "cache-manager": "catalog:",
     "keyv": "catalog:",
-    "pg": "^8.15.5",
+    "pg": "^8.20.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
-    "@types/pg": "^8.15.5"
+    "@types/pg": "^8.20.0"
   }
 }
