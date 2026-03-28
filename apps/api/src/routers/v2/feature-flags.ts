@@ -26,13 +26,6 @@ export const featureFlagsRouter = {
         return [];
       }
 
-      logger
-        .withMetadata({
-          featureFlagsCount: clientFlagsResult.value.length,
-          userId: userId ?? "unauthenticated",
-        })
-        .info("Retrieved feature flags for client");
-
       return clientFlagsResult.value;
     }),
 

@@ -34,9 +34,6 @@ export class FeatureFlagRegistry {
       const existingResult = await this.featureFlagService.findByName(name);
 
       if (existingResult.isOk()) {
-        this.logger
-          .withMetadata({ name })
-          .info("Feature flag already exists, skipping creation");
         return ok(existingResult.value);
       }
 
