@@ -101,7 +101,7 @@ function isValidIsoDate(value: string): boolean {
 }
 
 export type PerplexityConfig = {
-  /** OpenRouter API key (uses OPENROUTER_API_KEY env var if not provided) */
+  /** OpenRouter API key for Perplexity-via-OpenRouter */
   apiKey?: string;
   /**
    * Perplexity model to use. Let the agent choose based on query complexity:
@@ -115,7 +115,7 @@ export type PerplexityConfig = {
 export type WebSearchConfig = {
   /** Search provider: "brave" or "perplexity" */
   provider?: SearchProvider;
-  /** Brave Search API key (for brave provider, uses BRAVE_API_KEY env var if not provided) */
+  /** Brave Search API key (required for brave provider) */
   braveApiKey?: string;
   /** Perplexity configuration (for perplexity provider, uses OpenRouter) */
   perplexity?: PerplexityConfig;
@@ -264,9 +264,8 @@ async function runPerplexitySearch(params: {
 
 export function createWebSearchTool(config?: WebSearchConfig) {
   const provider: SearchProvider = config?.provider ?? "brave";
-  const braveApiKey = config?.braveApiKey ?? process.env.BRAVE_API_KEY;
-  const openRouterApiKey =
-    config?.perplexity?.apiKey ?? process.env.OPENROUTER_API_KEY;
+  const braveApiKey = config?.braveApiKey;
+  const openRouterApiKey = config?.perplexity?.apiKey;
   const perplexityModel = config?.perplexity?.model ?? DEFAULT_PERPLEXITY_MODEL;
   const timeoutSeconds = config?.timeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS;
   const maxResults = config?.maxResults ?? DEFAULT_SEARCH_COUNT;
@@ -361,7 +360,7 @@ export function createWebSearchTool(config?: WebSearchConfig) {
             provider: "perplexity",
             tookMs: 0,
             error:
-              "Missing OpenRouter API key. Set OPENROUTER_API_KEY environment variable.",
+              "Missing OpenRouter API key. Pass perplexity.apiKey in WebSearchConfig.",
           };
         }
 
@@ -405,7 +404,7 @@ export function createWebSearchTool(config?: WebSearchConfig) {
           tookMs: 0,
           results: [],
           error:
-            "Missing Brave Search API key. Set BRAVE_API_KEY environment variable or configure braveApiKey.",
+            "Missing Brave Search API key. Pass braveApiKey in WebSearchConfig.",
         };
       }
 

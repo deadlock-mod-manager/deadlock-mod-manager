@@ -1,4 +1,3 @@
-export * from "./mastra";
-export * from "./mastra/agents/dmm";
-export * from "./mastra/tools";
-export * from "./app";
+export { aiConfigSchema, type AiConfig } from "./config";
+export { createMastra } from "./mastra";
+export { ingestDocs } from "./mastra/tools/docs";

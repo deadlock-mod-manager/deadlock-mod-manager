@@ -3,14 +3,9 @@ import { join } from "node:path";
 import { embedMany } from "ai";
 import { MDocument } from "@mastra/rag";
 import matter from "gray-matter";
-import { env } from "../../../env";
+import type { AiConfig } from "../../../config";
 import { createServiceLogger } from "../../../logger";
-import {
-  INDEX_NAME,
-  EMBEDDING_DIMENSION,
-  vectorStore,
-  embeddingModel,
-} from "./vector-store";
+import { createDocsVectorDeps } from "./vector-store";
 
 const log = createServiceLogger("docs-ingest");
 
@@ -73,8 +68,11 @@ function walkMdxFiles(
   return results;
 }
 
-export async function ingestDocs(): Promise<void> {
-  const docsPath = env.DOCS_PATH;
+export async function ingestDocs(config: AiConfig): Promise<void> {
+  const { vectorStore, embeddingModel, INDEX_NAME, EMBEDDING_DIMENSION } =
+    createDocsVectorDeps(config);
+
+  const docsPath = config.DOCS_PATH;
   const files = walkMdxFiles(docsPath, docsPath);
 
   if (files.length === 0) {

@@ -1,5 +1,10 @@
 {
   "extends": "@deadlock-mods/typescript-config/base.json",
+  "compilerOptions": {
+    "types": [
+      "bun"
+    ],
+  },
   "include": [
     "src/**/*.ts"
   ],

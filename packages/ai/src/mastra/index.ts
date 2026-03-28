@@ -1,21 +1,24 @@
 import { Mastra } from "@mastra/core";
 import { PostgresStore } from "@mastra/pg";
 import { PinoLogger } from "@mastra/loggers";
-import { dmmAgent } from "./agents/dmm";
-import { env } from "../env";
+import type { AiConfig } from "../config";
+import { createDmmAgent } from "./agents/dmm";
 
 const mastraLogger = new PinoLogger({
   name: "mastra",
-  // level: "debug",
 });
 
-const storage = new PostgresStore({
-  id: "mastra-storage",
-  connectionString: env.DATABASE_URL,
-});
+export async function createMastra(config: AiConfig) {
+  const dmmAgent = await createDmmAgent(config);
 
-export const mastra = new Mastra({
-  agents: { dmmAgent },
-  storage,
-  logger: mastraLogger,
-});
+  const storage = new PostgresStore({
+    id: "mastra-storage",
+    connectionString: config.DATABASE_URL,
+  });
+
+  return new Mastra({
+    agents: { dmmAgent },
+    storage,
+    logger: mastraLogger,
+  });
+}

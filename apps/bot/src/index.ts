@@ -2,53 +2,29 @@
 import "./instrument";
 
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { ProcessManager } from "@/lib/process-manager";
 import healthRouter from "@/routers/health";
-import { BotStartupService } from "@/services/bot-startup";
-import { HealthService } from "@/services/health";
-import { RedisSubscriberService } from "@/services/redis-subscriber";
+import { BotApplication, type AppEnv } from "./bot-application";
 import client from "./lib/discord";
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
+
+app.use(
+  "*",
+  cors({
+    origin: env.TRUSTED_ORIGINS,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 app.route("/", healthRouter);
 
 const main = async () => {
-  logger.info("Starting health check server on port 3001");
-  Bun.serve({
-    port: 3001,
-    fetch: app.fetch,
-  });
-
-  if (!env.BOT_ENABLED) {
-    logger.info("Bot is disabled");
-    return;
-  }
-
-  const startupService = new BotStartupService();
-  await startupService.initialize(client);
-
-  const redisSubscriber = RedisSubscriberService.getInstance();
-  const healthService = HealthService.getInstance();
-
-  const processManager = new ProcessManager();
-  processManager.setClient(client);
-  processManager.registerShutdownHandler(redisSubscriber);
-  processManager.setupSignalHandlers();
-
-  client.once("clientReady", async () => {
-    logger.info(`Logged in as ${client.user?.tag}`);
-
-    try {
-      await redisSubscriber.start();
-      logger.info("Bot is fully initialized and ready");
-      healthService.markAsReady();
-    } catch (error) {
-      logger.withError(error).error("Failed to start services");
-    }
-  });
+  await new BotApplication(app, client).run();
 };
 
 if (import.meta.main) {

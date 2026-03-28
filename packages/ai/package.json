@@ -7,9 +7,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev:server": "bun --env-file=../../.env run --watch src/server.ts",
     "dev:studio": "mastra studio",
-    "dev": "pnpm run /^dev:.*/",
+    "dev": "pnpm run dev:studio",
     "version:generate": "genversion --esm src/version.ts",
     "check-types": "tsc --noEmit"
   },
@@ -19,7 +18,6 @@
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@mastra/core": "^1.17.0",
-    "@mastra/hono": "^1.3.0",
     "@mastra/loggers": "^1.0.3",
     "@mastra/mcp": "^1.3.1",
     "@mastra/memory": "^1.10.0",
@@ -30,9 +28,7 @@
     "@standard-community/standard-openapi": "^0.2.9",
     "ai": "^5.0.161",
     "gray-matter": "^4.0.3",
-    "hono": "^4.12.9",
     "linkedom": "^0.18.12",
-    "neverthrow": "^8.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {

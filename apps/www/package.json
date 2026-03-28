@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- vite dev --port 3003",
     "build": "vite build",
-    "start": "bun run server.ts",
+    "start": "bun run ./server.ts",
     "serve": "vite preview"
   },
   "dependencies": {

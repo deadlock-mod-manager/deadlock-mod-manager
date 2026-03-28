@@ -7,6 +7,7 @@ import type {
 } from "discord.js";
 import {
   ActionRowBuilder,
+  MessageFlags,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -140,7 +141,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: `❌ You don't have permission to moderate reports. Required roles: ${getRequiredRolesDisplay()}`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
       return;
     }
@@ -150,7 +151,7 @@ export class ReportInteractionListener extends Listener {
       if (!report) {
         await interaction.reply({
           content: "❌ Report not found.",
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
         return;
       }
@@ -158,7 +159,7 @@ export class ReportInteractionListener extends Listener {
       if (report.status !== "unverified") {
         await interaction.reply({
           content: `❌ This report has already been ${report.status}.`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
         return;
       }
@@ -181,7 +182,7 @@ export class ReportInteractionListener extends Listener {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: "❌ An error occurred while processing your request.",
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     }
@@ -218,7 +219,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: "✅ Report has been verified successfully.",
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
 
       logger
@@ -239,7 +240,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: "❌ Failed to verify report. Please try again.",
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   }
@@ -287,7 +288,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: `❌ You don't have permission to moderate reports. Required roles: ${getRequiredRolesDisplay()}`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
       return;
     }
@@ -323,7 +324,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: "✅ Report has been dismissed successfully.",
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
 
       logger
@@ -345,7 +346,7 @@ export class ReportInteractionListener extends Listener {
 
       await interaction.reply({
         content: "❌ Failed to dismiss report. Please try again.",
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   }
