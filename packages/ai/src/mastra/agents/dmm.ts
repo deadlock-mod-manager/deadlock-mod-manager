@@ -9,6 +9,8 @@ import { createDiscordMcp } from "../mcp/discord";
 import { SOUL_INSTRUCTIONS } from "../memory/soul";
 import { createSearchDocsTool } from "../tools/docs";
 import { createDocsVectorDeps } from "../tools/docs/vector-store";
+import { createSearchKbTool } from "../tools/kb";
+import { createKbVectorDeps } from "../tools/kb/vector-store";
 import { readSoulTool, updateSoulTool } from "../tools/soul";
 import { createWebFetchTool, createWebSearchTool } from "../tools/web";
 
@@ -26,6 +28,9 @@ export async function createDmmAgent(config: AiConfig): Promise<{
 
   const docsDeps = createDocsVectorDeps(config);
   const searchDocsTool = createSearchDocsTool(docsDeps);
+
+  const kbDeps = createKbVectorDeps(config);
+  const searchKbTool = createSearchKbTool(kbDeps);
 
   const perplexitySearchTool = createWebSearchTool({
     provider: "perplexity",
@@ -47,6 +52,7 @@ export async function createDmmAgent(config: AiConfig): Promise<{
         {}) as ToolsInput;
       return {
         searchDocsTool,
+        searchKbTool,
         readSoulTool,
         updateSoulTool,
         perplexitySearchTool,

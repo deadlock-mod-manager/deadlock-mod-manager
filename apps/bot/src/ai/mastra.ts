@@ -1,4 +1,4 @@
-import { createMastra, ingestDocs } from "@deadlock-mods/ai";
+import { createMastra, ingestDocs, type Agent } from "@deadlock-mods/ai";
 import {
   MastraServer,
   type HonoBindings,
@@ -10,18 +10,19 @@ import { logger, runWithWideEvent, wideEventContext } from "@/lib/logger";
 
 export type MastraAppEnv = { Bindings: HonoBindings; Variables: HonoVariables };
 
-let disconnectAllMcps: (() => Promise<void>) | null = null;
-
-export async function initializeMastra(app: Hono<MastraAppEnv>): Promise<void> {
-  const { mastra, disconnectAllMcps: registerDisconnectAllMcps } =
-    await createMastra(env);
-  disconnectAllMcps = registerDisconnectAllMcps;
-  const mastraServer = new MastraServer({ app, mastra });
-  await mastraServer.init();
+export interface MastraContext {
+  agent: Agent;
+  disconnectAllMcps: () => Promise<void>;
 }
 
-export async function disconnectMcps(): Promise<void> {
-  await disconnectAllMcps?.();
+export async function initializeMastra(
+  app: Hono<MastraAppEnv>,
+): Promise<MastraContext> {
+  const { mastra, disconnectAllMcps } = await createMastra(env);
+  const mastraServer = new MastraServer({ app, mastra });
+  await mastraServer.init();
+  const agent = mastra.getAgentById("dmm");
+  return { agent, disconnectAllMcps };
 }
 
 export function scheduleDocsIngest(): void {

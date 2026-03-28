@@ -1,5 +1,5 @@
 import { runWithWideEvent, logger, wideEventContext } from "@/lib/logger";
-import { getHeuristicIntent } from "@/listeners/messages/message-triage-heuristics";
+import { getHeuristicIntent } from "@/nlp/message-triage-heuristics";
 import { IntentClassifier, type IntentLabel } from "@/nlp/intent-classifier";
 import { container } from "tsyringe";
 import { Listener } from "@sapphire/framework";

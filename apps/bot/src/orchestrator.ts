@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { chatBot, startSupportChatGateway } from "@/ai/chat";
+import { createSupportChat, type SupportChat } from "@/ai/chat";
 import {
   type MastraAppEnv,
-  disconnectMcps,
   initializeMastra,
   scheduleDocsIngest as scheduleDocsIngestJob,
 } from "@/ai/mastra";
@@ -27,6 +26,8 @@ export class Orchestrator {
   private readonly processManager: ProcessManager;
   private readonly client = discordClient;
   private readonly supportChatGatewayAbort = new AbortController();
+  private supportChat: SupportChat | null = null;
+  private disconnectAllMcps: (() => Promise<void>) | null = null;
 
   constructor() {
     this.processManager = container.resolve(ProcessManager);
@@ -70,19 +71,6 @@ export class Orchestrator {
     this.app.route("/", healthRouter);
   }
 
-  async initializeChat(): Promise<void> {
-    await redis.connect();
-    await chatBot.initialize();
-
-    startSupportChatGateway({
-      abortSignal: this.supportChatGatewayAbort.signal,
-    });
-  }
-
-  async initializeMastra(): Promise<void> {
-    await initializeMastra(this.app);
-  }
-
   startHttpServer(): void {
     logger.info(`Starting HTTP server on port ${env.PORT}`);
     Bun.serve({
@@ -100,8 +88,12 @@ export class Orchestrator {
     this.processManager.registerTeardown("chat-discord-gateway", () => {
       this.supportChatGatewayAbort.abort();
     });
-    this.processManager.registerTeardown("chat", () => chatBot.shutdown());
-    this.processManager.registerTeardown("mastra-mcps", () => disconnectMcps());
+    this.processManager.registerTeardown("chat", () => {
+      this.supportChat?.chatBot.shutdown();
+    });
+    this.processManager.registerTeardown("mastra-mcps", () =>
+      this.disconnectAllMcps?.(),
+    );
     this.processManager.registerTeardown("discord-client", () => {
       this.client.destroy();
     });
@@ -137,15 +129,22 @@ export class Orchestrator {
   }
 
   async run(): Promise<void> {
-    await this.initializeMastra();
+    const { agent, disconnectAllMcps } = await initializeMastra(this.app);
+    this.disconnectAllMcps = disconnectAllMcps;
     this.startHttpServer();
     scheduleDocsIngestJob();
-    this.registerProcessTeardowns();
 
     if (env.BOT_ENABLED) {
+      this.supportChat = createSupportChat(agent);
       await this.startDiscordIfEnabled();
-      await this.initializeChat();
+      await redis.connect();
+      await this.supportChat.chatBot.initialize();
+      this.supportChat.startSupportChatGateway({
+        abortSignal: this.supportChatGatewayAbort.signal,
+      });
     }
+
+    this.registerProcessTeardowns();
 
     container.resolve(HealthService).markAsReady();
   }
