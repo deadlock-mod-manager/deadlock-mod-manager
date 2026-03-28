@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { chatBot } from "@/ai/chat";
+import { chatBot, startSupportChatGateway } from "@/ai/chat";
 import {
   type MastraAppEnv,
   disconnectMcps,
@@ -13,6 +13,7 @@ import { RedisSubscriberService } from "@/events/redis-subscriber";
 import { HealthService } from "@/health/health.service";
 import healthRouter from "@/health/health.router";
 import { env } from "@/lib/env";
+import { redis } from "@/lib/redis";
 import {
   createWideEvent,
   logger,
@@ -25,6 +26,7 @@ export class Orchestrator {
   private readonly app: Hono<MastraAppEnv>;
   private readonly processManager: ProcessManager;
   private readonly client = discordClient;
+  private readonly supportChatGatewayAbort = new AbortController();
 
   constructor() {
     this.processManager = container.resolve(ProcessManager);
@@ -69,7 +71,12 @@ export class Orchestrator {
   }
 
   async initializeChat(): Promise<void> {
+    await redis.connect();
     await chatBot.initialize();
+
+    startSupportChatGateway({
+      abortSignal: this.supportChatGatewayAbort.signal,
+    });
   }
 
   async initializeMastra(): Promise<void> {
@@ -90,6 +97,9 @@ export class Orchestrator {
     this.processManager.registerTeardown("redis-subscriber", () =>
       redisSubscriber.stop(),
     );
+    this.processManager.registerTeardown("chat-discord-gateway", () => {
+      this.supportChatGatewayAbort.abort();
+    });
     this.processManager.registerTeardown("chat", () => chatBot.shutdown());
     this.processManager.registerTeardown("mastra-mcps", () => disconnectMcps());
     this.processManager.registerTeardown("discord-client", () => {
@@ -130,14 +140,13 @@ export class Orchestrator {
     await this.initializeMastra();
     this.startHttpServer();
     scheduleDocsIngestJob();
+    this.registerProcessTeardowns();
+
     if (env.BOT_ENABLED) {
-      this.registerProcessTeardowns();
-    }
-    await this.startDiscordIfEnabled();
-    if (env.BOT_ENABLED) {
+      await this.startDiscordIfEnabled();
       await this.initializeChat();
-      logger.info("Bot is fully initialized and ready");
-      container.resolve(HealthService).markAsReady();
     }
+
+    container.resolve(HealthService).markAsReady();
   }
 }
