@@ -7,6 +7,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  envDir: path.resolve(__dirname, '../..'),
   plugins: [
     react(),
     Unfonts({

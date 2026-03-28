@@ -17,7 +17,7 @@ import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
 import logger from "./logger";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
 
 export const initializeApiUrl = async (): Promise<void> => {
   try {
