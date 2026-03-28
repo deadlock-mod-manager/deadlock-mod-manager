@@ -14,7 +14,9 @@ const defaultDocsPath = resolve(
 export const aiConfigSchema = z.object({
   DATABASE_URL: z.string(),
   DEFAULT_MODEL: z.string().default("openrouter/moonshotai/kimi-k2.5"),
-  GUARDRAILS_MODEL: z.string().default("openrouter/openai/gpt-4o-mini"),
+  GUARDRAILS_MODEL: z
+    .string()
+    .default("openrouter/openai/gpt-oss-safeguard-20b"),
   OPENROUTER_API_KEY: z.string(),
   BRAVE_API_KEY: z.string(),
   BOT_TOKEN: z.string(),

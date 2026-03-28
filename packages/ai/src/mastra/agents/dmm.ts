@@ -74,7 +74,7 @@ export async function createDmmAgent(config: AiConfig): Promise<{
     inputProcessors: [
       new PromptInjectionDetector({
         model: config.GUARDRAILS_MODEL,
-        threshold: 0.8,
+        threshold: 0.85,
         strategy: "rewrite",
         detectionTypes: ["injection", "jailbreak", "system-override"],
       }),

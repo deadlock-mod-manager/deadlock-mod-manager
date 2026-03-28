@@ -49,6 +49,15 @@ export const envSchema = z
       .string()
       .default("1322369692962390119")
       .transform((val) => val.split(",").map((id) => id.trim())),
+    SUPPORT_ROLES: z
+      .string()
+      .default("1322369690902990951")
+      .transform((val) =>
+        val
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean),
+      ),
     DISCORD_APPLICATION_ID: z.string().default("1417209944851222528"),
     DISCORD_PUBLIC_KEY: z
       .string()

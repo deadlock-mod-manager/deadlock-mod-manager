@@ -7,6 +7,7 @@ import type {
 } from "discord.js";
 import {
   ActionRowBuilder,
+  GuildMember,
   MessageFlags,
   ModalBuilder,
   TextInputBuilder,
@@ -14,6 +15,8 @@ import {
 } from "discord.js";
 import type { WideEvent } from "@deadlock-mods/logging";
 import { container } from "tsyringe";
+import { markSupportThreadEscalated } from "@/ai/support-thread-state";
+import { discordConfig } from "@/discord/config";
 import {
   getRequiredRolesDisplay,
   hasReportModerationPermission,
@@ -80,6 +83,11 @@ export class ReportInteractionListener extends Listener {
       return;
     }
 
+    if (customId === "escalate") {
+      await this.handleEscalation(interaction, wide);
+      return;
+    }
+
     wide.merge({ interactionOutcome: "unhandled_button" });
   }
 
@@ -102,6 +110,38 @@ export class ReportInteractionListener extends Listener {
     }
 
     wide.merge({ interactionOutcome: "unhandled_modal" });
+  }
+
+  private async handleEscalation(
+    interaction: ButtonInteraction,
+    wide: WideEvent,
+  ) {
+    if (!interaction.channel?.isThread()) {
+      wide.merge({ interactionOutcome: "escalate_not_in_thread" });
+      await interaction.reply({
+        content: "Escalation is only available in support threads.",
+        flags: [MessageFlags.Ephemeral],
+      });
+      return;
+    }
+
+    const threadId = interaction.channel.id;
+    await markSupportThreadEscalated(threadId);
+
+    const displayName =
+      interaction.member instanceof GuildMember
+        ? interaction.member.displayName
+        : interaction.user.username;
+
+    const supportMentions = discordConfig.supportRoles
+      .map((roleId) => `<@&${roleId}>`)
+      .join(" ");
+
+    await interaction.reply({
+      content: `${displayName} requested help from the support team. ${supportMentions}, please take a look.`,
+    });
+
+    wide.merge({ interactionOutcome: "escalated" });
   }
 
   private async handleReportInteraction(
