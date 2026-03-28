@@ -16,7 +16,6 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.101",
     "@deadlock-mods/common": "workspace:*",
-    "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@mastra/core": "^1.17.0",

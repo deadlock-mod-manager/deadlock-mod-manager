@@ -1085,9 +1085,6 @@ importers:
       '@deadlock-mods/common':
         specifier: workspace:*
         version: link:../common
-      '@deadlock-mods/database':
-        specifier: workspace:*
-        version: link:../database
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../logging
