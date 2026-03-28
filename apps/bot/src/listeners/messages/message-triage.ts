@@ -13,7 +13,7 @@ const TRIAGE_CHANNEL_BY_INTENT: Partial<Record<IntentLabel, string>> = {
   "help request": "1418618964925480990",
   "bug report": "1418618964925480990",
   "feature request": "1414240008394772624",
-  "commission request": "1486467282355097820",
+  "commission request": "1486466823120486430",
   "mod showcase": "1412799289301925908",
   "modding question": "1412799448932679863",
   "linux support": "1470108603598766304",
@@ -111,10 +111,13 @@ export class MessageTriageListener extends Listener {
       return;
     }
 
+    const replyText =
+      intent === "commission request"
+        ? `This looks like it may fit better in <#${targetChannelId}>. You can also use \`/howto\` to learn how commissions work.`
+        : `This looks like it may fit better in <#${targetChannelId}>, please post there so the right people can help.`;
+
     try {
-      await message.reply(
-        `This looks like it may fit better in <#${targetChannelId}>, please post there so the right people can help.`,
-      );
+      await message.reply(replyText);
     } catch (caught) {
       const error =
         caught instanceof Error ? caught : new Error(String(caught));
