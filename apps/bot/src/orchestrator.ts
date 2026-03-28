@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { chatBot } from "@/ai/chat";
 import {
   type MastraAppEnv,
+  disconnectMcps,
   initializeMastra,
   scheduleDocsIngest as scheduleDocsIngestJob,
 } from "@/ai/mastra";
@@ -90,6 +91,7 @@ export class Orchestrator {
       redisSubscriber.stop(),
     );
     this.processManager.registerTeardown("chat", () => chatBot.shutdown());
+    this.processManager.registerTeardown("mastra-mcps", () => disconnectMcps());
     this.processManager.registerTeardown("discord-client", () => {
       this.client.destroy();
     });

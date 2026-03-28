@@ -63,6 +63,7 @@ export const devFormat = format.combine(
     delete metadata.app;
     delete metadata.version;
     delete metadata.service;
+    delete metadata.environment;
     delete metadata[Symbol.for("splat")];
 
     const { formattedMessage, formattedMetadata, formattedError } =

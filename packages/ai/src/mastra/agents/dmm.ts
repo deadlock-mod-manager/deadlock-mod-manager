@@ -2,6 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import type { ToolsInput } from "@mastra/core/agent";
 import { PromptInjectionDetector } from "@mastra/core/processors";
 import { Memory } from "@mastra/memory";
+import type { MCPClient } from "@mastra/mcp";
 import { PostgresStore } from "@mastra/pg";
 import type { AiConfig } from "../../config";
 import { createDiscordMcp } from "../mcp/discord";
@@ -15,9 +16,13 @@ export type SmotixRuntimeContext = {
   "dynamic-tools"?: ToolsInput;
 };
 
-export async function createDmmAgent(config: AiConfig) {
+export async function createDmmAgent(config: AiConfig): Promise<{
+  agent: Agent;
+  mcpClients: MCPClient[];
+}> {
   const discordMcp = createDiscordMcp(config);
   const discordTools = await discordMcp.listTools();
+  const mcpClients: MCPClient[] = [discordMcp];
 
   const docsDeps = createDocsVectorDeps(config);
   const searchDocsTool = createSearchDocsTool(docsDeps);
@@ -32,7 +37,7 @@ export async function createDmmAgent(config: AiConfig) {
   });
   const webFetchTool = createWebFetchTool();
 
-  return new Agent({
+  const agent = new Agent({
     id: "dmm",
     name: "Deadlock Mod Manager Helper",
     instructions: SOUL_INSTRUCTIONS,
@@ -69,4 +74,6 @@ export async function createDmmAgent(config: AiConfig) {
       }),
     ],
   });
+
+  return { agent, mcpClients };
 }
