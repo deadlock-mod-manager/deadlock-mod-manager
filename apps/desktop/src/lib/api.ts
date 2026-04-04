@@ -12,7 +12,7 @@ import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 import { invoke } from "@tauri-apps/api/core";
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetch } from "./fetch";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
 import logger from "./logger";

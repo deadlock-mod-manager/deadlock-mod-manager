@@ -1,6 +1,6 @@
 import type { OIDCSession, OIDCUser } from "@deadlock-mods/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetch } from "@/lib/fetch";
 import { useCallback, useEffect, useState } from "react";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import {

@@ -6,7 +6,7 @@ import {
   parseOIDCState,
   type TokenResponse,
 } from "@deadlock-mods/shared/auth";
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetch } from "../fetch";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { AUTH_URL } from "../config";
 

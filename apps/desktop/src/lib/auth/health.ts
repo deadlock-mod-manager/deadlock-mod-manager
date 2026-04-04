@@ -1,4 +1,4 @@
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetch } from "../fetch";
 import { AUTH_URL } from "@/lib/config";
 
 export interface AuthHealthData {
