@@ -78,7 +78,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpm = pnpm_9;
     fetcherVersion = 2;
     sourceRoot = "source";
-    hash = "sha256-5VULH8PqO0G9BAE1usYhhbRPKP7AJb8SnxYkyEiCbb4=";
+    hash = "sha256-XXkcjkGSVdIoU43QWzjLTipNwucmXzUKsi9YQes6VWE=";
   };
 
   # Environment variables
