@@ -12,7 +12,9 @@ export const SidebarCollapse = () => {
   const { toggleSidebar, open } = useSidebar();
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton onClick={toggleSidebar}>
+      <SidebarMenuButton
+        onClick={toggleSidebar}
+        tooltip={t(open ? "navigation.collapseMenu" : "navigation.expandMenu")}>
         <ArrowLineLeftIcon
           className={cn(
             "transition-all duration-150 ease-linear",

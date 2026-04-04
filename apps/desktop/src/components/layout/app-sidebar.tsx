@@ -47,6 +47,7 @@ type SidebarItem = {
     count?: number;
     downloads?: number;
   }) => React.ReactNode;
+  tooltipLabel: string;
   url: string;
   dialog?: React.ComponentType;
   icon?: Icon;
@@ -64,6 +65,7 @@ const getSidebarItems = (
     {
       id: "dashboard",
       title: () => <span>{t("navigation.dashboard")}</span>,
+      tooltipLabel: t("navigation.dashboard"),
       url: "/",
       icon: HouseIcon,
       group: "general",
@@ -82,6 +84,7 @@ const getSidebarItems = (
           )}
         </div>
       ),
+      tooltipLabel: t("navigation.myMods"),
       url: "/my-mods",
       icon: PackageIcon,
       group: "mods",
@@ -89,6 +92,7 @@ const getSidebarItems = (
     {
       id: "get-mods",
       title: () => <span>{t("navigation.getMods")}</span>,
+      tooltipLabel: t("navigation.getMods"),
       url: "/mods",
       icon: MagnifyingGlassIcon,
       group: "mods",
@@ -103,6 +107,7 @@ const getSidebarItems = (
           )}
         </div>
       ),
+      tooltipLabel: t("navigation.downloads"),
       url: "/downloads",
       icon: DownloadIcon,
       group: "general",
@@ -110,6 +115,7 @@ const getSidebarItems = (
     {
       id: "crosshairs",
       title: () => <span>{t("navigation.crosshairs")}</span>,
+      tooltipLabel: t("navigation.crosshairs"),
       url: "/crosshairs",
       icon: CrosshairIcon,
       group: t("navigation.customization"),
@@ -117,6 +123,7 @@ const getSidebarItems = (
     {
       id: "autoexec",
       title: () => <span>{t("navigation.autoexec")}</span>,
+      tooltipLabel: t("navigation.autoexec"),
       url: "/settings/autoexec",
       icon: ArticleIcon,
       group: t("navigation.customization"),
@@ -124,6 +131,7 @@ const getSidebarItems = (
     {
       id: "settings",
       title: () => <span>{t("navigation.settings")}</span>,
+      tooltipLabel: t("navigation.settings"),
       url: "/settings",
       icon: GearIcon,
       group: "general",
@@ -133,6 +141,7 @@ const getSidebarItems = (
           {
             id: "developer",
             title: () => <span>{t("navigation.developer")}</span>,
+            tooltipLabel: t("navigation.developer"),
             url: "/developer",
             icon: CodeIcon,
             group: "Developer",
@@ -145,6 +154,7 @@ const getSidebarItems = (
           {
             id: "debug",
             title: () => <span>Debug</span>,
+            tooltipLabel: "Debug",
             url: "/debug",
             icon: BugBeetleIcon,
             bottom: true,
@@ -187,7 +197,8 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
         <DialogTrigger asChild>
           <SidebarMenuButton
             className='cursor-pointer'
-            isActive={location.pathname === item.url}>
+            isActive={location.pathname === item.url}
+            tooltip={item.tooltipLabel}>
             {renderIcon(item)}
             {item.title({
               isActive: location.pathname === item.url,
@@ -208,7 +219,10 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
   }
 
   return (
-    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+    <SidebarMenuButton
+      asChild
+      isActive={location.pathname === item.url}
+      tooltip={item.tooltipLabel}>
       <Link to={item.url} draggable='false'>
         {renderIcon(item)}
         {item.title({
@@ -315,7 +329,8 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => openUrl("https://docs.deadlockmods.app/")}>
+                  onClick={() => openUrl("https://docs.deadlockmods.app/")}
+                  tooltip={t("help.documentation")}>
                   <QuestionIcon weight='duotone' />
                   <span>{t("help.documentation")}</span>
                 </SidebarMenuButton>
@@ -323,7 +338,8 @@ export const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   className='cursor-pointer'
-                  onClick={() => openUrl(DISCORD_URL)}>
+                  onClick={() => openUrl(DISCORD_URL)}
+                  tooltip={t("help.needHelp")}>
                   <DiscordLogoIcon weight='duotone' />
                   <span>{t("help.needHelp")}</span>
                 </SidebarMenuButton>
