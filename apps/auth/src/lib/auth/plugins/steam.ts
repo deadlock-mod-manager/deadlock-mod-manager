@@ -324,10 +324,11 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
           const errorURL = errorCallbackURL || baseErrorURL;
 
-          const trustedOrigins: string[] =
+          const trustedOrigins: string[] = (
             typeof ctx.context.options.trustedOrigins === "function"
               ? await ctx.context.options.trustedOrigins(ctx.request)
-              : ctx.context.options.trustedOrigins || [];
+              : ctx.context.options.trustedOrigins || []
+          ).filter((origin): origin is string => typeof origin === "string");
 
           const isMatch = wildcardMatch(trustedOrigins, { separator: "." });
           const callbackOrigin = new URL(callbackURL).origin;
