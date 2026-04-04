@@ -364,8 +364,9 @@
     "failedToParseGameConfiguration": {
       "instruction": "Sigue estos pasos para resolver el problema:",
       "steps": [
+        "Ve a Configuración → Juego y restablece gameinfo.gi a Vanilla.",
         "Verifica los archivos del juego en Steam.",
-        "Abre el Mod Manager y haz clic en 'Iniciar con Mods'."
+        "Reinicia el Mod Manager y haz clic en 'Iniciar con Mods'."
       ]
     },
     "genericMessage": "Lo sentimos, pero ocurrió un error al procesar tu solicitud.",

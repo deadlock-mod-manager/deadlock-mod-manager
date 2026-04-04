@@ -13,7 +13,7 @@ pub enum Error {
   #[error("App handle not initialized")]
   AppHandleNotInitialized,
   #[error(
-    "Failed to parse game configuration. Try resetting the gameinfo.gi to Vanilla in game settings and restart the mod manager."
+    "Failed to parse game configuration. Try resetting the gameinfo.gi to Vanilla in Settings → Game and restart the mod manager."
   )]
   GameConfigParse(String),
   #[error("Mod file not found at path")]
