@@ -16,9 +16,14 @@ import {
 import { ORPCError } from "@orpc/server";
 import { featureFlagsService } from "@/services/feature-flags";
 import { formatModDownloads } from "@/lib/utils";
-import { publicProcedure } from "../../lib/orpc";
+import { createRateLimitMiddleware, publicProcedure } from "../../lib/orpc";
 import { ModSyncService } from "../../services/mod-sync";
 import { ForceSyncOutputSchema } from "../../validation/mods";
+
+const syncRateLimit = createRateLimitMiddleware({
+  maxRequests: 3,
+  windowSeconds: 60,
+});
 
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
@@ -152,6 +157,7 @@ export const modsRouter = {
     }),
 
   forceSyncV2: publicProcedure
+    .use(syncRateLimit)
     .route({ method: "POST", path: "/v2/sync" })
     .output(ForceSyncOutputSchema)
     .handler(async () => {
@@ -159,15 +165,19 @@ export const modsRouter = {
       const result = await syncService.synchronizeMods();
 
       if (!result.success) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: result.message,
-        });
+        throw new ORPCError(
+          result.locked ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          {
+            message: result.message,
+          },
+        );
       }
 
       return result;
     }),
 
   forceSyncModV2: publicProcedure
+    .use(syncRateLimit)
     .route({ method: "POST", path: "/v2/sync/{id}" })
     .input(ModIdParamSchema)
     .output(ForceSyncOutputSchema)
@@ -176,9 +186,12 @@ export const modsRouter = {
       const result = await syncService.synchronizeMod(input.id);
 
       if (!result.success) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: result.message,
-        });
+        throw new ORPCError(
+          result.locked ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          {
+            message: result.message,
+          },
+        );
       }
 
       return result;
