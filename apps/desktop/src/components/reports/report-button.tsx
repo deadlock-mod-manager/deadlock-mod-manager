@@ -1,4 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { REPORT_DISABLED_MOD_IDS } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Flag } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
@@ -13,8 +14,12 @@ export const ReportButton = ({ mod }: ReportButtonProps) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  if (REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
+    return null;
+  }
+
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card navigation
+    e.stopPropagation();
     setIsDialogOpen(true);
   };
 

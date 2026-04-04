@@ -1,5 +1,9 @@
 import { db, ModRepository, ReportRepository } from "@deadlock-mods/database";
-import { toReportDto, toReportWithModDto } from "@deadlock-mods/shared";
+import {
+  REPORT_DISABLED_MOD_IDS,
+  toReportDto,
+  toReportWithModDto,
+} from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { CACHE_TTL } from "@/lib/constants";
 import { logger } from "@/lib/logger";
@@ -44,6 +48,17 @@ export const reportsRouter = {
           throw new ORPCError("NOT_FOUND", {
             message: "Mod not found",
           });
+        }
+
+        if (REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
+          logger
+            .withMetadata({ modId: input.modId, remoteId: mod.remoteId })
+            .warn("Report submission blocked for disabled mod");
+          return {
+            id: "",
+            status: "error" as const,
+            error: "Reports are disabled for this mod",
+          };
         }
 
         // Check for duplicate reports from same reporter

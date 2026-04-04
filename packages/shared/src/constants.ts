@@ -47,6 +47,12 @@ export const DeadlockHeroesByAlias = Object.keys(DeadlockHeroes).reduce(
   {},
 );
 
+/**
+ * Mod remote IDs (GameBanana) for which report submissions are disabled.
+ * Reports cannot be created for these mods via the API or desktop UI.
+ */
+export const REPORT_DISABLED_MOD_IDS: ReadonlySet<string> = new Set(["650634"]);
+
 export enum CustomSettingType {
   LAUNCH_OPTION = "launch_option",
 }
