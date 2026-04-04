@@ -1,54 +1,59 @@
-import type { SapphireClient } from "@sapphire/framework";
+import { gracefulExit } from "exit-hook";
+import { singleton } from "tsyringe";
 import { logger } from "@/lib/logger";
-import { cronService } from "@/services/cron";
 
-export interface ShutdownHandler {
-  stop: () => void;
-}
+type TeardownFn = () => void | Promise<void>;
 
+@singleton()
 export class ProcessManager {
-  private shutdownHandlers: ShutdownHandler[] = [];
-  private client: SapphireClient | null = null;
+  private readonly teardowns: { label: string; fn: TeardownFn }[] = [];
+  private shuttingDown = false;
 
-  registerShutdownHandler(handler: ShutdownHandler): void {
-    this.shutdownHandlers.push(handler);
-  }
-
-  setClient(client: SapphireClient): void {
-    this.client = client;
+  registerTeardown(label: string, fn: TeardownFn): void {
+    this.teardowns.push({ label, fn });
   }
 
   setupSignalHandlers(): void {
-    const shutdown = async () => {
+    const shutdown = async (exitCode: number) => {
+      if (this.shuttingDown) {
+        return;
+      }
+      this.shuttingDown = true;
       logger.info("Shutting down gracefully...");
 
-      for (const handler of this.shutdownHandlers) {
-        handler.stop();
+      for (const { label, fn } of this.teardowns) {
+        try {
+          await Promise.resolve(fn());
+        } catch (error) {
+          logger
+            .withError(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+            .withMetadata({ teardown: label })
+            .error("Teardown failed");
+        }
       }
 
-      await cronService.shutdown();
-
-      if (this.client) {
-        this.client.destroy();
-      }
-
-      process.exit(0);
+      gracefulExit(exitCode);
     };
 
-    process.on("SIGINT", shutdown);
-    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", () => {
+      void shutdown(0);
+    });
+    process.on("SIGTERM", () => {
+      void shutdown(0);
+    });
 
     process.on("unhandledRejection", (reason) => {
       logger
         .withError(reason instanceof Error ? reason : new Error(String(reason)))
         .error("Unhandled promise rejection");
-      shutdown();
+      void shutdown(1);
     });
 
     process.on("uncaughtException", (error) => {
       logger.withError(error).fatal("Uncaught exception");
-      shutdown();
-      process.exit(1);
+      void shutdown(1);
     });
   }
 }

@@ -323,6 +323,13 @@
       "when": 1771879712015,
       "tag": "0045_heavy_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1774723229011,
+      "tag": "0046_awesome_mandroid",
+      "breakpoints": true
     }
   ]
 }

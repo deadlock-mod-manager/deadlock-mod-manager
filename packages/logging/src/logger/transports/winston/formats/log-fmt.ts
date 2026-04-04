@@ -1,23 +1,56 @@
 import chalk from "chalk";
 import logfmt from "logfmt";
 import { format } from "winston";
+import type { FormattedError } from "../utils";
 import { formatLogComponents } from "../utils";
 
-/**
- * Format for development environments with colorized output
- *
- * Example:
- * 2025-03-17T15:37:13+01:00 app-api (1.0.0) [error]: Test error app=app-api
- */
+const LEVEL_BADGES: Record<string, string> = {
+  error: chalk.red.bold("ERROR"),
+  warn: chalk.yellow.bold("WARN"),
+  info: chalk.green.bold("INFO"),
+  debug: chalk.blue.bold("DEBUG"),
+  trace: chalk.gray("TRACE"),
+  fatal: chalk.bgRed.white.bold("FATAL"),
+};
+
+const INDENT = "         ";
+
+function getLevelBadge(level: string): string {
+  for (const [key, badge] of Object.entries(LEVEL_BADGES)) {
+    if (level.includes(key)) return badge;
+  }
+  return level;
+}
+
+function formatMetadataLine(kvString: string): string {
+  if (!kvString) return "";
+  return kvString
+    .split(" ")
+    .map((pair) => {
+      const eqIdx = pair.indexOf("=");
+      if (eqIdx === -1) return chalk.dim(pair);
+      const key = pair.slice(0, eqIdx);
+      const value = pair.slice(eqIdx + 1);
+      return `${chalk.dim(key)}${chalk.dim("=")}${chalk.white(value)}`;
+    })
+    .join(" ");
+}
+
+function formatErrorBlock(error: FormattedError, isWarning: boolean): string[] {
+  const lines: string[] = [];
+  const headlineColor = isWarning ? chalk.yellow : chalk.red;
+  lines.push(`${INDENT}${headlineColor(error.headline)}`);
+  for (const stackLine of error.stackLines) {
+    lines.push(`${INDENT}${chalk.dim(stackLine)}`);
+  }
+  return lines;
+}
+
 export const devFormat = format.combine(
   format.timestamp({ format: "HH:mm:ss" }),
-  format.colorize(),
-  format.align(),
   format.printf(({ level, message, timestamp, error, ...meta }) => {
-    // Track seen keys to avoid duplicates
     const seenKeys = new Set<string>();
 
-    // Extract app and version before processing splat to avoid duplicates
     const app = (meta?.app ?? "") as string;
     if (app) seenKeys.add("app");
 
@@ -26,12 +59,11 @@ export const devFormat = format.combine(
 
     if (meta?.version) seenKeys.add("version");
 
-    // Remove app and version from meta to avoid duplicates
     const metadata = { ...meta };
-
     delete metadata.app;
     delete metadata.version;
     delete metadata.service;
+    delete metadata.environment;
     delete metadata[Symbol.for("splat")];
 
     const { formattedMessage, formattedMetadata, formattedError } =
@@ -44,28 +76,44 @@ export const devFormat = format.combine(
 
     const splat = formatSplat(meta[Symbol.for("splat")], seenKeys);
     const version = (meta?.version ?? "") as string;
-    const parts = [
-      timestamp,
-      `[${level}]`,
-      `${app}${version ? `@${version}` : ""}`,
-      `${chalk.cyan(service || "*")}:`,
-      formattedMessage.trim(),
-      splat?.trim() ? chalk.gray(splat?.trim()) : null,
-      formattedMetadata?.trim() ? chalk.gray(formattedMetadata?.trim()) : null,
-      formattedError?.trim()
-        ? level.includes("warn")
-          ? chalk.yellow(formattedError?.trim())
-          : chalk.red(formattedError?.trim())
-        : null,
-    ].filter(Boolean);
+    const badge = getLevelBadge(level);
+    const isWarning = level.includes("warn");
 
-    return parts.join(" ");
+    const appLabel = app
+      ? chalk.dim(`${app}${version ? `@${version}` : ""}`)
+      : "";
+
+    const serviceLabel = service ? chalk.cyan.bold(service) : "";
+
+    const prefix = [appLabel, serviceLabel].filter(Boolean).join(" ");
+
+    const mainLine = [
+      chalk.dim(timestamp),
+      badge,
+      prefix ? `${prefix}${chalk.dim(":")}` : null,
+      formattedMessage.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const lines: string[] = [mainLine];
+
+    const allMeta = [splat?.trim(), formattedMetadata?.trim()]
+      .filter(Boolean)
+      .join(" ");
+
+    if (allMeta) {
+      lines.push(`${INDENT}${formatMetadataLine(allMeta)}`);
+    }
+
+    if (formattedError) {
+      lines.push(...formatErrorBlock(formattedError, isWarning));
+    }
+
+    return lines.join("\n");
   }),
 );
 
-/**
- * Format splat array for dev format
- */
 export const formatSplat = (
   splat: unknown,
   seenKeys: Set<string> = new Set(),
@@ -84,7 +132,6 @@ export const formatSplat = (
         return String(item);
       }
 
-      // For objects, check for duplicate keys
       const filteredObj = Object.entries(
         item as Record<string, unknown>,
       ).reduce(
