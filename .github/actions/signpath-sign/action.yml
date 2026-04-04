@@ -1,5 +1,5 @@
 name: "SignPath Code Signing"
-description: "Sign Windows executables using SignPath and optionally regenerate Tauri updater signature"
+description: "Sign Windows executables using SignPath and regenerate Tauri updater signature"
 
 inputs:
   unsigned-artifact-path:
@@ -26,13 +26,9 @@ inputs:
       - "release-signing"
       - "test-signing"
     default: "release-signing"
-  regenerate-tauri-signature:
-    description: "Whether to regenerate the Tauri updater signature after code signing"
-    required: false
-    default: "false"
   tauri-private-key:
-    description: "Tauri signing private key (required if regenerate-tauri-signature is true)"
-    required: false
+    description: "Tauri signing private key for regenerating updater signature"
+    required: true
 
 outputs:
   signed-artifact-path:
@@ -72,7 +68,6 @@ runs:
         ls -la ./signpath-signed-output/ || echo "Directory doesn't exist or is empty"
 
     - name: Regenerate Tauri updater signature
-      if: inputs.regenerate-tauri-signature == 'true'
       shell: bash
       env:
         TAURI_PRIVATE_KEY: ${{ inputs.tauri-private-key }}
@@ -82,14 +77,6 @@ runs:
         pnpm tauri signer sign -k "$TAURI_PRIVATE_KEY" "$exeFile"
         mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
         mv ./signpath-signed-output/*.exe.sig "${{ inputs.output-directory }}/"
-        echo "Moved signed exe and regenerated sig to output directory"
-
-    - name: Move signed exe without regenerating signature
-      if: inputs.regenerate-tauri-signature != 'true'
-      shell: bash
-      run: |
-        mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
-        echo "Moved signed exe to output directory (no sig regeneration)"
 
     - name: Cleanup temporary signed output
       shell: bash

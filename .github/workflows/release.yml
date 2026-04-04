@@ -2,7 +2,6 @@ name: Release Desktop App
 
 env:
   NODE_VERSION: "24.8.0"
-  ENABLE_SIGNED_UPDATER: "false"
 
 on:
   workflow_dispatch:
@@ -252,17 +251,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifact-output
-
-          if [ "${{ env.ENABLE_SIGNED_UPDATER }}" == "true" ]; then
-            # Regenerate Tauri signature for code-signed exe
-            exeFile=$(ls ./signed-output/*.exe)
-            pnpm tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
-            mv ./signed-output/*.exe ./artifact-output/
-            mv ./signed-output/*.exe.sig ./artifact-output/
-          else
-            # Just move the signed exe without regenerating signature
-            mv ./signed-output/*.exe ./artifact-output/
-          fi
+          exeFile=$(ls ./signed-output/*.exe)
+          pnpm tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
+          mv ./signed-output/*.exe ./artifact-output/
+          mv ./signed-output/*.exe.sig ./artifact-output/
 
       - name: Upload signed Windows artifact
         if: matrix.platform == 'windows-latest'
@@ -307,7 +299,6 @@ jobs:
 
   update-latest-json:
     needs: [create-release, build-tauri]
-    if: ${{ vars.ENABLE_SIGNED_UPDATER == 'true' }}
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -334,7 +325,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-release, build-tauri]
+    needs: [create-release, build-tauri, update-latest-json]
     if: always() && needs.build-tauri.result == 'success'
 
     steps:
