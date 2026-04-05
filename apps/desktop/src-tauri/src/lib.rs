@@ -177,7 +177,8 @@ pub fn run() {
       commands::parse_crash_dump,
       commands::parse_latest_crash_dump,
       commands::open_latest_crash_dump_parsed,
-      commands::check_filesystem_writable
+      commands::check_filesystem_writable,
+      commands::test_fileserver_latency
     ])
     .run(context)
     .expect("error while running tauri application");
