@@ -53,7 +53,7 @@ interface RateLimitOptions {
  * The key is derived from the procedure path to scope limits per endpoint.
  */
 export function createRateLimitMiddleware(options: RateLimitOptions) {
-  return o.middleware(async ({ path, next }) => {
+  return o.middleware(async ({ path, context, next }) => {
     const key = path.join(".");
 
     const result = await checkRateLimit(key, {
@@ -61,7 +61,12 @@ export function createRateLimitMiddleware(options: RateLimitOptions) {
       windowSeconds: options.windowSeconds,
     });
 
+    context.resHeaders?.set("RateLimit-Limit", String(options.maxRequests));
+    context.resHeaders?.set("RateLimit-Remaining", String(result.remaining));
+    context.resHeaders?.set("RateLimit-Reset", String(result.resetSeconds));
+
     if (!result.allowed) {
+      context.resHeaders?.set("Retry-After", String(result.retryAfterSeconds));
       throw new ORPCError("TOO_MANY_REQUESTS", {
         message: `Rate limit exceeded. Try again in ${result.retryAfterSeconds} seconds`,
       });

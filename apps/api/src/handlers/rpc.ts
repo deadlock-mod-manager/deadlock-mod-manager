@@ -1,4 +1,5 @@
 import { onError, ORPCError, ValidationError } from "@orpc/server";
+import { ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { RPCHandler } from "@orpc/server/fetch";
 import { logger } from "@/lib/logger";
 import { appRouter } from "@/routers";
@@ -20,6 +21,7 @@ function extractValidationIssues(
 }
 
 export const rpcHandler = new RPCHandler(appRouter, {
+  plugins: [new ResponseHeadersPlugin()],
   interceptors: [
     onError((error) => {
       const validationDetails = extractValidationIssues(error);

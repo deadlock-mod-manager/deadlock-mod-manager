@@ -10,6 +10,8 @@ interface RateLimitConfig {
 interface RateLimitResult {
   allowed: boolean;
   remaining: number;
+  /** Seconds until the current window resets (from Redis TTL). */
+  resetSeconds: number;
   retryAfterSeconds: number;
 }
 
@@ -25,17 +27,21 @@ export async function checkRateLimit(
 
   const [current, ttl] = await redis.rateLimit(redisKey, config.windowSeconds);
 
+  const resetSeconds = ttl > 0 ? ttl : config.windowSeconds;
+
   if (current > config.maxRequests) {
     return {
       allowed: false,
       remaining: 0,
-      retryAfterSeconds: ttl > 0 ? ttl : config.windowSeconds,
+      resetSeconds,
+      retryAfterSeconds: resetSeconds,
     };
   }
 
   return {
     allowed: true,
     remaining: config.maxRequests - current,
+    resetSeconds,
     retryAfterSeconds: 0,
   };
 }
