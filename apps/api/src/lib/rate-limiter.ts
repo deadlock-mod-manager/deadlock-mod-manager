@@ -14,8 +14,8 @@ interface RateLimitResult {
 }
 
 /**
- * Redis-backed sliding window rate limiter.
- * Uses INCR + EXPIRE for a simple fixed-window counter per key.
+ * Redis-backed fixed-window rate limiter.
+ * Uses an atomic Lua script to avoid race conditions between INCR and EXPIRE.
  */
 export async function checkRateLimit(
   key: string,
@@ -23,14 +23,9 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const redisKey = `rate_limit:${key}`;
 
-  const current = await redis.incr(redisKey);
-
-  if (current === 1) {
-    await redis.expire(redisKey, config.windowSeconds);
-  }
+  const [current, ttl] = await redis.rateLimit(redisKey, config.windowSeconds);
 
   if (current > config.maxRequests) {
-    const ttl = await redis.ttl(redisKey);
     return {
       allowed: false,
       remaining: 0,
