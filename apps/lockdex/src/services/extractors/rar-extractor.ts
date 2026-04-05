@@ -2,6 +2,7 @@ import fs, { stat } from "node:fs/promises";
 import { basename } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { ExtractionError } from "@deadlock-mods/common";
 import { createExtractorFromData, UnrarError } from "node-unrar-js";
 import { logger } from "@/lib/logger";
 import type {
@@ -195,7 +196,7 @@ export class RarExtractor extends ArchiveExtractor {
       const entry = entries.find((e) => e.path === filePath);
 
       if (!entry) {
-        throw new Error(`File ${filePath} not found in archive`);
+        throw new ExtractionError(`File ${filePath} not found in archive`);
       }
 
       const buffer = await fs.readFile(archivePath);
@@ -208,7 +209,9 @@ export class RarExtractor extends ArchiveExtractor {
       const file = files[0];
 
       if (!file?.extraction) {
-        throw new Error(`Failed to extract ${filePath} from RAR archive`);
+        throw new ExtractionError(
+          `Failed to extract ${filePath} from RAR archive`,
+        );
       }
 
       const stream = new Readable({

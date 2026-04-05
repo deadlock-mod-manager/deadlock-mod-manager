@@ -45,6 +45,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **010-workflow.mdc** - Workflow guidelines and task management procedures
 - **020-codebase-structure.mdc** - Project structure, commands, and development setup
 - **030-coding-style.mdc** - Coding standards and style guidelines for all technologies
+- **035-error-handling.mdc** - Use BaseError subclasses instead of raw `throw new Error`
 - **040-logging.mdc** - Logging guidelines for implementing structured logging
 - **050-tauri-version.mdc** - Tauri v2 version enforcement and dependency management
 - **055-rust-edition.mdc** - Rust edition 2024 enforcement for all Rust code

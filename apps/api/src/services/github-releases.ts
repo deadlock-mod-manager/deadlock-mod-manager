@@ -1,3 +1,4 @@
+import { NotFoundError, ProviderError } from "@deadlock-mods/common";
 import { logger as mainLogger } from "../lib/logger";
 import type {
   GitHubRelease,
@@ -182,7 +183,7 @@ export class GitHubReleasesService {
       );
 
       if (!response.ok) {
-        throw new Error(
+        throw new ProviderError(
           `GitHub API responded with status ${response.status}: ${response.statusText}`,
         );
       }
@@ -190,7 +191,7 @@ export class GitHubReleasesService {
       const releases = (await response.json()) as GitHubRelease[];
 
       if (!releases || releases.length === 0) {
-        throw new Error("No releases found");
+        throw new NotFoundError("No releases found");
       }
 
       // Filter out drafts and sort by published date
@@ -203,7 +204,7 @@ export class GitHubReleasesService {
         );
 
       if (publishedReleases.length === 0) {
-        throw new Error("No published releases found");
+        throw new NotFoundError("No published releases found");
       }
 
       // Find the latest stable release (non-prerelease)

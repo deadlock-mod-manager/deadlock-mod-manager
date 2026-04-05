@@ -1,3 +1,4 @@
+import { ProviderError, RuntimeError } from "@deadlock-mods/common";
 import { env } from "@/lib/env";
 import { publicProcedure } from "../../lib/orpc";
 import { GitHubReleasesService } from "../../services/github-releases";
@@ -67,7 +68,7 @@ export const publicRouter = {
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new ProviderError(`HTTP error! status: ${response.status}`);
         }
 
         const data = (await response.json()) as {
@@ -104,9 +105,10 @@ export const publicRouter = {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error occurred";
-        throw new Error(`Failed to fetch releases: ${errorMessage}`, {
-          cause: error,
-        });
+        throw new RuntimeError(
+          `Failed to fetch releases: ${errorMessage}`,
+          error,
+        );
       }
     }),
 

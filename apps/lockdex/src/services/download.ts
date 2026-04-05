@@ -3,6 +3,11 @@ import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import {
+  ProviderError,
+  RuntimeError,
+  ValidationError,
+} from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
 import { logger } from "@/lib/logger";
 import { getTempDir } from "@/lib/temp-dir";
@@ -149,8 +154,9 @@ export class DownloadService {
     }
 
     await this.cleanup(tempDir);
-    throw new Error(
+    throw new RuntimeError(
       `Download failed after ${retryAttempts} attempts. Last error: ${lastAttempt?.message}`,
+      lastAttempt,
     );
   }
 
@@ -177,20 +183,22 @@ export class DownloadService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new ProviderError(
+          `HTTP ${response.status}: ${response.statusText}`,
+        );
       }
 
       const contentLength = response.headers.get("content-length");
       const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0;
 
       if (totalBytes > maxFileSize) {
-        throw new Error(
+        throw new ValidationError(
           `File size (${totalBytes} bytes) exceeds maximum allowed size (${maxFileSize} bytes)`,
         );
       }
 
       if (!response.body) {
-        throw new Error("Response body is null");
+        throw new RuntimeError("Response body is null");
       }
 
       this.logger.info(
@@ -209,7 +217,7 @@ export class DownloadService {
           downloadedBytes += chunk.length;
 
           if (downloadedBytes > maxFileSize) {
-            const error = new Error(
+            const error = new ValidationError(
               `Downloaded size exceeds maximum allowed size (${maxFileSize} bytes)`,
             );
             callback(error);

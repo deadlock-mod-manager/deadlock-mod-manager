@@ -1,4 +1,9 @@
 import {
+  ConfigurationError,
+  NotFoundError,
+  ValidationError,
+} from "@deadlock-mods/common";
+import {
   db,
   type Mod,
   ModRepository,
@@ -77,11 +82,13 @@ export class ReportPosterService {
       const channel = await client.channels.fetch(env.REPORTS_CHANNEL_ID);
 
       if (!channel) {
-        throw new Error(`Channel with ID ${env.REPORTS_CHANNEL_ID} not found`);
+        throw new NotFoundError(
+          `Channel with ID ${env.REPORTS_CHANNEL_ID} not found`,
+        );
       }
 
       if (channel.type !== ChannelType.GuildForum) {
-        throw new Error(
+        throw new ValidationError(
           `Channel ${env.REPORTS_CHANNEL_ID} is not a forum channel (type: ${channel.type})`,
         );
       }
@@ -89,7 +96,7 @@ export class ReportPosterService {
       // Fetch mod data to get the correct URL
       const mod = await this.modRepository.findById(event.data.modId);
       if (!mod) {
-        throw new Error(`Mod with ID ${event.data.modId} not found`);
+        throw new NotFoundError(`Mod with ID ${event.data.modId} not found`);
       }
 
       const { embed, components } = this.formatReportPost(event.data, mod);
@@ -158,7 +165,9 @@ export class ReportPosterService {
 
       const channel = await client.channels.fetch(env.REPORTS_CHANNEL_ID);
       if (!channel || channel.type !== ChannelType.GuildForum) {
-        throw new Error(`Invalid channel: ${env.REPORTS_CHANNEL_ID}`);
+        throw new ConfigurationError(
+          `Invalid channel: ${env.REPORTS_CHANNEL_ID}`,
+        );
       }
 
       // Fetch the thread (report.discordMessageId contains the thread ID)
@@ -189,7 +198,7 @@ export class ReportPosterService {
       // Fetch mod data to get the correct URL
       const mod = await this.modRepository.findById(event.data.modId);
       if (!mod) {
-        throw new Error(`Mod with ID ${event.data.modId} not found`);
+        throw new NotFoundError(`Mod with ID ${event.data.modId} not found`);
       }
 
       const { embed, components } = this.formatReportPost(event.data, mod);

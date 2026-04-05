@@ -1,3 +1,4 @@
+import { ProviderError } from "@deadlock-mods/common";
 import Parser from "rss-parser";
 
 interface GameBananaItem {
@@ -37,9 +38,9 @@ class GameBananaRssParser extends Parser<GameBananaFeed, GameBananaItem> {
 
       return super.parseString(content);
     } catch (error) {
-      throw new Error(
+      throw new ProviderError(
         `Failed to parse GameBanana RSS feed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { cause: error },
+        error,
       );
     }
   }

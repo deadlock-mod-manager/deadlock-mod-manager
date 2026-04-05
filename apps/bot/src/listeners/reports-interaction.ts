@@ -1,3 +1,4 @@
+import { NotFoundError, RuntimeError } from "@deadlock-mods/common";
 import { db, ModRepository, ReportRepository } from "@deadlock-mods/database";
 import { Listener } from "@sapphire/framework";
 import type {
@@ -201,13 +202,13 @@ export class ReportInteractionListener extends Listener {
       );
 
       if (!updatedReport) {
-        throw new Error("Failed to update report status");
+        throw new RuntimeError("Failed to update report status");
       }
 
       // Get the mod information for the Redis event
       const mod = await this.modRepository.findById(updatedReport.modId);
       if (!mod) {
-        throw new Error("Mod not found for report");
+        throw new NotFoundError("Mod not found for report");
       }
 
       // Publish Redis event to update Discord message
@@ -306,13 +307,13 @@ export class ReportInteractionListener extends Listener {
       );
 
       if (!updatedReport) {
-        throw new Error("Failed to update report status");
+        throw new RuntimeError("Failed to update report status");
       }
 
       // Get the mod information for the Redis event
       const mod = await this.modRepository.findById(updatedReport.modId);
       if (!mod) {
-        throw new Error("Mod not found for report");
+        throw new NotFoundError("Mod not found for report");
       }
 
       // Publish Redis event to update Discord message

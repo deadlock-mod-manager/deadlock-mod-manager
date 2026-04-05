@@ -53,6 +53,48 @@ export class UnauthorizedError extends BaseError {
   }
 }
 
+export class ForbiddenError extends BaseError {
+  readonly code = ApiErrorCode.FORBIDDEN_ERROR;
+  readonly status = 403;
+
+  constructor(message = "Forbidden", originalError?: unknown) {
+    super(message, originalError);
+  }
+}
+
+export class NotFoundError extends BaseError {
+  readonly code = ApiErrorCode.ENTITY_NOT_FOUND;
+  readonly status = 404;
+
+  constructor(message = "Not found", originalError?: unknown) {
+    super(message, originalError);
+  }
+}
+
+export class ConfigurationError extends GenericError {
+  readonly code = GenericErrorCode.CONFIGURATION_ERROR;
+
+  constructor(message: string, originalError?: unknown) {
+    super(`Configuration error: ${message}`, originalError);
+  }
+}
+
+export class ProviderError extends GenericError {
+  readonly code = GenericErrorCode.PROVIDER_ERROR;
+
+  constructor(message: string, originalError?: unknown) {
+    super(`Provider error: ${message}`, originalError);
+  }
+}
+
+export class ExtractionError extends GenericError {
+  readonly code = GenericErrorCode.EXTRACTION_ERROR;
+
+  constructor(message: string, originalError?: unknown) {
+    super(`Extraction error: ${message}`, originalError);
+  }
+}
+
 export class MultipleErrors extends BaseError {
   readonly errors: BaseError[];
   readonly code = GenericErrorCode.MULTIPLE_ERRORS;

@@ -9,6 +9,7 @@
     "./cron": "./src/cron/index.ts"
   },
   "dependencies": {
+    "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "bullmq": "^5.71.1",
     "ioredis": "^5.10.1"

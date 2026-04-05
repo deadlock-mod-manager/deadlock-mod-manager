@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common";
 import { and, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { CachedVPK, CachedVPKWithMod, NewCachedVPK } from "../schema/vpk";
@@ -155,7 +156,7 @@ export class VpkRepository {
 
     const existingBySha256 = await this.findBySha256(vpkData.sha256);
     if (!existingBySha256) {
-      throw new Error(
+      throw new RuntimeError(
         `VPK insertion failed but no existing VPK found for SHA256: ${vpkData.sha256}`,
       );
     }

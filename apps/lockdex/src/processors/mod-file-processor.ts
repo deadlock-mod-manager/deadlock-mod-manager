@@ -1,5 +1,6 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { RuntimeError } from "@deadlock-mods/common";
 import {
   db,
   ModDownloadRepository,
@@ -82,13 +83,13 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
           );
           if (!hasSpaceAfterCleanup) {
             return this.handleError(
-              new Error("Insufficient disk space even after cleanup"),
+              new RuntimeError("Insufficient disk space even after cleanup"),
             );
           }
         } catch (cleanupError) {
           this.logger.withError(cleanupError).error("Emergency cleanup failed");
           return this.handleError(
-            new Error("Insufficient disk space and cleanup failed"),
+            new RuntimeError("Insufficient disk space and cleanup failed"),
           );
         }
       }
@@ -156,7 +157,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     const extractor = archiveExtractorFactory.getExtractor(filename);
 
     if (!extractor) {
-      throw new Error(`No extractor available for file: ${filename}`);
+      throw new RuntimeError(`No extractor available for file: ${filename}`);
     }
 
     this.logger.info(`Using ${extractor.constructor.name} for extraction`);

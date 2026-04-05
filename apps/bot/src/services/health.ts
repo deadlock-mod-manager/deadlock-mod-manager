@@ -1,4 +1,4 @@
-import { toErrorMessage } from "@deadlock-mods/common";
+import { RuntimeError, toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { redis } from "@/lib/redis";
@@ -44,7 +44,7 @@ export class HealthService {
     try {
       const pong = await redis.ping();
       if (pong !== "PONG") {
-        throw new Error("Redis ping failed");
+        throw new RuntimeError("Redis ping failed");
       }
 
       return { alive: true, configured: true };

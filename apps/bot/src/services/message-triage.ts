@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common";
 import {
   db,
   type MessagePattern,
@@ -117,7 +118,7 @@ export class MessageTriageService {
 
   private cosineSimilarity(a: number[], b: number[]): number {
     if (a.length !== b.length) {
-      throw new Error("Vectors must have the same length");
+      throw new RuntimeError("Vectors must have the same length");
     }
 
     let dotProduct = 0;

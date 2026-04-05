@@ -1,6 +1,11 @@
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
 import { pipeline } from "node:stream/promises";
+import {
+  ExtractionError,
+  RuntimeError,
+  ValidationError,
+} from "@deadlock-mods/common";
 import * as yauzl from "yauzl";
 import { logger } from "@/lib/logger";
 import type {
@@ -41,7 +46,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error("Failed to open ZIP file"));
+            reject(new RuntimeError("Failed to open ZIP file"));
             return;
           }
 
@@ -111,7 +116,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error("Failed to open ZIP file"));
+            reject(new RuntimeError("Failed to open ZIP file"));
             return;
           }
 
@@ -251,7 +256,7 @@ export class ZipExtractor extends ArchiveExtractor {
       const entry = entries.find((e) => e.path === filePath);
 
       if (!entry) {
-        throw new Error(`File ${filePath} not found in archive`);
+        throw new ExtractionError(`File ${filePath} not found in archive`);
       }
 
       return new Promise((resolve, reject) => {
@@ -262,7 +267,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error("Failed to open ZIP file"));
+            reject(new RuntimeError("Failed to open ZIP file"));
             return;
           }
 
@@ -271,7 +276,9 @@ export class ZipExtractor extends ArchiveExtractor {
           zipfile.on("entry", (zipEntry: yauzl.Entry) => {
             if (zipEntry.fileName === filePath) {
               if (zipEntry.fileName.endsWith("/")) {
-                reject(new Error(`${filePath} is a directory, not a file`));
+                reject(
+                  new ValidationError(`${filePath} is a directory, not a file`),
+                );
                 return;
               }
 
@@ -283,7 +290,9 @@ export class ZipExtractor extends ArchiveExtractor {
 
                 if (!readStream) {
                   reject(
-                    new Error(`Failed to open read stream for ${filePath}`),
+                    new RuntimeError(
+                      `Failed to open read stream for ${filePath}`,
+                    ),
                   );
                   return;
                 }
@@ -300,7 +309,7 @@ export class ZipExtractor extends ArchiveExtractor {
 
           zipfile.on("end", () => {
             reject(
-              new Error(
+              new ExtractionError(
                 `File ${filePath} not found in archive during stream extraction`,
               ),
             );
@@ -342,7 +351,7 @@ export class ZipExtractor extends ArchiveExtractor {
           }
 
           if (!zipfile) {
-            reject(new Error("Failed to open ZIP file"));
+            reject(new RuntimeError("Failed to open ZIP file"));
             return;
           }
 

@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { basename } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { ExtractionError } from "@deadlock-mods/common";
 import * as _7z from "7zip-min";
 import { logger } from "@/lib/logger";
 import type {
@@ -145,7 +146,7 @@ export class SevenZipExtractor extends ArchiveExtractor {
       const entry = entries.find((e) => e.path === filePath);
 
       if (!entry) {
-        throw new Error(`File ${filePath} not found in archive`);
+        throw new ExtractionError(`File ${filePath} not found in archive`);
       }
 
       const tempDir = await this.createTempDir("7z-stream-");

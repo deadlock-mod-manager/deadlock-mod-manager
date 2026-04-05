@@ -1,3 +1,4 @@
+import { NotFoundError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
 import type { Redis } from "ioredis";
 import type { BaseProcessor } from "../base/processor";
@@ -139,7 +140,7 @@ export class CronService {
   async enableJob(jobName: string): Promise<void> {
     const definition = this.jobs.get(jobName);
     if (!definition) {
-      throw new Error(`Job not found: ${jobName}`);
+      throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
     // Ensure worker exists for this processor with the correct concurrency
@@ -172,7 +173,7 @@ export class CronService {
   async disableJob(jobName: string): Promise<void> {
     const definition = this.jobs.get(jobName);
     if (!definition) {
-      throw new Error(`Job not found: ${jobName}`);
+      throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
     definition.enabled = false;
@@ -321,7 +322,7 @@ export class CronService {
   ): Promise<void> {
     const currentDefinition = this.jobs.get(jobName);
     if (!currentDefinition) {
-      throw new Error(`Job not found: ${jobName}`);
+      throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
     // Merge the updates with the current definition

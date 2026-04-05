@@ -1317,6 +1317,10 @@ importers:
         version: link:../../tools/typescript
 
   packages/kv-parser:
+    dependencies:
+      '@deadlock-mods/common':
+        specifier: workspace:*
+        version: link:../common
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
@@ -1376,6 +1380,9 @@ importers:
 
   packages/queue:
     dependencies:
+      '@deadlock-mods/common':
+        specifier: workspace:*
+        version: link:../common
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../logging
@@ -1555,6 +1562,10 @@ importers:
         version: 5.9.3
 
   packages/vpk-parser:
+    dependencies:
+      '@deadlock-mods/common':
+        specifier: workspace:*
+        version: link:../common
     devDependencies:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*

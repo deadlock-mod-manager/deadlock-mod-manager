@@ -1,3 +1,4 @@
+import { NotFoundError } from "@deadlock-mods/common";
 import type { Mod } from "@deadlock-mods/database";
 import { logger } from "../lib/logger";
 
@@ -38,7 +39,7 @@ export class ProviderRegistry {
   getProvider<T>(name: string): Provider<T> {
     const provider = this.providers.get(name);
     if (!provider) {
-      throw new Error(`Provider ${name} not found`);
+      throw new NotFoundError(`Provider ${name} not found`);
     }
     return new provider() as Provider<T>;
   }

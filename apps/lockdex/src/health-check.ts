@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common";
 import { logger } from "@/lib/logger";
 import redis from "@/lib/redis";
 import { diskHealthMonitor } from "@/services/disk-health-monitor";
@@ -39,7 +40,7 @@ export async function healthCheck(): Promise<{
     await redis.set(testKey, testValue, "EX", 10);
     const retrievedValue = await redis.get(testKey);
     if (retrievedValue !== testValue) {
-      throw new Error("Redis read/write test failed");
+      throw new RuntimeError("Redis read/write test failed");
     }
     await redis.del(testKey);
   } catch (error) {
@@ -98,7 +99,7 @@ export async function legacyHealthCheck(): Promise<void> {
     await redis.ping();
   } catch (error) {
     logger.withError(error as Error).error("Health check failed");
-    throw new Error("Redis ping failed", { cause: error });
+    throw new RuntimeError("Redis ping failed", error);
   }
 
   try {
@@ -107,11 +108,11 @@ export async function legacyHealthCheck(): Promise<void> {
     await redis.set(testKey, testValue, "EX", 10);
     const retrievedValue = await redis.get(testKey);
     if (retrievedValue !== testValue) {
-      throw new Error("Redis read/write test failed");
+      throw new RuntimeError("Redis read/write test failed");
     }
     await redis.del(testKey);
   } catch (error) {
     logger.withError(error as Error).error("Health check failed");
-    throw new Error("Redis read/write test failed", { cause: error });
+    throw new RuntimeError("Redis read/write test failed", error);
   }
 }

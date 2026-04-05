@@ -13,6 +13,7 @@
  * use --count=N and --delay=MS parameters if needed.
  */
 
+import { NotFoundError } from "@deadlock-mods/common";
 import { db, RssItemRepository } from "@deadlock-mods/database";
 import { logger } from "@/lib/logger";
 import { RedisPublisherService } from "@/services/redis-publisher";
@@ -29,7 +30,7 @@ const fetchRssItems = async (count: number, latest: boolean) => {
     const allItems = await rssItemRepository.findAll("gamebanana");
 
     if (allItems.length === 0) {
-      throw new Error(
+      throw new NotFoundError(
         "No RSS items found in database. Please run the RSS processor first.",
       );
     }
@@ -66,7 +67,7 @@ const testModEvents = async () => {
     const rssItems = await fetchRssItems(count, latest);
 
     if (rssItems.length === 0) {
-      throw new Error(
+      throw new NotFoundError(
         "No RSS items found. Please run the RSS processor first to populate the database.",
       );
     }

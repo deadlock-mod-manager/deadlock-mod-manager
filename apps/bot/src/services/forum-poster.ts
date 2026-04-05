@@ -1,3 +1,4 @@
+import { NotFoundError, ValidationError } from "@deadlock-mods/common";
 import {
   db,
   ModDownloadRepository,
@@ -50,11 +51,13 @@ export class ForumPosterService {
       const channel = await client.channels.fetch(env.FORUM_CHANNEL_ID);
 
       if (!channel) {
-        throw new Error(`Channel with ID ${env.FORUM_CHANNEL_ID} not found`);
+        throw new NotFoundError(
+          `Channel with ID ${env.FORUM_CHANNEL_ID} not found`,
+        );
       }
 
       if (channel.type !== ChannelType.GuildForum) {
-        throw new Error(
+        throw new ValidationError(
           `Channel ${env.FORUM_CHANNEL_ID} is not a forum channel (type: ${channel.type})`,
         );
       }

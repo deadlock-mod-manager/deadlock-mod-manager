@@ -1,3 +1,4 @@
+import { ProviderError, ValidationError } from "@deadlock-mods/common";
 import {
   db,
   type Mod,
@@ -40,7 +41,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         `${GAME_BANANA_BASE_URL}/Mod/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
       );
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new ProviderError(`HTTP error! status: ${response.status}`);
       }
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission> | null;
@@ -77,7 +78,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         `${GAME_BANANA_BASE_URL}/Sound/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
       );
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new ProviderError(`HTTP error! status: ${response.status}`);
       }
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission> | null;
@@ -110,7 +111,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         `${GAME_BANANA_BASE_URL}/Game/${DEADLOCK_GAME_ID}/TopSubs`,
       );
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new ProviderError(`HTTP error! status: ${response.status}`);
       }
       const data =
         (await response.json()) as GameBanana.GameBananaTopSubmission[];
@@ -131,7 +132,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         `${GAME_BANANA_BASE_URL}/Util/List/Featured?_nPage=${page}&_idGameRow=${DEADLOCK_GAME_ID}`,
       );
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new ProviderError(`HTTP error! status: ${response.status}`);
       }
       const data =
         (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission> | null;
@@ -240,7 +241,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         // Fall back to text if JSON parsing fails
         errorBody = await response.text();
       }
-      throw new Error(`HTTP ${response.status}: ${errorBody}`);
+      throw new ProviderError(`HTTP ${response.status}: ${errorBody}`);
     }
 
     const data = (await response.json()) as D;
@@ -424,7 +425,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       };
     }
 
-    throw new Error(`Invalid source: ${source}`);
+    throw new ValidationError(`Invalid source: ${source}`);
   }
 
   async createMod(
@@ -561,7 +562,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       `${GAME_BANANA_BASE_URL}/Util/Fileservers?_nPage=1`,
     );
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new ProviderError(`HTTP error! status: ${response.status}`);
     }
     const json = await response.json();
     const data = GameBanana.GameBananaFileserversResponseSchema.parse(json);

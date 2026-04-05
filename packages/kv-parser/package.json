@@ -44,6 +44,9 @@
     "pretest": "pnpm run build",
     "postbuild": "pnpm run -w lint:fix"
   },
+  "dependencies": {
+    "@deadlock-mods/common": "workspace:*"
+  },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "^1.3.11",

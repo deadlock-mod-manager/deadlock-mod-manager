@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common";
 import { CString, dlopen, FFIType, type Pointer, ptr } from "bun:ffi";
 import { readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -77,7 +78,7 @@ function callNativeFunction<T>(
     } else {
       const errorResult = result as ErrorResult;
       if (errorResult.error) {
-        throw new Error(errorResult.error);
+        throw new RuntimeError(errorResult.error);
       }
       return result as T;
     }
@@ -86,7 +87,7 @@ function callNativeFunction<T>(
     jsonString = resultStr.toString();
     lib.symbols.vpk_free_string(result as Pointer);
   } else {
-    throw new Error(
+    throw new RuntimeError(
       `Unexpected result type: ${typeof result}, value: ${result}`,
     );
   }
@@ -94,7 +95,7 @@ function callNativeFunction<T>(
   const parsed = JSON.parse(jsonString) as T | ErrorResult;
   const errorResult = parsed as ErrorResult;
   if (errorResult.error) {
-    throw new Error(errorResult.error);
+    throw new RuntimeError(errorResult.error);
   }
   return parsed as T;
 }

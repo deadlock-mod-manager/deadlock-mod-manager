@@ -1,3 +1,4 @@
+import { ValidationError } from "@deadlock-mods/common";
 import { db, ModRepository } from "@deadlock-mods/database";
 import { Command } from "@sapphire/framework";
 import { type GuildMember, PermissionFlagsBits } from "discord.js";
@@ -110,7 +111,7 @@ export class BlacklistCommand extends Command {
     }
 
     // If we can't extract a valid ID, throw an error
-    throw new Error("Invalid mod ID or URL format");
+    throw new ValidationError("Invalid mod ID or URL format");
   }
 
   private async handleAdd(
