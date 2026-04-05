@@ -26,6 +26,7 @@ import {
   FlagIcon,
   FolderOpen,
   GamepadIcon,
+  Globe,
   InfoIcon,
   MonitorIcon,
   PlugIcon,
@@ -50,6 +51,7 @@ import { AutoUpdateToggle } from "@/components/settings/auto-update-toggle";
 import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
+import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
@@ -374,6 +376,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <MonitorIcon className='h-5 w-5' />
               {t("settings.application")}
             </TabsTrigger>
+            <TabsTrigger
+              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
+              value='network'>
+              <Globe className='h-5 w-5' />
+              {t("settings.network")}
+            </TabsTrigger>
             {showPlugins && (
               <TabsTrigger
                 className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
@@ -535,6 +543,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </SelectContent>
                 </Select>
               </div>
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-2' value='network'>
+            <Section
+              description={t("settings.networkDescription")}
+              title={t("settings.network")}>
+              <FileserverSettings />
             </Section>
           </TabsContent>
 
