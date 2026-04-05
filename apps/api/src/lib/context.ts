@@ -1,3 +1,4 @@
+import type { ResponseHeadersPluginContext } from "@orpc/server/plugins";
 import type { Context as HonoContext } from "hono";
 import { introspectToken, type UserInfo } from "./auth/introspection";
 
@@ -32,4 +33,5 @@ export async function createContext({
   };
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = Awaited<ReturnType<typeof createContext>> &
+  ResponseHeadersPluginContext;

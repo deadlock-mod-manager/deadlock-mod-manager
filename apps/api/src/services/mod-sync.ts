@@ -36,8 +36,26 @@ export class ModSyncService {
 
   async synchronizeMod(
     remoteId: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; locked?: boolean }> {
+    const lockJobName = `synchronize-mod-${remoteId}`;
+    let lock: AcquiredLock | null = null;
+
     try {
+      logger
+        .withMetadata({ remoteId })
+        .info("Attempting to acquire lock for single mod synchronization");
+
+      lock = await this.lockService.acquireLock(lockJobName, {
+        timeout: 5 * 60 * 1000,
+        heartbeatInterval: 30 * 1000,
+      });
+
+      if (!lock) {
+        const message = `Synchronization already in progress for mod ${remoteId}`;
+        logger.withMetadata({ remoteId }).info(message);
+        return { success: false, message, locked: true };
+      }
+
       logger
         .withMetadata({ remoteId })
         .info("Starting single mod synchronization");
@@ -74,6 +92,19 @@ export class ModSyncService {
         success: false,
         message: "Synchronization failed",
       };
+    } finally {
+      if (lock) {
+        try {
+          await lock.release();
+          logger
+            .withMetadata({ remoteId })
+            .info("Single mod sync lock released successfully");
+        } catch (releaseError) {
+          logger
+            .withError(releaseError)
+            .error("Error releasing single mod sync lock");
+        }
+      }
     }
   }
 
@@ -83,7 +114,7 @@ export class ModSyncService {
       checkInId?: string;
       monitorSlug?: string;
     } = {},
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; locked?: boolean }> {
     const {
       skipLock = false,
       checkInId,
@@ -105,7 +136,7 @@ export class ModSyncService {
           const message =
             "Could not acquire lock, another synchronization is already running";
           logger.info(message);
-          return { success: false, message };
+          return { success: false, message, locked: true };
         }
       }
 
