@@ -3,10 +3,12 @@ import type {
   CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
+  FileserverDto,
   ModDto,
   PublishedCrosshairDto,
   SharedProfile,
 } from "@deadlock-mods/shared";
+import { FileserversResponseSchema } from "@deadlock-mods/shared";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 
@@ -97,6 +99,11 @@ export const getModDownloads = async (remoteId: string) => {
     downloads: ModDownloadDto[];
     count: number;
   }>(`/api/v2/mods/${remoteId}/downloads`);
+};
+
+export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
+  const data = await apiRequest<unknown>("/api/v2/fileservers/gamebanana");
+  return FileserversResponseSchema.parse(data);
 };
 
 export const checkModUpdates = async (

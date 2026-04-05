@@ -2,8 +2,10 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { DownloadableMod, ModFileTree, Progress } from "@/types/mods";
+import { getGameBananaFileservers } from "../api";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
+import { resolveDownloadFileUrls } from "./fileserver";
 
 const logger = createLogger("download-manager");
 
@@ -180,13 +182,35 @@ class DownloadManager {
 
     const profileFolder = mod.profileFolder ?? null;
 
+    const { fileserverPreference, fileserverLatencyMs } =
+      usePersistedStore.getState();
+
+    let files = mod.downloads.map((d) => ({
+      url: d.url,
+      name: d.name,
+      size: d.size || 0,
+    }));
+
+    if (fileserverPreference !== "default") {
+      try {
+        const fileservers = await getGameBananaFileservers();
+        files = resolveDownloadFileUrls({
+          files,
+          preference: fileserverPreference,
+          fileservers,
+          latencyMs: fileserverLatencyMs,
+          isAudio: mod.isAudio,
+        });
+      } catch (error) {
+        logger
+          .withError(error instanceof Error ? error : new Error(String(error)))
+          .warn("Failed to resolve fileserver URLs; using original URLs");
+      }
+    }
+
     await invoke("queue_download", {
       modId: mod.remoteId,
-      files: mod.downloads.map((d) => ({
-        url: d.url,
-        name: d.name,
-        size: d.size || 0,
-      })),
+      files,
       profileFolder,
     });
   }

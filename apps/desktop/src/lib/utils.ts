@@ -1,5 +1,10 @@
-import type { ReportCountsDto } from "@deadlock-mods/shared";
-import { CustomSettingType, ModDto } from "@deadlock-mods/shared";
+import {
+  CustomSettingType,
+  ModDto,
+  type ReportCountsDto,
+  formatByteRate,
+  formatByteSize,
+} from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 
@@ -29,20 +34,8 @@ export function isMacOS(osType: string): boolean {
   return osType === "darwin" || osType === "macos";
 }
 
-export const formatSize = (size: number) => {
-  const units = ["B", "KB", "MB", "GB"];
-  let formattedSize = size;
-  let unitIndex = 0;
-  while (formattedSize >= 1024 && unitIndex < units.length - 1) {
-    formattedSize /= 1024;
-    unitIndex++;
-  }
-  return `${formattedSize.toFixed(2)} ${units[unitIndex]}`;
-};
-
-export const formatSpeed = (speed: number) => {
-  return `${formatSize(speed)}/s`;
-};
+export const formatSize = formatByteSize;
+export const formatSpeed = formatByteRate;
 
 export const getAdditionalArgs = async (settings: LocalSetting[]) => {
   const additionalArgs: string[] = [];
