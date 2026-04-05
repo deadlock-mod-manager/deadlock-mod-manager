@@ -21,6 +21,11 @@
       "sourceType": "github",
       "computedHash": "8df552b852faf36d258aa23d228306950df04568f0955f19a6e0c34993a0a91f"
     },
+    "logging-best-practices": {
+      "source": "boristane/agent-skills",
+      "sourceType": "github",
+      "computedHash": "b4810947c33b5356bf385c84cfe387afa9c54af652baaedb7d642a083cceaa4c"
+    },
     "security-review": {
       "source": "getsentry/skills",
       "sourceType": "github",
