@@ -16,10 +16,12 @@ use crate::mod_manager::{
   AddonAnalyzer, AddonsBackup, AnalyzeAddonsResult, AutoexecConfig, Mod, ModFileTree, ModManager,
 };
 use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, ReportService};
+use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::PathBuf;
 use std::sync::LazyLock;
+use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
@@ -2546,11 +2548,65 @@ pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Err
   };
 
   let gameinfo_writable = {
-    std::fs::OpenOptions::new().append(true).open(&gameinfo_path).is_ok()
+    std::fs::OpenOptions::new()
+      .append(true)
+      .open(&gameinfo_path)
+      .is_ok()
   };
 
   Ok(FilesystemWritableStatus {
     addons_writable,
     gameinfo_writable,
   })
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FileserverLatencyRequest {
+  pub id: String,
+  pub test_url: String,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FileserverLatencyResult {
+  pub id: String,
+  pub latency_ms: Option<u64>,
+  pub reachable: bool,
+}
+
+#[tauri::command]
+pub async fn test_fileserver_latency(
+  servers: Vec<FileserverLatencyRequest>,
+) -> Result<Vec<FileserverLatencyResult>, Error> {
+  let client = reqwest::Client::builder()
+    .timeout(std::time::Duration::from_secs(5))
+    .build()
+    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
+
+  let futures_iter = servers.into_iter().map(|req| {
+    let c = client.clone();
+    async move { test_one_fileserver(&c, req).await }
+  });
+
+  Ok(join_all(futures_iter).await)
+}
+
+async fn test_one_fileserver(
+  client: &reqwest::Client,
+  req: FileserverLatencyRequest,
+) -> FileserverLatencyResult {
+  let start = Instant::now();
+  match client.head(&req.test_url).send().await {
+    Ok(_response) => FileserverLatencyResult {
+      id: req.id,
+      latency_ms: Some(start.elapsed().as_millis() as u64),
+      reachable: true,
+    },
+    Err(_) => FileserverLatencyResult {
+      id: req.id,
+      latency_ms: None,
+      reachable: false,
+    },
+  }
 }

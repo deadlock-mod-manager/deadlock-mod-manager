@@ -5,6 +5,7 @@ import logger from "@/lib/logger";
 import { type CrosshairState, createCrosshairSlice } from "./slices/crosshair";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
+import { createNetworkSlice, type NetworkState } from "./slices/network";
 import { createProfilesSlice, type ProfilesState } from "./slices/profiles";
 import { createScrollSlice, type ScrollState } from "./slices/scroll";
 import { createSettingsSlice, type SettingsState } from "./slices/settings";
@@ -26,6 +27,7 @@ export type State = ModsState &
   ProfilesState &
   GameState &
   SettingsState &
+  NetworkState &
   UIState &
   ScrollState &
   CrosshairState;
@@ -37,13 +39,14 @@ export const usePersistedStore = create<State>()(
       ...createProfilesSlice(...a),
       ...createGameSlice(...a),
       ...createSettingsSlice(...a),
+      ...createNetworkSlice(...a),
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
     }),
     {
       name: "local-config",
-      version: 13,
+      version: 14,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -378,6 +381,21 @@ export const usePersistedStore = create<State>()(
             .info("Migrating from version 12 to 13: Adding backup settings");
           state.backupEnabled = true;
           state.maxBackupCount = 5;
+        }
+
+        // Migration from version 13 to 14: Add fileserver / network settings
+        if (version <= 13) {
+          logger
+            .withMetadata({
+              migrationFrom: 13,
+              migrationTo: 14,
+              action: "add-fileserver-settings",
+            })
+            .info(
+              "Migrating from version 13 to 14: Adding fileserver preferences",
+            );
+          state.fileserverPreference = "default";
+          state.fileserverLatencyMs = {};
         }
 
         return state;

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // Common shared types
 type BaseUser = {
   _idRow: number;
@@ -399,3 +401,37 @@ export type GameBananaSoundSubmission = Omit<
     };
   };
 };
+
+const GameBananaFileserverStatsBucketSchema = z.object({
+  _fRate: z.number(),
+  _nBytesSent: z.number(),
+  _nRequests: z.number(),
+});
+
+const GameBananaFileserverStatsSchema = z.object({
+  _a10min: GameBananaFileserverStatsBucketSchema.optional(),
+  _a1hr: GameBananaFileserverStatsBucketSchema.optional(),
+  _a1day: GameBananaFileserverStatsBucketSchema.optional(),
+  _a1week: GameBananaFileserverStatsBucketSchema.optional(),
+  _a1month: GameBananaFileserverStatsBucketSchema.optional(),
+});
+
+const GameBananaFileserverRecordSchema = z.object({
+  _idRow: z.number(),
+  _sDomain: z.string(),
+  _sState: z.string(),
+  _tsDiscoverDate: z.number().optional(),
+  _tsLastCheck: z.number().optional(),
+  _tsLastSuccess: z.number().optional(),
+  _aStats: GameBananaFileserverStatsSchema.optional(),
+});
+
+export const GameBananaFileserversResponseSchema = z.object({
+  _aMetadata: z
+    .object({
+      _nRecordCount: z.number(),
+      _bIsComplete: z.boolean(),
+    })
+    .optional(),
+  _aRecords: z.array(GameBananaFileserverRecordSchema).optional(),
+});

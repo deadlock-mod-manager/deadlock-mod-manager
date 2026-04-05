@@ -9,7 +9,13 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import { RocketIcon } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckCircleIcon,
+  RocketIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -18,6 +24,7 @@ import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
 import { OnboardingStepDisclaimer } from "./step-disclaimer";
 import { OnboardingStepGamePath } from "./step-game-path";
+import { OnboardingStepNetwork } from "./step-network";
 
 type StepComponentProps = {
   onComplete: () => void;
@@ -52,6 +59,11 @@ const STEP_CONFIGS: StepConfig[] = [
   },
   {
     step: 4,
+    component: OnboardingStepNetwork as React.ComponentType<StepComponentProps>,
+    requiresCompletion: false,
+  },
+  {
+    step: 5,
     component: OnboardingStepAddons as React.ComponentType<StepComponentProps>,
     requiresCompletion: false,
   },
@@ -175,17 +187,21 @@ export const OnboardingWizard = () => {
         <div className='py-4'>
           <Progress value={progress} className='h-2 mb-6' />
 
-          {CurrentStepComponent && <CurrentStepComponent {...stepHandlers} />}
+          <div className='max-h-[60vh] overflow-y-auto pr-1'>
+            {CurrentStepComponent && <CurrentStepComponent {...stepHandlers} />}
+          </div>
         </div>
 
         <DialogFooter className='flex-row justify-between gap-2 sm:justify-between'>
           <Button variant='ghost' onClick={onSkip}>
+            <XIcon className='h-4 w-4' />
             {t("onboarding.skip")}
           </Button>
 
           <div className='flex gap-2'>
             {currentStep > 1 && (
               <Button variant='outline' onClick={handleBack}>
+                <ArrowLeftIcon className='h-4 w-4' />
                 {t("onboarding.back")}
               </Button>
             )}
@@ -194,7 +210,17 @@ export const OnboardingWizard = () => {
               variant='default'
               onClick={handleNext}
               disabled={!canProceed}>
-              {isLastStep ? t("onboarding.finish") : t("onboarding.next")}
+              {isLastStep ? (
+                <>
+                  <CheckCircleIcon className='h-4 w-4' />
+                  {t("onboarding.finish")}
+                </>
+              ) : (
+                <>
+                  {t("onboarding.next")}
+                  <ArrowRightIcon className='h-4 w-4' />
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>

@@ -40,6 +40,11 @@
       "source": "getsentry/skills",
       "sourceType": "github",
       "computedHash": "f0f77c2f8f971ddd220a59d3f65d342070a167f749435287872d3386198ed51b"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "43ca6c197f8ec13055079da7053232d477068b03ca443f9ac1bc819b95cdd432"
     }
   }
 }

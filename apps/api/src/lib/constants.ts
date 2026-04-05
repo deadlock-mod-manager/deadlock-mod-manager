@@ -25,8 +25,10 @@ export const CACHE_TTL = {
   STATS: 60 * 60 * 1000,
   /** Feature flags cache - 1 hour */
   FEATURE_FLAGS: 60 * 60 * 1000,
-  /** Report counts cache - 7 days (reports rarely change) */
+  /** Report counts cache - 7 days */
   REPORT_COUNTS: 7 * 24 * 60 * 60 * 1000,
+  /** Fileserver geolocation cache - 7 days */
+  FILESERVER_GEO: 7 * 24 * 60 * 60 * 1000,
   /** Default cache TTL - 10 minutes */
   DEFAULT: 60 * 60 * 1000,
 } as const;
