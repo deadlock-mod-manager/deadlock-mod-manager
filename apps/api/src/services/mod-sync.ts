@@ -6,7 +6,7 @@ import {
 import type { GameBanana } from "@deadlock-mods/shared";
 import * as Sentry from "@sentry/node";
 import { env } from "../lib/env";
-import { logger as mainLogger } from "../lib/logger";
+import { logger as mainLogger, wideEventContext } from "../lib/logger";
 import { providerRegistry } from "../providers";
 import type { GameBananaSubmission } from "../providers/game-banana/types";
 import { cache } from "../lib/redis";
@@ -37,34 +37,43 @@ export class ModSyncService {
   async synchronizeMod(
     remoteId: string,
   ): Promise<{ success: boolean; message: string; locked?: boolean }> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "mod-sync",
+      operation: "synchronize_mod",
+      remoteId,
+    });
+
     const lockJobName = `synchronize-mod-${remoteId}`;
     let lock: AcquiredLock | null = null;
 
     try {
-      logger
-        .withMetadata({ remoteId })
-        .info("Attempting to acquire lock for single mod synchronization");
-
       lock = await this.lockService.acquireLock(lockJobName, {
         timeout: 5 * 60 * 1000,
         heartbeatInterval: 30 * 1000,
       });
 
-      if (!lock) {
-        const message = `Synchronization already in progress for mod ${remoteId}`;
-        logger.withMetadata({ remoteId }).info(message);
-        return { success: false, message, locked: true };
-      }
+      wide?.set("lockAcquired", !!lock);
 
-      logger
-        .withMetadata({ remoteId })
-        .info("Starting single mod synchronization");
+      if (!lock) {
+        wide?.set("outcomeReason", "already_locked");
+        return {
+          success: false,
+          message: `Synchronization already in progress for mod ${remoteId}`,
+          locked: true,
+        };
+      }
 
       const provider =
         providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
 
       const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
       const result = await provider.createMod(submission, "all");
+
+      wide?.merge({
+        modCreated: !!result.mod,
+        filesChanged: result.filesChanged,
+      });
 
       if (!result.mod) {
         return {
@@ -76,10 +85,6 @@ export class ModSyncService {
       if (result.filesChanged) {
         await cache.del("mods:listing");
       }
-
-      logger
-        .withMetadata({ remoteId })
-        .info("Single mod synchronization completed successfully");
 
       return {
         success: true,
@@ -96,9 +101,6 @@ export class ModSyncService {
       if (lock) {
         try {
           await lock.release();
-          logger
-            .withMetadata({ remoteId })
-            .info("Single mod sync lock released successfully");
         } catch (releaseError) {
           logger
             .withError(releaseError)
@@ -121,31 +123,37 @@ export class ModSyncService {
       monitorSlug = this.MONITOR_SLUG,
     } = options;
 
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "mod-sync",
+      operation: "synchronize_mods",
+      skipLock,
+    });
+
     let lock: AcquiredLock | null = null;
 
     try {
-      // Try to acquire the lock for this job unless skipped
       if (!skipLock) {
-        logger.info("Attempting to acquire lock for mod synchronization");
         lock = await this.lockService.acquireLock(this.JOB_NAME, {
-          timeout: 10 * 60 * 1000, // 10 minutes
-          heartbeatInterval: 30 * 1000, // 30 seconds heartbeat
+          timeout: 10 * 60 * 1000,
+          heartbeatInterval: 30 * 1000,
         });
 
         if (!lock) {
-          const message =
-            "Could not acquire lock, another synchronization is already running";
-          logger.info(message);
-          return { success: false, message, locked: true };
+          wide?.set("outcomeReason", "already_locked");
+          return {
+            success: false,
+            message:
+              "Could not acquire lock, another synchronization is already running",
+            locked: true,
+          };
         }
       }
 
-      logger
-        .withMetadata({
-          lockAcquired: !!lock,
-          instanceId: lock?.instanceId,
-        })
-        .info("Starting mod synchronization");
+      wide?.merge({
+        lockAcquired: !!lock,
+        instanceId: lock?.instanceId,
+      });
 
       const provider =
         providerRegistry.getProvider<GameBanana.GameBananaSubmission>(
@@ -153,9 +161,6 @@ export class ModSyncService {
         );
       await provider.synchronize();
 
-      logger.info("Mod synchronization completed successfully");
-
-      // Report success to Sentry if checkInId is provided
       if (checkInId) {
         Sentry.captureCheckIn({
           checkInId,
@@ -171,7 +176,6 @@ export class ModSyncService {
     } catch (error) {
       logger.withError(error).error("Error during mod synchronization");
 
-      // Report error to Sentry if checkInId is provided
       if (checkInId) {
         Sentry.captureCheckIn({
           checkInId,
@@ -185,14 +189,11 @@ export class ModSyncService {
         message: "Synchronization failed",
       };
     } finally {
-      // Always release the lock if we acquired it
       if (lock) {
         try {
           await lock.release();
-          logger.info("Lock released successfully");
         } catch (releaseError) {
           logger.withError(releaseError).error("Error releasing lock");
-          // Don't re-throw this error, the main job is done
         }
       }
     }

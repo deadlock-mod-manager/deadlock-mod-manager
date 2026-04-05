@@ -10,7 +10,7 @@ artifactsRouter.use(
   serveStatic({
     root: join(import.meta.dir, "../../static"),
     onNotFound(path) {
-      logger.warn(`File not found: ${path}`);
+      logger.withMetadata({ path }).warn("Static file not found");
     },
   }),
 );

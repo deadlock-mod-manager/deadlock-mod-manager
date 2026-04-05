@@ -19,7 +19,8 @@ import {
 } from "./lib/constants";
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
-import { logger } from "./lib/logger";
+import { logger, loggerContext } from "./lib/logger";
+import { requestLogger } from "./middleware/request-logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
 import artifactsRouter from "./routers/legacy/artifacts";
@@ -30,10 +31,11 @@ import modsRouter from "./routers/legacy/mods";
 import redirectRouter from "./routers/redirect";
 import { cronService } from "./services/cron";
 import { featureFlagsService } from "./services/feature-flags";
+import type { AppEnv } from "./types/hono";
 
 const { printMetrics, registerMetrics } = prometheus();
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 app.use(
   "*",
@@ -51,6 +53,17 @@ app.use(
   secureHeaders(),
   trimTrailingSlash(),
 );
+
+app.use("*", async (c, next) => {
+  await loggerContext.storage.run(
+    { requestId: c.get("requestId") },
+    async () => {
+      await next();
+    },
+  );
+});
+
+app.use("*", requestLogger);
 
 app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
@@ -132,7 +145,7 @@ const main = async () => {
     await Promise.all([cronService.shutdown()]);
   });
 
-  logger.info(`Server started on port ${env.PORT}`);
+  logger.withMetadata({ port: env.PORT }).info("Server started");
 
   Bun.serve({
     port: 9000,

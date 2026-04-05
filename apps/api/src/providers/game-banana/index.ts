@@ -12,6 +12,7 @@ import {
   guessHero,
 } from "@deadlock-mods/shared";
 import { cache } from "../../lib/redis";
+import { wideEventContext } from "../../lib/logger";
 import { resolveFileserverGeo } from "../../services/geo";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
@@ -262,7 +263,9 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   }
 
   async synchronize(): Promise<void> {
-    this.logger.info("Starting GameBanana synchronization");
+    const wide = wideEventContext.get();
+    wide?.merge({ provider: "GameBanana" });
+
     const mods = this.getMods();
     let count = 0;
     let anyFilesUpdated = false;
@@ -282,7 +285,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
               id: submission._idRow,
               source,
             })
-            .info("Synchronized GameBanana mod");
+            .debug("Synchronized GameBanana mod");
         } else {
           this.logger
             .withMetadata({
@@ -299,19 +302,17 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       }
 
       const duration = Date.now() - startTime;
-      this.logger
-        .withMetadata({
-          count,
-          durationMs: duration,
-          modsPerSecond: count / (duration / 1000),
-        })
-        .info("Completed GameBanana synchronization");
+      wide?.merge({
+        syncModCount: count,
+        syncDurationMs: duration,
+        syncModsPerSecond: count / (duration / 1000),
+        syncFilesUpdated: anyFilesUpdated,
+      });
     } catch (error) {
+      wide?.merge({ syncProcessedCount: count });
       this.logger
         .withError(error)
-        .withMetadata({
-          processedCount: count,
-        })
+        .withMetadata({ processedCount: count })
         .error("Synchronization failed");
       throw error;
     }
@@ -537,7 +538,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           modId: dbMod.id,
           downloadCount: downloadEntries.length,
         })
-        .info("Refreshed mod downloads successfully");
+        .debug("Refreshed mod downloads successfully");
 
       return { filesChanged };
     } catch (error) {

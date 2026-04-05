@@ -2,7 +2,11 @@ import { BaseProcessor, type CronJobData } from "@deadlock-mods/queue";
 import { CronPatterns } from "@deadlock-mods/queue/cron";
 import * as Sentry from "@sentry/node";
 import { MonitorSlug, SERVER_TIMEZONE } from "@/lib/constants";
-import { logger as mainLogger } from "@/lib/logger";
+import {
+  createWideEvent,
+  logger as mainLogger,
+  wideEventContext,
+} from "@/lib/logger";
 import { GameBananaRssService } from "@/services/gamebanana-rss";
 
 const logger = mainLogger.child().withContext({
@@ -41,16 +45,23 @@ export class GamebananaRssProcessor extends BaseProcessor<CronJobData> {
         timezone: SERVER_TIMEZONE,
       },
     );
-    const result = await GameBananaRssService.getInstance().processRssFeed();
 
-    if (result.isErr()) {
-      logger
-        .withError(result.error)
-        .error("Error processing gamebanana rss job");
-      return this.handleJobError(result.error, checkInId);
-    }
+    const wide = createWideEvent(logger, "scheduled_rss_sync", {
+      checkInId,
+      monitorSlug: GamebananaRssProcessor.monitorSlug,
+    });
 
-    return this.handleJobSuccess(jobData, checkInId);
+    return wideEventContext.run(wide, async () => {
+      const result = await GameBananaRssService.getInstance().processRssFeed();
+
+      if (result.isErr()) {
+        wide.emit("error", result.error);
+        return this.handleJobError(result.error, checkInId);
+      }
+
+      wide.emit();
+      return this.handleJobSuccess(jobData, checkInId);
+    });
   }
 
   protected handleJobSuccess(jobData: CronJobData, checkInId: string) {

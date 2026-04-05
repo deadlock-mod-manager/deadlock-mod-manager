@@ -6,19 +6,20 @@ type Logger = ILogLayer;
 export interface WideEvent {
   set(key: string, value: unknown): void;
   merge(data: Record<string, unknown>): void;
-  emit(outcome?: "success" | "error", error?: Error): void;
+  emit(outcome?: "success" | "error", error?: unknown): void;
 }
 
-export function createWideEvent(
+export const createWideEvent = (
   logger: Logger,
   operation: string,
   initialContext?: Record<string, unknown>,
-): WideEvent {
+): WideEvent => {
   const startTime = Date.now();
   const event: Record<string, unknown> = {
     operation,
     ...(initialContext ?? {}),
   };
+  let emitted = false;
 
   return {
     set(key, value) {
@@ -28,6 +29,8 @@ export function createWideEvent(
       Object.assign(event, data);
     },
     emit(outcome = "success", error) {
+      if (emitted) return;
+      emitted = true;
       event.outcome = outcome;
       event.duration_ms = Date.now() - startTime;
       if (error) {
@@ -37,9 +40,9 @@ export function createWideEvent(
       }
     },
   };
-}
+};
 
-export function createWideEventContext() {
+export const createWideEventContext = () => {
   const storage = new AsyncLocalStorage<WideEvent>();
   return {
     storage,
@@ -50,31 +53,26 @@ export function createWideEventContext() {
       return storage.getStore();
     },
   };
-}
+};
 
 export type WideEventContext = ReturnType<typeof createWideEventContext>;
 
-export function runWithWideEvent<T = void>(
+export const runWithWideEvent = <T = void>(
   ctx: WideEventContext,
   logger: Logger,
   operation: string,
   initialContext: Record<string, unknown>,
   fn: (wide: WideEvent) => Promise<T>,
-): Promise<T> {
+): Promise<T> => {
   const wide = createWideEvent(logger, operation, initialContext);
-  return ctx.run(wide, () =>
-    (async () => {
-      try {
-        const result = await fn(wide);
-        wide.emit("success");
-        return result;
-      } catch (error) {
-        wide.emit(
-          "error",
-          error instanceof Error ? error : new Error(String(error)),
-        );
-        throw error;
-      }
-    })(),
-  );
-}
+  return ctx.run(wide, async () => {
+    try {
+      const result = await fn(wide);
+      wide.emit("success");
+      return result;
+    } catch (error) {
+      wide.emit("error", error);
+      throw error;
+    }
+  });
+};

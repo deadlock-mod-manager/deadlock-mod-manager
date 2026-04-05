@@ -4,7 +4,7 @@ import {
   REDIS_CHANNELS,
   type ReportStatusUpdatedEvent,
 } from "@deadlock-mods/shared";
-import { logger } from "@/lib/logger";
+import { logger, wideEventContext } from "@/lib/logger";
 import { redisPublisher } from "@/lib/redis";
 
 export class ReportService {
@@ -18,6 +18,13 @@ export class ReportService {
   }
 
   async publishNewReportEvent(report: Report, mod: Mod): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      reportService: "publishNewReport",
+      reportId: report.id,
+      reportChannel: REDIS_CHANNELS.NEW_REPORTS,
+    });
+
     try {
       const event: NewReportEvent = {
         type: "new_report",
@@ -38,15 +45,6 @@ export class ReportService {
         REDIS_CHANNELS.NEW_REPORTS,
         JSON.stringify(event),
       );
-
-      logger
-        .withMetadata({
-          reportId: report.id,
-          modId: report.modId,
-          modName: mod.name,
-          channel: REDIS_CHANNELS.NEW_REPORTS,
-        })
-        .info("Published new report event to Redis");
     } catch (error) {
       logger
         .withError(error)
@@ -63,6 +61,14 @@ export class ReportService {
     report: Report,
     mod: Mod,
   ): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      reportService: "publishStatusUpdate",
+      reportId: report.id,
+      reportStatus: report.status,
+      reportChannel: REDIS_CHANNELS.REPORT_STATUS_UPDATED,
+    });
+
     try {
       const event: ReportStatusUpdatedEvent = {
         type: "report_status_updated",
@@ -86,16 +92,6 @@ export class ReportService {
         REDIS_CHANNELS.REPORT_STATUS_UPDATED,
         JSON.stringify(event),
       );
-
-      logger
-        .withMetadata({
-          reportId: report.id,
-          modId: report.modId,
-          modName: mod.name,
-          status: report.status,
-          channel: REDIS_CHANNELS.REPORT_STATUS_UPDATED,
-        })
-        .info("Published report status updated event to Redis");
     } catch (error) {
       logger
         .withError(error)

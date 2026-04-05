@@ -2,7 +2,11 @@ import { BaseProcessor, type CronJobData } from "@deadlock-mods/queue";
 import { CronPatterns } from "@deadlock-mods/queue/cron";
 import * as Sentry from "@sentry/node";
 import { MonitorSlug, SERVER_TIMEZONE } from "@/lib/constants";
-import { logger as mainLogger } from "@/lib/logger";
+import {
+  createWideEvent,
+  logger as mainLogger,
+  wideEventContext,
+} from "@/lib/logger";
 import { ModSyncService } from "@/services/mod-sync";
 
 const logger = mainLogger.child().withContext({
@@ -42,26 +46,31 @@ export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
       },
     );
 
-    try {
-      logger.info(
-        `Starting scheduled mod synchronization at ${new Date().toISOString()}`,
-      );
-      const syncService = ModSyncService.getInstance();
-      const result = await syncService.synchronizeMods({
-        checkInId,
-        monitorSlug: ModsSyncProcessor.monitorSlug,
-      });
+    const wide = createWideEvent(logger, "scheduled_mod_sync", {
+      checkInId,
+      monitorSlug: ModsSyncProcessor.monitorSlug,
+    });
 
-      if (result.success) {
-        logger.info("Scheduled mod synchronization completed successfully");
-      } else {
-        logger.warn(`Scheduled mod synchronization result: ${result.message}`);
+    return wideEventContext.run(wide, async () => {
+      try {
+        const syncService = ModSyncService.getInstance();
+        const result = await syncService.synchronizeMods({
+          checkInId,
+          monitorSlug: ModsSyncProcessor.monitorSlug,
+        });
+
+        wide.merge({ success: result.success, resultMessage: result.message });
+        wide.emit();
+
+        return this.handleJobSuccess(jobData, checkInId);
+      } catch (error) {
+        wide.emit("error", error);
+        return this.handleJobError(
+          error instanceof Error ? error : new Error(String(error)),
+          checkInId,
+        );
       }
-      return this.handleJobSuccess(jobData, checkInId);
-    } catch (error) {
-      logger.withError(error).error("Error processing mods scheduler job");
-      return this.handleJobError(error as Error, checkInId);
-    }
+    });
   }
 
   protected handleJobSuccess(jobData: CronJobData, checkInId: string) {

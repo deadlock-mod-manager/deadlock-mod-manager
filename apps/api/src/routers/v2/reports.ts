@@ -6,7 +6,7 @@ import {
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { CACHE_TTL } from "@/lib/constants";
-import { logger } from "@/lib/logger";
+import { logger, wideEventContext } from "@/lib/logger";
 import { cache } from "@/lib/redis";
 import { publicProcedure } from "../../lib/orpc";
 import { reportService } from "../../services/report";
@@ -30,30 +30,27 @@ export const reportsRouter = {
     .input(CreateReportInputSchema)
     .output(CreateReportResponseSchema)
     .handler(async ({ input }) => {
-      try {
-        logger
-          .withMetadata({
-            modId: input.modId,
-            type: input.type,
-            reporterHardwareId: input.reporterHardwareId,
-          })
-          .info("Processing new report submission");
+      const wide = wideEventContext.get();
+      wide?.merge({
+        router: "reports",
+        modId: input.modId,
+        reportType: input.type,
+      });
 
-        // Check if mod exists
+      try {
         const mod = await modRepository.findById(input.modId);
         if (!mod) {
-          logger
-            .withMetadata({ modId: input.modId })
-            .warn("Report submitted for non-existent mod");
+          wide?.set("outcomeReason", "mod_not_found");
           throw new ORPCError("NOT_FOUND", {
             message: "Mod not found",
           });
         }
 
         if (REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
-          logger
-            .withMetadata({ modId: input.modId, remoteId: mod.remoteId })
-            .warn("Report submission blocked for disabled mod");
+          wide?.merge({
+            remoteId: mod.remoteId,
+            outcomeReason: "reports_disabled",
+          });
           return {
             id: "",
             status: "error" as const,
@@ -61,20 +58,16 @@ export const reportsRouter = {
           };
         }
 
-        // Check for duplicate reports from same reporter
         if (input.reporterHardwareId) {
           const existingReport = await reportRepository.findByModIdAndReporter(
             input.modId,
             input.reporterHardwareId,
           );
           if (existingReport) {
-            logger
-              .withMetadata({
-                modId: input.modId,
-                reporterHardwareId: input.reporterHardwareId,
-                existingReportId: existingReport.id,
-              })
-              .warn("Duplicate report attempt from same reporter");
+            wide?.merge({
+              existingReportId: existingReport.id,
+              outcomeReason: "duplicate_report",
+            });
             return {
               id: existingReport.id,
               status: "error" as const,
@@ -83,7 +76,6 @@ export const reportsRouter = {
           }
         }
 
-        // Create the report
         const report = await reportRepository.create({
           modId: input.modId,
           type: input.type,
@@ -93,15 +85,11 @@ export const reportsRouter = {
           status: "unverified",
         });
 
-        logger
-          .withMetadata({
-            reportId: report.id,
-            modId: input.modId,
-            modName: mod.name,
-          })
-          .info("Report created successfully");
+        wide?.merge({
+          reportId: report.id,
+          modName: mod.name,
+        });
 
-        // Publish event for Discord integration
         await reportService.publishNewReportEvent(report, mod);
 
         return {
@@ -113,10 +101,8 @@ export const reportsRouter = {
           throw error;
         }
 
-        logger
-          .withError(error)
-          .withMetadata({ modId: input.modId })
-          .error("Failed to create report");
+        wide?.set("outcomeReason", "create_failed");
+        wide?.emit("error", error);
 
         return {
           id: "",

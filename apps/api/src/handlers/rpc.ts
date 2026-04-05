@@ -1,7 +1,7 @@
 import { onError, ORPCError, ValidationError } from "@orpc/server";
 import { ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { RPCHandler } from "@orpc/server/fetch";
-import { logger } from "@/lib/logger";
+import { wideEventContext } from "@/lib/logger";
 import { appRouter } from "@/routers";
 
 function extractValidationIssues(
@@ -32,10 +32,9 @@ export const rpcHandler = new RPCHandler(appRouter, {
         code: error instanceof ORPCError ? error.code : undefined,
         ...validationDetails,
       };
-      logger
-        .withMetadata(errorDetails)
-        .withError(isError ? error : new Error(String(error)))
-        .error("Error handling RPC request");
+
+      const wide = wideEventContext.get();
+      wide?.merge({ orpcError: errorDetails });
     }),
   ],
 });

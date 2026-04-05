@@ -154,7 +154,7 @@ export class GitHubReleasesService {
     }
 
     return {
-      version: release.tag_name.replace(/^v/, ""), // Remove 'v' prefix if present
+      version: release.tag_name.replace(/^v/, ""),
       name: release.name,
       releaseNotes: release.body,
       publishedAt: release.published_at,
@@ -211,7 +211,7 @@ export class GitHubReleasesService {
       const latestStable = publishedReleases.find(
         (release) => !release.prerelease,
       );
-      const latest = latestStable || publishedReleases[0]; // Fallback to the latest release if no stable found
+      const latest = latestStable || publishedReleases[0];
 
       const transformedLatest = this.transformRelease(latest);
       const allVersions = publishedReleases.slice(0, 10).map((release) => ({
@@ -235,16 +235,13 @@ export class GitHubReleasesService {
         timestamp: Date.now(),
       };
 
-      logger.info(
-        `Successfully fetched ${releases.length} releases from GitHub`,
-      );
+      logger
+        .withMetadata({ releaseCount: releases.length })
+        .info("Fetched releases from GitHub");
       return result;
     } catch (error) {
-      logger.error(
-        `Failed to fetch releases from GitHub: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      logger.withError(error).error("Failed to fetch releases from GitHub");
 
-      // Return cached data if available, even if expired
       if (this.cache) {
         logger.warn("Returning expired cached data due to API failure");
         return this.cache.data;
@@ -254,7 +251,6 @@ export class GitHubReleasesService {
     }
   }
 
-  // Method to clear cache (useful for testing or forced refresh)
   clearCache(): void {
     this.cache = null;
     logger.debug("GitHub releases cache cleared");

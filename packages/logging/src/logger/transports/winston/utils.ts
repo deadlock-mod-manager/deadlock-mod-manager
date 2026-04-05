@@ -1,5 +1,39 @@
 import logfmt from "logfmt";
 
+const flattenObject = (
+  obj: Record<string, unknown>,
+  prefix = "",
+): Record<string, string | number | boolean> => {
+  const result: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const flatKey = prefix ? `${prefix}.${key}` : key;
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      Object.assign(
+        result,
+        flattenObject(value as Record<string, unknown>, flatKey),
+      );
+    } else if (Array.isArray(value)) {
+      result[flatKey] = JSON.stringify(value);
+    } else if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      result[flatKey] = value;
+    } else if (value == null) {
+      result[flatKey] = "";
+    } else {
+      result[flatKey] = String(value);
+    }
+  }
+  return result;
+};
+
+export const safeLogfmt = (obj: Record<string, unknown>): string => {
+  const flat = flattenObject(obj);
+  return logfmt.stringify(flat);
+};
+
 export interface LogComponents {
   message: unknown;
   meta: Record<string, unknown>;
@@ -72,16 +106,7 @@ export const formatLogComponents = ({
       {} as Record<string, unknown>,
     );
 
-    try {
-      const logfmtResult = logfmt.stringify(filteredMetadata);
-      if (logfmtResult.includes("[object Object]")) {
-        formattedMetadata = JSON.stringify(filteredMetadata, null, 2);
-      } else {
-        formattedMetadata = logfmtResult;
-      }
-    } catch {
-      formattedMetadata = JSON.stringify(filteredMetadata, null, 2);
-    }
+    formattedMetadata = safeLogfmt(filteredMetadata);
     formattedMessage = error?.message ?? "An error occurred";
   } else {
     formattedMessage = String(message);
@@ -99,16 +124,7 @@ export const formatLogComponents = ({
       {} as Record<string, unknown>,
     );
 
-    try {
-      const logfmtResult = logfmt.stringify(filteredMeta);
-      if (logfmtResult.includes("[object Object]")) {
-        formattedMetadata = JSON.stringify(filteredMeta, null, 2);
-      } else {
-        formattedMetadata = logfmtResult;
-      }
-    } catch {
-      formattedMetadata = JSON.stringify(filteredMeta, null, 2);
-    }
+    formattedMetadata = safeLogfmt(filteredMeta);
   }
 
   return {

@@ -1,6 +1,6 @@
 import { db, type Mod, ReportRepository } from "@deadlock-mods/database";
 import { REDIS_CHANNELS } from "@deadlock-mods/shared";
-import { logger } from "@/lib/logger";
+import { logger, wideEventContext } from "@/lib/logger";
 import { redisPublisher } from "@/lib/redis";
 
 const reportRepository = new ReportRepository(db);
@@ -18,21 +18,20 @@ export class ModSyncHooksService {
   }
 
   async onModFilesUpdated(mod: Mod, filesUpdatedAt: Date): Promise<void> {
+    const wide = wideEventContext.get();
+    wide?.merge({
+      hook: "onModFilesUpdated",
+      modId: mod.id,
+      modName: mod.name,
+    });
+
     try {
       const dismissedCount = await reportRepository.dismissUnverifiedByModId(
         mod.id,
         "system",
         "Mod files updated",
       );
-      if (dismissedCount > 0) {
-        logger
-          .withMetadata({
-            modId: mod.id,
-            modName: mod.name,
-            dismissedCount,
-          })
-          .info("Dismissed unverified reports after mod files update");
-      }
+      wide?.set("dismissedReportCount", dismissedCount);
     } catch (error) {
       logger
         .withError(error)
@@ -53,12 +52,6 @@ export class ModSyncHooksService {
           },
         }),
       );
-      logger
-        .withMetadata({
-          modId: mod.id,
-          channel: REDIS_CHANNELS.MOD_FILES_UPDATED,
-        })
-        .debug("Published mod files updated event");
     } catch (error) {
       logger
         .withError(error)

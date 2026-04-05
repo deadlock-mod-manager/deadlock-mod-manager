@@ -3,7 +3,7 @@ import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError, ORPCError, ValidationError } from "@orpc/server";
 import { ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { logger } from "@/lib/logger";
+import { wideEventContext } from "@/lib/logger";
 import { appRouter } from "@/routers";
 
 function extractValidationIssues(
@@ -49,10 +49,9 @@ export const apiHandler = new OpenAPIHandler(appRouter, {
         code: error instanceof ORPCError ? error.code : undefined,
         ...validationDetails,
       };
-      logger
-        .withMetadata(errorDetails)
-        .withError(isError ? error : new Error(String(error)))
-        .error("Error handling API request");
+
+      const wide = wideEventContext.get();
+      wide?.merge({ orpcError: errorDetails });
     }),
   ],
 });

@@ -1,8 +1,7 @@
 import chalk from "chalk";
-import logfmt from "logfmt";
 import { format } from "winston";
 import type { FormattedError } from "../utils";
-import { formatLogComponents } from "../utils";
+import { formatLogComponents, safeLogfmt } from "../utils";
 
 const LEVEL_BADGES: Record<string, string> = {
   error: chalk.red.bold("ERROR"),
@@ -120,7 +119,7 @@ export const formatSplat = (
   if (!Array.isArray(splat)) {
     if (!splat) return "";
     if (typeof splat === "object") {
-      return JSON.stringify(splat, null, 2);
+      return safeLogfmt(splat as Record<string, unknown>);
     }
     return String(splat);
   }
@@ -145,15 +144,7 @@ export const formatSplat = (
       );
 
       if (Object.keys(filteredObj).length > 0) {
-        try {
-          const logfmtResult = logfmt.stringify(filteredObj);
-          if (logfmtResult.includes("[object Object]")) {
-            return JSON.stringify(filteredObj, null, 2);
-          }
-          return logfmtResult;
-        } catch {
-          return JSON.stringify(filteredObj, null, 2);
-        }
+        return safeLogfmt(filteredObj);
       }
       return "";
     })

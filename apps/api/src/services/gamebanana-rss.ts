@@ -8,7 +8,7 @@ import { err, ok } from "neverthrow";
 import { GAMEBANANA_RSS_FEED_URL } from "@/lib/constants";
 import { gamebananaRssParser } from "@/providers/game-banana/rss-parser";
 import { env } from "../lib/env";
-import { logger as mainLogger } from "../lib/logger";
+import { logger as mainLogger, wideEventContext } from "../lib/logger";
 import { RedisPublisherService } from "./redis-publisher";
 
 const logger = mainLogger.child().withContext({
@@ -38,45 +38,42 @@ export class GameBananaRssService {
 
   async processRssFeed(options: { skipLock?: boolean } = {}) {
     const { skipLock = false } = options;
+    const wide = wideEventContext.get();
+    wide?.merge({
+      service: "gamebanana-rss",
+      operation: "process_rss_feed",
+      skipLock,
+    });
 
     let lock: AcquiredLock | null = null;
 
     try {
       if (!skipLock) {
-        logger.info(
-          "Attempting to acquire lock for GameBanana RSS feed processing",
-        );
         lock = await this.lockService.acquireLock(GameBananaRssService.name, {
-          timeout: 10 * 60 * 1000, // 10 minutes
-          heartbeatInterval: 30 * 1000, // 30 seconds heartbeat
+          timeout: 10 * 60 * 1000,
+          heartbeatInterval: 30 * 1000,
         });
 
         if (!lock) {
-          logger.warn(
-            "Could not acquire lock, another GameBanana RSS feed processing is already running",
-          );
+          wide?.set("outcomeReason", "already_locked");
           return ok();
         }
       }
 
-      logger
-        .withMetadata({
-          lockAcquired: !!lock,
-          instanceId: lock?.instanceId,
-        })
-        .info("Starting GameBanana RSS feed processing");
+      wide?.merge({
+        lockAcquired: !!lock,
+        instanceId: lock?.instanceId,
+      });
 
       const feed = await gamebananaRssParser.parseURL(GAMEBANANA_RSS_FEED_URL);
 
-      logger
-        .withMetadata({
-          feedTitle: feed.title,
-          itemCount: feed.items?.length || 0,
-        })
-        .info("Successfully parsed RSS feed");
+      wide?.merge({
+        feedTitle: feed.title,
+        feedItemCount: feed.items?.length || 0,
+      });
 
       if (!feed.items || feed.items.length === 0) {
-        logger.warn("No items found in RSS feed");
+        wide?.set("outcomeReason", "empty_feed");
         return ok();
       }
 
@@ -92,22 +89,13 @@ export class GameBananaRssService {
       const result =
         await this.rssItemRepository.upsertManyByLink(rssItemsToStore);
 
-      logger
-        .withMetadata({
-          totalProcessed: result.totalProcessed,
-          newItems: result.newItems.length,
-          updatedItems: result.updatedItems.length,
-        })
-        .info("RSS items processed successfully");
+      wide?.merge({
+        totalProcessed: result.totalProcessed,
+        newItemCount: result.newItems.length,
+        updatedItemCount: result.updatedItems.length,
+      });
 
       if (result.newItems.length > 0) {
-        logger
-          .withMetadata({
-            newItemTitles: result.newItems.map((item) => item.title),
-          })
-          .info("New RSS items detected");
-
-        // Publish events for new mods
         for (const newItem of result.newItems) {
           try {
             await this.redisPublisher.publishNewMod({
@@ -126,7 +114,6 @@ export class GameBananaRssService {
                 modId: newItem.id,
               })
               .error("Failed to publish new mod event");
-            // Continue processing other items even if one fails
           }
         }
       }
@@ -152,7 +139,6 @@ export class GameBananaRssService {
     } finally {
       try {
         await lock?.release();
-        logger.info("Lock released successfully");
       } catch (releaseError) {
         logger.withError(releaseError).error("Error releasing lock");
       }

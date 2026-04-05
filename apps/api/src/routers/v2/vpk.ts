@@ -1,6 +1,6 @@
 import { ORPCError } from "@orpc/server";
 import { VPK_CONSTANTS } from "@/lib/constants";
-import { logger } from "@/lib/logger";
+import { wideEventContext } from "@/lib/logger";
 import { ModAnalyser } from "@/services/mod-analyser";
 import { publicProcedure } from "../../lib/orpc";
 import {
@@ -30,62 +30,33 @@ export const vpkRouter = {
       const fileSizeBytes = input.vpk.size;
       const fileSizeMB = (fileSizeBytes / (1024 * 1024)).toFixed(1);
 
-      // Validate file size
-      if (fileSizeBytes > VPK_CONSTANTS.MAX_FILE_SIZE_BYTES) {
-        const maxSizeMB = VPK_CONSTANTS.MAX_FILE_SIZE_MB;
-        logger
-          .withMetadata({
-            fileName: input.vpk.name,
-            fileSizeBytes,
-            fileSizeMB: `${fileSizeMB}MB`,
-            maxSizeMB: `${maxSizeMB}MB`,
-          })
-          .warn("VPK file exceeds maximum size limit");
+      const wide = wideEventContext.get();
+      wide?.merge({
+        router: "vpk",
+        fileName: input.vpk.name,
+        fileSizeBytes,
+        fileSizeMB: `${fileSizeMB}MB`,
+      });
 
+      if (fileSizeBytes > VPK_CONSTANTS.MAX_FILE_SIZE_BYTES) {
+        wide?.set("outcomeReason", "file_too_large");
         throw new ORPCError("BAD_REQUEST", {
-          message: `File size ${fileSizeMB}MB exceeds maximum limit of ${maxSizeMB}MB`,
+          message: `File size ${fileSizeMB}MB exceeds maximum limit of ${VPK_CONSTANTS.MAX_FILE_SIZE_MB}MB`,
         });
       }
 
-      logger
-        .withMetadata({
-          fileName: input.vpk.name,
-          fileSizeBytes,
-          fileSizeMB: `${fileSizeMB}MB`,
-        })
-        .info("Starting VPK analysis");
-
       try {
         const buffer = Buffer.from(await input.vpk.arrayBuffer());
-
-        logger
-          .withMetadata({
-            fileName: input.vpk.name,
-            bufferSizeBytes: buffer.length,
-          })
-          .debug("VPK file loaded into buffer");
-
         const result = await ModAnalyser.instance.analyseVPK(buffer);
 
-        logger
-          .withMetadata({
-            fileName: input.vpk.name,
-            hasMatch: !!result.matchedVpk,
-            modName: result.matchedVpk?.mod?.name,
-          })
-          .info("VPK analysis completed successfully");
+        wide?.merge({
+          hasMatch: !!result.matchedVpk,
+          modName: result.matchedVpk?.mod?.name,
+        });
 
         return result;
       } catch (error) {
-        logger
-          .withMetadata({
-            fileName: input.vpk.name,
-            fileSizeBytes,
-            fileSizeMB: `${fileSizeMB}MB`,
-          })
-          .withError(error)
-          .error("VPK analysis failed");
-
+        wide?.set("outcomeReason", "analysis_failed");
         throw error;
       }
     }),
