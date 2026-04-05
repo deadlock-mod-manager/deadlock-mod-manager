@@ -56,6 +56,7 @@ import {
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -87,6 +88,7 @@ import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 const PAGE_SIZE = 20;
+const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
 function ModsPagination({
   page,
@@ -478,6 +480,11 @@ const MyMods = () => {
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const modsStorePaginationEnabled = usePersistedStore(
+    (state) => state.settings[MODS_STORE_PAGINATION_SETTING_ID]?.enabled,
+  );
+  const paginationEnabled =
+    modsStorePaginationEnabled ?? platform() === "linux";
   const {
     unmatchedVpkCount,
     unmatchedVpks,
@@ -646,11 +653,16 @@ const MyMods = () => {
     sortedMods,
   ]);
 
-  const totalPages = Math.ceil(displayMods.length / PAGE_SIZE);
+  const totalPages = paginationEnabled
+    ? Math.ceil(displayMods.length / PAGE_SIZE)
+    : 1;
 
-  const paginatedMods = useMemo(
-    () => displayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-    [displayMods, page],
+  const visibleMods = useMemo(
+    () =>
+      paginationEnabled
+        ? displayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        : displayMods,
+    [displayMods, page, paginationEnabled],
   );
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
@@ -920,19 +932,19 @@ const MyMods = () => {
 
               {displayMods.length > 0 && (
                 <TabsContent value={ModFilter.ALL}>
-                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                  <ModsList mods={visibleMods} viewMode={viewMode} />
                 </TabsContent>
               )}
 
               {displayMods.length > 0 && (
                 <TabsContent value={ModFilter.ENABLED}>
-                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                  <ModsList mods={visibleMods} viewMode={viewMode} />
                 </TabsContent>
               )}
 
               {displayMods.length > 0 && (
                 <TabsContent value={ModFilter.DISABLED}>
-                  <ModsList mods={paginatedMods} viewMode={viewMode} />
+                  <ModsList mods={visibleMods} viewMode={viewMode} />
                 </TabsContent>
               )}
 
