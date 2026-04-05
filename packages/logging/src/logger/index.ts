@@ -133,3 +133,5 @@ export const createAppLogger = <C extends Record<string, unknown>>({
 
   return logger;
 };
+
+export * from "./wide-event";

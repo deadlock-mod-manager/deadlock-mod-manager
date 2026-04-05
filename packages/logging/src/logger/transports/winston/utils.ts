@@ -17,9 +17,30 @@ export interface LogMessageError {
   message?: string;
 }
 
-export const formatError = (error: LogMessageError | undefined) => {
-  if (!error) return "";
-  return `error=${error?.name} error.message=${error?.message} error.stack=${error?.stack}`;
+export interface FormattedError {
+  headline: string;
+  stackLines: string[];
+}
+
+export const formatError = (
+  error: LogMessageError | undefined,
+): FormattedError | null => {
+  if (!error) return null;
+  const name = error.name ?? "Error";
+  const message = error.message ?? "Unknown error";
+  const headline = `${name}: ${message}`;
+
+  const stackLines: string[] = [];
+  if (error.stack) {
+    for (const line of error.stack.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("at ")) {
+        stackLines.push(trimmed);
+      }
+    }
+  }
+
+  return { headline, stackLines };
 };
 
 export const isMessageObject = (value: unknown): value is LogMessage =>
@@ -36,13 +57,10 @@ export const formatLogComponents = ({
   let error = initialError as LogMessageError | undefined;
 
   if (isMessageObject(message)) {
-    // eslint-disable-next-line no-console
-    console.error(error); // Explicitly log full error object
     error = message.error;
 
     const { error: _, ...metadata } = message;
 
-    // Filter metadata to remove already seen keys
     const filteredMetadata = Object.entries(metadata).reduce(
       (acc, [key, value]) => {
         if (!seenKeys.has(key)) {
@@ -68,10 +86,8 @@ export const formatLogComponents = ({
   } else {
     formattedMessage = String(message);
 
-    // Remove duplicate keys from meta
     const filteredMeta = Object.entries(meta).reduce(
       (acc, [key, value]) => {
-        // Skip special symbols
         if (typeof key === "symbol") return acc;
 
         if (!seenKeys.has(key)) {
