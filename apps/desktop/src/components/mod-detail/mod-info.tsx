@@ -1,3 +1,4 @@
+import { DeadlockHeroes } from "@deadlock-mods/shared";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
@@ -11,6 +12,7 @@ import {
   Download,
   Hash,
   InfoIcon,
+  Shield,
   Tag,
   User,
 } from "@deadlock-mods/ui/icons";
@@ -95,16 +97,30 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
             )}
           </div>
 
-          {mod.tags && mod.tags.length > 0 && (
-            <div className='flex flex-wrap items-center gap-2'>
-              <Tag className='text-muted-foreground' />
-              {mod.tags.map((tag) => (
-                <Badge key={tag} variant='secondary'>
-                  {tag}
+          <div className='flex flex-wrap items-center gap-2'>
+            {mod.tags && mod.tags.length > 0 && (
+              <>
+                <Tag className='text-muted-foreground' />
+                {mod.tags.map((tag) => (
+                  <Badge key={tag} variant='secondary'>
+                    {tag}
+                  </Badge>
+                ))}
+              </>
+            )}
+            {localMod?.detectedHero !== undefined && (
+              <>
+                <Shield className='text-muted-foreground' />
+                <Badge variant='outline'>
+                  {localMod.detectedHero
+                    ? (DeadlockHeroes[
+                        localMod.detectedHero as keyof typeof DeadlockHeroes
+                      ] ?? localMod.detectedHero)
+                    : t("heroTag.other")}
                 </Badge>
-              ))}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </>

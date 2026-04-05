@@ -15,6 +15,7 @@
     "vpk-parser:build": "pnpm --filter vpk-parser build",
     "dmp-parser:build": "pnpm --filter dmp-parser build",
     "dmp-parser": "pnpm --filter dmp-parser run parse",
+    "hero-parser": "pnpm --filter @deadlock-mods/hero-parser cli --",
     "docker:api:build": "docker build -f apps/api/Dockerfile -t deadlock-api .",
     "docker:api:run": "docker run --rm -p 9000:9000 --env-file .env deadlock-api",
     "docker:api:dev": "docker compose up api --build",

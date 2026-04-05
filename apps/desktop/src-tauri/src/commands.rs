@@ -26,6 +26,7 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
+use hero_parser::HeroDetectionResult;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
@@ -985,6 +986,130 @@ pub fn parse_vpk_file(
   );
 
   Ok(parsed)
+}
+
+#[tauri::command]
+pub fn detect_mod_hero(
+  mod_id: String,
+  installed_vpks: Option<Vec<String>>,
+) -> Result<HeroDetectionResult, Error> {
+  log::info!("Detecting hero for mod: {mod_id}");
+
+  let mut vpk_files: Vec<PathBuf> = Vec::new();
+
+  let mod_manager = MANAGER.lock().unwrap();
+  if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+    let addons_path = game_path.join("game").join("citadel").join("addons");
+    if addons_path.exists() {
+      // Enabled mods: VPKs tracked by the mod repository or passed from frontend
+      let repo_vpks = mod_manager
+        .get_mod_repository()
+        .get_mod(&mod_id)
+        .map(|m| m.installed_vpks.clone());
+      let known_vpks = repo_vpks.or(installed_vpks).unwrap_or_default();
+      for vpk_name in &known_vpks {
+        let vpk_path = addons_path.join(vpk_name);
+        if vpk_path.exists() {
+          vpk_files.push(vpk_path);
+        }
+      }
+
+      // Disabled mods: VPKs prefixed with modId_
+      let prefix = format!("{mod_id}_");
+      if let Ok(entries) = std::fs::read_dir(&addons_path) {
+        for entry in entries.filter_map(|e| e.ok()) {
+          let path = entry.path();
+          if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+              if name.starts_with(&prefix) {
+                vpk_files.push(path);
+              }
+            }
+          }
+        }
+      }
+
+      // Also check profile subdirectories
+      if let Ok(subdirs) = std::fs::read_dir(&addons_path) {
+        for subdir in subdirs.filter_map(|e| e.ok()) {
+          let sub_path = subdir.path();
+          if !sub_path.is_dir() {
+            continue;
+          }
+          let prefix = format!("{mod_id}_");
+          if let Ok(entries) = std::fs::read_dir(&sub_path) {
+            for entry in entries.filter_map(|e| e.ok()) {
+              let path = entry.path();
+              if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                  if name.starts_with(&prefix) {
+                    vpk_files.push(path);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  drop(mod_manager);
+
+  // Also check the mod's local data directory for any VPKs
+  if let Ok(app_data) = std::env::var("LOCALAPPDATA") {
+    let mod_data_path =
+      PathBuf::from(app_data).join("dev.stormix.deadlock-mod-manager").join("mods").join(&mod_id);
+    if mod_data_path.exists() {
+      if let Ok(entries) = std::fs::read_dir(&mod_data_path) {
+        for entry in entries.filter_map(|e| e.ok()) {
+          let path = entry.path();
+          if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+            vpk_files.push(path);
+          }
+        }
+      }
+    }
+  }
+
+  log::info!("Found {} VPK file(s) for mod {mod_id}", vpk_files.len());
+
+  let mut all_entries = Vec::new();
+
+  for vpk_path in &vpk_files {
+    let vpk_data = match std::fs::read(vpk_path) {
+      Ok(data) => data,
+      Err(e) => {
+        log::warn!("Failed to read VPK {}: {e}", vpk_path.display());
+        continue;
+      }
+    };
+
+    let options = VpkParseOptions {
+      include_full_file_hash: false,
+      file_path: vpk_path.to_string_lossy().to_string(),
+      last_modified: None,
+      include_merkle: false,
+      include_entries: true,
+    };
+
+    match VpkParser::parse(vpk_data, options) {
+      Ok(parsed) => all_entries.extend(parsed.entries),
+      Err(e) => {
+        log::warn!("Failed to parse VPK {}: {e}", vpk_path.display());
+        continue;
+      }
+    }
+  }
+
+  let result = hero_parser::detect_hero(&all_entries);
+  log::info!(
+    "Hero detection result for mod {mod_id}: hero={:?}, category={}, internal_names={:?}",
+    result.hero,
+    result.category,
+    result.internal_names
+  );
+
+  Ok(result)
 }
 
 #[tauri::command]

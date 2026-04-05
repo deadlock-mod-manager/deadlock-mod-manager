@@ -55,6 +55,7 @@ import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settin
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
+import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
@@ -710,6 +711,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='backups'>
+            <Section
+              description={t("heroParser.settingsDescription")}
+              title={t("heroParser.settingsTitle")}>
+              <HeroParserSettings />
+            </Section>
             <Section
               description={t("settings.addonsBackupDescription")}
               title={t("settings.addonsBackup")}>

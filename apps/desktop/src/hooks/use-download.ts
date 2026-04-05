@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
+import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -19,6 +20,7 @@ export const useDownload = (
   const localMods = usePersistedStore((state) => state.localMods);
   const setModProgress = usePersistedStore((state) => state.setModProgress);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
@@ -54,6 +56,17 @@ export const useDownload = (
         setModStatus(mod.remoteId, ModStatus.Downloaded);
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
+
+        detectHeroForMod(mod.remoteId)
+          .then((result) => {
+            setDetectedHero(mod.remoteId, result.hero ?? null);
+          })
+          .catch((err) => {
+            logger
+              .withMetadata({ mod: mod.remoteId })
+              .withError(err instanceof Error ? err : new Error(String(err)))
+              .warn("Failed to detect hero after download");
+          });
       },
       onError: (error) => {
         toast.error(`Failed to download ${mod.name}: ${error.message}`);

@@ -556,6 +556,9 @@ importers:
       '@deadlock-mods/crosshair':
         specifier: workspace:*
         version: link:../../packages/crosshair
+      '@deadlock-mods/hero-parser':
+        specifier: workspace:*
+        version: link:../../packages/hero-parser
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1370,6 +1373,25 @@ importers:
       '@deadlock-mods/typescript-config':
         specifier: workspace:*
         version: link:../../tools/typescript
+
+  packages/hero-parser:
+    dependencies:
+      '@deadlock-mods/vpk-parser':
+        specifier: workspace:*
+        version: link:../vpk-parser
+    devDependencies:
+      '@deadlock-mods/typescript-config':
+        specifier: workspace:*
+        version: link:../../tools/typescript
+      '@types/bun':
+        specifier: ^1.3.11
+        version: 1.3.11
+      '@types/node':
+        specifier: 22.19.15
+        version: 22.19.15
+      bun-types:
+        specifier: ^1.3.11
+        version: 1.3.11
 
   packages/instrumentation:
     dependencies:

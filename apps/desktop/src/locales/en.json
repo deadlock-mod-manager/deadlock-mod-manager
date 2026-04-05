@@ -1770,5 +1770,29 @@
     "skip": "Skip",
     "installFailed": "Failed to install mod fonts. Please try again.",
     "discardFailed": "Failed to discard mod fonts. Please try again."
+  },
+  "heroConflict": {
+    "title": "Hero Mod Conflict",
+    "body": "\"{{modName}}\" is already enabled for {{heroName}}. Only one mod per hero can be loaded at a time. Do you want to enable this mod anyway?",
+    "cancel": "No",
+    "confirm": "Yes, enable anyway"
+  },
+  "heroTag": {
+    "hero": "Hero",
+    "other": "General"
+  },
+  "heroParser": {
+    "idle": "Hero Parser: Idle",
+    "scanning": "Scanning: {{current}}/{{total}}",
+    "scanningMod": "Analyzing: {{modName}}",
+    "settingsTitle": "Hero Parser",
+    "settingsDescription": "Automatically detects which hero a mod is for by analyzing VPK file contents.",
+    "statusIdle": "Idle",
+    "statusScanning": "Scanning mods...",
+    "indexedCount": "{{indexed}} of {{total}} mods indexed",
+    "forceRescan": "Force Rescan",
+    "forceRescanTitle": "Force Rescan All Mods",
+    "forceRescanBody": "This will re-analyze all mods without delays. The application may become unresponsive during the scan depending on the number and size of your mods.",
+    "forceRescanConfirm": "Rescan Now"
   }
 }

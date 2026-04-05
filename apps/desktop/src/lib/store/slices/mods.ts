@@ -18,6 +18,13 @@ export type ModProgress = {
   speed?: number;
 };
 
+export type HeroDetectionProgress = {
+  status: "idle" | "scanning";
+  current: number;
+  total: number;
+  currentModName: string | null;
+};
+
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
@@ -25,6 +32,8 @@ export type ModsState = {
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
+  // Hero detection state (ephemeral)
+  heroDetection: HeroDetectionProgress;
 
   setDefaultSort: (sortType: SortType) => void;
   addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
@@ -57,6 +66,8 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
+  setDetectedHero: (remoteId: string, hero: string | null) => void;
+  setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
 };
 
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
@@ -67,6 +78,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   modProgress: {},
   analysisResult: null,
   analysisDialogOpen: false,
+  heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
@@ -467,4 +479,17 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     });
   },
+
+  setDetectedHero: (remoteId: string, hero: string | null) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        detectedHero: mod.remoteId === remoteId ? hero : mod.detectedHero,
+      })),
+    })),
+
+  setHeroDetection: (progress) =>
+    set((state) => ({
+      heroDetection: { ...state.heroDetection, ...progress },
+    })),
 });

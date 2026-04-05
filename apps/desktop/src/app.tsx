@@ -22,6 +22,7 @@ import { useAutoUpdate } from "./hooks/use-auto-update";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
+import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
@@ -42,6 +43,7 @@ const App = () => {
   useDeepLink();
   useLanguageListener();
   useModOrderMigration();
+  useHeroDetection();
   useIngestToolInit();
   const { t } = useTranslation();
 

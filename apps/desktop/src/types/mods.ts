@@ -33,7 +33,8 @@ export interface LocalMod extends ModDto {
   selectedDownloads?: ModDownloadItem[];
   installedVpks?: string[];
   installedFileTree?: ModFileTree;
-  installOrder?: number; // Order in which the mod should be loaded (lower numbers load first)
+  installOrder?: number;
+  detectedHero?: string | null;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {

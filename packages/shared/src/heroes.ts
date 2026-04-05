@@ -38,6 +38,7 @@ const knownRegexes = {
   [DeadlockHeroes.Vyper]: [/vyper/i, /viper/i],
   [DeadlockHeroes.Warden]: [/warden/i],
   [DeadlockHeroes.Wraith]: [/wraith/i],
+  [DeadlockHeroes.Wrecker]: [/wrecker/i],
   [DeadlockHeroes.Yamato]: [/yamato/i],
 };
 

@@ -1,3 +1,4 @@
+import { DeadlockHeroes } from "@deadlock-mods/shared";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -22,6 +23,7 @@ import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
@@ -90,6 +92,8 @@ export const ModStatusIcon = ({
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
+  const confirm = useConfirm();
+  const localMods = usePersistedStore((state) => state.localMods);
 
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
@@ -139,7 +143,32 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           );
           break;
         case ModStatus.Downloaded:
-        case ModStatus.FailedToInstall:
+        case ModStatus.FailedToInstall: {
+          const detectedHero = localMod.detectedHero;
+          if (detectedHero) {
+            const conflictingMod = localMods.find(
+              (m) =>
+                m.remoteId !== localMod.remoteId &&
+                m.status === ModStatus.Installed &&
+                m.detectedHero === detectedHero,
+            );
+            if (conflictingMod) {
+              const heroDisplay =
+                DeadlockHeroes[detectedHero as keyof typeof DeadlockHeroes] ??
+                detectedHero;
+              const confirmed = await confirm({
+                title: t("heroConflict.title"),
+                body: t("heroConflict.body", {
+                  modName: conflictingMod.name,
+                  heroName: heroDisplay,
+                }),
+                tone: "destructive",
+                cancelButton: t("heroConflict.cancel"),
+                actionButton: t("heroConflict.confirm"),
+              });
+              if (!confirmed) break;
+            }
+          }
           await install(localMod, {
             onStart: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Installing);
@@ -190,6 +219,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
             },
           });
           break;
+        }
         case ModStatus.Installed:
           await uninstall(localMod, false);
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
@@ -211,6 +241,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   }, [
     isActionInProgress,
     localMod,
+    localMods,
+    confirm,
     download,
     install,
     uninstall,
