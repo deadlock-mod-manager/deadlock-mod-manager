@@ -285,7 +285,7 @@ function ModDetailPage() {
             <Card>
               <CardContent className='pt-6'>
                 <h2 className='mb-4 font-semibold text-xl'>Gallery</h2>
-                <div className='grid grid-cols-2 gap-4'>
+                <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
                   {mod.images.slice(1).map((image: string, index: number) => (
                     <NSFWBlur
                       key={image}

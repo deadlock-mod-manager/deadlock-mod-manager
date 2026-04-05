@@ -1,3 +1,6 @@
+// oxlint-disable import/no-unassigned-import
+import "yet-another-react-lightbox/styles.css";
+
 import type { NSFWSettings } from "@deadlock-mods/shared";
 import {
   Card,
@@ -5,15 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@deadlock-mods/ui/components/carousel";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
+import { Lightbox } from "yet-another-react-lightbox";
+import ZoomPlugin from "yet-another-react-lightbox/plugins/zoom";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 
 interface ModGalleryProps {
   images: string[];
@@ -29,6 +28,8 @@ export const ModGallery = ({
   onNSFWToggle,
 }: ModGalleryProps) => {
   const { t } = useTranslation();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   if (!images || images.length === 0) {
     return null;
@@ -40,38 +41,49 @@ export const ModGallery = ({
         <CardTitle>{t("ui.gallery")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Carousel className='w-full'>
-          <div className='relative'>
-            <CarouselContent>
-              {images.map((image, index) => (
-                <CarouselItem key={`image-${image}`}>
-                  <div className='p-1'>
-                    <Card className='overflow-hidden shadow-none [contain:layout_style_paint]'>
-                      <NSFWBlur
-                        blurStrength={nsfwSettings.blurStrength}
-                        className='aspect-video w-full'
-                        disableBlur={nsfwSettings.disableBlur}
-                        isNSFW={shouldBlur}
-                        onToggleVisibility={onNSFWToggle}>
-                        <img
-                          alt={t("ui.screenshot", { number: index + 1 })}
-                          className='aspect-video w-full object-cover'
-                          decoding='async'
-                          height='225'
-                          loading='lazy'
-                          src={image}
-                          width='400'
-                        />
-                      </NSFWBlur>
-                    </Card>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className='left-3 -translate-y-1/2 top-1/2 h-10 w-10 bg-black/50 hover:bg-black/70 border-0 text-white [&_svg]:size-5' />
-            <CarouselNext className='right-3 -translate-y-1/2 top-1/2 h-10 w-10 bg-black/50 hover:bg-black/70 border-0 text-white [&_svg]:size-5' />
-          </div>
-        </Carousel>
+        <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
+          {images.map((image, index) => (
+            <button
+              className='group relative overflow-hidden rounded-md border border-border bg-muted text-left outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring'
+              key={image}
+              onClick={() => {
+                setLightboxIndex(index);
+                setLightboxOpen(true);
+              }}
+              type='button'>
+              <NSFWBlur
+                blurStrength={nsfwSettings.blurStrength}
+                className='aspect-video w-full'
+                disableBlur={nsfwSettings.disableBlur}
+                isNSFW={shouldBlur}
+                onToggleVisibility={onNSFWToggle}>
+                <img
+                  alt={t("ui.screenshot", { number: index + 1 })}
+                  className='aspect-video w-full object-contain'
+                  decoding='async'
+                  height='225'
+                  loading='lazy'
+                  src={image}
+                  width='400'
+                />
+              </NSFWBlur>
+              <span className='pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-black/5 group-hover:bg-black/5' />
+            </button>
+          ))}
+        </div>
+
+        <Lightbox
+          carousel={{ imageFit: "contain" }}
+          close={() => setLightboxOpen(false)}
+          index={lightboxIndex}
+          open={lightboxOpen}
+          plugins={[ZoomPlugin]}
+          slides={images.map((src, index) => ({
+            alt: t("ui.screenshot", { number: index + 1 }),
+            src,
+          }))}
+          zoom={{ scrollToZoom: true }}
+        />
       </CardContent>
     </Card>
   );
