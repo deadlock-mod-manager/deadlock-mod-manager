@@ -45,8 +45,8 @@ export class ModsSchedulerProcessor extends BaseProcessor<CronJobData> {
         await modsQueue.processMod({
           modId: mod.id,
         });
-        logger.info(`Scheduled mod ${mod.id} for processing`);
       }
+      logger.info(`Scheduled ${mods.length} mods for processing`);
       return this.handleSuccess(jobData);
     } catch (error) {
       logger.withError(error).error("Error processing mods scheduler job");

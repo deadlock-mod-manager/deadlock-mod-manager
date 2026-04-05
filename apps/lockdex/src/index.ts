@@ -29,7 +29,7 @@ const main = async () => {
     redis,
     logger,
     modFileProcessor,
-    2,
+    1,
   );
 
   await cronService.defineJob({

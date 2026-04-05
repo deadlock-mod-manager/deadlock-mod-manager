@@ -31,42 +31,41 @@ export class RarExtractor extends ArchiveExtractor {
     return [".rar"];
   }
 
+  private async readArchiveBuffer(archivePath: string): Promise<ArrayBuffer> {
+    const buffer = await fs.readFile(archivePath);
+    return new Uint8Array(buffer).buffer;
+  }
+
+  private async listEntriesFromData(
+    data: ArrayBuffer,
+    archivePath: string,
+  ): Promise<ArchiveEntry[]> {
+    const extractor = await createExtractorFromData({ data });
+    const entries: ArchiveEntry[] = [];
+
+    for (const header of extractor.getFileList().fileHeaders) {
+      entries.push({
+        path: header.name,
+        size: header.unpSize,
+        isDirectory: header.flags.directory,
+        modifiedAt: header.time ? new Date(header.time) : undefined,
+        compressionRatio:
+          header.packSize > 0 ? 1 - header.packSize / header.unpSize : 0,
+      });
+    }
+
+    this.logger.info(
+      `Listed ${entries.length} entries from ${basename(archivePath)}`,
+    );
+    return entries;
+  }
+
   async listEntries(archivePath: string): Promise<ArchiveEntry[]> {
     try {
-      const buffer = await fs.readFile(archivePath);
-      const extractor = await createExtractorFromData({
-        data: new Uint8Array(buffer).buffer,
-      });
-
-      const entries: ArchiveEntry[] = [];
-      const list = extractor.getFileList();
-      const fileHeaders = Array.from(list.fileHeaders);
-
-      for (const header of fileHeaders) {
-        entries.push({
-          path: header.name,
-          size: header.unpSize,
-          isDirectory: header.flags.directory,
-          modifiedAt: header.time ? new Date(header.time) : undefined,
-          compressionRatio:
-            header.packSize > 0 ? 1 - header.packSize / header.unpSize : 0,
-        });
-      }
-
-      this.logger.info(
-        `Listed ${entries.length} entries from ${basename(archivePath)}`,
-      );
-      return entries;
+      const data = await this.readArchiveBuffer(archivePath);
+      return await this.listEntriesFromData(data, archivePath);
     } catch (error) {
-      if (error instanceof UnrarError) {
-        this.logger
-          .withError(error)
-          .error(
-            `Failed to list RAR entries: ${error.reason} ${error.file ? `(file: ${error.file})` : ""}`,
-          );
-      } else {
-        this.logger.withError(error).error("Failed to list RAR entries");
-      }
+      this.logUnrarError(error, "Failed to list RAR entries");
       throw error;
     }
   }
@@ -83,13 +82,9 @@ export class RarExtractor extends ArchiveExtractor {
     };
 
     try {
-      const entries = await this.listEntries(archivePath);
+      const data = await this.readArchiveBuffer(archivePath);
+      const entries = await this.listEntriesFromData(data, archivePath);
       const filteredEntries = this.filterEntries(entries, options);
-
-      const buffer = await fs.readFile(archivePath);
-      const extractor = await createExtractorFromData({
-        data: new Uint8Array(buffer).buffer,
-      });
 
       const fileNamesToExtract = filteredEntries
         .filter((entry) => !entry.isDirectory)
@@ -99,10 +94,12 @@ export class RarExtractor extends ArchiveExtractor {
         return result;
       }
 
+      const extractor = await createExtractorFromData({ data });
       const extracted = extractor.extract({ files: fileNamesToExtract });
-      const files = Array.from(extracted.files);
 
-      for (const file of files) {
+      // Iterate the generator lazily instead of Array.from() to avoid
+      // holding all decompressed file buffers in memory simultaneously
+      for (const file of extracted.files) {
         try {
           const entry = filteredEntries.find(
             (e) => e.path === file.fileHeader.name,
@@ -174,15 +171,7 @@ export class RarExtractor extends ArchiveExtractor {
 
       return result;
     } catch (error) {
-      if (error instanceof UnrarError) {
-        this.logger
-          .withError(error)
-          .error(
-            `Failed to extract RAR archive: ${error.reason} ${error.file ? `(file: ${error.file})` : ""}`,
-          );
-      } else {
-        this.logger.withError(error).error("Failed to extract RAR archive");
-      }
+      this.logUnrarError(error, "Failed to extract RAR archive");
       throw error;
     }
   }
@@ -192,21 +181,22 @@ export class RarExtractor extends ArchiveExtractor {
     filePath: string,
   ): Promise<StreamExtractionResult> {
     try {
-      const entries = await this.listEntries(archivePath);
+      const data = await this.readArchiveBuffer(archivePath);
+      const entries = await this.listEntriesFromData(data, archivePath);
       const entry = entries.find((e) => e.path === filePath);
 
       if (!entry) {
         throw new ExtractionError(`File ${filePath} not found in archive`);
       }
 
-      const buffer = await fs.readFile(archivePath);
-      const extractor = await createExtractorFromData({
-        data: new Uint8Array(buffer).buffer,
-      });
-
+      const extractor = await createExtractorFromData({ data });
       const extracted = extractor.extract({ files: [filePath] });
-      const files = Array.from(extracted.files);
-      const file = files[0];
+
+      let file: ReturnType<typeof extracted.files.next>["value"];
+      for (const f of extracted.files) {
+        file = f;
+        break;
+      }
 
       if (!file?.extraction) {
         throw new ExtractionError(
@@ -214,9 +204,10 @@ export class RarExtractor extends ArchiveExtractor {
         );
       }
 
+      const extraction = file.extraction;
       const stream = new Readable({
         read() {
-          this.push(Buffer.from(file.extraction!));
+          this.push(Buffer.from(extraction));
           this.push(null);
         },
       });
@@ -226,17 +217,10 @@ export class RarExtractor extends ArchiveExtractor {
         entry,
       };
     } catch (error) {
-      if (error instanceof UnrarError) {
-        this.logger
-          .withError(error)
-          .error(
-            `Failed to extract file stream for ${filePath}: ${error.reason} ${error.file ? `(file: ${error.file})` : ""}`,
-          );
-      } else {
-        this.logger
-          .withError(error)
-          .error(`Failed to extract file stream for ${filePath}`);
-      }
+      this.logUnrarError(
+        error,
+        `Failed to extract file stream for ${filePath}`,
+      );
       throw error;
     }
   }
@@ -254,16 +238,13 @@ export class RarExtractor extends ArchiveExtractor {
     };
 
     try {
-      const buffer = await fs.readFile(archivePath);
-      const extractor = await createExtractorFromData({
-        data: new Uint8Array(buffer).buffer,
-      });
-      const entries = await this.listEntries(archivePath);
+      const data = await this.readArchiveBuffer(archivePath);
+      const entries = await this.listEntriesFromData(data, archivePath);
 
+      const extractor = await createExtractorFromData({ data });
       const extracted = extractor.extract({ files: filePaths });
-      const files = Array.from(extracted.files);
 
-      for (const file of files) {
+      for (const file of extracted.files) {
         try {
           const filePath = file.fileHeader.name;
           const entry = entries.find((e) => e.path === filePath);
@@ -290,9 +271,10 @@ export class RarExtractor extends ArchiveExtractor {
           );
           const writeStream = await this.createSafeWriteStream(targetPath);
 
+          const extraction = file.extraction;
           const readableStream = new Readable({
             read() {
-              this.push(Buffer.from(file.extraction!));
+              this.push(Buffer.from(extraction));
               this.push(null);
             },
           });
@@ -320,17 +302,7 @@ export class RarExtractor extends ArchiveExtractor {
 
       return result;
     } catch (error) {
-      if (error instanceof UnrarError) {
-        this.logger
-          .withError(error)
-          .error(
-            `Failed to extract specific files from RAR: ${error.reason} ${error.file ? `(file: ${error.file})` : ""}`,
-          );
-      } else {
-        this.logger
-          .withError(error)
-          .error("Failed to extract specific files from RAR");
-      }
+      this.logUnrarError(error, "Failed to extract specific files from RAR");
       throw error;
     }
   }
@@ -352,6 +324,18 @@ export class RarExtractor extends ArchiveExtractor {
           .warn(`RAR validation failed for ${archivePath}`);
       }
       return false;
+    }
+  }
+
+  private logUnrarError(error: unknown, message: string): void {
+    if (error instanceof UnrarError) {
+      this.logger
+        .withError(error)
+        .error(
+          `${message}: ${error.reason} ${error.file ? `(file: ${error.file})` : ""}`,
+        );
+    } else {
+      this.logger.withError(error).error(message);
     }
   }
 }

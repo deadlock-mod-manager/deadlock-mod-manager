@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { RuntimeError } from "@deadlock-mods/common";
 import {
@@ -17,6 +17,8 @@ import { rarExtractor } from "@/services/extractors/rar-extractor";
 import { zipExtractor } from "@/services/extractors/zip-extractor";
 import { tempCleanupService } from "@/services/temp-cleanup";
 import type { ModFileProcessingJobData } from "@/types/jobs";
+
+const MAX_FILE_SIZE = 256 * 1024 * 1024; // 256 MiB
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
@@ -97,7 +99,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       const downloadResult = await downloadService.downloadFile(jobData.url, {
         filename: jobData.file,
         timeout: 10 * 60 * 1000,
-        maxFileSize: 256 * 1024 * 1024,
+        maxFileSize: MAX_FILE_SIZE,
         progressInterval: 5 * 1024 * 1024,
         retryAttempts: 3,
         retryDelay: 2000,
@@ -276,23 +278,18 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     extractionDir: string,
   ): Promise<void> {
     try {
-      const vpkBuffer = await readFile(vpkPath);
+      const vpkStats = await stat(vpkPath);
 
-      this.logger.info(
-        `Parsing VPK file: ${vpkPath} (${vpkBuffer.length} bytes)`,
-      );
+      this.logger.info(`Parsing VPK file: ${vpkPath} (${vpkStats.size} bytes)`);
 
-      const stats = await stat(vpkPath);
-
-      const parsed = await VpkParser.parse(vpkBuffer, {
+      const parsed = VpkParser.parseFile(vpkPath, {
         includeFullFileHash: true,
-        filePath: vpkPath,
-        lastModified: stats.mtime,
         includeMerkle: true,
+        includeEntries: false,
       });
 
       this.logger.debug(
-        `VPK Info - Version: ${parsed.version}, Entries: ${parsed.entries.length}, ` +
+        `VPK Info - Version: ${parsed.version}, FileCount: ${parsed.fingerprint.fileCount}, ` +
           `TreeLength: ${parsed.treeLength}, ManifestSHA256: ${parsed.manifestSha256}`,
       );
 
@@ -322,7 +319,6 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
           vpkData,
         );
 
-      // Check if this VPK belongs to our mod download or if it's a duplicate from another source
       if (
         storedVpk.modDownloadId === modDownloadId &&
         storedVpk.sourcePath === sourcePath
