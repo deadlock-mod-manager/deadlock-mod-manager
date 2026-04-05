@@ -416,7 +416,7 @@ const GameBananaFileserverStatsSchema = z.object({
   _a1month: GameBananaFileserverStatsBucketSchema.optional(),
 });
 
-export const GameBananaFileserverRecordSchema = z.object({
+const GameBananaFileserverRecordSchema = z.object({
   _idRow: z.number(),
   _sDomain: z.string(),
   _sState: z.string(),
@@ -435,13 +435,3 @@ export const GameBananaFileserversResponseSchema = z.object({
     .optional(),
   _aRecords: z.array(GameBananaFileserverRecordSchema).optional(),
 });
-
-export type GameBananaFileserverStatsBucket = z.infer<
-  typeof GameBananaFileserverStatsBucketSchema
->;
-export type GameBananaFileserverRecord = z.infer<
-  typeof GameBananaFileserverRecordSchema
->;
-export type GameBananaFileserversResponse = z.infer<
-  typeof GameBananaFileserversResponseSchema
->;

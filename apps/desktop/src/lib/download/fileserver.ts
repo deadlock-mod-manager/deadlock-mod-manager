@@ -3,13 +3,13 @@ import type { FileserverPreference } from "@/lib/store/slices/network";
 
 type DownloadFile = { url: string; name: string; size: number };
 
-export const GAMEBANANA_FILESERVER_HEAD_TEST_PATH =
+const GAMEBANANA_FILESERVER_HEAD_TEST_PATH =
   "tools/deadlockmodmanager-v050.zip";
 
 export const buildGameBananaFileserverTestUrl = (domain: string): string =>
   new URL(GAMEBANANA_FILESERVER_HEAD_TEST_PATH, `https://${domain}/`).href;
 
-export const buildGameBananaFilecacheUrl = (
+const buildGameBananaFilecacheUrl = (
   template: string,
   category: "mods" | "sounds",
   filename: string,
