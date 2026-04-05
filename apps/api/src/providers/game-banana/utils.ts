@@ -1,6 +1,6 @@
 import type { ModDownload } from "@deadlock-mods/database";
+import type { FileserverDto, GameBanana } from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_KEYWORDS } from "./constants";
-import type { GameBanana } from "@deadlock-mods/shared";
 import type { GameBananaSubmission } from "./types";
 
 type GameBananaProfileForCategory =
@@ -116,4 +116,17 @@ export const buildDownloadSignatureFromPayload = (
     )
     .sort()
     .join(";");
+};
+
+export const mapGameBananaFileserverState = (
+  state: string,
+): FileserverDto["state"] => {
+  switch (state) {
+    case "up":
+      return "up";
+    case "terminated":
+      return "terminated";
+    default:
+      return "down";
+  }
 };

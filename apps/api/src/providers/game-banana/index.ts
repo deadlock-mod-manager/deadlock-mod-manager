@@ -5,8 +5,13 @@ import {
   ModRepository,
   type NewMod,
 } from "@deadlock-mods/database";
-import { type GameBanana, guessHero } from "@deadlock-mods/shared";
+import {
+  GameBanana,
+  type FileserverDto,
+  guessHero,
+} from "@deadlock-mods/shared";
 import { cache } from "../../lib/redis";
+import { resolveFileserverGeo } from "../../services/geo";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
 import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
@@ -16,6 +21,7 @@ import {
   buildDownloadSignatureFromPayload,
   categoryFromGameBananaProfile,
   classifyNSFW,
+  mapGameBananaFileserverState,
   parseTags,
 } from "./utils";
 
@@ -546,9 +552,56 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
   }
 
-  // Public method to get a mod by ID
   async getModById(modId: string): Promise<Mod | null> {
     return await modRepository.findById(modId);
+  }
+
+  async getFileservers(): Promise<FileserverDto[]> {
+    const response = await fetch(
+      `${GAME_BANANA_BASE_URL}/Util/Fileservers?_nPage=1`,
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const json = await response.json();
+    const data = GameBanana.GameBananaFileserversResponseSchema.parse(json);
+    const records = data._aRecords ?? [];
+    const fileservers = records.map((record) => {
+      const domain = `${record._sDomain}.gamebanana.com`;
+      const hourStats = record._aStats?._a1hr;
+      return {
+        id: String(record._idRow),
+        provider: "gamebanana",
+        domain,
+        name: record._sDomain,
+        state: mapGameBananaFileserverState(record._sState),
+        urlTemplate: `https://${domain}/{category}/{filename}`,
+        stats: hourStats
+          ? {
+              rateBytes: Math.max(0, Math.floor(hourStats._fRate)),
+              requestsPerHour: Math.max(0, Math.floor(hourStats._nRequests)),
+            }
+          : undefined,
+      };
+    });
+    this.logger
+      .withMetadata({ count: fileservers.length })
+      .debug("Mapped GameBanana fileservers");
+
+    const fileserversWithGeo = await Promise.all(
+      fileservers.map(async (fs) => {
+        if (fs.state === "terminated") {
+          return fs;
+        }
+        const geoResult = await resolveFileserverGeo(fs.domain);
+        if (geoResult.isOk()) {
+          return { ...fs, geo: geoResult.value };
+        }
+        return fs;
+      }),
+    );
+
+    return fileserversWithGeo;
   }
 }
 
