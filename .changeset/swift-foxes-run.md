@@ -1,5 +1,5 @@
 ---
-"@deadlock-mods/desktop": patch
+"@deadlock-mods/desktop": minor
 ---
 
-Make the What's New dialog scroll when release notes are long
+Add download server (network) step to onboarding so users can pick or test the best file server during setup.
