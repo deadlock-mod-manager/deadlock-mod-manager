@@ -421,7 +421,10 @@
     "showNSFWContent": "إظهار محتوى NSFW",
     "showOutdated": "إظهار التعديلات القديمة",
     "showOutdatedBadge": "إظهار القديمة",
-    "sortBy": "الفرز حسب"
+    "sortBy": "الفرز حسب",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "تم إنشاء نسخة احتياطية من gameinfo.gi بنجاح",
@@ -484,7 +487,8 @@
       "selectToReplace": "اختر {{count}} ملف(ات) للاستبدال",
       "success": "تم استبدال ملفات VPK بنجاح",
       "title": "استبدال ملفات VPK"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "غير معروف",
@@ -554,7 +558,8 @@
       "refresh": "تحديث",
       "showList": "إظهار الملفات",
       "title": "تم العثور على ملفات VPK غير معروفة"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "تحليل الإضافات المحلية",

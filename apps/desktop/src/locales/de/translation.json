@@ -419,7 +419,10 @@
     "showNSFWContent": "NSFW-Inhalte anzeigen",
     "showOutdated": "Veraltete anzeigen",
     "showOutdatedBadge": "Veraltete anzeigen",
-    "sortBy": "Sortieren nach"
+    "sortBy": "Sortieren nach",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi-Sicherung erfolgreich erstellt",
@@ -482,7 +485,8 @@
       "selectToReplace": "{{count}} Datei(en) zum Ersetzen auswählen",
       "success": "VPK-Dateien erfolgreich ersetzt",
       "title": "VPK-Dateien ersetzen"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "Unbekannt",
@@ -552,7 +556,8 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "Lokale Addons analysieren",

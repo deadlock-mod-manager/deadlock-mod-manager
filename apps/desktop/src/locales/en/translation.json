@@ -78,6 +78,7 @@
     "audio": "Audio",
     "by": "By",
     "audioMod": "Audio Mod",
+    "mapBadge": "Map",
     "installing": "Installing...",
     "enable": "Enable",
     "disable": "Disable",
@@ -522,6 +523,8 @@
     "hideNSFWContent": "Hide NSFW",
     "audioModsOnly": "Audio Mods Only",
     "excludeAudioMods": "Hide Audio Mods",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
     "searchCategories": "Search categories...",
     "searchHeroes": "Search heroes...",
     "noCategoriesFound": "No categories found.",
@@ -537,6 +540,7 @@
     "hideNSFW": "Hide NSFW",
     "audioOnly": "Audio Mods",
     "hideAudio": "Hide Audio",
+    "hideMap": "Hide Maps",
     "hideOutdatedBadge": "Hide Outdated",
     "showOutdatedBadge": "Show Outdated",
     "clearAll": "Clear all"
@@ -1351,6 +1355,8 @@
     "modsProcessed": "Mods processed"
   },
   "modDetail": {
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension).",
+    "openMapInExplorer": "Open Map in Explorer",
     "backToMods": "Back to Mods",
     "goBackHome": "Go back home",
     "idLabel": "ID",

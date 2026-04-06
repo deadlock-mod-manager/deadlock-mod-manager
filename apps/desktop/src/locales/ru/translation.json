@@ -421,7 +421,10 @@
     "showNSFWContent": "Показывать NSFW",
     "showOutdated": "Показать устаревшие",
     "showOutdatedBadge": "Показать устаревшие",
-    "sortBy": "Сортировать по"
+    "sortBy": "Сортировать по",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "Резервная копия gameinfo.gi создана успешно",
@@ -484,7 +487,8 @@
       "selectToReplace": "Выберите {{count}} файл(ов) для замены",
       "success": "Файлы VPK успешно заменены",
       "title": "Заменить файлы VPK"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "Неизвестно",
@@ -554,7 +558,8 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "Анализировать локальные аддоны",

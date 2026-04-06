@@ -421,7 +421,10 @@
     "showNSFWContent": "เนื้อหา NSFW",
     "showOutdated": "แสดงที่ล้าสมัย",
     "showOutdatedBadge": "แสดงที่ล้าสมัย",
-    "sortBy": "จัดเรียงตาม"
+    "sortBy": "จัดเรียงตาม",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -484,7 +487,8 @@
       "selectToReplace": "Select {{count}} file(s) to replace",
       "success": "VPK files replaced successfully",
       "title": "Replace VPK Files"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "ไม่ทราบ",
@@ -554,7 +558,8 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "วิเคราะห์ Addons ในเครื่อง",
