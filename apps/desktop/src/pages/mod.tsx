@@ -78,9 +78,11 @@ const Mod = () => {
     (update) => update.mod.remoteId === mod?.remoteId,
   );
 
-  const { data: reportCounts } = useReportCounts(mod?.id ?? "");
+  const { data: reportCounts } = useReportCounts(
+    mod?.isMap ? "" : (mod?.id ?? ""),
+  );
   const staleResult =
-    mod && reportCounts ? isModStale(mod, reportCounts) : null;
+    mod && !mod.isMap && reportCounts ? isModStale(mod, reportCounts) : null;
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -273,7 +275,7 @@ const Mod = () => {
             />
           )}
 
-          <ReportCounter modId={mod.id} variant='default' />
+          {!mod.isMap && <ReportCounter modId={mod.id} variant='default' />}
 
           {mod.description && <ModDescription description={mod.description} />}
 
