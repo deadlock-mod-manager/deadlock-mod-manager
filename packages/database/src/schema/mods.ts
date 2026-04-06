@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -40,6 +41,7 @@ export const mods = pgTable(
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
     blacklistedBy: text("blacklisted_by"),
     filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
+    metadata: jsonb("metadata").$type<{ mapName?: string }>(),
     ...timestamps,
   },
   (table) => [

@@ -26,6 +26,12 @@ export const ModDtoSchema = z.object({
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),
   filesUpdatedAt: coercedDateNullable,
+  metadata: z
+    .object({
+      mapName: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
 });

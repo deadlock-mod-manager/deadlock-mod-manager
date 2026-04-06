@@ -485,7 +485,17 @@
       "success": "VPK 檔案替換成功",
       "title": "替換 VPK 檔案"
     },
-    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
+    "mapHowToPlay": {
+      "title": "",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "copied": "",
+      "mapNameFallback": ""
+    }
   },
   "modForm": {
     "authorPlaceholder": "未知",
