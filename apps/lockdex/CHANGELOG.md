@@ -1,5 +1,28 @@
 # @deadlock-mods/lockdex
 
+## 0.2.8
+
+### Patch Changes
+
+- 12fd777: Reduce log noise by pre-checking VPK existence before jobs
+- 12fd777: Fix OOM crashes in archive extraction and VPK parsing
+- Updated dependencies [795024d]
+- Updated dependencies [0687f21]
+- Updated dependencies [2c60dab]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [791de90]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [7074850]
+- Updated dependencies [bca8aae]
+- Updated dependencies [88b55b8]
+- Updated dependencies [b573253]
+  - @deadlock-mods/database@2.0.0
+  - @deadlock-mods/shared@2.0.0
+  - @deadlock-mods/logging@0.2.0
+  - @deadlock-mods/distributed-lock@1.0.8
+  - @deadlock-mods/instrumentation@0.1.8
+  - @deadlock-mods/queue@0.1.2
+
 ## 0.2.7
 
 ### Patch Changes

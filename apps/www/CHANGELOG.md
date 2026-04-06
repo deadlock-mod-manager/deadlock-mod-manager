@@ -1,5 +1,26 @@
 # web
 
+## 0.4.1
+
+### Patch Changes
+
+- 83915cf: Better image display in mod gallery and mod detail page.
+- Updated dependencies [795024d]
+- Updated dependencies [0687f21]
+- Updated dependencies [2c60dab]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [82ec280]
+- Updated dependencies [791de90]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [7074850]
+- Updated dependencies [bca8aae]
+- Updated dependencies [88b55b8]
+- Updated dependencies [b573253]
+  - @deadlock-mods/shared@2.0.0
+  - @deadlock-mods/logging@0.2.0
+  - @deadlock-mods/ui@0.3.1
+  - @deadlock-mods/crosshair@0.2.3
+
 ## 0.4.0
 
 ### Minor Changes

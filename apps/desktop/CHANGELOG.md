@@ -1,5 +1,41 @@
 # desktop
 
+## 0.18.0
+
+### Minor Changes
+
+- 0687f21: Add GameBanana file server selection with latency testing
+- b573253: Add HTTP request/response logging for outgoing fetch calls
+- 2c60dab: Add "How to Play" card with instructions for custom maps
+- 83915cf: Better image display in mod gallery and mod detail page.
+- 9b7ea81: Add button to open installed map mods in file explorer
+- b866299: Apply pagination setting to Mod Library page
+- 8c82dfc: Add tooltips to collapsed sidebar icons showing the navigation label on hover
+- d226a46: Add dedicated Maps section to sidebar for browsing custom maps
+- 7074850: Add ability to disable mod report submissions for specific mods
+- bdfbd79: Replace report dialog with streamlined broken-mod reporting flow
+- b573253: Add custom map support with sync, installation, and browsing
+- 795024d: Add Launch Map button with pre-launch safety warnings
+- 0687f21: Add download server selection step to onboarding
+
+### Patch Changes
+
+- 333e9dd: Update game config error message to reference Settings > Game
+- 74c9952: Disable reports on maps
+- 84c90d7: Decouple archive extraction from the download queue
+- 5eb1395: Make the What's New dialog scroll when release notes are long
+- Updated dependencies [795024d]
+- Updated dependencies [0687f21]
+- Updated dependencies [2c60dab]
+- Updated dependencies [82ec280]
+- Updated dependencies [791de90]
+- Updated dependencies [7074850]
+- Updated dependencies [bca8aae]
+- Updated dependencies [b573253]
+  - @deadlock-mods/shared@2.0.0
+  - @deadlock-mods/ui@0.3.1
+  - @deadlock-mods/crosshair@0.2.3
+
 ## 0.17.0
 
 ### Minor Changes

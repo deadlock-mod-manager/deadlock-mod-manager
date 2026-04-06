@@ -1,5 +1,43 @@
 # api
 
+## 3.0.0
+
+### Major Changes
+
+- bc6dac4: Remove report types, statuses, and moderation endpoints from API
+
+### Minor Changes
+
+- 383c548: Add rate limiting and distributed lock protection to sync endpoints
+- 795024d: Add mod metadata overrides that persist across sync runs
+- 0687f21: Add GameBanana file server selection with latency testing
+- 791de90: Allow overriding mod download URLs and filenames
+- 7074850: Add ability to disable mod report submissions for specific mods
+- 88b55b8: Add wide event logging with canonical log lines per request
+
+### Patch Changes
+
+- 383c548: Fix race condition in Redis rate limiter blocking endpoints
+- 74c9952: Disable reports on maps
+- b573253: Add custom map support with sync, installation, and browsing
+- Updated dependencies [795024d]
+- Updated dependencies [0687f21]
+- Updated dependencies [2c60dab]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [791de90]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [7074850]
+- Updated dependencies [bca8aae]
+- Updated dependencies [88b55b8]
+- Updated dependencies [b573253]
+  - @deadlock-mods/database@2.0.0
+  - @deadlock-mods/shared@2.0.0
+  - @deadlock-mods/logging@0.2.0
+  - @deadlock-mods/distributed-lock@1.0.8
+  - @deadlock-mods/feature-flags@0.2.6
+  - @deadlock-mods/instrumentation@0.1.8
+  - @deadlock-mods/queue@0.1.2
+
 ## 2.8.2
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @deadlock-mods/bot
 
+## 1.2.7
+
+### Patch Changes
+
+- 7bb1d98: Add wide event helpers and canonical log lines for the bot
+- Updated dependencies [795024d]
+- Updated dependencies [0687f21]
+- Updated dependencies [2c60dab]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [791de90]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [7074850]
+- Updated dependencies [bca8aae]
+- Updated dependencies [88b55b8]
+- Updated dependencies [b573253]
+  - @deadlock-mods/database@2.0.0
+  - @deadlock-mods/shared@2.0.0
+  - @deadlock-mods/logging@0.2.0
+  - @deadlock-mods/feature-flags@0.2.6
+  - @deadlock-mods/instrumentation@0.1.8
+  - @deadlock-mods/queue@0.1.2
+
 ## 1.2.6
 
 ### Patch Changes

@@ -1,5 +1,25 @@
 # @deadlock-mods/database
 
+## 2.0.0
+
+### Major Changes
+
+- bca8aae: Simplify reports to broken-only model, removing report types, statuses, and moderation workflow
+
+### Minor Changes
+
+- 795024d: Add mod metadata overrides that persist across sync runs
+- 2c60dab: Add "How to Play" card with instructions for custom maps
+- b573253: Add custom map support with sync, installation, and browsing
+
+### Patch Changes
+
+- 791de90: Allow overriding mod download URLs and filenames
+- Updated dependencies [7bb1d98]
+- Updated dependencies [7bb1d98]
+- Updated dependencies [88b55b8]
+  - @deadlock-mods/logging@0.2.0
+
 ## 1.8.1
 
 ### Patch Changes

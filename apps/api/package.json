@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/api",
-  "version": "2.8.2",
+  "version": "3.0.0",
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc --noEmit --skipLibCheck",

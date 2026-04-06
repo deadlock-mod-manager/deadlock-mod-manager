@@ -1,5 +1,11 @@
 # @deadlock-mods/ui
 
+## 0.3.1
+
+### Patch Changes
+
+- 82ec280: Fix collapsed sidebar icon alignment and label bleed
+
 ## 0.3.0
 
 ### Minor Changes

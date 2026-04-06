@@ -821,6 +821,19 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "0.18.0": {
+        "title": "Custom Maps, Download Servers & UI Improvements",
+        "features": [
+          "🧪 Custom maps support (experimental — enable in Settings > Experimental)",
+          "✨ Add GameBanana file server selection (for better download speed)",
+          "✨ Mods now show a Support Author button with links to the author's Patreon, GitHub Sponsors, and Ko-fi",
+          "🔧 Add tooltips to collapsed sidebar icons showing the navigation label on hover",
+          "🔧 Better image display in mod gallery and mod detail page",
+          "🔧 Apply pagination setting to Mod Library page",
+          "🔧 Revamped mod report system (we only allow broken mod reports)",
+          "🔧 Update game config error message to reference Settings > Game"
+        ]
+      },
       "0.17.0": {
         "title": "Mod store, themes, backups, logging, and fixes",
         "features": [

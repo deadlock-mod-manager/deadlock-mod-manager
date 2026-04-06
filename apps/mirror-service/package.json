@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/mirror-service",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "scripts": {
     "check-types": "tsc --noEmit --skipLibCheck",
     "start": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts src/index.ts",
