@@ -29,6 +29,55 @@ pub struct AutoexecConfig {
   pub readonly_sections: Vec<ReadonlySection>,
 }
 
+/// Merges managed readonly sections back into user-edited full content. Used by
+/// [`AutoexecManager::update_editable_content`] and unit tests.
+fn merge_readonly_sections_into_full_content(
+  full_content: &str,
+  readonly_sections: &[ReadonlySection],
+) -> String {
+  let mut result_content = full_content.to_string();
+
+  for readonly_section in readonly_sections.iter().rev() {
+    let (start_marker, end_marker) = if readonly_section
+      .content
+      .starts_with(MAP_COMMAND_SECTION_START)
+    {
+      (MAP_COMMAND_SECTION_START, MAP_COMMAND_SECTION_END)
+    } else if readonly_section
+      .content
+      .starts_with(CROSSHAIR_SECTION_START)
+    {
+      (CROSSHAIR_SECTION_START, CROSSHAIR_SECTION_END)
+    } else {
+      log::warn!(
+        "Readonly section does not start with a known managed marker; skipping merge for that section"
+      );
+      continue;
+    };
+
+    if let Some(start_pos) = result_content.find(start_marker) {
+      if let Some(rel_end) = result_content[start_pos..].find(end_marker) {
+        let end_pos = start_pos + rel_end + end_marker.len();
+        let current_section = &result_content[start_pos..end_pos];
+        if current_section != readonly_section.content {
+          result_content.replace_range(start_pos..end_pos, &readonly_section.content);
+        }
+      } else {
+        log::warn!("Found start marker but not end marker, restoring readonly section");
+        result_content.replace_range(start_pos.., &readonly_section.content);
+      }
+    } else {
+      log::info!("Readonly section not found in content, restoring it");
+      if !result_content.is_empty() && !result_content.ends_with('\n') {
+        result_content.push('\n');
+      }
+      result_content.push_str(&readonly_section.content);
+    }
+  }
+
+  result_content
+}
+
 pub struct AutoexecManager {
   filesystem: FileSystemHelper,
 }
@@ -125,29 +174,7 @@ impl AutoexecManager {
     full_content: &str,
     readonly_sections: &[ReadonlySection],
   ) -> Result<(), Error> {
-    let mut result_content = full_content.to_string();
-
-    for readonly_section in readonly_sections.iter().rev() {
-      if let Some(start_pos) = result_content.find(CROSSHAIR_SECTION_START) {
-        if let Some(end_pos) = result_content[start_pos..].find(CROSSHAIR_SECTION_END) {
-          let end_pos = start_pos + end_pos + CROSSHAIR_SECTION_END.len();
-          let current_section = &result_content[start_pos..end_pos];
-          if current_section != readonly_section.content {
-            result_content.replace_range(start_pos..end_pos, &readonly_section.content);
-          }
-        } else {
-          log::warn!("Found start marker but not end marker, restoring readonly section");
-          result_content.replace_range(start_pos.., &readonly_section.content);
-        }
-      } else {
-        log::info!("Readonly section not found in content, restoring it");
-        if !result_content.is_empty() && !result_content.ends_with('\n') {
-          result_content.push('\n');
-        }
-        result_content.push_str(&readonly_section.content);
-      }
-    }
-
+    let result_content = merge_readonly_sections_into_full_content(full_content, readonly_sections);
     self.write_autoexec_config(game_path, &result_content)
   }
 
@@ -262,7 +289,9 @@ impl AutoexecManager {
 
         content = new_content;
       } else {
-        log::warn!("Found map command start marker but not end marker, removing from start marker to end");
+        log::warn!(
+          "Found map command start marker but not end marker, removing from start marker to end"
+        );
         content.truncate(start_pos);
         content = content.trim_end().to_string();
       }
@@ -273,24 +302,23 @@ impl AutoexecManager {
     self.write_autoexec_config(game_path, &content)
   }
 
-  /// Checks the autoexec for a map command, both in the managed section and as bare `map <name>` lines.
-  /// Returns the map name if found, None otherwise.
   pub fn get_map_command(&self, game_path: &Path) -> Result<Option<String>, Error> {
     let content = self.read_autoexec_config(game_path)?;
 
     if let Some(start_pos) = content.find(MAP_COMMAND_SECTION_START)
-      && let Some(end_pos) = content.find(MAP_COMMAND_SECTION_END) {
-        let section = &content[start_pos..end_pos];
-        for line in section.lines() {
-          let trimmed = line.trim();
-          if let Some(name) = trimmed.strip_prefix("map ") {
-            let name = name.trim();
-            if !name.is_empty() {
-              return Ok(Some(name.to_string()));
-            }
+      && let Some(end_pos) = content.find(MAP_COMMAND_SECTION_END)
+    {
+      let section = &content[start_pos..end_pos];
+      for line in section.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = trimmed.strip_prefix("map ") {
+          let name = name.trim();
+          if !name.is_empty() {
+            return Ok(Some(name.to_string()));
           }
         }
       }
+    }
 
     for line in content.lines() {
       let trimmed = line.trim();
@@ -331,5 +359,97 @@ impl AutoexecManager {
 impl Default for AutoexecManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn map_section(map_name: &str) -> String {
+    format!(
+      "{}\nmap {}\n{}",
+      MAP_COMMAND_SECTION_START, map_name, MAP_COMMAND_SECTION_END
+    )
+  }
+
+  fn crosshair_section_body() -> String {
+    "cl_crosshaircolor 5".to_string()
+  }
+
+  fn crosshair_section() -> String {
+    format!(
+      "{}\n{}\n{}",
+      CROSSHAIR_SECTION_START,
+      crosshair_section_body(),
+      CROSSHAIR_SECTION_END
+    )
+  }
+
+  fn section_readonly(content: &str) -> ReadonlySection {
+    ReadonlySection {
+      start_line: 0,
+      end_line: 0,
+      content: content.to_string(),
+    }
+  }
+
+  #[test]
+  fn merge_map_only_idempotent_no_duplicate_on_second_pass() {
+    let map = map_section("streetball");
+    let full = format!("status\n{}", map);
+    let sections = vec![section_readonly(&map)];
+
+    let once = merge_readonly_sections_into_full_content(&full, &sections);
+    assert_eq!(
+      once.matches(MAP_COMMAND_SECTION_START).count(),
+      1,
+      "expected single map section"
+    );
+
+    let twice = merge_readonly_sections_into_full_content(&once, &sections);
+    assert_eq!(
+      twice.matches(MAP_COMMAND_SECTION_START).count(),
+      1,
+      "second merge must not append another map block"
+    );
+    assert_eq!(once, twice);
+  }
+
+  #[test]
+  fn merge_crosshair_only_preserves_section() {
+    let cross = crosshair_section();
+    let full = format!("echo hi\n{}", cross);
+    let sections = vec![section_readonly(&cross)];
+
+    let out = merge_readonly_sections_into_full_content(&full, &sections);
+    assert_eq!(out.matches(CROSSHAIR_SECTION_START).count(), 1);
+    assert!(out.contains(crosshair_section_body().as_str()));
+  }
+
+  #[test]
+  fn merge_crosshair_then_map_both_preserved() {
+    let cross = crosshair_section();
+    let map = map_section("arena");
+    let full = format!("{}\n{}", cross, map);
+    let sections = vec![section_readonly(&cross), section_readonly(&map)];
+
+    let out = merge_readonly_sections_into_full_content(&full, &sections);
+    assert_eq!(out.matches(CROSSHAIR_SECTION_START).count(), 1);
+    assert_eq!(out.matches(MAP_COMMAND_SECTION_START).count(), 1);
+    assert!(out.contains("cl_crosshaircolor 5"));
+    assert!(out.contains("map arena"));
+  }
+
+  #[test]
+  fn merge_restores_map_when_markers_removed_from_user_content() {
+    let map = map_section("streetball");
+    let full_user = "only user lines\n";
+    let sections = vec![section_readonly(&map)];
+
+    let out = merge_readonly_sections_into_full_content(full_user, &sections);
+    assert!(out.contains(MAP_COMMAND_SECTION_START));
+    assert!(out.contains("map streetball"));
+    assert_eq!(out.matches(MAP_COMMAND_SECTION_START).count(), 1);
   }
 }

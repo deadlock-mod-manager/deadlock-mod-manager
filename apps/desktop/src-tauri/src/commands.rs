@@ -988,7 +988,6 @@ pub async fn copy_selected_vpks_from_archive(
     &file_tree,
   )?;
 
-  // Clean up extracted directory after copying
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
 
@@ -2514,7 +2513,9 @@ pub async fn get_map_command_from_autoexec() -> Result<Option<String>, Error> {
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  mod_manager.get_autoexec_manager().get_map_command(game_path)
+  mod_manager
+    .get_autoexec_manager()
+    .get_map_command(game_path)
 }
 
 #[tauri::command]
