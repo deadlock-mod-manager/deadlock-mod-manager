@@ -42,7 +42,7 @@ export const LanguageSettings = () => {
     <div className='space-y-4'>
       <div className='flex items-center justify-between'>
         <div className='space-y-0.5'>
-          <Label className='text-base'>{t("settings.language")}</Label>
+          <Label className='font-bold text-sm'>{t("settings.language")}</Label>
           <div className='text-muted-foreground text-sm'>
             {t("settings.languageDescription")}
           </div>

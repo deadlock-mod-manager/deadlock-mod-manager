@@ -11,7 +11,9 @@ export const DeveloperModeToggle = () => {
   return (
     <div className='flex items-center justify-between'>
       <div className='space-y-1'>
-        <p>{t("settings.developerMode")}</p>
+        <Label className='font-bold text-sm'>
+          {t("settings.developerMode")}
+        </Label>
       </div>
       <div className='flex items-center gap-2'>
         <Switch

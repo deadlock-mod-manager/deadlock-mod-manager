@@ -9,23 +9,26 @@ import SettingCard from "./setting-card";
 const getSystemSettings = (
   t: (key: string) => string,
   isLinux: boolean,
-): SystemSetting[] =>
+): (SystemSetting & { subtitle: string })[] =>
   [
     {
       id: "auto-reapply-mods",
       description: t("settings.autoReapplyMods"),
+      subtitle: t("settings.autoReapplyModsDescription"),
       enabled: false,
       onChange: NOOP,
     },
     {
       id: "launch-vanilla-no-args",
       description: t("settings.launchVanillaNoArgs"),
+      subtitle: t("settings.launchVanillaNoArgsDescription"),
       enabled: false,
       onChange: NOOP,
     },
     {
       id: "mods-store-pagination",
       description: t("settings.modsStorePagination"),
+      subtitle: t("settings.modsStorePaginationDescription"),
       enabled: isLinux,
       onChange: NOOP,
     },
@@ -66,6 +69,7 @@ const SystemSettings = () => {
           key={setting.id}
           onChange={setting.onChange}
           setting={setting}
+          subtitle={setting.subtitle}
         />
       ))}
     </>

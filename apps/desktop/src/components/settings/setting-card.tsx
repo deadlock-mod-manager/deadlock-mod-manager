@@ -31,6 +31,7 @@ type SettingsCardProps = {
   setting: LocalSetting | undefined;
   onChange: (newValue: boolean) => void;
   disabled?: boolean;
+  subtitle?: string;
 };
 
 const parseCommand = (input: string) => {
@@ -48,6 +49,7 @@ const Command = ({ setting }: Pick<SettingsCardProps, "setting">) => {
   }
 
   if (setting.type !== CustomSettingType.LAUNCH_OPTION) {
+    if (!setting.key && !setting.value) return null;
     return (
       <code>
         {setting.key} {setting.value}
@@ -105,6 +107,7 @@ const SettingCard = ({
   setting,
   onChange,
   disabled = false,
+  subtitle,
 }: SettingsCardProps) => {
   const { t } = useTranslation();
   const addSetting = usePersistedStore((s) => s.addSetting);
@@ -166,9 +169,12 @@ const SettingCard = ({
     <>
       <div className='flex flex-row items-center justify-between'>
         <div className='flex flex-col gap-1'>
-          <h3 className='font-medium'>
+          <h3 className='font-bold text-sm'>
             {setting.description} {custom && <Badge>Custom</Badge>}
           </h3>
+          {subtitle && (
+            <p className='text-muted-foreground text-sm'>{subtitle}</p>
+          )}
           <p className='text-muted-foreground text-sm'>
             <Command setting={setting} />
           </p>
