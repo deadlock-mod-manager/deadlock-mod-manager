@@ -39,6 +39,10 @@ static INGEST_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
 static INGEST_WATCHER_GEN: LazyLock<Arc<AtomicUsize>> =
   LazyLock::new(|| Arc::new(AtomicUsize::new(0)));
 
+// Console log watcher state (for map connect codes)
+static CONSOLE_LOG_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
+  LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
   log::info!("Setting API URL to: {api_url}");
@@ -2516,6 +2520,52 @@ pub async fn get_map_command_from_autoexec() -> Result<Option<String>, Error> {
   mod_manager
     .get_autoexec_manager()
     .get_map_command(game_path)
+}
+
+#[tauri::command]
+pub async fn watch_console_log(app_handle: AppHandle) -> Result<(), Error> {
+  log::info!("Starting console log watcher for connect code");
+
+  let game_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .get_steam_manager()
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone()
+  };
+
+  if CONSOLE_LOG_WATCHER_RUNNING
+    .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
+    .is_err()
+  {
+    log::warn!("Console log watcher is already running");
+    return Ok(());
+  }
+
+  let running_flag = Arc::clone(&CONSOLE_LOG_WATCHER_RUNNING);
+
+  tokio::task::spawn(async move {
+    use crate::mod_manager::console_log_watcher;
+
+    let result = console_log_watcher::watch_for_connect_code(&game_path, running_flag).await;
+
+    CONSOLE_LOG_WATCHER_RUNNING.store(false, Ordering::Relaxed);
+
+    if let Some(code) = result {
+      log::info!("Emitting map-connect-code event: {code}");
+      let _ = app_handle.emit("map-connect-code", code);
+    }
+  });
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_watching_console_log() -> Result<(), Error> {
+  log::info!("Stopping console log watcher");
+  CONSOLE_LOG_WATCHER_RUNNING.store(false, Ordering::Relaxed);
+  Ok(())
 }
 
 #[tauri::command]
