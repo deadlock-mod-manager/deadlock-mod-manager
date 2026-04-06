@@ -270,6 +270,7 @@ export const useModProcessor = () => {
       category,
       filesUpdatedAt: null,
       metadata: null,
+      overrides: null,
     };
 
     addMod(modDto, {
@@ -354,6 +355,7 @@ export const useModProcessor = () => {
       category,
       filesUpdatedAt: null,
       metadata: null,
+      overrides: null,
     };
 
     addMod(modDto, {
