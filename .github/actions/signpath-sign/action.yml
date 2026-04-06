@@ -72,11 +72,12 @@ runs:
       env:
         TAURI_PRIVATE_KEY: ${{ inputs.tauri-private-key }}
       run: |
-        exeFile=$(ls ./signpath-signed-output/*.exe)
+        SIGNED_DIR="$(pwd)/signpath-signed-output"
+        exeFile=$(ls "$SIGNED_DIR"/*.exe)
         echo "Regenerating Tauri signature for: $exeFile"
         pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
-        mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
-        mv ./signpath-signed-output/*.exe.sig "${{ inputs.output-directory }}/"
+        mv "$SIGNED_DIR"/*.exe "${{ inputs.output-directory }}/"
+        mv "$SIGNED_DIR"/*.exe.sig "${{ inputs.output-directory }}/"
 
     - name: Cleanup temporary signed output
       shell: bash

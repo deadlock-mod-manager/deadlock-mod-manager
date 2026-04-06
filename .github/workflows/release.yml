@@ -251,10 +251,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifact-output
-          exeFile=$(ls ./signed-output/*.exe)
+          SIGNED_DIR="$(pwd)/signed-output"
+          exeFile=$(ls "$SIGNED_DIR"/*.exe)
           pnpm --filter @deadlock-mods/desktop tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" -p "" "$exeFile"
-          mv ./signed-output/*.exe ./artifact-output/
-          mv ./signed-output/*.exe.sig ./artifact-output/
+          mv "$SIGNED_DIR"/*.exe ./artifact-output/
+          mv "$SIGNED_DIR"/*.exe.sig ./artifact-output/
 
       - name: Upload signed Windows artifact
         if: matrix.platform == 'windows-latest'
