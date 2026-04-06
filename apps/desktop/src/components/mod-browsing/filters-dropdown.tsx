@@ -34,6 +34,7 @@ type FiltersDropdownProps = {
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
+  hideMapFilter?: boolean;
 };
 
 const FiltersDropdown = ({
@@ -52,6 +53,7 @@ const FiltersDropdown = ({
   onHideOutdatedChange,
   filterMode,
   onFilterModeChange,
+  hideMapFilter,
 }: FiltersDropdownProps) => {
   const { t } = useTranslation();
   const hasActiveFilters =
@@ -59,14 +61,14 @@ const FiltersDropdown = ({
     selectedHeroes.length > 0 ||
     hideNSFW ||
     audioQuickFilter !== "off" ||
-    mapQuickFilter !== "off" ||
+    (!hideMapFilter && mapQuickFilter !== "off") ||
     hideOutdated;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
     (hideNSFW ? 1 : 0) +
     (audioQuickFilter !== "off" ? 1 : 0) +
-    (mapQuickFilter !== "off" ? 1 : 0) +
+    (!hideMapFilter && mapQuickFilter !== "off" ? 1 : 0) +
     (hideOutdated ? 1 : 0);
 
   return (
@@ -159,32 +161,34 @@ const FiltersDropdown = ({
               }
             />
           </div>
-          <div className='flex items-center justify-between'>
-            <Label className='font-normal text-sm' htmlFor='hideMapSwitch'>
-              {filterMode === "include"
-                ? t("filters.mapsModsOnly")
-                : t("filters.excludeMapsMods")}
-            </Label>
-            <Switch
-              checked={
-                filterMode === "include"
-                  ? mapQuickFilter === "only"
-                  : mapQuickFilter === "exclude"
-              }
-              id='hideMapSwitch'
-              onCheckedChange={(checked) =>
-                onMapQuickFilterChange(
+          {!hideMapFilter && (
+            <div className='flex items-center justify-between'>
+              <Label className='font-normal text-sm' htmlFor='hideMapSwitch'>
+                {filterMode === "include"
+                  ? t("filters.mapsModsOnly")
+                  : t("filters.excludeMapsMods")}
+              </Label>
+              <Switch
+                checked={
                   filterMode === "include"
-                    ? checked
-                      ? "only"
-                      : "off"
-                    : checked
-                      ? "exclude"
-                      : "off",
-                )
-              }
-            />
-          </div>
+                    ? mapQuickFilter === "only"
+                    : mapQuickFilter === "exclude"
+                }
+                id='hideMapSwitch'
+                onCheckedChange={(checked) =>
+                  onMapQuickFilterChange(
+                    filterMode === "include"
+                      ? checked
+                        ? "only"
+                        : "off"
+                      : checked
+                        ? "exclude"
+                        : "off",
+                  )
+                }
+              />
+            </div>
+          )}
           <div className='flex items-center justify-between'>
             <Label className='font-normal text-sm' htmlFor='hideOutdatedSwitch'>
               {filterMode === "include"

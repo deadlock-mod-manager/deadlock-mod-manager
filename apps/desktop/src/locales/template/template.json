@@ -9,7 +9,8 @@
     "needHelp": "",
     "collapseMenu": "",
     "expandMenu": "",
-    "about": ""
+    "about": "",
+    "maps": ""
   },
   "menu": {
     "about": "",
@@ -44,6 +45,7 @@
     "gridView": "",
     "listView": "",
     "subtitle": "",
+    "mapsSubtitle": "",
     "noModsFound": "",
     "noModsMatchFilters": "",
     "noModsAvailable": "",

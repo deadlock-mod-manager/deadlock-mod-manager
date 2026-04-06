@@ -14,7 +14,8 @@
     "about": "About",
     "crosshairs": "Crosshairs",
     "customization": "Customization",
-    "autoexec": "Autoexec Config"
+    "autoexec": "Autoexec Config",
+    "maps": "Maps"
   },
   "menu": {
     "about": "About",
@@ -88,6 +89,7 @@
     "gridView": "Grid view",
     "listView": "List view",
     "subtitle": "Updated hourly, with new mods added every hour.",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
     "noModsFound": "No mods found",
     "noModsMatchFilters": "No mods match your current search and filters",
     "noModsAvailable": "No mods available",
