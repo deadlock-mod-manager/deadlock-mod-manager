@@ -26,17 +26,13 @@ export class ModSyncHooksService {
     });
 
     try {
-      const dismissedCount = await reportRepository.dismissUnverifiedByModId(
-        mod.id,
-        "system",
-        "Mod files updated",
-      );
-      wide?.set("dismissedReportCount", dismissedCount);
+      const deletedCount = await reportRepository.deleteByModId(mod.id);
+      wide?.set("deletedReportCount", deletedCount);
     } catch (error) {
       logger
         .withError(error)
         .withMetadata({ modId: mod.id, modName: mod.name })
-        .error("Failed to dismiss unverified reports after mod files update");
+        .error("Failed to delete reports after mod files update");
     }
 
     try {

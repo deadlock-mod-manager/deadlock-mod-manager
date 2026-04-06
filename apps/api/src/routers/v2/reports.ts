@@ -34,7 +34,6 @@ export const reportsRouter = {
       wide?.merge({
         router: "reports",
         modId: input.modId,
-        reportType: input.type,
       });
 
       try {
@@ -80,11 +79,7 @@ export const reportsRouter = {
 
         const report = await reportRepository.create({
           modId: input.modId,
-          type: input.type,
-          reason: input.reason,
-          description: input.description,
           reporterHardwareId: input.reporterHardwareId,
-          status: "unverified",
         });
 
         wide?.merge({
@@ -148,10 +143,8 @@ export const reportsRouter = {
         return await cache.wrap(
           `reports:counts:${input.modId}`,
           async () => {
-            const counts = await reportRepository.getReportCountsByType(
-              input.modId,
-            );
-            return counts;
+            const total = await reportRepository.getReportCount(input.modId);
+            return { total, verified: 0, unverified: 0, dismissed: 0 };
           },
           CACHE_TTL.REPORT_COUNTS,
         );

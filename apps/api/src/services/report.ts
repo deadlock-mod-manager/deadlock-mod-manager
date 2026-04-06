@@ -1,9 +1,5 @@
 import type { Mod, Report } from "@deadlock-mods/database";
-import {
-  type NewReportEvent,
-  REDIS_CHANNELS,
-  type ReportStatusUpdatedEvent,
-} from "@deadlock-mods/shared";
+import { type NewReportEvent, REDIS_CHANNELS } from "@deadlock-mods/shared";
 import { logger, wideEventContext } from "@/lib/logger";
 import { redisPublisher } from "@/lib/redis";
 
@@ -33,10 +29,6 @@ export class ReportService {
           modId: report.modId,
           modName: mod.name,
           modAuthor: mod.author,
-          type: report.type,
-          status: report.status,
-          reason: report.reason,
-          description: report.description || undefined,
           createdAt: report.createdAt?.toISOString() || undefined,
         },
       };
@@ -53,54 +45,6 @@ export class ReportService {
           modId: report.modId,
         })
         .error("Failed to publish new report event");
-      throw error;
-    }
-  }
-
-  async publishReportStatusUpdatedEvent(
-    report: Report,
-    mod: Mod,
-  ): Promise<void> {
-    const wide = wideEventContext.get();
-    wide?.merge({
-      reportService: "publishStatusUpdate",
-      reportId: report.id,
-      reportStatus: report.status,
-      reportChannel: REDIS_CHANNELS.REPORT_STATUS_UPDATED,
-    });
-
-    try {
-      const event: ReportStatusUpdatedEvent = {
-        type: "report_status_updated",
-        data: {
-          id: report.id,
-          modId: report.modId,
-          modName: mod.name,
-          modAuthor: mod.author,
-          type: report.type,
-          status: report.status,
-          reason: report.reason,
-          description: report.description || undefined,
-          verifiedBy: report.verifiedBy || undefined,
-          dismissedBy: report.dismissedBy || undefined,
-          dismissalReason: report.dismissalReason || undefined,
-          createdAt: report.createdAt?.toISOString() || undefined,
-        },
-      };
-
-      await redisPublisher.publish(
-        REDIS_CHANNELS.REPORT_STATUS_UPDATED,
-        JSON.stringify(event),
-      );
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({
-          reportId: report.id,
-          modId: report.modId,
-          status: report.status,
-        })
-        .error("Failed to publish report status updated event");
       throw error;
     }
   }
