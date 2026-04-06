@@ -34,6 +34,10 @@ interface DownloadFileTreeEvent {
   fileTree: ModFileTree;
 }
 
+interface DownloadExtractingEvent {
+  modId: string;
+}
+
 interface DownloadErrorEvent {
   modId: string;
   error: string;
@@ -107,6 +111,15 @@ class DownloadManager {
       },
     );
 
+    const unlistenExtracting = await listen<DownloadExtractingEvent>(
+      "download-extracting",
+      (event) => {
+        logger
+          .withMetadata({ mod: event.payload.modId })
+          .info("Extracting archive for mod");
+      },
+    );
+
     const unlistenFileTree = await listen<DownloadFileTreeEvent>(
       "download-file-tree",
       (event) => {
@@ -141,6 +154,7 @@ class DownloadManager {
       unlistenStarted,
       unlistenProgress,
       unlistenCompleted,
+      unlistenExtracting,
       unlistenFileTree,
       unlistenError,
     );

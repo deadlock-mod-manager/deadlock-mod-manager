@@ -60,6 +60,12 @@ pub struct DownloadFileTreeEvent {
   pub file_tree: crate::mod_manager::file_tree::ModFileTree,
 }
 
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadExtractingEvent {
+  pub mod_id: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
@@ -115,7 +121,7 @@ impl DownloadManager {
   async fn process_queue(&self) {
     let mut processing = self.processing.lock().await;
     if *processing {
-      log::debug!("Queue is already being processed");
+      log::info!("Queue is already being processed, download will start when current one finishes");
       return;
     }
     *processing = true;
@@ -317,32 +323,35 @@ impl DownloadManager {
       downloaded_files.len()
     );
 
-    // Extract archives and copy VPKs to addons with prefix
-    if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await {
-      log::error!("Failed to process downloaded files for mod {mod_id}: {e}");
+    // Spawn extraction as a detached task so it doesn't block subsequent downloads
+    let task_path = task.target_dir.to_string_lossy().to_string();
+    tokio::spawn(async move {
+      if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await {
+        log::error!("Failed to process downloaded files for mod {mod_id}: {e}");
+
+        app_handle
+          .emit(
+            "download-error",
+            DownloadErrorEvent {
+              mod_id: mod_id.clone(),
+              error: format!("Failed to process files: {e}"),
+            },
+          )
+          .ok();
+
+        return;
+      }
 
       app_handle
         .emit(
-          "download-error",
-          DownloadErrorEvent {
+          "download-completed",
+          DownloadCompletedEvent {
             mod_id: mod_id.clone(),
-            error: format!("Failed to process files: {e}"),
+            path: task_path,
           },
         )
         .ok();
-
-      return Err(e);
-    }
-
-    app_handle
-      .emit(
-        "download-completed",
-        DownloadCompletedEvent {
-          mod_id: mod_id.clone(),
-          path: task.target_dir.to_string_lossy().to_string(),
-        },
-      )
-      .ok();
+    });
 
     Ok(())
   }
@@ -358,7 +367,6 @@ impl DownloadManager {
 
     log::info!("Processing downloaded files for mod: {}", task.mod_id);
 
-    // Get game path
     let game_path = {
       let manager = MANAGER.lock().unwrap();
       manager
@@ -368,7 +376,7 @@ impl DownloadManager {
         .clone()
     };
 
-    let addons_path = if let Some(ref profile_folder) = task.profile_folder {
+    let destination_path = if let Some(ref profile_folder) = task.profile_folder {
       game_path
         .join("game")
         .join("citadel")
@@ -379,156 +387,160 @@ impl DownloadManager {
     };
 
     log::info!(
-      "Using addons path for profile: {addons_path:?} (profile_folder: {:?})",
+      "Using game destination path: {destination_path:?} (profile_folder: {:?})",
       task.profile_folder
     );
 
-    // Create addons directory if it doesn't exist (for profile folders)
-    if !addons_path.exists() {
-      log::info!("Creating addons directory: {addons_path:?}");
-      std::fs::create_dir_all(&addons_path)?;
+    if !destination_path.exists() {
+      log::info!("Creating destination directory: {destination_path:?}");
+      std::fs::create_dir_all(&destination_path)?;
     }
 
     use crate::mod_manager::file_tree::FileTreeAnalyzer;
 
-    let extractor = ArchiveExtractor::new();
     let vpk_manager = VpkManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
 
-    // Extract archives and analyze file tree
     for file_path in downloaded_files {
-      if extractor.is_supported_archive(file_path) {
-        log::info!("Extracting archive: {file_path:?}");
+      if !ArchiveExtractor::new().is_supported_archive(file_path) {
+        continue;
+      }
 
-        // Extract to a persistent directory within the mod folder instead of temp
-        // This allows us to reuse the extracted files later without re-extracting
-        let extracted_dir = task.target_dir.join("extracted");
-        if extracted_dir.exists() {
-          log::warn!("Extracted directory already exists, removing: {extracted_dir:?}");
-          std::fs::remove_dir_all(&extracted_dir)?;
+      app_handle
+        .emit(
+          "download-extracting",
+          DownloadExtractingEvent {
+            mod_id: task.mod_id.clone(),
+          },
+        )
+        .ok();
+
+      log::info!("Extracting archive: {file_path:?}");
+
+      let extracted_dir = task.target_dir.join("extracted");
+      if extracted_dir.exists() {
+        log::warn!("Extracted directory already exists, removing: {extracted_dir:?}");
+        std::fs::remove_dir_all(&extracted_dir)?;
+      }
+      std::fs::create_dir_all(&extracted_dir)?;
+
+      // Run extraction on a blocking thread with a timeout so it never blocks the async runtime
+      let archive_path = file_path.clone();
+      let extract_target = extracted_dir.clone();
+      const EXTRACTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+
+      let extraction_result = tokio::time::timeout(
+        EXTRACTION_TIMEOUT,
+        tokio::task::spawn_blocking(move || {
+          ArchiveExtractor::new().extract_archive(&archive_path, &extract_target)
+        }),
+      )
+      .await;
+
+      match extraction_result {
+        Ok(Ok(Ok(()))) => {}
+        Ok(Ok(Err(e))) => return Err(e),
+        Ok(Err(e)) => {
+          return Err(Error::ModExtractionFailed(format!(
+            "Extraction task panicked: {e}"
+          )));
         }
-        std::fs::create_dir_all(&extracted_dir)?;
+        Err(_) => {
+          return Err(Error::ModExtractionFailed(format!(
+            "Extraction timed out after {} seconds for mod {}",
+            EXTRACTION_TIMEOUT.as_secs(),
+            task.mod_id
+          )));
+        }
+      }
 
-        extractor.extract_archive(file_path, &extracted_dir)?;
+      let archive_name = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown")
+        .to_string();
 
-        // Analyze file tree from extracted directory
-        let archive_name = file_path
-          .file_name()
-          .and_then(|n| n.to_str())
-          .unwrap_or("unknown")
-          .to_string();
+      match file_tree_analyzer.get_file_tree_from_extracted(&extracted_dir, &archive_name) {
+        Ok(file_tree) => {
+          log::info!(
+            "Analyzed file tree: {} files, has_multiple: {}",
+            file_tree.total_files,
+            file_tree.has_multiple_files
+          );
 
-        match file_tree_analyzer.get_file_tree_from_extracted(&extracted_dir, &archive_name) {
-          Ok(file_tree) => {
-            log::info!(
-              "Analyzed file tree: {} files, has_multiple: {}",
-              file_tree.total_files,
-              file_tree.has_multiple_files
-            );
+          if file_tree.has_multiple_files {
+            if task.is_profile_import {
+              if let Some(ref provided_file_tree) = task.file_tree {
+                log::info!(
+                  "Profile import: File tree provided with selections, copying selected VPKs for mod: {}",
+                  task.mod_id
+                );
 
-            // If multiple files, emit event and keep extracted files for user selection
-            if file_tree.has_multiple_files {
-              // During profile imports, check if file_tree with selections is already provided
-              if task.is_profile_import {
-                if let Some(ref provided_file_tree) = task.file_tree {
-                  // File selection already made - copy selected VPKs immediately
-                  log::info!(
-                    "Profile import: File tree provided with selections, copying selected VPKs for mod: {}",
-                    task.mod_id
-                  );
+                let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
+                  &extracted_dir,
+                  &destination_path,
+                  &task.mod_id,
+                  provided_file_tree,
+                )?;
 
-                  let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
-                    &extracted_dir,
-                    &addons_path,
-                    &task.mod_id,
-                    provided_file_tree,
-                  )?;
+                log::info!(
+                  "Copied {} VPKs for mod {}: {:?}",
+                  copied_vpks.len(),
+                  task.mod_id,
+                  copied_vpks
+                );
 
-                  log::info!(
-                    "Copied {} VPKs for mod {}: {:?}",
-                    copied_vpks.len(),
-                    task.mod_id,
-                    copied_vpks
-                  );
-
-                  if copied_vpks.is_empty() {
-                    log::error!("No VPKs were copied for mod: {}", task.mod_id);
-                    return Err(Error::InvalidInput(
-                      "No VPKs matched the file tree selection".to_string(),
-                    ));
-                  }
-
-                  // Clean up extracted directory and archive after successful copy
-                  log::info!("Removing extracted directory: {extracted_dir:?}");
-                  std::fs::remove_dir_all(&extracted_dir)?;
-                  log::info!("Removing archive: {file_path:?}");
-                  std::fs::remove_file(file_path)?;
-
-                  log::info!(
-                    "Successfully copied {} selected VPKs for profile import mod: {}",
-                    copied_vpks.len(),
-                    task.mod_id
-                  );
-                  return Ok(());
-                } else {
-                  // No file selection provided - skip for now, frontend will handle selection
-                  log::info!(
-                    "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
-                    task.mod_id
-                  );
-
-                  // Don't copy VPKs yet, keep extracted directory and archive
-                  // Profile import flow will handle VPK selection and copying later
-                  return Ok(());
+                if copied_vpks.is_empty() {
+                  log::error!("No VPKs were copied for mod: {}", task.mod_id);
+                  return Err(Error::InvalidInput(
+                    "No VPKs matched the file tree selection".to_string(),
+                  ));
                 }
+
+                Self::cleanup_extracted(&extracted_dir, file_path);
+                return Ok(());
+              } else {
+                log::info!(
+                  "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
+                  task.mod_id
+                );
+                return Ok(());
               }
-
-              log::info!(
-                "Mod has multiple VPK files, emitting file tree event for mod: {}",
-                task.mod_id
-              );
-
-              // Emit file tree event - frontend will show dialog
-              app_handle
-                .emit(
-                  "download-file-tree",
-                  DownloadFileTreeEvent {
-                    mod_id: task.mod_id.clone(),
-                    file_tree: file_tree.clone(),
-                  },
-                )
-                .ok();
-
-              // Keep extracted directory for later use, keep archive for reference
-              // We'll copy selected VPKs from the extracted directory during installation
-              // download-completed will be emitted by the caller
-              return Ok(());
             }
 
-            // Single file - proceed with normal copy
             log::info!(
-              "Mod has single VPK file, copying directly for mod: {}",
+              "Mod has multiple VPK files, emitting file tree event for mod: {}",
               task.mod_id
             );
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &addons_path, &task.mod_id)?;
 
-            // Clean up extracted directory and archive after successful copy
-            log::info!("Removing extracted directory: {extracted_dir:?}");
-            std::fs::remove_dir_all(&extracted_dir)?;
-            log::info!("Removing archive: {file_path:?}");
-            std::fs::remove_file(file_path)?;
+            app_handle
+              .emit(
+                "download-file-tree",
+                DownloadFileTreeEvent {
+                  mod_id: task.mod_id.clone(),
+                  file_tree: file_tree.clone(),
+                },
+              )
+              .ok();
+
+            return Ok(());
           }
-          Err(e) => {
-            log::warn!(
-              "Failed to analyze file tree for mod {}: {}. Proceeding with normal copy.",
-              task.mod_id,
-              e
-            );
-            // Fallback to normal copy if analysis fails
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &addons_path, &task.mod_id)?;
-            std::fs::remove_dir_all(&extracted_dir)?;
-            std::fs::remove_file(file_path)?;
-          }
+
+          log::info!(
+            "Mod has single VPK file, copying directly for mod: {}",
+            task.mod_id
+          );
+          vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          Self::cleanup_extracted(&extracted_dir, file_path);
+        }
+        Err(e) => {
+          log::warn!(
+            "Failed to analyze file tree for mod {}: {}. Proceeding with normal copy.",
+            task.mod_id,
+            e
+          );
+          vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          Self::cleanup_extracted(&extracted_dir, file_path);
         }
       }
     }
@@ -538,6 +550,21 @@ impl DownloadManager {
       task.mod_id
     );
     Ok(())
+  }
+
+  fn cleanup_extracted(extracted_dir: &PathBuf, archive_path: &PathBuf) {
+    if extracted_dir.exists() {
+      log::info!("Removing extracted directory: {extracted_dir:?}");
+      if let Err(e) = std::fs::remove_dir_all(extracted_dir) {
+        log::warn!("Failed to remove extracted directory: {e}");
+      }
+    }
+    if archive_path.exists() {
+      log::info!("Removing archive: {archive_path:?}");
+      if let Err(e) = std::fs::remove_file(archive_path) {
+        log::warn!("Failed to remove archive file: {e}");
+      }
+    }
   }
 
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
