@@ -12,7 +12,7 @@ import Debug from "./pages/debug";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Mod from "./pages/mod";
-import GetMods from "./pages/mods";
+import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
 import CustomSettings from "./pages/settings";
@@ -30,6 +30,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Dashboard />} path='/' />
               <Route element={<MyMods />} path='/my-mods' />
               <Route element={<GetMods />} path='/mods' />
+              <Route element={<GetMaps />} path='/maps' />
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />

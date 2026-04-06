@@ -23,6 +23,7 @@ import {
   HouseIcon,
   type Icon,
   MagnifyingGlassIcon,
+  MapTrifoldIcon,
   PackageIcon,
   QuestionIcon,
 } from "@phosphor-icons/react";
@@ -95,6 +96,14 @@ const getSidebarItems = (
       tooltipLabel: t("navigation.getMods"),
       url: "/mods",
       icon: MagnifyingGlassIcon,
+      group: "mods",
+    },
+    {
+      id: "maps",
+      title: () => <span>{t("navigation.maps")}</span>,
+      tooltipLabel: t("navigation.maps"),
+      url: "/maps",
+      icon: MapTrifoldIcon,
       group: "mods",
     },
     {

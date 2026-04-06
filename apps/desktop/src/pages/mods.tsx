@@ -51,6 +51,7 @@ import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
 const MODS_STORE_PAGE_KEY = "/mods:page";
+const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
 
@@ -138,7 +139,7 @@ function ModsPagination({
   );
 }
 
-const GetModsData = () => {
+const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
   const { data, error } = useSuspenseQuery({
     queryKey: ["mods"],
@@ -164,22 +165,24 @@ const GetModsData = () => {
     selectedCategories,
     selectedHeroes,
     audioQuickFilter,
-    mapQuickFilter,
     hideNSFW,
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
   } = modsFilters;
+  const mapQuickFilter = mapsOnly ? "only" : modsFilters.mapQuickFilter;
+  const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
+  const scrollKey = mapsOnly ? "/maps" : "/mods";
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
-  const [page, setPage] = useState(() => getPersistedPage(MODS_STORE_PAGE_KEY));
+  const [page, setPage] = useState(() => getPersistedPage(pageKey));
   const parentRef = useRef<HTMLDivElement>(null);
   const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
   // block the UI while Fuse.js rebuilds its index on 2600+ items.
   const deferredData = useDeferredValue(data ?? []);
   const { restoreScrollPosition, setScrollElement, scrollY } =
-    useScrollPosition("/mods");
+    useScrollPosition(scrollKey);
   const columnsPerRow = useResponsiveColumns();
 
   useEffect(() => {
@@ -335,12 +338,12 @@ const GetModsData = () => {
       const nextPage = Math.min(currentPage, maxPage);
 
       if (nextPage !== currentPage) {
-        setPersistedPage(MODS_STORE_PAGE_KEY, nextPage);
+        setPersistedPage(pageKey, nextPage);
       }
 
       return nextPage;
     });
-  }, [setPersistedPage, totalPages]);
+  }, [pageKey, setPersistedPage, totalPages]);
 
   useEffect(() => {
     if (previousFilterSignatureRef.current === null) {
@@ -355,11 +358,11 @@ const GetModsData = () => {
     previousFilterSignatureRef.current = filterSignature;
 
     setPage(0);
-    setPersistedPage(MODS_STORE_PAGE_KEY, 0);
+    setPersistedPage(pageKey, 0);
     if (parentRef.current) {
       parentRef.current.scrollTo({ top: 0, behavior: "auto" });
     }
-  }, [filterSignature, setPersistedPage]);
+  }, [filterSignature, pageKey, setPersistedPage]);
 
   useEffect(() => {
     if (error) {
@@ -370,12 +373,12 @@ const GetModsData = () => {
   const handlePageChange = useCallback(
     (newPage: number) => {
       setPage(newPage);
-      setPersistedPage(MODS_STORE_PAGE_KEY, newPage);
+      setPersistedPage(pageKey, newPage);
       if (parentRef.current) {
         parentRef.current.scrollTo({ top: 0, behavior: "auto" });
       }
     },
-    [setPersistedPage],
+    [pageKey, setPersistedPage],
   );
 
   const handleCategoriesChange = useCallback(
@@ -436,6 +439,7 @@ const GetModsData = () => {
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
+        hideMapFilter={mapsOnly}
       />
       {filteredResults.length === 0 ? (
         <Empty className='py-12'>
@@ -532,6 +536,17 @@ const GetModsData = () => {
   );
 };
 
+const ModsPageSkeleton = () => (
+  <div className='flex flex-col gap-4'>
+    <SearchBarSkeleton />
+    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+      {Array.from({ length: 25 }, (_, i) => (
+        <ModCard key={i} mod={undefined} />
+      ))}
+    </div>
+  </div>
+);
+
 const GetMods = () => {
   const { t } = useTranslation();
 
@@ -542,19 +557,28 @@ const GetMods = () => {
         subtitle={t("mods.subtitle")}
         title={t("navigation.getMods")}
       />
-      <Suspense
-        fallback={
-          <div className='flex flex-col gap-4'>
-            <SearchBarSkeleton />
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-              {Array.from({ length: 25 }, (_, i) => (
-                <ModCard key={i} mod={undefined} />
-              ))}
-            </div>
-          </div>
-        }>
+      <Suspense fallback={<ModsPageSkeleton />}>
         <ErrorBoundary>
           <GetModsData />
+        </ErrorBoundary>
+      </Suspense>
+    </div>
+  );
+};
+
+export const GetMaps = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className='w-full px-4'>
+      <PageTitle
+        className='mb-8'
+        subtitle={t("mods.mapsSubtitle")}
+        title={t("navigation.maps")}
+      />
+      <Suspense fallback={<ModsPageSkeleton />}>
+        <ErrorBoundary>
+          <GetModsData mapsOnly />
         </ErrorBoundary>
       </Suspense>
     </div>

@@ -48,6 +48,7 @@ type SearchBarProps = {
   onFilterModeChange: (filterMode: FilterMode) => void;
   showSortControl?: boolean;
   showTimePeriodControl?: boolean;
+  hideMapFilter?: boolean;
 };
 
 const SearchBar = ({
@@ -74,6 +75,7 @@ const SearchBar = ({
   onFilterModeChange,
   showSortControl = true,
   showTimePeriodControl = true,
+  hideMapFilter,
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
@@ -111,7 +113,7 @@ const SearchBar = ({
     selectedHeroes.length > 0 ||
     hideNSFW ||
     audioQuickFilter !== "off" ||
-    mapQuickFilter !== "off" ||
+    (!hideMapFilter && mapQuickFilter !== "off") ||
     hideOutdated ||
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
@@ -142,6 +144,7 @@ const SearchBar = ({
             mapQuickFilter={mapQuickFilter}
             hideNSFW={hideNSFW}
             hideOutdated={hideOutdated}
+            hideMapFilter={hideMapFilter}
           />
         </div>
         {(showTimePeriodControl || showSortControl) && (
@@ -265,7 +268,7 @@ const SearchBar = ({
             </Badge>
           )}
 
-          {mapQuickFilter !== "off" && (
+          {!hideMapFilter && mapQuickFilter !== "off" && (
             <Badge className='flex items-center gap-1' variant='secondary'>
               {mapQuickFilter === "only"
                 ? t("filters.mapsModsOnly")
