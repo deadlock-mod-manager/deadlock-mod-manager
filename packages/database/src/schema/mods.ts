@@ -11,6 +11,19 @@ import {
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
+export interface ModOverrides {
+  name?: string;
+  description?: string;
+  category?: string;
+  hero?: string;
+  isMap?: boolean;
+  isAudio?: boolean;
+  isNSFW?: boolean;
+  isObsolete?: boolean;
+  tags?: string[];
+  metadata?: { mapName?: string };
+}
+
 export const mods = pgTable(
   "mod",
   {
@@ -42,6 +55,7 @@ export const mods = pgTable(
     blacklistedBy: text("blacklisted_by"),
     filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
     metadata: jsonb("metadata").$type<{ mapName?: string }>(),
+    overrides: jsonb("overrides").$type<ModOverrides>(),
     ...timestamps,
   },
   (table) => [
