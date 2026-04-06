@@ -26,6 +26,11 @@
       "sourceType": "github",
       "computedHash": "b4810947c33b5356bf385c84cfe387afa9c54af652baaedb7d642a083cceaa4c"
     },
+    "recomposing-commits": {
+      "source": "nur-zaman/git-recompose-skill",
+      "sourceType": "github",
+      "computedHash": "d48bb7c0a569c9c56719e1dd096b5d935a1783f87d22cdf58c1b393843222e46"
+    },
     "security-review": {
       "source": "getsentry/skills",
       "sourceType": "github",
