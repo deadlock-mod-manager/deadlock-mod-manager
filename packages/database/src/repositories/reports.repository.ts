@@ -1,12 +1,7 @@
 import { and, count, desc, eq, sql } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import { mods } from "../schema/mods";
-import {
-  type NewReport,
-  type Report,
-  type ReportStatus,
-  reports,
-} from "../schema/reports";
+import { type NewReport, type Report, reports } from "../schema/reports";
 
 export class ReportRepository {
   constructor(private db: Database) {}
@@ -50,106 +45,12 @@ export class ReportRepository {
     return report || null;
   }
 
-  async getReportCounts(modId: string): Promise<{
-    total: number;
-    verified: number;
-    unverified: number;
-    dismissed: number;
-  }> {
-    const result = await this.db
-      .select({
-        status: reports.status,
-        count: count(),
-      })
+  async getReportCount(modId: string): Promise<number> {
+    const [result] = await this.db
+      .select({ count: count() })
       .from(reports)
-      .where(eq(reports.modId, modId))
-      .groupBy(reports.status);
-
-    const counts = {
-      total: 0,
-      verified: 0,
-      unverified: 0,
-      dismissed: 0,
-    };
-
-    for (const row of result) {
-      counts.total += row.count;
-      counts[row.status] = row.count;
-    }
-
-    return counts;
-  }
-
-  async getReportCountsByType(modId: string): Promise<{
-    total: number;
-    verified: number;
-    unverified: number;
-    dismissed: number;
-    byType: Record<
-      string,
-      { total: number; verified: number; unverified: number; dismissed: number }
-    >;
-  }> {
-    const result = await this.db
-      .select({
-        type: reports.type,
-        status: reports.status,
-        count: count(),
-      })
-      .from(reports)
-      .where(eq(reports.modId, modId))
-      .groupBy(reports.type, reports.status);
-
-    const counts = {
-      total: 0,
-      verified: 0,
-      unverified: 0,
-      dismissed: 0,
-      byType: {} as Record<
-        string,
-        {
-          total: number;
-          verified: number;
-          unverified: number;
-          dismissed: number;
-        }
-      >,
-    };
-
-    for (const row of result) {
-      counts.total += row.count;
-
-      // Update status counts
-      if (row.status === "verified") {
-        counts.verified += row.count;
-      } else if (row.status === "unverified") {
-        counts.unverified += row.count;
-      } else if (row.status === "dismissed") {
-        counts.dismissed += row.count;
-      }
-
-      if (!counts.byType[row.type]) {
-        counts.byType[row.type] = {
-          total: 0,
-          verified: 0,
-          unverified: 0,
-          dismissed: 0,
-        };
-      }
-
-      counts.byType[row.type].total += row.count;
-
-      // Update type-specific status counts
-      if (row.status === "verified") {
-        counts.byType[row.type].verified += row.count;
-      } else if (row.status === "unverified") {
-        counts.byType[row.type].unverified += row.count;
-      } else if (row.status === "dismissed") {
-        counts.byType[row.type].dismissed += row.count;
-      }
-    }
-
-    return counts;
+      .where(eq(reports.modId, modId));
+    return result?.count ?? 0;
   }
 
   async getRecentReports(
@@ -159,16 +60,7 @@ export class ReportRepository {
       .select({
         id: reports.id,
         modId: reports.modId,
-        type: reports.type,
-        status: reports.status,
-        reason: reports.reason,
-        description: reports.description,
         reporterHardwareId: reports.reporterHardwareId,
-        verifiedBy: reports.verifiedBy,
-        verifiedAt: reports.verifiedAt,
-        dismissedBy: reports.dismissedBy,
-        dismissedAt: reports.dismissedAt,
-        dismissalReason: reports.dismissalReason,
         discordMessageId: reports.discordMessageId,
         createdAt: reports.createdAt,
         updatedAt: reports.updatedAt,
@@ -181,56 +73,11 @@ export class ReportRepository {
       .limit(limit);
   }
 
-  async updateStatus(
-    id: string,
-    status: ReportStatus,
-    metadata: {
-      verifiedBy?: string;
-      dismissedBy?: string;
-      dismissalReason?: string;
-    } = {},
-  ): Promise<Report | null> {
-    const updateData: Partial<Report> = {
-      status,
-      updatedAt: new Date(),
-    };
-
-    if (status === "verified" && metadata.verifiedBy) {
-      updateData.verifiedBy = metadata.verifiedBy;
-      updateData.verifiedAt = new Date();
-    }
-
-    if (status === "dismissed" && metadata.dismissedBy) {
-      updateData.dismissedBy = metadata.dismissedBy;
-      updateData.dismissedAt = new Date();
-      updateData.dismissalReason = metadata.dismissalReason;
-    }
-
-    const [report] = await this.db
-      .update(reports)
-      .set(updateData)
-      .where(eq(reports.id, id))
-      .returning();
-
-    return report || null;
-  }
-
-  async dismissUnverifiedByModId(
-    modId: string,
-    dismissedBy: string,
-    dismissalReason: string,
-  ): Promise<number> {
+  async deleteByModId(modId: string): Promise<number> {
     const result = await this.db
-      .update(reports)
-      .set({
-        status: "dismissed",
-        dismissedAt: new Date(),
-        dismissedBy,
-        dismissalReason,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(reports.modId, modId), eq(reports.status, "unverified")))
-      .returning();
+      .delete(reports)
+      .where(eq(reports.modId, modId))
+      .returning({ id: reports.id });
     return result.length;
   }
 
@@ -256,8 +103,6 @@ export class ReportRepository {
       modName: string;
       modAuthor: string;
       totalReports: number;
-      verifiedReports: number;
-      unverifiedReports: number;
     }>
   > {
     return this.db
@@ -266,21 +111,11 @@ export class ReportRepository {
         modName: mods.name,
         modAuthor: mods.author,
         totalReports: count(reports.id),
-        verifiedReports: sql<number>`count(case when ${reports.status} = 'verified' then 1 end)`,
-        unverifiedReports: sql<number>`count(case when ${reports.status} = 'unverified' then 1 end)`,
       })
       .from(mods)
       .leftJoin(reports, eq(mods.id, reports.modId))
       .groupBy(mods.id, mods.name, mods.author)
       .having(sql`count(${reports.id}) > 0`)
-      .orderBy(desc(sql`count(${reports.id})`));
-  }
-
-  async deleteAllUnverified(): Promise<number> {
-    const deleted = await this.db
-      .delete(reports)
-      .where(eq(reports.status, "unverified"))
-      .returning({ id: reports.id });
-    return deleted.length;
+      .orderBy(desc(count(reports.id)));
   }
 }

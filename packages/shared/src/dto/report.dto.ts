@@ -1,17 +1,16 @@
-import type { Report, ReportStatus, ReportType } from "@deadlock-mods/database";
+import type { Report } from "@deadlock-mods/database";
 
 export interface ReportDto {
   id: string;
   modId: string;
-  type: ReportType;
-  status: ReportStatus;
+  /** @deprecated Always "broken". Kept for backwards compatibility with old clients. */
+  type: string;
+  /** @deprecated Always "verified". Kept for backwards compatibility with old clients. */
+  status: string;
+  /** @deprecated Always "". Kept for backwards compatibility with old clients. */
   reason: string;
+  /** @deprecated Always undefined. Kept for backwards compatibility with old clients. */
   description?: string;
-  verifiedBy?: string;
-  verifiedAt?: string;
-  dismissedBy?: string;
-  dismissedAt?: string;
-  dismissalReason?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,36 +22,20 @@ export interface ReportWithModDto extends ReportDto {
 
 export interface ReportCountsDto {
   total: number;
+  /** @deprecated Always 0. Kept for backwards compatibility with old desktop clients. */
   verified: number;
+  /** @deprecated Always 0. Kept for backwards compatibility with old desktop clients. */
   unverified: number;
+  /** @deprecated Always 0. Kept for backwards compatibility with old desktop clients. */
   dismissed: number;
-  byType?: Record<
-    string,
-    { total: number; verified: number; unverified: number; dismissed: number }
-  >;
-}
-
-export interface ModWithReportCountsDto {
-  modId: string;
-  modName: string;
-  modAuthor: string;
-  totalReports: number;
-  verifiedReports: number;
-  unverifiedReports: number;
 }
 
 export const toReportDto = (report: Report): ReportDto => ({
   id: report.id,
   modId: report.modId,
-  type: report.type,
-  status: report.status,
-  reason: report.reason,
-  description: report.description || undefined,
-  verifiedBy: report.verifiedBy || undefined,
-  verifiedAt: report.verifiedAt?.toISOString(),
-  dismissedBy: report.dismissedBy || undefined,
-  dismissedAt: report.dismissedAt?.toISOString(),
-  dismissalReason: report.dismissalReason || undefined,
+  type: "broken",
+  status: "verified",
+  reason: "",
   createdAt: report.createdAt?.toISOString() || new Date().toISOString(),
   updatedAt: report.updatedAt?.toISOString() || new Date().toISOString(),
 });
