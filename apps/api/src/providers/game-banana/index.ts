@@ -17,7 +17,11 @@ import { resolveFileserverGeo } from "../../services/geo";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
 import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
-import { DEADLOCK_GAME_ID, GAME_BANANA_BASE_URL } from "./constants";
+import {
+  DEADLOCK_GAME_ID,
+  GAME_BANANA_BASE_URL,
+  MAPS_CATEGORY_NAME,
+} from "./constants";
 import {
   buildDownloadSignature,
   buildDownloadSignatureFromPayload,
@@ -347,6 +351,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
+        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
       };
     }
 
@@ -375,6 +380,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
+        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
       };
     }
 
@@ -399,6 +405,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
+        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
       };
     }
 
@@ -423,6 +430,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
+        isMap: false,
       };
     }
 
