@@ -75,6 +75,7 @@ import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import useUninstall from "@/hooks/use-uninstall";
@@ -480,6 +481,10 @@ const ModsList = ({
 
 const MyMods = () => {
   const { t } = useTranslation();
+  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
+    "custom-maps",
+    false,
+  );
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
@@ -533,6 +538,9 @@ const MyMods = () => {
   const [audioQuickFilter, setAudioQuickFilter] =
     useState<AudioQuickFilter>("off");
   const [mapQuickFilter, setMapQuickFilter] = useState<MapQuickFilter>("off");
+  const effectiveMapQuickFilter: MapQuickFilter = isCustomMapsEnabled
+    ? mapQuickFilter
+    : "off";
   const [hideNSFW, setHideNSFW] = useState(false);
   const [hideOutdated, setHideOutdated] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>("include");
@@ -641,9 +649,9 @@ const MyMods = () => {
       filteredMods = filteredMods.filter((mod) => !mod.isAudio);
     }
 
-    if (mapQuickFilter === "only") {
+    if (effectiveMapQuickFilter === "only") {
       filteredMods = filteredMods.filter((mod) => mod.isMap);
-    } else if (mapQuickFilter === "exclude") {
+    } else if (effectiveMapQuickFilter === "exclude") {
       filteredMods = filteredMods.filter((mod) => !mod.isMap);
     }
 
@@ -658,7 +666,7 @@ const MyMods = () => {
     activeTab,
     filterMode,
     audioQuickFilter,
-    mapQuickFilter,
+    effectiveMapQuickFilter,
     hideNSFW,
     hideOutdated,
     query,
@@ -688,7 +696,7 @@ const MyMods = () => {
     activeTab,
     filterMode,
     audioQuickFilter,
-    mapQuickFilter,
+    effectiveMapQuickFilter,
     hideNSFW,
     hideOutdated,
     query,
@@ -852,7 +860,7 @@ const MyMods = () => {
                 <SearchBar
                   filterMode={filterMode}
                   audioQuickFilter={audioQuickFilter}
-                  mapQuickFilter={mapQuickFilter}
+                  mapQuickFilter={effectiveMapQuickFilter}
                   hideNSFW={hideNSFW}
                   hideOutdated={hideOutdated}
                   mods={mods}
@@ -869,6 +877,7 @@ const MyMods = () => {
                   setQuery={setQuery}
                   showSortControl={false}
                   showTimePeriodControl={false}
+                  hideMapFilter={!isCustomMapsEnabled}
                 />
                 <div className='flex items-center gap-2'>
                   <TabsList>

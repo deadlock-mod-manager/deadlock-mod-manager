@@ -52,4 +52,10 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "boolean",
     defaultValue: true,
   },
+  {
+    name: "custom-maps",
+    description: "Enable custom maps support",
+    type: "boolean",
+    defaultValue: false,
+  },
 ];

@@ -2,8 +2,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
+import { useFeatureFlag } from "./hooks/use-feature-flags";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Crosshairs from "./pages/crosshairs";
@@ -20,6 +21,14 @@ import Splash from "./pages/splash";
 import "./index.css";
 import "./lib/i18n";
 
+const MapsRouteGate = () => {
+  const { isEnabled } = useFeatureFlag("custom-maps", false);
+  if (!isEnabled) {
+    return <Navigate replace to='/mods' />;
+  }
+  return <GetMaps />;
+};
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -30,7 +39,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Dashboard />} path='/' />
               <Route element={<MyMods />} path='/my-mods' />
               <Route element={<GetMods />} path='/mods' />
-              <Route element={<GetMaps />} path='/maps' />
+              <Route element={<MapsRouteGate />} path='/maps' />
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
