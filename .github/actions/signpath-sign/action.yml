@@ -74,7 +74,7 @@ runs:
       run: |
         exeFile=$(ls ./signpath-signed-output/*.exe)
         echo "Regenerating Tauri signature for: $exeFile"
-        pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" "$exeFile"
+        pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
         mv ./signpath-signed-output/*.exe "${{ inputs.output-directory }}/"
         mv ./signpath-signed-output/*.exe.sig "${{ inputs.output-directory }}/"
 
