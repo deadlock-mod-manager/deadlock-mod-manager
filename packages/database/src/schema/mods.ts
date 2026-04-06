@@ -22,6 +22,7 @@ export interface ModOverrides {
   isObsolete?: boolean;
   tags?: string[];
   metadata?: { mapName?: string };
+  downloads?: Array<{ url: string; file: string }>;
 }
 
 export const mods = pgTable(
