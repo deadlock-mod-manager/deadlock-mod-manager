@@ -205,7 +205,6 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
       <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
         <DialogTrigger asChild>
           <SidebarMenuButton
-            className='cursor-pointer'
             isActive={location.pathname === item.url}
             tooltip={item.tooltipLabel}>
             {renderIcon(item)}
@@ -337,7 +336,6 @@ export const AppSidebar = () => {
               <Separator />
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className='cursor-pointer'
                   onClick={() => openUrl("https://docs.deadlockmods.app/")}
                   tooltip={t("help.documentation")}>
                   <QuestionIcon weight='duotone' />
@@ -346,7 +344,6 @@ export const AppSidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className='cursor-pointer'
                   onClick={() => openUrl(DISCORD_URL)}
                   tooltip={t("help.needHelp")}>
                   <DiscordLogoIcon weight='duotone' />

@@ -90,6 +90,7 @@
     "listView": "List view",
     "subtitle": "Updated hourly, with new mods added every hour.",
     "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsFound": "No mods found",
     "noModsMatchFilters": "No mods match your current search and filters",
     "noModsAvailable": "No mods available",
