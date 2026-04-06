@@ -1,7 +1,6 @@
 import {
   parseNewModEvent,
   parseNewReportEvent,
-  parseReportStatusUpdatedEvent,
   REDIS_CHANNELS,
 } from "@deadlock-mods/shared";
 import IORedis from "ioredis";
@@ -42,7 +41,6 @@ export class RedisSubscriberService {
     try {
       logger.info("Starting Redis subscriber service");
 
-      // Create a dedicated subscriber connection
       this.subscriber = new IORedis(env.REDIS_URL, {
         maxRetriesPerRequest: null,
         lazyConnect: false,
@@ -60,12 +58,9 @@ export class RedisSubscriberService {
         logger.info("Redis subscriber ready");
       });
 
-      // Subscribe to events
       await this.subscriber.subscribe(REDIS_CHANNELS.NEW_MODS);
       await this.subscriber.subscribe(REDIS_CHANNELS.NEW_REPORTS);
-      await this.subscriber.subscribe(REDIS_CHANNELS.REPORT_STATUS_UPDATED);
 
-      // Handle incoming messages
       this.subscriber.on("message", async (channel, message) => {
         await this.handleMessage(channel, message);
       });
@@ -114,9 +109,6 @@ export class RedisSubscriberService {
         case REDIS_CHANNELS.NEW_REPORTS:
           await this.handleNewReportEvent(message);
           break;
-        case REDIS_CHANNELS.REPORT_STATUS_UPDATED:
-          await this.handleReportStatusUpdatedEvent(message);
-          break;
         default:
           logger
             .withMetadata({ channel })
@@ -127,7 +119,7 @@ export class RedisSubscriberService {
         .withError(error)
         .withMetadata({
           channel,
-          message: message.substring(0, 200), // Log first 200 chars for debugging
+          message: message.substring(0, 200),
         })
         .error("Error handling Redis message");
     }
@@ -135,10 +127,7 @@ export class RedisSubscriberService {
 
   private async handleNewModEvent(message: string): Promise<void> {
     try {
-      // Parse JSON first
       const rawData = JSON.parse(message);
-
-      // Validate with Zod schema for runtime safety
       const event = parseNewModEvent(rawData);
 
       logger
@@ -187,7 +176,6 @@ export class RedisSubscriberService {
           reportId: event.data.id,
           modId: event.data.modId,
           modName: event.data.modName,
-          reportType: event.data.type,
         })
         .info("Processing new report event");
 
@@ -216,52 +204,6 @@ export class RedisSubscriberService {
           .error("Invalid new report event schema");
       } else {
         logger.withError(error).error("Failed to process new report event");
-      }
-    }
-  }
-
-  private async handleReportStatusUpdatedEvent(message: string): Promise<void> {
-    try {
-      const rawData = JSON.parse(message);
-      const event = parseReportStatusUpdatedEvent(rawData);
-
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          modId: event.data.modId,
-          newStatus: event.data.status,
-          verifiedBy: event.data.verifiedBy,
-          dismissedBy: event.data.dismissedBy,
-        })
-        .info("Processing report status updated event");
-
-      await this.reportPoster.updateReportStatus(event);
-
-      logger
-        .withMetadata({
-          reportId: event.data.id,
-          newStatus: event.data.status,
-        })
-        .info("Successfully processed report status updated event");
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        logger
-          .withError(error)
-          .withMetadata({
-            message: message.substring(0, 200),
-          })
-          .error("Failed to parse report status updated event JSON");
-      } else if (error instanceof Error && error.name === "ZodError") {
-        logger
-          .withError(error)
-          .withMetadata({
-            message: message.substring(0, 200),
-          })
-          .error("Invalid report status updated event schema");
-      } else {
-        logger
-          .withError(error)
-          .error("Failed to process report status updated event");
       }
     }
   }
