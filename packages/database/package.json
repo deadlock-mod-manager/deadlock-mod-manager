@@ -10,7 +10,7 @@
     "db:generate": "dotenv -e ../../.env -- drizzle-kit generate",
     "db:push": "dotenv -e ../../.env -- drizzle-kit push",
     "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
-    "db:seed": "dotenv -e ../../.env -- bun run src/seed.ts"
+    "db:seed": "dotenv -e ../../.env -- bun run ./src/seed.ts"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",

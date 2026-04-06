@@ -22,8 +22,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "dev": "bun run ./src/index.ts",
+    "build": "bun build ./src/index.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "type-check": "tsc --noEmit"
   },

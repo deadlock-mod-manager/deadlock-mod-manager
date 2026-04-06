@@ -5,14 +5,14 @@
     "build": "tsdown",
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-    "start": "dotenv -e ../../.env -- bun run --preload src/instrument.ts src/index.ts",
-    "dev": "dotenv -e ../../.env -- bun run --watch --preload src/instrument.ts src/index.ts",
-    "test:mod-events": "dotenv -e ../../.env -- bun run src/scripts/test-mod-events.ts",
-    "calculate-mod-sizes": "dotenv -e ../../.env -- bun run src/scripts/calculate-mod-sizes.ts",
-    "sync-mods": "dotenv -e ../../.env -- bun run src/scripts/sync-mods.ts",
-    "purge-unverified-reports": "dotenv -e ../../.env -- bun run src/scripts/purge-unverified-reports.ts",
+    "start": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/index.ts",
+    "dev": "dotenv -e ../../.env -- bun run --watch --preload ./src/instrument.ts ./src/index.ts",
+    "test:mod-events": "dotenv -e ../../.env -- bun run ./src/scripts/test-mod-events.ts",
+    "calculate-mod-sizes": "dotenv -e ../../.env -- bun run ./src/scripts/calculate-mod-sizes.ts",
+    "sync-mods": "dotenv -e ../../.env -- bun run ./src/scripts/sync-mods.ts",
+    "purge-unverified-reports": "dotenv -e ../../.env -- bun run ./src/scripts/purge-unverified-reports.ts",
     "desktop:dev": "pnpm dev",
-    "version:generate": "genversion -f -p ./package.json --es6 src/version.ts"
+    "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts"
   },
   "dependencies": {
     "@better-fetch/fetch": "^1.1.21",
