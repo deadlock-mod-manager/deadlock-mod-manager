@@ -46,7 +46,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 14,
+      version: 15,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -396,6 +396,39 @@ export const usePersistedStore = create<State>()(
             );
           state.fileserverPreference = "default";
           state.fileserverLatencyMs = {};
+        }
+
+        // Migration from version 14 to 15: hideAudio/hideMap booleans -> audioQuickFilter/mapQuickFilter
+        if (version <= 14) {
+          logger
+            .withMetadata({
+              migrationFrom: 14,
+              migrationTo: 15,
+              action: "mods-filters-audio-map-quick-filter",
+            })
+            .info(
+              "Migrating from version 14 to 15: Converting map/audio quick filters to tri-state",
+            );
+          const modsFilters = state.modsFilters as
+            | Record<string, unknown>
+            | undefined;
+          if (modsFilters) {
+            if ("hideAudio" in modsFilters) {
+              const hideAudio = modsFilters.hideAudio;
+              modsFilters.audioQuickFilter =
+                hideAudio === true ? "exclude" : "off";
+              delete modsFilters.hideAudio;
+            } else if (!("audioQuickFilter" in modsFilters)) {
+              modsFilters.audioQuickFilter = "off";
+            }
+            if ("hideMap" in modsFilters) {
+              const hideMap = modsFilters.hideMap;
+              modsFilters.mapQuickFilter = hideMap === true ? "exclude" : "off";
+              delete modsFilters.hideMap;
+            } else if (!("mapQuickFilter" in modsFilters)) {
+              modsFilters.mapQuickFilter = "off";
+            }
+          }
         }
 
         return state;

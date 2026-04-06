@@ -8,6 +8,8 @@ pub struct Mod {
   pub id: String,
   pub name: String,
   #[serde(default)]
+  pub is_map: bool,
+  #[serde(default)]
   pub installed_vpks: Vec<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,

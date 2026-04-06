@@ -5,10 +5,14 @@ import type { State } from "..";
 
 export type FilterMode = "include" | "exclude";
 
+export type MapQuickFilter = "off" | "only" | "exclude";
+export type AudioQuickFilter = "off" | "only" | "exclude";
+
 export type ModsFilters = {
   selectedCategories: string[];
   selectedHeroes: string[];
-  hideAudio: boolean;
+  audioQuickFilter: AudioQuickFilter;
+  mapQuickFilter: MapQuickFilter;
   hideNSFW: boolean;
   hideOutdated: boolean;
   currentSort: SortType;
@@ -53,7 +57,8 @@ export type UIState = {
 const DEFAULT_MODS_FILTERS: ModsFilters = {
   selectedCategories: [],
   selectedHeroes: [],
-  hideAudio: false,
+  audioQuickFilter: "off",
+  mapQuickFilter: "off",
   hideNSFW: false,
   hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,

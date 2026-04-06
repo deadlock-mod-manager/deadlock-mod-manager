@@ -83,7 +83,11 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import type { FilterMode } from "@/lib/store/slices/ui";
+import type {
+  AudioQuickFilter,
+  FilterMode,
+  MapQuickFilter,
+} from "@/lib/store/slices/ui";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -526,7 +530,9 @@ const MyMods = () => {
   const [page, setPage] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
-  const [hideAudio, setHideAudio] = useState(false);
+  const [audioQuickFilter, setAudioQuickFilter] =
+    useState<AudioQuickFilter>("off");
+  const [mapQuickFilter, setMapQuickFilter] = useState<MapQuickFilter>("off");
   const [hideNSFW, setHideNSFW] = useState(false);
   const [hideOutdated, setHideOutdated] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>("include");
@@ -629,8 +635,16 @@ const MyMods = () => {
       filteredMods = filteredMods.filter((mod) => !mod.isNSFW);
     }
 
-    if (hideAudio) {
+    if (audioQuickFilter === "only") {
+      filteredMods = filteredMods.filter((mod) => mod.isAudio);
+    } else if (audioQuickFilter === "exclude") {
       filteredMods = filteredMods.filter((mod) => !mod.isAudio);
+    }
+
+    if (mapQuickFilter === "only") {
+      filteredMods = filteredMods.filter((mod) => mod.isMap);
+    } else if (mapQuickFilter === "exclude") {
+      filteredMods = filteredMods.filter((mod) => !mod.isMap);
     }
 
     if (hideOutdated) {
@@ -643,7 +657,8 @@ const MyMods = () => {
   }, [
     activeTab,
     filterMode,
-    hideAudio,
+    audioQuickFilter,
+    mapQuickFilter,
     hideNSFW,
     hideOutdated,
     query,
@@ -672,7 +687,8 @@ const MyMods = () => {
   }, [
     activeTab,
     filterMode,
-    hideAudio,
+    audioQuickFilter,
+    mapQuickFilter,
     hideNSFW,
     hideOutdated,
     query,
@@ -835,14 +851,16 @@ const MyMods = () => {
               <div className='flex items-center justify-between'>
                 <SearchBar
                   filterMode={filterMode}
-                  hideAudio={hideAudio}
+                  audioQuickFilter={audioQuickFilter}
+                  mapQuickFilter={mapQuickFilter}
                   hideNSFW={hideNSFW}
                   hideOutdated={hideOutdated}
                   mods={mods}
                   onCategoriesChange={setSelectedCategories}
                   onFilterModeChange={setFilterMode}
                   onHeroesChange={setSelectedHeroes}
-                  onHideAudioChange={setHideAudio}
+                  onAudioQuickFilterChange={setAudioQuickFilter}
+                  onMapQuickFilterChange={setMapQuickFilter}
                   onHideNSFWChange={setHideNSFW}
                   onHideOutdatedChange={setHideOutdated}
                   query={query}

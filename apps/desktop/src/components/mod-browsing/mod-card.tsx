@@ -1,11 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@deadlock-mods/ui/components/card";
+import { Card, CardHeader, CardTitle } from "@deadlock-mods/ui/components/card";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
 import { format } from "date-fns";
 import { memo } from "react";
@@ -107,11 +102,16 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
                 title={mod.name}>
                 {mod.name}
               </CardTitle>
-              <CardDescription
-                className='overflow-clip text-ellipsis text-nowrap'
-                title={mod.author}>
-                {t("mods.by")} {mod.author}
-              </CardDescription>
+              <div className='flex flex-wrap items-center gap-1.5'>
+                {mod.isMap && (
+                  <Badge variant='secondary'>{t("mods.mapBadge")}</Badge>
+                )}
+                <span
+                  className='overflow-clip text-ellipsis text-nowrap text-muted-foreground text-sm'
+                  title={mod.author}>
+                  {t("mods.by")} {mod.author}
+                </span>
+              </div>
             </div>
 
             <div className='flex flex-row justify-between'>

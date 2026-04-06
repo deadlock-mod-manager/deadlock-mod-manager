@@ -144,6 +144,7 @@ export const useBatchUpdate = () => {
         })),
         fileTree: um.selectedFileTree,
         installedVpks: localMod?.installedVpks ?? [],
+        isMap: um.mod.isMap,
       };
     });
 

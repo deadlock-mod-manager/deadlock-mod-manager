@@ -35,8 +35,11 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
       {showHeader && (
         <CardHeader>
           <CardTitle className='text-3xl'>{mod.name}</CardTitle>
-          <CardDescription>
-            {getModCategoryDisplayName(mod.category)}
+          <CardDescription className='flex flex-wrap items-center gap-2'>
+            {mod.isMap && (
+              <Badge variant='secondary'>{t("mods.mapBadge")}</Badge>
+            )}
+            <span>{getModCategoryDisplayName(mod.category)}</span>
           </CardDescription>
         </CardHeader>
       )}

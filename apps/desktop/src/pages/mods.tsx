@@ -40,7 +40,11 @@ import { ModCategory, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getTimePeriodCutoff } from "@/lib/utils";
-import type { FilterMode } from "@/lib/store/slices/ui";
+import type {
+  AudioQuickFilter,
+  FilterMode,
+  MapQuickFilter,
+} from "@/lib/store/slices/ui";
 import { cn, isModOutdated } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
@@ -159,7 +163,8 @@ const GetModsData = () => {
   const {
     selectedCategories,
     selectedHeroes,
-    hideAudio,
+    audioQuickFilter,
+    mapQuickFilter,
     hideNSFW,
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
@@ -230,8 +235,16 @@ const GetModsData = () => {
       filtered = filtered.filter((mod) => !mod.isNSFW);
     }
 
-    if (hideAudio) {
+    if (audioQuickFilter === "only") {
+      filtered = filtered.filter((mod) => mod.isAudio);
+    } else if (audioQuickFilter === "exclude") {
       filtered = filtered.filter((mod) => !mod.isAudio);
+    }
+
+    if (mapQuickFilter === "only") {
+      filtered = filtered.filter((mod) => mod.isMap);
+    } else if (mapQuickFilter === "exclude") {
+      filtered = filtered.filter((mod) => !mod.isMap);
     }
 
     if (hideOutdated) {
@@ -256,7 +269,8 @@ const GetModsData = () => {
     filterMode,
     nsfwSettings.hideNSFW,
     hideNSFW,
-    hideAudio,
+    audioQuickFilter,
+    mapQuickFilter,
     hideOutdated,
     timePeriod,
   ]);
@@ -293,7 +307,8 @@ const GetModsData = () => {
     () =>
       JSON.stringify({
         filterMode,
-        hideAudio,
+        audioQuickFilter,
+        mapQuickFilter,
         hideNSFW,
         hideOutdated,
         query,
@@ -303,7 +318,8 @@ const GetModsData = () => {
       }),
     [
       filterMode,
-      hideAudio,
+      audioQuickFilter,
+      mapQuickFilter,
       hideNSFW,
       hideOutdated,
       query,
@@ -374,8 +390,12 @@ const GetModsData = () => {
     (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
     [updateModsFilters],
   );
-  const handleHideAudioChange = useCallback(
-    (hideAudio: boolean) => updateModsFilters({ hideAudio }),
+  const handleAudioQuickFilterChange = useCallback(
+    (value: AudioQuickFilter) => updateModsFilters({ audioQuickFilter: value }),
+    [updateModsFilters],
+  );
+  const handleMapQuickFilterChange = useCallback(
+    (value: MapQuickFilter) => updateModsFilters({ mapQuickFilter: value }),
     [updateModsFilters],
   );
   const handleHideNSFWChange = useCallback(
@@ -402,7 +422,8 @@ const GetModsData = () => {
         onCategoriesChange={handleCategoriesChange}
         onFilterModeChange={handleFilterModeChange}
         onHeroesChange={handleHeroesChange}
-        onHideAudioChange={handleHideAudioChange}
+        onAudioQuickFilterChange={handleAudioQuickFilterChange}
+        onMapQuickFilterChange={handleMapQuickFilterChange}
         onHideNSFWChange={handleHideNSFWChange}
         onHideOutdatedChange={handleHideOutdatedChange}
         query={query}
@@ -410,7 +431,8 @@ const GetModsData = () => {
         selectedHeroes={selectedHeroes}
         setQuery={setQuery}
         setSortType={setSortType}
-        hideAudio={hideAudio}
+        audioQuickFilter={audioQuickFilter}
+        mapQuickFilter={mapQuickFilter}
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
@@ -426,7 +448,8 @@ const GetModsData = () => {
               {query.trim() ||
               selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
-              hideAudio ||
+              audioQuickFilter !== "off" ||
+              mapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
               timePeriod !== TimePeriod.ALL_TIME
@@ -435,7 +458,8 @@ const GetModsData = () => {
             </EmptyDescription>
             {(selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
-              hideAudio ||
+              audioQuickFilter !== "off" ||
+              mapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
               timePeriod !== TimePeriod.ALL_TIME) && (

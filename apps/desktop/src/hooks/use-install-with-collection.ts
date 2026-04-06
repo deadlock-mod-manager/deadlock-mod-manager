@@ -83,6 +83,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             modId: mod.remoteId,
             fileTree,
             profileFolder,
+            isMap: mod.isMap,
           });
         } catch (error: unknown) {
           logger
@@ -105,6 +106,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         deadlockMod: {
           id: modData.remoteId,
           name: modData.name,
+          is_map: modData.isMap,
           file_tree: modData.file_tree,
         },
         profileFolder,

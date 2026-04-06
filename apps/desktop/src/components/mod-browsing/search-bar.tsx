@@ -17,7 +17,11 @@ import {
   SortType,
   TimePeriod,
 } from "@/lib/constants";
-import type { FilterMode } from "@/lib/store/slices/ui";
+import type {
+  AudioQuickFilter,
+  FilterMode,
+  MapQuickFilter,
+} from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";
 
 type SearchBarProps = {
@@ -32,8 +36,10 @@ type SearchBarProps = {
   onHeroesChange: (heroes: string[]) => void;
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
-  hideAudio: boolean;
-  onHideAudioChange: (hideAudio: boolean) => void;
+  audioQuickFilter: AudioQuickFilter;
+  onAudioQuickFilterChange: (value: AudioQuickFilter) => void;
+  mapQuickFilter: MapQuickFilter;
+  onMapQuickFilterChange: (value: MapQuickFilter) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   timePeriod?: TimePeriod;
@@ -56,8 +62,10 @@ const SearchBar = ({
   onHeroesChange,
   hideNSFW,
   onHideNSFWChange,
-  hideAudio,
-  onHideAudioChange,
+  audioQuickFilter,
+  onAudioQuickFilterChange,
+  mapQuickFilter,
+  onMapQuickFilterChange,
   hideOutdated,
   onHideOutdatedChange,
   timePeriod,
@@ -91,7 +99,8 @@ const SearchBar = ({
     onCategoriesChange([]);
     onHeroesChange([]);
     onHideNSFWChange(false);
-    onHideAudioChange(false);
+    onAudioQuickFilterChange("off");
+    onMapQuickFilterChange("off");
     onHideOutdatedChange(false);
     onTimePeriodChange?.(TimePeriod.ALL_TIME);
     onFilterModeChange("include");
@@ -101,7 +110,8 @@ const SearchBar = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
-    hideAudio ||
+    audioQuickFilter !== "off" ||
+    mapQuickFilter !== "off" ||
     hideOutdated ||
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
@@ -122,12 +132,14 @@ const SearchBar = ({
             onCategoriesChange={onCategoriesChange}
             onFilterModeChange={onFilterModeChange}
             onHeroesChange={onHeroesChange}
-            onHideAudioChange={onHideAudioChange}
+            onAudioQuickFilterChange={onAudioQuickFilterChange}
+            onMapQuickFilterChange={onMapQuickFilterChange}
             onHideNSFWChange={onHideNSFWChange}
             onHideOutdatedChange={onHideOutdatedChange}
             selectedCategories={selectedCategories}
             selectedHeroes={selectedHeroes}
-            hideAudio={hideAudio}
+            audioQuickFilter={audioQuickFilter}
+            mapQuickFilter={mapQuickFilter}
             hideNSFW={hideNSFW}
             hideOutdated={hideOutdated}
           />
@@ -239,12 +251,28 @@ const SearchBar = ({
           )}
 
           {/* Audio filter badge */}
-          {hideAudio && (
+          {audioQuickFilter !== "off" && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {t("filters.hideAudio")}
+              {audioQuickFilter === "only"
+                ? t("filters.audioModsOnly")
+                : t("filters.excludeAudioMods")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onHideAudioChange(false)}
+                onClick={() => onAudioQuickFilterChange("off")}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
+
+          {mapQuickFilter !== "off" && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {mapQuickFilter === "only"
+                ? t("filters.mapsModsOnly")
+                : t("filters.excludeMapsMods")}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onMapQuickFilterChange("off")}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>

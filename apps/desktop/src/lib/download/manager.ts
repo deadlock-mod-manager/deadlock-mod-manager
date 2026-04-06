@@ -226,6 +226,7 @@ class DownloadManager {
       modId: mod.remoteId,
       files,
       profileFolder,
+      isMap: mod.isMap,
     });
   }
 
