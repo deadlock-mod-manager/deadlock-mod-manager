@@ -23,6 +23,7 @@ export enum SortType {
 }
 
 export enum ModCategory {
+  MAPS = "Maps",
   SKINS = "Skins",
   GAMEPLAY_MODIFICATIONS = "Gameplay Modifications",
   HUD = "HUD",
@@ -37,6 +38,7 @@ export enum ModCategory {
 }
 
 export const MOD_CATEGORY_ORDER = [
+  ModCategory.MAPS,
   ModCategory.SKINS,
   ModCategory.GAMEPLAY_MODIFICATIONS,
   ModCategory.HUD,
@@ -52,6 +54,8 @@ export const MOD_CATEGORY_ORDER = [
 
 export function getModCategoryDisplayName(category: string): string {
   switch (category) {
+    case ModCategory.MAPS:
+      return "Maps";
     case ModCategory.GAMEPLAY_MODIFICATIONS:
       return "Gameplay";
     case ModCategory.MODEL_REPLACEMENT:

@@ -30,6 +30,7 @@ export const mods = pgTable(
     images: text("images").array().notNull(),
     hero: text("hero"),
     isAudio: boolean("is_audio").notNull().default(false),
+    isMap: boolean("is_map").notNull().default(false),
     audioUrl: text("audio_url"),
     downloadCount: integer("download_count").notNull().default(0),
     isNSFW: boolean("is_nsfw").notNull().default(false),

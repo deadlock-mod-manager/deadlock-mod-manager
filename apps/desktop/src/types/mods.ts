@@ -114,6 +114,7 @@ export interface ProfileImportMod {
   }>;
   fileTree?: ModFileTree;
   installedVpks?: string[];
+  isMap?: boolean;
 }
 
 export interface ProfileImportProgressEvent {
