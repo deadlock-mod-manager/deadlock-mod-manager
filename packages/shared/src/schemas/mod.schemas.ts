@@ -21,6 +21,7 @@ export const ModDtoSchema = z.object({
   images: z.array(z.string()),
   hero: z.string().nullable(),
   isAudio: z.boolean(),
+  isMap: z.boolean().default(false),
   audioUrl: z.string().nullable(),
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),

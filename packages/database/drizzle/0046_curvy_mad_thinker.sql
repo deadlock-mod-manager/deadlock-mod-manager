@@ -1,0 +1,1 @@
+ALTER TABLE "mod" ADD COLUMN "is_map" boolean DEFAULT false NOT NULL;
