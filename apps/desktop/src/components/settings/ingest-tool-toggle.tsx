@@ -36,7 +36,9 @@ export const IngestToolToggle = () => {
     <div className='flex items-center justify-between'>
       <div className='flex items-center gap-3'>
         <div className='space-y-1'>
-          <p>{t("settings.ingestTool.title")}</p>
+          <Label className='font-bold text-sm'>
+            {t("settings.ingestTool.title")}
+          </Label>
           <p className='text-sm text-muted-foreground'>
             {t("settings.ingestTool.description")}
           </p>
