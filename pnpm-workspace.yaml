@@ -11,6 +11,6 @@ catalog:
   cache-manager: ^7.2.8
   cacheable: ^2.3.4
   keyv: ^5.6.0
-  typescript: ^5.9.3
+  typescript: ^6.0.0
   zod: 4.1.9
   better-auth: ^1.5.6

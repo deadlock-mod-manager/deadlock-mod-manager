@@ -78,10 +78,10 @@ const getPreviousTag = (currentVersion: string): string | null => {
       .split("\n")
       .filter((tag) => tag.trim().length > 0);
 
-    const currentTagVariants = [`v${currentVersion}`, currentVersion];
+    const currentTagVariants = new Set([`v${currentVersion}`, currentVersion]);
 
     for (const tag of tags) {
-      if (!currentTagVariants.includes(tag)) {
+      if (!currentTagVariants.has(tag)) {
         return tag;
       }
     }

@@ -363,9 +363,9 @@ function getRecentCommits(): string[] {
  * Main function
  */
 function main(): void {
-  const args = process.argv.slice(2);
-  const generateWhatsNew = args.includes("--generate-whats-new");
-  const dryRun = args.includes("--dry-run");
+  const args = new Set(process.argv.slice(2));
+  const generateWhatsNew = args.has("--generate-whats-new");
+  const dryRun = args.has("--dry-run");
 
   console.log("=== Version Bump Script ===\n");
 

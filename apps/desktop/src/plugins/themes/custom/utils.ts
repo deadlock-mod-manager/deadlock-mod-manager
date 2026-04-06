@@ -34,7 +34,7 @@ export const deleteUserTheme = (id: string) => {
   const setSettings = usePersistedStore.getState().setPluginSettings;
   const list = Array.isArray(settings?.userThemes) ? settings!.userThemes : [];
   const next = list.filter((t) => t.id !== id);
-  setSettings("themes", { ...(settings ?? {}), userThemes: next });
+  setSettings("themes", { ...settings, userThemes: next });
 };
 
 export const beginEditingUserTheme = (id: string) => {

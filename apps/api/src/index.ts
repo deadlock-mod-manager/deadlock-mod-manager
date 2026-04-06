@@ -142,7 +142,7 @@ const main = async () => {
   });
 
   process.on("SIGTERM", async () => {
-    await Promise.all([cronService.shutdown()]);
+    await cronService.shutdown();
   });
 
   logger.withMetadata({ port: env.PORT }).info("Server started");

@@ -26,7 +26,7 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.OTHER_MISC,
 ] as const;
 
-export const MOD_CATEGORY_VALUE_SET = new Set<string>([...MOD_CATEGORY_ORDER]);
+export const MOD_CATEGORY_VALUE_SET = new Set<string>(MOD_CATEGORY_ORDER);
 
 export function getModCategoryDisplayName(category: string): string {
   switch (category) {

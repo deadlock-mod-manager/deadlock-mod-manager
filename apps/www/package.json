@@ -72,7 +72,7 @@
     "tailwindcss": "^4.2.2",
     "tanstack-start-sitemap": "^0.0.5",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-sitemap": "^0.8.2",
     "vite-tsconfig-paths": "^5.1.4",

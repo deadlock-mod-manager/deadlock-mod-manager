@@ -519,7 +519,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             });
 
             user = await ctx.context.internalAdapter.createUser({
-              ...(userDetails || {}),
+              ...userDetails,
               name: userDetails?.name || profile.personaname || "Unknown",
               email: userDetails?.email || email,
               emailVerified: userDetails?.emailVerified || false,

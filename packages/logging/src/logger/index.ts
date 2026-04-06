@@ -33,7 +33,7 @@ const createLogger = <C extends Record<string, unknown>>(
     onBeforeDataOut(params: { data?: Record<string, any> | undefined }) {
       const store = context?.storage.getStore();
       return {
-        ...(params?.data ?? {}),
+        ...params?.data,
         ...store,
       };
     },

@@ -17,7 +17,7 @@ export const createWideEvent = (
   const startTime = Date.now();
   const event: Record<string, unknown> = {
     operation,
-    ...(initialContext ?? {}),
+    ...initialContext,
   };
   let emitted = false;
 

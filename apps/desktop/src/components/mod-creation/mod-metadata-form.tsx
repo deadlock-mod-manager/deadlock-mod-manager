@@ -68,17 +68,17 @@ const sanitizePreviewUrl = (url: string | undefined): string | undefined => {
   return SAFE_PREVIEW_REGEX.test(url.trim()) ? url : undefined;
 };
 
-const ALLOWED_IMAGE_TYPES = [
+const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/svg+xml",
-];
+]);
 
 const isAllowedImageFile = (file: File): boolean =>
-  ALLOWED_IMAGE_TYPES.includes(file.type) ||
+  ALLOWED_IMAGE_TYPES.has(file.type) ||
   IMAGE_FILE_EXTENSION_REGEX.test(file.name);
 
 const buildSchema = (invalidUrlMsg: string) =>

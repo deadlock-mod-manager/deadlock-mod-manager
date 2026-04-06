@@ -2,7 +2,11 @@
   "extends": "@deadlock-mods/typescript-config/base.json",
   "compilerOptions": {
     "allowImportingTsExtensions": false,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "strict": true,
     "noEmit": false,
     "experimentalDecorators": true,
@@ -12,13 +16,15 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "composite": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
       ]
     },
-    "types": ["bun"]
+    "types": [
+      "vite/client",
+      "bun"
+    ]
   },
   "include": [
     "src/**/*.ts",
