@@ -1,9 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@deadlock-mods/ui/components/alert";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -13,88 +9,67 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@deadlock-mods/ui/components/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deadlock-mods/ui/components/select";
+import { Separator } from "@deadlock-mods/ui/components/separator";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Textarea } from "@deadlock-mods/ui/components/textarea";
-import { AlertTriangle, ExternalLink, Flag } from "@deadlock-mods/ui/icons";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Flag,
+  RefreshCw,
+} from "@deadlock-mods/ui/icons";
 import { openUrl as openExternal } from "@tauri-apps/plugin-opener";
+import { format } from "date-fns";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
 import { useCreateReport } from "@/hooks/use-create-report";
 import { useHardwareId } from "@/hooks/use-hardware-id";
+import type { LocalMod } from "@/types/mods";
+import { ModStatus } from "@/types/mods";
 
-const reportFormSchema = z.object({
-  type: z.enum(["broken", "outdated", "malicious", "inappropriate", "other"]),
-  reason: z
-    .string()
-    .min(5, "Reason must be at least 5 characters")
-    .max(500, "Reason must be less than 500 characters"),
-  description: z
-    .string()
-    .max(2000, "Description must be less than 2000 characters")
-    .optional(),
-});
-
-type ReportFormData = z.infer<typeof reportFormSchema>;
-
-interface ReportDialogProps {
-  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId">;
+interface BrokenModDialogProps {
+  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId" | "remoteUpdatedAt">;
+  localMod: LocalMod | undefined;
+  hasUpdate: boolean;
+  onTriggerUpdate: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const ReportDialog = ({
+type DialogStep = "gate" | "confirm" | "submitted";
+
+export const BrokenModDialog = ({
   mod,
+  localMod,
+  hasUpdate,
+  onTriggerUpdate,
   open,
   onOpenChange,
-}: ReportDialogProps) => {
+}: BrokenModDialogProps) => {
   const { t } = useTranslation();
   const { hardwareId } = useHardwareId();
   const { mutate: createReport, isPending } = useCreateReport();
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [step, setStep] = useState<DialogStep>("gate");
 
-  const form = useForm<ReportFormData>({
-    resolver: zodResolver(reportFormSchema),
-    defaultValues: {
-      type: "broken",
-      reason: "",
-      description: "",
-    },
-  });
+  const isInstalled = localMod?.status === ModStatus.Installed;
 
-  const onSubmit = (data: ReportFormData) => {
+  const handleClose = () => {
+    if (isPending) return;
+    setStep("gate");
+    onOpenChange(false);
+  };
+
+  const handleSubmitBroken = () => {
     createReport(
       {
         modId: mod.id,
-        type: data.type,
-        reason: data.reason,
-        description: data.description || undefined,
         reporterHardwareId: hardwareId || undefined,
       },
       {
         onSuccess: (response) => {
           if (response.status === "success") {
-            setIsSubmitted(true);
+            setStep("submitted");
             toast.success(t("reports.reportSubmitted"));
-            form.reset();
           } else {
             toast.error(response.error || t("reports.reportFailed"));
           }
@@ -104,14 +79,6 @@ export const ReportDialog = ({
         },
       },
     );
-  };
-
-  const handleClose = () => {
-    if (!isPending) {
-      setIsSubmitted(false);
-      form.reset();
-      onOpenChange(false);
-    }
   };
 
   const handleOpenGameBananaIssues = async () => {
@@ -124,158 +91,174 @@ export const ReportDialog = ({
     }
   };
 
-  const reportTypes = [
-    { value: "broken", label: t("reports.types.broken") },
-    { value: "outdated", label: t("reports.types.outdated") },
-    { value: "malicious", label: t("reports.types.malicious") },
-    { value: "inappropriate", label: t("reports.types.inappropriate") },
-    { value: "other", label: t("reports.types.other") },
-  ];
+  const handleUpdate = () => {
+    onTriggerUpdate();
+    handleClose();
+  };
 
-  if (isSubmitted) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className='sm:max-w-md'>
+  const renderContent = () => {
+    if (step === "submitted") {
+      return (
+        <>
           <DialogHeader>
-            <DialogTitle>{t("reports.thankYou")}</DialogTitle>
+            <div className='flex items-center gap-2'>
+              <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15'>
+                <CheckCircle2 className='h-4 w-4 text-emerald-500' />
+              </div>
+              <DialogTitle>{t("reports.thankYou")}</DialogTitle>
+            </div>
             <DialogDescription>
-              {t("reports.submissionConfirmation")}
+              {t("reports.thankYouDescription")}
             </DialogDescription>
           </DialogHeader>
+
+          {mod.remoteId && (
+            <>
+              <Separator />
+              <div className='space-y-3'>
+                <p className='text-sm text-muted-foreground'>
+                  {t("reports.reportToDevs")}
+                </p>
+                <Button
+                  variant='outline'
+                  className='w-full justify-start'
+                  icon={<ExternalLink className='h-4 w-4' />}
+                  onClick={handleOpenGameBananaIssues}>
+                  {t("reports.openGameBananaIssues")}
+                </Button>
+              </div>
+            </>
+          )}
+
           <DialogFooter>
-            <Button onClick={handleClose}>{t("common.close")}</Button>
+            <Button onClick={handleClose} className='w-full'>
+              {t("common.close")}
+            </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+        </>
+      );
+    }
+
+    if (!isInstalled) {
+      return (
+        <>
+          <DialogHeader>
+            <div className='flex items-center gap-2'>
+              <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/15'>
+                <Flag className='h-4 w-4 text-destructive' />
+              </div>
+              <DialogTitle>{t("reports.isModBroken")}</DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <p className='text-sm text-muted-foreground'>
+            {t("reports.notInstalledYet")}
+          </p>
+
+          <DialogFooter>
+            <Button onClick={handleClose} variant='outline'>
+              {t("common.close")}
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+
+    if (hasUpdate) {
+      return (
+        <>
+          <DialogHeader>
+            <div className='flex items-center gap-2'>
+              <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-500/15'>
+                <AlertTriangle className='h-4 w-4 text-yellow-500' />
+              </div>
+              <DialogTitle>{t("reports.isModBroken")}</DialogTitle>
+            </div>
+            <DialogDescription>{t("reports.modOutdated")}</DialogDescription>
+          </DialogHeader>
+
+          <div className='rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4'>
+            <div className='flex items-start gap-3'>
+              <RefreshCw className='mt-0.5 h-4 w-4 shrink-0 text-yellow-500' />
+              <div className='space-y-1'>
+                <p className='text-sm font-medium'>
+                  {t("reports.updateAvailable")}
+                </p>
+                <p className='text-sm text-muted-foreground'>
+                  {t("reports.pleaseUpdate")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className='flex gap-2 sm:justify-between'>
+            <Button variant='ghost' onClick={handleClose}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleUpdate}
+              icon={<RefreshCw className='h-4 w-4' />}>
+              {t("reports.updateMod")}
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+
+    if (step === "gate") {
+      const lastUpdatedDate = new Date(mod.remoteUpdatedAt);
+      const formattedDate = format(lastUpdatedDate, "PPP");
+
+      return (
+        <>
+          <DialogHeader>
+            <div className='flex items-center gap-2'>
+              <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/15'>
+                <Flag className='h-4 w-4 text-destructive' />
+              </div>
+              <DialogTitle>{t("reports.isModBroken")}</DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between rounded-lg border bg-secondary/50 px-4 py-3'>
+              <span className='text-sm text-muted-foreground'>
+                {t("reports.lastUpdated")}
+              </span>
+              <Badge variant='outline' className='gap-1.5'>
+                <AlertTriangle className='h-3 w-3 text-yellow-500' />
+                {formattedDate}
+              </Badge>
+            </div>
+
+            <p className='text-sm text-muted-foreground'>
+              {t("reports.confirmBrokenDescription")}
+            </p>
+          </div>
+
+          <DialogFooter className='flex gap-2 sm:justify-between'>
+            <Button variant='ghost' onClick={handleClose}>
+              {t("reports.noItsWorking")}
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleSubmitBroken}
+              disabled={isPending}
+              isLoading={isPending}
+              icon={<Flag className='h-4 w-4' />}>
+              {t("reports.yesItsBroken")}
+            </Button>
+          </DialogFooter>
+        </>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className='max-h-[80vh] overflow-y-auto'>
-        <DialogHeader>
-          <DialogTitle>{t("reports.reportMod")}</DialogTitle>
-          <DialogDescription>
-            {t("reports.reportDescription", {
-              modName: mod.name,
-              author: mod.author,
-            })}
-          </DialogDescription>
-        </DialogHeader>
-
-        {mod.remoteId && (
-          <Alert variant='warning' className='mb-4'>
-            <AlertTriangle className='h-4 w-4' />
-            <div className='flex-1 space-y-2'>
-              <AlertTitle className='font-semibold leading-5'>
-                {t("reports.gameBananaDisclaimer")}
-              </AlertTitle>
-              <AlertDescription className='text-sm'>
-                {t("reports.gameBananaFallback")}
-              </AlertDescription>
-              <Button
-                type='button'
-                variant='secondary'
-                size='sm'
-                icon={<ExternalLink className='h-4 w-4' />}
-                onClick={handleOpenGameBananaIssues}
-                className='mt-2'>
-                {t("reports.openGameBananaIssues")}
-              </Button>
-            </div>
-          </Alert>
-        )}
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='type'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("reports.type")}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("reports.selectType")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {reportTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='reason'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("reports.reason")}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t("reports.reasonPlaceholder")}
-                      className='min-h-[80px]'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t("reports.reasonDescription")}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("reports.additionalDetails")} ({t("common.optional")})
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t("reports.detailsPlaceholder")}
-                      className='min-h-[100px]'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t("reports.detailsDescription")}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type='button' variant='outline' onClick={handleClose}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type='submit'
-                disabled={isPending}
-                isLoading={isPending}
-                icon={<Flag className='h-4 w-4' />}>
-                {isPending
-                  ? t("reports.submitting")
-                  : t("reports.submitReport")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+      <DialogContent className='sm:max-w-md'>{renderContent()}</DialogContent>
     </Dialog>
   );
 };

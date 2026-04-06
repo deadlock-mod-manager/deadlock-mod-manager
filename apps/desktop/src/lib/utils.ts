@@ -8,7 +8,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 
-import type { LocalMod } from "@/types/mods";
+import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import {
   STALE_MOD_DAYS,
@@ -134,15 +134,14 @@ export const isModStale = (
   reportThreshold = STALE_MOD_REPORT_THRESHOLD,
   staleDays = STALE_MOD_DAYS,
 ): StaleModResult | null => {
-  const openReportCount = reportCounts.verified + reportCounts.unverified;
-  if (openReportCount < reportThreshold) return null;
+  if (reportCounts.total < reportThreshold) return null;
 
   const lastUpdatedAt = new Date(mod.remoteUpdatedAt);
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - staleDays);
   if (lastUpdatedAt >= cutoff) return null;
 
-  return { isStale: true, openReportCount, lastUpdatedAt };
+  return { isStale: true, openReportCount: reportCounts.total, lastUpdatedAt };
 };
 
 export const isUpdatedRecently = (mod: ModDto): boolean => {
@@ -159,6 +158,7 @@ export const isUpdateAvailable = (
   localMod: LocalMod | null | undefined,
 ): boolean => {
   if (!localMod || !mod.filesUpdatedAt) return false;
+  if (localMod.status !== ModStatus.Installed) return false;
   const installedAt =
     localMod.downloadedAt ??
     localMod.selectedDownloads?.[0]?.createdAt ??

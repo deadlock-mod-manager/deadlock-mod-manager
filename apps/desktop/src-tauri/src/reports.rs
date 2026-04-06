@@ -6,10 +6,6 @@ use serde::{Deserialize, Serialize};
 pub struct CreateReportRequest {
   #[serde(rename = "modId")]
   pub mod_id: String,
-  #[serde(rename = "type")]
-  pub report_type: String,
-  pub reason: String,
-  pub description: Option<String>,
   #[serde(rename = "reporterHardwareId")]
   pub reporter_hardware_id: Option<String>,
 }
@@ -22,21 +18,8 @@ pub struct CreateReportResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReportTypeCounts {
-  pub total: u32,
-  pub verified: u32,
-  pub unverified: u32,
-  pub dismissed: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReportCounts {
   pub total: u32,
-  pub verified: u32,
-  pub unverified: u32,
-  pub dismissed: u32,
-  #[serde(rename = "byType")]
-  pub by_type: Option<std::collections::HashMap<String, ReportTypeCounts>>,
 }
 
 pub struct ReportService {
@@ -58,14 +41,8 @@ impl ReportService {
   ) -> Result<CreateReportResponse, Error> {
     let mut request_body = serde_json::json!({
       "modId": data.mod_id,
-      "type": data.report_type,
-      "reason": data.reason
     });
 
-    // Only include optional fields if they have values
-    if let Some(description) = data.description {
-      request_body["description"] = serde_json::Value::String(description);
-    }
     if let Some(reporter_hardware_id) = data.reporter_hardware_id {
       request_body["reporterHardwareId"] = serde_json::Value::String(reporter_hardware_id);
     }

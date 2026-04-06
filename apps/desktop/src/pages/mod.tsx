@@ -22,8 +22,7 @@ import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-war
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
-import { ReportButton } from "@/components/reports/report-button";
-import { ReportCounter } from "@/components/reports/report-counter";
+import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
@@ -240,7 +239,12 @@ const Mod = () => {
               </div>
 
               <div className='flex items-center gap-2'>
-                <ReportButton mod={mod} />
+                <BrokenModButton
+                  mod={mod}
+                  localMod={localMod}
+                  hasUpdate={hasUpdate}
+                  onTriggerUpdate={() => setUpdateDialogOpen(true)}
+                />
                 <ModButton remoteMod={mod} variant='default' />
                 {hasUpdate && (
                   <Button
@@ -279,8 +283,6 @@ const Mod = () => {
               isInstalled={isInstalled}
             />
           )}
-
-          {!mod.isMap && <ReportCounter modId={mod.id} variant='default' />}
 
           {mod.description && <ModDescription description={mod.description} />}
 

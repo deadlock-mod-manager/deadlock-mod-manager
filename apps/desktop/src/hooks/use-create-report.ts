@@ -19,14 +19,8 @@ export const useCreateReport = () => {
     },
     onSuccess: (response, variables) => {
       if (response.status === "success") {
-        // Invalidate report counts for the mod
         queryClient.invalidateQueries({
           queryKey: ["reportCounts", variables.modId],
-        });
-
-        // Invalidate recent reports
-        queryClient.invalidateQueries({
-          queryKey: ["recentReports"],
         });
       }
     },
