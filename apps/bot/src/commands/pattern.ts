@@ -1,11 +1,7 @@
 import { db, MessagePatternRepository } from "@deadlock-mods/database";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { Command } from "@sapphire/framework";
-import {
-  type GuildMember,
-  MessageFlags,
-  PermissionFlagsBits,
-} from "discord.js";
+import { type GuildMember, MessageFlags } from "discord.js";
 import { logger as mainLogger } from "../lib/logger";
 import {
   getBlacklistRequiredPermissionsDisplay,
@@ -35,8 +31,7 @@ export class PatternCommand extends Command {
     registry.registerChatInputCommand((builder) =>
       builder
         .setName("pattern")
-        .setDescription("Manage message triage patterns (Administrator only)")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDescription("Manage message triage patterns")
         .addSubcommand((subcommand) =>
           subcommand
             .setName("add")

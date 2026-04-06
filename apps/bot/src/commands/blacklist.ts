@@ -1,7 +1,7 @@
 import { ValidationError } from "@deadlock-mods/common";
 import { db, ModRepository } from "@deadlock-mods/database";
 import { Command } from "@sapphire/framework";
-import { type GuildMember, PermissionFlagsBits } from "discord.js";
+import { type GuildMember } from "discord.js";
 import { logger as mainLogger } from "../lib/logger";
 import {
   getBlacklistRequiredPermissionsDisplay,
@@ -23,8 +23,7 @@ export class BlacklistCommand extends Command {
     registry.registerChatInputCommand((builder) =>
       builder
         .setName("blacklist")
-        .setDescription("Manage mod blacklist (Administrator only)")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDescription("Manage mod blacklist")
         .addSubcommand((subcommand) =>
           subcommand
             .setName("add")
