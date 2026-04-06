@@ -2,23 +2,16 @@ import type winston from "winston";
 import { format } from "winston";
 
 const formatMeta = (meta: Record<string | symbol, unknown | unknown[]>) => {
-  // Filter out numeric keys and known Winston symbols
-  const cleanMeta = Object.entries(meta).reduce(
+  // Exclude Winston splat numeric indices (0, 1, ...) from metadata; keep named fields
+  return Object.entries(meta).reduce(
     (acc, [key, value]) => {
-      if (!Number.isNaN(Number(key)) && typeof key !== "symbol") {
+      if (Number.isNaN(Number(key)) && typeof key !== "symbol") {
         acc[key] = value;
       }
       return acc;
     },
     {} as Record<string, unknown>,
   );
-
-  const splat = meta[Symbol.for("splat")];
-
-  if (splat && Array.isArray(splat)) {
-    return cleanMeta;
-  }
-  return cleanMeta;
 };
 
 const customFormat = format.printf((info) => {
