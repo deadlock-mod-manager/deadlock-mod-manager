@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
-import type { ModDownload } from "@deadlock-mods/database";
-import { toModDownloadDto } from "@deadlock-mods/shared";
+import type { ModDownload, ModOverrides } from "@deadlock-mods/database";
+import {
+  modDownloadOverridesToDto,
+  toModDownloadDto,
+} from "@deadlock-mods/shared";
 import { env } from "./env";
 
 export const generateHash = (data: string) => {
@@ -11,7 +14,12 @@ export const formatModDownloads = (
   downloads: ModDownload[],
   modId: string,
   mirroringEnabled: boolean,
+  overrides: ModOverrides | null | undefined,
 ) => {
+  if (overrides?.downloads !== undefined) {
+    return modDownloadOverridesToDto(overrides.downloads);
+  }
+
   return toModDownloadDto(
     downloads
       .sort((a, b) => b.size - a.size)

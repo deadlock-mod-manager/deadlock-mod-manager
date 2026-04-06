@@ -67,17 +67,21 @@ export const modsRouter = {
       }
 
       const downloads = await modDownloadRepository.findByModId(mod.id);
-      if (downloads.length === 0) {
+      const hasDownloadOverride = mod.overrides?.downloads !== undefined;
+      if (downloads.length === 0 && !hasDownloadOverride) {
         throw new ORPCError("NOT_FOUND");
       }
 
+      const formattedDownloads = formatModDownloads(
+        downloads,
+        mod.id,
+        isModDownloadMirroringEnabled.unwrapOr(false),
+        mod.overrides,
+      );
+
       return {
-        downloads: formatModDownloads(
-          downloads,
-          mod.id,
-          isModDownloadMirroringEnabled.unwrapOr(false),
-        ),
-        count: downloads.length,
+        downloads: formattedDownloads,
+        count: formattedDownloads.length,
       };
     }),
 
@@ -99,7 +103,8 @@ export const modsRouter = {
       }
 
       const downloads = await modDownloadRepository.findByModId(mod.id);
-      if (downloads.length === 0) {
+      const hasDownloadOverride = mod.overrides?.downloads !== undefined;
+      if (downloads.length === 0 && !hasDownloadOverride) {
         throw new ORPCError("NOT_FOUND");
       }
 
@@ -107,6 +112,7 @@ export const modsRouter = {
         downloads,
         mod.id,
         isModDownloadMirroringEnabled.unwrapOr(false),
+        mod.overrides,
       );
     }),
 
@@ -150,6 +156,7 @@ export const modsRouter = {
           downloadsByModId.get(mod.id) ?? [],
           mod.id,
           isModDownloadMirroringEnabled.unwrapOr(false),
+          mod.overrides,
         ),
       }));
 
