@@ -46,10 +46,12 @@ export const reportsRouter = {
           });
         }
 
-        if (REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
+        if (mod.isMap || REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
           wide?.merge({
             remoteId: mod.remoteId,
-            outcomeReason: "reports_disabled",
+            outcomeReason: mod.isMap
+              ? "reports_disabled_for_maps"
+              : "reports_disabled",
           });
           return {
             id: "",

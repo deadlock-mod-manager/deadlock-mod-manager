@@ -7,14 +7,14 @@ import { useTranslation } from "react-i18next";
 import { ReportDialog } from "./report-dialog";
 
 interface ReportButtonProps {
-  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId">;
+  mod: Pick<ModDto, "id" | "name" | "author" | "remoteId" | "isMap">;
 }
 
 export const ReportButton = ({ mod }: ReportButtonProps) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  if (REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
+  if (mod.isMap || REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
     return null;
   }
 
