@@ -252,7 +252,7 @@ jobs:
         run: |
           mkdir -p artifact-output
           exeFile=$(ls ./signed-output/*.exe)
-          pnpm tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
+          pnpm --filter @deadlock-mods/desktop tauri signer sign -k "${{ secrets.TAURI_PRIVATE_KEY }}" "$exeFile"
           mv ./signed-output/*.exe ./artifact-output/
           mv ./signed-output/*.exe.sig ./artifact-output/
 
