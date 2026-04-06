@@ -1355,7 +1355,17 @@
     "modsProcessed": "Mods processed"
   },
   "modDetail": {
-    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension).",
+    "mapHowToPlay": {
+      "title": "How to Play This Map",
+      "step1": "Enable the Developer Console in Deadlock settings.",
+      "step2": "Press F7 to open the console.",
+      "step3Command": "Type the following command:",
+      "step4Glitch": "If you notice any visual glitches, try disconnecting and running {{mapCommand}} again to fix it.",
+      "step5Status": "Type \"status\" in the console and copy your SteamID — the part in square brackets (e.g. [1234567890]), including the brackets.",
+      "step6Share": "Share your SteamID like \"status [your_steamid]\" so others can connect to your custom map server. Enjoy!",
+      "copied": "Copied!",
+      "mapNameFallback": "Check the mod description for the map name to use with this command."
+    },
     "openMapInExplorer": "Open Map in Explorer",
     "backToMods": "Back to Mods",
     "goBackHome": "Go back home",

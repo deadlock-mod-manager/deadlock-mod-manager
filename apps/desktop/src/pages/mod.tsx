@@ -23,6 +23,7 @@ import { ModFiles } from "@/components/mod-detail/mod-files";
 import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
+import { MapHowToPlay } from "@/components/mod-detail/map-how-to-play";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
@@ -97,8 +98,7 @@ const Mod = () => {
     onSuccess: () => {
       toast.success(t("contextMenu.openedModInGame"));
     },
-    onError: (error) => {
-      console.error("Failed to open map in explorer:", error);
+    onError: () => {
       toast.error(t("contextMenu.failedToOpenGameFolder"));
     },
   });
@@ -241,12 +241,6 @@ const Mod = () => {
             </div>
           )}
 
-          {mod.isMap && (
-            <div className='mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm'>
-              {t("modDetail.mapConsoleHint")}
-            </div>
-          )}
-
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
@@ -314,6 +308,7 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
+          {mod.isMap && <MapHowToPlay mapName={mod.metadata?.mapName} />}
 
           <ReportCounter modId={mod.id} variant='default' />
 

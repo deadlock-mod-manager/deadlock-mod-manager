@@ -667,7 +667,17 @@
       "error": "",
       "countMismatch": ""
     },
-    "mapConsoleHint": "",
+    "mapHowToPlay": {
+      "title": "",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "copied": "",
+      "mapNameFallback": ""
+    },
     "openMapInExplorer": ""
   }
 }
