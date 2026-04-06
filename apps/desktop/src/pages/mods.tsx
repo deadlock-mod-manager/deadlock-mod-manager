@@ -12,8 +12,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
+import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -572,10 +573,21 @@ export const GetMaps = () => {
   return (
     <div className='w-full px-4'>
       <PageTitle
-        className='mb-8'
+        className='mb-4'
         subtitle={t("mods.mapsSubtitle")}
         title={t("navigation.maps")}
       />
+      <Alert
+        className='mb-6 gap-3.5 rounded-xl border-amber-200/80 bg-amber-50/90 py-4 pl-4 pr-5 shadow-sm ring-1 ring-inset ring-amber-200/60 items-start dark:border-amber-500/35 dark:bg-amber-950/50 dark:ring-amber-500/10'
+        variant='warning'>
+        <Warning
+          className='mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400'
+          weight='duotone'
+        />
+        <AlertDescription className='min-w-0 text-sm leading-relaxed text-foreground/90'>
+          {t("mods.mapsWarning")}
+        </AlertDescription>
+      </Alert>
       <Suspense fallback={<ModsPageSkeleton />}>
         <ErrorBoundary>
           <GetModsData mapsOnly />
