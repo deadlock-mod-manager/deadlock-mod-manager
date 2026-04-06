@@ -2,9 +2,16 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { ArrowLeft, RefreshCw, Trash } from "@deadlock-mods/ui/icons";
+import {
+  ArrowLeft,
+  FolderOpen,
+  RefreshCw,
+  Trash,
+} from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useMutation } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
@@ -70,7 +77,31 @@ const Mod = () => {
 
   const localMods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+
+  const openMapInExplorerMutation = useMutation({
+    mutationFn: async () => {
+      const vpks = localMod?.installedVpks ?? [];
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+      await invoke("show_mod_in_game", {
+        vpkFiles: vpks,
+        profileFolder,
+        isMap: true,
+      });
+    },
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+    onSuccess: () => {
+      toast.success(t("contextMenu.openedModInGame"));
+    },
+    onError: (error) => {
+      console.error("Failed to open map in explorer:", error);
+      toast.error(t("contextMenu.failedToOpenGameFolder"));
+    },
+  });
 
   const { updatableMods } = useCheckUpdates();
   const hasUpdate = updatableMods.some(
@@ -210,6 +241,12 @@ const Mod = () => {
             </div>
           )}
 
+          {mod.isMap && (
+            <div className='mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm'>
+              {t("modDetail.mapConsoleHint")}
+            </div>
+          )}
+
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
@@ -252,6 +289,18 @@ const Mod = () => {
                     {t("modDetail.forceUpdate")}
                   </Button>
                 )}
+                {mod.isMap &&
+                  localMod?.installedVpks &&
+                  localMod.installedVpks.length > 0 && (
+                    <Button
+                      icon={<FolderOpen className='h-4 w-4' />}
+                      isLoading={openMapInExplorerMutation.isPending}
+                      onClick={() => openMapInExplorerMutation.mutate()}
+                      size='lg'
+                      variant='outline'>
+                      {t("modDetail.openMapInExplorer")}
+                    </Button>
+                  )}
                 {!!localMod?.status && (
                   <Button
                     icon={<Trash className='h-4 w-4' />}

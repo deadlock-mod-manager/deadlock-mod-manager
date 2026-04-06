@@ -312,6 +312,7 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
 pub async fn show_mod_in_game(
   vpk_files: Vec<String>,
   profile_folder: Option<String>,
+  _is_map: bool,
 ) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
@@ -319,7 +320,7 @@ pub async fn show_mod_in_game(
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let addons_path = if let Some(ref folder) = profile_folder {
+  let target_path = if let Some(ref folder) = profile_folder {
     game_path
       .join("game")
       .join("citadel")
@@ -329,19 +330,19 @@ pub async fn show_mod_in_game(
     game_path.join("game").join("citadel").join("addons")
   };
 
-  if !addons_path.exists() {
+  if !target_path.exists() {
     return Err(Error::GamePathNotSet);
   }
 
   if let Some(first_vpk) = vpk_files.first() {
-    let vpk_path = addons_path.join(first_vpk);
+    let vpk_path = target_path.join(first_vpk);
     if vpk_path.exists() {
       crate::utils::show_file_in_folder(vpk_path.to_string_lossy().as_ref())
     } else {
-      crate::utils::show_in_folder(addons_path.to_string_lossy().as_ref())
+      crate::utils::show_in_folder(target_path.to_string_lossy().as_ref())
     }
   } else {
-    crate::utils::show_in_folder(addons_path.to_string_lossy().as_ref())
+    crate::utils::show_in_folder(target_path.to_string_lossy().as_ref())
   }
 }
 
@@ -862,6 +863,7 @@ pub async fn queue_download(
   mod_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
+  _is_map: bool,
 ) -> Result<(), Error> {
   log::info!(
     "Received download request for mod: {mod_id} with {} files (profile: {profile_folder:?})",
@@ -914,6 +916,7 @@ pub async fn copy_selected_vpks_from_archive(
   mod_id: String,
   file_tree: crate::mod_manager::file_tree::ModFileTree,
   profile_folder: Option<String>,
+  _is_map: bool,
 ) -> Result<(), Error> {
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
   use crate::mod_manager::vpk_manager::VpkManager;
@@ -961,7 +964,7 @@ pub async fn copy_selected_vpks_from_archive(
     .ok_or(Error::GamePathNotSet)?
     .clone();
 
-  let addons_path = if let Some(ref folder) = profile_folder {
+  let destination_path = if let Some(ref folder) = profile_folder {
     game_path
       .join("game")
       .join("citadel")
@@ -971,14 +974,19 @@ pub async fn copy_selected_vpks_from_archive(
     game_path.join("game").join("citadel").join("addons")
   };
 
-  if !addons_path.exists() {
-    std::fs::create_dir_all(&addons_path)?;
+  if !destination_path.exists() {
+    std::fs::create_dir_all(&destination_path)?;
   }
 
   drop(mod_manager); // Release lock before file operations
 
   let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(&extracted_dir, &addons_path, &mod_id, &file_tree)?;
+  vpk_manager.copy_selected_vpks_with_prefix(
+    &extracted_dir,
+    &destination_path,
+    &mod_id,
+    &file_tree,
+  )?;
 
   // Clean up extracted directory after copying
   log::info!("Removing extracted directory: {extracted_dir:?}");
@@ -1003,6 +1011,7 @@ pub async fn copy_selected_vpks_from_archive(
 pub async fn copy_local_mod_vpks(
   mod_id: String,
   profile_folder: Option<String>,
+  _is_map: bool,
 ) -> Result<Vec<String>, Error> {
   use crate::mod_manager::vpk_manager::VpkManager;
 
@@ -1026,7 +1035,7 @@ pub async fn copy_local_mod_vpks(
     .ok_or(Error::GamePathNotSet)?
     .clone();
 
-  let addons_path = if let Some(ref folder) = profile_folder {
+  let destination_path = if let Some(ref folder) = profile_folder {
     game_path
       .join("game")
       .join("citadel")
@@ -1036,14 +1045,14 @@ pub async fn copy_local_mod_vpks(
     game_path.join("game").join("citadel").join("addons")
   };
 
-  if !addons_path.exists() {
-    std::fs::create_dir_all(&addons_path)?;
+  if !destination_path.exists() {
+    std::fs::create_dir_all(&destination_path)?;
   }
 
   drop(mod_manager);
 
   let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &addons_path, &mod_id)?;
+  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id)?;
 
   if prefixed_vpks.is_empty() {
     log::warn!("No VPK files found in mod files directory: {files_dir:?}");
@@ -1527,6 +1536,8 @@ pub struct ProfileImportMod {
   pub download_files: Vec<DownloadFileDto>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
+  #[serde(default)]
+  pub is_map: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1678,12 +1689,15 @@ pub async fn import_profile_batch(
     }
 
     if download_complete && download_error.is_none() {
-      let addons_path = MANAGER
+      let game_path = MANAGER
         .lock()
         .unwrap()
         .get_steam_manager()
         .get_game_path()
         .ok_or(Error::GamePathNotSet)?
+        .clone();
+
+      let verify_path = game_path
         .join("game")
         .join("citadel")
         .join("addons")
@@ -1695,7 +1709,7 @@ pub async fn import_profile_batch(
       let mut retry_delay_ms = 100; // Start with 100ms delay
 
       for attempt in 0..max_retries {
-        match vpk_manager.find_prefixed_vpks(&addons_path, &mod_data.mod_id) {
+        match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
           Ok(vpks) if !vpks.is_empty() => {
             log::info!(
               "Download completed for mod: {} (found {} VPKs after {} attempts)",
@@ -1781,6 +1795,7 @@ pub async fn import_profile_batch(
       let deadlock_mod = Mod {
         id: mod_data.mod_id.clone(),
         name: mod_data.mod_name.clone(),
+        is_map: mod_data.is_map,
         installed_vpks: Vec::new(),
         file_tree: mod_data.file_tree.clone(),
         install_order: None,
@@ -1854,6 +1869,7 @@ pub async fn register_analyzed_mod(
     let deadlock_mod = Mod {
       id: mod_id,
       name: mod_name,
+      is_map: false,
       installed_vpks,
       file_tree: None,
       install_order: None,
@@ -1877,6 +1893,8 @@ pub struct BatchUpdateMod {
   pub file_tree: Option<ModFileTree>,
   #[serde(default)]
   pub installed_vpks: Vec<String>,
+  #[serde(default)]
+  pub is_map: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -2258,6 +2276,7 @@ pub async fn batch_update_mods(
       let deadlock_mod = Mod {
         id: mod_data.mod_id.clone(),
         name: mod_data.mod_name.clone(),
+        is_map: mod_data.is_map,
         installed_vpks: Vec::new(),
         file_tree: mod_data.file_tree.clone(),
         install_order: None,

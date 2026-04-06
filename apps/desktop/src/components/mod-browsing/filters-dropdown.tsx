@@ -10,7 +10,11 @@ import { Label } from "@deadlock-mods/ui/components/label";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { Filter } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import type { FilterMode } from "@/lib/store/slices/ui";
+import type {
+  AudioQuickFilter,
+  FilterMode,
+  MapQuickFilter,
+} from "@/lib/store/slices/ui";
 import CategoryFilter from "./category-filter";
 import HeroFilter from "./hero-filter";
 
@@ -22,8 +26,10 @@ type FiltersDropdownProps = {
   onHeroesChange: (heroes: string[]) => void;
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
-  hideAudio: boolean;
-  onHideAudioChange: (hideAudio: boolean) => void;
+  audioQuickFilter: AudioQuickFilter;
+  onAudioQuickFilterChange: (value: AudioQuickFilter) => void;
+  mapQuickFilter: MapQuickFilter;
+  onMapQuickFilterChange: (value: MapQuickFilter) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   filterMode: FilterMode;
@@ -38,8 +44,10 @@ const FiltersDropdown = ({
   onHeroesChange,
   hideNSFW,
   onHideNSFWChange,
-  hideAudio,
-  onHideAudioChange,
+  audioQuickFilter,
+  onAudioQuickFilterChange,
+  mapQuickFilter,
+  onMapQuickFilterChange,
   hideOutdated,
   onHideOutdatedChange,
   filterMode,
@@ -50,13 +58,15 @@ const FiltersDropdown = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
-    hideAudio ||
+    audioQuickFilter !== "off" ||
+    mapQuickFilter !== "off" ||
     hideOutdated;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
     (hideNSFW ? 1 : 0) +
-    (hideAudio ? 1 : 0) +
+    (audioQuickFilter !== "off" ? 1 : 0) +
+    (mapQuickFilter !== "off" ? 1 : 0) +
     (hideOutdated ? 1 : 0);
 
   return (
@@ -130,10 +140,48 @@ const FiltersDropdown = ({
                 : t("filters.excludeAudioMods")}
             </Label>
             <Switch
-              checked={filterMode === "include" ? !hideAudio : hideAudio}
+              checked={
+                filterMode === "include"
+                  ? audioQuickFilter === "only"
+                  : audioQuickFilter === "exclude"
+              }
               id='hideAudioSwitch'
               onCheckedChange={(checked) =>
-                onHideAudioChange(filterMode === "include" ? !checked : checked)
+                onAudioQuickFilterChange(
+                  filterMode === "include"
+                    ? checked
+                      ? "only"
+                      : "off"
+                    : checked
+                      ? "exclude"
+                      : "off",
+                )
+              }
+            />
+          </div>
+          <div className='flex items-center justify-between'>
+            <Label className='font-normal text-sm' htmlFor='hideMapSwitch'>
+              {filterMode === "include"
+                ? t("filters.mapsModsOnly")
+                : t("filters.excludeMapsMods")}
+            </Label>
+            <Switch
+              checked={
+                filterMode === "include"
+                  ? mapQuickFilter === "only"
+                  : mapQuickFilter === "exclude"
+              }
+              id='hideMapSwitch'
+              onCheckedChange={(checked) =>
+                onMapQuickFilterChange(
+                  filterMode === "include"
+                    ? checked
+                      ? "only"
+                      : "off"
+                    : checked
+                      ? "exclude"
+                      : "off",
+                )
               }
             />
           </div>

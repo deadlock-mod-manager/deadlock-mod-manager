@@ -6,7 +6,7 @@ import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
-import type { ModCategory } from "@/lib/constants";
+import { ModCategory } from "@/lib/constants";
 import {
   generateFallbackModSVG,
   IMAGE_PATTERN,
@@ -207,6 +207,7 @@ export const useModProcessor = () => {
       await invoke("copy_local_mod_vpks", {
         modId: modId,
         profileFolder,
+        isMap: category === ModCategory.MAPS,
       });
 
       try {
@@ -254,6 +255,7 @@ export const useModProcessor = () => {
       images: [imageDataUrl],
       hero: null,
       isAudio: false,
+      isMap: category === ModCategory.MAPS,
       audioUrl: null,
       isNSFW: false,
       createdAt: new Date(modMetadata.createdAt),
@@ -336,6 +338,7 @@ export const useModProcessor = () => {
       images: [imageDataUrl],
       hero: null,
       isAudio: false,
+      isMap: category === ModCategory.MAPS,
       audioUrl: null,
       isNSFW: false,
       createdAt: new Date(modMetadata.createdAt),

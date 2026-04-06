@@ -139,7 +139,7 @@ impl ModManager {
   ) -> Result<Mod, Error> {
     log::info!(
       "Starting installation (enable) of mod: {} (profile: {profile_folder:?})",
-      deadlock_mod.name
+      deadlock_mod.name,
     );
 
     if !self.config_manager.is_game_setup() {
@@ -195,12 +195,8 @@ impl ModManager {
       ));
     }
 
-    log::info!(
-      "Found {} prefixed VPKs, enabling them by removing prefix",
-      prefixed_vpks.len()
-    );
+    log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
-    // Enable by renaming prefixed VPKs to sequential numbering
     let installed_vpks =
       self
         .vpk_manager
@@ -257,11 +253,9 @@ impl ModManager {
       return Err(Error::GamePathNotSet);
     }
 
-    // Check if the mod is in memory
     if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       log::info!("Mod found in memory: {}", local_mod.name);
 
-      // Disable by renaming installed VPKs to prefixed format
       let prefixed_vpks = self.vpk_manager.disable_vpks(
         &addons_path,
         &mod_id,
@@ -323,26 +317,27 @@ impl ModManager {
       game_path.join("game").join("citadel").join("addons")
     };
 
-    if !addons_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-
-    // Remove VPK files from game (both installed and prefixed)
     if let Some(local_mod) = self.mod_repository.remove_mod(&mod_id) {
       log::info!("Mod found in memory: {}", local_mod.name);
+
+      if !addons_path.exists() {
+        return Err(Error::GamePathNotSet);
+      }
+      let game_dir: &std::path::Path = addons_path.as_path();
 
       // Remove installed VPKs if any
       if !local_mod.installed_vpks.is_empty() {
         self
           .vpk_manager
-          .remove_vpks(&local_mod.installed_vpks, &addons_path)?;
+          .remove_vpks(&local_mod.installed_vpks, game_dir)?;
       }
 
       // Also remove any prefixed VPKs
-      self
-        .vpk_manager
-        .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
+      self.vpk_manager.remove_vpks_by_mod_id(game_dir, &mod_id)?;
     } else {
+      if !addons_path.exists() {
+        return Err(Error::GamePathNotSet);
+      }
       // Remove both specified VPKs and any prefixed VPKs
       self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
       self
@@ -383,7 +378,6 @@ impl ModManager {
 
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
-    // Collect all mods and sort by install order
     let mut ordered_mods: Vec<Mod> = self.mod_repository.get_all_mods().cloned().collect();
     ordered_mods.sort_by_key(|mod_entry| mod_entry.install_order.unwrap_or(999));
 
@@ -443,6 +437,8 @@ impl ModManager {
     // Sort by order
     let mut sorted_data = mod_order_data;
     sorted_data.sort_by_key(|(_, _, order)| *order);
+
+    sorted_data.retain(|(remote_id, _, _)| self.mod_repository.get_mod(remote_id).is_some());
 
     // Log the sorted data
     log::info!("Sorted order:");

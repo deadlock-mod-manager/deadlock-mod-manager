@@ -1,6 +1,6 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { listen } from "@tauri-apps/api/event";
-import { fetch } from "@tauri-apps/plugin-http";
+import { fetch } from "@/lib/fetch";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { getMod } from "@/lib/api";

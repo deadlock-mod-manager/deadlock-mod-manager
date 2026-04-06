@@ -34,6 +34,7 @@ const useInstall = () => {
           deadlockMod: {
             id: mod.remoteId,
             name: mod.name,
+            is_map: mod.isMap,
           },
           profileFolder,
         })) as InstallableMod;

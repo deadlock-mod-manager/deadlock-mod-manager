@@ -45,6 +45,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
         await invoke("show_mod_in_game", {
           vpkFiles: mod.installedVpks,
           profileFolder,
+          isMap: mod.isMap,
         });
         toast.success(t("contextMenu.openedModInGame"));
       } else {

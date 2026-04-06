@@ -163,6 +163,7 @@ export const useProfileImport = () => {
                     })),
               }
             : undefined,
+          isMap: modData.isMap,
         };
       }),
     );
@@ -352,6 +353,7 @@ export const useProfileImport = () => {
                     })),
               }
             : undefined,
+          isMap: modData.isMap,
         };
       }),
     );
