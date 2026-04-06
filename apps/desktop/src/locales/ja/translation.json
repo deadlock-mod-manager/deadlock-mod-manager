@@ -411,7 +411,10 @@
     "showNSFWContent": "NSFW（R-18）コンテンツ",
     "showOutdated": "旧バージョンを見る",
     "showOutdatedBadge": "旧バージョンを表示",
-    "sortBy": "並び順"
+    "sortBy": "並び順",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -475,7 +478,8 @@
       "selectToReplace": "{{count}}個のファイルを選択して置換",
       "success": "VPKファイルを正常に置換しました",
       "title": "VPKファイルを置換"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "不明",
@@ -545,7 +549,8 @@
       "refresh": "更新",
       "showList": "ファイル一覧を表示",
       "title": "認識されていないVPKファイルが見つかりました"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "ローカルアドオンをチェック",

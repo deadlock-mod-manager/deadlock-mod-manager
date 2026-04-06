@@ -58,7 +58,8 @@
     "disableError": "",
     "customModDisableTitle": "",
     "customModDisableBody": "",
-    "customModDisableAction": ""
+    "customModDisableAction": "",
+    "mapBadge": ""
   },
   "pagination": {
     "previous": "",
@@ -269,7 +270,10 @@
     "hideAudio": "",
     "hideOutdatedBadge": "",
     "showOutdatedBadge": "",
-    "clearAll": ""
+    "clearAll": "",
+    "mapsModsOnly": "",
+    "excludeMapsMods": "",
+    "hideMap": ""
   },
   "sorting": {
     "default": "",
@@ -662,6 +666,8 @@
       "success": "",
       "error": "",
       "countMismatch": ""
-    }
+    },
+    "mapConsoleHint": "",
+    "openMapInExplorer": ""
   }
 }

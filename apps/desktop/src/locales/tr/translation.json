@@ -418,7 +418,10 @@
     "showNSFWContent": "NSFW içerikleri göster",
     "showOutdated": "Eskileri göster",
     "showOutdatedBadge": "Eskileri göster",
-    "sortBy": "Sırala"
+    "sortBy": "Sırala",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -481,7 +484,8 @@
       "selectToReplace": "Değiştirilecek {{count}} dosya seçin",
       "success": "VPK dosyaları başarıyla değiştirildi",
       "title": "VPK Dosyalarını Değiştir"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "Bilinmeyen",
@@ -551,7 +555,8 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "Yerel Eklentileri Analiz Et",

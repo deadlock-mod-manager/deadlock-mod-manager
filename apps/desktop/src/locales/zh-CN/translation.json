@@ -418,7 +418,10 @@
     "showNSFWContent": "显示NSFW内容",
     "showOutdated": "显示过时",
     "showOutdatedBadge": "显示过时",
-    "sortBy": "排序方式"
+    "sortBy": "排序方式",
+    "mapsModsOnly": "Maps Only",
+    "excludeMapsMods": "Hide Map Mods",
+    "hideMap": "Hide Maps"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -481,7 +484,8 @@
       "selectToReplace": "选择 {{count}} 个文件进行替换",
       "success": "VPK 文件替换成功",
       "title": "替换 VPK 文件"
-    }
+    },
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
   },
   "modForm": {
     "authorPlaceholder": "未知",
@@ -551,7 +555,8 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    }
+    },
+    "mapBadge": "Map"
   },
   "myMods": {
     "analyzeLocalAddons": "分析本地插件",
