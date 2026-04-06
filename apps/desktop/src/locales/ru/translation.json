@@ -7,6 +7,7 @@
     "downloadingUpdate": "Загрузка обновления...",
     "forModContent": ", для создания контента модов и сообществ",
     "gamebananaDescription": "Наш основной источник модов и основа этого приложения. GameBanana предоставляет обширную базу данных модов и API, сделавший просмотр, нахождение и загрузку модов для Deadlock возможным.",
+    "installUpdate": "Install update",
     "latestVersion": "У вас установлена последняя версия.",
     "openSourceCommunity": "Сообщество с открытым исходным кодом",
     "openSourceDescription": "Приложение создано с использованием потрясающих технологий с открытым исходным кодом, включая React, TypeScript и многие другие библиотеки, которые делают возможными современные приложения. Спасибо всем участникам и разработчикам.",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "Закрыть",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "Перейти на первую страницу",
     "goToLastPage": "Перейти на последнюю страницу",
     "goToNextPage": "Перейти на следующую страницу",
     "goToPreviousPage": "Перейти на предыдущую страницу",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "Еще",
     "morePages": "Следующие страницы",
     "next": "Следующая",
     "nextSlide": "Следующий слайд",
     "previous": "Предыдущая",
     "previousSlide": "Предыдущий слайд",
+    "restore": "Restore",
     "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
@@ -121,6 +126,7 @@
     "foundAddons": "Найденные аддоны",
     "hide": "Скрыть детали",
     "identifiedAddons": "Идентифицированные аддоны",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "modAuthor": "Автор",
     "modName": "Название мода",
     "modNotFound": "Мод не найден в базе данных",
@@ -152,6 +158,7 @@
       "identified": "Identified",
       "unknown": "Unknown"
     },
+    "total": "total",
     "unidentifiedAddons": "Неидентифицированные аддоны",
     "vpkContents": "VPK Contents"
   },
@@ -169,8 +176,8 @@
     "apiHealthy": "API Онлайн",
     "apiOffline": "API Оффлайн",
     "apiUnknown": "Статус API Неизвестен",
-    "authOnline": "Auth Онлайн",
     "authOffline": "Auth Оффлайн",
+    "authOnline": "Auth Онлайн",
     "authUnknown": "Статус Auth Неизвестен",
     "back": "Back",
     "cancel": "Отмена",
@@ -188,6 +195,9 @@
     "enabled": "Enabled",
     "error": "Ошибка",
     "failedToFetchMods": "Не удалось получить моды. Попробуйте еще раз позже.",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "Игра обнаружена",
     "gameInstalledAt": "Игра установлена по пути: {{path}}",
     "gameNotDetected": "Файлы игры не найдены",
@@ -199,7 +209,6 @@
     "loading": "Загрузка...",
     "mods": "Моды",
     "never": "Никогда",
-    "volume": "Громкость",
     "no": "Нет",
     "none": "None",
     "off": "off",
@@ -214,6 +223,7 @@
     "stopGame": "Остановить игру",
     "success": "Успех",
     "type": "Type",
+    "volume": "Громкость",
     "yes": "Да"
   },
   "contextMenu": {
@@ -250,17 +260,18 @@
       "applied": "Crosshair applied successfully",
       "apply": "Apply",
       "applyError": "Failed to apply crosshair",
+      "color": "Цвет",
+      "colorDialogDescription": "Выберите цвет прицела.",
+      "colorDialogTitle": "Пользовательский цвет",
+      "defaultHero": "Default",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "Шестнадцатеричный код цвета",
-      "color": "Цвет",
-      "colorDialogTitle": "Пользовательский цвет",
-      "colorDialogDescription": "Выберите цвет прицела.",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -325,6 +336,7 @@
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
     "latestMods": "Latest Mods",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "noAnnouncementsTitle": "No Announcements",
     "noModsAvailable": "No mods available",
@@ -348,7 +360,11 @@
     "active": "Активные",
     "all": "Все",
     "completed": "Завершенные",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "Загрузка {{count}} мода",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "Загрузка {{count}} модов",
     "filesSelected": "{{selected}} из {{total}} файлов выбрано",
     "noDownloadsFound": "Загрузки не найдены",
@@ -360,6 +376,8 @@
     "selectNone": "Снять выбор",
     "title": "Загрузки",
     "total": "Total",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "Показать все загрузки"
   },
   "errors": {
@@ -387,6 +405,16 @@
     "toggleError": "Failed to toggle feature flag",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "Активные фильтры:",
     "allCategories": "Все категории",
@@ -399,17 +427,20 @@
     "content": "Содержание",
     "exclude": "Исключить",
     "excludeAudioMods": "Скрыть аудио-моды",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "Исключающие Фильтры:",
     "filters": "Фильтры",
     "hero": "Герои",
     "heroLabel": "Герой:",
     "hideAudio": "Скрыть аудио",
+    "hideMap": "Hide Maps",
     "hideNSFW": "Скрыть NSFW",
     "hideNSFWContent": "Скрыть NSFW",
     "hideOutdated": "Скрыть устаревшее",
     "hideOutdatedBadge": "Скрыть устаревшие",
     "include": "Включить",
     "includingFilters": "Включающие Фильтры:",
+    "mapsModsOnly": "Maps Only",
     "mode": "Режим фильтров",
     "noCategoriesFound": "Категория не найдена",
     "noHeroesFound": "Герой не найден",
@@ -421,10 +452,7 @@
     "showNSFWContent": "Показывать NSFW",
     "showOutdated": "Показать устаревшие",
     "showOutdatedBadge": "Показать устаревшие",
-    "sortBy": "Сортировать по",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "Сортировать по"
   },
   "game": {
     "backupCreatedSuccess": "Резервная копия gameinfo.gi создана успешно",
@@ -444,6 +472,17 @@
     "documentation": "Documentation",
     "needHelp": "Нужна помощь?",
     "viewDocs": "View Documentation"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "О приложении",
@@ -470,14 +509,41 @@
   "modDetail": {
     "authorLabel": "Автор",
     "backToMods": "Назад к модам",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "Загрузки",
+    "forceUpdate": "Force Update",
     "goBackHome": "На главную",
     "idLabel": "ID",
     "installedAt": "Установлен",
     "lastModifiedAt": "Изменён",
+    "mapHowToPlay": {
+      "copied": "",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "title": ""
+    },
     "modStatusLabel": "Статус мода",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "Опубликован",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "Текущие файлы VPK",
       "description": "Замена файлов модов для быстрой итерации во время разработки",
       "dragAndDrop": "Перетащите файлы VPK сюда",
@@ -487,22 +553,12 @@
       "selectToReplace": "Выберите {{count}} файл(ов) для замены",
       "success": "Файлы VPK успешно заменены",
       "title": "Заменить файлы VPK"
-    },
-    "mapHowToPlay": {
-      "title": "",
-      "step1": "",
-      "step2": "",
-      "step3Command": "",
-      "step4Glitch": "",
-      "step5Status": "",
-      "step6Share": "",
-      "copied": "",
-      "mapNameFallback": ""
     }
   },
   "modForm": {
     "authorPlaceholder": "Неизвестно",
     "description": "Добавить дополнительные детали. Требуется только имя.",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "Крутой Мод",
     "modPreview": "Предпросмотр мода",
     "title": "Метаданные мода",
@@ -516,7 +572,8 @@
     "noMods": "Нет установленных модов для упорядочивания",
     "orderSaveFailed": "Не удалось сохранить порядок модов",
     "orderSaved": "Порядок модов успешно сохранен",
-    "title": "Управление порядком загрузки модов"
+    "title": "Управление порядком загрузки модов",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "Добавлено в мои моды",
@@ -547,11 +604,15 @@
     "disable": "Выкл",
     "disableError": "Не удалось отключить мод",
     "disableSuccess": "Мод успешно отключен",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "Вкл",
     "gridView": "Вид сеткой",
     "installing": "Установка...",
     "listView": "Вид списком",
     "manageOrder": "Change Mods Order",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "Нет доступных модов",
     "noModsFound": "Моды не найдены",
     "noModsMatchFilters": "Нет модов, соответствующих вашему поиску и фильтрам",
@@ -568,11 +629,27 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "Анализировать локальные аддоны",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "{{count}}/99 модов включено",
     "enabledModsCountAtLimit": "{{count}}/99 модов включено (достигнут лимит)",
     "enabledModsCountNearLimit": "{{count}}/99 модов включено (приближается к лимиту)",
@@ -585,6 +662,10 @@
       "downloaded": "Downloaded",
       "installed": "Installed"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "Посетить страницу модов"
   },
   "navigation": {
@@ -597,7 +678,9 @@
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "Загрузки",
+    "expandMenu": "Expand menu",
     "getMods": "Найти моды",
+    "maps": "Maps",
     "myMods": "Мои моды",
     "needHelp": "Нужна помощь?",
     "settings": "Настройки",
@@ -653,13 +736,29 @@
       "success": "Game path detected successfully!",
       "title": "Game Path Detection"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "Next",
     "skip": "Skip Setup",
     "stepIndicator": "Step {{current}} of {{total}}",
     "title": "Welcome to Deadlock Mod Manager",
     "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started."
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "Акцентный цвет",
+      "addCustomColor": "Добавить цвет",
+      "customColor": "Пользовательский цвет",
+      "customColorDescription": "Выберите пользовательский акцентный цвет для темы Arcane.",
+      "description": "Элегантная тёмная тема с розово-красным свечением, вдохновлённая эстетикой Arcane.",
+      "visit": "Тема от Skeptic"
+    },
     "background": {
       "blur": "Размытие",
       "chooseImage": "Выбрать изображение",
@@ -676,13 +775,11 @@
       "description": "Тёмная тема с чёрно‑красными градиентами и малиновыми акцентами.",
       "visit": "Тема от Skeptic"
     },
-    "arcane": {
-      "description": "Элегантная тёмная тема с розово-красным свечением, вдохновлённая эстетикой Arcane.",
-      "visit": "Тема от Skeptic",
-      "accentColor": "Акцентный цвет",
-      "customColor": "Пользовательский цвет",
-      "customColorDescription": "Выберите пользовательский акцентный цвет для темы Arcane.",
-      "addCustomColor": "Добавить цвет"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "ID приложения Discord",
@@ -716,6 +813,7 @@
       "title": "Режим Flashbang",
       "usageInstructions": "Включите плагин и задайте часы начала и конца (0–23)."
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "Киберпанк‑тема с бирюзовыми акцентами для ясности и длительных игровых сессий.",
       "discord": "Discord",
@@ -731,6 +829,7 @@
     },
     "themes": {
       "activate": "Активировать",
+      "active": "Active",
       "activeTheme": "Активная тема",
       "apply": "Применить",
       "b": "B",
@@ -758,6 +857,7 @@
       "eyedropper": "Eyedropper",
       "g": "G",
       "hue": "Оттенок",
+      "inactive": "Inactive",
       "lightness": "Яркость",
       "lineColor": "Цвет линий",
       "lineColorDialogDescription": "Настройте цвет с помощью H, S, L или вставьте шестнадцатеричное значение.",
@@ -881,19 +981,35 @@
   },
   "reports": {
     "additionalDetails": "Additional Details",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "Сообщить о проблемах с модами или предложить улучшения.",
     "description_plural": "This mod has been reported {{count}} times",
     "detailsDescription": "Optional: Provide more context about the issue",
     "detailsPlaceholder": "Any additional information that might help...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "Reason",
     "reasonDescription": "Please provide a clear description of the problem",
     "reasonPlaceholder": "Describe the issue you're experiencing...",
+    "reportBroken": "Report as broken",
     "reportDescription": "Report issues with {{modName}} by {{author}}",
     "reportError": "Ошибка при отправке отчета",
     "reportFailed": "Failed to submit report",
     "reportMod": "Сообщить о моде",
     "reportModDescription": "Сообщить о проблеме с этим модом",
     "reportSubmitted": "Отчет отправлен",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": {
       "bug": "Ошибка",
       "copyright": "Нарушение авторских прав",
@@ -905,6 +1021,7 @@
     "submitReport": "Submit Report",
     "submitting": "Submitting...",
     "thankYou": "Thank You!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "Отчеты",
     "totalReports": "{{count}} report",
     "totalReports_plural": "{{count}} reports",
@@ -920,6 +1037,8 @@
     "unverifiedCount": "{{count}} unverified",
     "unverifiedReports": "{{count}} unverified report",
     "unverifiedReports_plural": "{{count}} unverified reports",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "Description must be less than 2000 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
@@ -929,23 +1048,32 @@
     "verifiedCount": "{{count}} verified",
     "verifiedReports": "{{count}} verified report",
     "verifiedReports_plural": "{{count}} verified reports",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "О приложении",
     "addSetting": "Добавить настройку",
     "addonsBackup": "Резервное копирование модов",
     "addonsBackupDescription": "Создание и восстановление резервных копий установленных модов.",
+    "aiProvider": "AI Provider",
     "allModsCleared": "Все моды были удалены",
     "appearance": "Внешний вид",
     "appearanceDescription": "Настройте внешний вид приложения.",
     "application": "Приложение",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "Громкость звука",
     "audioVolumeDescription": "Изменить громкость для предварительного прослушивания и воспроизведения аудио",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "Автоматически применять моды при запуске менеджера модов",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "autoexec": "Autoexec.cfg",
@@ -960,6 +1088,7 @@
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "backup": "Backup",
     "backupCreated": "Резервная копия успешно создана",
     "backupCreationFailed": "Не удалось создать резервную копию",
     "backupDate": "Дата",
@@ -973,17 +1102,29 @@
     "backupRestored": "Резервная копия успешно восстановлена",
     "backupSize": "Размер",
     "backupVpkCount": "Файлы VPK",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "Резервные копии",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "Browse",
     "clearAllMods": "Очистить все моды",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Вы уверены, что хотите удалить все моды? Это действие невозможно отменить.",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "copiedToClipboard": "Copied to clipboard",
     "copyToClipboardTooltip": "Copy to clipboard",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "Создать резервную копию",
     "createCustomSetting": "Создать пользовательскую настройку",
     "createCustomSettingDescription": "Это создаст пользовательскую настройку для игры, которая будет добавлена к списку параметров запуска.",
@@ -1001,8 +1142,21 @@
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
+    "external": "External",
     "failedToClearMods": "Не удалось удалить моды",
     "failedToOpenFolder": "Failed to open folder",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "Флэшбэнг",
     "flashbangDescription": "Автоматически включает светлую тему с 20:00 до 8:00, независимо от выбранной темы",
     "formatCommandHint": "Format: +cvar value (leading + is optional)",
@@ -1029,12 +1183,49 @@
     "launchOptions": "Опции запуска",
     "launchOptionsDescription": "Настройка параметров запуска игры. Они применяются независимо от выбранного режима игры (стандартный или модифицированный).",
     "launchVanillaNoArgs": "Запускать игру в обычном режиме без дополнительных аргументов",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "Mods state cleared successfully",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "Резервные копии не найдены",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "Открыть папку резервных копий",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "Открыть папку с игрой",
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "Откройте папку с модами",
     "openModsStore": "Открыть магазин модов",
     "placeholderCommand": "+r_aspectratio 2.7",
@@ -1055,13 +1246,14 @@
     "settingRemoved": "Setting removed",
     "settingType": "Тип настройки",
     "settingUpdated": "Setting updated",
+    "syntax": "Syntax",
     "systemSettings": "Системные настройки",
     "systemSettingsDescription": "Настройки менеджера модов. Они не влияют на игру.",
     "theme": "Тема",
     "themeDescription": "Выберите светлую, тёмную или системную тему",
     "tools": "Инструменты",
-    "backups": "Резервные копии",
     "toolsDescription": "Полезные функции для управления вашими модами.",
+    "unlimitedBackups": "Unlimited",
     "value": "Значение",
     "valuePlaceholder": "true или false, или любое другое значение"
   },
@@ -1074,7 +1266,10 @@
   },
   "status": {
     "disabled": "Отключено",
-    "enabled": "Включено"
+    "enabled": "Включено",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "Действия",
@@ -1095,6 +1290,13 @@
   "time": {
     "ago": "ago",
     "at": "at"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "Аудио",
@@ -1132,6 +1334,18 @@
     "releaseNotes": "Примечания к Выпуску"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "Этот мод больше недоступен в магазине модов и может не работать с текущей версией игры.",
     "obsoleteLabel": "Устарел",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -1146,30 +1360,6 @@
     "gotIt": "Ок!",
     "title": "Что нового",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1230,6 +1420,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [

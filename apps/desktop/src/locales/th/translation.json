@@ -7,6 +7,7 @@
     "downloadingUpdate": "กำลังดาวน์โหลดการอัปเดต...",
     "forModContent": "สำหรับเนื้อหาม็อดและชุมชน",
     "gamebananaDescription": "แหล่งม็อดหลักและแกนหลักของแอปพลิเคชันนี้ GameBanana ให้บริการฐานข้อมูลม็อดและ API ที่ครอบคลุมซึ่งทำให้การเรียกดู ค้นหา และดาวน์โหลดม็อด Deadlock เป็นไปได้",
+    "installUpdate": "Install update",
     "latestVersion": "คุณมีเวอร์ชันล่าสุดแล้ว",
     "openSourceCommunity": "ชุมชนโอเพนซอร์ส",
     "openSourceDescription": "สร้างขึ้นด้วยเทคโนโลยีโอเพนซอร์สที่น่าทึ่ง รวมถึง React, TypeScript และไลบรารีอื่น ๆ อีกมากมายที่ทำให้แอปพลิเคชันสมัยใหม่เป็นไปได้ ขอบคุณผู้มีส่วนร่วมและผู้ดูแลทุกคน",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "ปิด",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "ไปที่หน้าแรก",
     "goToLastPage": "ไปที่หน้าสุดท้าย",
     "goToNextPage": "ไปที่หน้าถัดไป",
     "goToPreviousPage": "ไปที่หน้าก่อนหน้า",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "เพิ่มเติม",
     "morePages": "หน้าเพิ่มเติม",
     "next": "ถัดไป",
     "nextSlide": "สไลด์ถัดไป",
     "previous": "ก่อนหน้า",
     "previousSlide": "สไลด์ก่อนหน้า",
+    "restore": "Restore",
     "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
@@ -119,6 +124,7 @@
     "identificationFailed": "ไม่สามารถระบุม็อดนี้ได้",
     "identificationResult": "ผลการระบุ",
     "identificationSuccess": "ระบุสำเร็จ: {{name}}",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "identifyMod": "ระบุม็อด",
     "identifying": "กำลังระบุ...",
     "modAuthor": "ผู้สร้าง",
@@ -151,6 +157,7 @@
       "identified": "ระบุแล้ว",
       "unknown": "ไม่รู้จัก"
     },
+    "total": "total",
     "vpkContents": "เนื้อหา VPK"
   },
   "auth": {
@@ -167,8 +174,8 @@
     "apiHealthy": "API ออนไลน์",
     "apiOffline": "API ออฟไลน์",
     "apiUnknown": "ไม่ทราบสถานะ API",
-    "authOnline": "Auth ออนไลน์",
     "authOffline": "Auth ออฟไลน์",
+    "authOnline": "Auth ออนไลน์",
     "authUnknown": "ไม่ทราบสถานะ Auth",
     "back": "ย้อนกลับ",
     "cancel": "ยกเลิก",
@@ -186,6 +193,9 @@
     "enabled": "Enabled",
     "error": "ข้อผิดพลาด",
     "failedToFetchMods": "ไม่สามารถดึงข้อมูลม็อดได้ โปรดลองอีกครั้งในภายหลัง",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "ตรวจพบเกม",
     "gameInstalledAt": "เกมติดตั้งอยู่ที่ {{path}}",
     "gameNotDetected": "ตรวจไม่พบเกม",
@@ -197,7 +207,6 @@
     "loading": "กำลังโหลด...",
     "mods": "ม็อด",
     "never": "ไม่เคย",
-    "volume": "ระดับเสียง",
     "no": "ไม่",
     "none": "None",
     "off": "off",
@@ -212,6 +221,7 @@
     "stopGame": "หยุดเกม",
     "success": "สำเร็จ",
     "type": "Type",
+    "volume": "ระดับเสียง",
     "yes": "ใช่"
   },
   "contextMenu": {
@@ -251,17 +261,18 @@
       "applied": "Crosshair applied successfully",
       "apply": "Apply",
       "applyError": "Failed to apply crosshair",
+      "color": "สี",
+      "colorDialogDescription": "เลือกสีสำหรับเป้าเล็ง",
+      "colorDialogTitle": "กำหนดสี",
+      "defaultHero": "Default",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "รหัสสีแบบฐานสิบหก",
-      "color": "สี",
-      "colorDialogTitle": "กำหนดสี",
-      "colorDialogDescription": "เลือกสีสำหรับเป้าเล็ง",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -326,6 +337,7 @@
     "announcements": "ประกาศ",
     "checkBackLater": "กลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดต",
     "latestMods": "ม็อดล่าสุด",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "ขณะนี้ไม่มีประกาศ โปรดกลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดตและข่าวสาร",
     "noAnnouncementsTitle": "ไม่มีประกาศ",
     "noModsAvailable": "ไม่มีม็อด",
@@ -349,7 +361,11 @@
     "active": "กำลังดำเนินการ",
     "all": "ทั้งหมด",
     "completed": "เสร็จสมบูรณ์",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "กำลังดาวน์โหลด {{count}} ม็อด",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "กำลังดาวน์โหลด {{count}} ม็อด",
     "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "ไม่พบการดาวน์โหลด",
@@ -361,6 +377,8 @@
     "selectNone": "Select None",
     "title": "ดาวน์โหลด",
     "total": "Total",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "ดูการดาวน์โหลดทั้งหมด"
   },
   "errors": {
@@ -388,6 +406,16 @@
     "toggleError": "Failed to toggle feature flag",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "ตัวกรองที่ใช้งานอยู่:",
     "allCategories": "ทุกหมวดหมู่",
@@ -399,17 +427,20 @@
     "clearAll": "ล้างทั้งหมด",
     "exclude": "ไม่รวม",
     "excludeAudioMods": "ซ่อนม็อดเสียง",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "ตัวกรองที่ไม่รวม:",
     "filters": "ตัวกรอง",
     "hero": "ฮีโร่",
     "heroLabel": "ฮีโร่:",
     "hideAudio": "ซ่อนเสียง",
+    "hideMap": "Hide Maps",
     "hideNSFW": "ซ่อน NSFW",
     "hideNSFWContent": "เนื้อหา NSFW",
     "hideOutdated": "ซ่อนที่ล้าสมัย",
     "hideOutdatedBadge": "ซ่อนที่ล้าสมัย",
     "include": "รวม",
     "includingFilters": "ตัวกรองที่รวม:",
+    "mapsModsOnly": "Maps Only",
     "mode": "โหมดตัวกรอง",
     "noCategoriesFound": "ไม่พบหมวดหมู่",
     "noHeroesFound": "ไม่พบฮีโร่",
@@ -421,10 +452,7 @@
     "showNSFWContent": "เนื้อหา NSFW",
     "showOutdated": "แสดงที่ล้าสมัย",
     "showOutdatedBadge": "แสดงที่ล้าสมัย",
-    "sortBy": "จัดเรียงตาม",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "จัดเรียงตาม"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -444,6 +472,17 @@
     "documentation": "เอกสารประกอบ",
     "needHelp": "ต้องการความช่วยเหลือ?",
     "viewDocs": "ดูเอกสารประกอบ"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "เกี่ยวกับ",
@@ -470,14 +509,41 @@
   "modDetail": {
     "authorLabel": "ผู้สร้าง",
     "backToMods": "กลับไปยังมอด",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "การดาวน์โหลด",
+    "forceUpdate": "Force Update",
     "goBackHome": "กลับหน้าแรก",
     "idLabel": "ID",
     "installedAt": "ติดตั้งเมื่อ",
     "lastModifiedAt": "แก้ไขล่าสุดเมื่อ",
+    "mapHowToPlay": {
+      "copied": "",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "title": ""
+    },
     "modStatusLabel": "สถานะมอด",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "เผยแพร่เมื่อ",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "Current VPK Files",
       "description": "Replace mod files for quick iteration during development",
       "dragAndDrop": "Drag and drop VPK files here",
@@ -487,22 +553,12 @@
       "selectToReplace": "Select {{count}} file(s) to replace",
       "success": "VPK files replaced successfully",
       "title": "Replace VPK Files"
-    },
-    "mapHowToPlay": {
-      "title": "",
-      "step1": "",
-      "step2": "",
-      "step3Command": "",
-      "step4Glitch": "",
-      "step5Status": "",
-      "step6Share": "",
-      "copied": "",
-      "mapNameFallback": ""
     }
   },
   "modForm": {
     "authorPlaceholder": "ไม่ทราบ",
     "description": "เพิ่มรายละเอียดเพิ่มเติม ต้องระบุชื่อเท่านั้น",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "Awesome Mod",
     "modPreview": "ตัวอย่างม็อด",
     "title": "ข้อมูลเมตาของม็อด",
@@ -516,7 +572,8 @@
     "noMods": "ไม่มีม็อดที่ติดตั้งเพื่อจัดลำดับ",
     "orderSaveFailed": "ไม่สามารถบันทึกลำดับม็อดได้",
     "orderSaved": "บันทึกลำดับม็อดเรียบร้อยแล้ว",
-    "title": "จัดการลำดับการโหลดม็อด"
+    "title": "จัดการลำดับการโหลดม็อด",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "เพิ่มไปยังม็อดของฉันแล้ว",
@@ -547,11 +604,15 @@
     "disable": "ปิดใช้งาน",
     "disableError": "ไม่สามารถปิดใช้งานม็อดได้",
     "disableSuccess": "ปิดใช้งานม็อดเรียบร้อยแล้ว",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "เปิดใช้งาน",
     "gridView": "มุมมองตาราง",
     "installing": "กำลังติดตั้ง...",
     "listView": "มุมมองรายการ",
     "manageOrder": "เปลี่ยนลำดับม็อด",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "ไม่มีม็อด",
     "noModsFound": "ไม่พบม็อด",
     "noModsMatchFilters": "ไม่มีม็อดที่ตรงกับการค้นหาและตัวกรองปัจจุบันของคุณ",
@@ -568,11 +629,27 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "วิเคราะห์ Addons ในเครื่อง",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "เปิดใช้งาน {{count}}/99 ม็อด",
     "enabledModsCountAtLimit": "เปิดใช้งาน {{count}}/99 ม็อด (ถึงขีดจำกัดแล้ว)",
     "enabledModsCountNearLimit": "เปิดใช้งาน {{count}}/99 ม็อด (ใกล้ถึงขีดจำกัด)",
@@ -585,6 +662,10 @@
       "downloaded": "ดาวน์โหลดแล้ว",
       "installed": "ติดตั้งแล้ว"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "ไปที่หน้าม็อด"
   },
   "navigation": {
@@ -597,7 +678,9 @@
     "dashboard": "แดชบอร์ด",
     "developer": "เครื่องมือสำหรับนักพัฒนา",
     "downloads": "ดาวน์โหลด",
+    "expandMenu": "Expand menu",
     "getMods": "รายการม็อด",
+    "maps": "Maps",
     "myMods": "คลังม็อด",
     "needHelp": "ต้องการความช่วยเหลือ ?",
     "settings": "การตั้งค่า",
@@ -653,13 +736,29 @@
       "success": "ตรวจจับตำแหน่งของเกมเรียบร้อยแล้ว!",
       "title": "การตรวจจับตำแหน่งของเกม"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "ถัดไป",
     "skip": "ข้ามการตั้งค่า",
     "stepIndicator": "ขั้นตอนที่ {{current}} จาก {{total}}",
     "title": "ยินดีต้อนรับสู่ Deadlock Mod Manager",
     "welcome": "มาเริ่มตั้งค่า {{appName}} กันเถอะ! การตั้งค่าอย่างรวดเร็วนี้จะช่วยให้คุณเริ่มต้นได้"
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "สีเน้น",
+      "addCustomColor": "เพิ่มสี",
+      "customColor": "สีกำหนดเอง",
+      "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane",
+      "description": "ธีมมืดสง่างามพร้อมเอฟเฟกต์เรืองแสงสีชมพู-แดง ได้รับแรงบันดาลใจจากสไตล์ Arcane",
+      "visit": "ธีมโดย Skeptic"
+    },
     "background": {
       "blur": "Blur",
       "chooseImage": "Choose Image",
@@ -676,13 +775,11 @@
       "description": "ธีมมืดพร้อมการไล่ระดับสีดำ-แดงและสีแดงเข้ม",
       "visit": "ธีมโดย Skeptic"
     },
-    "arcane": {
-      "description": "ธีมมืดสง่างามพร้อมเอฟเฟกต์เรืองแสงสีชมพู-แดง ได้รับแรงบันดาลใจจากสไตล์ Arcane",
-      "visit": "ธีมโดย Skeptic",
-      "accentColor": "สีเน้น",
-      "customColor": "สีกำหนดเอง",
-      "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane",
-      "addCustomColor": "เพิ่มสี"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "Discord Application ID",
@@ -716,6 +813,7 @@
       "title": "Flashbang Mode",
       "usageInstructions": "Enable the plugin and choose start and end hour (0–23)."
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
       "discord": "Discord",
@@ -731,6 +829,7 @@
     },
     "themes": {
       "activate": "Activate",
+      "active": "Active",
       "activeTheme": "Active Theme",
       "apply": "Apply",
       "b": "B",
@@ -758,6 +857,7 @@
       "eyedropper": "Eyedropper",
       "g": "G",
       "hue": "Hue",
+      "inactive": "Inactive",
       "lightness": "Lightness",
       "lineColor": "Line color",
       "lineColorDialogDescription": "Adjust color using H, S, V or paste a hex value.",
@@ -881,23 +981,40 @@
   },
   "reports": {
     "additionalDetails": "รายละเอียดเพิ่มเติม",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "ม็อดนี้ถูกรายงาน {{count}} ครั้ง",
     "description_plural": "ม็อดนี้ถูกรายงาน {{count}} ครั้ง",
     "detailsDescription": "ไม่บังคับ: ให้บริบทเพิ่มเติมเกี่ยวกับปัญหา",
     "detailsPlaceholder": "ข้อมูลเพิ่มเติมที่อาจเป็นประโยชน์...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "เหตุผล",
     "reasonDescription": "โปรดให้คำอธิบายที่ชัดเจนเกี่ยวกับปัญหา",
     "reasonPlaceholder": "อธิบายปัญหาที่คุณพบ...",
+    "reportBroken": "Report as broken",
     "reportDescription": "รายงานปัญหาเกี่ยวกับ {{modName}} โดย {{author}}",
     "reportFailed": "ไม่สามารถส่งรายงานได้",
     "reportMod": "รายงานม็อด",
     "reportSubmitted": "ส่งรายงานเรียบร้อยแล้ว",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": "ประเภทการรายงาน",
     "selectType": "เลือกประเภทการรายงาน",
     "submissionConfirmation": "รายงานของคุณถูกส่งแล้วและจะได้รับการตรวจสอบโดยผู้ดูแล",
     "submitReport": "ส่งรายงาน",
     "submitting": "กำลังส่ง...",
     "thankYou": "ขอบคุณ!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "รายงาน",
     "totalReports": "{{count}} รายงาน",
     "totalReports_plural": "{{count}} รายงาน",
@@ -913,6 +1030,8 @@
     "unverifiedCount": "{{count}} รายการที่ยังไม่ได้ตรวจสอบ",
     "unverifiedReports": "{{count}} รายงานที่ยังไม่ได้ตรวจสอบ",
     "unverifiedReports_plural": "{{count}} รายงานที่ยังไม่ได้ตรวจสอบ",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "คำอธิบายต้องมีความยาวไม่เกิน 2000 ตัวอักษร",
       "reasonMaxLength": "เหตุผลต้องมีความยาวไม่เกิน 500 ตัวอักษร",
@@ -922,23 +1041,32 @@
     "verifiedCount": "{{count}} รายการที่ตรวจสอบแล้ว",
     "verifiedReports": "{{count}} รายงานที่ตรวจสอบแล้ว",
     "verifiedReports_plural": "{{count}} รายงานที่ตรวจสอบแล้ว",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "เกี่ยวกับ",
     "addSetting": "เพิ่มการตั้งค่า",
     "addonsBackup": "สำรองข้อมูลม็อด",
     "addonsBackupDescription": "สร้างและกู้คืนข้อมูลสำรองของม็อดที่ติดตั้งของคุณ",
+    "aiProvider": "AI Provider",
     "allModsCleared": "ล้างม็อดทั้งหมดแล้ว",
     "appearance": "ลักษณะที่ปรากฏ",
     "appearanceDescription": "ปรับแต่งลักษณะที่ปรากฏของแอปพลิเคชัน",
     "application": "แอปพลิเคชัน",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "ระดับเสียง",
     "audioVolumeDescription": "ปรับระดับเสียงสำหรับตัวอย่างเสียงและการเล่นเสียง",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "ตรวจจับอัตโนมัติ",
     "autoReapplyMods": "ใช้ม็อดอีกครั้งโดยอัตโนมัติเมื่อเปิดตัวจัดการม็อด",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "autoexec": "Autoexec.cfg",
@@ -953,6 +1081,7 @@
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "backup": "Backup",
     "backupCreated": "สร้างข้อมูลสำรองเรียบร้อยแล้ว",
     "backupCreationFailed": "ไม่สามารถสร้างข้อมูลสำรองได้",
     "backupDate": "วันที่",
@@ -966,17 +1095,29 @@
     "backupRestored": "กู้คืนข้อมูลสำรองเรียบร้อยแล้ว",
     "backupSize": "ขนาด",
     "backupVpkCount": "ไฟล์ VPK",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "สำรองข้อมูล",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "เลือกดู",
     "clearAllMods": "ล้างม็อดทั้งหมด",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "copiedToClipboard": "Copied to clipboard",
     "copyToClipboardTooltip": "Copy to clipboard",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "สร้างข้อมูลสำรอง",
     "createCustomSetting": "สร้างการตั้งค่าที่กำหนดเอง",
     "createCustomSettingDescription": "เพิ่มการตั้งค่าที่กำหนดเองลงในเกม สิ่งเหล่านี้จะถูกเพิ่มเข้าไปในเกมเป็นตัวเลือกการเริ่มเกม",
@@ -994,8 +1135,21 @@
     "developerModeDescription": "เปิดใช้งานโหมดนักพัฒนาเพื่อเข้าถึงเครื่องมือขั้นสูงและคุณสมบัติการดีบัก",
     "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
+    "external": "External",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
     "failedToOpenFolder": "ไม่สามารถเปิดโฟลเดอร์ได้",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "แฟลชแบง",
     "flashbangDescription": "บังคับใช้โหมดสว่างระหว่างเวลา 20:00 น. ถึง 8:00 น. โดยไม่คำนึงถึงธีมที่เลือก",
     "formatCommandHint": "Format: +cvar value (leading + is optional)",
@@ -1022,12 +1176,49 @@
     "launchOptions": "ตัวเลือกการเริ่มเกม",
     "launchOptionsDescription": "ปรับแต่งตัวเลือกการเริ่มเกม ตัวเลือกเหล่านี้จะถูกนำไปใช้โดยไม่คำนึงถึงโหมดเกมที่เลือก (ปกติหรือมีม็อด)",
     "launchVanillaNoArgs": "เริ่มเกมในโหมดปกติโดยไม่มีอาร์กิวเมนต์เพิ่มเติม",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "Mods state cleared successfully",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "ไม่พบข้อมูลสำรอง",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "เปิดโฟลเดอร์ข้อมูลสำรอง",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "เปิดโฟลเดอร์เกม",
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsStore": "เปิดรายการม็อด",
     "placeholderCommand": "+r_aspectratio 2.7",
@@ -1048,13 +1239,14 @@
     "settingRemoved": "Setting removed",
     "settingType": "ประเภทการตั้งค่า",
     "settingUpdated": "Setting updated",
+    "syntax": "Syntax",
     "systemSettings": "การตั้งค่าระบบ",
     "systemSettingsDescription": "การตั้งค่าตัวจัดการม็อด สิ่งเหล่านี้ไม่มีผลต่อเกม",
     "theme": "ธีม",
     "themeDescription": "เลือกระหว่างธีมสว่าง, มืด หรือธีมตามระบบ",
     "tools": "เครื่องมือ",
-    "backups": "สำรองข้อมูล",
     "toolsDescription": "ฟังก์ชันยูทิลิตี้สำหรับจัดการม็อดของคุณ",
+    "unlimitedBackups": "Unlimited",
     "value": "ค่า",
     "valuePlaceholder": "จริง หรือ เท็จ หรือค่าใดๆ"
   },
@@ -1067,7 +1259,10 @@
   },
   "status": {
     "disabled": "ปิดใช้งาน",
-    "enabled": "เปิดใช้งาน"
+    "enabled": "เปิดใช้งาน",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "การดำเนินการ",
@@ -1088,6 +1283,13 @@
   "time": {
     "ago": "ago",
     "at": "at"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "เสียง",
@@ -1125,6 +1327,18 @@
     "releaseNotes": "บันทึกประจำรุ่น"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "ม็อดนี้ไม่มีจำหน่ายในร้านม็อดแล้ว และอาจไม่ทำงานกับเวอร์ชันเกมปัจจุบัน",
     "obsoleteLabel": "ล้าสมัย",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -1139,30 +1353,6 @@
     "gotIt": "รับทราบ!",
     "title": "มีอะไรใหม่",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1223,6 +1413,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [

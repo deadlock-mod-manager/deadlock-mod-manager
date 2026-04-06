@@ -49,7 +49,7 @@ export const BrokenModButton = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant='outline' onClick={handleClick}>
-            <HeartBreakIcon className='size-5' weight='fill' />
+            <HeartBreakIcon className='size-5' />
             <span>{total}</span>
           </Button>
         </TooltipTrigger>

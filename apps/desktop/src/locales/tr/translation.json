@@ -7,6 +7,7 @@
     "downloadingUpdate": "Güncelleme indiriliyor...",
     "forModContent": "mod içerikleri ve topluluk için",
     "gamebananaDescription": "Birincil mod kaynağımız ve bu uygulamanın omurgasıdır. GameBanana, Deadlock modlarını keşfetme, bulma ve indirmeyi sağlayan kapsamlı mod veritabanı ve API sunar.",
+    "installUpdate": "Install update",
     "latestVersion": "En son sürümü kullanıyorsunuz.",
     "openSourceCommunity": "Açık Kaynak Topluluğu",
     "openSourceDescription": "React, TypeScript ve modern uygulamaları mümkün kılan birçok kütüphane dahil olmak üzere harika açık kaynak teknolojilerle oluşturuldu. Tüm katkıda bulunanlara teşekkürler.",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "Kapat",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "İlk sayfaya git",
     "goToLastPage": "Son sayfaya git",
     "goToNextPage": "Sonraki sayfaya git",
     "goToPreviousPage": "Önceki sayfaya git",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "Daha fazla",
     "morePages": "Daha fazla sayfa",
     "next": "Sonraki",
     "nextSlide": "Sonraki slayt",
     "previous": "Önceki",
     "previousSlide": "Önceki slayt",
+    "restore": "Restore",
     "snipzteaMascotAlt": "Snipztea maskotu"
   },
   "addMods": {
@@ -119,6 +124,7 @@
     "identificationFailed": "Bu mod tanımlanamadı",
     "identificationResult": "Tanımlama Sonucu",
     "identificationSuccess": "Başarıyla tanımlandı: {{name}}",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "identifyMod": "Modu Tanımla",
     "identifying": "Tanımlanıyor...",
     "modAuthor": "Yazar",
@@ -151,6 +157,7 @@
       "identified": "Tanımlanan",
       "unknown": "Bilinmeyen"
     },
+    "total": "total",
     "vpkContents": "VPK İçeriği"
   },
   "auth": {
@@ -167,8 +174,8 @@
     "apiHealthy": "API Çevrimiçi",
     "apiOffline": "API Çevrimdışı",
     "apiUnknown": "API Durumu Bilinmiyor",
-    "authOnline": "Auth Çevrimiçi",
     "authOffline": "Auth Çevrimdışı",
+    "authOnline": "Auth Çevrimiçi",
     "authUnknown": "Auth Durumu Bilinmiyor",
     "back": "Geri",
     "cancel": "İptal",
@@ -186,6 +193,9 @@
     "enabled": "Etkin",
     "error": "Hata",
     "failedToFetchMods": "Modlar yüklenemedi. Daha sonra tekrar deneyin.",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "Oyun algılandı",
     "gameInstalledAt": "Oyun burada kurulu {{path}}",
     "gameNotDetected": "Oyun Algılanmadı",
@@ -197,7 +207,6 @@
     "loading": "Yükleniyor...",
     "mods": "Modlar",
     "never": "Asla",
-    "volume": "Ses",
     "no": "Hayır",
     "none": "None",
     "off": "off",
@@ -212,6 +221,7 @@
     "stopGame": "Oyunu durdur",
     "success": "Başarılı",
     "type": "Type",
+    "volume": "Ses",
     "yes": "Evet"
   },
   "contextMenu": {
@@ -247,17 +257,18 @@
       "applied": "Crosshair applied successfully",
       "apply": "Apply",
       "applyError": "Failed to apply crosshair",
+      "color": "Renk",
+      "colorDialogDescription": "Nişangahınız için bir renk seçin.",
+      "colorDialogTitle": "Özel renk",
+      "defaultHero": "Default",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "Onaltılık renk kodu",
-      "color": "Renk",
-      "colorDialogTitle": "Özel renk",
-      "colorDialogDescription": "Nişangahınız için bir renk seçin.",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -322,6 +333,7 @@
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
     "latestMods": "Latest Mods",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "noAnnouncementsTitle": "No Announcements",
     "noModsAvailable": "No mods available",
@@ -345,7 +357,11 @@
     "active": "Aktif",
     "all": "Tümü",
     "completed": "Tamamlandı",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "{{count}} mod indiriliyor",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "{{count}} mod indiriliyor",
     "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "İndirilen dosya bulunamadı",
@@ -357,6 +373,8 @@
     "selectNone": "Select None",
     "title": "İndirilenler",
     "total": "Total",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "Tüm indirmeleri görüntüle"
   },
   "errors": {
@@ -384,6 +402,16 @@
     "toggleError": "Failed to toggle feature flag",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "Aktif filtreler:",
     "allCategories": "Tüm kategoriler",
@@ -396,17 +424,20 @@
     "content": "İçerik",
     "exclude": "Hariç Tut",
     "excludeAudioMods": "Ses modlarını gizle",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "Hariç Tutan Filtreler:",
     "filters": "Filtreler",
     "hero": "Kahraman",
     "heroLabel": "Kahraman:",
     "hideAudio": "Ses gizle",
+    "hideMap": "Hide Maps",
     "hideNSFW": "NSFW gizle",
     "hideNSFWContent": "NSFW içerikleri gizle",
     "hideOutdated": "Eskileri gizle",
     "hideOutdatedBadge": "Eskileri gizle",
     "include": "Dahil Et",
     "includingFilters": "Dahil Eden Filtreler:",
+    "mapsModsOnly": "Maps Only",
     "mode": "Filtre Modu",
     "noCategoriesFound": "Kategori bulunamadı.",
     "noHeroesFound": "Kahraman bulunamadı.",
@@ -418,10 +449,7 @@
     "showNSFWContent": "NSFW içerikleri göster",
     "showOutdated": "Eskileri göster",
     "showOutdatedBadge": "Eskileri göster",
-    "sortBy": "Sırala",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "Sırala"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -441,6 +469,17 @@
     "documentation": "Documentation",
     "needHelp": "Yardım?",
     "viewDocs": "View Documentation"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "Bilgi",
@@ -467,14 +506,41 @@
   "modDetail": {
     "authorLabel": "Yazar",
     "backToMods": "Modlara dön",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "İndirmeler",
+    "forceUpdate": "Force Update",
     "goBackHome": "Ana sayfaya dön",
     "idLabel": "ID",
     "installedAt": "Yükleme tarihi",
     "lastModifiedAt": "Son değişiklik",
+    "mapHowToPlay": {
+      "copied": "",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "title": ""
+    },
     "modStatusLabel": "Mod durumu",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "Yayın tarihi",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "Mevcut VPK Dosyaları",
       "description": "Geliştirme sırasında hızlı iterasyon için mod dosyalarını değiştirin",
       "dragAndDrop": "VPK dosyalarını buraya sürükleyip bırakın",
@@ -484,22 +550,12 @@
       "selectToReplace": "Değiştirilecek {{count}} dosya seçin",
       "success": "VPK dosyaları başarıyla değiştirildi",
       "title": "VPK Dosyalarını Değiştir"
-    },
-    "mapHowToPlay": {
-      "title": "",
-      "step1": "",
-      "step2": "",
-      "step3Command": "",
-      "step4Glitch": "",
-      "step5Status": "",
-      "step6Share": "",
-      "copied": "",
-      "mapNameFallback": ""
     }
   },
   "modForm": {
     "authorPlaceholder": "Bilinmeyen",
     "description": "Isteğe bağlı ayrıntılar ekleyin. Yalnızca ad gereklidir.",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "Harika Mod",
     "modPreview": "Mod önizlemesi",
     "title": "Mod metadata",
@@ -513,7 +569,8 @@
     "noMods": "No installed mods to order",
     "orderSaveFailed": "Failed to save mod order",
     "orderSaved": "Mod order saved successfully",
-    "title": "Manage Mod Load Order"
+    "title": "Manage Mod Load Order",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "Modlarıma eklendi",
@@ -544,11 +601,15 @@
     "disable": "Devre dışı bırak",
     "disableError": "Mod devre dışı bırakılırken hata oluştu",
     "disableSuccess": "Mod başarıyla devre dışı bırakıldı",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "Etkinleştir",
     "gridView": "Izgara görünümü",
     "installing": "Yükleniyor...",
     "listView": "Liste görünümü",
     "manageOrder": "Change Mods Order",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "Mod mevcut değil",
     "noModsFound": "Mod bulunamadı",
     "noModsMatchFilters": "Aramanıza ve filtrelere uygun mod yok",
@@ -565,11 +626,27 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "Yerel Eklentileri Analiz Et",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
@@ -582,6 +659,10 @@
       "downloaded": "Downloaded",
       "installed": "Installed"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "Modlar Sayfasını Ziyaret Et"
   },
   "navigation": {
@@ -594,7 +675,9 @@
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "İndirilenler",
+    "expandMenu": "Expand menu",
     "getMods": "Modları keşfet",
+    "maps": "Maps",
     "myMods": "Modlarım",
     "needHelp": "Yardıma İhtiyacınız Var mı?",
     "settings": "Ayarlar",
@@ -650,13 +733,29 @@
       "success": "Game path detected successfully!",
       "title": "Game Path Detection"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "Next",
     "skip": "Skip Setup",
     "stepIndicator": "Step {{current}} of {{total}}",
     "title": "Welcome to Deadlock Mod Manager",
     "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started."
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "Vurgu Rengi",
+      "addCustomColor": "Renk ekle",
+      "customColor": "Özel Renk",
+      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin.",
+      "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
+      "visit": "Skeptic tarafından tema"
+    },
     "background": {
       "blur": "Bulanıklık",
       "chooseImage": "Görüntü seç",
@@ -673,13 +772,11 @@
       "description": "Siyah-kırmızı gradyanlar ve koyu kırmızı vurgularla karanlık tema.",
       "visit": "Skeptic tarafından tema"
     },
-    "arcane": {
-      "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
-      "visit": "Skeptic tarafından tema",
-      "accentColor": "Vurgu Rengi",
-      "customColor": "Özel Renk",
-      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin.",
-      "addCustomColor": "Renk ekle"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "Discord Uygulama Kimliği",
@@ -713,6 +810,7 @@
       "title": "Flashbang Modu",
       "usageInstructions": "Eklentiyi etkinleştirip başlangıç ve bitiş saatini (0–23) seçin."
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
       "discord": "Discord",
@@ -728,6 +826,7 @@
     },
     "themes": {
       "activate": "Activate",
+      "active": "Active",
       "activeTheme": "Active Theme",
       "apply": "Apply",
       "b": "B",
@@ -755,6 +854,7 @@
       "eyedropper": "Eyedropper",
       "g": "G",
       "hue": "Hue",
+      "inactive": "Inactive",
       "lightness": "Lightness",
       "lineColor": "Line color",
       "lineColorDialogDescription": "Adjust color using H, S, V or paste a hex value.",
@@ -878,23 +978,40 @@
   },
   "reports": {
     "additionalDetails": "Additional Details",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "This mod has been reported {{count}} time",
     "description_plural": "This mod has been reported {{count}} times",
     "detailsDescription": "Optional: Provide more context about the issue",
     "detailsPlaceholder": "Any additional information that might help...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "Reason",
     "reasonDescription": "Please provide a clear description of the problem",
     "reasonPlaceholder": "Describe the issue you're experiencing...",
+    "reportBroken": "Report as broken",
     "reportDescription": "Report issues with {{modName}} by {{author}}",
     "reportFailed": "Failed to submit report",
     "reportMod": "Report Mod",
     "reportSubmitted": "Report submitted successfully",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": "Report Types",
     "selectType": "Select report type",
     "submissionConfirmation": "Your report has been submitted and will be reviewed by moderators.",
     "submitReport": "Submit Report",
     "submitting": "Submitting...",
     "thankYou": "Thank You!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "Reports",
     "totalReports": "{{count}} report",
     "totalReports_plural": "{{count}} reports",
@@ -910,6 +1027,8 @@
     "unverifiedCount": "{{count}} unverified",
     "unverifiedReports": "{{count}} unverified report",
     "unverifiedReports_plural": "{{count}} unverified reports",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "Description must be less than 2000 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
@@ -919,23 +1038,32 @@
     "verifiedCount": "{{count}} verified",
     "verifiedReports": "{{count}} verified report",
     "verifiedReports_plural": "{{count}} verified reports",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "Hakkında",
     "addSetting": "Ayar ekle",
     "addonsBackup": "Mod yedeği",
     "addonsBackupDescription": "Yüklü modlarınızın yedeklerini oluşturun ve geri yükleyin.",
+    "aiProvider": "AI Provider",
     "allModsCleared": "Tüm modlar silinemedi",
     "appearance": "Görünüm",
     "appearanceDescription": "Uygulamaın görünümünü özelleştirin.",
     "application": "Uygulama",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "Ses Seviyesi",
     "audioVolumeDescription": "Ses ön izleme ve oynatma için ses seviyesini ayarlayın",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "Mod Yöneticisi açıldığında modları otomatik olarak yeniden uygula.",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "autoexec": "Autoexec.cfg",
@@ -950,6 +1078,7 @@
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "backup": "Backup",
     "backupCreated": "Yedek başarıyla oluşturuldu",
     "backupCreationFailed": "Yedek oluşturulamadı",
     "backupDate": "Tarih",
@@ -963,17 +1092,29 @@
     "backupRestored": "Yedek başarıyla geri yüklendi",
     "backupSize": "Boyut",
     "backupVpkCount": "VPK Dosyaları",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "Yedekler",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "Browse",
     "clearAllMods": "Tüm modları sil",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Tüm modları silmek istendiginzine emin misiniz? Bu işlem geri alınamaz.",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "copiedToClipboard": "Copied to clipboard",
     "copyToClipboardTooltip": "Copy to clipboard",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "Yedek Oluştur",
     "createCustomSetting": "Özel ayar oluştur",
     "createCustomSettingDescription": "Oyuna özel bir ayar ekleyin. Bunlar başlatma seçeneklerine eklenir.",
@@ -991,8 +1132,21 @@
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
+    "external": "External",
     "failedToClearMods": "Fehler beim Löschen der Mods",
     "failedToOpenFolder": "Failed to open folder",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "Flashbang",
     "flashbangDescription": "Seçilen tema ne olursa olsun, 20:00 ile 8:00 arasında açık modu zorlar",
     "formatCommandHint": "Format: +cvar value (leading + is optional)",
@@ -1019,12 +1173,49 @@
     "launchOptions": "Başlatma seşenekleri",
     "launchOptionsDescription": "Oyun için başlatma seçeneklerini ayarlayın. Bunlar (Vanilla veya Modlu) oyun modundan bağımsız uygulanır.",
     "launchVanillaNoArgs": "Oyunu Vanilla modunda ek argüman olmadan başlat.",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "Mods state cleared successfully",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "Yedek bulunamadı",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "Yedekler Klasörünü Aç",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "Oyun klasörünü aç",
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "Mod klasörünü aç",
     "placeholderCommand": "+r_aspectratio 2.7",
     "placeholderFov": "e.g. 110 FOV",
@@ -1044,13 +1235,14 @@
     "settingRemoved": "Setting removed",
     "settingType": "Ayar türü",
     "settingUpdated": "Setting updated",
+    "syntax": "Syntax",
     "systemSettings": "Sistem ayarları",
     "systemSettingsDescription": "Mod Yöneticisi. Bunlar oyunu etkilemez.",
     "theme": "Tema",
     "themeDescription": "Açık, koyu veya sistem temasını seçin",
     "tools": "Araçlar",
-    "backups": "Yedekler",
     "toolsDescription": "Modlarınızı yönetmek için yardımıcı fonksiyonlar",
+    "unlimitedBackups": "Unlimited",
     "value": "Değer",
     "valuePlaceholder": "doğru, yanlış veya herhangi bir değer"
   },
@@ -1063,7 +1255,10 @@
   },
   "status": {
     "disabled": "Devre dışı",
-    "enabled": "Etkin"
+    "enabled": "Etkin",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "Eylemler",
@@ -1084,6 +1279,13 @@
   "time": {
     "ago": "ago",
     "at": "at"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "Audio",
@@ -1121,6 +1323,18 @@
     "releaseNotes": "Sürüm Notları"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir.",
     "obsoleteLabel": "Kullanımdan kalkmış",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -1135,30 +1349,6 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1219,6 +1409,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [

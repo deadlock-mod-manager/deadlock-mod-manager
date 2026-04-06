@@ -7,6 +7,7 @@
     "downloadingUpdate": "Pobieranie aktualizacji...",
     "forModContent": "dla treści modów i społeczności",
     "gamebananaDescription": "Nasze główne źródło modów i fundament tej aplikacji. GameBanana zapewnia kompleksową bazę modów i API, które umożliwia przeglądanie, odkrywanie i pobieranie modów Deadlock.",
+    "installUpdate": "Install update",
     "latestVersion": "Posiadasz najnowszą wersję",
     "openSourceCommunity": "Społeczność Open Source",
     "openSourceDescription": "Stworzona z wykorzystaniem niesamowitych technologii open source, w tym React, TypeScript i wielu innych bibliotek, które umożliwiają powstawanie nowoczesnych aplikacji. Dziękujemy wszystkim współtwórcom i opiekunom.",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "Zamknij",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "Przejdź do pierwszej strony",
     "goToLastPage": "Przejdź do ostatniej strony",
     "goToNextPage": "Przejdź do następnej strony",
     "goToPreviousPage": "Przejdź do poprzedniej strony",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "Więcej",
     "morePages": "Więcej stron",
     "next": "Następny",
     "nextSlide": "Następny slajd",
     "previous": "Poprzedni",
     "previousSlide": "Poprzedni slajd",
+    "restore": "Restore",
     "snipzteaMascotAlt": "Maskotka Snipztea"
   },
   "addMods": {
@@ -115,6 +120,7 @@
     "files": "pliki",
     "foundAddons": "Znalezione dodatki",
     "hide": "Ukryj szczegóły",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "modAuthor": "Autor",
     "modName": "Nazwa moda",
     "modNotFound": "Mod nie został znaleziony w bazie danych",
@@ -145,6 +151,7 @@
       "identified": "Zidentyfikowane",
       "unknown": "Nieznane"
     },
+    "total": "total",
     "vpkContents": "Zawartość VPK"
   },
   "auth": {
@@ -161,8 +168,8 @@
     "apiHealthy": "API online",
     "apiOffline": "API offline",
     "apiUnknown": "Status API nieznany",
-    "authOnline": "Auth Online",
     "authOffline": "Auth Offline",
+    "authOnline": "Auth Online",
     "authUnknown": "Status Auth nieznany",
     "back": "Back",
     "cancel": "Anuluj",
@@ -180,6 +187,9 @@
     "enabled": "Enabled",
     "error": "Błąd",
     "failedToFetchMods": "Nie udało się pobrać modów. Spróbuj ponownie później.",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "Wykryto Grę",
     "gameInstalledAt": "Gra zainstalowana w {{path}}",
     "gameNotDetected": "Nie wykryto gry",
@@ -191,7 +201,6 @@
     "loading": "Ładowanie...",
     "mods": "Mody",
     "never": "Nigdy",
-    "volume": "Głośność",
     "no": "Nie",
     "none": "None",
     "off": "off",
@@ -206,6 +215,7 @@
     "stopGame": "Zatrzymaj Grę",
     "success": "Sukces",
     "type": "Type",
+    "volume": "Głośność",
     "yes": "Tak"
   },
   "contextMenu": {
@@ -241,17 +251,18 @@
       "applied": "Crosshair applied successfully",
       "apply": "Apply",
       "applyError": "Failed to apply crosshair",
+      "color": "Kolor",
+      "colorDialogDescription": "Wybierz kolor celownika.",
+      "colorDialogTitle": "Niestandardowy kolor",
+      "defaultHero": "Default",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "Kod koloru szesnastkowego",
-      "color": "Kolor",
-      "colorDialogTitle": "Niestandardowy kolor",
-      "colorDialogDescription": "Wybierz kolor celownika.",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -316,6 +327,7 @@
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
     "latestMods": "Latest Mods",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "noAnnouncementsTitle": "No Announcements",
     "noModsAvailable": "No mods available",
@@ -340,7 +352,11 @@
     "active": "Aktywne",
     "all": "Wszystkie",
     "completed": "Ukończone",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "Pobieranie {{count}} moda",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "Pobieranie {{count}} modów",
     "filesSelected": "{{selected}} z {{total}} plików wybranych",
     "noDownloadsFound": "Nie znaleziono pobrań",
@@ -352,6 +368,8 @@
     "selectNone": "Odznacz wszystko",
     "title": "Pobrane",
     "total": "Total",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "Zobacz wszystkie pobrane"
   },
   "errors": {
@@ -379,6 +397,16 @@
     "toggleError": "Failed to toggle feature flag",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "Aktywne filtry:",
     "allCategories": "Wszystkie Kategorie",
@@ -391,17 +419,20 @@
     "content": "Treści",
     "exclude": "Exclude",
     "excludeAudioMods": "Hide Audio Mods",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "Excluding Filters:",
     "filters": "Filtry",
     "hero": "Postać",
     "heroLabel": "Postać:",
     "hideAudio": "Hide Audio",
+    "hideMap": "Hide Maps",
     "hideNSFW": "Hide NSFW",
     "hideNSFWContent": "NSFW Content",
     "hideOutdated": "Ukryj nieaktualne",
     "hideOutdatedBadge": "Hide Outdated",
     "include": "Include",
     "includingFilters": "Including Filters:",
+    "mapsModsOnly": "Maps Only",
     "mode": "Filter Mode",
     "noCategoriesFound": "Nie znaleziono kategorii.",
     "noHeroesFound": "Nie znaleziono postaci.",
@@ -413,10 +444,7 @@
     "showNSFWContent": "Pokaż Treści NSFW",
     "showOutdated": "Show Outdated",
     "showOutdatedBadge": "Show Outdated",
-    "sortBy": "Sortuj Według",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "Sortuj Według"
   },
   "game": {
     "backupCreatedSuccess": "Kopia zapasowa gameinfo.gi utworzona pomyślnie",
@@ -436,6 +464,17 @@
     "documentation": "Documentation",
     "needHelp": "Potrzebujesz Pomocy?",
     "viewDocs": "View Documentation"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "O Aplikacji",
@@ -462,14 +501,42 @@
   "modDetail": {
     "authorLabel": "Autor",
     "backToMods": "Powrót do modów",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "Pobrania",
+    "forceUpdate": "Force Update",
     "goBackHome": "Powrót do strony głównej",
     "idLabel": "ID",
     "installedAt": "Zainstalowano",
     "lastModifiedAt": "Ostatnia modyfikacja",
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension).",
+    "mapHowToPlay": {
+      "copied": "Copied!",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "Check the mod description for the map name to use with this command.",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "Enable the Developer Console in Deadlock settings.",
+      "step2": "Press F7 to open the console.",
+      "step3Command": "Type the following command:",
+      "step4Glitch": "If you notice any visual glitches, try disconnecting and running {{mapCommand}} again to fix it.",
+      "step5Status": "Type \"status\" in the console and copy your SteamID, the part in square brackets (e.g. [1234567890]), including the brackets.",
+      "step6Share": "Share your SteamID like \"status [your_steamid]\" so others can connect to your custom map server. Enjoy!",
+      "title": "How to Play This Map"
+    },
     "modStatusLabel": "Status moda",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "Opublikowano",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "Bieżące pliki VPK",
       "description": "Zamień pliki modów na szybkie iteracje podczas programowania",
       "dragAndDrop": "Przeciągnij i upuść pliki VPK tutaj",
@@ -479,12 +546,12 @@
       "selectToReplace": "Wybierz {{count}} plik(ów) do zamiany",
       "success": "Pliki VPK zostały pomyślnie zamienione",
       "title": "Zamień pliki VPK"
-    },
-    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
+    }
   },
   "modForm": {
     "authorPlaceholder": "Nieznany",
     "description": "Dodaj opcjonalne szczegóły. Wymagana jest tylko nazwa.",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "Niesamowity Mod",
     "modPreview": "Podgląd moda",
     "title": "Metadane moda",
@@ -498,7 +565,8 @@
     "noMods": "No installed mods to order",
     "orderSaveFailed": "Failed to save mod order",
     "orderSaved": "Mod order saved successfully",
-    "title": "Manage Mod Load Order"
+    "title": "Manage Mod Load Order",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "Dodano do moich modów",
@@ -529,11 +597,15 @@
     "disable": "Wyłącz",
     "disableError": "Nie udało się wyłączyć moda",
     "disableSuccess": "Mod został pomyślnie wyłączony",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "Włącz",
     "gridView": "Widok Siatki",
     "installing": "Instalowanie...",
     "listView": "Widok Listy",
     "manageOrder": "Change Mods Order",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "Brak Dostępnych modów",
     "noModsFound": "Nie znaleziono żadnych modów",
     "noModsMatchFilters": "Brak modów pasujących do bieżącego wyszukiwania i filtrów",
@@ -550,11 +622,27 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "Analyze Local Addons",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
@@ -567,6 +655,10 @@
       "downloaded": "Downloaded",
       "installed": "Installed"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "Visit Mods Page"
   },
   "navigation": {
@@ -579,7 +671,9 @@
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "Pobrane",
+    "expandMenu": "Expand menu",
     "getMods": "Zdobądź mody",
+    "maps": "Maps",
     "myMods": "Moje mody",
     "needHelp": "Potrzebujesz Pomocy ?",
     "settings": "Ustawienia",
@@ -635,13 +729,29 @@
       "success": "Game path detected successfully!",
       "title": "Game Path Detection"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "Next",
     "skip": "Skip Setup",
     "stepIndicator": "Step {{current}} of {{total}}",
     "title": "Welcome to Deadlock Mod Manager",
     "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started."
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "Kolor akcentu",
+      "addCustomColor": "Dodaj kolor",
+      "customColor": "Niestandardowy kolor",
+      "customColorDescription": "Wybierz niestandardowy kolor akcentu dla motywu Arcane.",
+      "description": "Elegancki ciemny motyw z różowo-czerwonymi efektami poświaty inspirowany estetyką Arcane.",
+      "visit": "Motyw autorstwa Skeptic"
+    },
     "background": {
       "blur": "Rozmycie",
       "chooseImage": "Wybierz obraz",
@@ -658,13 +768,11 @@
       "description": "Ciemny motyw z czarno-czerwonymi gradientami i karmazynowymi akcentami.",
       "visit": "Motyw autorstwa Skeptic"
     },
-    "arcane": {
-      "description": "Elegancki ciemny motyw z różowo-czerwonymi efektami poświaty inspirowany estetyką Arcane.",
-      "visit": "Motyw autorstwa Skeptic",
-      "accentColor": "Kolor akcentu",
-      "customColor": "Niestandardowy kolor",
-      "customColorDescription": "Wybierz niestandardowy kolor akcentu dla motywu Arcane.",
-      "addCustomColor": "Dodaj kolor"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "ID aplikacji Discord",
@@ -698,6 +806,7 @@
       "title": "Tryb Flashbang",
       "usageInstructions": "Włącz wtyczkę i ustaw godzinę rozpoczęcia i zakończenia (0–23)."
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",
       "discord": "Discord",
@@ -713,6 +822,7 @@
     },
     "themes": {
       "activate": "Activate",
+      "active": "Active",
       "activeTheme": "Active Theme",
       "apply": "Apply",
       "b": "B",
@@ -740,6 +850,7 @@
       "eyedropper": "Eyedropper",
       "g": "G",
       "hue": "Hue",
+      "inactive": "Inactive",
       "lightness": "Lightness",
       "lineColor": "Line color",
       "lineColorDialogDescription": "Adjust color using H, S, V or paste a hex value.",
@@ -863,23 +974,40 @@
   },
   "reports": {
     "additionalDetails": "Additional Details",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "This mod has been reported {{count}} time",
     "description_plural": "This mod has been reported {{count}} times",
     "detailsDescription": "Optional: Provide more context about the issue",
     "detailsPlaceholder": "Any additional information that might help...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "Reason",
     "reasonDescription": "Please provide a clear description of the problem",
     "reasonPlaceholder": "Describe the issue you're experiencing...",
+    "reportBroken": "Report as broken",
     "reportDescription": "Report issues with {{modName}} by {{author}}",
     "reportFailed": "Failed to submit report",
     "reportMod": "Report Mod",
     "reportSubmitted": "Report submitted successfully",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": "Report Types",
     "selectType": "Select report type",
     "submissionConfirmation": "Your report has been submitted and will be reviewed by moderators.",
     "submitReport": "Submit Report",
     "submitting": "Submitting...",
     "thankYou": "Thank You!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "Reports",
     "totalReports": "{{count}} report",
     "totalReports_plural": "{{count}} reports",
@@ -895,6 +1023,8 @@
     "unverifiedCount": "{{count}} unverified",
     "unverifiedReports": "{{count}} unverified report",
     "unverifiedReports_plural": "{{count}} unverified reports",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "Description must be less than 2000 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
@@ -904,23 +1034,32 @@
     "verifiedCount": "{{count}} verified",
     "verifiedReports": "{{count}} verified report",
     "verifiedReports_plural": "{{count}} verified reports",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "O Aplikacji",
     "addSetting": "Dodaj Ustawienie",
     "addonsBackup": "Kopia zapasowa modów",
     "addonsBackupDescription": "Twórz i przywracaj kopie zapasowe zainstalowanych modów.",
+    "aiProvider": "AI Provider",
     "allModsCleared": "Usunięto wszystkie mody",
     "appearance": "Wygląd",
     "appearanceDescription": "Dostosuj wygląd aplikacji.",
     "application": "Aplikacja",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "Głośność audio",
     "audioVolumeDescription": "Dostosuj głośność dla podglądów audio i odtwarzania",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "Automatycznie ponownie zastosuj mody przy uruchomieniu menedżera modów.",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "autoexec": "Autoexec.cfg",
@@ -935,6 +1074,7 @@
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "backup": "Backup",
     "backupCreated": "Kopia zapasowa utworzona pomyślnie",
     "backupCreationFailed": "Nie udało się utworzyć kopii zapasowej",
     "backupDate": "Data",
@@ -948,17 +1088,29 @@
     "backupRestored": "Kopia zapasowa przywrócona pomyślnie",
     "backupSize": "Rozmiar",
     "backupVpkCount": "Pliki VPK",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "Kopie zapasowe",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "Browse",
     "clearAllMods": "Usuń Wszystkie Mody",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "Czy na pewno chcesz usunąć wszystkie mody? Tej operacji nie można cofnąć.",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "copiedToClipboard": "Copied to clipboard",
     "copyToClipboardTooltip": "Copy to clipboard",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "Utwórz Kopię Zapasową",
     "createCustomSetting": "Stwórz własne ustawienie",
     "createCustomSettingDescription": "Dodaj własne ustawienie do gry. Zostanie ono dodane jako opcja uruchamiania.",
@@ -976,8 +1128,21 @@
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
+    "external": "External",
     "failedToClearMods": "Nie udało się usunąć modów",
     "failedToOpenFolder": "Failed to open folder",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "Flashbang",
     "flashbangDescription": "Wymusza tryb jasny między 20:00 a 8:00, niezależnie od wybranego motywu",
     "formatCommandHint": "Format: +cvar value (leading + is optional)",
@@ -1004,12 +1169,49 @@
     "launchOptions": "Opcje Startu",
     "launchOptionsDescription": "Dostosuj opcje uruchamiania gry. Zostaną one zastosowane niezależnie od wybranego trybu gry (bez modów lub z modami).",
     "launchVanillaNoArgs": "Uruchom grę bez modów, bez dodatkowych argumentów",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "Mods state cleared successfully",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "Nie znaleziono kopii zapasowych",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "Otwórz Folder Kopii Zapasowych",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "Otwórz Folder Gry",
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "Otwórz Folder Modów",
     "placeholderCommand": "+r_aspectratio 2.7",
     "placeholderFov": "e.g. 110 FOV",
@@ -1029,13 +1231,14 @@
     "settingRemoved": "Setting removed",
     "settingType": "Typ ustawienia",
     "settingUpdated": "Setting updated",
+    "syntax": "Syntax",
     "systemSettings": "Ustawienia Systemowe",
     "systemSettingsDescription": "Ustawienia menedżera modów. Nie mają wpływu na grę.",
     "theme": "Motyw",
     "themeDescription": "Wybierz między jasnym, ciemnym lub motywem systemowym",
     "tools": "Narzędzia",
-    "backups": "Kopie zapasowe",
     "toolsDescription": "Narzędzia do zarządzania modami",
+    "unlimitedBackups": "Unlimited",
     "value": "Wartość",
     "valuePlaceholder": "prawda lub fałsz albo dowolna wartość"
   },
@@ -1048,7 +1251,10 @@
   },
   "status": {
     "disabled": "Wyłączony",
-    "enabled": "Włączony"
+    "enabled": "Włączony",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "Akcje",
@@ -1069,6 +1275,13 @@
   "time": {
     "ago": "ago",
     "at": "at"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "Audio",
@@ -1106,6 +1319,18 @@
     "releaseNotes": "Informacje o Wydaniu"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "Ten mod nie jest już dostępny w sklepie z modami i może nie działać z aktualną wersją gry.",
     "obsoleteLabel": "Nieaktualny",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -1120,30 +1345,6 @@
     "gotIt": "Got it!",
     "title": "What's New",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1204,6 +1405,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [

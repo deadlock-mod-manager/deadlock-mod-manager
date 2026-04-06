@@ -7,6 +7,7 @@
     "downloadingUpdate": "جار تنزيل التحديث...",
     "forModContent": "لمحتوى التعديل والمجتمع",
     "gamebananaDescription": "مصدر التعديل الأساسي لدينا لهذا التطبيق. يوفر GameBanana قاعدة بيانات التعديل الشاملة وواجهة برمجة التطبيقات التي تجعل تصفح تعديلات Deadlock واكتشافها وتنزيلها ممكنًا.",
+    "installUpdate": "Install update",
     "latestVersion": "لديك أحدث إصدار.",
     "openSourceCommunity": "مجتمع المصادر المفتوحة",
     "openSourceDescription": "تم تصميمه باستخدام تقنيات مذهلة مفتوحة المصدر بما في ذلك React و TypeScript والعديد من المكتبات الأخرى التي تجعل التطبيقات الحديثة ممكنة. شكرًا لجميع المساهمين والمشرفين.",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "إغلاق",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "الذهاب للصفحة الأولى",
     "goToLastPage": "الذهاب للصفحة الأخيرة",
     "goToNextPage": "الذهاب للصفحة التالية",
     "goToPreviousPage": "الذهاب للصفحة السابقة",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "المزيد",
     "morePages": "المزيد من الصفحات",
     "next": "التالي",
     "nextSlide": "الشريحة التالية",
     "previous": "السابق",
     "previousSlide": "الشريحة السابقة",
+    "restore": "Restore",
     "snipzteaMascotAlt": "تميمة Snipztea"
   },
   "addMods": {
@@ -121,6 +126,7 @@
     "foundAddons": "الإضافات الموجودة",
     "hide": "إخفاء التفاصيل",
     "identifiedAddons": "الإضافات المحددة",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "modAuthor": "المؤلف",
     "modName": "اسم التعديل",
     "modNotFound": "التعديل غير موجود في قاعدة البيانات",
@@ -152,6 +158,7 @@
       "identified": "محدد",
       "unknown": "غير معروف"
     },
+    "total": "total",
     "unidentifiedAddons": "الإضافات غير المحددة",
     "vpkContents": "محتويات VPK"
   },
@@ -171,6 +178,7 @@
     "apiUnknown": "حالة API غير معروفة",
     "authHealthy": "Auth متصل",
     "authOffline": "Auth غير متصل",
+    "authOnline": "Auth Server Online",
     "authUnknown": "حالة Auth غير معروفة",
     "back": "Back",
     "cancel": "إلغاء",
@@ -188,6 +196,9 @@
     "enabled": "مفعل",
     "error": "خطأ",
     "failedToFetchMods": "فشل في الحصول على تعديلات. حاول مرة أخرى لاحقاً",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "تم الكشف عن اللعبة",
     "gameInstalledAt": "تم تثبيت اللعبة في {{path}}",
     "gameNotDetected": "اللعبة غير مكتشفة",
@@ -199,7 +210,6 @@
     "loading": "جار التحميل...",
     "mods": "تعديلات",
     "never": "أبداً",
-    "volume": "مستوى الصوت",
     "no": "لا",
     "none": "لا شيء",
     "off": "إيقاف",
@@ -214,6 +224,7 @@
     "stopGame": "إيقاف اللعبة",
     "success": "نجاح",
     "type": "النوع",
+    "volume": "مستوى الصوت",
     "yes": "نعم"
   },
   "contextMenu": {
@@ -250,17 +261,18 @@
       "applied": "تم تطبيق الموضع بنجاح",
       "apply": "تطبيق",
       "applyError": "فشل في تطبيق الموضع",
+      "color": "اللون",
+      "colorDialogDescription": "اختر لونًا للتصويب.",
+      "colorDialogTitle": "لون مخصص",
+      "defaultHero": "Default",
       "description": "الوصف",
       "descriptionPlaceholder": "وصف اختياري",
       "descriptionValidation": "يجب أن يكون الوصف أقل من 500 حرف",
       "heroes": "الأبطال",
       "heroesSelected": "محدد",
       "heroesValidation": "يرجى اختيار بطل واحد على الأقل (الحد الأقصى 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "رمز اللون السداسي",
-      "color": "اللون",
-      "colorDialogTitle": "لون مخصص",
-      "colorDialogDescription": "اختر لونًا للتصويب.",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "استيراد",
         "description": "الصق إعدادات تنسيق موضع citadel أدناه لاستيرادها إلى النموذج.",
@@ -325,6 +337,7 @@
     "announcements": "الإعلانات",
     "checkBackLater": "تحقق لاحقًا للحصول على التحديثات",
     "latestMods": "أحدث التعديلات",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "لا توجد إعلانات حالياً. تحقق لاحقًا للحصول على التحديثات والأخبار.",
     "noAnnouncementsTitle": "لا توجد إعلانات",
     "noModsAvailable": "لا توجد تعديلات متاحة",
@@ -348,7 +361,11 @@
     "active": "نشط",
     "all": "الكل",
     "completed": "مكتمل",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "جاري التنزيل {{count}} تعديل",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "تعديلات {{count}} تنزيل",
     "filesSelected": "تم اختيار {{selected}} من {{total}} ملف",
     "noDownloadsFound": "لم يتم العثور على تحميلات",
@@ -360,6 +377,8 @@
     "selectNone": "عدم التحديد",
     "title": "التحميلات",
     "total": "الإجمالي",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "عرض جميع التحميلات"
   },
   "errors": {
@@ -387,6 +406,16 @@
     "toggleError": "فشل في تبديل علامة الميزة",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "المرشحات النشطة:",
     "allCategories": "جميع الفئات",
@@ -399,17 +428,20 @@
     "content": "المحتوى",
     "exclude": "استبعاد",
     "excludeAudioMods": "إخفاء التعديلات الصوتية",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "مرشحات الاستبعاد:",
     "filters": "المرشحات",
     "hero": "البطل",
     "heroLabel": "البطل:",
     "hideAudio": "إخفاء الصوتيات",
+    "hideMap": "Hide Maps",
     "hideNSFW": "إخفاء NSFW",
     "hideNSFWContent": "إخفاء محتوى NSFW",
     "hideOutdated": "إخفاء التعديلات القديمة",
     "hideOutdatedBadge": "إخفاء القديمة",
     "include": "تضمين",
     "includingFilters": "مرشحات التضمين:",
+    "mapsModsOnly": "Maps Only",
     "mode": "وضع التصفية",
     "noCategoriesFound": "لم يتم العثور على أي فئات.",
     "noHeroesFound": "لم يتم العثور على أي أبطال.",
@@ -421,10 +453,7 @@
     "showNSFWContent": "إظهار محتوى NSFW",
     "showOutdated": "إظهار التعديلات القديمة",
     "showOutdatedBadge": "إظهار القديمة",
-    "sortBy": "الفرز حسب",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "الفرز حسب"
   },
   "game": {
     "backupCreatedSuccess": "تم إنشاء نسخة احتياطية من gameinfo.gi بنجاح",
@@ -444,6 +473,17 @@
     "documentation": "التوثيق",
     "needHelp": "تحتاج المساعدة؟",
     "viewDocs": "عرض التوثيق"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "عن التطبيق",
@@ -470,14 +510,42 @@
   "modDetail": {
     "authorLabel": "المؤلف",
     "backToMods": "العودة إلى الإضافات",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "التنزيلات",
+    "forceUpdate": "Force Update",
     "goBackHome": "العودة للرئيسية",
     "idLabel": "المعرف",
     "installedAt": "تاريخ التثبيت",
     "lastModifiedAt": "آخر تعديل",
+    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension).",
+    "mapHowToPlay": {
+      "copied": "Copied!",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "Check the mod description for the map name to use with this command.",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "Enable the Developer Console in Deadlock settings.",
+      "step2": "Press F7 to open the console.",
+      "step3Command": "Type the following command:",
+      "step4Glitch": "If you notice any visual glitches, try disconnecting and running {{mapCommand}} again to fix it.",
+      "step5Status": "Type \"status\" in the console and copy your SteamID, the part in square brackets (e.g. [1234567890]), including the brackets.",
+      "step6Share": "Share your SteamID like \"status [your_steamid]\" so others can connect to your custom map server. Enjoy!",
+      "title": "How to Play This Map"
+    },
     "modStatusLabel": "حالة الإضافة",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "تاريخ النشر",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "ملفات VPK الحالية",
       "description": "استبدال ملفات التعديل للتكرار السريع أثناء التطوير",
       "dragAndDrop": "اسحب وأفلت ملفات VPK هنا",
@@ -487,12 +555,12 @@
       "selectToReplace": "اختر {{count}} ملف(ات) للاستبدال",
       "success": "تم استبدال ملفات VPK بنجاح",
       "title": "استبدال ملفات VPK"
-    },
-    "mapConsoleHint": "Load this map from the developer console with the command map MAP_NAME (use the map name for this VPK, without the .vpk extension)."
+    }
   },
   "modForm": {
     "authorPlaceholder": "غير معروف",
     "description": "إضافة تفاصيل اختيارية. الاسم فقط مطلوب.",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "تعديل رائع",
     "modPreview": "معاينة التعديل",
     "title": "بيانات التعديل الوصفية",
@@ -506,7 +574,8 @@
     "noMods": "لا توجد تعديلات مثبتة لترتيبها",
     "orderSaveFailed": "فشل في حفظ ترتيب التعديلات",
     "orderSaved": "تم حفظ ترتيب التعديلات بنجاح",
-    "title": "إدارة ترتيب تحميل التعديلات"
+    "title": "إدارة ترتيب تحميل التعديلات",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "تمت الإضافة إلى تعديلاتي",
@@ -537,11 +606,15 @@
     "disable": "تعطيل",
     "disableError": "فشل في تعطيل التعديل",
     "disableSuccess": "تم تعطيل التعديل بنجاح",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "تمكين",
     "gridView": "عرض الشبكة",
     "installing": "التثبيت...",
     "listView": "عرض القائمة",
     "manageOrder": "تغيير ترتيب التعديلات",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "لم تتوفر أي تعديلات",
     "noModsFound": "لم يتم العثور على أي تعديلات",
     "noModsMatchFilters": "لم يتم العثور على أي تعديلات تتوافق مع معايير البحث والفلترة الحالية",
@@ -558,11 +631,27 @@
       "refresh": "تحديث",
       "showList": "إظهار الملفات",
       "title": "تم العثور على ملفات VPK غير معروفة"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "تحليل الإضافات المحلية",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "{{count}}/99 تعديل مفعل",
     "enabledModsCountAtLimit": "{{count}}/99 تعديل مفعل (في الحد الأقصى)",
     "enabledModsCountNearLimit": "{{count}}/99 تعديل مفعل (قريب من الحد)",
@@ -575,6 +664,10 @@
       "downloaded": "تم التنزيل",
       "installed": "مثبت"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "زيارة صفحة التعديلات"
   },
   "navigation": {
@@ -587,7 +680,9 @@
     "dashboard": "لوحة التحكم",
     "developer": "أدوات المطور",
     "downloads": "تنزيلات",
+    "expandMenu": "Expand menu",
     "getMods": "احصل على تعديلات",
+    "maps": "Maps",
     "myMods": "تعديلاتي",
     "needHelp": "تحتاج المساعدة؟",
     "settings": "إعدادات",
@@ -643,13 +738,29 @@
       "success": "تم اكتشاف مسار اللعبة بنجاح!",
       "title": "اكتشاف مسار اللعبة"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "التالي",
     "skip": "تخطي الإعداد",
     "stepIndicator": "الخطوة {{current}} من {{total}}",
     "title": "مرحبًا بك في Deadlock Mod Manager",
     "welcome": "دعنا نعدك مع {{appName}}! سيساعدك هذا الإعداد السريع على البدء."
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "لون التمييز",
+      "addCustomColor": "إضافة لون",
+      "customColor": "لون مخصص",
+      "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane.",
+      "description": "ثيم داكن أنيق مع تأثيرات توهج وردية-حمراء مستوحاة من جمالية Arcane.",
+      "visit": "ثيم من Skeptic"
+    },
     "background": {
       "blur": "الضبابية",
       "chooseImage": "اختر صورة",
@@ -666,13 +777,11 @@
       "description": "ثيم داكن بتدرجات سوداء وحمراء ولمسات قرمزية.",
       "visit": "ثيم من Skeptic"
     },
-    "arcane": {
-      "description": "ثيم داكن أنيق مع تأثيرات توهج وردية-حمراء مستوحاة من جمالية Arcane.",
-      "visit": "ثيم من Skeptic",
-      "accentColor": "لون التمييز",
-      "customColor": "لون مخصص",
-      "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane.",
-      "addCustomColor": "إضافة لون"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "معرف تطبيق Discord",
@@ -706,6 +815,7 @@
       "title": "وضع فلاش بانغ",
       "usageInstructions": "فعّل الملحق واختر ساعة البدء والانتهاء (0–23)."
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "ثيم سايبربانك بلمسات فيروزية مصمم للوضوح والجلسات الطويلة.",
       "discord": "ديسكورد",
@@ -721,6 +831,7 @@
     },
     "themes": {
       "activate": "تفعيل",
+      "active": "Active",
       "activeTheme": "السمة النشطة",
       "apply": "تطبيق",
       "b": "ب",
@@ -748,6 +859,7 @@
       "eyedropper": "الماصة",
       "g": "ج",
       "hue": "اللون",
+      "inactive": "Inactive",
       "lightness": "الإضاءة",
       "lineColor": "لون الخط",
       "lineColorDialogDescription": "اضبط اللون باستخدام H، S، V أو الصق قيمة hex.",
@@ -871,19 +983,35 @@
   },
   "reports": {
     "additionalDetails": "تفاصيل إضافية",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "ابلغ عن مشاكل في التعديلات أو اقترح تحسينات.",
     "description_plural": "تم الإبلاغ عن هذا التعديل {{count}} مرة",
     "detailsDescription": "اختياري: قدم المزيد من السياق حول المشكلة",
     "detailsPlaceholder": "أي معلومات إضافية قد تساعد...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "السبب",
     "reasonDescription": "يرجى تقديم وصف واضح للمشكلة",
     "reasonPlaceholder": "اوصف المشكلة التي تواجهها...",
+    "reportBroken": "Report as broken",
     "reportDescription": "الإبلاغ عن مشاكل في {{modName}} بواسطة {{author}}",
     "reportError": "خطأ في إرسال التقرير",
     "reportFailed": "فشل في إرسال التقرير",
     "reportMod": "ابلغ عن تعديل",
     "reportModDescription": "ابلغ عن مشكلة في هذا التعديل",
     "reportSubmitted": "تم إرسال التقرير",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": {
       "bug": "خطأ",
       "copyright": "انتهاك حقوق الطبع والنشر",
@@ -895,6 +1023,7 @@
     "submitReport": "إرسال التقرير",
     "submitting": "جاري الإرسال...",
     "thankYou": "شكرًا لك!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "التقارير",
     "totalReports": "{{count}} report",
     "totalReports_plural": "{{count}} reports",
@@ -910,6 +1039,8 @@
     "unverifiedCount": "{{count}} غير مُتحقق منه",
     "unverifiedReports": "{{count}} تقرير غير مُتحقق منه",
     "unverifiedReports_plural": "{{count}} تقارير غير مُتحقق منها",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "يجب أن يكون الوصف أقل من 2000 حرف",
       "reasonMaxLength": "يجب أن يكون السبب أقل من 500 حرف",
@@ -919,23 +1050,32 @@
     "verifiedCount": "{{count}} مُتحقق منه",
     "verifiedReports": "{{count}} تقرير مُتحقق منه",
     "verifiedReports_plural": "{{count}} تقارير مُتحقق منها",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "عن التطبيق",
     "addSetting": "إضافة إعداد",
     "addonsBackup": "نسخ احتياطي للمودات",
     "addonsBackupDescription": "إنشاء واستعادة النسخ الاحتياطية للمودات المثبتة.",
+    "aiProvider": "AI Provider",
     "allModsCleared": "تم مسح جميع التعديلات",
     "appearance": "المظهر",
     "appearanceDescription": "خصص مظهر التطبيق.",
     "application": "التطبيق",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "مستوى الصوت",
     "audioVolumeDescription": "اضبط مستوى الصوت لمعاينة وتشغيل الصوت",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "اكتشاف تلقائي",
     "autoReapplyMods": "إعادة تطبيق التعديلات تلقائيًا عند تشغيل مدير التعديلات.",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "التحديثات التلقائية",
     "autoUpdateDescription": "التحقق تلقائيًا من التحديثات وإشعارك بتحديثات التطبيق عند البدء.",
     "autoexec": "Autoexec.cfg",
@@ -950,6 +1090,7 @@
     "autoexecReadonlySectionDeleted": "لا يمكن حذف الأقسام للقراءة فقط. سيتم استعادتها عند الحفظ.",
     "autoexecSaveError": "فشل في حفظ تكوين autoexec",
     "autoexecSaved": "تم حفظ تكوين autoexec بنجاح! أعد تشغيل اللعبة لتفعيل التغييرات.",
+    "backup": "Backup",
     "backupCreated": "تم إنشاء النسخة الاحتياطية بنجاح",
     "backupCreationFailed": "فشل في إنشاء النسخة الاحتياطية",
     "backupDate": "التاريخ",
@@ -963,17 +1104,29 @@
     "backupRestored": "تم استعادة النسخة الاحتياطية بنجاح",
     "backupSize": "الحجم",
     "backupVpkCount": "ملفات VPK",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "النسخ الاحتياطية",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "تصفح",
     "clearAllMods": "امسح جميع التعديلات",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "مفتاح الأمر مطلوب",
     "commandLabel": "الأمر",
     "commandValueRequired": "قيمة الأمر مطلوبة",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "مسح حالة التعديلات؟",
     "confirmClearModsStateAction": "مسح الحالة",
     "confirmClearModsStateBody": "سيؤدي هذا إلى إزالة جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
     "copiedToClipboard": "تم النسخ إلى الحافظة",
     "copyToClipboardTooltip": "نسخ إلى الحافظة",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "إنشاء نسخة احتياطية",
     "createCustomSetting": "إنشاء إعداد مخصص",
     "createCustomSettingDescription": "أضف إعدادًا مخصصًا إلى اللعبة. سيتم إضافة هذه إلى اللعبة كخيارات تشغيل.",
@@ -991,8 +1144,21 @@
     "developerModeDescription": "تمكين وضع المطور للوصول إلى الأدوات المتقدمة وميزات التصحيح",
     "editCustomOptionTitle": "تعديل الخيار المخصص",
     "experimental": "تجريبي",
+    "external": "External",
     "failedToClearMods": "فشل في مسح التعديلات",
     "failedToOpenFolder": "فشل في فتح المجلد",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "فلاش بانج",
     "flashbangDescription": "يفرض الوضع الفاتح بين الساعة 8 مساءً و 8 صباحاً، بغض النظر عن المظهر المحدد",
     "formatCommandHint": "التنسيق: +cvar value (العلامة + في البداية اختيارية)",
@@ -1019,12 +1185,49 @@
     "launchOptions": "خيارات التشغيل",
     "launchOptionsDescription": "تخصيص خيارات التشغيل للعبة. يتم تطبيقها بغض النظر عن وضع اللعبة المحدد (أصلية أو معدلة).",
     "launchVanillaNoArgs": "تشغيل اللعبة في الوضع الأصلي بدون وسائط إضافية.",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "لم يتم العثور على نسخ احتياطية",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "افتح مجلد النسخ الاحتياطية",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "افتح مجلد اللعبة",
     "openInEditor": "فتح في المحرر",
     "openInFolder": "فتح في المجلد",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "افتح مجلد التعديلات",
     "placeholderCommand": "+r_aspectratio 2.7",
     "placeholderFov": "e.g. 110 FOV",
@@ -1044,13 +1247,14 @@
     "settingRemoved": "تمت إزالة الإعداد",
     "settingType": "نوع الإعداد",
     "settingUpdated": "تم تحديث الإعداد",
+    "syntax": "Syntax",
     "systemSettings": "إعدادات النظام",
     "systemSettingsDescription": "إعدادات مدير التعديلات. هذه لا تؤثر على اللعبة.",
     "theme": "المظهر",
     "themeDescription": "اختر بين المظهر الفاتح أو الداكن أو مظهر النظام",
     "tools": "أدوات",
-    "backups": "النسخ الاحتياطية",
     "toolsDescription": "الوظائف المساعدة لإدارة التعديلات الخاصة بك",
+    "unlimitedBackups": "Unlimited",
     "value": "القيمة",
     "valuePlaceholder": "true أو false أو أي قيمة"
   },
@@ -1063,7 +1267,10 @@
   },
   "status": {
     "disabled": "معطل",
-    "enabled": "مفعل"
+    "enabled": "مفعل",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "الإجراءات",
@@ -1084,6 +1291,13 @@
   "time": {
     "ago": "منذ",
     "at": "في"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "صوت",
@@ -1121,6 +1335,18 @@
     "releaseNotes": "ملاحظات الإصدار"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "هذا التعديل لم يعد متوفراً في متجر التعديلات وقد لا يعمل مع الإصدار الحالي من اللعبة.",
     "obsoleteLabel": "قديم",
     "staleModDescription": "هذا التعديل لديه {{count}} تقارير غير محلولة ولم يتم تحديثه منذ {{date}}. قد يكون معطلاً مع إصدار اللعبة الحالي.",
@@ -1135,30 +1361,6 @@
     "gotIt": "فهمت!",
     "title": "ما الجديد",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1219,6 +1421,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [

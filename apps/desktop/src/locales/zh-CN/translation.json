@@ -7,6 +7,7 @@
     "downloadingUpdate": "正在下载更新...",
     "forModContent": "用于模组内容和社区",
     "gamebananaDescription": "我们的主要模组来源和本应用程序的支柱。GameBanana 提供了全面的模组数据库和API，使得浏览、发现和下载 Deadlock 模组成为可能。",
+    "installUpdate": "Install update",
     "latestVersion": "您使用的是最新版本。",
     "openSourceCommunity": "开源社区",
     "openSourceDescription": "使用出色的开源技术构建，包括 React、TypeScript 和许多其他使现代应用程序成为可能的库。感谢所有贡献者和维护者。",
@@ -31,17 +32,21 @@
   },
   "accessibility": {
     "close": "关闭",
+    "deadlockApiIconAlt": "Deadlock API icon",
     "deadlockLogoAlt": "Deadlock",
     "goToFirstPage": "转到第一页",
     "goToLastPage": "转到最后一页",
     "goToNextPage": "转到下一页",
     "goToPreviousPage": "转到上一页",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
     "more": "更多",
     "morePages": "更多页面",
     "next": "下一个",
     "nextSlide": "下一张",
     "previous": "上一个",
     "previousSlide": "上一张",
+    "restore": "Restore",
     "snipzteaMascotAlt": "Snipztea mascot"
   },
   "addMods": {
@@ -119,6 +124,7 @@
     "identificationFailed": "无法识别此模组",
     "identificationResult": "识别结果",
     "identificationSuccess": "成功识别：{{name}}",
+    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
     "identifyMod": "识别模组",
     "identifying": "识别中...",
     "modAuthor": "作者",
@@ -151,6 +157,7 @@
       "identified": "已识别",
       "unknown": "未知"
     },
+    "total": "total",
     "vpkContents": "VPK 内容"
   },
   "auth": {
@@ -167,8 +174,8 @@
     "apiHealthy": "API 在线",
     "apiOffline": "API 离线",
     "apiUnknown": "API 状态未知",
-    "authOnline": "Auth 在线",
     "authOffline": "Auth 离线",
+    "authOnline": "Auth 在线",
     "authUnknown": "Auth 状态未知",
     "back": "返回",
     "cancel": "取消",
@@ -186,6 +193,9 @@
     "enabled": "已启用",
     "error": "错误",
     "failedToFetchMods": "获取模组失败，请稍后重试。",
+    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
+    "fsUnknown": "Filesystem: Unknown",
+    "fsWritable": "Filesystem: Writable",
     "gameDetected": "游戏已检测到",
     "gameInstalledAt": "游戏安装于 {{path}}",
     "gameNotDetected": "未检测到游戏",
@@ -197,7 +207,6 @@
     "loading": "加载中...",
     "mods": "模组",
     "never": "从不",
-    "volume": "音量",
     "no": "否",
     "none": "无",
     "off": "关",
@@ -212,6 +221,7 @@
     "stopGame": "停止游戏",
     "success": "成功",
     "type": "Type",
+    "volume": "音量",
     "yes": "是"
   },
   "contextMenu": {
@@ -247,17 +257,18 @@
       "applied": "Crosshair applied successfully",
       "apply": "Apply",
       "applyError": "Failed to apply crosshair",
+      "color": "颜色",
+      "colorDialogDescription": "选择准星颜色。",
+      "colorDialogTitle": "自定义颜色",
+      "defaultHero": "Default",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
       "descriptionValidation": "Description must be less than 500 characters",
       "heroes": "Heroes",
       "heroesSelected": "selected",
       "heroesValidation": "Please select at least one hero (max 5)",
-      "hexPlaceholder": "#FFFFFF",
       "hexColorInputLabel": "十六进制颜色代码",
-      "color": "颜色",
-      "colorDialogTitle": "自定义颜色",
-      "colorDialogDescription": "选择准星颜色。",
+      "hexPlaceholder": "#FFFFFF",
       "import": {
         "button": "Import",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
@@ -322,6 +333,7 @@
     "announcements": "Announcements",
     "checkBackLater": "Check back later for updates",
     "latestMods": "Latest Mods",
+    "learnMore": "Learn More",
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "noAnnouncementsTitle": "No Announcements",
     "noModsAvailable": "No mods available",
@@ -345,7 +357,11 @@
     "active": "进行中",
     "all": "全部",
     "completed": "已完成",
+    "createdAgo": "Created {{when}} ago",
+    "createdAt": "Created at {{date}}",
+    "downloadSelected": "Download Selected",
     "downloading": "正在下载 {{count}} 个模组",
+    "downloadingPercent": "Downloading {{percent}}%...",
     "downloading_plural": "正在下载 {{count}} 个模组",
     "filesSelected": "{{selected}} of {{total}} files selected",
     "noDownloadsFound": "未找到下载",
@@ -357,6 +373,8 @@
     "selectNone": "Select None",
     "title": "下载",
     "total": "Total",
+    "updatedAgo": "Updated {{when}} ago",
+    "updatedAt": "Updated at {{date}}",
     "viewAllDownloads": "查看所有下载"
   },
   "errors": {
@@ -384,6 +402,16 @@
     "toggleError": "Failed to toggle feature flag",
     "toggleSuccess": "{{name}} {{state}}"
   },
+  "fileSelector": {
+    "analyzingModFiles": "Analyzing mod files, please wait...",
+    "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
+    "filesOfTotalSelected": "{{selected}} of {{total}} files selected",
+    "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
+    "installSelected": "Install Selected",
+    "noFilesSelected": "No files selected",
+    "selectAllCount": "Select All ({{count}} files)",
+    "selectFilesToInstall": "Select Files to Install: {{modName}}"
+  },
   "filters": {
     "activeFilters": "活跃筛选器：",
     "allCategories": "所有类别",
@@ -396,17 +424,20 @@
     "content": "内容",
     "exclude": "排除",
     "excludeAudioMods": "隐藏音频模组",
+    "excludeMapsMods": "Hide Map Mods",
     "excludingFilters": "排除筛选器：",
     "filters": "筛选器",
     "hero": "英雄",
     "heroLabel": "英雄：",
     "hideAudio": "隐藏音频",
+    "hideMap": "Hide Maps",
     "hideNSFW": "隐藏NSFW",
     "hideNSFWContent": "隐藏NSFW内容",
     "hideOutdated": "隐藏过时",
     "hideOutdatedBadge": "隐藏过时",
     "include": "包含",
     "includingFilters": "包含筛选器：",
+    "mapsModsOnly": "Maps Only",
     "mode": "筛选模式",
     "noCategoriesFound": "未找到类别。",
     "noHeroesFound": "未找到英雄。",
@@ -418,10 +449,7 @@
     "showNSFWContent": "显示NSFW内容",
     "showOutdated": "显示过时",
     "showOutdatedBadge": "显示过时",
-    "sortBy": "排序方式",
-    "mapsModsOnly": "Maps Only",
-    "excludeMapsMods": "Hide Map Mods",
-    "hideMap": "Hide Maps"
+    "sortBy": "排序方式"
   },
   "game": {
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
@@ -441,6 +469,17 @@
     "documentation": "Documentation",
     "needHelp": "需要帮助？",
     "viewDocs": "View Documentation"
+  },
+  "mapInvite": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied!",
+    "description": "Your server is ready!",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "title": "Invite Friends",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready."
   },
   "menu": {
     "about": "关于",
@@ -467,14 +506,41 @@
   "modDetail": {
     "authorLabel": "作者",
     "backToMods": "返回模组列表",
+    "checkForUpdate": "Check for update",
+    "checkUpdateError": "Failed to check for updates",
+    "checkingForUpdate": "Checking...",
     "downloadsLabel": "下载量",
+    "forceUpdate": "Force Update",
     "goBackHome": "返回首页",
     "idLabel": "ID",
     "installedAt": "安装于",
     "lastModifiedAt": "最后修改于",
+    "mapHowToPlay": {
+      "copied": "",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "mapNameFallback": "",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map.",
+      "quickLaunchTitle": "Quick Launch",
+      "step1": "",
+      "step2": "",
+      "step3Command": "",
+      "step4Glitch": "",
+      "step5Status": "",
+      "step6Share": "",
+      "title": ""
+    },
     "modStatusLabel": "模组状态",
+    "noUpdateAvailable": "No update available",
     "publishedAt": "发布于",
+    "supportAuthor": {
+      "installedTitle": "Enjoying this mod? Support the author",
+      "title": "Support the Author"
+    },
+    "updateMod": "Update Mod",
+    "viewOriginalPost": "View Post on GameBanana",
     "vpkReplacement": {
+      "countMismatch": "Expected {{expected}} file(s), got {{actual}}",
       "currentFiles": "当前 VPK 文件",
       "description": "在开发过程中替换模组文件以快速迭代",
       "dragAndDrop": "将 VPK 文件拖放到此处",
@@ -484,22 +550,12 @@
       "selectToReplace": "选择 {{count}} 个文件进行替换",
       "success": "VPK 文件替换成功",
       "title": "替换 VPK 文件"
-    },
-    "mapHowToPlay": {
-      "title": "",
-      "step1": "",
-      "step2": "",
-      "step3Command": "",
-      "step4Glitch": "",
-      "step5Status": "",
-      "step6Share": "",
-      "copied": "",
-      "mapNameFallback": ""
     }
   },
   "modForm": {
     "authorPlaceholder": "未知",
     "description": "添加可选详细信息。仅名称是必填项。",
+    "invalidUrl": "Invalid URL",
     "modNamePlaceholder": "超棒模组",
     "modPreview": "模组预览",
     "title": "模组元数据",
@@ -513,7 +569,8 @@
     "noMods": "No installed mods to order",
     "orderSaveFailed": "Failed to save mod order",
     "orderSaved": "Mod order saved successfully",
-    "title": "Manage Mod Load Order"
+    "title": "Manage Mod Load Order",
+    "vpkCount": "{{count}} VPK(s)"
   },
   "modStatus": {
     "added": "已添加到我的模组",
@@ -544,11 +601,15 @@
     "disable": "禁用",
     "disableError": "禁用模组失败",
     "disableSuccess": "模组禁用成功",
+    "emptyClearFilters": "Try clearing some filters to see more results",
     "enable": "启用",
     "gridView": "网格视图",
     "installing": "安装中...",
     "listView": "列表视图",
     "manageOrder": "Change Mods Order",
+    "mapBadge": "Map",
+    "mapsSubtitle": "Browse custom maps for Deadlock",
+    "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
     "noModsAvailable": "暂无可用模组",
     "noModsFound": "未找到模组",
     "noModsMatchFilters": "没有模组符合您当前的搜索和筛选条件",
@@ -565,11 +626,27 @@
       "refresh": "Refresh",
       "showList": "Show files",
       "title": "Unrecognized VPK files found"
-    },
-    "mapBadge": "Map"
+    }
   },
   "myMods": {
+    "allModsUpToDate": "All mods are up to date",
     "analyzeLocalAddons": "分析本地插件",
+    "batchUpdate": {
+      "backupNote": "A backup will be created automatically before updating",
+      "complete": "Update complete",
+      "currentVersion": "Installed",
+      "description": "The following mods have updates available. A backup of your current addons will be created before updating.",
+      "error": "Failed to update mods",
+      "installedAt": "Installed",
+      "newVersion": "Available Update",
+      "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectVariant": "Select variant",
+      "title": "Update All Mods",
+      "updatedAt": "Last Updated",
+      "updating": "Updating mods..."
+    },
+    "checkForUpdates": "Check for updates",
+    "checkForUpdatesError": "Failed to check for mod updates",
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
@@ -582,6 +659,10 @@
       "downloaded": "Downloaded",
       "installed": "Installed"
     },
+    "updateAll": "Update All",
+    "updateAllDescription": "Download and install the latest versions of all your mods",
+    "updateAvailableCount_one": "{{count}} update available",
+    "updateAvailableCount_other": "{{count}} updates available",
     "visitModsPage": "访问模组页面"
   },
   "navigation": {
@@ -594,7 +675,9 @@
     "dashboard": "Dashboard",
     "developer": "Developer Tools",
     "downloads": "下载",
+    "expandMenu": "Expand menu",
     "getMods": "获取模组",
+    "maps": "Maps",
     "myMods": "我的模组",
     "needHelp": "需要帮助？",
     "settings": "设置",
@@ -650,13 +733,29 @@
       "success": "Game path detected successfully!",
       "title": "Game Path Detection"
     },
+    "network": {
+      "description": "Choose which server to download mods from. You can test server latency to find the fastest one for your location, or leave it on default.",
+      "title": "Download Server"
+    },
     "next": "Next",
     "skip": "Skip Setup",
     "stepIndicator": "Step {{current}} of {{total}}",
     "title": "Welcome to Deadlock Mod Manager",
     "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started."
   },
+  "pagination": {
+    "next": "Next",
+    "previous": "Previous"
+  },
   "plugins": {
+    "arcane": {
+      "accentColor": "强调色",
+      "addCustomColor": "添加颜色",
+      "customColor": "自定义颜色",
+      "customColorDescription": "为Arcane主题选择自定义强调色。",
+      "description": "一款优雅的暗黑主题，带有粉红色发光效果，灵感来自Arcane美学。",
+      "visit": "Skeptic 制作的主题"
+    },
     "background": {
       "blur": "模糊",
       "chooseImage": "选择图像",
@@ -673,13 +772,11 @@
       "description": "带有黑红渐变和深红色点缀的暗黑主题。",
       "visit": "Skeptic 制作的主题"
     },
-    "arcane": {
-      "description": "一款优雅的暗黑主题，带有粉红色发光效果，灵感来自Arcane美学。",
-      "visit": "Skeptic 制作的主题",
-      "accentColor": "强调色",
-      "customColor": "自定义颜色",
-      "customColorDescription": "为Arcane主题选择自定义强调色。",
-      "addCustomColor": "添加颜色"
+    "deadlockApi": {
+      "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",
+      "discord": "Discord",
+      "visit": "Visit Deadlock API:",
+      "website": "Website"
     },
     "discord": {
       "applicationId": "Discord 应用 ID",
@@ -713,6 +810,7 @@
       "title": "闪光弹模式",
       "usageInstructions": "启用插件并设置开始/结束小时（0–23）。"
     },
+    "homepage": "Homepage",
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
       "discord": "Discord",
@@ -728,6 +826,7 @@
     },
     "themes": {
       "activate": "启用",
+      "active": "Active",
       "activeTheme": "活动主题",
       "apply": "应用",
       "b": "B",
@@ -755,6 +854,7 @@
       "eyedropper": "Eyedropper",
       "g": "G",
       "hue": "色调",
+      "inactive": "Inactive",
       "lightness": "亮度",
       "lineColor": "线条颜色",
       "lineColorDialogDescription": "使用 H、S、L 调整颜色或粘贴十六进制值。",
@@ -878,23 +978,40 @@
   },
   "reports": {
     "additionalDetails": "Additional Details",
+    "brokenReportsCount_one": "{{count}} broken report",
+    "brokenReportsCount_other": "{{count}} broken reports",
+    "confirmBroken": "Is this mod broken?",
+    "confirmBrokenDescription": "If this mod is not working correctly, let the community know by marking it as broken.",
     "description": "This mod has been reported {{count}} time",
     "description_plural": "This mod has been reported {{count}} times",
     "detailsDescription": "Optional: Provide more context about the issue",
     "detailsPlaceholder": "Any additional information that might help...",
+    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
+    "gameBananaFallback": "Use this form only if the author is unresponsive.",
+    "isModBroken": "Is this mod broken?",
+    "lastUpdated": "Last updated",
+    "lastUpdatedOn": "This mod was last updated on {{date}}",
+    "modOutdated": "Your mod is outdated.",
+    "noItsWorking": "No, it works",
+    "notInstalledYet": "You haven't used this mod yet. Please install and try the mod before marking as broken.",
+    "openGameBananaIssues": "Report on GameBanana",
+    "pleaseUpdate": "Please update your mod to the latest version.",
     "reason": "Reason",
     "reasonDescription": "Please provide a clear description of the problem",
     "reasonPlaceholder": "Describe the issue you're experiencing...",
+    "reportBroken": "Report as broken",
     "reportDescription": "Report issues with {{modName}} by {{author}}",
     "reportFailed": "Failed to submit report",
     "reportMod": "Report Mod",
     "reportSubmitted": "Report submitted successfully",
+    "reportToDevs": "Report the issue details to the mod developer here:",
     "reportTypes": "Report Types",
     "selectType": "Select report type",
     "submissionConfirmation": "Your report has been submitted and will be reviewed by moderators.",
     "submitReport": "Submit Report",
     "submitting": "Submitting...",
     "thankYou": "Thank You!",
+    "thankYouDescription": "Thank you for letting the community know!",
     "title": "Reports",
     "totalReports": "{{count}} report",
     "totalReports_plural": "{{count}} reports",
@@ -910,6 +1027,8 @@
     "unverifiedCount": "{{count}} unverified",
     "unverifiedReports": "{{count}} unverified report",
     "unverifiedReports_plural": "{{count}} unverified reports",
+    "updateAvailable": "Update available",
+    "updateMod": "Update",
     "validation": {
       "descriptionMaxLength": "Description must be less than 2000 characters",
       "reasonMaxLength": "Reason must be less than 500 characters",
@@ -919,23 +1038,32 @@
     "verifiedCount": "{{count}} verified",
     "verifiedReports": "{{count}} verified report",
     "verifiedReports_plural": "{{count}} verified reports",
-    "gameBananaDisclaimer": "For the best results, report issues directly on GameBanana's issues page so the mod author can review and fix them.",
-    "gameBananaFallback": "Use this form only if the author is unresponsive.",
-    "openGameBananaIssues": "Report on GameBanana"
+    "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
     "about": "关于",
     "addSetting": "添加设置",
     "addonsBackup": "模组备份",
     "addonsBackupDescription": "创建和恢复已安装模组的备份。",
+    "aiProvider": "AI Provider",
     "allModsCleared": "所有模组已清除",
     "appearance": "外观",
     "appearanceDescription": "自定义应用程序的外观。",
     "application": "应用程序",
+    "askAi": "Ask AI for Help",
+    "askAiButton": "Get AI Help",
+    "askAiConfirmAction": "Copy Logs & Open AI",
+    "askAiConfirmBody": "Log files may contain personal information like file paths and usernames. The logs will be copied to your clipboard and you can paste them into the AI chat. Do you want to continue?",
+    "askAiConfirmTitle": "Share Log Files with AI?",
+    "askAiDescription": "Open an AI assistant with your log files to help troubleshoot issues.",
+    "askAiError": "Failed to open AI assistant",
     "audioVolume": "音频音量",
     "audioVolumeDescription": "调整音频预览和播放的音量",
+    "autoBackupEnabled": "Auto-backup before updates",
+    "autoBackupEnabledDescription": "Automatically create a backup of your mods before batch updating mods",
     "autoDetectGamePath": "Auto-Detect",
     "autoReapplyMods": "启动模组管理器时自动重新应用模组。",
+    "autoReapplyModsDescription": "Automatically reapply mods when the mod manager is launched.",
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "autoexec": "Autoexec.cfg",
@@ -950,6 +1078,7 @@
     "autoexecReadonlySectionDeleted": "Read-only sections cannot be deleted. They will be restored on save.",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "backup": "Backup",
     "backupCreated": "备份创建成功",
     "backupCreationFailed": "创建备份失败",
     "backupDate": "日期",
@@ -963,17 +1092,29 @@
     "backupRestored": "备份恢复成功",
     "backupSize": "大小",
     "backupVpkCount": "VPK 文件",
+    "backupWillRemoveOldest": "Oldest backup will be removed",
+    "backupWillRemoveOldestDescription": "Creating a new backup will remove {{count}} old backup(s) to stay within your retention limit.",
+    "backups": "备份",
+    "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "Browse",
     "clearAllMods": "清除所有模组",
+    "clearAllModsData": "Clear All Mod Data",
+    "clearDownloadCache": "Clear Download Cache",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
+    "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateAction": "Clear State",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "copiedToClipboard": "Copied to clipboard",
     "copyToClipboardTooltip": "Copy to clipboard",
+    "crashDumpFilesCount_one": "{{count}} Deadlock crash dump",
+    "crashDumpFilesCount_other": "{{count}} Deadlock crash dumps",
+    "crashDumps": "Deadlock Crash Dumps",
+    "crashDumpsDescription": "Crash dumps generated when Deadlock crashes for debugging.",
     "createBackup": "创建备份",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
@@ -991,8 +1132,21 @@
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "editCustomOptionTitle": "Edit custom option",
     "experimental": "Experimental",
+    "external": "External",
     "failedToClearMods": "清除模组失败",
     "failedToOpenFolder": "Failed to open folder",
+    "fileserverAuto": "Best latency or throughput",
+    "fileserverAutoTitle": "Automatic",
+    "fileserverDefault": "Standard download link from the API",
+    "fileserverDefaultTitle": "Default",
+    "fileserverGeoCityCountry": "{{city}}, {{country}}",
+    "fileserverLatencyPending": "—",
+    "fileserverLoadError": "Could not load file servers. Check your connection and try again.",
+    "fileserverMs": "{{ms}} ms",
+    "fileserverPreferenceSaved": "Network preference saved",
+    "fileserverRefresh": "Refresh list",
+    "fileserverTestServers": "Test servers",
+    "fileserverTesting": "Testing…",
     "flashbang": "闪光弹",
     "flashbangDescription": "无论选择何种主题，在晚上8点到早上8点之间强制使用浅色模式",
     "formatCommandHint": "Format: +cvar value (leading + is optional)",
@@ -1019,12 +1173,49 @@
     "launchOptions": "启动选项",
     "launchOptionsDescription": "自定义游戏的启动选项。这些设置将应用于所选的任何游戏模式（纯净版或模组版）。",
     "launchVanillaNoArgs": "以纯净模式启动游戏，不添加额外参数。",
+    "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
+    "linuxGpuCompat": "NVIDIA Wayland Compatibility",
+    "linuxGpuCompatAuto": "Auto",
+    "linuxGpuCompatCurrentlyActive": "Workaround is currently active for this session.",
+    "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
+    "linuxGpuCompatOff": "Force Off",
+    "linuxGpuCompatOn": "Force On",
+    "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
+    "logFilesCount_one": "{{count}} log file",
+    "logFilesCount_other": "{{count}} log files",
+    "logSource": "Log Source",
+    "logSourceCombined": "Combined",
+    "logSourceCrash": "Deadlock Crash Dumps",
+    "logSourceDmm": "DMM Logs",
+    "logging": "Logging",
+    "loggingDescription": "Access log files for troubleshooting issues.",
+    "logsCopiedAndAiOpened": "Logs copied to clipboard. {{provider}} opened - paste with Ctrl+V",
+    "maxBackupCount": "Maximum backups to keep",
+    "maxBackupCountDescription": "Older backups will be automatically removed when this limit is reached",
+    "modManager": "Mod Manager",
+    "modManagerLogs": "Mod Manager Logs",
+    "modManagerLogsDescription": "Application logs for debugging issues.",
+    "modifications": "Modifications",
     "modsStateCleared": "Mods state cleared successfully",
+    "modsStorePagination": "Paginated Browsing",
+    "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "network": "Network",
+    "networkDescription": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
     "noBackupsFound": "未找到备份",
+    "noCrashDumpsFound": "No Deadlock crash dumps found",
+    "noLogsFound": "No log files found",
     "openBackupsFolder": "打开备份文件夹",
+    "openCrashDumpError": "Failed to open crash dump",
+    "openCrashDumpsFolderError": "Failed to open crash dumps folder",
     "openGameFolder": "打开游戏文件夹",
     "openInEditor": "Open in Editor",
     "openInFolder": "Open in Folder",
+    "openLatestCrashDump": "Open Latest",
+    "openLogFile": "Open Latest Log",
+    "openLogFileError": "Failed to open log file",
+    "openLogsFolder": "Open Folder",
+    "openLogsFolderError": "Failed to open logs folder",
+    "openModsDataFolder": "Open App Data Folder",
     "openModsFolder": "打开模组文件夹",
     "placeholderCommand": "+r_aspectratio 2.7",
     "placeholderFov": "e.g. 110 FOV",
@@ -1044,13 +1235,14 @@
     "settingRemoved": "Setting removed",
     "settingType": "设置类型",
     "settingUpdated": "Setting updated",
+    "syntax": "Syntax",
     "systemSettings": "系统设置",
     "systemSettingsDescription": "模组管理器设置。这些设置不影响游戏。",
     "theme": "主题",
     "themeDescription": "在浅色、深色或系统主题之间选择",
     "tools": "工具",
-    "backups": "备份",
     "toolsDescription": "用于管理模组的实用功能",
+    "unlimitedBackups": "Unlimited",
     "value": "值",
     "valuePlaceholder": "true 或 false 或任意值"
   },
@@ -1063,7 +1255,10 @@
   },
   "status": {
     "disabled": "已禁用",
-    "enabled": "已启用"
+    "enabled": "已启用",
+    "invalid": "Invalid",
+    "none": "None",
+    "valid": "Valid"
   },
   "table": {
     "actions": "操作",
@@ -1084,6 +1279,13 @@
   "time": {
     "ago": "ago",
     "at": "at"
+  },
+  "timePeriod": {
+    "alltime": "All Time",
+    "past3months": "Past 3 Months",
+    "pastmonth": "Past Month",
+    "pastweek": "Past Week",
+    "pastyear": "Past Year"
   },
   "ui": {
     "audio": "音频",
@@ -1121,6 +1323,18 @@
     "releaseNotes": "发行说明"
   },
   "warnings": {
+    "mapCommandInAutoexec": {
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "launchAnyway": "Launch Anyway",
+      "removeAndLaunch": "Remove & Launch",
+      "title": "Map command detected in autoexec"
+    },
+    "mapModsInstalled": {
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway",
+      "title": "Map mods are installed"
+    },
     "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。",
     "obsoleteLabel": "已淘汰",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -1135,30 +1349,6 @@
     "gotIt": "知道了！",
     "title": "更新日志",
     "versions": {
-      "0.17.0": {
-        "title": "Mod store, themes, backups, logging, and fixes",
-        "features": [
-          "✨ Time period filters in the mod store; stack sorts together with filters.",
-          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
-          "✨ Quick filters respect include and exclude mode.",
-          "🔧 Clearer mod store search with fewer weak matches.",
-          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
-          "✨ Easier gallery navigation and missing translations filled in.",
-          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
-          "🔧 Settings sidebar scrolls when content is long.",
-          "✨ Backup options in a dedicated Backups tab.",
-          "✨ Configure auto-backup before batch updates and how many backups to keep.",
-          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
-          "🔧 Install no longer hangs if you close the install popup.",
-          "✨ Logging settings with log files and AI troubleshooting.",
-          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
-          "🔧 Less likely to be signed out unexpectedly.",
-          "🎨 Deadlock API theme and improved color picking for themes and accents.",
-          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
-          "🔧 Stop Game only shows when the game is running.",
-          "🔧 Mod cards refresh correctly after enable, disable, or delete."
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1219,6 +1409,79 @@
           "🌐 Add Bulgarian language support"
         ],
         "title": "Third-Party Content Disclaimer & Improvements"
+      },
+      "0.14.0": {
+        "features": [
+          "🎨 Add Arcane theme with customizable accent colors and gradient effects",
+          "🔄 Mod cards now show \"Update available\" and \"Updated recently\" indicators when mod files change",
+          "⚠️ Add stale mod warning for mods with multiple reports and no updates for 30+ days",
+          "📋 Add GameBanana issues page disclaimer to report dialog",
+          "🔧 Fix mod reordering and deletion issues",
+          "🔧 Fix local mods imported via Add page not being toggleable",
+          "🔧 Fix split replay storage by symlinking to a single location"
+        ],
+        "title": "Arcane Theme, Mod Updates & Improvements"
+      },
+      "0.14.1": {
+        "features": [
+          "🎨 Replace theme activation buttons with toggle switches for better UX",
+          "🔧 Fix eyedropper button closing color picker modal immediately after click",
+          "🔧 Fix Arcane theme border colors not updating when accent color changes"
+        ],
+        "title": "Theme Toggle Improvements & Bug Fixes"
+      },
+      "0.15.0": {
+        "features": [
+          "🔄 Update All button to mass update all mods with automatic backup",
+          "🔄 Individual mod update button on mod detail page",
+          "📥 OTA app update system with background polling and install flow",
+          "🐧 Opt-in Linux GPU optimization for WebKit rendering compatibility",
+          "🔒 Fix security issue where embedded links could navigate the webview away",
+          "🔧 Fix \"Back to Mods\" button returning to wrong page",
+          "🔧 Keep Game_Language in gameinfo.gi SearchPaths rewrites",
+          "🐧 Fix opening folders, URLs, and browser flows on Linux AppImage"
+        ],
+        "title": "Mod Updates, OTA Updates & Bug Fixes"
+      },
+      "0.16.0": {
+        "features": [
+          "🔧 Auto-detect NVIDIA GPU on Wayland with Auto/Force On/Force Off modes to avoid perf loss on non-NVIDIA",
+          "🔧 Fix macOS compatibility: platform detection, game path sync, deep links, and cross-platform mods storage",
+          "🔧 Fix local mod installs getting stuck with invalid state",
+          "🔧 Throttle app update checker to prevent excessive requests to the update server",
+          "🔧 Fix false update prompt right after mod installation",
+          "📥 Show download progress percentage in multi-file download dialog",
+          "🔌 Update OTA plugin version",
+          "✨ Add volume slider in bottom bar for quick audio level adjustment",
+          "🔧 Fix wrong mod file deletion after reordering",
+          "🔧 Fix critical and high security vulnerabilities by updating dependencies and adding pnpm overrides",
+          "🔧 Fix empty Mod Load Order dialog on first open"
+        ],
+        "title": "Bug Fixes, Developer Tools & More"
+      },
+      "0.17.0": {
+        "features": [
+          "✨ Time period filters in the mod store; stack sorts together with filters.",
+          "✨ While searching, the store sorts by relevance and restores your previous sort when search clears.",
+          "✨ Quick filters respect include and exclude mode.",
+          "🔧 Clearer mod store search with fewer weak matches.",
+          "✨ GameBanana sound categories: ability, weapon, voice, kill, and music filters.",
+          "✨ Easier gallery navigation and missing translations filled in.",
+          "✨ Choose paginated or continuous scrolling in the Mods Store (pagination default on Linux).",
+          "🔧 Settings sidebar scrolls when content is long.",
+          "✨ Backup options in a dedicated Backups tab.",
+          "✨ Configure auto-backup before batch updates and how many backups to keep.",
+          "🔧 Manual backups respect retention limits, with warnings before old backups are removed.",
+          "🔧 Install no longer hangs if you close the install popup.",
+          "✨ Logging settings with log files and AI troubleshooting.",
+          "🔧 Crash dumps save under your Deadlock game folder on Windows (not the generic CrashDumps folder); dumps can be analyzed for AI help.",
+          "🔧 Less likely to be signed out unexpectedly.",
+          "🎨 Deadlock API theme and improved color picking for themes and accents.",
+          "🔧 App updates: check when you use Check for updates, with fewer background checks.",
+          "🔧 Stop Game only shows when the game is running.",
+          "🔧 Mod cards refresh correctly after enable, disable, or delete."
+        ],
+        "title": "Mod store, themes, backups, logging, and fixes"
       },
       "0.2.0": {
         "features": [
