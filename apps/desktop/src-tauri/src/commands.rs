@@ -2479,6 +2479,45 @@ pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn add_map_command_to_autoexec(map_name: String) -> Result<(), Error> {
+  log::info!("Adding map command to autoexec: {map_name}");
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  mod_manager
+    .get_autoexec_manager()
+    .add_map_command(game_path, &map_name)
+}
+
+#[tauri::command]
+pub async fn remove_map_command_from_autoexec() -> Result<(), Error> {
+  log::info!("Removing map command from autoexec");
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  mod_manager
+    .get_autoexec_manager()
+    .remove_map_command(game_path)
+}
+
+#[tauri::command]
+pub async fn get_map_command_from_autoexec() -> Result<Option<String>, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  mod_manager.get_autoexec_manager().get_map_command(game_path)
+}
+
+#[tauri::command]
 pub async fn get_log_info(app_handle: AppHandle) -> Result<LogInfo, Error> {
   log_manager::get_log_info(&app_handle).await
 }

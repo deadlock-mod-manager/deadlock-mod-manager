@@ -11,6 +11,10 @@ const CROSSHAIR_SECTION_START: &str =
   "// === Deadlock Mod Manager - Crosshair Settings (DO NOT EDIT) ===";
 const CROSSHAIR_SECTION_END: &str = "// === End Crosshair Settings ===";
 
+const MAP_COMMAND_SECTION_START: &str =
+  "// === Deadlock Mod Manager - Map Command (DO NOT EDIT) ===";
+const MAP_COMMAND_SECTION_END: &str = "// === End Map Command ===";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadonlySection {
   pub start_line: usize,
@@ -84,12 +88,12 @@ impl AutoexecManager {
     let mut readonly_lines = Vec::new();
 
     for (line_num, line) in lines.iter().enumerate() {
-      if line.contains(CROSSHAIR_SECTION_START) {
+      if line.contains(CROSSHAIR_SECTION_START) || line.contains(MAP_COMMAND_SECTION_START) {
         in_readonly_section = true;
         readonly_start = line_num;
         readonly_lines.clear();
         readonly_lines.push(*line);
-      } else if line.contains(CROSSHAIR_SECTION_END) {
+      } else if line.contains(CROSSHAIR_SECTION_END) || line.contains(MAP_COMMAND_SECTION_END) {
         if in_readonly_section {
           readonly_lines.push(*line);
           readonly_sections.push(ReadonlySection {
@@ -208,6 +212,100 @@ impl AutoexecManager {
     }
 
     self.write_autoexec_config(game_path, &content)
+  }
+
+  pub fn add_map_command(&self, game_path: &Path, map_name: &str) -> Result<(), Error> {
+    let mut content = self.read_autoexec_config(game_path)?;
+    let map_section = format!(
+      "{}\nmap {}\n{}",
+      MAP_COMMAND_SECTION_START, map_name, MAP_COMMAND_SECTION_END
+    );
+
+    if let Some(start_pos) = content.find(MAP_COMMAND_SECTION_START) {
+      if let Some(end_pos) = content.find(MAP_COMMAND_SECTION_END) {
+        let end_pos = end_pos + MAP_COMMAND_SECTION_END.len();
+        content.replace_range(start_pos..end_pos, &map_section);
+      } else {
+        log::warn!("Found map command start marker but not end marker, appending section");
+        content.push('\n');
+        content.push_str(&map_section);
+      }
+    } else {
+      if !content.is_empty() && !content.ends_with('\n') {
+        content.push('\n');
+      }
+      content.push_str(&map_section);
+    }
+
+    self.write_autoexec_config(game_path, &content)
+  }
+
+  pub fn remove_map_command(&self, game_path: &Path) -> Result<(), Error> {
+    let mut content = self.read_autoexec_config(game_path)?;
+
+    if let Some(start_pos) = content.find(MAP_COMMAND_SECTION_START) {
+      if let Some(end_pos) = content.find(MAP_COMMAND_SECTION_END) {
+        let end_pos = end_pos + MAP_COMMAND_SECTION_END.len();
+        let before_section = content[..start_pos].trim_end();
+        let after_section = content[end_pos..].trim_start();
+
+        let mut new_content = String::new();
+        if !before_section.is_empty() {
+          new_content.push_str(before_section);
+        }
+        if !after_section.is_empty() {
+          if !new_content.is_empty() && !new_content.ends_with('\n') {
+            new_content.push('\n');
+          }
+          new_content.push_str(after_section);
+        }
+
+        content = new_content;
+      } else {
+        log::warn!("Found map command start marker but not end marker, removing from start marker to end");
+        content.truncate(start_pos);
+        content = content.trim_end().to_string();
+      }
+    } else {
+      log::info!("Map command section not found, nothing to remove");
+    }
+
+    self.write_autoexec_config(game_path, &content)
+  }
+
+  /// Checks the autoexec for a map command, both in the managed section and as bare `map <name>` lines.
+  /// Returns the map name if found, None otherwise.
+  pub fn get_map_command(&self, game_path: &Path) -> Result<Option<String>, Error> {
+    let content = self.read_autoexec_config(game_path)?;
+
+    if let Some(start_pos) = content.find(MAP_COMMAND_SECTION_START)
+      && let Some(end_pos) = content.find(MAP_COMMAND_SECTION_END) {
+        let section = &content[start_pos..end_pos];
+        for line in section.lines() {
+          let trimmed = line.trim();
+          if let Some(name) = trimmed.strip_prefix("map ") {
+            let name = name.trim();
+            if !name.is_empty() {
+              return Ok(Some(name.to_string()));
+            }
+          }
+        }
+      }
+
+    for line in content.lines() {
+      let trimmed = line.trim();
+      if trimmed.starts_with("//") {
+        continue;
+      }
+      if let Some(name) = trimmed.strip_prefix("map ") {
+        let name = name.trim();
+        if !name.is_empty() {
+          return Ok(Some(name.to_string()));
+        }
+      }
+    }
+
+    Ok(None)
   }
 
   pub fn open_autoexec_folder(&self, game_path: &Path) -> Result<(), Error> {

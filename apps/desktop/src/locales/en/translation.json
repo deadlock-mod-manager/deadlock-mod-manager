@@ -156,7 +156,19 @@
     "updatedRecentlyLabel": "Updated recently",
     "updatedRecentlyDescription": "This mod's files were updated in the last 7 days.",
     "updateAvailableLabel": "Update available",
-    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files."
+    "updateAvailableDescription": "A newer version of this mod is available. Download again to get the latest files.",
+    "mapCommandInAutoexec": {
+      "title": "Map command detected in autoexec",
+      "body": "Your autoexec.cfg contains a map command (\"map {{mapName}}\"). This will load a custom map instead of the normal game.",
+      "removeAndLaunch": "Remove & Launch",
+      "launchAnyway": "Launch Anyway"
+    },
+    "mapModsInstalled": {
+      "title": "Map mods are installed",
+      "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
+      "disableAndLaunch": "Disable Map Mods & Launch",
+      "launchAnyway": "Launch Anyway"
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -1361,12 +1373,15 @@
       "step2": "Press F7 to open the console.",
       "step3Command": "Type the following command:",
       "step4Glitch": "If you notice any visual glitches, try disconnecting and running {{mapCommand}} again to fix it.",
-      "step5Status": "Type \"status\" in the console and copy your SteamID — the part in square brackets (e.g. [1234567890]), including the brackets.",
+      "step5Status": "Type \"status\" in the console and copy your SteamID, the part in square brackets (e.g. [1234567890]), including the brackets.",
       "step6Share": "Share your SteamID like \"status [your_steamid]\" so others can connect to your custom map server. Enjoy!",
       "copied": "Copied!",
-      "mapNameFallback": "Check the mod description for the map name to use with this command."
+      "mapNameFallback": "Check the mod description for the map name to use with this command.",
+      "launchMap": "Launch Map",
+      "launchingMap": "Launching...",
+      "quickLaunchTitle": "Quick Launch",
+      "quickLaunchDesc": "Configures Deadlock to automatically launch this map."
     },
-    "openMapInExplorer": "Open Map in Explorer",
     "backToMods": "Back to Mods",
     "goBackHome": "Go back home",
     "idLabel": "ID",

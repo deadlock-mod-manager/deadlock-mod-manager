@@ -54,7 +54,7 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
   }
 
   // Image hero
-  if (mod.hero && hasImages) {
+  if (hasImages) {
     return (
       <div className='relative z-10 h-64 w-full'>
         <img

@@ -290,7 +290,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
               id: submission._idRow,
               source,
             })
-            .debug("Synchronized GameBanana mod");
+            .info("Synchronized GameBanana mod");
         } else {
           this.logger
             .withMetadata({

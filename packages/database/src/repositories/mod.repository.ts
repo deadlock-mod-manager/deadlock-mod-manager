@@ -94,6 +94,7 @@ export class ModRepository {
       blacklistReason: _blacklistReason,
       blacklistedAt: _blacklistedAt,
       blacklistedBy: _blacklistedBy,
+      overrides: _overrides,
       ...updateableFields
     } = mod;
 

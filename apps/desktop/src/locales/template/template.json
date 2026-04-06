@@ -93,7 +93,19 @@
     "updatedRecentlyLabel": "",
     "updatedRecentlyDescription": "",
     "updateAvailableLabel": "",
-    "updateAvailableDescription": ""
+    "updateAvailableDescription": "",
+    "mapCommandInAutoexec": {
+      "title": "",
+      "body": "",
+      "removeAndLaunch": "",
+      "launchAnyway": ""
+    },
+    "mapModsInstalled": {
+      "title": "",
+      "body": "",
+      "disableAndLaunch": "",
+      "launchAnyway": ""
+    }
   },
   "common": {
     "loading": "",
@@ -676,8 +688,11 @@
       "step5Status": "",
       "step6Share": "",
       "copied": "",
-      "mapNameFallback": ""
-    },
-    "openMapInExplorer": ""
+      "mapNameFallback": "",
+      "launchMap": "",
+      "launchingMap": "",
+      "quickLaunchTitle": "",
+      "quickLaunchDesc": ""
+    }
   }
 }

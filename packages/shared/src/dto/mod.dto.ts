@@ -1,7 +1,17 @@
 import type { Mod, ModDownload } from "@deadlock-mods/database";
 
 export const toModDto = (mod: Mod) => {
-  return mod;
+  if (!mod.overrides) return mod;
+
+  const { metadata: metadataOverrides, ...fieldOverrides } = mod.overrides;
+
+  return {
+    ...mod,
+    ...fieldOverrides,
+    metadata: metadataOverrides
+      ? { ...mod.metadata, ...metadataOverrides }
+      : mod.metadata,
+  };
 };
 
 export const toModDownloadDto = (mod: ModDownload[]) => {
