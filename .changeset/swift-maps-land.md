@@ -5,4 +5,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Add support for Deadlock custom maps: store `isMap` from sync, install map VPKs under `game/citadel/maps/`, and browse and filter maps in the desktop app.
+Add custom map support with sync, installation, and browsing
