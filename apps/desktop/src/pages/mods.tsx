@@ -33,6 +33,7 @@ import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
@@ -142,6 +143,10 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
+  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
+    "custom-maps",
+    false,
+  );
   const { data, error } = useSuspenseQuery({
     queryKey: ["mods"],
     queryFn: getMods,
@@ -171,7 +176,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
   } = modsFilters;
-  const mapQuickFilter = mapsOnly ? "only" : modsFilters.mapQuickFilter;
+  const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
+    ? "only"
+    : isCustomMapsEnabled
+      ? modsFilters.mapQuickFilter
+      : "off";
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
   const paginationEnabled =
@@ -245,9 +254,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       filtered = filtered.filter((mod) => !mod.isAudio);
     }
 
-    if (mapQuickFilter === "only") {
+    if (effectiveMapQuickFilter === "only") {
       filtered = filtered.filter((mod) => mod.isMap);
-    } else if (mapQuickFilter === "exclude") {
+    } else if (effectiveMapQuickFilter === "exclude") {
       filtered = filtered.filter((mod) => !mod.isMap);
     }
 
@@ -274,7 +283,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     nsfwSettings.hideNSFW,
     hideNSFW,
     audioQuickFilter,
-    mapQuickFilter,
+    effectiveMapQuickFilter,
     hideOutdated,
     timePeriod,
   ]);
@@ -312,7 +321,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       JSON.stringify({
         filterMode,
         audioQuickFilter,
-        mapQuickFilter,
+        mapQuickFilter: effectiveMapQuickFilter,
         hideNSFW,
         hideOutdated,
         query,
@@ -323,7 +332,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     [
       filterMode,
       audioQuickFilter,
-      mapQuickFilter,
+      effectiveMapQuickFilter,
       hideNSFW,
       hideOutdated,
       query,
@@ -436,11 +445,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         setQuery={setQuery}
         setSortType={setSortType}
         audioQuickFilter={audioQuickFilter}
-        mapQuickFilter={mapQuickFilter}
+        mapQuickFilter={effectiveMapQuickFilter}
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
-        hideMapFilter={mapsOnly}
+        hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
       {filteredResults.length === 0 ? (
         <Empty className='py-12'>
@@ -454,7 +463,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
               selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
               audioQuickFilter !== "off" ||
-              mapQuickFilter !== "off" ||
+              effectiveMapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
               timePeriod !== TimePeriod.ALL_TIME
@@ -464,7 +473,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
             {(selectedCategories.length > 0 ||
               selectedHeroes.length > 0 ||
               audioQuickFilter !== "off" ||
-              mapQuickFilter !== "off" ||
+              effectiveMapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
               timePeriod !== TimePeriod.ALL_TIME) && (

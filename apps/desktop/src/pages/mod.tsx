@@ -25,6 +25,7 @@ import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { ReportButton } from "@/components/reports/report-button";
 import { ReportCounter } from "@/components/reports/report-counter";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useReportCounts } from "@/hooks/use-report-counts";
@@ -40,6 +41,10 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
+    "custom-maps",
+    false,
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);
@@ -268,7 +273,7 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
-          {mod.isMap && (
+          {mod.isMap && isCustomMapsEnabled && (
             <MapHowToPlay
               mapName={mod.metadata?.mapName}
               isInstalled={isInstalled}
