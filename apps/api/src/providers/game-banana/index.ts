@@ -27,6 +27,7 @@ import {
   buildDownloadSignatureFromPayload,
   categoryFromGameBananaProfile,
   classifyNSFW,
+  extractMapName,
   mapGameBananaFileserverState,
   parseTags,
 } from "./utils";
@@ -332,10 +333,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         featuredSubmission._idRow.toString(),
         "Mod",
       );
+      const description = submission._sText || submission._sDescription || "";
+      const isMap =
+        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
       return {
         remoteId: featuredSubmission._idRow.toString(),
         name: featuredSubmission._sName,
-        description: submission._sText || submission._sDescription || "",
+        description,
         tags: parseTags(submission._aTags),
         author: featuredSubmission._aSubmitter._sName,
         likes: featuredSubmission._nLikeCount ?? 0,
@@ -351,7 +355,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
-        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
+        isMap,
+        metadata: isMap ? { mapName: extractMapName(description) } : null,
       };
     }
 
@@ -361,10 +366,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         topSubmission._idRow.toString(),
         "Mod",
       );
+      const description = submission._sText || submission._sDescription || "";
+      const isMap =
+        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
       return {
         remoteId: topSubmission._idRow.toString(),
         name: topSubmission._sName,
-        description: submission._sText || submission._sDescription || "",
+        description,
         tags: parseTags(submission._aTags),
         author: topSubmission._aSubmitter._sName,
         likes: topSubmission._nLikeCount,
@@ -380,16 +388,20 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
-        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
+        isMap,
+        metadata: isMap ? { mapName: extractMapName(description) } : null,
       };
     }
 
     if (source === "all") {
       const submission = await this.getMod(mod._idRow.toString(), "Mod");
+      const description = submission._sText || submission._sDescription || "";
+      const isMap =
+        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
       return {
         remoteId: submission._idRow.toString(),
         name: submission._sName,
-        description: submission._sText || submission._sDescription || "",
+        description,
         tags: parseTags(submission._aTags),
         author: submission._aSubmitter._sName,
         likes: submission._nLikeCount,
@@ -405,7 +417,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         ),
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
-        isMap: categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME,
+        isMap,
+        metadata: isMap ? { mapName: extractMapName(description) } : null,
       };
     }
 
@@ -431,6 +444,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
         isMap: false,
+        metadata: null,
       };
     }
 

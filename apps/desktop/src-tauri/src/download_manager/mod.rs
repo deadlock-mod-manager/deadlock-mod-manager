@@ -121,7 +121,7 @@ impl DownloadManager {
   async fn process_queue(&self) {
     let mut processing = self.processing.lock().await;
     if *processing {
-      log::info!("Queue is already being processed, download will start when current one finishes");
+      log::debug!("Queue is already being processed");
       return;
     }
     *processing = true;

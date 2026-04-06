@@ -19,3 +19,4 @@ export * from "./schemas/mod.schemas";
 export * from "./schemas/profile.schemas";
 export * from "./schemas/report.schemas";
 export * from "./types/crosshair";
+export * from "./types/mod-metadata";

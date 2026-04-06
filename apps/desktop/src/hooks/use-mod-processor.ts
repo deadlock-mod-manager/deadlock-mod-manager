@@ -269,6 +269,7 @@ export const useModProcessor = () => {
       isObsolete: false,
       category,
       filesUpdatedAt: null,
+      metadata: null,
     };
 
     addMod(modDto, {
@@ -352,6 +353,7 @@ export const useModProcessor = () => {
       blacklistedBy: null,
       category,
       filesUpdatedAt: null,
+      metadata: null,
     };
 
     addMod(modDto, {

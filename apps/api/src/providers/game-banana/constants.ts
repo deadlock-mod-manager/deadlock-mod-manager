@@ -1,5 +1,4 @@
 export const DEADLOCK_GAME_ID = 20_948; // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
-/** GameBanana mod category id 37225 — https://gamebanana.com/mods/cats/37225 */
 export const MAPS_CATEGORY_NAME = "Maps";
 export const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";
 export const ACCEPTED_MODELS = ["Mod", "Sound"];

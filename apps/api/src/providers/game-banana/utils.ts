@@ -118,6 +118,49 @@ export const buildDownloadSignatureFromPayload = (
     .join(";");
 };
 
+// Matches "map <identifier>" in a quoted or code context (high confidence)
+const QUOTED_MAP_RE = /(?:["'`>]|&quot;)\s*map\s+([a-z][a-z0-9_]{2,})\b/gi;
+
+// Matches bare "map <identifier>" (lower confidence)
+const BARE_MAP_RE = /\bmap\s+([a-z][a-z0-9_]{2,})\b/gi;
+
+// Only words that actually appear after "map" in real GameBanana descriptions
+// and are clearly not map names. Kept minimal on purpose.
+const BARE_EXCLUDE = new Set([
+  "features",
+  "includes",
+  "currently",
+  "loading",
+  "created",
+  "queue",
+  "using",
+  "look",
+  "making",
+  "overrides",
+  "works",
+  "featuring",
+  "breaking",
+  "correctly",
+  "again",
+]);
+
+export function extractMapName(description: string): string | undefined {
+  if (!description) return undefined;
+
+  for (const match of description.matchAll(QUOTED_MAP_RE)) {
+    return match[1].toLowerCase();
+  }
+
+  for (const match of description.matchAll(BARE_MAP_RE)) {
+    const name = match[1].toLowerCase();
+    if (!BARE_EXCLUDE.has(name)) {
+      return name;
+    }
+  }
+
+  return undefined;
+}
+
 export const mapGameBananaFileserverState = (
   state: string,
 ): FileserverDto["state"] => {
