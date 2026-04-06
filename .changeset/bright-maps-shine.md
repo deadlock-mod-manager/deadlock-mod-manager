@@ -4,4 +4,4 @@
 "@deadlock-mods/shared": minor
 ---
 
-Add "How to Play This Map" card with step-by-step instructions and copyable console commands for custom maps
+Add "How to Play" card with instructions for custom maps

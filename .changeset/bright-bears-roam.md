@@ -4,4 +4,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Add optional GameBanana file server selection for downloads with latency testing in Settings
+Add GameBanana file server selection with latency testing

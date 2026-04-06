@@ -4,4 +4,4 @@
 "@deadlock-mods/shared": patch
 ---
 
-Add mod metadata override mechanism to persist manual corrections across sync runs
+Add mod metadata overrides that persist across sync runs
