@@ -1369,6 +1369,17 @@
     "processingMods": "Processing mods...",
     "modsProcessed": "Mods processed"
   },
+  "mapInvite": {
+    "title": "Invite Friends",
+    "description": "Your server is ready!",
+    "instructions": "Share this connect command with your friends. They can join by opening the Deadlock console (F7) and pasting it:",
+    "friendSteps": "Your friends need to: open Deadlock, press F7 to open the console, then paste the connect command above and press Enter.",
+    "copied": "Copied!",
+    "close": "Close",
+    "watching": "Waiting for server to start...",
+    "watchingDesc": "The connect code will appear once the map server is ready.",
+    "cancel": "Cancel"
+  },
   "modDetail": {
     "mapHowToPlay": {
       "title": "How to Play This Map",

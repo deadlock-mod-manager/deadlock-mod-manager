@@ -171,6 +171,8 @@ pub fn run() {
       commands::add_map_command_to_autoexec,
       commands::remove_map_command_from_autoexec,
       commands::get_map_command_from_autoexec,
+      commands::watch_console_log,
+      commands::stop_watching_console_log,
       commands::get_log_info,
       commands::open_logs_folder,
       commands::open_log_file,

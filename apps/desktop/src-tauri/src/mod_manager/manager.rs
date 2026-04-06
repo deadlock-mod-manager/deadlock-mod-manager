@@ -325,20 +325,17 @@ impl ModManager {
       }
       let game_dir: &std::path::Path = addons_path.as_path();
 
-      // Remove installed VPKs if any
       if !local_mod.installed_vpks.is_empty() {
         self
           .vpk_manager
           .remove_vpks(&local_mod.installed_vpks, game_dir)?;
       }
 
-      // Also remove any prefixed VPKs
       self.vpk_manager.remove_vpks_by_mod_id(game_dir, &mod_id)?;
     } else {
       if !addons_path.exists() {
         return Err(Error::GamePathNotSet);
       }
-      // Remove both specified VPKs and any prefixed VPKs
       self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
       self
         .vpk_manager

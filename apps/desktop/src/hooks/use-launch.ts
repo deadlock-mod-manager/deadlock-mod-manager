@@ -24,12 +24,12 @@ export const useLaunch = () => {
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
-  const checkMapCommandInAutoexec = async (): Promise<boolean> => {
+  const checkMapCommandInAutoexec = async () => {
     try {
       const mapName = await invoke<string | null>(
         "get_map_command_from_autoexec",
       );
-      if (!mapName) return true;
+      if (!mapName) return;
 
       const shouldRemove = await confirm({
         title: t("warnings.mapCommandInAutoexec.title"),
@@ -41,14 +41,12 @@ export const useLaunch = () => {
       if (shouldRemove) {
         await invoke("remove_map_command_from_autoexec");
       }
-
-      return true;
     } catch {
-      return true;
+      // Autoexec check is best-effort; don't block game launch
     }
   };
 
-  const checkInstalledMapMods = async (): Promise<boolean> => {
+  const disableInstalledMapMods = async () => {
     const installedMapMods = localMods.filter(
       (mod) =>
         mod.isMap &&
@@ -56,7 +54,7 @@ export const useLaunch = () => {
         isModEnabledInCurrentProfile(mod.remoteId),
     );
 
-    if (installedMapMods.length === 0) return true;
+    if (installedMapMods.length === 0) return;
 
     const modNames = installedMapMods.map((mod) => mod.name).join(", ");
 
@@ -81,17 +79,12 @@ export const useLaunch = () => {
         setModEnabledInCurrentProfile(mapMod.remoteId, false);
       }
     }
-
-    return true;
   };
 
   const launch = async (vanilla = false) => {
     try {
-      const shouldContinueAutoexec = await checkMapCommandInAutoexec();
-      if (!shouldContinueAutoexec) return;
-
-      const shouldContinueMapMods = await checkInstalledMapMods();
-      if (!shouldContinueMapMods) return;
+      await checkMapCommandInAutoexec();
+      await disableInstalledMapMods();
 
       const activeProfile = getActiveProfile();
       const profileFolder = vanilla
