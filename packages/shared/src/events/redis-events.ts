@@ -18,19 +18,6 @@ export const NewModEventSchema = z.object({
   data: NewModEventDataSchema,
 });
 
-export const ReportEventDataSchema = z.object({
-  id: z.string(),
-  modId: z.string(),
-  modName: z.string(),
-  modAuthor: z.string(),
-  createdAt: z.string().datetime().optional(),
-});
-
-export const NewReportEventSchema = z.object({
-  type: z.literal("new_report"),
-  data: ReportEventDataSchema,
-});
-
 export const ModFilesUpdatedEventDataSchema = z.object({
   modId: z.string(),
   remoteId: z.string(),
@@ -55,8 +42,6 @@ export type NewModEventData = z.infer<typeof NewModEventDataSchema>;
 export type NewModEvent = z.infer<typeof NewModEventSchema>;
 export type ModEvent = z.infer<typeof ModEventSchema>;
 
-export type ReportEventData = z.infer<typeof ReportEventDataSchema>;
-export type NewReportEvent = z.infer<typeof NewReportEventSchema>;
 export type ModFilesUpdatedEventData = z.infer<
   typeof ModFilesUpdatedEventDataSchema
 >;
@@ -67,7 +52,6 @@ export type ModFilesUpdatedEvent = z.infer<typeof ModFilesUpdatedEventSchema>;
  */
 export const REDIS_CHANNELS = {
   NEW_MODS: "deadlock:new_mods",
-  NEW_REPORTS: "deadlock:new_reports",
   MOD_FILES_UPDATED: "deadlock:mod_files_updated",
 } as const;
 
@@ -82,10 +66,6 @@ export const parseModEvent = (data: unknown): ModEvent => {
 
 export const parseNewModEvent = (data: unknown): NewModEvent => {
   return NewModEventSchema.parse(data);
-};
-
-export const parseNewReportEvent = (data: unknown): NewReportEvent => {
-  return NewReportEventSchema.parse(data);
 };
 
 export const parseModFilesUpdatedEvent = (

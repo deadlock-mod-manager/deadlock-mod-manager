@@ -14,7 +14,6 @@ export const envSchema = z.object({
   BOT_TOKEN: z.string(),
   BOT_ENABLED: z.coerce.boolean().default(false),
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
-  REPORTS_CHANNEL_ID: z.string().default("1421566655338905620"),
   SUPPORT_CHANNEL_ID: z.string().default("1431734280463188100"),
   BUG_REPORT_CHANNEL_ID: z.string().default("1418618964925480990"),
   API_URL: z.string().url().default("https://api.deadlockmods.app"),

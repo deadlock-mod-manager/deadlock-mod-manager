@@ -213,7 +213,7 @@ export class MessageTriageService {
       if (maxSimilarity >= threshold && bestMatch) {
         const channelId =
           bestMatch.patternType === "bug_report"
-            ? env.BUG_REPORT_CHANNEL_ID || env.REPORTS_CHANNEL_ID
+            ? env.BUG_REPORT_CHANNEL_ID
             : env.SUPPORT_CHANNEL_ID;
 
         logger

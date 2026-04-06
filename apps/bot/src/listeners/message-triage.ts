@@ -23,7 +23,6 @@ export class MessageTriageListener extends Listener {
 
     this.triageService = MessageTriageService.getInstance();
     this.excludedChannels = new Set([
-      env.REPORTS_CHANNEL_ID,
       env.FORUM_CHANNEL_ID,
       env.SUPPORT_CHANNEL_ID,
       env.BUG_REPORT_CHANNEL_ID,

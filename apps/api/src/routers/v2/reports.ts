@@ -9,7 +9,6 @@ import { CACHE_TTL } from "@/lib/constants";
 import { logger, wideEventContext } from "@/lib/logger";
 import { cache } from "@/lib/redis";
 import { publicProcedure } from "../../lib/orpc";
-import { reportService } from "../../services/report";
 import {
   CreateReportInputSchema,
   CreateReportResponseSchema,
@@ -86,8 +85,6 @@ export const reportsRouter = {
           reportId: report.id,
           modName: mod.name,
         });
-
-        await reportService.publishNewReportEvent(report, mod);
 
         return {
           id: report.id,
