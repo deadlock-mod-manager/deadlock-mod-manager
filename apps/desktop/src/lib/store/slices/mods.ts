@@ -67,6 +67,7 @@ export type ModsState = {
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
   setDetectedHero: (remoteId: string, hero: string | null) => void;
+  clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
 };
 
@@ -485,6 +486,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       localMods: state.localMods.map((mod) => ({
         ...mod,
         detectedHero: mod.remoteId === remoteId ? hero : mod.detectedHero,
+      })),
+    })),
+
+  clearAllDetectedHeroes: () =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        detectedHero: undefined,
       })),
     })),
 

@@ -28,6 +28,7 @@ export type SettingsState = {
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   backupEnabled: boolean;
   maxBackupCount: number; // 0 means unlimited
+  heroParserIntervalSeconds: number;
 
   addSetting: (setting: LocalSetting) => void;
   removeSetting: (id: string) => void;
@@ -66,6 +67,9 @@ export type SettingsState = {
   setBackupEnabled: (enabled: boolean) => void;
   setMaxBackupCount: (count: number) => void;
 
+  // Hero parser settings
+  setHeroParserIntervalSeconds: (seconds: number) => void;
+
   // Plugin management
   togglePlugin: (pluginId: string) => void;
   isPluginEnabled: (pluginId: string) => boolean;
@@ -87,6 +91,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   enabledPlugins: {},
   backupEnabled: true,
   maxBackupCount: 5,
+  heroParserIntervalSeconds: 30,
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
       settings: { ...state.settings, [setting.id]: setting },
@@ -214,6 +219,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setMaxBackupCount: (count: number) =>
     set(() => ({
       maxBackupCount: count,
+    })),
+
+  setHeroParserIntervalSeconds: (seconds: number) =>
+    set(() => ({
+      heroParserIntervalSeconds: seconds,
     })),
 
   // Plugin management

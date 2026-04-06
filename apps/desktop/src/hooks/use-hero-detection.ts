@@ -6,10 +6,45 @@ import { usePersistedStore } from "@/lib/store";
 
 const logger = createLogger("hero-detection");
 
-const INITIAL_DELAY_MS = 60_000;
-const BETWEEN_MOD_DELAY_MS = 60_000;
+const DEFAULT_INTERVAL_MS = 30_000;
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+let activeAbortController: AbortController | null = null;
+
+const cancellableSleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        reject(signal.reason);
+      },
+      { once: true },
+    );
+  });
+
+const abortActiveScan = () => {
+  if (activeAbortController) {
+    activeAbortController.abort(
+      new DOMException("Scan cancelled", "AbortError"),
+    );
+    activeAbortController = null;
+  }
+};
+
+const resetToIdle = () => {
+  const { setHeroDetection } = usePersistedStore.getState();
+  setHeroDetection({
+    status: "idle",
+    current: 0,
+    total: 0,
+    currentModName: null,
+  });
+};
 
 export const useHeroDetection = () => {
   const localMods = usePersistedStore((state) => state.localMods);
@@ -28,27 +63,46 @@ export const useHeroDetection = () => {
 
     hasRun.current = true;
 
-    const total = modsWithoutHero.length;
+    runBackgroundScan(modsWithoutHero);
+  }, [localMods, setDetectedHero, setHeroDetection]);
+};
 
-    logger
-      .withMetadata({ count: total })
-      .info("Background hero detection scheduled");
+const runBackgroundScan = (
+  mods: ReturnType<typeof usePersistedStore.getState>["localMods"],
+) => {
+  const { setDetectedHero, setHeroDetection } = usePersistedStore.getState();
+  const total = mods.length;
 
-    setHeroDetection({
-      status: "scanning",
-      current: 0,
-      total,
-      currentModName: null,
-    });
+  logger
+    .withMetadata({ count: total })
+    .info("Background hero detection scheduled");
 
-    const detectAll = async () => {
-      await sleep(INITIAL_DELAY_MS);
+  setHeroDetection({
+    status: "scanning",
+    current: 0,
+    total,
+    currentModName: null,
+  });
 
-      for (let i = 0; i < modsWithoutHero.length; i++) {
-        const mod = modsWithoutHero[i];
+  const controller = new AbortController();
+  activeAbortController = controller;
+  const { signal } = controller;
+
+  const detectAll = async () => {
+    const intervalMs =
+      usePersistedStore.getState().heroParserIntervalSeconds * 1000 ||
+      DEFAULT_INTERVAL_MS;
+
+    try {
+      await cancellableSleep(intervalMs, signal);
+
+      for (let i = 0; i < mods.length; i++) {
+        if (signal.aborted) return;
+
+        const mod = mods[i];
 
         if (i > 0) {
-          await sleep(BETWEEN_MOD_DELAY_MS);
+          await cancellableSleep(intervalMs, signal);
         }
 
         setHeroDetection({
@@ -89,10 +143,12 @@ export const useHeroDetection = () => {
       });
 
       logger.info("Background hero detection complete");
-    };
+    } catch {
+      logger.info("Background hero detection cancelled");
+    }
+  };
 
-    detectAll();
-  }, [localMods, setDetectedHero, setHeroDetection]);
+  detectAll();
 };
 
 export const detectHeroForMod = async (
@@ -105,7 +161,35 @@ export const detectHeroForMod = async (
   });
 };
 
+export const stopHeroDetection = () => {
+  abortActiveScan();
+  resetToIdle();
+  logger.info("Hero detection stopped by user");
+};
+
+export const startBackgroundScan = () => {
+  abortActiveScan();
+
+  const { localMods } = usePersistedStore.getState();
+  const modsWithoutHero = localMods.filter(
+    (mod) => mod.detectedHero === undefined,
+  );
+
+  if (modsWithoutHero.length === 0) return;
+
+  runBackgroundScan(modsWithoutHero);
+};
+
+export const clearAllDetectedHeroes = () => {
+  abortActiveScan();
+  usePersistedStore.getState().clearAllDetectedHeroes();
+  resetToIdle();
+  logger.info("All detected heroes cleared by user");
+};
+
 export const forceRescanAllMods = async () => {
+  abortActiveScan();
+
   const store = usePersistedStore.getState();
   const { localMods, setDetectedHero, setHeroDetection } = store;
 
@@ -114,6 +198,10 @@ export const forceRescanAllMods = async () => {
 
   logger.withMetadata({ count: total }).info("Force rescan started");
 
+  const controller = new AbortController();
+  activeAbortController = controller;
+  const { signal } = controller;
+
   setHeroDetection({
     status: "scanning",
     current: 0,
@@ -121,31 +209,97 @@ export const forceRescanAllMods = async () => {
     currentModName: null,
   });
 
-  for (let i = 0; i < localMods.length; i++) {
-    const mod = localMods[i];
+  try {
+    for (let i = 0; i < localMods.length; i++) {
+      if (signal.aborted) return;
+
+      const mod = localMods[i];
+
+      setHeroDetection({
+        current: i,
+        currentModName: mod.name,
+      });
+
+      try {
+        const result = await invoke<HeroDetectionResult>("detect_mod_hero", {
+          modId: mod.remoteId,
+          installedVpks: mod.installedVpks ?? null,
+        });
+        setDetectedHero(mod.remoteId, result.hero ?? null);
+      } catch {
+        setDetectedHero(mod.remoteId, null);
+      }
+    }
 
     setHeroDetection({
-      current: i,
-      currentModName: mod.name,
+      status: "idle",
+      current: total,
+      total,
+      currentModName: null,
     });
 
-    try {
-      const result = await invoke<HeroDetectionResult>("detect_mod_hero", {
-        modId: mod.remoteId,
-        installedVpks: mod.installedVpks ?? null,
-      });
-      setDetectedHero(mod.remoteId, result.hero ?? null);
-    } catch {
-      setDetectedHero(mod.remoteId, null);
-    }
+    logger.info("Force rescan complete");
+  } catch {
+    logger.info("Force rescan cancelled");
   }
+};
+
+export const indexUnindexedModsNow = async () => {
+  abortActiveScan();
+
+  const store = usePersistedStore.getState();
+  const { localMods, setDetectedHero, setHeroDetection } = store;
+
+  const unindexedMods = localMods.filter(
+    (mod) => mod.detectedHero === undefined,
+  );
+  const total = unindexedMods.length;
+  if (total === 0) return;
+
+  logger.withMetadata({ count: total }).info("Index unindexed mods started");
+
+  const controller = new AbortController();
+  activeAbortController = controller;
+  const { signal } = controller;
 
   setHeroDetection({
-    status: "idle",
-    current: total,
+    status: "scanning",
+    current: 0,
     total,
     currentModName: null,
   });
 
-  logger.info("Force rescan complete");
+  try {
+    for (let i = 0; i < unindexedMods.length; i++) {
+      if (signal.aborted) return;
+
+      const mod = unindexedMods[i];
+
+      setHeroDetection({
+        current: i,
+        currentModName: mod.name,
+      });
+
+      try {
+        const result = await invoke<HeroDetectionResult>("detect_mod_hero", {
+          modId: mod.remoteId,
+          installedVpks: mod.installedVpks ?? null,
+        });
+        setDetectedHero(mod.remoteId, result.hero ?? null);
+      } catch {
+        setDetectedHero(mod.remoteId, null);
+      }
+    }
+
+    setHeroDetection({
+      status: "idle",
+      current: total,
+      total,
+      currentModName: null,
+    });
+
+    logger.info("Index unindexed mods complete");
+  } catch {
+    logger.info("Index unindexed mods cancelled");
+  }
 };

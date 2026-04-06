@@ -502,6 +502,18 @@ export const usePersistedStore = create<State>()(
           }
         }
 
+        // Migration from version 15 to 16: Add hero parser interval setting
+        if (version <= 15) {
+          logger
+            .withMetadata({
+              migrationFrom: version,
+              migrationTo: 16,
+              action: "add-hero-parser-interval",
+            })
+            .info("Migrating to version 16: Adding heroParserIntervalSeconds");
+          state.heroParserIntervalSeconds = 30;
+        }
+
         return state;
       },
       partialize: (state) => {
