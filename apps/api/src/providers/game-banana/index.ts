@@ -25,9 +25,9 @@ import {
 import {
   buildDownloadSignature,
   buildDownloadSignatureFromPayload,
+  buildMetadata,
   categoryFromGameBananaProfile,
   classifyNSFW,
-  extractMapName,
   mapGameBananaFileserverState,
   parseTags,
 } from "./utils";
@@ -356,7 +356,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
         isMap,
-        metadata: isMap ? { mapName: extractMapName(description) } : null,
+        metadata: buildMetadata({
+          description,
+          isMap,
+          donationMethods: submission._aSubmitter._aDonationMethods,
+        }),
       };
     }
 
@@ -389,7 +393,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
         isMap,
-        metadata: isMap ? { mapName: extractMapName(description) } : null,
+        metadata: buildMetadata({
+          description,
+          isMap,
+          donationMethods: submission._aSubmitter._aDonationMethods,
+        }),
       };
     }
 
@@ -418,16 +426,21 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
         isMap,
-        metadata: isMap ? { mapName: extractMapName(description) } : null,
+        metadata: buildMetadata({
+          description,
+          isMap,
+          donationMethods: submission._aSubmitter._aDonationMethods,
+        }),
       };
     }
 
     if (source === "sound") {
       const submission = await this.getMod(mod._idRow.toString(), "Sound");
+      const description = submission._sText || submission._sDescription || "";
       return {
         remoteId: submission._idRow.toString(),
         name: submission._sName,
-        description: submission._sText || submission._sDescription || "",
+        description,
         tags: parseTags(submission._aTags),
         author: submission._aSubmitter._sName,
         likes: submission._nLikeCount,
@@ -444,7 +457,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isNSFW: classifyNSFW(submission),
         isObsolete: submission._bIsObsolete ?? false,
         isMap: false,
-        metadata: null,
+        metadata: buildMetadata({
+          description,
+          isMap: false,
+          donationMethods: submission._aSubmitter._aDonationMethods,
+        }),
       };
     }
 

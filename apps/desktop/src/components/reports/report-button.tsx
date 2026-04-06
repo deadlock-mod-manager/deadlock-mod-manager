@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Flag } from "@deadlock-mods/ui/icons";
+import { HeartBreakIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReportCounts } from "@/hooks/use-report-counts";
@@ -49,7 +49,7 @@ export const BrokenModButton = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant='outline' onClick={handleClick}>
-            <Flag className='h-4 w-4' />
+            <HeartBreakIcon className='size-5' weight='fill' />
             <span>{total}</span>
           </Button>
         </TooltipTrigger>

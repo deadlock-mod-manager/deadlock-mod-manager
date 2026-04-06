@@ -21,7 +21,10 @@ export interface ModOverrides {
   isNSFW?: boolean;
   isObsolete?: boolean;
   tags?: string[];
-  metadata?: { mapName?: string };
+  metadata?: {
+    mapName?: string;
+    donationLinks?: Array<{ url: string; platform: string }>;
+  };
   downloads?: Array<{ url: string; file: string }>;
 }
 
@@ -55,7 +58,10 @@ export const mods = pgTable(
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
     blacklistedBy: text("blacklisted_by"),
     filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
-    metadata: jsonb("metadata").$type<{ mapName?: string }>(),
+    metadata: jsonb("metadata").$type<{
+      mapName?: string;
+      donationLinks?: Array<{ url: string; platform: string }>;
+    }>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),
     ...timestamps,
   },

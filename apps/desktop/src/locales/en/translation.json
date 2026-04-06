@@ -1396,6 +1396,10 @@
       "quickLaunchTitle": "Quick Launch",
       "quickLaunchDesc": "Configures Deadlock to automatically launch this map."
     },
+    "supportAuthor": {
+      "title": "Support the Author",
+      "installedTitle": "Enjoying this mod? Support the author"
+    },
     "backToMods": "Back to Mods",
     "goBackHome": "Go back home",
     "idLabel": "ID",
@@ -1405,7 +1409,7 @@
     "installedAt": "Installed At",
     "downloadsLabel": "Downloads",
     "modStatusLabel": "Mod Status",
-    "viewOriginalPost": "View Original Post",
+    "viewOriginalPost": "View Post on GameBanana",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",
     "checkForUpdate": "Check for update",

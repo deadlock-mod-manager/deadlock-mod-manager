@@ -38,6 +38,14 @@ interface BaseGame extends BaseCategory {
   _idRow: number;
 }
 
+export interface GameBananaDonationMethod {
+  _sTitle: string;
+  _sCustomTitle: string;
+  _sValue: string;
+  _bIsUrl: boolean;
+  _sIconClasses: string;
+}
+
 // Base submission interface for shared properties
 type BaseSubmission = {
   _idRow: number;
@@ -224,7 +232,7 @@ export type GameBananaModProfile = BaseSubmission & {
     _aLegendaryMedals: unknown[];
     _nBuddyCount: number;
     _nSubscriberCount: number;
-    _aDonationMethods: unknown[];
+    _aDonationMethods: GameBananaDonationMethod[];
     _bAccessorIsBuddy: boolean;
     _bBuddyRequestExistsWithAccessor: boolean;
     _bAccessorIsSubscribed: boolean;
@@ -341,7 +349,7 @@ export type GameBananaSoundProfile = BaseSubmission & {
     _aLegendaryMedals: unknown[];
     _nBuddyCount: number;
     _nSubscriberCount: number;
-    _aDonationMethods: unknown[];
+    _aDonationMethods: GameBananaDonationMethod[];
     _bAccessorIsBuddy: boolean;
     _bBuddyRequestExistsWithAccessor: boolean;
     _bAccessorIsSubscribed: boolean;

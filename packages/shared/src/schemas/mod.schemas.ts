@@ -29,6 +29,14 @@ export const ModDtoSchema = z.object({
   metadata: z
     .object({
       mapName: z.string().optional(),
+      donationLinks: z
+        .array(
+          z.object({
+            url: z.string(),
+            platform: z.string(),
+          }),
+        )
+        .optional(),
     })
     .nullable()
     .optional(),

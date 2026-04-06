@@ -1,5 +1,10 @@
 import type { ModDownload } from "@deadlock-mods/database";
-import type { FileserverDto, GameBanana } from "@deadlock-mods/shared";
+import type {
+  DonationLink,
+  FileserverDto,
+  GameBanana,
+  ModMetadata,
+} from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_KEYWORDS } from "./constants";
 import type { GameBananaSubmission } from "./types";
 
@@ -173,3 +178,159 @@ export const mapGameBananaFileserverState = (
       return "down";
   }
 };
+
+// --- Donation link extraction ---
+
+const DONATION_HOST_ALLOWLIST = new Set([
+  "ko-fi.com",
+  "patreon.com",
+  "buymeacoffee.com",
+  "paypal.me",
+  "paypal.com",
+  "liberapay.com",
+  "opencollective.com",
+  "github.com",
+]);
+
+function normalizeHost(hostname: string): string {
+  return hostname.toLowerCase().replace(/^www\./, "");
+}
+
+function platformFromTitle(title: string): string | undefined {
+  const t = title.toLowerCase();
+  if (t.includes("ko-fi") || t.includes("kofi")) return "Ko-fi";
+  if (t.includes("patreon")) return "Patreon";
+  if (t.includes("buy me a coffee") || t.includes("buymeacoffee"))
+    return "Buy Me a Coffee";
+  if (t.includes("paypal")) return "PayPal";
+  if (t.includes("liberapay")) return "Liberapay";
+  if (t.includes("open collective") || t.includes("opencollective"))
+    return "Open Collective";
+  if (t.includes("github")) return "GitHub Sponsors";
+  return undefined;
+}
+
+function platformFromHost(host: string): string {
+  switch (host) {
+    case "ko-fi.com":
+      return "Ko-fi";
+    case "patreon.com":
+      return "Patreon";
+    case "buymeacoffee.com":
+      return "Buy Me a Coffee";
+    case "paypal.me":
+    case "paypal.com":
+      return "PayPal";
+    case "liberapay.com":
+      return "Liberapay";
+    case "opencollective.com":
+      return "Open Collective";
+    case "github.com":
+      return "GitHub Sponsors";
+    default:
+      return host;
+  }
+}
+
+function isDonationUrl(url: URL): boolean {
+  const host = normalizeHost(url.hostname);
+  if (!DONATION_HOST_ALLOWLIST.has(host)) return false;
+  if (host === "github.com") {
+    return url.pathname.startsWith("/sponsors");
+  }
+  return true;
+}
+
+function toDonationLink(
+  rawUrl: string,
+  titleHint?: string,
+): DonationLink | undefined {
+  try {
+    const url = new URL(rawUrl);
+    if (!isDonationUrl(url)) return undefined;
+    const host = normalizeHost(url.hostname);
+    const platform =
+      (titleHint && platformFromTitle(titleHint)) || platformFromHost(host);
+    return { url: url.toString(), platform };
+  } catch {
+    return undefined;
+  }
+}
+
+export function donationLinksFromMethods(
+  methods: GameBanana.GameBananaDonationMethod[],
+): DonationLink[] {
+  if (!Array.isArray(methods)) return [];
+  const links: DonationLink[] = [];
+  for (const m of methods) {
+    if (!m._bIsUrl || !m._sValue) continue;
+    const link = toDonationLink(m._sValue, m._sTitle);
+    if (link) links.push(link);
+  }
+  return links;
+}
+
+const URL_RE = /https?:\/\/[^\s"'<>]+/gi;
+
+export function extractDonationLinksFromDescription(
+  description: string,
+): DonationLink[] {
+  if (!description) return [];
+  const links: DonationLink[] = [];
+  const seen = new Set<string>();
+  for (const [raw] of description.matchAll(URL_RE)) {
+    const cleaned = raw.replace(/[)"'>.,;:!?\]]+$/, "");
+    const link = toDonationLink(cleaned);
+    if (link && !seen.has(link.url)) {
+      seen.add(link.url);
+      links.push(link);
+    }
+  }
+  return links;
+}
+
+export function buildDonationLinks({
+  methods,
+  description,
+}: {
+  methods: GameBanana.GameBananaDonationMethod[];
+  description: string;
+}): DonationLink[] {
+  const fromApi = donationLinksFromMethods(methods);
+  const fromDesc = extractDonationLinksFromDescription(description);
+
+  const seen = new Set<string>();
+  const result: DonationLink[] = [];
+
+  for (const link of [...fromApi, ...fromDesc]) {
+    if (!seen.has(link.url)) {
+      seen.add(link.url);
+      result.push(link);
+    }
+  }
+
+  return result;
+}
+
+export function buildMetadata({
+  description,
+  isMap,
+  donationMethods,
+}: {
+  description: string;
+  isMap: boolean;
+  donationMethods: GameBanana.GameBananaDonationMethod[];
+}): ModMetadata | null {
+  const mapName = isMap ? extractMapName(description) : undefined;
+  const donationLinks = buildDonationLinks({
+    methods: donationMethods,
+    description,
+  });
+
+  if (!mapName && donationLinks.length === 0) return null;
+
+  const metadata: ModMetadata = {};
+  if (mapName) metadata.mapName = mapName;
+  if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
+  return metadata;
+}

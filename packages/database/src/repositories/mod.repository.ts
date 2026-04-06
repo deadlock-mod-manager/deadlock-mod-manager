@@ -1,5 +1,5 @@
 import { EntityNotFoundError } from "@deadlock-mods/common";
-import { and, desc, eq, inArray } from "@deadlock-mods/database";
+import { and, desc, eq, inArray, sql } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";
@@ -95,6 +95,7 @@ export class ModRepository {
       blacklistedAt: _blacklistedAt,
       blacklistedBy: _blacklistedBy,
       overrides: _overrides,
+      metadata,
       ...updateableFields
     } = mod;
 
@@ -106,6 +107,11 @@ export class ModRepository {
         set: {
           ...updateableFields,
           updatedAt: new Date(),
+          ...(metadata != null
+            ? {
+                metadata: sql`COALESCE(${mods.metadata}, '{}'::jsonb) || ${JSON.stringify(metadata)}::jsonb`,
+              }
+            : {}),
         },
       })
       .returning();

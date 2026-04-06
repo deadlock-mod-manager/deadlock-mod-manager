@@ -98,12 +98,53 @@ export default {
             transform: 'translateX(100%)',
           },
         },
+
+        heartbeat: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+          },
+          '14%': {
+            transform: 'scale(1.2)',
+          },
+          '28%': {
+            transform: 'scale(1)',
+          },
+          '42%': {
+            transform: 'scale(1.15)',
+          },
+          '56%': {
+            transform: 'scale(1)',
+          },
+        },
+
+        jiggle: {
+          '0%, 18%, 100%': {
+            transform: 'rotate(0deg)',
+          },
+          '3%': {
+            transform: 'rotate(-3deg)',
+          },
+          '6%': {
+            transform: 'rotate(3deg)',
+          },
+          '9%': {
+            transform: 'rotate(-2deg)',
+          },
+          '12%': {
+            transform: 'rotate(2deg)',
+          },
+          '15%': {
+            transform: 'rotate(0deg)',
+          },
+        },
       },
 
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-x': 'pulse-x 1.5s ease-in-out infinite',
+        heartbeat: 'heartbeat 2s ease-in-out infinite',
+        jiggle: 'jiggle 3s ease-in-out infinite',
       },
     },
   },

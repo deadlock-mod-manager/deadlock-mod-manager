@@ -17,6 +17,7 @@ import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
 import { MapHowToPlay } from "@/components/mod-detail/map-how-to-play";
+import { SupportAuthor } from "@/components/mod-detail/support-author";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
@@ -220,6 +221,13 @@ const Mod = () => {
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero mod={mod} shouldBlur={shouldBlur} />
             <ModInfo hasHero={hasHero} mod={mod} />
+            {mod.metadata?.donationLinks &&
+              mod.metadata.donationLinks.length > 0 && (
+                <SupportAuthor
+                  donationLinks={mod.metadata.donationLinks}
+                  isInstalled={isInstalled}
+                />
+              )}
             <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
               <div className='flex flex-col gap-2'>
                 {mod.remoteUrl && (
