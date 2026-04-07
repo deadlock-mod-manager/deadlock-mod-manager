@@ -1,5 +1,3 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Dialog, DialogTrigger } from "@deadlock-mods/ui/components/dialog";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
   Sidebar,
@@ -8,9 +6,8 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarItem,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
   ArticleIcon,
@@ -28,227 +25,119 @@ import {
   QuestionIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
+import { LocalMod, ModStatus } from "@/types/mods";
 import { SidebarCollapse } from "./sidebar-collapse";
 
-type SidebarItem = {
+interface SProps {
+  t: (key: string) => string;
+  badgeContext?: LocalMod[];
+}
+
+interface Item {
   id: string;
-  title: ({
-    isActive,
-    count,
-    downloads,
-  }: {
-    isActive?: boolean;
-    count?: number;
-    downloads?: number;
-  }) => React.ReactNode;
-  tooltipLabel: string;
+  title: string;
+  icon: Icon;
   url: string;
-  dialog?: React.ComponentType;
-  icon?: Icon;
-  iconUrl?: string;
-  bottom?: boolean;
-  group?: string;
-};
+  group: Groups;
+  badge?: string | number;
+  isFooter?: boolean;
+  tooltipLabel?: string;
+  isDev?: boolean;
+  isVisible?: (isVisible: boolean) => boolean;
+}
+type Groups = "general" | "mods" | "customization" | "developer";
 
-const getSidebarItems = (
-  t: (key: string) => string,
-  developerMode: boolean,
-  group?: string,
-): SidebarItem[] => {
-  const allItems: SidebarItem[] = [
-    {
-      id: "dashboard",
-      title: () => <span>{t("navigation.dashboard")}</span>,
-      tooltipLabel: t("navigation.dashboard"),
-      url: "/",
-      icon: HouseIcon,
-      group: "general",
-    },
-    {
-      id: "my-mods",
-      title: ({ isActive, count }: { isActive?: boolean; count?: number }) => (
-        <div className='flex items-center justify-between w-full'>
-          <span>{t("navigation.myMods")}</span>
-          {count !== undefined && (
-            <Badge
-              className='px-1 py-0.1 text-xs'
-              variant={isActive ? "inverted" : "default"}>
-              {count}
-            </Badge>
-          )}
-        </div>
-      ),
-      tooltipLabel: t("navigation.myMods"),
-      url: "/my-mods",
-      icon: PackageIcon,
-      group: "mods",
-    },
-    {
-      id: "get-mods",
-      title: () => <span>{t("navigation.getMods")}</span>,
-      tooltipLabel: t("navigation.getMods"),
-      url: "/mods",
-      icon: MagnifyingGlassIcon,
-      group: "mods",
-    },
-    {
-      id: "maps",
-      title: () => <span>{t("navigation.maps")}</span>,
-      tooltipLabel: t("navigation.maps"),
-      url: "/maps",
-      icon: MapTrifoldIcon,
-      group: "mods",
-    },
-    {
-      id: "downloads",
-      title: ({ downloads }: { downloads?: number }) => (
-        <div className='flex items-center justify-between w-full'>
-          {t("navigation.downloads")}{" "}
-          {downloads !== undefined && downloads > 0 && (
-            <Badge className='px-1 py-0.1 text-xs'>{downloads}</Badge>
-          )}
-        </div>
-      ),
-      tooltipLabel: t("navigation.downloads"),
-      url: "/downloads",
-      icon: DownloadIcon,
-      group: "general",
-    },
-    {
-      id: "crosshairs",
-      title: () => <span>{t("navigation.crosshairs")}</span>,
-      tooltipLabel: t("navigation.crosshairs"),
-      url: "/crosshairs",
-      icon: CrosshairIcon,
-      group: t("navigation.customization"),
-    },
-    {
-      id: "autoexec",
-      title: () => <span>{t("navigation.autoexec")}</span>,
-      tooltipLabel: t("navigation.autoexec"),
-      url: "/settings/autoexec",
-      icon: ArticleIcon,
-      group: t("navigation.customization"),
-    },
-    {
-      id: "settings",
-      title: () => <span>{t("navigation.settings")}</span>,
-      tooltipLabel: t("navigation.settings"),
-      url: "/settings",
-      icon: GearIcon,
-      group: "general",
-    },
-    ...(developerMode
-      ? [
-          {
-            id: "developer",
-            title: () => <span>{t("navigation.developer")}</span>,
-            tooltipLabel: t("navigation.developer"),
-            url: "/developer",
-            icon: CodeIcon,
-            group: "Developer",
-            bottom: true,
-          },
-        ]
-      : []),
-    ...(import.meta.env.DEV
-      ? [
-          {
-            id: "debug",
-            title: () => <span>Debug</span>,
-            tooltipLabel: "Debug",
-            url: "/debug",
-            icon: BugBeetleIcon,
-            bottom: true,
-            group: "Developer",
-          },
-        ]
-      : []),
-  ];
+const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
+  {
+    id: "dashboard",
+    title: t("navigation.dashboard"),
+    url: "/",
+    tooltipLabel: t("navigation.dashboard"),
+    icon: HouseIcon,
+    group: "general",
+  },
+  {
+    id: "downloads",
+    title: t("navigation.downloads"),
+    url: "/downloads",
+    icon: DownloadIcon,
+    group: "general",
+    badge:
+      badgeContext?.filter(
+        (mod: { status: ModStatus }) => mod.status === ModStatus.Downloading,
+      ).length || undefined,
+  },
+  {
+    id: "my-mods",
+    title: t("navigation.myMods"),
+    url: "/my-mods",
+    icon: PackageIcon,
+    badge: badgeContext?.length || undefined,
+    group: "mods",
+  },
+  {
+    id: "get-mods",
+    title: t("navigation.getMods"),
+    url: "/mods",
+    icon: MagnifyingGlassIcon,
+    group: "mods",
+  },
+  {
+    id: "settings",
+    title: t("navigation.settings"),
+    url: "/settings",
+    icon: GearIcon,
+    group: "general",
+  },
+  {
+    id: "maps",
+    title: t("navigation.maps"),
+    tooltipLabel: t("navigation.maps"),
+    url: "/maps",
+    icon: MapTrifoldIcon,
+    group: "mods",
+  },
+  {
+    id: "crosshairs",
+    title: t("navigation.crosshairs"),
+    url: "/crosshairs",
+    icon: CrosshairIcon,
+    group: "customization",
+  },
+  {
+    id: "autoexec",
+    title: t("navigation.autoexec"),
+    url: "/settings/autoexec",
+    icon: ArticleIcon,
+    group: "customization",
+  },
 
-  if (group) {
-    return allItems.filter((item) => item.group === group);
-  }
-
-  return allItems;
-};
-
-type SidebarItemProps = {
-  item: SidebarItem;
-  location: ReturnType<typeof useLocation>;
-  mods: Array<{ status: ModStatus; remoteId: string }>;
-};
-
-const renderIcon = (item: SidebarItem) => {
-  if (item.icon) {
-    return <item.icon weight='duotone' />;
-  }
-  if (item.iconUrl) {
-    return <img alt='' className='h-5 w-5' src={item.iconUrl} />;
-  }
-  return null;
-};
-
-const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  if (item.dialog) {
-    const DialogComponent = item.dialog;
-    return (
-      <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
-        <DialogTrigger asChild>
-          <SidebarMenuButton
-            isActive={location.pathname === item.url}
-            tooltip={item.tooltipLabel}>
-            {renderIcon(item)}
-            {item.title({
-              isActive: location.pathname === item.url,
-              count: item.id === "my-mods" ? mods.length : undefined,
-              downloads:
-                item.id === "downloads"
-                  ? mods.filter(
-                      (mod: { status: ModStatus }) =>
-                        mod.status === ModStatus.Downloading,
-                    ).length
-                  : undefined,
-            })}
-          </SidebarMenuButton>
-        </DialogTrigger>
-        <DialogComponent />
-      </Dialog>
-    );
-  }
-
-  return (
-    <SidebarMenuButton
-      asChild
-      isActive={location.pathname === item.url}
-      tooltip={item.tooltipLabel}>
-      <Link to={item.url} draggable='false'>
-        {renderIcon(item)}
-        {item.title({
-          isActive: location.pathname === item.url,
-          count: item.id === "my-mods" ? mods.length : undefined,
-          downloads:
-            item.id === "downloads"
-              ? mods.filter(
-                  (mod: { status: ModStatus }) =>
-                    mod.status === ModStatus.Downloading,
-                ).length
-              : undefined,
-        })}
-      </Link>
-    </SidebarMenuButton>
-  );
-};
+  {
+    id: "developer",
+    title: t("navigation.developer"),
+    url: "/developer",
+    icon: CodeIcon,
+    isDev: true,
+    group: "developer",
+    isFooter: true,
+  },
+  import.meta.env.DEV
+    ? {
+        id: "debug",
+        title: "Debug",
+        url: "/debug",
+        isFooter: true,
+        icon: BugBeetleIcon,
+        group: "developer",
+      }
+    : ({} as Item),
+];
 
 export const AppSidebar = () => {
   const { t } = useTranslation();
@@ -262,48 +151,82 @@ export const AppSidebar = () => {
     false,
   );
 
-  const allItems = getSidebarItems(t, developerMode).filter(
-    (item) => item.id !== "maps" || isCustomMapsEnabled,
+  const groups: Record<
+    Groups,
+    {
+      label: string;
+      position: "footer" | "general";
+    }
+  > = {
+    general: {
+      label: "General",
+      position: "general",
+    },
+    mods: {
+      label: "Mods",
+      position: "general",
+    },
+    customization: {
+      label: "Customization",
+      position: "general",
+    },
+    developer: {
+      label: "Developer",
+      position: "footer",
+    },
+  };
+
+  const items = sidebarItems({ t, badgeContext: mods });
+
+  const generalGroups = (Object.keys(groups) as Groups[]).filter(
+    (group) => groups[group].position === "general",
+  );
+  const footerGroups = (Object.keys(groups) as Groups[]).filter(
+    (group) => groups[group].position === "footer",
   );
 
-  const topItems = allItems.filter((item) => !item.bottom);
-  const bottomItems = allItems.filter((item) => item.bottom);
+  const topSidebarItems = [...new Set(items.filter((item) => !item.isFooter))];
 
-  const topGroups = [...new Set(topItems.map((item) => item.group))].filter(
-    Boolean,
-  ) as string[];
-  const bottomGroups = [
-    ...new Set(bottomItems.map((item) => item.group)),
-  ].filter(Boolean) as string[];
-
-  const groupLabels: Record<string, string> = {
-    mods: "Mods",
-    general: "General",
-  };
+  const footerSidebarItems = [
+    ...new Set(items.filter((item) => item.isFooter)),
+  ];
 
   return (
     <Sidebar
-      className='z-50 flex h-[calc(100vh-96px)] absolute bottom-0 left-0 w-[12rem] flex-col border-t'
-      collapsible='icon'
-      variant='sidebar'>
-      <SidebarContent className='flex-grow pt-2'>
-        {topGroups.map((group) => {
-          const groupItems = topItems.filter((item) => item.group === group);
+      className="z-50 flex h-[calc(100vh-96px)] absolute bottom-0 left-0 w-[12rem] flex-col border-t"
+      collapsible="icon"
+      variant="sidebar"
+    >
+      <SidebarContent className="flex-grow inline pt-2">
+        {generalGroups.map((group) => {
+          const items = topSidebarItems.filter(
+            (groupItem) => groupItem.group === group,
+          );
           return (
-            <SidebarGroup key={group}>
-              <SidebarGroupLabel>
-                {groupLabels[group] || group}
-              </SidebarGroupLabel>
+            <SidebarGroup className="pb-1">
+              <SidebarGroupLabel>{groups[group].label}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {groupItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarItemComponent
-                        item={item}
-                        location={location}
-                        mods={mods}
+                  {items.map((item) => (
+                    <Link to={item.url}>
+                      <SidebarItem
+                        tooltip={item.tooltipLabel}
+                        key={item.id}
+                        isVisible={
+                          item.isDev
+                            ? developerMode
+                            : item.isVisible
+                              ? item.isVisible(!!isCustomMapsEnabled)
+                              : true
+                        }
+                        isActive={item.url === location.pathname}
+                        title={item.title}
+                        badge={item.badge}
+                        icon={
+                          <item.icon className="h-5 w-5" weight="duotone" />
+                        }
                       />
-                    </SidebarMenuItem>
+                    </Link>
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -312,51 +235,53 @@ export const AppSidebar = () => {
         })}
         {SidebarContentExtra ? <SidebarContentExtra /> : null}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="min-h-fit">
         {SidebarFooterExtra ? <SidebarFooterExtra /> : null}
-        {bottomGroups.map((group) => {
-          const groupItems = bottomItems.filter((item) => item.group === group);
-          return (
-            <SidebarGroup key={group}>
-              <SidebarGroupLabel>
-                {groupLabels[group] || group}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {groupItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarItemComponent
-                        item={item}
-                        location={location}
-                        mods={mods}
-                      />
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          );
-        })}
-        <SidebarGroup>
+        <SidebarGroup className="group-data-[collapsible=icon]:pb-0">
           <SidebarGroupContent>
-            <SidebarMenu>
-              <Separator />
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => openUrl("https://docs.deadlockmods.app/")}
-                  tooltip={t("help.documentation")}>
-                  <QuestionIcon weight='duotone' />
-                  <span>{t("help.documentation")}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => openUrl(DISCORD_URL)}
-                  tooltip={t("help.needHelp")}>
-                  <DiscordLogoIcon weight='duotone' />
-                  <span>{t("help.needHelp")}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+            {footerGroups.map((group) => {
+              const items = footerSidebarItems.filter(
+                (groupItem) => groupItem.group === group,
+              );
+
+              if (!items.length) return null;
+
+              return (
+                <div className="pb-1">
+                  <SidebarGroupLabel>{groups[group].label}</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {items.map((item) => (
+                        <Link to={item.url}>
+                          <SidebarItem
+                            tooltip={item.tooltipLabel}
+                            key={item.id}
+                            isActive={item.url === location.pathname}
+                            title={item.title}
+                            badge={item.badge}
+                            icon={
+                              <item.icon className="h-5 w-5" weight="duotone" />
+                            }
+                          />
+                        </Link>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </div>
+              );
+            })}
+            <Separator />
+            <SidebarMenu className="py-1">
+              <SidebarItem
+                icon={<QuestionIcon className="w-5 h-5" weight="duotone" />}
+                title={t("help.documentation")}
+                onClick={() => openUrl("https://docs.deadlockmods.app/")}
+              />
+              <SidebarItem
+                icon={<DiscordLogoIcon className="w-5 h-5" weight="duotone" />}
+                title={t("help.needHelp")}
+                onClick={() => openUrl(DISCORD_URL)}
+              />
               <Separator />
               <SidebarCollapse />
             </SidebarMenu>
