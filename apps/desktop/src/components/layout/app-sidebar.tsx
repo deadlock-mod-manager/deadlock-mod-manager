@@ -1,4 +1,3 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 // import { Dialog, DialogTrigger } from "@deadlock-mods/ui/components/dialog";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
@@ -8,8 +7,8 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarItem,
   SidebarMenu,
-  SidebarMenuButton,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
   ArticleIcon,
@@ -26,7 +25,6 @@ import {
   QuestionIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
@@ -127,48 +125,6 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     : ({} as Item),
 ];
 
-interface SidebarItemProps {
-  title: string;
-  icon: ReactNode;
-  isActive?: boolean;
-  url?: string;
-  badge?: ReactNode;
-  isVisible?: boolean;
-  onClick?: () => void;
-}
-
-export const SidebarItem = ({
-  title,
-  icon,
-  badge,
-  isActive,
-  isVisible = true,
-  onClick,
-}: SidebarItemProps) => {
-  return (
-    isVisible && (
-      <SidebarMenuButton
-        onClick={onClick}
-        className="justify-between"
-        isActive={isActive}
-      >
-        <div className="flex items-center gap-2">
-          <div>{icon}</div>
-          <span className="group-data-[collapsible=icon]:hidden">{title}</span>
-        </div>
-        {badge && (
-          <Badge
-            variant={isActive ? "inverted" : "default"}
-            className="px-1 py-0.1 text-xs group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:right-[-3px] group-data-[collapsible=icon]:top-[-3px]"
-          >
-            {badge}
-          </Badge>
-        )}
-      </SidebarMenuButton>
-    )
-  );
-};
-
 export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -194,38 +150,42 @@ export const AppSidebar = () => {
       variant="sidebar"
     >
       <SidebarContent className="flex-grow inline pt-2">
-        {Object.keys(groups).map((group) => {
+        {(Object.keys(groups) as Groups[]).map((group) => {
           const items = topSidebarItems.filter(
             (groupItem) => groupItem.group === group,
           );
           return (
             <SidebarGroup>
               <SidebarGroupLabel>{groups[group]}</SidebarGroupLabel>
-              <SidebarMenu>
-                {items.map((item) => (
-                  <Link to={item.url}>
-                    <SidebarItem
-                      key={item.id}
-                      isVisible={item.isDev ? developerMode : true}
-                      isActive={item.url === location.pathname}
-                      title={item.title}
-                      badge={item.badge}
-                      icon={<item.icon className="h-5 w-5" weight="duotone" />}
-                    />
-                  </Link>
-                ))}
-              </SidebarMenu>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {items.map((item) => (
+                    <Link to={item.url}>
+                      <SidebarItem
+                        key={item.id}
+                        isVisible={item.isDev ? developerMode : true}
+                        isActive={item.url === location.pathname}
+                        title={item.title}
+                        badge={item.badge}
+                        icon={
+                          <item.icon className="h-5 w-5" weight="duotone" />
+                        }
+                      />
+                    </Link>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
             </SidebarGroup>
           );
         })}
         {SidebarContentExtra ? <SidebarContentExtra /> : null}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="min-h-fit">
         {SidebarFooterExtra ? <SidebarFooterExtra /> : null}
-        <SidebarGroup>
+        <SidebarGroup className="group-data-[collapsible=icon]:pb-0">
           <SidebarGroupContent>
-            <SidebarMenu>
-              <Separator />
+            <Separator />
+            <SidebarMenu className="py-1">
               <SidebarItem
                 icon={<QuestionIcon className="w-5 h-5" weight="duotone" />}
                 title={t("help.documentation")}
