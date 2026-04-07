@@ -105,6 +105,93 @@ pub async fn is_auto_update_disabled() -> Result<bool, Error> {
 }
 
 #[tauri::command]
+pub async fn is_flatpak() -> Result<bool, Error> {
+  let flatpak = std::env::var("FLATPAK_ID").is_ok();
+  log::info!("Running as Flatpak: {flatpak}");
+  Ok(flatpak)
+}
+
+#[tauri::command]
+pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Error> {
+  use std::io::{BufRead, BufReader};
+  use std::process::{Command, Stdio};
+
+  std::env::var("FLATPAK_ID").map_err(|_| {
+    Error::InvalidInput("Not running as a Flatpak".to_string())
+  })?;
+
+  log::info!("Downloading Flatpak bundle from {url}");
+  let _ = app_handle.emit("flatpak-update-progress", "Downloading update...");
+
+  let response = reqwest::get(&url)
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
+
+  if !response.status().is_success() {
+    return Err(Error::InvalidInput(format!(
+      "Download failed with status: {}",
+      response.status()
+    )));
+  }
+
+  let bytes = response
+    .bytes()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?;
+
+  let bundle_path = std::env::temp_dir().join("deadlock-mod-manager.flatpak");
+  std::fs::write(&bundle_path, &bytes)
+    .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
+
+  let bundle_path_str = bundle_path.to_string_lossy().to_string();
+  log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
+  let _ = app_handle.emit("flatpak-update-progress", "Installing update...");
+
+  let mut child = Command::new("flatpak-spawn")
+    .args(["--host", "flatpak", "install", "--reinstall", "--noninteractive", &bundle_path_str])
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .map_err(|e| Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}")))?;
+
+  let stdout = child.stdout.take().expect("stdout piped");
+  let stderr = child.stderr.take().expect("stderr piped");
+
+  let app_stdout = app_handle.clone();
+  std::thread::spawn(move || {
+    for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+      log::info!("[flatpak update] {line}");
+      let _ = app_stdout.emit("flatpak-update-progress", &line);
+    }
+  });
+
+  let app_stderr = app_handle.clone();
+  std::thread::spawn(move || {
+    for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+      log::warn!("[flatpak update stderr] {line}");
+      let _ = app_stderr.emit("flatpak-update-progress", &line);
+    }
+  });
+
+  let status = child
+    .wait()
+    .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
+
+  if status.success() {
+    log::info!("Flatpak update completed successfully");
+    let _ = app_handle.emit("flatpak-update-done", true);
+    Ok(())
+  } else {
+    let code = status.code().unwrap_or(-1);
+    log::error!("Flatpak update failed with exit code {code}");
+    let _ = app_handle.emit("flatpak-update-done", false);
+    Err(Error::InvalidInput(format!(
+      "flatpak update exited with code {code}"
+    )))
+  }
+}
+
+#[tauri::command]
 pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
   #[cfg(target_os = "linux")]
   {

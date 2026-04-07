@@ -155,6 +155,14 @@ export const isAutoUpdateDisabled = async (): Promise<boolean> => {
   return await invoke("is_auto_update_disabled");
 };
 
+export const isFlatpak = async (): Promise<boolean> => {
+  return await invoke("is_flatpak");
+};
+
+export const updateFlatpak = async (url: string): Promise<void> => {
+  return await invoke("update_flatpak", { url });
+};
+
 export const shareProfile = async (
   hardwareId: string,
   name: string,

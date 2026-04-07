@@ -75,7 +75,9 @@ runs:
           const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
           console.log(`Read new signature from ${sigFile}`);
 
-          const exeUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${exeFile}`;
+          // GitHub normalizes spaces to dots in release asset download URLs
+          const exeUrlFilename = exeFile.replace(/ /g, '.');
+          const exeUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${exeUrlFilename}`;
 
           // Update or add Windows NSIS entries
           latestJson.platforms['windows-x86_64'] = {
@@ -89,6 +91,19 @@ runs:
             url: exeUrl
           };
           console.log('Updated windows-x86_64-nsis entry');
+
+          // Add Flatpak entry if the asset exists in the release
+          const flatpakAsset = release.assets.find(a => a.name === 'deadlock-mod-manager.flatpak');
+          if (flatpakAsset) {
+            const flatpakUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/deadlock-mod-manager.flatpak`;
+            latestJson.platforms['linux-x86_64-flatpak'] = {
+              signature: '',
+              url: flatpakUrl
+            };
+            console.log('Added linux-x86_64-flatpak entry');
+          } else {
+            console.log('No Flatpak asset found, skipping linux-x86_64-flatpak entry');
+          }
 
           console.log('Final platforms:', Object.keys(latestJson.platforms));
 

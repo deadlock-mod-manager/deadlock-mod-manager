@@ -121,6 +121,8 @@ pub fn run() {
       commands::set_language,
       commands::set_api_url,
       commands::is_auto_update_disabled,
+      commands::is_flatpak,
+      commands::update_flatpak,
       commands::is_linux_gpu_optimization_active,
       commands::extract_archive,
       commands::remove_mod_folder,

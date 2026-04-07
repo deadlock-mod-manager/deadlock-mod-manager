@@ -7,17 +7,21 @@ import {
 } from "@tauri-apps/plugin-updater";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { isFlatpak } from "@/lib/api";
+import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import {
   GC_TIME_UPDATER,
   STALE_TIME_MANUAL_CHECK,
   STALE_TIME_UPDATER,
 } from "@/lib/query-constants";
+import { useFlatpakUpdate } from "./use-flatpak-update";
 
 const logger = createLogger("check-for-updates");
 
 const NATIVE_UPDATES_QUERY_KEY = ["app-updates", "native"] as const;
 const OTA_UPDATES_QUERY_KEY = ["app-updates", "ota"] as const;
+const IS_FLATPAK_QUERY_KEY = ["app-env", "is-flatpak"] as const;
 
 type OtaUpdate = Awaited<ReturnType<typeof checkOta>>;
 
@@ -46,6 +50,16 @@ export const useCheckForUpdates = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  const { installFlatpakUpdate, isInstallingFlatpakUpdate } =
+    useFlatpakUpdate();
+
+  const { data: isRunningAsFlatpak = false } = useQuery({
+    queryKey: IS_FLATPAK_QUERY_KEY,
+    queryFn: isFlatpak,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
   const {
     data: nativeUpdate,
     isLoading: isNativeLoading,
@@ -55,6 +69,7 @@ export const useCheckForUpdates = () => {
   } = useQuery({
     queryKey: NATIVE_UPDATES_QUERY_KEY,
     queryFn: fetchNativeUpdate,
+    enabled: true,
     staleTime: STALE_TIME_UPDATER,
     gcTime: GC_TIME_UPDATER,
     refetchInterval: STALE_TIME_UPDATER,
@@ -86,7 +101,16 @@ export const useCheckForUpdates = () => {
         throw new Error("No update available");
       }
 
-      if (native) {
+      if (native && isRunningAsFlatpak) {
+        const flatpakUrl = `${GITHUB_REPO}/releases/download/v${native.version}/deadlock-mod-manager.flatpak`;
+        logger
+          .withMetadata({ version: native.version })
+          .info("Installing Flatpak update");
+        installFlatpakUpdate(flatpakUrl);
+        return;
+      }
+
+      if (native && !isRunningAsFlatpak) {
         logger
           .withMetadata({ version: native.version })
           .info("Installing native update");
@@ -106,10 +130,9 @@ export const useCheckForUpdates = () => {
       }
     },
     onError: (err) => {
-      logger
-        .withError(err instanceof Error ? err : new Error(String(err)))
-        .error("Update install failed");
-      toast.error(t("about.updateFailed"));
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.withError(error).error("Update install failed");
+      toast.error(`${t("about.updateFailed")}: ${error.message}`);
     },
   });
 
@@ -145,12 +168,14 @@ export const useCheckForUpdates = () => {
 
   return {
     updateAvailable,
+    isRunningAsFlatpak,
     isCheckingForUpdates: isNativeLoading || isCheckForUpdatesPending,
     isError,
     error,
     refetch,
     installUpdate,
-    isInstallingUpdate,
+    isInstallingUpdate: isInstallingUpdate || isInstallingFlatpakUpdate,
+    installFlatpakUpdate,
     checkForUpdates,
   };
 };

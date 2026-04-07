@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { isAutoUpdateDisabled } from "@/lib/api";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { isAutoUpdateDisabled, isFlatpak } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import useUpdateManager from "./use-update-manager";
@@ -22,6 +23,15 @@ export const useAutoUpdate = () => {
         if (disabledViaCli) {
           logger.info(
             "Auto-update is disabled via --disable-auto-update CLI flag",
+          );
+          return;
+        }
+
+        // Flatpak installs cannot self-update; updates must go through flatpak update
+        const flatpak = await isFlatpak();
+        if (flatpak) {
+          logger.info(
+            "Running as Flatpak — skipping native updater. Use 'flatpak update' to upgrade.",
           );
           return;
         }
@@ -58,10 +68,13 @@ export const useAutoUpdate = () => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to update and relaunch");
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.withError(err).error("Failed to update and relaunch");
+      toast.error(
+        `Update failed: ${err.message}. You may need to manually update the app.`,
+      );
       setShowUpdateDialog(false);
+      updateManager.reset();
     }
   };
 

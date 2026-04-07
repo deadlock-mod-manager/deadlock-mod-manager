@@ -35,27 +35,31 @@ const useUpdateManager = () => {
     setDownloaded(0);
     setSize(0);
 
-    await update.downloadAndInstall((event) => {
-      switch (event.event) {
-        case "Started":
-          setSize(event.data.contentLength ?? 0);
-          logger
-            .withMetadata({ contentLength: event.data.contentLength })
-            .info("started downloading");
-          break;
-        case "Progress":
-          setDownloaded((prev) => prev + event.data.chunkLength);
-          logger.withMetadata({ downloaded, size }).info("downloaded");
-          break;
-        case "Finished":
-          logger.info("download finished");
-          break;
-        default:
-          logger.withMetadata({ event }).info("Unknown update event");
-          break;
-      }
-    });
-    await relaunch();
+    try {
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case "Started":
+            setSize(event.data.contentLength ?? 0);
+            logger
+              .withMetadata({ contentLength: event.data.contentLength })
+              .info("started downloading");
+            break;
+          case "Progress":
+            setDownloaded((prev) => prev + event.data.chunkLength);
+            logger.withMetadata({ downloaded, size }).info("downloaded");
+            break;
+          case "Finished":
+            logger.info("download finished");
+            break;
+          default:
+            logger.withMetadata({ event }).info("Unknown update event");
+            break;
+        }
+      });
+      await relaunch();
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const reset = () => {
