@@ -136,17 +136,41 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     group: "developer",
     isFooter: true,
   },
-  import.meta.env.DEV
-    ? {
-        id: "debug",
-        title: "Debug",
-        url: "/debug",
-        isFooter: true,
-        icon: BugBeetleIcon,
-        group: "developer",
-      }
-    : ({} as Item),
+  {
+    id: "debug",
+    title: "Debug",
+    url: "/debug",
+    isFooter: true,
+    isVisible: () => import.meta.env.DEV,
+    icon: BugBeetleIcon,
+    group: "developer",
+  },
 ];
+
+const groups: Record<
+  Groups,
+  {
+    label: string;
+    position: "footer" | "general";
+  }
+> = {
+  general: {
+    label: "General",
+    position: "general",
+  },
+  mods: {
+    label: "Mods",
+    position: "general",
+  },
+  customization: {
+    label: "Customization",
+    position: "general",
+  },
+  developer: {
+    label: "Developer",
+    position: "footer",
+  },
+};
 
 const AppSidebar = () => {
   const { t } = useTranslation();
@@ -159,31 +183,6 @@ const AppSidebar = () => {
     "custom-maps",
     false,
   );
-
-  const groups: Record<
-    Groups,
-    {
-      label: string;
-      position: "footer" | "general";
-    }
-  > = {
-    general: {
-      label: "General",
-      position: "general",
-    },
-    mods: {
-      label: "Mods",
-      position: "general",
-    },
-    customization: {
-      label: "Customization",
-      position: "general",
-    },
-    developer: {
-      label: "Developer",
-      position: "footer",
-    },
-  };
 
   const getItemVisibility = (item: Item) => {
     if (item.isDev) return developerMode;
@@ -255,7 +254,8 @@ const AppSidebar = () => {
           <SidebarGroupContent>
             {footerGroups.map((group) => {
               const items = footerSidebarItems.filter(
-                (groupItem) => groupItem.group === group,
+                (groupItem) =>
+                  groupItem.group === group && getItemVisibility(groupItem),
               );
 
               if (!items.length) return null;
