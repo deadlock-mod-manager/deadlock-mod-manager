@@ -49,8 +49,9 @@ interface Item {
   isFooter?: boolean;
   tooltipLabel?: string;
   isDev?: boolean;
-  isVisible?: (isVisible: boolean) => boolean;
+  isVisible?: (isVisible: boolean) => boolean | boolean;
 }
+
 type Groups = "general" | "mods" | "customization" | "developer";
 
 const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
@@ -67,6 +68,7 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     title: t("navigation.downloads"),
     url: "/downloads",
     icon: DownloadIcon,
+    tooltipLabel: t("navigation.downloads"),
     group: "general",
     badge:
       badgeContext?.filter(
@@ -77,12 +79,14 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     id: "my-mods",
     title: t("navigation.myMods"),
     url: "/my-mods",
+    tooltipLabel: t("navigation.myMods"),
     icon: PackageIcon,
     badge: badgeContext?.length || undefined,
     group: "mods",
   },
   {
     id: "get-mods",
+    tooltipLabel: t("navigation.getMods"),
     title: t("navigation.getMods"),
     url: "/mods",
     icon: MagnifyingGlassIcon,
@@ -91,6 +95,7 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
   {
     id: "settings",
     title: t("navigation.settings"),
+    tooltipLabel: t("navigation.settings"),
     url: "/settings",
     icon: GearIcon,
     group: "general",
@@ -100,12 +105,14 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     title: t("navigation.maps"),
     tooltipLabel: t("navigation.maps"),
     url: "/maps",
+    isVisible: (flag) => flag,
     icon: MapTrifoldIcon,
     group: "mods",
   },
   {
     id: "crosshairs",
     title: t("navigation.crosshairs"),
+    tooltipLabel: t("navigation.crosshairs"),
     url: "/crosshairs",
     icon: CrosshairIcon,
     group: "customization",
@@ -114,6 +121,7 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     id: "autoexec",
     title: t("navigation.autoexec"),
     url: "/settings/autoexec",
+    tooltipLabel: t("navigation.autoexec"),
     icon: ArticleIcon,
     group: "customization",
   },
@@ -122,6 +130,7 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     id: "developer",
     title: t("navigation.developer"),
     url: "/developer",
+    tooltipLabel: "navigation.developer",
     icon: CodeIcon,
     isDev: true,
     group: "developer",
@@ -139,7 +148,7 @@ const sidebarItems = ({ t, badgeContext }: SProps): Array<Item> => [
     : ({} as Item),
 ];
 
-export const AppSidebar = () => {
+const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
@@ -176,6 +185,16 @@ export const AppSidebar = () => {
     },
   };
 
+  const getItemVisibility = (item: Item) => {
+    if (item.isDev) return developerMode;
+
+    if (typeof item.isVisible === "function") {
+      return item.isVisible(!!isCustomMapsEnabled);
+    }
+
+    return item.isVisible;
+  };
+
   const items = sidebarItems({ t, badgeContext: mods });
 
   const generalGroups = (Object.keys(groups) as Groups[]).filter(
@@ -202,6 +221,7 @@ export const AppSidebar = () => {
           const items = topSidebarItems.filter(
             (groupItem) => groupItem.group === group,
           );
+
           return (
             <SidebarGroup className="pb-1">
               <SidebarGroupLabel>{groups[group].label}</SidebarGroupLabel>
@@ -212,13 +232,7 @@ export const AppSidebar = () => {
                       <SidebarItem
                         tooltip={item.tooltipLabel}
                         key={item.id}
-                        isVisible={
-                          item.isDev
-                            ? developerMode
-                            : item.isVisible
-                              ? item.isVisible(!!isCustomMapsEnabled)
-                              : true
-                        }
+                        isVisible={getItemVisibility(item)}
                         isActive={item.url === location.pathname}
                         title={item.title}
                         badge={item.badge}
@@ -258,6 +272,7 @@ export const AppSidebar = () => {
                             key={item.id}
                             isActive={item.url === location.pathname}
                             title={item.title}
+                            isVisible={getItemVisibility(item)}
                             badge={item.badge}
                             icon={
                               <item.icon className="h-5 w-5" weight="duotone" />
@@ -291,3 +306,4 @@ export const AppSidebar = () => {
     </Sidebar>
   );
 };
+export default AppSidebar;

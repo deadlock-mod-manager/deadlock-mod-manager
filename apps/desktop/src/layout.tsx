@@ -4,7 +4,7 @@ import {
   SidebarProvider,
 } from "@deadlock-mods/ui/components/sidebar";
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
-import { AppSidebar } from "./components/layout/app-sidebar";
+import AppSidebar from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
 import { Titlebar } from "./components/layout/titlebar";
 import { Toolbar } from "./components/layout/toolbar";
@@ -21,7 +21,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <main className='h-screen overflow-hidden'>
+      <main className="h-screen overflow-hidden">
         <Titlebar />
         <Topbar />
         <SidebarProvider>
@@ -31,7 +31,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               <div className={cn("flex h-full w-full flex-col")}>
                 <Toolbar />
                 <div
-                  className={cn("flex pr-2 pl-2 pt-4 h-[calc(100vh-198px)]")}>
+                  className={cn("flex pr-2 pl-2 pt-4 h-[calc(100vh-198px)]")}
+                >
                   {children}
                 </div>
                 <BottomBar />
@@ -44,7 +45,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
       <Dialog
         onOpenChange={(open) => !open && markVersionAsSeen()}
-        open={showWhatsNew}>
+        open={showWhatsNew}
+      >
         <WhatsNewDialog onClose={markVersionAsSeen} />
       </Dialog>
     </>
