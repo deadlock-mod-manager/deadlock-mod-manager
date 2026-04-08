@@ -316,7 +316,7 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
 pub async fn show_mod_in_game(
   vpk_files: Vec<String>,
   profile_folder: Option<String>,
-  _is_map: bool,
+  _is_map: Option<bool>,
 ) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
