@@ -2,6 +2,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { DownloadableMod, ModFileTree, Progress } from "@/types/mods";
+import type { FontInfo } from "@/types/mods";
 import { getGameBananaFileservers } from "../api";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
@@ -38,6 +39,11 @@ interface DownloadExtractingEvent {
   modId: string;
 }
 
+interface DownloadFontsFoundEvent {
+  modId: string;
+  fonts: FontInfo[];
+}
+
 interface DownloadErrorEvent {
   modId: string;
   error: string;
@@ -46,6 +52,11 @@ interface DownloadErrorEvent {
 class DownloadManager {
   private pendingDownloads: Map<string, DownloadableMod> = new Map();
   private unlistenFns: UnlistenFn[] = [];
+  private onFontsFoundHandler?: (
+    modId: string,
+    modName: string,
+    fonts: FontInfo[],
+  ) => void;
 
   async init() {
     logger.info("Download manager initializing");
@@ -150,16 +161,44 @@ class DownloadManager {
       },
     );
 
+    const unlistenFontsFound = await listen<DownloadFontsFoundEvent>(
+      "download-fonts-found",
+      (event) => {
+        if (this.onFontsFoundHandler) {
+          const mod = this.pendingDownloads.get(event.payload.modId);
+          const modName = mod?.name ?? event.payload.modId;
+          logger
+            .withMetadata({
+              mod: event.payload.modId,
+              fontCount: event.payload.fonts.length,
+            })
+            .info("Fonts found in mod download");
+          this.onFontsFoundHandler(
+            event.payload.modId,
+            modName,
+            event.payload.fonts,
+          );
+        }
+      },
+    );
+
     this.unlistenFns.push(
       unlistenStarted,
       unlistenProgress,
       unlistenCompleted,
       unlistenExtracting,
       unlistenFileTree,
+      unlistenFontsFound,
       unlistenError,
     );
 
     logger.info("Download manager initialized");
+  }
+
+  setFontsFoundHandler(
+    handler: (modId: string, modName: string, fonts: FontInfo[]) => void,
+  ) {
+    this.onFontsFoundHandler = handler;
   }
 
   async cleanup() {

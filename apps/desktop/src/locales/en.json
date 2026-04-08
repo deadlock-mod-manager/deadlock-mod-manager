@@ -1695,5 +1695,11 @@
     "filesSelectedWithSize": "{{count}} file(s) selected ({{size}})",
     "installSelected": "Install Selected",
     "analyzingModFiles": "Analyzing mod files, please wait..."
+  },
+  "fontInstall": {
+    "title": "Fonts found in mod",
+    "description": "{{modName}} includes font files. Would you like to install them to the game?",
+    "install": "Install Fonts",
+    "skip": "Skip"
   }
 }

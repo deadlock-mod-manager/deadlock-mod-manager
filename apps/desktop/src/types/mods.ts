@@ -44,6 +44,11 @@ export interface DownloadableMod extends Omit<LocalMod, "status"> {
   profileFolder?: string | null;
 }
 
+export interface FontInfo {
+  fileName: string;
+  fontName: string;
+}
+
 export type InstallableMod = {
   id: string;
   name: string;

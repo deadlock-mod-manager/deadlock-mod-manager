@@ -1110,6 +1110,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tokio-util",
+ "ttf-parser",
  "unrar",
  "urlencoding",
  "vpk-parser",
@@ -6664,6 +6665,12 @@ dependencies = [
  "syn 2.0.117",
  "termcolor",
 ]
+
+[[package]]
+name = "ttf-parser"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5be21190ff5d38e8b4a2d3b6a3ae57f612cc39c96e83cedeaf7abc338a8bac4a"
 
 [[package]]
 name = "twox-hash"

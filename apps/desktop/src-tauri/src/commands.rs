@@ -375,6 +375,107 @@ pub async fn open_mods_data_folder() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
+  use crate::mod_manager::FontManager;
+
+  log::info!("Installing fonts for mod: {mod_id}");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+  drop(mod_manager);
+
+  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let game_fonts_dir = game_path
+    .join("game")
+    .join("citadel")
+    .join("panorama")
+    .join("fonts");
+  let conf_path = game_fonts_dir.join("fonts.conf");
+
+  let font_manager = FontManager::new();
+  let installed = font_manager.install_fonts(&stash_dir, &game_fonts_dir)?;
+
+  if conf_path.exists() {
+    font_manager.patch_fonts_conf(&conf_path, &mod_id, &installed)?;
+  } else {
+    log::warn!("fonts.conf not found at {conf_path:?}, skipping patch");
+  }
+
+  log::info!(
+    "Installed {} font(s) for mod {mod_id}",
+    installed.len()
+  );
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
+  use crate::mod_manager::FontManager;
+
+  log::info!("Discarding stashed fonts for mod: {mod_id}");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  drop(mod_manager);
+
+  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  FontManager::new().discard_stash(&stash_dir)
+}
+
+/// Debug-only: stash a real system TTF and fire the download-fonts-found event so the
+/// font-install dialog can be tested without a full mod download.
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn debug_trigger_font_install(
+  mod_id: String,
+  app_handle: tauri::AppHandle,
+) -> Result<(), Error> {
+  use crate::download_manager::DownloadFontsFoundEvent;
+  use crate::mod_manager::FontManager;
+  use tauri::Emitter;
+
+  let system_ttf = std::path::Path::new("/usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf");
+  if !system_ttf.exists() {
+    return Err(Error::Io(std::io::Error::new(
+      std::io::ErrorKind::NotFound,
+      "test TTF not found at /usr/share/fonts/Adwaita/AdwaitaSans-Regular.ttf — adjust path in debug_trigger_font_install",
+    )));
+  }
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  drop(mod_manager);
+
+  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let font_manager = FontManager::new();
+
+  // stash_fonts expects a slice of paths found under panorama/fonts/
+  let font_infos = font_manager.stash_fonts(&[system_ttf.to_path_buf()], &stash_dir)?;
+
+  app_handle
+    .emit(
+      "download-fonts-found",
+      DownloadFontsFoundEvent {
+        mod_id: mod_id.clone(),
+        fonts: font_infos,
+      },
+    )
+    .map_err(|e| {
+      Error::Io(std::io::Error::other(
+        e.to_string(),
+      ))
+    })?;
+
+  log::info!("debug_trigger_font_install: emitted download-fonts-found for mod {mod_id}");
+  Ok(())
+}
+
+#[tauri::command]
 pub async fn clear_download_cache() -> Result<u64, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   mod_manager.clear_download_cache()

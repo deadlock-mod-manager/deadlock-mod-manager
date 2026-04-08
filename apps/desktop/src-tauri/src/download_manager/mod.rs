@@ -66,6 +66,13 @@ pub struct DownloadExtractingEvent {
   pub mod_id: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadFontsFoundEvent {
+  pub mod_id: String,
+  pub fonts: Vec<crate::mod_manager::FontInfo>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
@@ -451,6 +458,34 @@ impl DownloadManager {
             EXTRACTION_TIMEOUT.as_secs(),
             task.mod_id
           )));
+        }
+      }
+
+      // Scan for font files before processing VPKs and emit an event if any are found
+      let font_manager = crate::mod_manager::FontManager::new();
+      let found_fonts = font_manager.scan_for_fonts(&extracted_dir);
+      if !found_fonts.is_empty() {
+        let stash_dir = task.target_dir.join("fonts");
+        match font_manager.stash_fonts(&found_fonts, &stash_dir) {
+          Ok(font_infos) => {
+            log::info!(
+              "Found {} font(s) in mod {}, emitting fonts-found event",
+              font_infos.len(),
+              task.mod_id
+            );
+            app_handle
+              .emit(
+                "download-fonts-found",
+                DownloadFontsFoundEvent {
+                  mod_id: task.mod_id.clone(),
+                  fonts: font_infos,
+                },
+              )
+              .ok();
+          }
+          Err(e) => {
+            log::warn!("Failed to stash fonts for mod {}: {e}", task.mod_id);
+          }
         }
       }
 

@@ -104,6 +104,10 @@ pub fn run() {
       commands::open_mods_folder,
       commands::open_game_folder,
       commands::open_mods_data_folder,
+      commands::install_mod_fonts,
+      commands::discard_mod_fonts,
+      #[cfg(debug_assertions)]
+      commands::debug_trigger_font_install,
       commands::clear_download_cache,
       commands::clear_all_mods_data,
       commands::uninstall_mod,
