@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
@@ -90,6 +91,8 @@ export const useLaunch = () => {
       const profileFolder = vanilla
         ? null
         : (activeProfile?.folderName ?? null);
+
+      stopHeroDetection();
 
       await invoke("start_game", {
         vanilla,

@@ -169,6 +169,16 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               if (!confirmed) break;
             }
           }
+          if (localMod.usesCriticalPaths) {
+            const confirmed = await confirm({
+              title: t("criticalPaths.title"),
+              body: t("criticalPaths.body"),
+              tone: "destructive",
+              cancelButton: t("criticalPaths.cancel"),
+              actionButton: t("criticalPaths.confirm"),
+            });
+            if (!confirmed) break;
+          }
           await install(localMod, {
             onStart: (mod) => {
               setModStatus(mod.remoteId, ModStatus.Installing);

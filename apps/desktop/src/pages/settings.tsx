@@ -716,11 +716,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("heroParser.settingsTitle")}>
               <HeroParserSettings />
             </Section>
-            <Section
-              description={t("settings.addonsBackupDescription")}
-              title={t("settings.addonsBackup")}>
-              <AddonsBackupManagement />
-            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='logging'>

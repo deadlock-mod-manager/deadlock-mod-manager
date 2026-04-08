@@ -66,7 +66,11 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
-  setDetectedHero: (remoteId: string, hero: string | null) => void;
+  setDetectedHero: (
+    remoteId: string,
+    hero: string | null,
+    usesCriticalPaths?: boolean,
+  ) => void;
   clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
 };
@@ -481,12 +485,21 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     });
   },
 
-  setDetectedHero: (remoteId: string, hero: string | null) =>
+  setDetectedHero: (
+    remoteId: string,
+    hero: string | null,
+    usesCriticalPaths?: boolean,
+  ) =>
     set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        detectedHero: mod.remoteId === remoteId ? hero : mod.detectedHero,
-      })),
+      localMods: state.localMods.map((mod) =>
+        mod.remoteId === remoteId
+          ? {
+              ...mod,
+              detectedHero: hero,
+              usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+            }
+          : mod,
+      ),
     })),
 
   clearAllDetectedHeroes: () =>

@@ -7,6 +7,12 @@ use mapping::{lookup_hero, HERO_PATH_PREFIXES};
 use std::collections::HashMap;
 use vpk_parser::VpkEntry;
 
+const CRITICAL_GAME_PATHS: [&str; 3] = [
+    "scripts/abilities.vdata_c",
+    "scripts/heroes.vdata_c",
+    "scripts/generic_data.vdata_c",
+];
+
 fn extract_internal_name(path: &str) -> Option<&str> {
     for prefix in &HERO_PATH_PREFIXES {
         if let Some(rest) = path.strip_prefix(prefix) {
@@ -14,6 +20,17 @@ fn extract_internal_name(path: &str) -> Option<&str> {
         }
     }
     None
+}
+
+fn find_critical_paths(paths: impl Iterator<Item = impl AsRef<str>>) -> Vec<String> {
+    let mut found: Vec<String> = Vec::new();
+    for path in paths {
+        let p = path.as_ref();
+        if CRITICAL_GAME_PATHS.contains(&p) && !found.contains(&p.to_string()) {
+            found.push(p.to_string());
+        }
+    }
+    found
 }
 
 pub fn detect_hero(entries: &[VpkEntry]) -> HeroDetectionResult {
@@ -32,12 +49,17 @@ pub fn detect_hero(entries: &[VpkEntry]) -> HeroDetectionResult {
         }
     }
 
+    let critical_paths = find_critical_paths(entries.iter().map(|e| &e.full_path));
+    let uses_critical_paths = !critical_paths.is_empty();
+
     if hero_counts.is_empty() {
         return HeroDetectionResult {
             hero: None,
             hero_display: None,
             category: "other".to_string(),
             internal_names,
+            uses_critical_paths,
+            critical_paths,
         };
     }
 
@@ -58,6 +80,8 @@ pub fn detect_hero(entries: &[VpkEntry]) -> HeroDetectionResult {
         hero_display: display_name,
         category: "hero".to_string(),
         internal_names,
+        uses_critical_paths,
+        critical_paths,
     }
 }
 
@@ -77,12 +101,17 @@ pub fn detect_hero_from_paths(paths: &[String]) -> HeroDetectionResult {
         }
     }
 
+    let critical_paths = find_critical_paths(paths.iter());
+    let uses_critical_paths = !critical_paths.is_empty();
+
     if hero_counts.is_empty() {
         return HeroDetectionResult {
             hero: None,
             hero_display: None,
             category: "other".to_string(),
             internal_names,
+            uses_critical_paths,
+            critical_paths,
         };
     }
 
@@ -103,6 +132,8 @@ pub fn detect_hero_from_paths(paths: &[String]) -> HeroDetectionResult {
         hero_display: display_name,
         category: "hero".to_string(),
         internal_names,
+        uses_critical_paths,
+        critical_paths,
     }
 }
 
@@ -121,6 +152,7 @@ mod tests {
         assert_eq!(result.hero, Some("Drifter".to_string()));
         assert_eq!(result.hero_display, Some("Drifter".to_string()));
         assert_eq!(result.category, "hero");
+        assert!(!result.uses_critical_paths);
     }
 
     #[test]
@@ -132,6 +164,7 @@ mod tests {
         let result = detect_hero_from_paths(&paths);
         assert_eq!(result.hero, None);
         assert_eq!(result.category, "other");
+        assert!(!result.uses_critical_paths);
     }
 
     #[test]
@@ -157,5 +190,39 @@ mod tests {
         let paths = vec!["models/heroes/kelvin/model.vmdl_c".to_string()];
         let result = detect_hero_from_paths(&paths);
         assert_eq!(result.hero, Some("Kelvin".to_string()));
+    }
+
+    #[test]
+    fn test_critical_paths_detected() {
+        let paths = vec![
+            "scripts/abilities.vdata_c".to_string(),
+            "models/heroes_wip/drifter/drifter.vmdl_c".to_string(),
+        ];
+        let result = detect_hero_from_paths(&paths);
+        assert!(result.uses_critical_paths);
+        assert_eq!(result.critical_paths, vec!["scripts/abilities.vdata_c"]);
+    }
+
+    #[test]
+    fn test_multiple_critical_paths() {
+        let paths = vec![
+            "scripts/abilities.vdata_c".to_string(),
+            "scripts/heroes.vdata_c".to_string(),
+            "scripts/generic_data.vdata_c".to_string(),
+        ];
+        let result = detect_hero_from_paths(&paths);
+        assert!(result.uses_critical_paths);
+        assert_eq!(result.critical_paths.len(), 3);
+    }
+
+    #[test]
+    fn test_no_critical_paths() {
+        let paths = vec![
+            "scripts/other_file.vdata_c".to_string(),
+            "sounds/custom/effect.wav".to_string(),
+        ];
+        let result = detect_hero_from_paths(&paths);
+        assert!(!result.uses_critical_paths);
+        assert!(result.critical_paths.is_empty());
     }
 }

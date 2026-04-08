@@ -1,0 +1,10 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "apps/desktop/Cargo.toml",
+    "packages/dmp-parser/Cargo.toml",
+    "packages/dmodpkg/Cargo.toml",
+    "packages/hero-parser/Cargo.toml",
+    "packages/kv-parser/Cargo.toml",
+    "packages/vpk-parser/Cargo.toml"
+  ]
+}

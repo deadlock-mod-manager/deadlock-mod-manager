@@ -5,7 +5,25 @@ export type HeroDetectionResult = {
   heroDisplay: string | null;
   category: "hero" | "other";
   internalNames: string[];
+  usesCriticalPaths: boolean;
+  criticalPaths: string[];
 };
+
+const CRITICAL_GAME_PATHS = [
+  "scripts/abilities.vdata_c",
+  "scripts/heroes.vdata_c",
+  "scripts/generic_data.vdata_c",
+];
+
+function findCriticalPaths(paths: string[]): string[] {
+  const found: string[] = [];
+  for (const path of paths) {
+    if (CRITICAL_GAME_PATHS.includes(path) && !found.includes(path)) {
+      found.push(path);
+    }
+  }
+  return found;
+}
 
 export function detectHero(entryPaths: string[]): HeroDetectionResult {
   const heroCounts = new Map<string, number>();
@@ -25,12 +43,17 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
     }
   }
 
+  const criticalPaths = findCriticalPaths(entryPaths);
+  const usesCriticalPaths = criticalPaths.length > 0;
+
   if (heroCounts.size === 0) {
     return {
       hero: null,
       heroDisplay: null,
       category: "other",
       internalNames,
+      usesCriticalPaths,
+      criticalPaths,
     };
   }
 
@@ -53,5 +76,7 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
     heroDisplay: displayName,
     category: "hero",
     internalNames,
+    usesCriticalPaths,
+    criticalPaths,
   };
 }

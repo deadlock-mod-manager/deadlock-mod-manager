@@ -59,7 +59,11 @@ export const useDownload = (
 
         detectHeroForMod(mod.remoteId)
           .then((result) => {
-            setDetectedHero(mod.remoteId, result.hero ?? null);
+            setDetectedHero(
+              mod.remoteId,
+              result.hero ?? null,
+              result.usesCriticalPaths,
+            );
           })
           .catch((err) => {
             logger

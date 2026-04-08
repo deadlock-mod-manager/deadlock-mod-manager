@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Add hero parser controls and configurable scan interval
+Move hero parser to async background thread to prevent UI lag during mod scanning

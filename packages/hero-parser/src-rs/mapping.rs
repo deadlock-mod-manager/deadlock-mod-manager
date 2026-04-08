@@ -11,6 +11,7 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
 
     let entries: Vec<(&str, &str, &str)> = vec![
         // heroes_wip
+        //Deadlock internal name => Deadlock enum key => Deadlock display name
         ("abrams", "Abrams", "Abrams"),
         ("bookworm", "Paige", "Paige"),
         ("doorman", "Doorman", "Doorman"),
@@ -92,12 +93,14 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
     m
 });
 
+// Paths to look for heroes in
 pub const HERO_PATH_PREFIXES: [&str; 3] = [
     "models/heroes_wip/",
     "models/heroes_staging/",
     "models/heroes/",
 ];
 
+// Lookup hero by internal name
 pub fn lookup_hero(internal_name: &str) -> Option<&'static HeroMapping> {
     HERO_MAP.get(internal_name)
 }

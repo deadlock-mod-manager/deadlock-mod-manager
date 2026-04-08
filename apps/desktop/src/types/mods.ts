@@ -35,6 +35,7 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
+  usesCriticalPaths?: boolean;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {

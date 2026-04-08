@@ -1,13 +1,5 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Label } from "@deadlock-mods/ui/components/label";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deadlock-mods/ui/components/select";
 import {
   ArrowsClockwiseIcon,
   CheckCircleIcon,
@@ -27,19 +19,11 @@ import {
 } from "@/hooks/use-hero-detection";
 import { usePersistedStore } from "@/lib/store";
 
-const INTERVAL_OPTIONS = [15, 30, 45, 60, 120];
-
 export const HeroParserSettings = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const localMods = usePersistedStore((state) => state.localMods);
   const heroDetection = usePersistedStore((state) => state.heroDetection);
-  const heroParserIntervalSeconds = usePersistedStore(
-    (state) => state.heroParserIntervalSeconds,
-  );
-  const setHeroParserIntervalSeconds = usePersistedStore(
-    (state) => state.setHeroParserIntervalSeconds,
-  );
 
   const isScanning = heroDetection.status === "scanning";
   const indexedCount = localMods.filter(
@@ -190,33 +174,6 @@ export const HeroParserSettings = () => {
           <Progress className='h-1.5' value={indexPercentage} />
         </div>
       )}
-
-      <div className='flex items-center justify-between'>
-        <div className='space-y-1'>
-          <Label className='font-bold text-sm'>
-            {t("heroParser.intervalLabel")}
-          </Label>
-          <p className='text-muted-foreground text-sm'>
-            {t("heroParser.intervalDescription")}
-          </p>
-        </div>
-        <Select
-          value={String(heroParserIntervalSeconds)}
-          onValueChange={(v) =>
-            setHeroParserIntervalSeconds(Number.parseInt(v, 10))
-          }>
-          <SelectTrigger className='w-32'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {INTERVAL_OPTIONS.map((seconds) => (
-              <SelectItem key={seconds} value={String(seconds)}>
-                {t("heroParser.intervalSeconds", { seconds })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   );
 };

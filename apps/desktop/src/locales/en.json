@@ -1777,6 +1777,12 @@
     "cancel": "No",
     "confirm": "Yes, enable anyway"
   },
+  "criticalPaths": {
+    "title": "Critical Game Files Warning",
+    "body": "This mod overwrites critical game files (abilities, heroes, or generic data). Enabling it may cause game instability or crashes. Do you want to enable this mod anyway?",
+    "cancel": "No",
+    "confirm": "Yes, enable anyway"
+  },
   "heroTag": {
     "hero": "Hero",
     "other": "General"
@@ -1798,9 +1804,6 @@
     "indexNowTitle": "Index All Unindexed Mods",
     "indexNowBody": "This will immediately analyze all unindexed mods without delays. The application may become unresponsive during the scan depending on the number and size of your mods.",
     "indexNowConfirm": "Index Now",
-    "intervalLabel": "Background scan interval",
-    "intervalDescription": "Time between each mod analysis during background scanning",
-    "intervalSeconds": "{{seconds}}s",
     "stop": "Stop",
     "startBackgroundScan": "Start Background Scan",
     "clearIndex": "Clear Index",
