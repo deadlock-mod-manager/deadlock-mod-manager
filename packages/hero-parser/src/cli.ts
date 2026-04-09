@@ -1,14 +1,17 @@
+import { createAppLogger } from "@deadlock-mods/logging";
 import { parseVpkFile } from "@deadlock-mods/vpk-parser";
 import { detectHero } from "./detect-hero";
+
+const logger = createAppLogger({ app: "hero-parser" });
 
 const filePath = process.argv[2];
 
 if (!filePath) {
-  console.error("Usage: pnpm hero-parser <vpk-file-path>");
+  logger.error("Usage: pnpm hero-parser <vpk-file-path>");
   process.exit(1);
 }
 
-console.log(`Parsing VPK: ${filePath}`);
+logger.info(`Parsing VPK: ${filePath}`);
 
 const parsed = parseVpkFile(filePath, {
   includeFullFileHash: false,
@@ -19,17 +22,17 @@ const parsed = parseVpkFile(filePath, {
 });
 
 const paths = parsed.entries.map((e) => e.fullPath);
-console.log(`Entries found: ${paths.length}`);
+logger.info(`Entries found: ${paths.length}`);
 
 const result = detectHero(paths);
 
 if (result.hero) {
-  console.log(`Detected hero: ${result.hero} (display: ${result.heroDisplay})`);
+  logger.info(`Detected hero: ${result.hero} (display: ${result.heroDisplay})`);
 } else {
-  console.log("Detected hero: Other/Misc");
+  logger.info("Detected hero: Other/Misc");
 }
 
-console.log(
+logger.info(
   `Internal names found: ${result.internalNames.join(", ") || "none"}`,
 );
-console.log(`Category: ${result.category}`);
+logger.info(`Category: ${result.category}`);

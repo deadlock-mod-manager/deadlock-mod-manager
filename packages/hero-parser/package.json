@@ -13,6 +13,7 @@
     "test": "cargo test"
   },
   "dependencies": {
+    "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*"
   },
   "devDependencies": {
