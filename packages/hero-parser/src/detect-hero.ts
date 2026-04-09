@@ -59,11 +59,26 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
 
   let primaryHeroKey = "";
   let maxCount = 0;
+  let isTied = false;
   for (const [key, count] of heroCounts) {
     if (count > maxCount) {
       maxCount = count;
       primaryHeroKey = key;
+      isTied = false;
+    } else if (count === maxCount) {
+      isTied = true;
     }
+  }
+
+  if (isTied) {
+    return {
+      hero: null,
+      heroDisplay: null,
+      category: "other",
+      internalNames,
+      usesCriticalPaths,
+      criticalPaths,
+    };
   }
 
   const displayName =

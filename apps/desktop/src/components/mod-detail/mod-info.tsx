@@ -1,4 +1,8 @@
 import { DeadlockHeroes } from "@deadlock-mods/shared";
+
+function isDeadlockHeroKey(key: string): key is keyof typeof DeadlockHeroes {
+  return key in DeadlockHeroes;
+}
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
@@ -113,9 +117,9 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
                 <Shield className='text-muted-foreground' />
                 <Badge variant='outline'>
                   {localMod.detectedHero
-                    ? (DeadlockHeroes[
-                        localMod.detectedHero as keyof typeof DeadlockHeroes
-                      ] ?? localMod.detectedHero)
+                    ? isDeadlockHeroKey(localMod.detectedHero)
+                      ? DeadlockHeroes[localMod.detectedHero]
+                      : localMod.detectedHero
                     : t("heroTag.other")}
                 </Badge>
               </>

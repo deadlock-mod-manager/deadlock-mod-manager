@@ -63,16 +63,33 @@ pub fn detect_hero(entries: &[VpkEntry]) -> HeroDetectionResult {
         };
     }
 
-    let primary_hero_key = hero_counts
-        .iter()
-        .max_by_key(|(_, count)| *count)
-        .map(|(key, _)| key.clone())
-        .unwrap();
+    let mut primary_hero_key = String::new();
+    let mut max_count: usize = 0;
+    let mut is_tied = false;
+    for (key, &count) in &hero_counts {
+        if count > max_count {
+            max_count = count;
+            primary_hero_key = key.clone();
+            is_tied = false;
+        } else if count == max_count {
+            is_tied = true;
+        }
+    }
+
+    if is_tied {
+        return HeroDetectionResult {
+            hero: None,
+            hero_display: None,
+            category: "other".to_string(),
+            internal_names,
+            uses_critical_paths,
+            critical_paths,
+        };
+    }
 
     let display_name = internal_names
         .iter()
-        .find_map(|name| lookup_hero(name))
-        .filter(|h| h.enum_key == primary_hero_key)
+        .find_map(|name| lookup_hero(name).filter(|h| h.enum_key == primary_hero_key))
         .map(|h| h.display_name.to_string());
 
     HeroDetectionResult {
@@ -115,16 +132,33 @@ pub fn detect_hero_from_paths(paths: &[String]) -> HeroDetectionResult {
         };
     }
 
-    let primary_hero_key = hero_counts
-        .iter()
-        .max_by_key(|(_, count)| *count)
-        .map(|(key, _)| key.clone())
-        .unwrap();
+    let mut primary_hero_key = String::new();
+    let mut max_count: usize = 0;
+    let mut is_tied = false;
+    for (key, &count) in &hero_counts {
+        if count > max_count {
+            max_count = count;
+            primary_hero_key = key.clone();
+            is_tied = false;
+        } else if count == max_count {
+            is_tied = true;
+        }
+    }
+
+    if is_tied {
+        return HeroDetectionResult {
+            hero: None,
+            hero_display: None,
+            category: "other".to_string(),
+            internal_names,
+            uses_critical_paths,
+            critical_paths,
+        };
+    }
 
     let display_name = internal_names
         .iter()
-        .find_map(|name| lookup_hero(name))
-        .filter(|h| h.enum_key == primary_hero_key)
+        .find_map(|name| lookup_hero(name).filter(|h| h.enum_key == primary_hero_key))
         .map(|h| h.display_name.to_string());
 
     HeroDetectionResult {

@@ -1,4 +1,8 @@
 import { DeadlockHeroes } from "@deadlock-mods/shared";
+
+function isDeadlockHeroKey(key: string): key is keyof typeof DeadlockHeroes {
+  return key in DeadlockHeroes;
+}
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -153,9 +157,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
                 m.detectedHero === detectedHero,
             );
             if (conflictingMod) {
-              const heroDisplay =
-                DeadlockHeroes[detectedHero as keyof typeof DeadlockHeroes] ??
-                detectedHero;
+              const heroDisplay = isDeadlockHeroKey(detectedHero)
+                ? DeadlockHeroes[detectedHero]
+                : detectedHero;
               const confirmed = await confirm({
                 title: t("heroConflict.title"),
                 body: t("heroConflict.body", {

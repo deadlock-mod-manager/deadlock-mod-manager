@@ -89,7 +89,7 @@ export function extractInternalName(path: string): string | undefined {
       const rest = path.slice(prefix.length);
       const segment = rest.split("/")[0];
       if (segment && segment.length > 0) {
-        return segment;
+        return segment.toLowerCase();
       }
     }
   }

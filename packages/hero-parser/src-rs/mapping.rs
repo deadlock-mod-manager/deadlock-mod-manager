@@ -102,5 +102,6 @@ pub const HERO_PATH_PREFIXES: [&str; 3] = [
 
 // Lookup hero by internal name
 pub fn lookup_hero(internal_name: &str) -> Option<&'static HeroMapping> {
-    HERO_MAP.get(internal_name)
+    let lower = internal_name.to_lowercase();
+    HERO_MAP.get(lower.as_str())
 }

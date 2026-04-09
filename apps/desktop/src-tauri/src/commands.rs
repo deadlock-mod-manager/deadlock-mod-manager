@@ -1045,7 +1045,10 @@ fn collect_vpk_files_for_mod(
         .get_mod_repository()
         .get_mod(mod_id)
         .map(|m| m.installed_vpks.clone());
-      let known_vpks = repo_vpks.or(installed_vpks).unwrap_or_default();
+      let known_vpks = repo_vpks
+        .filter(|v| !v.is_empty())
+        .or(installed_vpks)
+        .unwrap_or_default();
       for vpk_name in &known_vpks {
         let vpk_path = addons_path.join(vpk_name);
         if vpk_path.exists() {
@@ -1168,7 +1171,10 @@ pub async fn detect_mod_heroes_batch(
               .get_mod_repository()
               .get_mod(&req.mod_id)
               .map(|m| m.installed_vpks.clone());
-            let known_vpks = repo_vpks.or(req.installed_vpks).unwrap_or_default();
+            let known_vpks = repo_vpks
+              .filter(|v| !v.is_empty())
+              .or(req.installed_vpks)
+              .unwrap_or_default();
             for vpk_name in &known_vpks {
               let vpk_path = addons_path.join(vpk_name);
               if vpk_path.exists() {
