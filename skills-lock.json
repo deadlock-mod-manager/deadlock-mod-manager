@@ -6,10 +6,20 @@
       "sourceType": "github",
       "computedHash": "3396f2a758bca4adab4fcfff070105da71732b7da38fdc1402d5e3994f3b0a02"
     },
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "a4c830509e85557b59339d8d93a4e243e9e59c686e7678854d39230e12c2a6dc"
+    },
     "code-simplifier": {
       "source": "getsentry/skills",
       "sourceType": "github",
       "computedHash": "ff9cb10181e31daf1f1644754c491601a7849dff4b4536a1d0ec4f97f680348e"
+    },
+    "create-auth-skill": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "31c027d02dbf1faa37f58191f574b9443143042fb2b684fe32df53ab0270487c"
     },
     "find-bugs": {
       "source": "getsentry/skills",
