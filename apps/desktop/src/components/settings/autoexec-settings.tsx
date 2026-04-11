@@ -87,9 +87,7 @@ export const AutoexecSettings = () => {
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.autoexecSaveError"));
     },
   });
@@ -97,9 +95,7 @@ export const AutoexecSettings = () => {
   const openFolderMutation = useMutation({
     mutationFn: () => invoke("open_autoexec_folder"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.autoexecOpenFolderError"));
     },
   });
@@ -107,9 +103,7 @@ export const AutoexecSettings = () => {
   const openEditorMutation = useMutation({
     mutationFn: () => invoke("open_autoexec_editor"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.autoexecOpenEditorError"));
     },
   });

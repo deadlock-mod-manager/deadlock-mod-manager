@@ -10,8 +10,10 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { format } from "date-fns";
 import { Markup } from "interweave";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { transformMarkupLinks } from "@/lib/markup-transform";
+import { useNavigate } from "react-router";
+import { createMarkupLinkTransform } from "@/lib/markup-transform";
 import {
   AnnouncementIcon,
   CategoryBadge,
@@ -27,6 +29,11 @@ export const AnnouncementDetailDialog = ({
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const markupTransform = useMemo(
+    () => createMarkupLinkTransform(navigate),
+    [navigate],
+  );
 
   return (
     <Dialog
@@ -54,7 +61,7 @@ export const AnnouncementDetailDialog = ({
             <div className='prose prose-sm dark:prose-invert max-w-none text-sm'>
               <Markup
                 content={announcement.content}
-                transform={transformMarkupLinks}
+                transform={markupTransform}
               />
             </div>
             {announcement.linkUrl && (

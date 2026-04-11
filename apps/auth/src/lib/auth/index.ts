@@ -33,19 +33,26 @@ export const auth = betterAuth({
   },
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      secure: env.NODE_ENV === "production",
       httpOnly: true,
     },
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: ".deadlockmods.app",
-    },
+    crossSubDomainCookies:
+      env.NODE_ENV === "production"
+        ? {
+            enabled: true,
+            domain: ".deadlockmods.app",
+          }
+        : { enabled: false },
   },
   socialProviders: {
     github: {
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
+    },
+    discord: {
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
     },
   },
   plugins: [

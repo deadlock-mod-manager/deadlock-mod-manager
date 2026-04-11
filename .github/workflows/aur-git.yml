@@ -21,7 +21,7 @@ jobs:
         run: cp -r distribution/aur/deadlock-modmanager-git ./deadlock-modmanager-git
 
       - name: Publish to AUR
-        uses: KSXGitHub/github-actions-deploy-aur@2ac5a4c1d7035885d46b10e3193393be8460b6f1
+        uses: KSXGitHub/github-actions-deploy-aur@abe8ac26b51011c88be58c8809fd2ac674068ea5
         with:
           pkgname: deadlock-modmanager-git
           pkgbuild: deadlock-modmanager-git/PKGBUILD

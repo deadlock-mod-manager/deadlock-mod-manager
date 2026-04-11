@@ -72,3 +72,5 @@ opensrc/
 # Auto generated files
 index.mjs
 routeTree.gen.ts
+
+.wtx.kv

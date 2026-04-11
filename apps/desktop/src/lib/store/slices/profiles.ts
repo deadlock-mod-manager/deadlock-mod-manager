@@ -108,7 +108,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     } catch (error) {
       logger
         .withMetadata({ profileId })
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error)
         .error("Failed to create profile folder");
       return null;
     }
@@ -139,7 +139,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             profileId,
             folderName: profile.folderName,
           })
-          .withError(error instanceof Error ? error : new Error(String(error)))
+          .withError(error)
           .error("Failed to delete profile folder");
       }
     }
@@ -242,7 +242,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     } catch (error) {
       logger
         .withMetadata({ profileId })
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error)
         .error("Failed to switch profile");
       result.errors.push(`Failed to switch profile: ${error}`);
     } finally {
@@ -527,7 +527,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     } catch (error) {
       logger
         .withMetadata({ profileId })
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error)
         .error("Failed to sync profile enabled mods");
     }
   },
@@ -638,9 +638,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
           .info("Added unknown profiles to state");
       }
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to sync profiles with filesystem");
+      logger.withError(error).error("Failed to sync profiles with filesystem");
     }
   },
 });

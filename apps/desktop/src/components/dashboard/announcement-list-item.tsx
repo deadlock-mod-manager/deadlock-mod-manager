@@ -2,9 +2,7 @@ import type { AnnouncementDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
-import { Markup } from "interweave";
 import { useTranslation } from "react-i18next";
-import { transformMarkupLinks } from "@/lib/markup-transform";
 import {
   AnnouncementIcon,
   CategoryBadge,
@@ -25,7 +23,7 @@ export const AnnouncementListItem = ({
     <div
       role='button'
       tabIndex={0}
-      className='w-full rounded-lg border p-3 space-y-2 text-left cursor-pointer hover:bg-muted/50 transition-colors'
+      className='group w-full cursor-pointer rounded-lg border border-border/40 p-4 text-left transition-colors hover:border-border hover:bg-muted/40'
       onClick={() => onSelect(announcement)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -35,42 +33,33 @@ export const AnnouncementListItem = ({
       }}>
       <div className='flex items-start gap-3'>
         <AnnouncementIcon announcement={announcement} size='sm' />
-        <div className='flex-1 min-w-0 space-y-2'>
-          <div className='flex items-center gap-2 flex-wrap'>
-            <h3 className='font-semibold text-sm leading-tight'>
+        <div className='min-w-0 flex-1'>
+          <div className='mb-1 flex items-center gap-2'>
+            <h3 className='truncate font-semibold text-sm'>
               {announcement.title}
             </h3>
             <CategoryBadge
               category={announcement.category}
-              className='text-xs'
+              className='shrink-0 text-[10px]'
             />
           </div>
-          <span className='text-xs text-muted-foreground'>
+          <p className='mb-2 text-muted-foreground text-xs'>
             {formatDistanceToNow(getAnnouncementDate(announcement), {
               addSuffix: true,
             })}
-          </span>
-          <div className='prose prose-sm dark:prose-invert max-w-none text-sm text-muted-foreground line-clamp-2'>
-            <Markup
-              content={announcement.content}
-              transform={transformMarkupLinks}
-            />
-          </div>
+          </p>
           {announcement.linkUrl && (
-            <div className='flex justify-end'>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (announcement.linkUrl)
-                    handleOpenLink(announcement.linkUrl);
-                }}
-                size='sm'
-                variant='outline'
-                className='gap-1.5'>
-                {announcement.linkLabel || t("dashboard.learnMore")}
-                <ArrowSquareOutIcon className='h-3.5 w-3.5' />
-              </Button>
-            </div>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (announcement.linkUrl) handleOpenLink(announcement.linkUrl);
+              }}
+              size='sm'
+              variant='ghost'
+              className='h-auto gap-1.5 px-0 py-0 text-primary text-xs hover:bg-transparent hover:underline'>
+              {announcement.linkLabel || t("dashboard.learnMore")}
+              <ArrowSquareOutIcon className='size-3.5' />
+            </Button>
           )}
         </div>
       </div>

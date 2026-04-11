@@ -25,9 +25,7 @@ export const initializeApiUrl = async (): Promise<void> => {
   try {
     await invoke("set_api_url", { apiUrl: BASE_URL });
   } catch (error) {
-    logger
-      .withError(error instanceof Error ? error : new Error(String(error)))
-      .error("Failed to set API URL in Rust backend");
+    logger.withError(error).error("Failed to set API URL in Rust backend");
   }
 };
 

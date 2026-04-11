@@ -105,9 +105,7 @@ export const ProfileShareDialog = () => {
     },
     onError(error) {
       setProfileId(null);
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("profiles.shareError"));
     },
     onSuccess(data) {

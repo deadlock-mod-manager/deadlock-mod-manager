@@ -147,11 +147,7 @@ const Render = () => {
         invoke("clear_discord_presence")
           .then(() => logger.info("Discord presence cleared"))
           .catch((error) => {
-            logger
-              .withError(
-                error instanceof Error ? error : new Error(String(error)),
-              )
-              .warn("Failed to clear Discord presence");
+            logger.withError(error).warn("Failed to clear Discord presence");
           });
         return;
       }
@@ -192,9 +188,7 @@ const Render = () => {
           if (retries > 0) {
             logger
               .withMetadata({ retries })
-              .withError(
-                error instanceof Error ? error : new Error(String(error)),
-              )
+              .withError(error)
               .warn("Failed to set Discord presence, retrying");
             if (cancelledRef.current) return;
             const retryId = window.setTimeout(() => {
@@ -204,9 +198,7 @@ const Render = () => {
             timeoutsRef.current.push(retryId);
           } else {
             logger
-              .withError(
-                error instanceof Error ? error : new Error(String(error)),
-              )
+              .withError(error)
               .warn("Failed to set Discord presence after all attempts");
             logger.info("Make sure Discord is running and you're logged in");
           }
@@ -228,11 +220,7 @@ const Render = () => {
       invoke("clear_discord_presence")
         .then(() => logger.info("Discord presence cleared"))
         .catch((error) => {
-          logger
-            .withError(
-              error instanceof Error ? error : new Error(String(error)),
-            )
-            .error("Failed to clear Discord presence");
+          logger.withError(error).error("Failed to clear Discord presence");
         });
     };
   }, [isEnabled, settings, startTimestamp]);

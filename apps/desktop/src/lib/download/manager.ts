@@ -173,9 +173,7 @@ class DownloadManager {
   addToQueue(mod: DownloadableMod) {
     this.pendingDownloads.set(mod.remoteId, mod);
     this.queueDownload(mod).catch((error) => {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to queue download");
+      logger.withError(error).error("Failed to queue download");
       toast.error(`Failed to queue download: ${error.message}`);
       mod.onError(error);
       this.pendingDownloads.delete(mod.remoteId);
@@ -217,7 +215,7 @@ class DownloadManager {
         });
       } catch (error) {
         logger
-          .withError(error instanceof Error ? error : new Error(String(error)))
+          .withError(error)
           .warn("Failed to resolve fileserver URLs; using original URLs");
       }
     }
@@ -236,9 +234,7 @@ class DownloadManager {
       this.pendingDownloads.delete(modId);
       logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to cancel download");
+      logger.withError(error).error("Failed to cancel download");
       throw error;
     }
   }
@@ -247,9 +243,7 @@ class DownloadManager {
     try {
       return await invoke("get_download_status", { modId });
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to get download status");
+      logger.withError(error).error("Failed to get download status");
       throw error;
     }
   }
@@ -258,9 +252,7 @@ class DownloadManager {
     try {
       return await invoke("get_all_downloads");
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to get all downloads");
+      logger.withError(error).error("Failed to get all downloads");
       throw error;
     }
   }

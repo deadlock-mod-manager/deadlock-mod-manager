@@ -120,9 +120,7 @@ export const useAddonAnalysis = () => {
           } catch (error) {
             logger
               .withMetadata({ remoteId: addon.remoteId })
-              .withError(
-                error instanceof Error ? error : new Error(String(error)),
-              )
+              .withError(error)
               .error("Failed to fetch mod details");
           }
         }
@@ -176,9 +174,7 @@ export const useAddonAnalysis = () => {
       }
     },
     onError: (error) => {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to analyze addons");
+      logger.withError(error).error("Failed to analyze addons");
       toast.error(t("addons.analysisError"));
       setShowProgressToast(false);
       setProgress(null);

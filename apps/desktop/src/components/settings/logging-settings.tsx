@@ -139,9 +139,7 @@ export const LoggingSettings = () => {
   const openLogsFolderMutation = useMutation({
     mutationFn: () => invoke("open_logs_folder"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.openLogsFolderError"));
     },
   });
@@ -149,9 +147,7 @@ export const LoggingSettings = () => {
   const openLogFileMutation = useMutation({
     mutationFn: () => invoke("open_log_file"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.openLogFileError"));
     },
   });
@@ -165,9 +161,7 @@ export const LoggingSettings = () => {
   const openCrashDumpsFolderMutation = useMutation({
     mutationFn: () => invoke("open_crash_dumps_folder"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.openCrashDumpsFolderError"));
     },
   });
@@ -175,9 +169,7 @@ export const LoggingSettings = () => {
   const openLatestCrashDumpMutation = useMutation({
     mutationFn: () => invoke("open_latest_crash_dump_parsed"),
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.openCrashDumpError"));
     },
   });
@@ -203,9 +195,7 @@ export const LoggingSettings = () => {
       );
     },
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.askAiError"));
     },
   });

@@ -56,9 +56,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
         .info("Local addons analyzed");
     },
     onError: (error) => {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to analyze addons");
+      logger.withError(error).error("Failed to analyze addons");
     },
   });
 

@@ -19,9 +19,7 @@ const useUpdateManager = () => {
       setUpdate(update);
       return update;
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to check for updates");
+      logger.withError(error).error("Failed to check for updates");
       return null;
     }
   };

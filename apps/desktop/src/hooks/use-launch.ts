@@ -104,9 +104,8 @@ export const useLaunch = () => {
         queryKey: ["is-game-running"],
       });
     } catch (error) {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      console.error(error);
+      logger.errorOnly(error);
       toast.error((error as ErrorKind).message);
     }
   };
