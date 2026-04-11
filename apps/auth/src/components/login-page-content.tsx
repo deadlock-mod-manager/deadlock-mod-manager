@@ -33,7 +33,10 @@ export function LoginPageContent({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <SocialButtons onSteamClick={() => setShowSteamForm(true)} />
+      <SocialButtons
+        callbackURL={callbackURL}
+        onSteamClick={() => setShowSteamForm(true)}
+      />
     </div>
   );
 }
