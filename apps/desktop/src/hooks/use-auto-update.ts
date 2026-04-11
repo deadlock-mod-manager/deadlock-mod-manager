@@ -29,16 +29,12 @@ export const useAutoUpdate = () => {
           return;
         }
 
-        // Flatpak installs cannot self-update; updates must go through flatpak update
         const flatpak = await isFlatpak();
         if (flatpak) {
-          logger.info(
-            "Running as Flatpak — skipping native updater. Use 'flatpak update' to upgrade.",
-          );
+          logger.info("Running as Flatpak — skipping auto-update on launch");
           return;
         }
 
-        // Check if auto-update is disabled via GUI setting
         if (!autoUpdateEnabled) {
           logger.info("Auto-update is disabled via GUI setting");
           return;

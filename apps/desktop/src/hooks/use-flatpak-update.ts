@@ -1,28 +1,11 @@
-import { listen } from "@tauri-apps/api/event";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { updateFlatpak } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("flatpak-update");
-const MAX_PROGRESS_MESSAGES = 100;
 
 export const useFlatpakUpdate = () => {
-  const [progress, setProgress] = useState<string[]>([]);
-
-  useEffect(() => {
-    const unlisten = listen<string>("flatpak-update-progress", (event) => {
-      setProgress((prev) =>
-        [...prev, event.payload].slice(-MAX_PROGRESS_MESSAGES),
-      );
-    });
-
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
-
   const {
     mutateAsync: installFlatpakUpdate,
     isPending: isInstallingFlatpakUpdate,
@@ -38,12 +21,8 @@ export const useFlatpakUpdate = () => {
     },
   });
 
-  const reset = () => setProgress([]);
-
   return {
     installFlatpakUpdate,
     isInstallingFlatpakUpdate,
-    progress,
-    reset,
   };
 };

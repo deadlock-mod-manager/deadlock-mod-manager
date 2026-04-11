@@ -190,7 +190,6 @@ export const BottomBar = () => {
     installUpdate,
     isCheckingForUpdates,
     isInstallingUpdate,
-    isRunningAsFlatpak,
   } = useCheckForUpdates();
   const { status: apiStatus } = useApiStatus();
   const { status: authStatus } = useAuthStatus();
@@ -263,35 +262,19 @@ export const BottomBar = () => {
         <Separator className='mx-1 h-3' orientation='vertical' />
         <BottomBarVolume />
         <Separator className='mx-1 h-3' orientation='vertical' />
-        {isRunningAsFlatpak ? (
-          <Button
-            className='h-5 gap-1 px-2 text-xs'
-            disabled={isCheckingForUpdates || isInstallingUpdate}
-            onClick={() =>
-              updateAvailable ? installUpdate() : checkForUpdates()
-            }
-            size='sm'
-            variant={updateAvailable ? "default" : "ghost"}>
-            <CloudArrowDownIcon className='h-3 w-3' />
-            {updateAvailable
-              ? t("about.installUpdate")
-              : t("about.checkForUpdates")}
-          </Button>
-        ) : (
-          <Button
-            className='h-5 gap-1 px-2 text-xs'
-            disabled={isCheckingForUpdates || isInstallingUpdate}
-            onClick={() =>
-              updateAvailable ? installUpdate() : checkForUpdates()
-            }
-            size='sm'
-            variant={updateAvailable ? "default" : "ghost"}>
-            <CloudArrowDownIcon className='h-3 w-3' />
-            {updateAvailable
-              ? t("about.installUpdate")
-              : t("about.checkForUpdates")}
-          </Button>
-        )}
+        <Button
+          className='h-5 gap-1 px-2 text-xs'
+          disabled={isCheckingForUpdates || isInstallingUpdate}
+          onClick={() =>
+            updateAvailable ? installUpdate() : checkForUpdates()
+          }
+          size='sm'
+          variant={updateAvailable ? "default" : "ghost"}>
+          <CloudArrowDownIcon className='h-3 w-3' />
+          {updateAvailable
+            ? t("about.installUpdate")
+            : t("about.checkForUpdates")}
+        </Button>
       </div>
     </div>
   );
