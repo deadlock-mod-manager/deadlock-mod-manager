@@ -175,102 +175,106 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
   })?;
 
   let validated_url = validate_flatpak_update_url(&url)?;
-
-  log::info!("Downloading Flatpak bundle from {url}");
-  let _ = app_handle.emit("flatpak-update-progress", "Downloading update...");
-
-  let mut response = reqwest::get(validated_url)
-    .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
-
-  if !response.status().is_success() {
-    return Err(Error::InvalidInput(format!(
-      "Download failed with status: {}",
-      response.status()
-    )));
-  }
-
   let bundle_path = create_flatpak_bundle_path();
-  let mut bundle_file = File::create(&bundle_path)
-    .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to create bundle file: {e}")))?;
 
-  while let Some(chunk) = response
-    .chunk()
-    .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?
-  {
-    bundle_file
-      .write_all(&chunk)
+  let result: Result<(), Error> = async {
+    log::info!("Downloading Flatpak bundle from {url}");
+    let _ = app_handle.emit("flatpak-update-progress", "Downloading update...");
+
+    let mut response = reqwest::get(validated_url)
       .await
-      .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
-  }
+      .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
 
-  bundle_file
-    .flush()
-    .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to flush bundle: {e}")))?;
+    if !response.status().is_success() {
+      return Err(Error::InvalidInput(format!(
+        "Download failed with status: {}",
+        response.status()
+      )));
+    }
 
-  let bundle_path_str = bundle_path.to_string_lossy().to_string();
-  log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
-  let _ = app_handle.emit("flatpak-update-progress", "Installing update...");
+    let mut bundle_file = File::create(&bundle_path)
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to create bundle file: {e}")))?;
 
-  let mut child = Command::new("flatpak-spawn")
-    .args(["--host", "flatpak", "install", "--reinstall", "--noninteractive", &bundle_path_str])
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped())
-    .spawn()
-    .map_err(|e| {
-      Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}"))
+    while let Some(chunk) = response
+      .chunk()
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?
+    {
+      bundle_file
+        .write_all(&chunk)
+        .await
+        .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
+    }
+
+    bundle_file
+      .flush()
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to flush bundle: {e}")))?;
+
+    let bundle_path_str = bundle_path.to_string_lossy().to_string();
+    log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
+    let _ = app_handle.emit("flatpak-update-progress", "Installing update...");
+
+    let mut child = Command::new("flatpak-spawn")
+      .args(["--host", "flatpak", "install", "--reinstall", "--noninteractive", &bundle_path_str])
+      .stdout(Stdio::piped())
+      .stderr(Stdio::piped())
+      .spawn()
+      .map_err(|e| {
+        Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}"))
+      })?;
+
+    let stdout = child.stdout.take().ok_or_else(|| {
+      Error::InvalidInput("Failed to capture flatpak install stdout".to_string())
+    })?;
+    let stderr = child.stderr.take().ok_or_else(|| {
+      Error::InvalidInput("Failed to capture flatpak install stderr".to_string())
     })?;
 
-  let stdout = child.stdout.take().ok_or_else(|| {
-    Error::InvalidInput("Failed to capture flatpak install stdout".to_string())
-  })?;
-  let stderr = child.stderr.take().ok_or_else(|| {
-    Error::InvalidInput("Failed to capture flatpak install stderr".to_string())
-  })?;
+    let app_stdout = app_handle.clone();
+    let stdout_task = tokio::spawn(async move {
+      let mut lines = BufReader::new(stdout).lines();
+      while let Ok(Some(line)) = lines.next_line().await {
+        log::info!("[flatpak update] {line}");
+        let _ = app_stdout.emit("flatpak-update-progress", &line);
+      }
+    });
 
-  let app_stdout = app_handle.clone();
-  let stdout_task = tokio::spawn(async move {
-    let mut lines = BufReader::new(stdout).lines();
-    while let Ok(Some(line)) = lines.next_line().await {
-      log::info!("[flatpak update] {line}");
-      let _ = app_stdout.emit("flatpak-update-progress", &line);
+    let app_stderr = app_handle.clone();
+    let stderr_task = tokio::spawn(async move {
+      let mut lines = BufReader::new(stderr).lines();
+      while let Ok(Some(line)) = lines.next_line().await {
+        log::warn!("[flatpak update stderr] {line}");
+        let _ = app_stderr.emit("flatpak-update-progress", &line);
+      }
+    });
+
+    let status = child
+      .wait()
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
+
+    let _ = stdout_task.await;
+    let _ = stderr_task.await;
+
+    if status.success() {
+      log::info!("Flatpak update completed successfully");
+      let _ = app_handle.emit("flatpak-update-done", true);
+      Ok(())
+    } else {
+      let code = status.code().unwrap_or(-1);
+      log::error!("Flatpak update failed with exit code {code}");
+      let _ = app_handle.emit("flatpak-update-done", false);
+      Err(Error::InvalidInput(format!(
+        "flatpak update exited with code {code}"
+      )))
     }
-  });
-
-  let app_stderr = app_handle.clone();
-  let stderr_task = tokio::spawn(async move {
-    let mut lines = BufReader::new(stderr).lines();
-    while let Ok(Some(line)) = lines.next_line().await {
-      log::warn!("[flatpak update stderr] {line}");
-      let _ = app_stderr.emit("flatpak-update-progress", &line);
-    }
-  });
-
-  let status = child
-    .wait()
-    .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
-
-  let _ = stdout_task.await;
-  let _ = stderr_task.await;
+  }
+  .await;
 
   cleanup_flatpak_bundle(&bundle_path).await;
-
-  if status.success() {
-    log::info!("Flatpak update completed successfully");
-    let _ = app_handle.emit("flatpak-update-done", true);
-    Ok(())
-  } else {
-    let code = status.code().unwrap_or(-1);
-    log::error!("Flatpak update failed with exit code {code}");
-    let _ = app_handle.emit("flatpak-update-done", false);
-    Err(Error::InvalidInput(format!(
-      "flatpak update exited with code {code}"
-    )))
-  }
+  result
 }
 
 #[tauri::command]
