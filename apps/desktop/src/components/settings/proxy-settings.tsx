@@ -15,13 +15,9 @@ import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { syncProxyConfigToBackend } from "@/lib/proxy";
 import { usePersistedStore } from "@/lib/store";
 import type { ProxyConfig, ProxyProtocol } from "@/lib/store/slices/network";
-
-const syncProxyToBackend = (config: ProxyConfig) =>
-  invoke("set_proxy_config", {
-    config: config.enabled ? config : null,
-  });
 
 export const ProxySettings = () => {
   const { t } = useTranslation();
@@ -32,7 +28,7 @@ export const ProxySettings = () => {
     (updates: Partial<ProxyConfig>) => {
       const updated = { ...proxyConfig, ...updates };
       setProxyConfig(updated);
-      syncProxyToBackend(updated);
+      syncProxyConfigToBackend();
     },
     [proxyConfig, setProxyConfig],
   );
@@ -112,7 +108,7 @@ export const ProxySettings = () => {
                 min={1}
                 onChange={(e) => {
                   const port = Number.parseInt(e.target.value, 10);
-                  if (!Number.isNaN(port)) {
+                  if (!Number.isNaN(port) && port >= 1 && port <= 65535) {
                     updateProxy({ port });
                   }
                 }}

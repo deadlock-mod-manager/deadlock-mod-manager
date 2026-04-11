@@ -103,9 +103,3 @@ impl ReportService {
     Ok(result)
   }
 }
-
-impl Default for ReportService {
-  fn default() -> Self {
-    Self::new().expect("Failed to create default ReportService")
-  }
-}

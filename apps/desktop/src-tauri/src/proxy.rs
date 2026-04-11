@@ -87,7 +87,14 @@ pub fn build_default_http_client() -> Result<reqwest::Client, Error> {
 
 #[tauri::command]
 pub async fn set_proxy_config(config: Option<ProxyConfig>) -> Result<(), Error> {
-  log::info!("Updating proxy configuration: {config:?}");
+  if let Some(ref c) = config {
+    log::info!(
+      "Updating proxy configuration: enabled={}, protocol={:?}, host={}, port={}, auth_enabled={}, no_proxy={}",
+      c.enabled, c.protocol, c.host, c.port, c.auth_enabled, c.no_proxy
+    );
+  } else {
+    log::info!("Clearing proxy configuration");
+  }
   let mut proxy = PROXY_CONFIG
     .lock()
     .map_err(|e| Error::Network(format!("Failed to acquire proxy config lock: {e}")))?;
@@ -127,6 +134,13 @@ pub async fn test_proxy_connection(config: ProxyConfig) -> Result<String, Error>
 
   let latency_ms = start.elapsed().as_millis();
   let status = response.status();
+
+  if !status.is_success() {
+    log::warn!("Proxy test failed: status={status}, latency={latency_ms}ms");
+    return Err(Error::Network(format!(
+      "Proxy connection test failed: HTTP {status}"
+    )));
+  }
 
   log::info!("Proxy test result: status={status}, latency={latency_ms}ms");
   Ok(format!("{latency_ms}ms"))
