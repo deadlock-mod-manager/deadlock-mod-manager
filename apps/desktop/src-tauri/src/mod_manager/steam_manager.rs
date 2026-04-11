@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use log;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const DEADLOCK_APP_ID: u32 = 1422450;
 
@@ -8,6 +8,52 @@ const DEADLOCK_APP_ID: u32 = 1422450;
 pub struct SteamManager {
   steam_dir: Option<steamlocate::SteamDir>,
   game_path: Option<PathBuf>,
+}
+
+fn push_unique_steam_dir(
+  steam_dirs: &mut Vec<steamlocate::SteamDir>,
+  steam_dir: steamlocate::SteamDir,
+) {
+  if steam_dirs
+    .iter()
+    .all(|candidate| candidate.path() != steam_dir.path())
+  {
+    steam_dirs.push(steam_dir);
+  }
+}
+
+#[cfg(target_os = "linux")]
+fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
+  vec![
+    home_dir.join(".var/app/com.valvesoftware.Steam/data/Steam"),
+    home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
+    home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
+    home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
+  ]
+}
+
+fn resolve_game_from_steam_dirs(
+  steam_dirs: Vec<steamlocate::SteamDir>,
+) -> Result<Option<(steamlocate::SteamDir, PathBuf)>, Error> {
+  for steam_dir in steam_dirs {
+    match steam_dir.find_app(DEADLOCK_APP_ID) {
+      Ok(Some((game, library))) => {
+        let game_path = library.resolve_app_dir(&game);
+        if game_path.exists() {
+          return Ok(Some((steam_dir, game_path)));
+        }
+      }
+      Ok(None) => {}
+      Err(error) => {
+        log::warn!(
+          "Failed to inspect Steam directory {:?} while locating Deadlock: {error}",
+          steam_dir.path()
+        );
+      }
+    }
+  }
+
+  Ok(None)
 }
 
 impl SteamManager {
@@ -21,8 +67,11 @@ impl SteamManager {
   /// Find and locate Steam installation
   pub fn find_steam(&mut self) -> Result<&steamlocate::SteamDir, Error> {
     if self.steam_dir.is_none() {
-      let steam_dir = steamlocate::SteamDir::locate().map_err(|_| Error::SteamNotFound)?;
-      log::info!("Steam path from steamlocate: {:?}", steam_dir.path());
+      let steam_dir = self
+        .candidate_steam_dirs()
+        .into_iter()
+        .next()
+        .ok_or(Error::SteamNotFound)?;
       self.steam_dir = Some(steam_dir);
     }
 
@@ -32,19 +81,12 @@ impl SteamManager {
   /// Find the Deadlock game installation path
   pub fn find_game(&mut self) -> Result<&PathBuf, Error> {
     if self.game_path.is_none() {
-      let steam_dir = self.find_steam()?;
-      let (game, library) = steam_dir
-        .find_app(DEADLOCK_APP_ID)
-        .map_err(|_| Error::GameNotFound)?
-        .ok_or(Error::GameNotFound)?;
+      let (steam_dir, game_path) =
+        resolve_game_from_steam_dirs(self.candidate_steam_dirs())?.ok_or(Error::GameNotFound)?;
 
-      let game_path = library.resolve_app_dir(&game);
-      if game_path.exists() {
-        log::info!("Game path found: {game_path:?}");
-        self.game_path = Some(game_path);
-      } else {
-        return Err(Error::GameNotFound);
-      }
+      log::info!("Game path found: {game_path:?}");
+      self.steam_dir = Some(steam_dir);
+      self.game_path = Some(game_path);
     }
 
     Ok(self.game_path.as_ref().unwrap())
@@ -132,10 +174,128 @@ impl SteamManager {
 
     Ok(())
   }
+
+  fn candidate_steam_dirs(&self) -> Vec<steamlocate::SteamDir> {
+    let mut steam_dirs = Vec::new();
+
+    if let Some(steam_dir) = self.steam_dir.clone() {
+      push_unique_steam_dir(&mut steam_dirs, steam_dir);
+    }
+
+    if let Ok(steam_dir) = steamlocate::SteamDir::locate() {
+      log::info!("Steam path from steamlocate: {:?}", steam_dir.path());
+      push_unique_steam_dir(&mut steam_dirs, steam_dir);
+    }
+
+    #[cfg(target_os = "linux")]
+    if let Some(home_dir) = std::env::var_os("HOME").map(PathBuf::from) {
+      for candidate in linux_steam_dir_candidates(&home_dir) {
+        if let Ok(steam_dir) = steamlocate::SteamDir::from_dir(&candidate) {
+          log::info!(
+            "Steam fallback candidate path found: {:?}",
+            steam_dir.path()
+          );
+          push_unique_steam_dir(&mut steam_dirs, steam_dir);
+        }
+      }
+    }
+
+    steam_dirs
+  }
 }
 
 impl Default for SteamManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::fs;
+  use tempfile::TempDir;
+
+  const DEADLOCK_INSTALL_DIR: &str = "Deadlock";
+
+  fn create_steam_dir(base_path: &Path, has_deadlock: bool) {
+    let steamapps_path = base_path.join("steamapps");
+    fs::create_dir_all(steamapps_path.join("common")).unwrap();
+
+    let apps_section = if has_deadlock {
+      format!("\"{DEADLOCK_APP_ID}\"\t\t\"0\"")
+    } else {
+      String::new()
+    };
+
+    fs::write(
+      steamapps_path.join("libraryfolders.vdf"),
+      format!(
+        "\"libraryfolders\"\n{{\n\t\"0\"\n\t{{\n\t\t\"path\"\t\t\"{}\"\n\t\t\"label\"\t\t\"\"\n\t\t\"contentid\"\t\t\"1\"\n\t\t\"totalsize\"\t\t\"0\"\n\t\t\"apps\"\n\t\t{{\n\t\t\t{}\n\t\t}}\n\t}}\n}}\n",
+        base_path.display(),
+        apps_section
+      ),
+    )
+    .unwrap();
+
+    if has_deadlock {
+      fs::write(
+        steamapps_path.join(format!("appmanifest_{DEADLOCK_APP_ID}.acf")),
+        format!(
+          "\"AppState\"\n{{\n\t\"appid\"\t\t\"{DEADLOCK_APP_ID}\"\n\t\"name\"\t\t\"Deadlock\"\n\t\"installdir\"\t\t\"{DEADLOCK_INSTALL_DIR}\"\n}}\n"
+        ),
+      )
+      .unwrap();
+
+      fs::create_dir_all(steamapps_path.join("common").join(DEADLOCK_INSTALL_DIR)).unwrap();
+    }
+  }
+
+  fn temp_steam_dir(relative_path: &str, has_deadlock: bool) -> (TempDir, steamlocate::SteamDir) {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let steam_path = temp_dir.path().join(relative_path);
+    create_steam_dir(&steam_path, has_deadlock);
+
+    (
+      temp_dir,
+      steamlocate::SteamDir::from_dir(&steam_path).unwrap(),
+    )
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn linux_candidates_include_flatpak_data_steam_path() {
+    let candidates = linux_steam_dir_candidates(Path::new("/home/tester"));
+
+    assert!(
+      candidates.contains(&PathBuf::from(
+        "/home/tester/.var/app/com.valvesoftware.Steam/data/Steam"
+      )),
+      "expected Flatpak Steam data path fallback to be included"
+    );
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn resolve_game_from_steam_dirs_finds_deadlock_in_fallback_directory() {
+    let (_primary_temp_dir, primary_steam_dir) = temp_steam_dir(".local/share/Steam", false);
+    let (_flatpak_temp_dir, flatpak_steam_dir) =
+      temp_steam_dir(".var/app/com.valvesoftware.Steam/data/Steam", true);
+
+    let resolved = resolve_game_from_steam_dirs(vec![primary_steam_dir, flatpak_steam_dir])
+      .unwrap()
+      .expect("expected Deadlock to be found in fallback Steam directory");
+
+    assert!(
+      resolved
+        .0
+        .path()
+        .ends_with(".var/app/com.valvesoftware.Steam/data/Steam")
+    );
+    assert!(
+      resolved
+        .1
+        .ends_with(".var/app/com.valvesoftware.Steam/data/Steam/steamapps/common/Deadlock")
+    );
   }
 }
