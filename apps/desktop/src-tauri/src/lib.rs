@@ -10,6 +10,7 @@ mod deep_link;
 mod discord_rpc;
 mod download_manager;
 mod errors;
+mod flatpak;
 mod ingest_tool;
 mod logs;
 mod mod_manager;
@@ -121,6 +122,8 @@ pub fn run() {
       commands::set_language,
       commands::set_api_url,
       commands::is_auto_update_disabled,
+      flatpak::is_flatpak,
+      flatpak::update_flatpak,
       commands::is_linux_gpu_optimization_active,
       commands::extract_archive,
       commands::remove_mod_folder,

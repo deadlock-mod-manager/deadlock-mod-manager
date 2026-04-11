@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { isAutoUpdateDisabled } from "@/lib/api";
+import { useTranslation } from "react-i18next";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { isAutoUpdateDisabled, isFlatpak } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import useUpdateManager from "./use-update-manager";
@@ -7,6 +9,7 @@ import useUpdateManager from "./use-update-manager";
 const logger = createLogger("auto-update");
 
 export const useAutoUpdate = () => {
+  const { t } = useTranslation();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
   const autoUpdateEnabled = usePersistedStore(
@@ -26,7 +29,12 @@ export const useAutoUpdate = () => {
           return;
         }
 
-        // Check if auto-update is disabled via GUI setting
+        const flatpak = await isFlatpak();
+        if (flatpak) {
+          logger.info("Running as Flatpak — skipping auto-update on launch");
+          return;
+        }
+
         if (!autoUpdateEnabled) {
           logger.info("Auto-update is disabled via GUI setting");
           return;
@@ -56,8 +64,11 @@ export const useAutoUpdate = () => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      logger.withError(error).error("Failed to update and relaunch");
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.withError(err).error("Failed to update and relaunch");
+      toast.error(t("update.failedWithMessage", { message: err.message }));
       setShowUpdateDialog(false);
+      updateManager.reset();
     }
   };
 

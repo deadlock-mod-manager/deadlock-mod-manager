@@ -1,6 +1,6 @@
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("updater");
@@ -9,6 +9,7 @@ const useUpdateManager = () => {
   const [update, setUpdate] = useState<Update | null>(null);
   const [downloaded, setDownloaded] = useState(0);
   const [size, setSize] = useState(0);
+  const sizeRef = useRef(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadProgress = size > 0 ? Math.round((downloaded / size) * 100) : 0;
@@ -33,27 +34,43 @@ const useUpdateManager = () => {
     setDownloaded(0);
     setSize(0);
 
-    await update.downloadAndInstall((event) => {
-      switch (event.event) {
-        case "Started":
-          setSize(event.data.contentLength ?? 0);
-          logger
-            .withMetadata({ contentLength: event.data.contentLength })
-            .info("started downloading");
-          break;
-        case "Progress":
-          setDownloaded((prev) => prev + event.data.chunkLength);
-          logger.withMetadata({ downloaded, size }).info("downloaded");
-          break;
-        case "Finished":
-          logger.info("download finished");
-          break;
-        default:
-          logger.withMetadata({ event }).info("Unknown update event");
-          break;
-      }
-    });
-    await relaunch();
+    try {
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case "Started": {
+            const contentLength = event.data.contentLength ?? 0;
+            sizeRef.current = contentLength;
+            setSize(contentLength);
+            logger
+              .withMetadata({ contentLength: event.data.contentLength })
+              .info("started downloading");
+            break;
+          }
+          case "Progress":
+            setDownloaded((prev) => {
+              const nextDownloaded = prev + event.data.chunkLength;
+              logger
+                .withMetadata({
+                  chunkLength: event.data.chunkLength,
+                  downloaded: nextDownloaded,
+                  size: sizeRef.current,
+                })
+                .info("downloaded");
+              return nextDownloaded;
+            });
+            break;
+          case "Finished":
+            logger.info("download finished");
+            break;
+          default:
+            logger.withMetadata({ event }).info("Unknown update event");
+            break;
+        }
+      });
+      await relaunch();
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const reset = () => {
