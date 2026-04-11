@@ -399,6 +399,68 @@ pnpm format:fix
 pnpm lint:fix
 ```
 
+## Worktree Development (Parallel Branches)
+
+For working on multiple features or bug fixes simultaneously, we recommend using git worktrees. This lets you have multiple branches checked out at once without stashing or switching.
+
+### Windows (wtx)
+
+Install [wtx](https://github.com/littlesmilelove/worktree.ps), a PowerShell 7+ CLI for managing worktrees:
+
+```powershell
+# Clone and install
+git clone https://github.com/littlesmilelove/worktree.ps.git
+pwsh -File worktree.ps/install.ps1
+
+# Reload your profile
+. $PROFILE
+```
+
+Then initialize it in the repo and start using it:
+
+```powershell
+wtx init                          # Run once inside the repo
+wtx add fix-mod-conflict          # Creates ../deadlock-modmanager.fix-mod-conflict
+wtx fix-mod-conflict              # Jump to that worktree
+wtx main                          # Jump back to main repo
+wtx rm fix-mod-conflict --yes     # Clean up when done
+```
+
+The repo is pre-configured (`.wtx.kv`) to automatically copy `.env`, `.env.local`, and `.tauri/` keys, run `pnpm install`, and start `pnpm dev` in new worktrees.
+
+### Linux / macOS (git-worktree-runner)
+
+Install [git-worktree-runner (gtr)](https://github.com/coderabbitai/git-worktree-runner):
+
+```bash
+# macOS (Homebrew)
+brew tap coderabbitai/tap
+brew install git-gtr
+
+# Linux / macOS (script)
+git clone https://github.com/coderabbitai/git-worktree-runner.git
+cd git-worktree-runner
+./install.sh
+```
+
+Then use it:
+
+```bash
+git gtr new fix-mod-conflict              # Create a worktree
+git gtr new fix-mod-conflict --editor     # Create and open in editor
+git gtr list                              # List all worktrees
+git gtr rm fix-mod-conflict               # Remove when done
+git gtr clean --merged                    # Clean up merged worktrees
+```
+
+After creating a worktree, remember to copy environment files and install dependencies:
+
+```bash
+cp .env .env.local ../deadlock-modmanager.fix-mod-conflict/
+cp -r .tauri ../deadlock-modmanager.fix-mod-conflict/
+cd ../deadlock-modmanager.fix-mod-conflict && pnpm install
+```
+
 ## Code Style Guidelines
 
 ### General Principles
