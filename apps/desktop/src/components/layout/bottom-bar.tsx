@@ -188,7 +188,6 @@ export const BottomBar = () => {
     updateAvailable,
     checkForUpdates,
     installUpdate,
-    installFlatpakUpdate,
     isCheckingForUpdates,
     isInstallingUpdate,
     isRunningAsFlatpak,
@@ -269,7 +268,7 @@ export const BottomBar = () => {
             className='h-5 gap-1 px-2 text-xs'
             disabled={isCheckingForUpdates || isInstallingUpdate}
             onClick={() =>
-              updateAvailable ? installFlatpakUpdate() : checkForUpdates()
+              updateAvailable ? installUpdate() : checkForUpdates()
             }
             size='sm'
             variant={updateAvailable ? "default" : "ghost"}>

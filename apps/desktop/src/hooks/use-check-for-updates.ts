@@ -89,6 +89,9 @@ export const useCheckForUpdates = () => {
 
   const updateAvailable = !!nativeUpdate || !!otaUpdate;
 
+  const buildFlatpakReleaseUrl = (version: string) =>
+    `${GITHUB_REPO}/releases/download/v${version}/deadlock-mod-manager.flatpak`;
+
   const { mutate: installUpdate, isPending: isInstallingUpdate } = useMutation({
     mutationFn: async () => {
       const native = queryClient.getQueryData<NativeUpdate | null>(
@@ -102,11 +105,11 @@ export const useCheckForUpdates = () => {
       }
 
       if (native && isRunningAsFlatpak) {
-        const flatpakUrl = `${GITHUB_REPO}/releases/download/v${native.version}/deadlock-mod-manager.flatpak`;
+        const flatpakUrl = buildFlatpakReleaseUrl(native.version);
         logger
           .withMetadata({ version: native.version })
           .info("Installing Flatpak update");
-        installFlatpakUpdate(flatpakUrl);
+        await installFlatpakUpdate(flatpakUrl);
         return;
       }
 
@@ -175,7 +178,6 @@ export const useCheckForUpdates = () => {
     refetch,
     installUpdate,
     isInstallingUpdate: isInstallingUpdate || isInstallingFlatpakUpdate,
-    installFlatpakUpdate,
     checkForUpdates,
   };
 };

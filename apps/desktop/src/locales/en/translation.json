@@ -520,7 +520,8 @@
     "downloading": "Downloading update",
     "downloadAndInstall": "Download and Install",
     "later": "Later",
-    "installing": "Installing..."
+    "installing": "Installing...",
+    "failedWithMessage": "Update failed: {{message}}. You may need to manually update the app."
   },
   "filters": {
     "filters": "Filters",

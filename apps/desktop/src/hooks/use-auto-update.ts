@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { isAutoUpdateDisabled, isFlatpak } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
@@ -8,6 +9,7 @@ import useUpdateManager from "./use-update-manager";
 const logger = createLogger("auto-update");
 
 export const useAutoUpdate = () => {
+  const { t } = useTranslation();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
   const autoUpdateEnabled = usePersistedStore(
@@ -70,9 +72,7 @@ export const useAutoUpdate = () => {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       logger.withError(err).error("Failed to update and relaunch");
-      toast.error(
-        `Update failed: ${err.message}. You may need to manually update the app.`,
-      );
+      toast.error(t("update.failedWithMessage", { message: err.message }));
       setShowUpdateDialog(false);
       updateManager.reset();
     }

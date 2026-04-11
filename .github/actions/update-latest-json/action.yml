@@ -75,9 +75,8 @@ runs:
           const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
           console.log(`Read new signature from ${sigFile}`);
 
-          // GitHub normalizes spaces to dots in release asset download URLs
-          const exeUrlFilename = exeFile.replace(/ /g, '.');
-          const exeUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${exeUrlFilename}`;
+          const exeAsset = release.assets.find(a => a.name === exeFile);
+          const exeUrl = exeAsset?.browser_download_url ?? `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${encodeURIComponent(exeFile)}`;
 
           // Update or add Windows NSIS entries
           latestJson.platforms['windows-x86_64'] = {

@@ -25,7 +25,60 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
+use tokio::{fs::File, io::AsyncWriteExt};
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
+
+const ALLOWED_FLATPAK_UPDATE_HOST: &str = "github.com";
+const ALLOWED_FLATPAK_UPDATE_PATH_PREFIX: &str =
+  "/deadlock-mod-manager/deadlock-mod-manager/releases/download/";
+
+fn validate_flatpak_update_url(url: &str) -> Result<reqwest::Url, Error> {
+  let parsed_url = reqwest::Url::parse(url)
+    .map_err(|e| Error::InvalidInput(format!("Invalid Flatpak update URL: {e}")))?;
+
+  if parsed_url.scheme() != "https" {
+    return Err(Error::InvalidInput(
+      "Flatpak update URL must use https".to_string(),
+    ));
+  }
+
+  if parsed_url.host_str() != Some(ALLOWED_FLATPAK_UPDATE_HOST)
+    || !parsed_url
+      .path()
+      .starts_with(ALLOWED_FLATPAK_UPDATE_PATH_PREFIX)
+  {
+    return Err(Error::InvalidInput(
+      "Flatpak update URL must point to this repository's GitHub releases"
+        .to_string(),
+    ));
+  }
+
+  if !parsed_url.path().ends_with("/deadlock-mod-manager.flatpak") {
+    return Err(Error::InvalidInput(
+      "Flatpak update URL must target the deadlock-mod-manager.flatpak asset"
+        .to_string(),
+    ));
+  }
+
+  Ok(parsed_url)
+}
+
+async fn cleanup_flatpak_bundle(bundle_path: &PathBuf) {
+  if let Err(error) = tokio::fs::remove_file(bundle_path).await {
+    log::warn!(
+      "Failed to remove temporary Flatpak bundle {}: {error}",
+      bundle_path.display()
+    );
+  }
+}
+
+fn create_flatpak_bundle_path() -> PathBuf {
+  let timestamp = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
+  std::env::temp_dir().join(format!(
+    "deadlock-mod-manager-{}-{timestamp}.flatpak",
+    std::process::id(),
+  ))
+}
 
 pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
   LazyLock::new(|| Mutex::new(ModManager::new()));
@@ -113,17 +166,20 @@ pub async fn is_flatpak() -> Result<bool, Error> {
 
 #[tauri::command]
 pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Error> {
-  use std::io::{BufRead, BufReader};
-  use std::process::{Command, Stdio};
+  use tokio::io::{AsyncBufReadExt, BufReader};
+  use tokio::process::Command;
+  use std::process::Stdio;
 
   std::env::var("FLATPAK_ID").map_err(|_| {
     Error::InvalidInput("Not running as a Flatpak".to_string())
   })?;
 
+  let validated_url = validate_flatpak_update_url(&url)?;
+
   log::info!("Downloading Flatpak bundle from {url}");
   let _ = app_handle.emit("flatpak-update-progress", "Downloading update...");
 
-  let response = reqwest::get(&url)
+  let mut response = reqwest::get(validated_url)
     .await
     .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
 
@@ -134,14 +190,26 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
     )));
   }
 
-  let bytes = response
-    .bytes()
+  let bundle_path = create_flatpak_bundle_path();
+  let mut bundle_file = File::create(&bundle_path)
     .await
-    .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?;
+    .map_err(|e| Error::InvalidInput(format!("Failed to create bundle file: {e}")))?;
 
-  let bundle_path = std::env::temp_dir().join("deadlock-mod-manager.flatpak");
-  std::fs::write(&bundle_path, &bytes)
-    .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?
+  {
+    bundle_file
+      .write_all(&chunk)
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
+  }
+
+  bundle_file
+    .flush()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to flush bundle: {e}")))?;
 
   let bundle_path_str = bundle_path.to_string_lossy().to_string();
   log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
@@ -152,22 +220,30 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
     .stdout(Stdio::piped())
     .stderr(Stdio::piped())
     .spawn()
-    .map_err(|e| Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}")))?;
+    .map_err(|e| {
+      Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}"))
+    })?;
 
-  let stdout = child.stdout.take().expect("stdout piped");
-  let stderr = child.stderr.take().expect("stderr piped");
+  let stdout = child.stdout.take().ok_or_else(|| {
+    Error::InvalidInput("Failed to capture flatpak install stdout".to_string())
+  })?;
+  let stderr = child.stderr.take().ok_or_else(|| {
+    Error::InvalidInput("Failed to capture flatpak install stderr".to_string())
+  })?;
 
   let app_stdout = app_handle.clone();
-  std::thread::spawn(move || {
-    for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+  let stdout_task = tokio::spawn(async move {
+    let mut lines = BufReader::new(stdout).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
       log::info!("[flatpak update] {line}");
       let _ = app_stdout.emit("flatpak-update-progress", &line);
     }
   });
 
   let app_stderr = app_handle.clone();
-  std::thread::spawn(move || {
-    for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+  let stderr_task = tokio::spawn(async move {
+    let mut lines = BufReader::new(stderr).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
       log::warn!("[flatpak update stderr] {line}");
       let _ = app_stderr.emit("flatpak-update-progress", &line);
     }
@@ -175,7 +251,13 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
 
   let status = child
     .wait()
+    .await
     .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
+
+  let _ = stdout_task.await;
+  let _ = stderr_task.await;
+
+  cleanup_flatpak_bundle(&bundle_path).await;
 
   if status.success() {
     log::info!("Flatpak update completed successfully");

@@ -45,8 +45,17 @@ const useUpdateManager = () => {
               .info("started downloading");
             break;
           case "Progress":
-            setDownloaded((prev) => prev + event.data.chunkLength);
-            logger.withMetadata({ downloaded, size }).info("downloaded");
+            setDownloaded((prev) => {
+              const nextDownloaded = prev + event.data.chunkLength;
+              logger
+                .withMetadata({
+                  chunkLength: event.data.chunkLength,
+                  downloaded: nextDownloaded,
+                  size,
+                })
+                .info("downloaded");
+              return nextDownloaded;
+            });
             break;
           case "Finished":
             logger.info("download finished");

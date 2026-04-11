@@ -6,13 +6,16 @@ import { updateFlatpak } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("flatpak-update");
+const MAX_PROGRESS_MESSAGES = 100;
 
 export const useFlatpakUpdate = () => {
   const [progress, setProgress] = useState<string[]>([]);
 
   useEffect(() => {
     const unlisten = listen<string>("flatpak-update-progress", (event) => {
-      setProgress((prev) => [...prev, event.payload]);
+      setProgress((prev) =>
+        [...prev, event.payload].slice(-MAX_PROGRESS_MESSAGES),
+      );
     });
 
     return () => {
@@ -20,18 +23,20 @@ export const useFlatpakUpdate = () => {
     };
   }, []);
 
-  const { mutate: installFlatpakUpdate, isPending: isInstallingFlatpakUpdate } =
-    useMutation({
-      mutationFn: (url: string) => updateFlatpak(url),
-      onSuccess: async () => {
-        logger.info("Flatpak update complete — relaunching");
-        await relaunch();
-      },
-      onError: (err) => {
-        const error = err instanceof Error ? err : new Error(String(err));
-        logger.withError(error).error("Flatpak update failed");
-      },
-    });
+  const {
+    mutateAsync: installFlatpakUpdate,
+    isPending: isInstallingFlatpakUpdate,
+  } = useMutation({
+    mutationFn: (url: string) => updateFlatpak(url),
+    onSuccess: async () => {
+      logger.info("Flatpak update complete — relaunching");
+      await relaunch();
+    },
+    onError: (err) => {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.withError(error).error("Flatpak update failed");
+    },
+  });
 
   const reset = () => setProgress([]);
 
