@@ -59,6 +59,7 @@ import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
 import { PluginList } from "@/components/settings/plugin-list";
+import { ProxySettings } from "@/components/settings/proxy-settings";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
@@ -476,6 +477,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <IngestToolToggle />
                 <LinuxGpuToggle />
               </div>
+            </Section>
+
+            <Section
+              description={t("settings.proxyDescription")}
+              title={t("settings.proxy")}>
+              <ProxySettings />
             </Section>
 
             <Section

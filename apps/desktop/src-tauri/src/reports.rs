@@ -28,11 +28,11 @@ pub struct ReportService {
 }
 
 impl ReportService {
-  pub fn new() -> Self {
-    Self {
-      client: reqwest::Client::new(),
+  pub fn new() -> Result<Self, crate::errors::Error> {
+    Ok(Self {
+      client: crate::proxy::build_default_http_client()?,
       api_url: get_api_url(),
-    }
+    })
   }
 
   pub async fn create_report(
@@ -106,6 +106,6 @@ impl ReportService {
 
 impl Default for ReportService {
   fn default() -> Self {
-    Self::new()
+    Self::new().expect("Failed to create default ReportService")
   }
 }

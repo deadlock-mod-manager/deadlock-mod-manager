@@ -46,7 +46,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 15,
+      version: 16,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -429,6 +429,29 @@ export const usePersistedStore = create<State>()(
               modsFilters.mapQuickFilter = "off";
             }
           }
+        }
+
+        // Migration from version 15 to 16: Add proxy configuration
+        if (version <= 15) {
+          logger
+            .withMetadata({
+              migrationFrom: 15,
+              migrationTo: 16,
+              action: "add-proxy-config",
+            })
+            .info(
+              "Migrating from version 15 to 16: Adding proxy configuration",
+            );
+          state.proxyConfig = {
+            enabled: false,
+            protocol: "http",
+            host: "",
+            port: 8080,
+            authEnabled: false,
+            username: "",
+            password: "",
+            noProxy: "",
+          };
         }
 
         return state;

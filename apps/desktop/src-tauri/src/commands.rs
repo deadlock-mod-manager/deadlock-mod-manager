@@ -817,7 +817,7 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
     let url = format!("{api_url}/artifacts/deadlock/gameinfo.gi");
     log::info!("Downloading vanilla gameinfo.gi from: {url}");
 
-    let client = reqwest::Client::new();
+    let client = crate::proxy::build_default_http_client()?;
     let response = client
       .get(&url)
       .send()
@@ -1043,13 +1043,13 @@ pub async fn analyze_local_addons(
 
 #[tauri::command]
 pub async fn create_report(data: CreateReportRequest) -> Result<CreateReportResponse, Error> {
-  let report_service = ReportService::new();
+  let report_service = ReportService::new()?;
   report_service.create_report(data).await
 }
 
 #[tauri::command]
 pub async fn get_report_counts(mod_id: String) -> Result<ReportCounts, Error> {
-  let report_service = ReportService::new();
+  let report_service = ReportService::new()?;
   report_service.get_report_counts(&mod_id).await
 }
 
@@ -3046,10 +3046,9 @@ pub struct FileserverLatencyResult {
 pub async fn test_fileserver_latency(
   servers: Vec<FileserverLatencyRequest>,
 ) -> Result<Vec<FileserverLatencyResult>, Error> {
-  let client = reqwest::Client::builder()
-    .timeout(std::time::Duration::from_secs(5))
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
+  let client = crate::proxy::build_http_client(|b| {
+    b.timeout(std::time::Duration::from_secs(5))
+  })?;
 
   let futures_iter = servers.into_iter().map(|req| {
     let c = client.clone();

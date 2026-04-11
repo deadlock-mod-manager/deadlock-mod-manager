@@ -15,6 +15,7 @@ mod flatpak;
 mod ingest_tool;
 mod logs;
 mod mod_manager;
+pub mod proxy;
 mod reports;
 mod utils;
 
@@ -195,7 +196,10 @@ pub fn run() {
       commands::open_latest_crash_dump_parsed,
       commands::read_dropped_mod_file,
       commands::check_filesystem_writable,
-      commands::test_fileserver_latency
+      commands::test_fileserver_latency,
+      proxy::set_proxy_config,
+      proxy::get_proxy_config,
+      proxy::test_proxy_connection
     ])
     .run(context)
     .expect("error while running tauri application");

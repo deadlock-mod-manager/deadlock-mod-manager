@@ -1,5 +1,7 @@
+import type { ClientOptions } from "@tauri-apps/plugin-http";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { createLogger } from "./logger";
+import { usePersistedStore } from "./store";
 
 const logger = createLogger("http");
 
@@ -49,6 +51,28 @@ const getRequestMethod = (
   return "GET";
 };
 
+const getProxyOptions = (): ClientOptions["proxy"] => {
+  const { proxyConfig } = usePersistedStore.getState();
+  if (!proxyConfig.enabled || !proxyConfig.host || proxyConfig.port <= 0) {
+    return undefined;
+  }
+
+  const proxyUrl = `${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`;
+  return {
+    all: {
+      url: proxyUrl,
+      basicAuth:
+        proxyConfig.authEnabled && proxyConfig.username
+          ? {
+              username: proxyConfig.username,
+              password: proxyConfig.password,
+            }
+          : undefined,
+      noProxy: proxyConfig.noProxy || undefined,
+    },
+  };
+};
+
 export const fetch: typeof tauriFetch = async (input, init) => {
   const url = getRequestUrl(input);
   const method = getRequestMethod(input, init);
@@ -62,7 +86,10 @@ export const fetch: typeof tauriFetch = async (input, init) => {
     })
     .debug("HTTP request");
 
-  const response = await tauriFetch(input, init);
+  const proxy = getProxyOptions();
+  const mergedInit = proxy ? { ...init, proxy } : init;
+
+  const response = await tauriFetch(input, mergedInit);
 
   const duration = Math.round(performance.now() - startTime);
 
