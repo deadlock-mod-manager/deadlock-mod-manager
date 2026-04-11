@@ -988,47 +988,27 @@ pub fn parse_vpk_file(
   Ok(parsed)
 }
 
-type VpkCacheKey = (PathBuf, u64);
-type VpkCacheMap = std::collections::HashMap<VpkCacheKey, Vec<vpk_parser::VpkEntry>>;
-static VPK_ENTRY_CACHE: LazyLock<Mutex<VpkCacheMap>> = LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
-
-fn get_file_modified_secs(path: &PathBuf) -> u64 {
-  std::fs::metadata(path)
-    .and_then(|m| m.modified())
-    .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
-    .unwrap_or(0)
-}
-
-fn parse_vpk_entries_cached(vpk_path: &PathBuf) -> Option<Vec<vpk_parser::VpkEntry>> {
-  let modified = get_file_modified_secs(vpk_path);
-  let cache_key = (vpk_path.clone(), modified);
-
-  {
-    let cache = VPK_ENTRY_CACHE.lock().unwrap();
-    if let Some(entries) = cache.get(&cache_key) {
-      return Some(entries.clone());
-    }
-  }
-
-  match VpkParser::parse_directory_from_file(vpk_path.as_path()) {
-    Ok(entries) => {
-      let mut cache = VPK_ENTRY_CACHE.lock().unwrap();
-      cache.insert(cache_key, entries.clone());
-      Some(entries)
-    }
-    Err(e) => {
-      log::warn!("Failed to parse VPK {}: {e}", vpk_path.display());
-      None
-    }
-  }
-}
+static HERO_CACHE: LazyLock<hero_parser::VpkEntryCache> =
+  LazyLock::new(hero_parser::VpkEntryCache::new);
 
 #[tauri::command]
 pub fn clear_vpk_entry_cache() {
-  let mut cache = VPK_ENTRY_CACHE.lock().unwrap();
-  let count = cache.len();
-  cache.clear();
+  let count = HERO_CACHE.clear();
   log::info!("VPK entry cache cleared ({count} entries removed)");
+}
+
+fn collect_vpk_files_recursive(dir: &PathBuf, out: &mut Vec<PathBuf>) {
+  let Ok(entries) = std::fs::read_dir(dir) else {
+    return;
+  };
+  for entry in entries.filter_map(|e| e.ok()) {
+    let path = entry.path();
+    if path.is_dir() {
+      collect_vpk_files_recursive(&path, out);
+    } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+      out.push(path);
+    }
+  }
 }
 
 fn collect_vpk_files_for_mod(
@@ -1090,14 +1070,7 @@ fn collect_vpk_files_for_mod(
     let mod_data_path =
       PathBuf::from(app_data).join("dev.stormix.deadlock-mod-manager").join("mods").join(mod_id);
     if mod_data_path.exists() {
-      if let Ok(entries) = std::fs::read_dir(&mod_data_path) {
-        for entry in entries.filter_map(|e| e.ok()) {
-          let path = entry.path();
-          if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-            vpk_files.push(path);
-          }
-        }
-      }
+      collect_vpk_files_recursive(&mod_data_path, &mut vpk_files);
     }
   }
 
@@ -1111,18 +1084,10 @@ pub async fn detect_mod_hero(
 ) -> Result<HeroDetectionResult, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     log::info!("Detecting hero for mod: {mod_id}");
-
     let vpk_files = collect_vpk_files_for_mod(&mod_id, installed_vpks);
     log::info!("Found {} VPK file(s) for mod {mod_id}", vpk_files.len());
 
-    let mut all_entries = Vec::new();
-    for vpk_path in &vpk_files {
-      if let Some(entries) = parse_vpk_entries_cached(vpk_path) {
-        all_entries.extend(entries);
-      }
-    }
-
-    let result = hero_parser::detect_hero(&all_entries);
+    let result = hero_parser::detect_hero_from_vpk_files(&vpk_files, &HERO_CACHE);
     log::info!(
       "Hero detection result for mod {mod_id}: hero={:?}, category={}, internal_names={:?}",
       result.hero,
@@ -1154,7 +1119,7 @@ pub struct ModDetectionResponse {
 pub async fn detect_mod_heroes_batch(
   mods: Vec<ModDetectionRequest>,
 ) -> Result<Vec<ModDetectionResponse>, Error> {
-  let mod_vpk_map: Vec<(String, Vec<PathBuf>)> = {
+  let items: Vec<hero_parser::BatchDetectionItem> = {
     let mod_manager = MANAGER.lock().unwrap();
     let game_path = mod_manager.get_steam_manager().get_game_path().cloned();
     let app_data = std::env::var("LOCALAPPDATA").ok();
@@ -1215,52 +1180,37 @@ pub async fn detect_mod_heroes_batch(
           let mod_data_path =
             PathBuf::from(ad).join("dev.stormix.deadlock-mod-manager").join("mods").join(&req.mod_id);
           if mod_data_path.exists() {
-            if let Ok(entries) = std::fs::read_dir(&mod_data_path) {
-              for entry in entries.filter_map(|e| e.ok()) {
-                let path = entry.path();
-                if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-                  vpk_files.push(path);
-                }
-              }
-            }
+            collect_vpk_files_recursive(&mod_data_path, &mut vpk_files);
           }
         }
 
-        (req.mod_id, vpk_files)
+        hero_parser::BatchDetectionItem {
+          id: req.mod_id,
+          vpk_paths: vpk_files,
+        }
       })
       .collect()
   };
 
-  log::info!("Batch hero detection for {} mods", mod_vpk_map.len());
+  log::info!("Batch hero detection for {} mods", items.len());
 
-  let mut set = tokio::task::JoinSet::new();
-  for (mod_id, vpk_files) in mod_vpk_map {
-    set.spawn_blocking(move || {
-      let mut all_entries = Vec::new();
-      for vpk_path in &vpk_files {
-        if let Some(entries) = parse_vpk_entries_cached(vpk_path) {
-          all_entries.extend(entries);
-        }
-      }
-
-      let result = hero_parser::detect_hero(&all_entries);
-      log::debug!(
-        "Batch hero detection for {mod_id}: hero={:?}, category={}",
-        result.hero,
-        result.category
-      );
-
-      ModDetectionResponse { mod_id, result }
-    });
-  }
-
-  let mut results = Vec::new();
-  while let Some(res) = set.join_next().await {
-    results.push(res.map_err(|e| Error::TaskJoinFailed(e.to_string()))?);
-  }
+  let results = tauri::async_runtime::spawn_blocking(move || {
+    hero_parser::detect_heroes_batch(items, &HERO_CACHE)
+  })
+  .await
+  .map_err(|e| Error::TaskJoinFailed(e.to_string()))?;
 
   log::info!("Batch hero detection complete: {} results", results.len());
-  Ok(results)
+
+  Ok(
+    results
+      .into_iter()
+      .map(|r| ModDetectionResponse {
+        mod_id: r.id,
+        result: r.result,
+      })
+      .collect(),
+  )
 }
 
 #[tauri::command]

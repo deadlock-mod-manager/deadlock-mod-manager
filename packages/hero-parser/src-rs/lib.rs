@@ -1,10 +1,15 @@
+mod batch;
+mod cache;
 mod mapping;
 mod types;
 
+pub use batch::{detect_heroes_batch, BatchDetectionItem, BatchDetectionResult};
+pub use cache::VpkEntryCache;
 pub use types::HeroDetectionResult;
 
 use mapping::{lookup_hero, HERO_PATH_PREFIXES};
 use std::collections::HashMap;
+use std::path::Path;
 use vpk_parser::VpkEntry;
 
 const CRITICAL_GAME_PATHS: [&str; 3] = [
@@ -169,6 +174,19 @@ pub fn detect_hero_from_paths(paths: &[String]) -> HeroDetectionResult {
         uses_critical_paths,
         critical_paths,
     }
+}
+
+pub fn detect_hero_from_vpk_files(
+    vpk_paths: &[impl AsRef<Path>],
+    cache: &VpkEntryCache,
+) -> HeroDetectionResult {
+    let mut all_entries = Vec::new();
+    for path in vpk_paths {
+        if let Some(entries) = cache.get_or_parse(path.as_ref()) {
+            all_entries.extend(entries);
+        }
+    }
+    detect_hero(&all_entries)
 }
 
 #[cfg(test)]

@@ -310,7 +310,9 @@ export const useModProcessor = () => {
     setModStatus(modId, ModStatus.Downloaded);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) => setDetectedHero(modId, result.hero ?? null))
+      .then((result) =>
+        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+      )
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));
@@ -413,7 +415,9 @@ export const useModProcessor = () => {
     setModStatus(modId, ModStatus.Installed);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) => setDetectedHero(modId, result.hero ?? null))
+      .then((result) =>
+        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+      )
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));

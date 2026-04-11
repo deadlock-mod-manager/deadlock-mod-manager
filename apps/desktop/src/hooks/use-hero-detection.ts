@@ -23,6 +23,7 @@ interface ModDetectionResponse {
 
 let activeAbortController: AbortController | null = null;
 let pausedByGame = false;
+let suppressAutoScan = false;
 
 const abortActiveScan = () => {
   if (activeAbortController) {
@@ -53,11 +54,9 @@ const detectBatch = async (
 
 export const useHeroDetection = () => {
   const localMods = usePersistedStore((state) => state.localMods);
-  const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
-  const setHeroDetection = usePersistedStore((state) => state.setHeroDetection);
   const gamePath = usePersistedStore((state) => state.gamePath);
-  const hasRun = useRef(false);
   const prevGameRunning = useRef(false);
+  const prevUnindexedCount = useRef(-1);
 
   const { data: gameRunning } = useQuery({
     queryKey: ["is-game-running"],
@@ -86,26 +85,39 @@ export const useHeroDetection = () => {
     }
   }, [gameRunning]);
 
+  // Startup: 5s after mount, scan any unindexed mods
   useEffect(() => {
-    if (hasRun.current) return;
+    const timer = setTimeout(() => {
+      if (pausedByGame) return;
+      startBackgroundScan();
+    }, 5_000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reactive: when new unindexed mods appear, scan immediately
+  useEffect(() => {
     if (pausedByGame) return;
 
-    const modsWithoutHero = localMods.filter(
+    const unindexedCount = localMods.filter(
       (mod) => mod.detectedHero === undefined,
-    );
+    ).length;
 
-    if (modsWithoutHero.length === 0) return;
+    const isFirstRun = prevUnindexedCount.current === -1;
+    const hadNewUnindexed = unindexedCount > prevUnindexedCount.current;
+    prevUnindexedCount.current = unindexedCount;
 
-    hasRun.current = true;
+    if (suppressAutoScan) {
+      suppressAutoScan = false;
+      return;
+    }
 
-    const timer = setTimeout(() => {
-      if (!pausedByGame) {
-        runBackgroundScan(modsWithoutHero);
-      }
-    }, 15_000);
+    if (isFirstRun) return;
+    if (unindexedCount === 0) return;
+    if (!hadNewUnindexed) return;
+    if (activeAbortController) return;
 
-    return () => clearTimeout(timer);
-  }, [localMods, setDetectedHero, setHeroDetection]);
+    startBackgroundScan();
+  }, [localMods]);
 };
 
 const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
@@ -226,6 +238,7 @@ export const startBackgroundScan = () => {
 
 export const clearAllDetectedHeroes = () => {
   abortActiveScan();
+  suppressAutoScan = true;
   usePersistedStore.getState().clearAllDetectedHeroes();
   invoke("clear_vpk_entry_cache").catch(() => {});
   resetToIdle();
