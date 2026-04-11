@@ -35,7 +35,9 @@ fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
 fn resolve_game_from_steam_dirs(
   steam_dirs: Vec<steamlocate::SteamDir>,
 ) -> Result<Option<(steamlocate::SteamDir, PathBuf)>, Error> {
-  for steam_dir in steam_dirs {
+  let total_candidates = steam_dirs.len();
+
+  for (index, steam_dir) in steam_dirs.into_iter().enumerate() {
     match steam_dir.find_app(DEADLOCK_APP_ID) {
       Ok(Some((game, library))) => {
         let game_path = library.resolve_app_dir(&game);
@@ -46,7 +48,9 @@ fn resolve_game_from_steam_dirs(
       Ok(None) => {}
       Err(error) => {
         log::warn!(
-          "Failed to inspect Steam directory {:?} while locating Deadlock: {error}",
+          "Failed to inspect Steam directory candidate {}/{} at {:?} while locating Deadlock: {error}",
+          index + 1,
+          total_candidates,
           steam_dir.path()
         );
       }
@@ -272,6 +276,24 @@ mod tests {
         "/home/tester/.var/app/com.valvesoftware.Steam/data/Steam"
       )),
       "expected Flatpak Steam data path fallback to be included"
+    );
+    assert!(
+      candidates.contains(&PathBuf::from(
+        "/home/tester/.var/app/com.valvesoftware.Steam/.local/share/Steam"
+      )),
+      "expected Flatpak Steam .local/share fallback to be included"
+    );
+    assert!(
+      candidates.contains(&PathBuf::from(
+        "/home/tester/.var/app/com.valvesoftware.Steam/.steam/steam"
+      )),
+      "expected Flatpak Steam .steam/steam fallback to be included"
+    );
+    assert!(
+      candidates.contains(&PathBuf::from(
+        "/home/tester/.var/app/com.valvesoftware.Steam/.steam/root"
+      )),
+      "expected Flatpak Steam .steam/root fallback to be included"
     );
   }
 
