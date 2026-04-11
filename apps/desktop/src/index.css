@@ -4,6 +4,80 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .gamebanana-description .GreenColor {
+    @apply text-green-700 dark:text-green-400;
+  }
+
+  .gamebanana-description .RedColor {
+    @apply text-red-700 dark:text-red-400;
+  }
+
+  .gamebanana-description .BlueColor {
+    @apply text-blue-700 dark:text-blue-400;
+  }
+
+  .gamebanana-description .YellowColor {
+    @apply text-yellow-700 dark:text-yellow-400;
+  }
+
+  .gamebanana-description .OrangeColor {
+    @apply text-orange-700 dark:text-orange-400;
+  }
+
+  .gamebanana-description .PurpleColor {
+    @apply text-purple-700 dark:text-purple-400;
+  }
+
+  .gamebanana-description .GrayColor,
+  .gamebanana-description .GreyColor {
+    @apply text-neutral-600 dark:text-neutral-400;
+  }
+
+  .gamebanana-description .SelectedElement {
+    @apply font-semibold text-foreground underline decoration-primary/50 decoration-2 underline-offset-2;
+  }
+
+  .gamebanana-description del,
+  .gamebanana-description s {
+    text-decoration-line: line-through;
+    text-decoration-thickness: 1px;
+    opacity: 0.85;
+  }
+
+  .gamebanana-description ul {
+    @apply my-2 list-disc pl-6;
+  }
+
+  .gamebanana-description ol {
+    @apply my-2 list-decimal pl-6;
+  }
+
+  .gamebanana-description li {
+    @apply py-0.5;
+  }
+
+  .gamebanana-description ul ul {
+    list-style-type: circle;
+  }
+
+  .gamebanana-description ul ul ul {
+    list-style-type: square;
+  }
+
+  .gamebanana-description code {
+    @apply cursor-pointer rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.875em] text-foreground;
+  }
+
+  .gamebanana-description pre {
+    @apply my-3 cursor-pointer overflow-x-auto rounded-md border border-border bg-muted p-3 font-mono text-sm text-foreground;
+  }
+
+  .gamebanana-description pre code {
+    @apply border-0 bg-transparent p-0 text-sm;
+  }
+}
+
 /* Font Face Declarations */
 @font-face {
   font-family: "Forevs Demo";
