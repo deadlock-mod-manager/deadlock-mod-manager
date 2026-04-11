@@ -90,9 +90,7 @@ export const AddonsBackupManagement = () => {
       setBackups(backupList);
       logger.withMetadata({ count: backupList.length }).info("Loaded backups");
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to load backups");
+      logger.withError(error).error("Failed to load backups");
       toast.error(t("settings.backupDeleteFailed"));
     } finally {
       setLoading(false);
@@ -150,9 +148,7 @@ export const AddonsBackupManagement = () => {
     } catch (error) {
       setCreating(false);
       setBackupProgress(null);
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to create backup");
+      logger.withError(error).error("Failed to create backup");
       toast.error(t("settings.backupCreationFailed"));
     }
   };
@@ -199,9 +195,7 @@ export const AddonsBackupManagement = () => {
       logger.withMetadata({ fileName }).info("Backup deleted");
       await loadBackups();
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to delete backup");
+      logger.withError(error).error("Failed to delete backup");
       toast.error(t("settings.backupDeleteFailed"));
     }
   };
@@ -210,9 +204,7 @@ export const AddonsBackupManagement = () => {
     try {
       await invoke("open_addons_backups_folder");
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to open backups folder");
+      logger.withError(error).error("Failed to open backups folder");
       toast.error(t("settings.failedToOpenFolder"));
     }
   };
@@ -231,9 +223,7 @@ export const AddonsBackupManagement = () => {
           await loadBackups();
         }
       } catch (error) {
-        logger
-          .withError(error instanceof Error ? error : new Error(String(error)))
-          .error("Failed to prune backups");
+        logger.withError(error).error("Failed to prune backups");
       }
     }
   };

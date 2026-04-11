@@ -55,9 +55,7 @@ export const useLaunchMap = (onSuccess?: () => void) => {
     },
     onSuccess,
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(
         error instanceof Error ? error.message : "An unexpected error occurred",
       );

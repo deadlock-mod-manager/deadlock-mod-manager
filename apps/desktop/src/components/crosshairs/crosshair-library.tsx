@@ -66,9 +66,7 @@ const CrosshairLibraryData = () => {
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"

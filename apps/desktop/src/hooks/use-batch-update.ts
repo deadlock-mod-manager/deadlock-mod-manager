@@ -207,9 +207,7 @@ export const useBatchUpdate = () => {
         toast.success(t("myMods.batchUpdate.complete"));
       }
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Batch mod update failed");
+      logger.withError(error).error("Batch mod update failed");
       setUpdateProgress(null);
       throw error;
     }

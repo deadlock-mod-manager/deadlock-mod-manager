@@ -292,9 +292,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
       const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
       toast.success(`${t("settings.clearDownloadCache")}: ${freedMB} MB freed`);
     } catch (error) {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("common.error"));
     }
   };
@@ -308,9 +306,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
       const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
       toast.success(`${t("settings.clearAllModsData")}: ${freedMB} MB freed`);
     } catch (error) {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("common.error"));
     }
   };
@@ -335,9 +331,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
       clearMods();
       toast.success(t("settings.allModsCleared"));
     } catch (error) {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("settings.failedToClearMods"));
     }
   };

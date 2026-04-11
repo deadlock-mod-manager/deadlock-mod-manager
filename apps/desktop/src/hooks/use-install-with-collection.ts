@@ -88,9 +88,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         } catch (error: unknown) {
           logger
             .withMetadata({ modId: mod.remoteId })
-            .withError(
-              error instanceof Error ? error : new Error(String(error)),
-            )
+            .withError(error)
             .error("Failed to copy selected VPKs");
           // If copying fails, try to proceed anyway (maybe VPKs already exist)
           // This handles edge cases where archive was already processed
@@ -117,7 +115,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
     } catch (error: unknown) {
       logger
         .withMetadata({ modId: mod.remoteId })
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error)
         .error("Installation failed");
 
       if (error instanceof Error) {
@@ -317,7 +315,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         setIsAnalyzing(false);
         logger
           .withMetadata({ modId: mod.remoteId })
-          .withError(error instanceof Error ? error : new Error(String(error)))
+          .withError(error)
           .warn(
             "File tree analysis failed, proceeding with direct installation",
           );
@@ -330,7 +328,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       setIsAnalyzing(false);
       logger
         .withMetadata({ modId: mod.remoteId })
-        .withError(error instanceof Error ? error : new Error(String(error)))
+        .withError(error)
         .error("Installation process failed");
 
       if (error instanceof Error) {

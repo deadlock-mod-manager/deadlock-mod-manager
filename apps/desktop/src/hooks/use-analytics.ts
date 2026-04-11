@@ -54,9 +54,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
         isInitialized.current = true;
         logger.info("Google Analytics initialized");
       } catch (error) {
-        logger
-          .withError(error instanceof Error ? error : new Error(String(error)))
-          .warn("Failed to initialize Google Analytics");
+        logger.withError(error).warn("Failed to initialize Google Analytics");
       }
     }
   }, [telemetrySettings.analyticsEnabled]);
@@ -76,9 +74,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
         ...properties,
       });
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .warn("Analytics capture failed");
+      logger.withError(error).warn("Analytics capture failed");
     }
   };
 
@@ -95,9 +91,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       ReactGA.set({ userId: distinctId, ...properties });
       logger.debug("User identified for analytics");
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .warn("Analytics identify failed");
+      logger.withError(error).warn("Analytics identify failed");
     }
   };
 

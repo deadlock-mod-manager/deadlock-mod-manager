@@ -93,9 +93,7 @@ export const useAnalyticsEvents = () => {
           })
           .info("User identified for analytics");
       } catch (error) {
-        logger
-          .withError(error instanceof Error ? error : new Error(String(error)))
-          .warn("Failed to identify user for analytics");
+        logger.withError(error).warn("Failed to identify user for analytics");
       }
     },
     [identify, isEnabled, version],

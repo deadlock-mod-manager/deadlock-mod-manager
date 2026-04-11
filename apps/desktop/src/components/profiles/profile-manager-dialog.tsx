@@ -134,9 +134,7 @@ export const ProfileManagerDialog = ({
         }),
       );
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to switch profile");
+      logger.withError(error).error("Failed to switch profile");
       toast.error(t("profiles.switchUnexpectedError"));
     }
   };
@@ -189,9 +187,7 @@ export const ProfileManagerDialog = ({
       await syncProfilesWithFilesystem();
       toast.success(t("profiles.syncSuccess"));
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to sync profiles");
+      logger.withError(error).error("Failed to sync profiles");
       toast.error(t("profiles.syncError"));
     } finally {
       setIsSyncing(false);

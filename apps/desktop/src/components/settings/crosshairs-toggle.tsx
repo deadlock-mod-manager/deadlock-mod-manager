@@ -38,9 +38,7 @@ export const CrosshairsToggle = () => {
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(t("crosshairs.toggleError"));
     },
   });

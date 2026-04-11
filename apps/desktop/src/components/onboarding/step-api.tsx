@@ -42,9 +42,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
 
   useEffect(() => {
     if (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to connect to API");
+      logger.withError(error).error("Failed to connect to API");
       onError();
     }
   }, [error, onError]);

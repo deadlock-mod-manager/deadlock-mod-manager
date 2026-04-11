@@ -280,9 +280,7 @@ export const useProfileImport = () => {
         );
       }
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Profile import failed");
+      logger.withError(error).error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.createError"));
       throw error;
@@ -422,9 +420,7 @@ export const useProfileImport = () => {
         toast.success(t("profiles.overrideSuccess"));
       }
     } catch (error) {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Profile import failed");
+      logger.withError(error).error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.updateError"));
       throw error;

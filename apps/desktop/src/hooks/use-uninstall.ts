@@ -96,9 +96,7 @@ const useUninstall = () => {
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
     } catch (error) {
-      logger.errorOnly(
-        error instanceof Error ? error : new Error(String(error)),
-      );
+      logger.errorOnly(error);
       toast.error(remove ? t("mods.deleteError") : t("mods.disableError"));
     }
   };
