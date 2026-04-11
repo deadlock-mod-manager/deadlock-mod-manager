@@ -1072,6 +1072,7 @@ dependencies = [
  "chrono",
  "clap",
  "discord-rich-presence",
+ "dmodpkg",
  "dmp-parser",
  "dotenvy",
  "fix-path-env",
@@ -1264,6 +1265,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "442039f5147480ba31067cb00ada1adae6892028e40e45fc5de7b7df6dcc1b5f"
 dependencies = [
  "const-random",
+]
+
+[[package]]
+name = "dmodpkg"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+ "zod_gen",
+ "zod_gen_derive",
+ "zstd",
 ]
 
 [[package]]
@@ -2327,7 +2342,7 @@ dependencies = [
  "tokio",
  "tower-service",
  "tracing",
- "windows-registry 0.5.3",
+ "windows-registry 0.6.1",
 ]
 
 [[package]]
@@ -8243,6 +8258,28 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
+
+[[package]]
+name = "zod_gen"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a657d3280352f3c694d4b3363d72e1470feb23c02b9a40b4ee3653485c360f9"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "zod_gen_derive"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e6fcabbd0e8a3e8fd3b0caa1afed324aeb54231af26580e299fad15c1940363"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+ "zod_gen",
+]
 
 [[package]]
 name = "zopfli"

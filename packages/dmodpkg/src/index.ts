@@ -1,12 +1,23 @@
-/**
- * @deadlock-mods/dmodpkg
- *
- * Library for working with Deadlock mod packages (.dmodpkg)
- *
- * Note: FFI integration with Rust is not yet implemented.
- * This file will be expanded when TypeScript bindings are added.
- */
+export {
+  AuthorSchema,
+  ConflictSchema,
+  DependencySchema,
+  LayerSchema,
+  MetadataSchema,
+  ModConfigSchema,
+  VariantGroupSchema,
+  VariantSchema,
+} from "./generated/schemas";
 
-export const VERSION = "0.1.0";
+export type {
+  Author,
+  Conflict,
+  Dependency,
+  Layer,
+  Metadata,
+  ModConfig,
+  Variant,
+  VariantGroup,
+} from "./generated/schemas";
 
-// FFI bindings and API will be added here
+export { version } from "./version";

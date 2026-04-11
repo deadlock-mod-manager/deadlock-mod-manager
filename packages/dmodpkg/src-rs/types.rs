@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use zod_gen_derive::ZodSchema;
 
 /// Author information (can be a string or a detailed object)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
 #[serde(untagged)]
 pub enum Author {
     /// Simple string author name
@@ -18,7 +19,7 @@ pub enum Author {
 }
 
 /// Layer configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
 pub struct Layer {
     /// Unique layer name (e.g., "base", "hd_textures")
     pub name: String,
@@ -33,7 +34,7 @@ pub struct Layer {
 }
 
 /// Variant within a variant group
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
 pub struct Variant {
     /// Unique variant identifier
     pub id: String,
@@ -53,7 +54,7 @@ pub struct Variant {
 }
 
 /// Variant group (mutually exclusive options)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
 pub struct VariantGroup {
     /// Unique group identifier
     pub id: String,
@@ -68,20 +69,8 @@ pub struct VariantGroup {
     pub variants: Vec<Variant>,
 }
 
-/// Transformer configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Transformer {
-    /// Transformer plugin name
-    pub name: String,
-    /// Glob patterns for matching files
-    pub patterns: Vec<String>,
-    /// Transformer-specific configuration
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<HashMap<String, serde_json::Value>>,
-}
-
 /// Additional metadata
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ZodSchema)]
 pub struct Metadata {
     /// Mod tags for categorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -92,6 +81,24 @@ pub struct Metadata {
     /// Whether mod contains NSFW content
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nsfw: Option<bool>,
+}
+
+/// Dependency on another mod
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
+pub struct Dependency {
+    pub remote_id: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub optional: Option<bool>,
+}
+
+/// Conflict with another mod
+#[derive(Debug, Clone, Serialize, Deserialize, ZodSchema)]
+pub struct Conflict {
+    pub remote_id: String,
+    pub name: String,
 }
 
 /// Build information (added during packaging)

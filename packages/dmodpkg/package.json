@@ -37,13 +37,18 @@
     "test": "echo 'No tests yet'",
     "clean": "cargo clean && rm -rf src/generated/*.ts",
     "check": "cargo check",
+    "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts",
     "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "^1.3.11",
     "@types/node": "^24.12.0",
     "bun-types": "^1.3.11",
+    "genversion": "^3.2.0",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {

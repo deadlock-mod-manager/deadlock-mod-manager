@@ -41,10 +41,6 @@ pub enum DmodpkgError {
     /// Variant errors (invalid variant selection, etc.)
     #[error("Variant error: {0}")]
     Variant(String),
-
-    /// Transformer errors
-    #[error("Transformer error: {0}")]
-    Transformer(String),
 }
 
 impl DmodpkgError {
@@ -82,10 +78,4 @@ impl DmodpkgError {
     pub fn variant(msg: impl Into<String>) -> Self {
         Self::Variant(msg.into())
     }
-
-    /// Create a transformer error
-    pub fn transformer(msg: impl Into<String>) -> Self {
-        Self::Transformer(msg.into())
-    }
 }
-

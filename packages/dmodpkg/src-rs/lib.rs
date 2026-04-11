@@ -6,19 +6,37 @@ mod types;
 pub use config::{BundleConfig, ModConfig};
 pub use error::{DmodpkgError, Result};
 pub use format::{
-    BundleHeader, PackageHeader, MetadataSection,
-    DMODPKG_MAGIC, DMODBUNDLE_MAGIC, FORMAT_VERSION,
-    DEFAULT_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE,
+    BundleHeader, DEFAULT_CHUNK_SIZE, DMODBUNDLE_MAGIC, DMODPKG_MAGIC, FORMAT_VERSION,
+    MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MetadataSection, PackageHeader,
 };
 pub use types::*;
 
-/// Get library version
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-// FFI interface will be implemented later when needed
-// For now, this module provides the Rust library foundation
+#[cfg(test)]
+mod codegen {
+    use super::*;
+    use zod_gen::ZodGenerator;
+
+    #[test]
+    fn generate_zod_schemas() {
+        let mut generator = ZodGenerator::new();
+        generator.add_schema::<ModConfig>("ModConfig");
+        generator.add_schema::<Author>("Author");
+        generator.add_schema::<Layer>("Layer");
+        generator.add_schema::<Variant>("Variant");
+        generator.add_schema::<VariantGroup>("VariantGroup");
+        generator.add_schema::<Metadata>("Metadata");
+        generator.add_schema::<Dependency>("Dependency");
+        generator.add_schema::<Conflict>("Conflict");
+
+        let content = generator.generate();
+        std::fs::create_dir_all("src/generated").ok();
+        std::fs::write("src/generated/schemas.ts", content).unwrap();
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -47,9 +65,9 @@ mod tests {
         }"#;
 
         let config = ModConfig::from_json(json).unwrap();
-        assert_eq!(config.name, "test-mod");
-        assert_eq!(config.display_name, "Test Mod");
-        assert!(config.validate().is_ok());
+        assert_eq!(config.name.as_deref(), Some("test-mod"));
+        assert_eq!(config.display_name.as_deref(), Some("Test Mod"));
+        assert!(config.validate_full().is_ok());
     }
 
     #[test]
@@ -82,4 +100,3 @@ mod tests {
         assert_eq!(DEFAULT_CHUNK_SIZE, 1024 * 1024);
     }
 }
-
