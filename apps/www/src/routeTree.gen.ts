@@ -15,6 +15,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ModPackagerRouteImport } from './routes/mod-packager'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KvParserRouteImport } from './routes/kv-parser'
 import { Route as DownloadRouteImport } from './routes/download'
@@ -62,6 +63,11 @@ const SitemapModsDotxmlRoute = SitemapModsDotxmlRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModPackagerRoute = ModPackagerRouteImport.update({
+  id: '/mod-packager',
+  path: '/mod-packager',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRouteWithChildren
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mod-packager': typeof ModPackagerRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mod-packager': typeof ModPackagerRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRouteWithChildren
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mod-packager': typeof ModPackagerRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/kv-parser'
     | '/login'
+    | '/mod-packager'
     | '/privacy'
     | '/sitemap-mods.xml'
     | '/status'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/kv-parser'
     | '/login'
+    | '/mod-packager'
     | '/privacy'
     | '/sitemap-mods.xml'
     | '/status'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/kv-parser'
     | '/login'
+    | '/mod-packager'
     | '/privacy'
     | '/sitemap-mods.xml'
     | '/status'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRouteWithChildren
   KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
+  ModPackagerRoute: typeof ModPackagerRoute
   PrivacyRoute: typeof PrivacyRoute
   SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mod-packager': {
+      id: '/mod-packager'
+      path: '/mod-packager'
+      fullPath: '/mod-packager'
+      preLoaderRoute: typeof ModPackagerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -547,6 +567,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRouteWithChildren,
   KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
+  ModPackagerRoute: ModPackagerRoute,
   PrivacyRoute: PrivacyRoute,
   SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,

@@ -926,6 +926,9 @@ importers:
       '@deadlock-mods/crosshair':
         specifier: workspace:*
         version: link:../../packages/crosshair
+      '@deadlock-mods/dmodpkg':
+        specifier: workspace:*
+        version: link:../../packages/dmodpkg
       '@deadlock-mods/logging':
         specifier: workspace:*
         version: link:../../packages/logging
@@ -1001,6 +1004,9 @@ importers:
       interweave:
         specifier: ^13.1.1
         version: 13.1.1(react@19.2.0)
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.2.0)
