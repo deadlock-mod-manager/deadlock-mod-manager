@@ -427,7 +427,61 @@ pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
   FontManager::new().discard_stash(&stash_dir)
 }
 
-/// Debug-only: stash a real system TTF and fire the download-fonts-found event so the
+/// Scan a local mod's files directory for fonts, stash them, and emit the
+/// download-fonts-found event so the same dialog flow fires as for downloaded mods.
+/// Called from the frontend after a local mod archive has been processed.
+#[tauri::command]
+pub async fn scan_and_stash_local_mod_fonts(
+  app_handle: tauri::AppHandle,
+  mod_id: String,
+  files_dir: String,
+) -> Result<(), Error> {
+  use crate::download_manager::DownloadFontsFoundEvent;
+  use crate::mod_manager::FontManager;
+  use tauri::Emitter;
+
+  let search_dir = std::path::Path::new(&files_dir);
+  if !search_dir.exists() {
+    return Ok(()); // Nothing to scan
+  }
+
+  let font_manager = FontManager::new();
+  let found_loose = font_manager.scan_for_fonts(search_dir);
+  let found_vpk = font_manager.scan_vpks_for_fonts(search_dir);
+  if found_loose.is_empty() && found_vpk.is_empty() {
+    return Ok(());
+  }
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let mods_path = mod_manager.get_mods_store_path()?;
+  drop(mod_manager);
+
+  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let mut font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
+  if !found_loose.is_empty() {
+    font_infos.extend(font_manager.stash_fonts(&found_loose, &stash_dir)?);
+  }
+  if !found_vpk.is_empty() {
+    font_infos.extend(font_manager.stash_font_bytes(&found_vpk, &stash_dir)?);
+  }
+
+  log::info!(
+    "Found {} font(s) in local mod {mod_id}, emitting fonts-found event",
+    font_infos.len()
+  );
+
+  app_handle
+    .emit(
+      "download-fonts-found",
+      DownloadFontsFoundEvent {
+        mod_id,
+        fonts: font_infos,
+      },
+    )
+    .map_err(|e| Error::Io(std::io::Error::other(e.to_string())))?;
+
+  Ok(())
+}
 /// font-install dialog can be tested without a full mod download.
 #[cfg(debug_assertions)]
 #[tauri::command]
@@ -473,6 +527,61 @@ pub async fn debug_trigger_font_install(
 
   log::info!("debug_trigger_font_install: emitted download-fonts-found for mod {mod_id}");
   Ok(())
+}
+
+/// Debug-only: queue a local zip file through the normal download pipeline so the full
+/// extract → font-scan → install flow can be tested without a real GameBanana download.
+/// Usage (devtools console):
+///   await window.__TAURI_INTERNALS__.invoke('debug_queue_local_zip', {
+///     modId: 'test-font-mod',
+///     zipPath: '/home/you/Downloads/prowlertp_with_fonts.zip'
+///   })
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn debug_queue_local_zip(
+  app_handle: tauri::AppHandle,
+  mod_id: String,
+  zip_path: String,
+) -> Result<(), Error> {
+  use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadTask};
+
+  let path = std::path::Path::new(&zip_path);
+  if !path.exists() {
+    return Err(Error::Io(std::io::Error::new(
+      std::io::ErrorKind::NotFound,
+      format!("zip not found: {zip_path}"),
+    )));
+  }
+
+  let size = std::fs::metadata(path)?.len();
+  let file_name = path
+    .file_name()
+    .and_then(|n| n.to_str())
+    .unwrap_or("mod.zip")
+    .to_string();
+
+  let app_local_data_dir = app_handle
+    .path()
+    .app_local_data_dir()
+    .map_err(Error::Tauri)?;
+
+  let target_dir = app_local_data_dir.join("mods").join(&mod_id);
+  std::fs::create_dir_all(&target_dir)?;
+
+  // Copy the zip into the mod's target dir (mirrors what the downloader would produce)
+  let dest = target_dir.join(&file_name);
+  std::fs::copy(path, &dest)?;
+
+  let task = DownloadTask {
+    mod_id,
+    files: vec![DownloadFileDto { url: String::new(), name: file_name, size }],
+    target_dir,
+    profile_folder: None,
+    is_profile_import: false,
+    file_tree: None,
+  };
+
+  DownloadManager::process_local_file(task, dest, app_handle).await
 }
 
 #[tauri::command]
@@ -1171,6 +1280,15 @@ pub async fn copy_local_mod_vpks(
     mod_id
   );
   Ok(prefixed_vpks)
+}
+
+#[tauri::command]
+pub async fn read_dropped_mod_file(file_path: String) -> Result<Vec<u8>, Error> {
+  let validated_path = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
+
+  log::info!("Reading dropped mod file from path: {}", validated_path.display());
+
+  tokio::fs::read(&validated_path).await.map_err(Error::from)
 }
 
 #[tauri::command]

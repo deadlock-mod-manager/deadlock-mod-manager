@@ -51,11 +51,12 @@ import {
   MOD_CATEGORY_ORDER,
   ModCategory,
 } from "@/lib/constants";
+import { ALL_SUPPORTED_PATTERN } from "@/lib/file-patterns";
 import {
-  ACCEPTED_FILE_TYPES,
-  ALL_SUPPORTED_PATTERN,
-} from "@/lib/file-patterns";
-import { type DetectedSource, getFileName } from "@/lib/file-utils";
+  type DetectedSource,
+  getFileBaseName,
+  getFileName,
+} from "@/lib/file-utils";
 import logger from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { type AddModFormValues, addModSchema } from "@/types/add-mods";
@@ -68,7 +69,6 @@ const AddMods = () => {
   const [initialMeta, setInitialMeta] = useState<
     Partial<ModMetadata> | undefined
   >(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const metaRef = useRef<ModMetadataFormHandle>(null);
 
   const { processMod } = useModProcessor();
@@ -79,7 +79,7 @@ const AddMods = () => {
   });
 
   const handleFilesDetected = (detectedSource: DetectedSource) => {
-    const baseName = detectedSource.file.name.replace(
+    const baseName = getFileBaseName(detectedSource.file).replace(
       ALL_SUPPORTED_PATTERN,
       "",
     );
@@ -96,7 +96,7 @@ const AddMods = () => {
     toast.error(message);
   };
 
-  const { isDragging, dragHandlers, onFileSelect } = useFileDrop(
+  const { isDragging, dragHandlers, openTauriFilePicker } = useFileDrop(
     handleFilesDetected,
     handleError,
   );
@@ -150,16 +150,8 @@ const AddMods = () => {
                     ? "bg-muted/50 ring-2 ring-primary/40"
                     : "hover:bg-muted/40",
                 )}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={openTauriFilePicker}
                 {...dragHandlers}>
-                <input
-                  accept={ACCEPTED_FILE_TYPES}
-                  className='hidden'
-                  multiple
-                  onChange={onFileSelect}
-                  ref={fileInputRef}
-                  type='file'
-                />
                 <div className='pointer-events-none text-center'>
                   <UploadSimple className='mx-auto h-8 w-8' />
                   <div className='mt-2 font-medium text-sm'>

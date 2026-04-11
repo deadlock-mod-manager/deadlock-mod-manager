@@ -2,6 +2,9 @@ use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use vpk_parser::{VpkParseOptions, VpkParser};
+
+const VPK_SIGNATURE: u32 = 0x55aa1234;
 
 const FONTS_CONF_SECTION_START: &str = "<!-- [DEADLOCK-MOD-MANAGER-FONTS-START:";
 const FONTS_CONF_SECTION_END: &str = "<!-- [DEADLOCK-MOD-MANAGER-FONTS-END:";
@@ -59,8 +62,8 @@ impl FontManager {
       return fallback;
     };
 
-    // Try name ID 4 (Full Name) first, then 1 (Family Name)
-    for target_id in [4u16, 1u16] {
+    // Try name ID 1 (Family Name) first, then 4 (Full Name) as fallback
+    for target_id in [1u16, 4u16] {
       for name in face.names() {
         if name.name_id == target_id
           && let Some(s) = name.to_string() {
@@ -234,6 +237,166 @@ impl FontManager {
       log::info!("Discarded font stash: {stash_dir:?}");
     }
     Ok(())
+  }
+
+  /// Parse a single VPK dir file and extract any TTF fonts packed under `panorama/fonts/`.
+  /// Returns `(filename, bytes)` pairs for each font found.
+  pub fn extract_fonts_from_vpk(&self, vpk_path: &Path) -> Vec<(String, Vec<u8>)> {
+    let buffer = match fs::read(vpk_path) {
+      Ok(b) => b,
+      Err(e) => {
+        log::warn!("Font scan: failed to read VPK {:?}: {e}", vpk_path);
+        return vec![];
+      }
+    };
+
+    if buffer.len() < 12 {
+      return vec![];
+    }
+
+    let sig = u32::from_le_bytes(buffer[0..4].try_into().unwrap_or_default());
+    if sig != VPK_SIGNATURE {
+      return vec![];
+    }
+
+    let version = u32::from_le_bytes(buffer[4..8].try_into().unwrap_or_default());
+    let tree_length = u32::from_le_bytes(buffer[8..12].try_into().unwrap_or_default()) as usize;
+    let tree_start: usize = if version >= 2 { 28 } else { 12 };
+    let data_section_start = tree_start + tree_length;
+
+    let options = VpkParseOptions {
+      include_entries: true,
+      include_full_file_hash: false,
+      file_path: vpk_path.to_string_lossy().to_string(),
+      last_modified: None,
+      include_merkle: false,
+    };
+
+    let parsed = match VpkParser::parse(buffer.clone(), options) {
+      Ok(p) => p,
+      Err(e) => {
+        log::warn!("Font scan: failed to parse VPK {:?}: {e}", vpk_path);
+        return vec![];
+      }
+    };
+
+    let mut result = Vec::new();
+
+    for entry in &parsed.entries {
+      // Only care about TTF files inside panorama/fonts/
+      if !entry.ext.eq_ignore_ascii_case("ttf") {
+        continue;
+      }
+      let path_lower = entry.path.to_lowercase();
+      if !path_lower.contains("panorama") || !path_lower.contains("fonts") {
+        continue;
+      }
+
+      let file_name = format!("{}.{}", entry.filename, entry.ext);
+      let mut font_bytes: Vec<u8> = Vec::new();
+
+      if entry.entry_length > 0 {
+        if entry.archive_index == 0x7fff {
+          // Inline in the dir file
+          let start = data_section_start + entry.entry_offset as usize;
+          let end = start + entry.entry_length as usize;
+          if end <= buffer.len() {
+            font_bytes.extend_from_slice(&buffer[start..end]);
+          } else {
+            log::warn!(
+              "Font scan: VPK entry out of bounds for \"{}\" in {:?}",
+              entry.full_path,
+              vpk_path
+            );
+            continue;
+          }
+        } else {
+          // In a companion archive file
+          let stem = vpk_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("");
+          let base = stem.strip_suffix("_dir").unwrap_or(stem);
+          let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
+          let archive_path = vpk_path
+            .parent()
+            .unwrap_or(Path::new("."))
+            .join(&archive_name);
+
+          match fs::read(&archive_path) {
+            Ok(archive_buf) => {
+              let start = entry.entry_offset as usize;
+              let end = start + entry.entry_length as usize;
+              if end <= archive_buf.len() {
+                font_bytes.extend_from_slice(&archive_buf[start..end]);
+              } else {
+                log::warn!(
+                  "Font scan: archive entry out of bounds for \"{}\" in {:?}",
+                  entry.full_path,
+                  archive_path
+                );
+                continue;
+              }
+            }
+            Err(e) => {
+              log::warn!("Font scan: cannot read companion archive {:?}: {e}", archive_path);
+              continue;
+            }
+          }
+        }
+      }
+
+      if !font_bytes.is_empty() {
+        log::info!("Font scan: found VPK-packed font: {file_name}");
+        result.push((file_name, font_bytes));
+      }
+    }
+
+    result
+  }
+
+  /// Scan all VPK files in `dir` (non-recursive) for packed TTF fonts.
+  /// Returns `(filename, bytes)` pairs ready to be stashed.
+  pub fn scan_vpks_for_fonts(&self, dir: &Path) -> Vec<(String, Vec<u8>)> {
+    let Ok(entries) = fs::read_dir(dir) else {
+      return vec![];
+    };
+    let mut result = Vec::new();
+    for entry in entries.flatten() {
+      let path = entry.path();
+      if path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("vpk"))
+        == Some(true)
+      {
+        result.extend(self.extract_fonts_from_vpk(&path));
+      }
+    }
+    result
+  }
+
+  /// Stash in-memory font bytes into `stash_dir`, returning `FontInfo` for each.
+  pub fn stash_font_bytes(
+    &self,
+    fonts: &[(String, Vec<u8>)],
+    stash_dir: &Path,
+  ) -> Result<Vec<FontInfo>, Error> {
+    fs::create_dir_all(stash_dir)?;
+
+    let mut infos = Vec::new();
+    for (file_name, bytes) in fonts {
+      let dest = stash_dir.join(file_name);
+      fs::write(&dest, bytes)?;
+      let font_name = self.get_font_name(&dest);
+      log::info!("Stashed VPK font: {file_name} -> \"{font_name}\"");
+      infos.push(FontInfo {
+        file_name: file_name.clone(),
+        font_name,
+      });
+    }
+
+    Ok(infos)
   }
 }
 

@@ -461,31 +461,47 @@ impl DownloadManager {
         }
       }
 
-      // Scan for font files before processing VPKs and emit an event if any are found
+      // Scan for font files before processing VPKs and emit an event if any are found.
+      // Fonts may be loose files under panorama/fonts/ OR packed inside a .vpk.
       let font_manager = crate::mod_manager::FontManager::new();
-      let found_fonts = font_manager.scan_for_fonts(&extracted_dir);
-      if !found_fonts.is_empty() {
+      let found_loose = font_manager.scan_for_fonts(&extracted_dir);
+      let found_vpk = font_manager.scan_vpks_for_fonts(&extracted_dir);
+      if !found_loose.is_empty() || !found_vpk.is_empty() {
         let stash_dir = task.target_dir.join("fonts");
-        match font_manager.stash_fonts(&found_fonts, &stash_dir) {
-          Ok(font_infos) => {
-            log::info!(
-              "Found {} font(s) in mod {}, emitting fonts-found event",
-              font_infos.len(),
+        let mut all_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
+        if !found_loose.is_empty() {
+          match font_manager.stash_fonts(&found_loose, &stash_dir) {
+            Ok(fi) => all_font_infos.extend(fi),
+            Err(e) => log::warn!(
+              "Failed to stash loose fonts for mod {}: {e}",
               task.mod_id
-            );
-            app_handle
-              .emit(
-                "download-fonts-found",
-                DownloadFontsFoundEvent {
-                  mod_id: task.mod_id.clone(),
-                  fonts: font_infos,
-                },
-              )
-              .ok();
+            ),
           }
-          Err(e) => {
-            log::warn!("Failed to stash fonts for mod {}: {e}", task.mod_id);
+        }
+        if !found_vpk.is_empty() {
+          match font_manager.stash_font_bytes(&found_vpk, &stash_dir) {
+            Ok(fi) => all_font_infos.extend(fi),
+            Err(e) => log::warn!(
+              "Failed to stash VPK-packed fonts for mod {}: {e}",
+              task.mod_id
+            ),
           }
+        }
+        if !all_font_infos.is_empty() {
+          log::info!(
+            "Found {} font(s) in mod {}, emitting fonts-found event",
+            all_font_infos.len(),
+            task.mod_id
+          );
+          app_handle
+            .emit(
+              "download-fonts-found",
+              DownloadFontsFoundEvent {
+                mod_id: task.mod_id.clone(),
+                fonts: all_font_infos,
+              },
+            )
+            .ok();
         }
       }
 
@@ -689,5 +705,15 @@ impl DownloadManager {
         })
         .collect(),
     )
+  }
+
+  /// Debug-only: run the post-download processing pipeline on an already-copied local file.
+  #[cfg(debug_assertions)]
+  pub async fn process_local_file(
+    task: DownloadTask,
+    file_path: std::path::PathBuf,
+    app_handle: AppHandle,
+  ) -> Result<(), Error> {
+    Self::process_downloaded_files(&task, &[file_path], &app_handle).await
   }
 }

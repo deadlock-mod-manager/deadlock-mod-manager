@@ -32,7 +32,6 @@ import type { FontInfo } from "./types/mods";
 
 interface PendingFontInstall {
   modId: string;
-  modName: string;
   fonts: FontInfo[];
 }
 
@@ -68,8 +67,8 @@ const App = () => {
   usePromise(hydrateStore, []);
 
   useEffect(() => {
-    downloadManager.setFontsFoundHandler((modId, modName, fonts) => {
-      setPendingFontInstall({ modId, modName, fonts });
+    downloadManager.setFontsFoundHandler((modId, _modName, fonts) => {
+      setPendingFontInstall({ modId, fonts });
     });
   }, []);
 
@@ -100,7 +99,6 @@ const App = () => {
                     <FontInstallDialog
                       fonts={pendingFontInstall?.fonts ?? []}
                       isOpen={pendingFontInstall !== null}
-                      modName={pendingFontInstall?.modName ?? ""}
                       onInstall={async () => {
                         if (!pendingFontInstall) return;
                         await invoke("install_mod_fonts", {

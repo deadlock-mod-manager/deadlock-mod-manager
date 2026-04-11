@@ -12,7 +12,6 @@ import type { FontInfo } from "@/types/mods";
 
 interface FontInstallDialogProps {
   readonly isOpen: boolean;
-  readonly modName: string;
   readonly fonts: FontInfo[];
   readonly onInstall: () => void;
   readonly onSkip: () => void;
@@ -20,7 +19,6 @@ interface FontInstallDialogProps {
 
 export function FontInstallDialog({
   isOpen,
-  modName,
   fonts,
   onInstall,
   onSkip,
@@ -32,9 +30,7 @@ export function FontInstallDialog({
       <DialogContent className='max-w-md' onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>{t("fontInstall.title")}</DialogTitle>
-          <DialogDescription>
-            {t("fontInstall.description", { modName })}
-          </DialogDescription>
+          <DialogDescription>{t("fontInstall.description")}</DialogDescription>
         </DialogHeader>
 
         <ul className='my-2 space-y-1 rounded-md border bg-muted/50 p-3 text-sm'>

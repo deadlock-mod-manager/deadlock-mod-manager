@@ -1698,7 +1698,7 @@
   },
   "fontInstall": {
     "title": "Fonts found in mod",
-    "description": "{{modName}} includes font files. Would you like to install them to the game?",
+    "description": "The mod author included font files. Would you like to install and use them?",
     "install": "Install Fonts",
     "skip": "Skip"
   }

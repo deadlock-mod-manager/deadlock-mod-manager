@@ -15,6 +15,7 @@ import {
 import {
   type DetectedSource,
   ensureDirectory,
+  getFileBaseName,
   fileToBytes,
   fileToDataUrl,
   writeFileBytes,
@@ -45,7 +46,8 @@ export const useModProcessor = () => {
     filesDir: string,
     modDir: string,
   ): Promise<void> => {
-    const fileName = file.name.toLowerCase();
+    const fileBaseName = getFileBaseName(file);
+    const fileName = fileBaseName.toLowerCase();
 
     if (fileName.endsWith(".zip")) {
       const zip = await JSZip.loadAsync(await file.arrayBuffer());
@@ -59,7 +61,7 @@ export const useModProcessor = () => {
         await writeFileBytes(await join(filesDir, baseName), buffer);
       } else {
         await writeFileBytes(
-          await join(modDir, file.name),
+          await join(modDir, fileBaseName),
           await fileToBytes(file),
         );
         toast.error(t("addMods.noVpkFound"));
@@ -69,14 +71,14 @@ export const useModProcessor = () => {
 
       setProcessing(true, t("addMods.storingArchive", { format }));
       await writeFileBytes(
-        await join(modDir, file.name),
+        await join(modDir, fileBaseName),
         await fileToBytes(file),
       );
 
       // Extract archive using backend
       try {
         setProcessing(true, t("addMods.extractingArchive", { format }));
-        const archivePath = await join(modDir, file.name);
+        const archivePath = await join(modDir, fileBaseName);
         await invoke("extract_archive", {
           archivePath: await archivePath,
           targetPath: await filesDir,
@@ -87,7 +89,7 @@ export const useModProcessor = () => {
       }
     } else {
       await writeFileBytes(
-        await join(modDir, file.name),
+        await join(modDir, fileBaseName),
         await fileToBytes(file),
       );
     }
@@ -135,7 +137,7 @@ export const useModProcessor = () => {
     }
 
     if (detectedSource.kind === "archive") {
-      const fileName = detectedSource.file.name.toLowerCase();
+      const fileName = getFileBaseName(detectedSource.file).toLowerCase();
       if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
         toast.info(t("addMods.archiveWillBeProcessed"));
         return true;
@@ -176,17 +178,19 @@ export const useModProcessor = () => {
     setProcessing(true, t("addMods.processingFiles"));
     try {
       if (detectedSource.kind === "vpk") {
+        const fileName = getFileBaseName(detectedSource.file);
         await writeFileBytes(
-          await join(filesDir, detectedSource.file.name),
+          await join(filesDir, fileName),
           await fileToBytes(detectedSource.file),
         );
       } else {
         await processArchive(detectedSource.file, filesDir, modDir);
       }
     } catch {
+      const fileName = getFileBaseName(detectedSource.file);
       toast.error(t("addMods.failedToProcessArchive"));
       await writeFileBytes(
-        await join(modDir, detectedSource.file.name),
+        await join(modDir, fileName),
         await fileToBytes(detectedSource.file),
       );
     }
@@ -208,6 +212,15 @@ export const useModProcessor = () => {
         modId: modId,
         profileFolder,
         isMap: category === ModCategory.MAPS,
+      });
+
+      // Scan the extracted files dir for fonts and emit the same event as the
+      // download pipeline so the FontInstallDialog appears if any are found.
+      await invoke("scan_and_stash_local_mod_fonts", {
+        modId,
+        filesDir,
+      }).catch(() => {
+        // Non-fatal — font detection failing should never block mod install
       });
 
       try {

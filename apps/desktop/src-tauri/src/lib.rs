@@ -9,6 +9,7 @@ mod commands;
 mod deep_link;
 mod discord_rpc;
 mod download_manager;
+mod dropped_mod_file;
 mod errors;
 mod flatpak;
 mod ingest_tool;
@@ -106,8 +107,11 @@ pub fn run() {
       commands::open_mods_data_folder,
       commands::install_mod_fonts,
       commands::discard_mod_fonts,
+      commands::scan_and_stash_local_mod_fonts,
       #[cfg(debug_assertions)]
       commands::debug_trigger_font_install,
+      #[cfg(debug_assertions)]
+      commands::debug_queue_local_zip,
       commands::clear_download_cache,
       commands::clear_all_mods_data,
       commands::uninstall_mod,
@@ -189,6 +193,7 @@ pub fn run() {
       commands::parse_crash_dump,
       commands::parse_latest_crash_dump,
       commands::open_latest_crash_dump_parsed,
+      commands::read_dropped_mod_file,
       commands::check_filesystem_writable,
       commands::test_fileserver_latency
     ])

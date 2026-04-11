@@ -31,6 +31,13 @@ export type DetectedSource =
 export const getFileName = (file: File): string =>
   (file as FileWithPath).webkitRelativePath || file.name;
 
+export const getFileBaseName = (file: File): string => {
+  const resolvedName = getFileName(file);
+  const segments = resolvedName.split(/[\\/]/).filter(Boolean);
+
+  return segments.at(-1) || file.name || "mod";
+};
+
 export const fileToBytes = async (file: File): Promise<Uint8Array> =>
   new Uint8Array(await file.arrayBuffer());
 
@@ -74,14 +81,16 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   }
 
   const validFiles = files.filter(Boolean);
-  const vpkFile = validFiles.find((file) => VPK_PATTERN.test(file.name));
+  const vpkFile = validFiles.find((file) =>
+    VPK_PATTERN.test(getFileBaseName(file)),
+  );
 
   if (validFiles.length === 1 && vpkFile) {
     return { kind: "vpk", file: vpkFile };
   }
 
   const archiveFile = validFiles.find((file) =>
-    ARCHIVE_PATTERN.test(file.name),
+    ARCHIVE_PATTERN.test(getFileBaseName(file)),
   );
   if (validFiles.length === 1 && archiveFile) {
     return { kind: "archive", file: archiveFile };
@@ -94,7 +103,7 @@ export const detectSource = (files: File[]): DetectedSource | null => {
  * Recursively reads files from DataTransfer items
  */
 export const readFromDataTransferItems = async (
-  items: DataTransferItemList,
+  items: ArrayLike<DataTransferItem>,
 ): Promise<File[]> => {
   const promises: Promise<File[]>[] = [];
 
