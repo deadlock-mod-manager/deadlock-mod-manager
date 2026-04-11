@@ -34,7 +34,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-6ljyPdobcoBaYyarc7Iin5N24y1YXPafrYAk2xvBtvY=";
+  cargoHash = "sha256-JICzqXVLv+XXMJuSCFS+ZN6XHhcnHwRQLWEPI51hrWg=";
 
   nativeBuildInputs = [
     rustToolchain
@@ -78,7 +78,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpm = pnpm_9;
     fetcherVersion = 2;
     sourceRoot = "source";
-    hash = "sha256-fFcKyqAo/HpGBaEJMk6Lq0FafNXrGu9z9nHnav5d6Hg=";
+    hash = "sha256-JICzqXVLv+XXMJuSCFS+ZN6XHhcnHwRQLWEPI51hrWg=";
   };
 
   # Environment variables
