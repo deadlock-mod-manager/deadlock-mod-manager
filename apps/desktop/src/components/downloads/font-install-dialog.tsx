@@ -26,8 +26,12 @@ export function FontInstallDialog({
   const { t } = useTranslation();
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onSkip()}>
-      <DialogContent className='max-w-md' onClick={(e) => e.stopPropagation()}>
+    <Dialog open={isOpen}>
+      <DialogContent
+        className='max-w-md'
+        onClick={(e) => e.stopPropagation()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t("fontInstall.title")}</DialogTitle>
           <DialogDescription>{t("fontInstall.description")}</DialogDescription>

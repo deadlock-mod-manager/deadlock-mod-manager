@@ -1,7 +1,6 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
-import { readFile } from "@tauri-apps/plugin-fs";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { resolveDroppedModSource } from "@/lib/dropped-file-source";
 import { createLogger } from "@/lib/logger";
 import {
@@ -13,6 +12,10 @@ import {
 } from "@/lib/file-utils";
 
 const logger = createLogger("use-file-drop");
+
+interface PathBackedFile extends File {
+  path?: string;
+}
 
 const summarizeFiles = (files: File[]) =>
   files.map((file) => ({
@@ -46,12 +49,47 @@ const readStringPayloads = async (items: DataTransferItem[]) => {
   return payloads.filter((payload) => payload.value.trim().length > 0);
 };
 
-const readDroppedFileFromPath = async (filePath: string): Promise<File> => {
-  const bytes = await invoke<number[]>("read_dropped_mod_file", { filePath });
-  const fileName =
-    filePath.split("/").pop() ?? filePath.split("\\").pop() ?? "mod";
+const getPathFileName = (filePath: string): string =>
+  filePath.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
 
-  return new File([new Uint8Array(bytes)], fileName);
+const createPathBackedFile = (filePath: string): File => {
+  const file = new File([], getPathFileName(filePath)) as PathBackedFile;
+  file.path = filePath;
+  return file;
+};
+
+const parseFileUri = (value: string): string | null => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "file:") {
+      return null;
+    }
+
+    const decodedPath = decodeURIComponent(url.pathname);
+    const normalizedPath = /^\/[a-zA-Z]:\//.test(decodedPath)
+      ? decodedPath.slice(1)
+      : decodedPath;
+
+    if (url.hostname && url.hostname !== "localhost") {
+      return `//${url.hostname}${normalizedPath}`;
+    }
+
+    return normalizedPath;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeDroppedPath = (value: string): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (value.startsWith("file://")) {
+    return parseFileUri(value);
+  }
+
+  return value;
 };
 
 const extractPathsFromStringPayloads = (
@@ -67,13 +105,9 @@ const extractPathsFromStringPayloads = (
           continue;
         }
 
-        const decodedPath = decodeURIComponent(
-          trimmedLine.startsWith("file://")
-            ? trimmedLine.slice(7)
-            : trimmedLine,
-        );
-        if (decodedPath) {
-          extractedPaths.add(decodedPath);
+        const normalizedPath = normalizeDroppedPath(trimmedLine);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
         }
       }
       continue;
@@ -82,9 +116,9 @@ const extractPathsFromStringPayloads = (
     if (payload.type === "text/html") {
       const uriMatches = payload.value.match(/file:\/\/[^"'\s<>]+/g) ?? [];
       for (const uri of uriMatches) {
-        const decodedPath = decodeURIComponent(uri.slice(7));
-        if (decodedPath) {
-          extractedPaths.add(decodedPath);
+        const normalizedPath = normalizeDroppedPath(uri);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
         }
       }
       continue;
@@ -97,8 +131,9 @@ const extractPathsFromStringPayloads = (
           continue;
         }
 
-        if (trimmedLine.startsWith("file://")) {
-          extractedPaths.add(decodeURIComponent(trimmedLine.slice(7)));
+        const normalizedPath = normalizeDroppedPath(trimmedLine);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
         }
       }
     }
@@ -115,6 +150,7 @@ export const useFileDrop = (
   onError: (message: string) => void,
 ) => {
   const [isDragging, setIsDragging] = useState(false);
+  const { t } = useTranslation();
 
   const preventDefaults = useCallback((event: Event) => {
     event.preventDefault();
@@ -214,29 +250,11 @@ export const useFileDrop = (
                         .split(/\r?\n/)
                         .map((line) => line.trim())
                         .filter((line) => line && !line.startsWith("#"))
-                        .map((uri) =>
-                          decodeURIComponent(
-                            uri.startsWith("file://") ? uri.slice(7) : uri,
-                          ),
-                        )
+                        .map(normalizeDroppedPath)
+                        .filter((path): path is string => Boolean(path))
                     : extractedStringPaths;
 
-                  const loadedFiles: File[] = [];
-                  for (const filePath of paths) {
-                    try {
-                      loadedFiles.push(await readDroppedFileFromPath(filePath));
-                    } catch (error) {
-                      logger
-                        .withMetadata({ filePath })
-                        .withError(
-                          error instanceof Error
-                            ? error
-                            : new Error(String(error)),
-                        )
-                        .warn("Failed to read file from dropped URI path");
-                      // skip unreadable paths
-                    }
-                  }
+                  const loadedFiles = paths.map(createPathBackedFile);
 
                   logger
                     .withMetadata({
@@ -254,7 +272,7 @@ export const useFileDrop = (
         logger
           .withError(error instanceof Error ? error : new Error(String(error)))
           .error("Failed to resolve dropped mod source");
-        onError("Failed to read dropped files.");
+        onError(t("addMods.failedToReadDroppedFiles"));
         return;
       }
 
@@ -268,7 +286,7 @@ export const useFileDrop = (
           })
           .warn("Dropped files were rejected as unsupported");
         onError(
-          "Unsupported files. Please select VPK files or archives (ZIP, RAR, 7Z).",
+          `${t("addMods.unsupportedFiles")} ${t("addMods.supportedFormats")}`,
         );
         return;
       }
@@ -298,7 +316,7 @@ export const useFileDrop = (
 
       if (!detectedSource) {
         onError(
-          "Unsupported selection. Please select VPK files or archives (ZIP, RAR, 7Z).",
+          `${t("addMods.unsupportedSelection")} ${t("addMods.supportedFormats")}`,
         );
         return;
       }
@@ -313,7 +331,7 @@ export const useFileDrop = (
       multiple: false,
       filters: [
         {
-          name: "Mod Files",
+          name: t("common.mods"),
           extensions: ["vpk", "zip", "rar", "7z"],
         },
       ],
@@ -322,26 +340,23 @@ export const useFileDrop = (
     if (!selected) return;
 
     const filePath = selected;
-    const fileName =
-      filePath.split("/").pop() ?? filePath.split("\\").pop() ?? "mod";
 
     try {
-      const bytes = await readFile(filePath);
-      const file = new File([bytes], fileName);
+      const file = createPathBackedFile(filePath);
       const detectedSource = detectSource([file]);
 
       if (!detectedSource) {
         onError(
-          "Unsupported selection. Please select VPK files or archives (ZIP, RAR, 7Z).",
+          `${t("addMods.unsupportedSelection")} ${t("addMods.supportedFormats")}`,
         );
         return;
       }
 
       onFilesDetected(detectedSource);
     } catch {
-      onError("Failed to read the selected file.");
+      onError(t("addMods.failedToReadSelectedFile"));
     }
-  }, [onFilesDetected, onError]);
+  }, [onFilesDetected, onError, t]);
 
   return {
     isDragging,

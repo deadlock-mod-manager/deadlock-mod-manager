@@ -19,6 +19,15 @@ pub struct FontInfo {
 
 pub struct FontManager;
 
+fn escape_xml(value: &str) -> String {
+  value
+    .replace('&', "&amp;")
+    .replace('<', "&lt;")
+    .replace('>', "&gt;")
+    .replace('"', "&quot;")
+    .replace('\'', "&apos;")
+}
+
 impl FontManager {
   pub fn new() -> Self {
     Self
@@ -156,12 +165,20 @@ impl FontManager {
 
     let patterns: String = font_infos
       .iter()
-      .map(|f| format!("        <fontpattern>{}</fontpattern>", f.font_name))
+      .map(|f| {
+        format!(
+          "        <fontpattern>{}</fontpattern>",
+          escape_xml(&f.font_name)
+        )
+      })
       .collect::<Vec<_>>()
       .join("\n");
 
+    let escaped_mod_id = escape_xml(mod_id);
+
     let section = format!(
       "\n        {start} {mod_id} -->\n{patterns}\n        {end} {mod_id} -->",
+      mod_id = escaped_mod_id,
       start = FONTS_CONF_SECTION_START,
       end = FONTS_CONF_SECTION_END,
     );
@@ -205,8 +222,9 @@ impl FontManager {
   }
 
   fn remove_section(&self, content: &str, mod_id: &str) -> String {
-    let start_marker = format!("{} {} -->", FONTS_CONF_SECTION_START, mod_id);
-    let end_marker = format!("{} {} -->", FONTS_CONF_SECTION_END, mod_id);
+    let escaped_mod_id = escape_xml(mod_id);
+    let start_marker = format!("{} {} -->", FONTS_CONF_SECTION_START, escaped_mod_id);
+    let end_marker = format!("{} {} -->", FONTS_CONF_SECTION_END, escaped_mod_id);
 
     let Some(start_pos) = content.find(&start_marker) else {
       return content.to_string();
@@ -249,7 +267,9 @@ impl FontManager {
     for entry in fs::read_dir(stash_dir)? {
       let entry = entry?;
       let path = entry.path();
-      if path.extension() != Some(OsStr::new("ttf")) {
+      if path.extension().and_then(OsStr::to_str).map(|ext| ext.eq_ignore_ascii_case("ttf"))
+        != Some(true)
+      {
         continue;
       }
 

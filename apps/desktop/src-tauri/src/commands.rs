@@ -382,6 +382,11 @@ struct PreparedFontCleanup {
   removable_font_files: Vec<String>,
 }
 
+fn get_validated_mod_folder_path(mod_id: &str) -> Result<PathBuf, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.get_validated_mod_folder_path(mod_id)
+}
+
 fn collect_other_stashed_font_file_names(
   mods_path: &std::path::Path,
   excluded_mod_id: &str,
@@ -417,11 +422,17 @@ fn collect_other_stashed_font_file_names(
 }
 
 fn prepare_font_cleanup(
-  mods_path: &std::path::Path,
   game_path: &std::path::Path,
   mod_id: &str,
 ) -> Result<Option<PreparedFontCleanup>, Error> {
-  let stash_dir = mods_path.join(mod_id).join("fonts");
+  let mod_folder = get_validated_mod_folder_path(mod_id)?;
+  let Some(mods_path) = mod_folder.parent() else {
+    return Err(Error::InvalidInput(
+      "Unable to determine mods directory for font cleanup".to_string(),
+    ));
+  };
+
+  let stash_dir = mod_folder.join("fonts");
   if !stash_dir.exists() {
     return Ok(None);
   }
@@ -453,11 +464,24 @@ fn prepare_font_cleanup(
 
 fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Error> {
   let font_manager = crate::mod_manager::FontManager::new();
-  font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id)?;
-  font_manager.remove_installed_fonts(
+
+  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
+    log::warn!(
+      "Failed to remove font patterns for mod {}: {error}",
+      cleanup.mod_id
+    );
+  }
+
+  if let Err(error) = font_manager.remove_installed_fonts(
     &cleanup.game_fonts_dir,
     &cleanup.removable_font_files,
-  )?;
+  ) {
+    log::warn!(
+      "Failed to remove installed fonts for mod {}: {error}",
+      cleanup.mod_id
+    );
+  }
+
   Ok(())
 }
 
@@ -467,16 +491,16 @@ pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
 
   log::info!("Installing fonts for mod: {mod_id}");
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-  drop(mod_manager);
+  let game_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .get_steam_manager()
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone()
+  };
 
-  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let stash_dir = get_validated_mod_folder_path(&mod_id)?.join("fonts");
   let game_fonts_dir = game_path
     .join("game")
     .join("citadel")
@@ -506,11 +530,7 @@ pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
 
   log::info!("Discarding stashed fonts for mod: {mod_id}");
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  drop(mod_manager);
-
-  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let stash_dir = get_validated_mod_folder_path(&mod_id)?.join("fonts");
   FontManager::new().discard_stash(&stash_dir)
 }
 
@@ -527,7 +547,24 @@ pub async fn scan_and_stash_local_mod_fonts(
   use crate::mod_manager::FontManager;
   use tauri::Emitter;
 
-  let search_dir = std::path::Path::new(&files_dir);
+  let (mod_dir, validated_files_dir) = {
+    let mod_manager = MANAGER.lock().unwrap();
+    let mod_dir = mod_manager.get_validated_mod_folder_path(&mod_id)?;
+    let validated_files_dir = mod_manager.validate_extract_target_path(&PathBuf::from(&files_dir))?;
+    let expected_files_dir = mod_dir.join("files");
+
+    if validated_files_dir != expected_files_dir {
+      return Err(Error::UnauthorizedPath(format!(
+        "Path '{}' is outside the allowed mod files directory '{}'",
+        validated_files_dir.display(),
+        expected_files_dir.display()
+      )));
+    }
+
+    (mod_dir, validated_files_dir)
+  };
+
+  let search_dir = validated_files_dir.as_path();
   if !search_dir.exists() {
     return Ok(()); // Nothing to scan
   }
@@ -539,11 +576,7 @@ pub async fn scan_and_stash_local_mod_fonts(
     return Ok(());
   }
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  drop(mod_manager);
-
-  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let stash_dir = mod_dir.join("fonts");
   let mut font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
   if !found_loose.is_empty() {
     font_infos.extend(font_manager.stash_fonts(&found_loose, &stash_dir)?);
@@ -588,11 +621,7 @@ pub async fn debug_trigger_font_install(
     )));
   }
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  drop(mod_manager);
-
-  let stash_dir = mods_path.join(&mod_id).join("fonts");
+  let stash_dir = get_validated_mod_folder_path(&mod_id)?.join("fonts");
   let font_manager = FontManager::new();
 
   // stash_fonts expects a slice of paths found under panorama/fonts/
@@ -647,12 +676,7 @@ pub async fn debug_queue_local_zip(
     .unwrap_or("mod.zip")
     .to_string();
 
-  let app_local_data_dir = app_handle
-    .path()
-    .app_local_data_dir()
-    .map_err(Error::Tauri)?;
-
-  let target_dir = app_local_data_dir.join("mods").join(&mod_id);
+  let target_dir = get_validated_mod_folder_path(&mod_id)?;
   std::fs::create_dir_all(&target_dir)?;
 
   // Copy the zip into the mod's target dir (mirrors what the downloader would produce)
@@ -699,18 +723,16 @@ pub async fn purge_mod(
   vpks: Vec<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
-  let (mods_path, game_path) = {
+  let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
-    let mods_path = mod_manager.get_mods_store_path()?;
-    let game_path = mod_manager
+    mod_manager
       .get_steam_manager()
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?
-      .clone();
-    (mods_path, game_path)
+      .clone()
   };
 
-  let prepared_font_cleanup = prepare_font_cleanup(&mods_path, &game_path, &mod_id)?;
+  let prepared_font_cleanup = prepare_font_cleanup(&game_path, &mod_id)?;
 
   {
     let mut mod_manager = MANAGER.lock().unwrap();

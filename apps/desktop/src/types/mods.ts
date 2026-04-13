@@ -45,6 +45,7 @@ export interface DownloadableMod extends Omit<LocalMod, "status"> {
 }
 
 export interface FontInfo {
+  /** Bundled font metadata detected for a mod install prompt. */
   fileName: string;
   fontName: string;
 }

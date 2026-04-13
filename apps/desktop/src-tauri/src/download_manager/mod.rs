@@ -3,7 +3,7 @@ mod downloader;
 use crate::errors::Error;
 use downloader::{DownloadProgress as FileProgress, download_file};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
@@ -407,6 +407,31 @@ impl DownloadManager {
 
     let vpk_manager = VpkManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
+    let font_manager = crate::mod_manager::FontManager::new();
+    let stash_dir = task.target_dir.join("fonts");
+    let mut found_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
+    let mut seen_font_files = HashSet::new();
+
+    let emit_fonts_found = |font_infos: &[crate::mod_manager::FontInfo]| {
+      if font_infos.is_empty() {
+        return;
+      }
+
+      log::info!(
+        "Found {} font(s) in mod {}, emitting fonts-found event",
+        font_infos.len(),
+        task.mod_id
+      );
+      app_handle
+        .emit(
+          "download-fonts-found",
+          DownloadFontsFoundEvent {
+            mod_id: task.mod_id.clone(),
+            fonts: font_infos.to_vec(),
+          },
+        )
+        .ok();
+    };
 
     for file_path in downloaded_files {
       if !ArchiveExtractor::new().is_supported_archive(file_path) {
@@ -463,15 +488,18 @@ impl DownloadManager {
 
       // Scan for font files before processing VPKs and emit an event if any are found.
       // Fonts may be loose files under panorama/fonts/ OR packed inside a .vpk.
-      let font_manager = crate::mod_manager::FontManager::new();
       let found_loose = font_manager.scan_for_fonts(&extracted_dir);
       let found_vpk = font_manager.scan_vpks_for_fonts(&extracted_dir);
       if !found_loose.is_empty() || !found_vpk.is_empty() {
-        let stash_dir = task.target_dir.join("fonts");
-        let mut all_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
         if !found_loose.is_empty() {
           match font_manager.stash_fonts(&found_loose, &stash_dir) {
-            Ok(fi) => all_font_infos.extend(fi),
+            Ok(fonts) => {
+              for font in fonts {
+                if seen_font_files.insert(font.file_name.clone()) {
+                  found_font_infos.push(font);
+                }
+              }
+            }
             Err(e) => log::warn!(
               "Failed to stash loose fonts for mod {}: {e}",
               task.mod_id
@@ -480,28 +508,18 @@ impl DownloadManager {
         }
         if !found_vpk.is_empty() {
           match font_manager.stash_font_bytes(&found_vpk, &stash_dir) {
-            Ok(fi) => all_font_infos.extend(fi),
+            Ok(fonts) => {
+              for font in fonts {
+                if seen_font_files.insert(font.file_name.clone()) {
+                  found_font_infos.push(font);
+                }
+              }
+            }
             Err(e) => log::warn!(
               "Failed to stash VPK-packed fonts for mod {}: {e}",
               task.mod_id
             ),
           }
-        }
-        if !all_font_infos.is_empty() {
-          log::info!(
-            "Found {} font(s) in mod {}, emitting fonts-found event",
-            all_font_infos.len(),
-            task.mod_id
-          );
-          app_handle
-            .emit(
-              "download-fonts-found",
-              DownloadFontsFoundEvent {
-                mod_id: task.mod_id.clone(),
-                fonts: all_font_infos,
-              },
-            )
-            .ok();
         }
       }
 
@@ -548,6 +566,7 @@ impl DownloadManager {
                   ));
                 }
 
+                emit_fonts_found(&found_font_infos);
                 Self::cleanup_extracted(&extracted_dir, file_path);
                 return Ok(());
               } else {
@@ -555,6 +574,7 @@ impl DownloadManager {
                   "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
                   task.mod_id
                 );
+                emit_fonts_found(&found_font_infos);
                 return Ok(());
               }
             }
@@ -574,6 +594,7 @@ impl DownloadManager {
               )
               .ok();
 
+            emit_fonts_found(&found_font_infos);
             return Ok(());
           }
 
@@ -645,6 +666,8 @@ impl DownloadManager {
           .ok();
       }
     }
+
+    emit_fonts_found(&found_font_infos);
 
     log::info!(
       "Finished processing downloaded files for mod: {}",

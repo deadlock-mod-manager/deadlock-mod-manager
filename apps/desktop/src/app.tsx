@@ -2,7 +2,7 @@ import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import usePromise from "react-promise-suspense";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
@@ -41,8 +41,10 @@ const App = () => {
   useModOrderMigration();
   useIngestToolInit();
 
-  const [pendingFontInstall, setPendingFontInstall] =
-    useState<PendingFontInstall | null>(null);
+  const [pendingFontInstalls, setPendingFontInstalls] = useState<
+    PendingFontInstall[]
+  >([]);
+  const activePendingFontInstall = pendingFontInstalls[0] ?? null;
 
   const {
     showUpdateDialog,
@@ -66,9 +68,16 @@ const App = () => {
 
   usePromise(hydrateStore, []);
 
+  const dequeuePendingFontInstall = useCallback(() => {
+    setPendingFontInstalls((currentQueue) => currentQueue.slice(1));
+  }, []);
+
   useEffect(() => {
     downloadManager.setFontsFoundHandler((modId, _modName, fonts) => {
-      setPendingFontInstall({ modId, fonts });
+      setPendingFontInstalls((currentQueue) => [
+        ...currentQueue,
+        { modId, fonts },
+      ]);
     });
   }, []);
 
@@ -97,21 +106,21 @@ const App = () => {
                     />
                     <OnboardingWizard />
                     <FontInstallDialog
-                      fonts={pendingFontInstall?.fonts ?? []}
-                      isOpen={pendingFontInstall !== null}
+                      fonts={activePendingFontInstall?.fonts ?? []}
+                      isOpen={activePendingFontInstall !== null}
                       onInstall={async () => {
-                        if (!pendingFontInstall) return;
+                        if (!activePendingFontInstall) return;
                         await invoke("install_mod_fonts", {
-                          modId: pendingFontInstall.modId,
+                          modId: activePendingFontInstall.modId,
                         });
-                        setPendingFontInstall(null);
+                        dequeuePendingFontInstall();
                       }}
                       onSkip={async () => {
-                        if (!pendingFontInstall) return;
+                        if (!activePendingFontInstall) return;
                         await invoke("discard_mod_fonts", {
-                          modId: pendingFontInstall.modId,
+                          modId: activePendingFontInstall.modId,
                         });
-                        setPendingFontInstall(null);
+                        dequeuePendingFontInstall();
                       }}
                     />
                   </TauriAppWindowProvider>

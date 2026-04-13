@@ -32,7 +32,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UploadSimple } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -101,6 +101,18 @@ const AddMods = () => {
     handleError,
   );
 
+  const handleDropZoneKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      openTauriFilePicker();
+    },
+    [openTauriFilePicker],
+  );
+
   const handleFinalize = async () => {
     const metadata = await metaRef.current?.validateAndGet();
 
@@ -150,7 +162,11 @@ const AddMods = () => {
                     ? "bg-muted/50 ring-2 ring-primary/40"
                     : "hover:bg-muted/40",
                 )}
+                aria-label={t("addMods.dropAreaText")}
                 onClick={openTauriFilePicker}
+                onKeyDown={handleDropZoneKeyDown}
+                role='button'
+                tabIndex={0}
                 {...dragHandlers}>
                 <div className='pointer-events-none text-center'>
                   <UploadSimple className='mx-auto h-8 w-8' />
