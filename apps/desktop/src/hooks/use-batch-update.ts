@@ -64,17 +64,24 @@ export const useBatchUpdate = () => {
         let selectedDownloads: ModDownloadItem[];
         if (update.downloads.length === 1) {
           selectedDownloads = update.downloads;
-        } else if (
-          localMod?.selectedDownloads &&
-          localMod.selectedDownloads.length > 0
-        ) {
-          const savedSelections = localMod.selectedDownloads;
-          const matched = update.downloads.filter((d) =>
-            savedSelections.some((sd) => sd.name === d.name),
+        } else {
+          // Match by previously saved download selections
+          const savedNames = new Set(
+            (localMod?.selectedDownloads ?? []).map((sd) => sd.name),
+          );
+          // Also match by archive names from installed file tree
+          // (installedFileTree is populated during download, while
+          // selectedDownloads is only set after the first update)
+          const installedArchiveNames = new Set(
+            (localMod?.installedFileTree?.files ?? [])
+              .filter((f) => f.is_selected)
+              .map((f) => f.archive_name),
+          );
+
+          const matched = update.downloads.filter(
+            (d) => savedNames.has(d.name) || installedArchiveNames.has(d.name),
           );
           selectedDownloads = matched.length > 0 ? matched : update.downloads;
-        } else {
-          selectedDownloads = update.downloads;
         }
 
         return {

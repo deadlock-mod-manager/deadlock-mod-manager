@@ -28,7 +28,10 @@ export const useDownload = (
       return;
     }
 
-    addLocalMod(mod as unknown as ModDto, { downloads: selectedFiles });
+    addLocalMod(mod as unknown as ModDto, {
+      downloads: selectedFiles,
+      selectedDownloads: selectedFiles,
+    });
 
     const activeProfile = getActiveProfile();
     const profileFolder = activeProfile?.folderName ?? null;
