@@ -1,6 +1,7 @@
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use vpk_parser::{VpkParseOptions, VpkParser};
 
@@ -239,6 +240,49 @@ impl FontManager {
     Ok(())
   }
 
+  pub fn list_stashed_font_file_names(&self, stash_dir: &Path) -> Result<Vec<String>, Error> {
+    if !stash_dir.exists() {
+      return Ok(Vec::new());
+    }
+
+    let mut file_names = Vec::new();
+    for entry in fs::read_dir(stash_dir)? {
+      let entry = entry?;
+      let path = entry.path();
+      if path.extension() != Some(OsStr::new("ttf")) {
+        continue;
+      }
+
+      let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
+        continue;
+      };
+
+      file_names.push(file_name.to_string());
+    }
+
+    Ok(file_names)
+  }
+
+  pub fn remove_installed_fonts(
+    &self,
+    game_fonts_dir: &Path,
+    font_file_names: &[String],
+  ) -> Result<(), Error> {
+    if !game_fonts_dir.exists() {
+      return Ok(());
+    }
+
+    for file_name in font_file_names {
+      let font_path = game_fonts_dir.join(file_name);
+      if font_path.exists() {
+        fs::remove_file(&font_path)?;
+        log::info!("Removed installed font: {font_path:?}");
+      }
+    }
+
+    Ok(())
+  }
+
   /// Parse a single VPK dir file and extract any TTF fonts packed under `panorama/fonts/`.
   /// Returns `(filename, bytes)` pairs for each font found.
   pub fn extract_fonts_from_vpk(&self, vpk_path: &Path) -> Vec<(String, Vec<u8>)> {
@@ -414,4 +458,41 @@ fn is_under_panorama_fonts(path: &Path, base: &Path) -> bool {
   components
     .windows(2)
     .any(|w| w[0] == "panorama" && w[1] == "fonts")
+}
+
+#[cfg(test)]
+mod tests {
+  use super::FontManager;
+  use std::fs;
+
+  #[test]
+  fn lists_only_stashed_ttf_files() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let stash_dir = temp_dir.path().join("fonts");
+    fs::create_dir_all(&stash_dir).unwrap();
+    fs::write(stash_dir.join("kept.ttf"), b"font").unwrap();
+    fs::write(stash_dir.join("ignored.txt"), b"note").unwrap();
+
+    let file_names = FontManager::new()
+      .list_stashed_font_file_names(&stash_dir)
+      .unwrap();
+
+    assert_eq!(file_names, vec!["kept.ttf"]);
+  }
+
+  #[test]
+  fn removes_only_requested_installed_fonts() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let game_fonts_dir = temp_dir.path().join("game-fonts");
+    fs::create_dir_all(&game_fonts_dir).unwrap();
+    fs::write(game_fonts_dir.join("remove.ttf"), b"font").unwrap();
+    fs::write(game_fonts_dir.join("keep.ttf"), b"font").unwrap();
+
+    FontManager::new()
+      .remove_installed_fonts(&game_fonts_dir, &["remove.ttf".to_string()])
+      .unwrap();
+
+    assert!(!game_fonts_dir.join("remove.ttf").exists());
+    assert!(game_fonts_dir.join("keep.ttf").exists());
+  }
 }

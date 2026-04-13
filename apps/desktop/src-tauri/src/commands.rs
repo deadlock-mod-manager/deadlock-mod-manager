@@ -19,6 +19,7 @@ use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, Re
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time::Instant;
@@ -374,6 +375,92 @@ pub async fn open_mods_data_folder() -> Result<(), Error> {
   mod_manager.open_mods_data_folder()
 }
 
+struct PreparedFontCleanup {
+  conf_path: PathBuf,
+  game_fonts_dir: PathBuf,
+  mod_id: String,
+  removable_font_files: Vec<String>,
+}
+
+fn collect_other_stashed_font_file_names(
+  mods_path: &std::path::Path,
+  excluded_mod_id: &str,
+) -> Result<HashSet<String>, Error> {
+  let mut preserved = HashSet::new();
+
+  if !mods_path.exists() {
+    return Ok(preserved);
+  }
+
+  let font_manager = crate::mod_manager::FontManager::new();
+  for entry in std::fs::read_dir(mods_path)? {
+    let entry = entry?;
+    let mod_dir = entry.path();
+    if !mod_dir.is_dir() {
+      continue;
+    }
+
+    let Some(mod_dir_name) = mod_dir.file_name().and_then(|name| name.to_str()) else {
+      continue;
+    };
+
+    if mod_dir_name == excluded_mod_id {
+      continue;
+    }
+
+    for file_name in font_manager.list_stashed_font_file_names(&mod_dir.join("fonts"))? {
+      preserved.insert(file_name);
+    }
+  }
+
+  Ok(preserved)
+}
+
+fn prepare_font_cleanup(
+  mods_path: &std::path::Path,
+  game_path: &std::path::Path,
+  mod_id: &str,
+) -> Result<Option<PreparedFontCleanup>, Error> {
+  let stash_dir = mods_path.join(mod_id).join("fonts");
+  if !stash_dir.exists() {
+    return Ok(None);
+  }
+
+  let font_manager = crate::mod_manager::FontManager::new();
+  let stashed_font_files = font_manager.list_stashed_font_file_names(&stash_dir)?;
+  let preserved_font_files = collect_other_stashed_font_file_names(mods_path, mod_id)?;
+  let removable_font_files = stashed_font_files
+    .into_iter()
+    .filter(|file_name| !preserved_font_files.contains(file_name))
+    .collect();
+
+  Ok(Some(PreparedFontCleanup {
+    conf_path: game_path
+      .join("game")
+      .join("citadel")
+      .join("panorama")
+      .join("fonts")
+      .join("fonts.conf"),
+    game_fonts_dir: game_path
+      .join("game")
+      .join("citadel")
+      .join("panorama")
+      .join("fonts"),
+    mod_id: mod_id.to_string(),
+    removable_font_files,
+  }))
+}
+
+fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Error> {
+  let font_manager = crate::mod_manager::FontManager::new();
+  font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id)?;
+  font_manager.remove_installed_fonts(
+    &cleanup.game_fonts_dir,
+    &cleanup.removable_font_files,
+  )?;
+  Ok(())
+}
+
 #[tauri::command]
 pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
   use crate::mod_manager::FontManager;
@@ -612,8 +699,29 @@ pub async fn purge_mod(
   vpks: Vec<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.purge_mod(mod_id, vpks, profile_folder)
+  let (mods_path, game_path) = {
+    let mod_manager = MANAGER.lock().unwrap();
+    let mods_path = mod_manager.get_mods_store_path()?;
+    let game_path = mod_manager
+      .get_steam_manager()
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone();
+    (mods_path, game_path)
+  };
+
+  let prepared_font_cleanup = prepare_font_cleanup(&mods_path, &game_path, &mod_id)?;
+
+  {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.purge_mod(mod_id.clone(), vpks, profile_folder)?;
+  }
+
+  if let Some(cleanup) = prepared_font_cleanup {
+    apply_font_cleanup(cleanup)?;
+  }
+
+  Ok(())
 }
 
 #[tauri::command]
