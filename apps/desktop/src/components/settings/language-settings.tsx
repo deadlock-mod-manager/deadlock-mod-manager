@@ -25,6 +25,7 @@ const languages = [
   { code: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷" },
   { code: "it", name: "Italiano", flag: "🇮🇹" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
   { code: "bg", name: "Български", flag: "🇧🇬" },
 ];
 

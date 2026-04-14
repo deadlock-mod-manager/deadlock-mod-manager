@@ -223,6 +223,20 @@
           "discord": "hiropiki"
         }
       ]
+    },
+    {
+      "code": "ko",
+      "name": "Korean",
+      "nativeName": "한국어",
+      "flag": "🇰🇷",
+      "status": "complete",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "Quinnly_IRL",
+          "discord": "Quinnly_IRL"
+        }
+      ]
     }
   ]
 }

@@ -11,6 +11,7 @@ import frTranslation from "@/locales/fr/translation.json" with { type: "json" };
 import gswTranslation from "@/locales/gsw/translation.json" with { type: "json" };
 import itTranslation from "@/locales/it/translation.json" with { type: "json" };
 import jaTranslation from "@/locales/ja/translation.json" with { type: "json" };
+import koTranslation from "@/locales/ko/translation.json" with { type: "json" };
 import plTranslation from "@/locales/pl/translation.json" with { type: "json" };
 import ptBRTranslation from "@/locales/pt-BR/translation.json" with { type: "json" };
 import ruTranslation from "@/locales/ru/translation.json" with { type: "json" };
@@ -65,6 +66,9 @@ const resources = {
   ja: {
     translation: jaTranslation,
   },
+  ko: {
+    translation: koTranslation,
+  },
   bg: {
     translation: bgTranslation,
   },
@@ -93,6 +97,7 @@ i18n
       "pt-BR",
       "it",
       "ja",
+      "ko",
       "bg",
     ],
     interpolation: {
