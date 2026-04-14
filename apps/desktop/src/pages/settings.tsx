@@ -605,11 +605,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </Button>
               </div>
             </Section>
-            <Section
-              description={t("settings.addonsBackupDescription")}
-              title={t("settings.addonsBackup")}>
-              <AddonsBackupManagement />
-            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-2' value='backups'>
