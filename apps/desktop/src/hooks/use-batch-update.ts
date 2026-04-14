@@ -65,13 +65,9 @@ export const useBatchUpdate = () => {
         if (update.downloads.length === 1) {
           selectedDownloads = update.downloads;
         } else {
-          // Match by previously saved download selections
           const savedNames = new Set(
             (localMod?.selectedDownloads ?? []).map((sd) => sd.name),
           );
-          // Also match by archive names from installed file tree
-          // (installedFileTree is populated during download, while
-          // selectedDownloads is only set after the first update)
           const installedArchiveNames = new Set(
             (localMod?.installedFileTree?.files ?? [])
               .filter((f) => f.is_selected)
@@ -81,14 +77,35 @@ export const useBatchUpdate = () => {
           const matched = update.downloads.filter(
             (d) => savedNames.has(d.name) || installedArchiveNames.has(d.name),
           );
-          selectedDownloads = matched;
+          selectedDownloads = matched.length > 0 ? matched : update.downloads;
+        }
+
+        let selectedFileTree = localMod?.installedFileTree;
+        if (
+          selectedFileTree &&
+          localMod?.installedVpks &&
+          localMod.installedVpks.length > 0
+        ) {
+          const installedNames = new Set(
+            localMod.installedVpks.map((vpkPath) => {
+              const filename = vpkPath.split(/[\\/]/).pop() || "";
+              return filename.replace(new RegExp(`^${localMod.remoteId}_`), "");
+            }),
+          );
+          selectedFileTree = {
+            ...selectedFileTree,
+            files: selectedFileTree.files.map((f) => ({
+              ...f,
+              is_selected: installedNames.has(f.name),
+            })),
+          };
         }
 
         return {
           mod: update.mod,
           downloads: update.downloads,
           selectedDownloads,
-          selectedFileTree: localMod?.installedFileTree,
+          selectedFileTree,
         };
       });
 

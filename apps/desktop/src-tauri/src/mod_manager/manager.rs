@@ -2,7 +2,7 @@ use crate::errors::Error;
 use crate::mod_manager::{
   addons_backup_manager::AddonsBackupManager,
   autoexec_manager::AutoexecManager,
-  file_tree::{FileTreeAnalyzer, ModFileTree},
+  file_tree::{FileTreeAnalyzer, ModFile, ModFileTree},
   filesystem_helper::FileSystemHelper,
   game_config_manager::GameConfigManager,
   game_process_manager::GameProcessManager,
@@ -212,6 +212,26 @@ impl ModManager {
           .to_string()
       })
       .collect();
+
+    if deadlock_mod.file_tree.is_none() && !deadlock_mod.original_vpk_names.is_empty() {
+      let files: Vec<ModFile> = deadlock_mod
+        .original_vpk_names
+        .iter()
+        .map(|name| ModFile {
+          name: name.clone(),
+          path: name.clone(),
+          size: 0,
+          is_selected: true,
+          archive_name: String::new(),
+        })
+        .collect();
+      let total_files = files.len();
+      deadlock_mod.file_tree = Some(ModFileTree {
+        files,
+        total_files,
+        has_multiple_files: total_files > 1,
+      });
+    }
 
     log::info!("Adding mod to managed mods list");
     self.mod_repository.add_mod(deadlock_mod.clone());

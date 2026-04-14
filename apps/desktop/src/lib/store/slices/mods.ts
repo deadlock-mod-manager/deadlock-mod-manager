@@ -142,12 +142,29 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
           : -1;
 
+      const fileName = filePath.split(/[\\/]/).pop() || filePath;
       const newMod = {
         ...mod,
         status: markAsInstalled ? ModStatus.Installed : ModStatus.Downloaded,
         downloadedAt: new Date(),
         installedVpks: markAsInstalled ? [filePath] : [],
         installOrder: markAsInstalled ? maxOrder + 1 : undefined,
+        installedFileTree:
+          markAsInstalled && filePath
+            ? {
+                files: [
+                  {
+                    name: fileName,
+                    path: filePath,
+                    size: 0,
+                    is_selected: true,
+                    archive_name: "",
+                  },
+                ],
+                total_files: 1,
+                has_multiple_files: false,
+              }
+            : undefined,
       };
 
       logger

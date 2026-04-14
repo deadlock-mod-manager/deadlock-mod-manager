@@ -545,6 +545,56 @@ impl DownloadManager {
       }
     }
 
+    if !task.is_profile_import {
+      let prefixed_vpks = vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?;
+
+      if !prefixed_vpks.is_empty() {
+        let prefix = format!("{}_", task.mod_id);
+        let files: Vec<crate::mod_manager::file_tree::ModFile> = prefixed_vpks
+          .iter()
+          .map(|vpk_name| {
+            let original_name = vpk_name
+              .strip_prefix(&prefix)
+              .unwrap_or(vpk_name)
+              .to_string();
+            let size = std::fs::metadata(destination_path.join(vpk_name))
+              .map(|m| m.len())
+              .unwrap_or(0);
+            crate::mod_manager::file_tree::ModFile {
+              name: original_name.clone(),
+              path: original_name,
+              size,
+              is_selected: true,
+              archive_name: String::new(),
+            }
+          })
+          .collect();
+
+        let total_files = files.len();
+        let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
+          files,
+          total_files,
+          has_multiple_files: false,
+        };
+
+        log::info!(
+          "Emitting aggregated file tree for mod {}: {} files",
+          task.mod_id,
+          total_files
+        );
+
+        app_handle
+          .emit(
+            "download-file-tree",
+            DownloadFileTreeEvent {
+              mod_id: task.mod_id.clone(),
+              file_tree: aggregated_tree,
+            },
+          )
+          .ok();
+      }
+    }
+
     log::info!(
       "Finished processing downloaded files for mod: {}",
       task.mod_id

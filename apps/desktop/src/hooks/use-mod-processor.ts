@@ -358,9 +358,23 @@ export const useModProcessor = () => {
       overrides: null,
     };
 
+    const vpkFileName = existingPath.split(/[\\/]/).pop() || existingPath;
     addMod(modDto, {
       status: ModStatus.Installed,
       installedVpks: [existingPath],
+      installedFileTree: {
+        files: [
+          {
+            name: vpkFileName,
+            path: existingPath,
+            size: 0,
+            is_selected: true,
+            archive_name: "",
+          },
+        ],
+        total_files: 1,
+        has_multiple_files: false,
+      },
     });
     setModStatus(modId, ModStatus.Installed);
 
