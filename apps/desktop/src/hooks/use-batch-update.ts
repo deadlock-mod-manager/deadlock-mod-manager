@@ -81,7 +81,7 @@ export const useBatchUpdate = () => {
           const matched = update.downloads.filter(
             (d) => savedNames.has(d.name) || installedArchiveNames.has(d.name),
           );
-          selectedDownloads = matched.length > 0 ? matched : update.downloads;
+          selectedDownloads = matched;
         }
 
         return {
