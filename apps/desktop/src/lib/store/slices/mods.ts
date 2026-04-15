@@ -147,7 +147,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         ...mod,
         status: markAsInstalled ? ModStatus.Installed : ModStatus.Downloaded,
         downloadedAt: new Date(),
-        installedVpks: markAsInstalled ? [filePath] : [],
+        installedVpks: markAsInstalled ? [fileName] : [],
         installOrder: markAsInstalled ? maxOrder + 1 : undefined,
         installedFileTree:
           markAsInstalled && filePath
@@ -155,7 +155,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
                 files: [
                   {
                     name: fileName,
-                    path: filePath,
+                    path: fileName,
                     size: 0,
                     is_selected: true,
                     archive_name: "",

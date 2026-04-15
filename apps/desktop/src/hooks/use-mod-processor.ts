@@ -361,12 +361,12 @@ export const useModProcessor = () => {
     const vpkFileName = existingPath.split(/[\\/]/).pop() || existingPath;
     addMod(modDto, {
       status: ModStatus.Installed,
-      installedVpks: [existingPath],
+      installedVpks: [vpkFileName],
       installedFileTree: {
         files: [
           {
             name: vpkFileName,
-            path: existingPath,
+            path: vpkFileName,
             size: 0,
             is_selected: true,
             archive_name: "",
