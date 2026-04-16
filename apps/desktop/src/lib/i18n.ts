@@ -8,7 +8,7 @@ import deDETranslation from "@/locales/de-DE.json" with { type: "json" };
 import enTranslation from "@/locales/en.json" with { type: "json" };
 import esESTranslation from "@/locales/es-ES.json" with { type: "json" };
 import frFRTranslation from "@/locales/fr-FR.json" with { type: "json" };
-import gswCHTranslation from "@/locales/gsw-CH.json" with { type: "json" };
+import deCHTranslation from "@/locales/de-CH.json" with { type: "json" };
 import itITTranslation from "@/locales/it-IT.json" with { type: "json" };
 import jaJPTranslation from "@/locales/ja-JP.json" with { type: "json" };
 import koKRTranslation from "@/locales/ko-KR.json" with { type: "json" };
@@ -38,7 +38,8 @@ const LEGACY_LANGUAGE_MIGRATION: Record<string, string> = {
   tr: "tr-TR",
   th: "th-TH",
   bg: "bg-BG",
-  gsw: "gsw-CH",
+  gsw: "de-CH",
+  "gsw-CH": "de-CH",
 };
 
 if (typeof localStorage !== "undefined") {
@@ -64,8 +65,8 @@ const resources = {
   "ar-SA": {
     translation: arSATranslation,
   },
-  "gsw-CH": {
-    translation: gswCHTranslation,
+  "de-CH": {
+    translation: deCHTranslation,
   },
   "pl-PL": {
     translation: plPLTranslation,
@@ -118,7 +119,7 @@ i18n
       "fr-FR",
       "ar-SA",
       "pl-PL",
-      "gsw-CH",
+      "de-CH",
       "th-TH",
       "tr-TR",
       "ru-RU",

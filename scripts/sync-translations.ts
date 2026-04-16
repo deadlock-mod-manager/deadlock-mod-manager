@@ -12,7 +12,7 @@ const LANGUAGE_CODES = [
   "de-DE",
   "es-ES",
   "fr-FR",
-  "gsw-CH",
+  "de-CH",
   "it-IT",
   "ja-JP",
   "ko-KR",

@@ -12,7 +12,7 @@ To see which locales are missing keys before syncing, from the repo root:
 - For each locale file `apps/desktop/src/locales/<code>.json` (skip `en.json`), collect its keys the same way.
 - For each locale, list keys that exist in English but are missing in that locale. Report by locale (e.g. "de: missing X, Y, Z").
 
-Locales to check: `ar`, `bg`, `de`, `es`, `fr`, `gsw`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `th`, `tr`, `zh-CN`, `zh-TW`.
+Locales to check: `ar`, `bg`, `de`, `de-CH`, `es`, `fr`, `it`, `ja`, `pl`, `pt-BR`, `ru`, `th`, `tr`, `zh-CN`, `zh-TW`.
 
 ### 2. Run Sync Script
 
