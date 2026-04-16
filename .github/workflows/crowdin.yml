@@ -1,0 +1,45 @@
+name: Crowdin
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types:
+      - file-fully-translated
+  push:
+    branches:
+      - main
+    paths:
+      - apps/desktop/src/locales/en.json
+
+jobs:
+  synchronize-with-crowdin:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Crowdin action
+        uses: crowdin/github-action@v2
+        with:
+          upload_sources: true
+          upload_translations: true
+          download_translations: true
+          skip_untranslated_strings: true
+          localization_branch_name: l10n_crowdin_translations
+          create_pull_request: true
+          pull_request_title: "chore(i18n): new Crowdin translations"
+          pull_request_body: "New Crowdin translations by the [Crowdin GitHub Action](https://github.com/crowdin/github-action)"
+          pull_request_base_branch_name: main
+          pull_request_labels: "i18n,automated"
+          commit_message: "chore(i18n): new Crowdin translations"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
