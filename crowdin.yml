@@ -1,8 +1,3 @@
-# Crowdin UI (if you configure the branch pattern manually): source
-# `apps/desktop/src/locales/en.json`, translation
-# `apps/desktop/src/locales/%locale%.json`. In Project settings -> Language
-# mapping, map targets to the same BCP-47 codes the app uses (e.g. zh-CN,
-# zh-TW, pt-BR, gsw).
 files:
   - source: apps/desktop/src/locales/en.json
-    translation: apps/desktop/src/locales/%locale%.json
+    translation: apps/desktop/src/locales/%locale%.%file_extension%
