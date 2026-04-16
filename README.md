@@ -55,6 +55,7 @@
   <ol>
     <li><a href="#screenshots">Screenshots</a></li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#sponsors">Sponsors</a></li>
     <li><a href="#whats-inside">What's inside?</a></li>
     <li><a href="#development">Development</a></li>
     <li><a href="#translation--localization">Translation & Localization</a></li>
@@ -62,7 +63,6 @@
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
-    <li><a href="#sponsors">Sponsors</a></li>
   </ol>
 </details>
 
@@ -84,6 +84,33 @@ For help and support:
 > Linux support is provided on a **best-effort basis**. Due to a lack of contributors with Linux expertise and the maintainer's limited experience distributing software across the many Linux distributions, you may encounter packaging issues, missing dependencies, or platform-specific bugs. If you're a Linux user and want to help improve support, contributions are very welcome! Please reach out on [Discord](https://deadlockmods.app/discord) or open a PR.
 
 <br />
+
+## Sponsors
+
+<p align="center">
+  <a href="https://neon.com/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">
+    <img src="https://neon.com/brand/neon-logo-dark-color.svg" alt="Neon" height="60" />
+  </a>
+</p>
+
+<p align="center">
+  Serverless Postgres provided by <a href="https://neon.com/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">Neon</a>. Thanks for sponsoring Deadlock Mod Manager!
+</p>
+
+<br/>
+
+<p align="center">
+  <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">
+    <img src="https://avatars.githubusercontent.com/u/34448643" alt="SignPath" height="60" />
+  </a>
+</p>
+
+<p align="center">
+  Free code signing on Windows provided by <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath.io</a><br/>
+  Certificate by <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath Foundation</a>
+</p>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Development
 
@@ -266,19 +293,6 @@ This project was only possible thanks to the amazing open source community, espe
 - [react-i18next](https://react.i18next.com/)
 
 </details>
-
-## Sponsors
-
-<p align="center">
-  <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">
-    <img src="https://avatars.githubusercontent.com/u/34448643" alt="SignPath" height="60" />
-  </a>
-</p>
-
-<p align="center">
-  Free code signing on Windows provided by <a href="https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath.io</a><br/>
-  Certificate by <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath Foundation</a>
-</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -190,6 +190,25 @@ HOST=localhost
 
 ### 4. Database Setup
 
+<Callout type='info' title='Prefer managed Postgres?'>
+  <a href='https://neon.com/?utm_source=deadlock-mod-manager&utm_medium=docs'>
+    <img
+      src='https://neon.com/brand/neon-logo-dark-color.svg'
+      alt='Neon'
+      height='32'
+      style={{ height: 32 }}
+    />
+  </a>
+
+For self-hosted deployments, or if you'd rather not run Postgres locally, we
+recommend
+[Neon](https://neon.com/?utm_source=deadlock-mod-manager&utm_medium=docs):
+serverless Postgres with a generous free tier and a proud sponsor of this
+project. Point `DATABASE_URL` at your Neon connection string and skip the
+Docker step below.
+
+</Callout>
+
 Start the development database using Docker:
 
 ```bash
