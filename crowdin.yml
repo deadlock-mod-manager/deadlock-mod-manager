@@ -1,9 +1,6 @@
 files:
-  - source: apps/desktop/src/locales/en.json
-    translation: apps/desktop/src/locales/%two_letters_code%.%file_extension%
+  - source: /apps/desktop/src/locales/en.json
+    translation: /apps/desktop/src/locales/%locale%.%file_extension%
     languages_mapping:
-      two_letters_code:
-        pt-BR: pt-BR
-        zh-CN: zh-CN
-        zh-TW: zh-TW
+      locale:
         gsw-CH: gsw
