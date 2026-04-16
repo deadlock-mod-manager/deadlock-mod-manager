@@ -1,5 +1,5 @@
+preserve_hierarchy: true
+
 files:
   - source: /apps/desktop/src/locales/en.json
     translation: /apps/desktop/src/locales/%locale%.%file_extension%
-    translation_replace:
-      gsw-CH: gsw

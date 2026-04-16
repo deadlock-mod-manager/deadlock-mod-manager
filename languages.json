@@ -10,7 +10,7 @@
       "contributors": []
     },
     {
-      "code": "bg",
+      "code": "bg-BG",
       "name": "Bulgarian",
       "nativeName": "Български",
       "flag": "🇧🇬",
@@ -24,7 +24,7 @@
       ]
     },
     {
-      "code": "de",
+      "code": "de-DE",
       "name": "German",
       "nativeName": "Deutsch",
       "flag": "🇩🇪",
@@ -38,7 +38,7 @@
       ]
     },
     {
-      "code": "fr",
+      "code": "fr-FR",
       "name": "French",
       "nativeName": "Français",
       "flag": "🇫🇷",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "code": "ru",
+      "code": "ru-RU",
       "name": "Russian",
       "nativeName": "Русский",
       "flag": "🇷🇺",
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "code": "ar",
+      "code": "ar-SA",
       "name": "Arabic",
       "nativeName": "العربية",
       "flag": "🇸🇦",
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "code": "pl",
+      "code": "pl-PL",
       "name": "Polish",
       "nativeName": "Polski",
       "flag": "🇵🇱",
@@ -98,7 +98,7 @@
       ]
     },
     {
-      "code": "gsw",
+      "code": "gsw-CH",
       "name": "Swiss German",
       "nativeName": "Schwiizerdütsch",
       "flag": "🇨🇭",
@@ -112,7 +112,7 @@
       ]
     },
     {
-      "code": "th",
+      "code": "th-TH",
       "name": "Thai",
       "nativeName": "ไทย",
       "flag": "🇹🇭",
@@ -126,7 +126,7 @@
       ]
     },
     {
-      "code": "tr",
+      "code": "tr-TR",
       "name": "Turkish",
       "nativeName": "Türkçe",
       "flag": "🇹🇷",
@@ -168,7 +168,7 @@
       ]
     },
     {
-      "code": "es",
+      "code": "es-ES",
       "name": "Spanish",
       "nativeName": "Español",
       "flag": "🇪🇸",
@@ -196,7 +196,7 @@
       ]
     },
     {
-      "code": "it",
+      "code": "it-IT",
       "name": "Italian",
       "nativeName": "Italiano",
       "flag": "🇮🇹",
@@ -211,7 +211,7 @@
       ]
     },
     {
-      "code": "ja",
+      "code": "ja-JP",
       "name": "Japanese",
       "nativeName": "日本語",
       "flag": "🇯🇵",
@@ -225,7 +225,7 @@
       ]
     },
     {
-      "code": "ko",
+      "code": "ko-KR",
       "name": "Korean",
       "nativeName": "한국어",
       "flag": "🇰🇷",

@@ -2,51 +2,82 @@
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import arTranslation from "@/locales/ar.json" with { type: "json" };
-import bgTranslation from "@/locales/bg.json" with { type: "json" };
-import deTranslation from "@/locales/de.json" with { type: "json" };
+import arSATranslation from "@/locales/ar-SA.json" with { type: "json" };
+import bgBGTranslation from "@/locales/bg-BG.json" with { type: "json" };
+import deDETranslation from "@/locales/de-DE.json" with { type: "json" };
 import enTranslation from "@/locales/en.json" with { type: "json" };
-import esTranslation from "@/locales/es.json" with { type: "json" };
-import frTranslation from "@/locales/fr.json" with { type: "json" };
-import gswTranslation from "@/locales/gsw.json" with { type: "json" };
-import itTranslation from "@/locales/it.json" with { type: "json" };
-import jaTranslation from "@/locales/ja.json" with { type: "json" };
-import koTranslation from "@/locales/ko.json" with { type: "json" };
-import plTranslation from "@/locales/pl.json" with { type: "json" };
+import esESTranslation from "@/locales/es-ES.json" with { type: "json" };
+import frFRTranslation from "@/locales/fr-FR.json" with { type: "json" };
+import gswCHTranslation from "@/locales/gsw-CH.json" with { type: "json" };
+import itITTranslation from "@/locales/it-IT.json" with { type: "json" };
+import jaJPTranslation from "@/locales/ja-JP.json" with { type: "json" };
+import koKRTranslation from "@/locales/ko-KR.json" with { type: "json" };
+import plPLTranslation from "@/locales/pl-PL.json" with { type: "json" };
 import ptBRTranslation from "@/locales/pt-BR.json" with { type: "json" };
-import ruTranslation from "@/locales/ru.json" with { type: "json" };
-import thTranslation from "@/locales/th.json" with { type: "json" };
-import trTranslation from "@/locales/tr.json" with { type: "json" };
+import ruRUTranslation from "@/locales/ru-RU.json" with { type: "json" };
+import thTHTranslation from "@/locales/th-TH.json" with { type: "json" };
+import trTRTranslation from "@/locales/tr-TR.json" with { type: "json" };
 import zhCNTranslation from "@/locales/zh-CN.json" with { type: "json" };
 import zhTWTranslation from "@/locales/zh-TW.json" with { type: "json" };
+
+const LANGUAGE_STORAGE_KEY = "i18nextLng";
+
+// Migrate users who saved a short language code (e.g. "fr") before the
+// BCP-47 rename (e.g. "fr-FR"). Runs once per page load before i18next reads
+// localStorage via the detector.
+const LEGACY_LANGUAGE_MIGRATION: Record<string, string> = {
+  fr: "fr-FR",
+  ar: "ar-SA",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  de: "de-DE",
+  es: "es-ES",
+  it: "it-IT",
+  ru: "ru-RU",
+  pl: "pl-PL",
+  tr: "tr-TR",
+  th: "th-TH",
+  bg: "bg-BG",
+  gsw: "gsw-CH",
+};
+
+if (typeof localStorage !== "undefined") {
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (stored && LEGACY_LANGUAGE_MIGRATION[stored]) {
+    localStorage.setItem(
+      LANGUAGE_STORAGE_KEY,
+      LEGACY_LANGUAGE_MIGRATION[stored],
+    );
+  }
+}
 
 const resources = {
   en: {
     translation: enTranslation,
   },
-  de: {
-    translation: deTranslation,
+  "de-DE": {
+    translation: deDETranslation,
   },
-  fr: {
-    translation: frTranslation,
+  "fr-FR": {
+    translation: frFRTranslation,
   },
-  ar: {
-    translation: arTranslation,
+  "ar-SA": {
+    translation: arSATranslation,
   },
-  gsw: {
-    translation: gswTranslation,
+  "gsw-CH": {
+    translation: gswCHTranslation,
   },
-  pl: {
-    translation: plTranslation,
+  "pl-PL": {
+    translation: plPLTranslation,
   },
-  th: {
-    translation: thTranslation,
+  "th-TH": {
+    translation: thTHTranslation,
   },
-  tr: {
-    translation: trTranslation,
+  "tr-TR": {
+    translation: trTRTranslation,
   },
-  ru: {
-    translation: ruTranslation,
+  "ru-RU": {
+    translation: ruRUTranslation,
   },
   "zh-CN": {
     translation: zhCNTranslation,
@@ -54,23 +85,23 @@ const resources = {
   "zh-TW": {
     translation: zhTWTranslation,
   },
-  es: {
-    translation: esTranslation,
+  "es-ES": {
+    translation: esESTranslation,
   },
   "pt-BR": {
     translation: ptBRTranslation,
   },
-  it: {
-    translation: itTranslation,
+  "it-IT": {
+    translation: itITTranslation,
   },
-  ja: {
-    translation: jaTranslation,
+  "ja-JP": {
+    translation: jaJPTranslation,
   },
-  ko: {
-    translation: koTranslation,
+  "ko-KR": {
+    translation: koKRTranslation,
   },
-  bg: {
-    translation: bgTranslation,
+  "bg-BG": {
+    translation: bgBGTranslation,
   },
 };
 
@@ -83,22 +114,22 @@ i18n
     fallbackLng: "en",
     supportedLngs: [
       "en",
-      "de",
-      "fr",
-      "ar",
-      "pl",
-      "gsw",
-      "th",
-      "tr",
-      "ru",
+      "de-DE",
+      "fr-FR",
+      "ar-SA",
+      "pl-PL",
+      "gsw-CH",
+      "th-TH",
+      "tr-TR",
+      "ru-RU",
       "zh-CN",
       "zh-TW",
-      "es",
+      "es-ES",
       "pt-BR",
-      "it",
-      "ja",
-      "ko",
-      "bg",
+      "it-IT",
+      "ja-JP",
+      "ko-KR",
+      "bg-BG",
     ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default

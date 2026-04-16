@@ -428,7 +428,7 @@ function updateI18nFile(code: string, cli: ConsoleHelper): void {
 
   // Add to resources object
   const resourcesEndRegex =
-    /(\s*)(ja:\s*{\s*translation:\s*jaTranslation,?\s*},?)\s*\n(\s*};)/;
+    /(\s*)("ja-JP":\s*{\s*translation:\s*jaJPTranslation,?\s*},?)\s*\n(\s*};)/;
   const resourceMatch = content.match(resourcesEndRegex);
 
   if (resourceMatch) {
@@ -438,14 +438,14 @@ function updateI18nFile(code: string, cli: ConsoleHelper): void {
   }
 
   // Add to supportedLngs array
-  const supportedLngsRegex = /(\s*)"ja",?\s*\n(\s*\],)/;
+  const supportedLngsRegex = /(\s*)"ja-JP",?\s*\n(\s*\],)/;
   const supportedMatch = content.match(supportedLngsRegex);
 
   if (supportedMatch) {
-    const langCode = code.includes("-") ? `"${code}"` : `"${code}"`;
+    const langCode = `"${code}"`;
     content = content.replace(
       supportedLngsRegex,
-      `${supportedMatch[1]}"ja",\n${supportedMatch[1]}${langCode},\n${supportedMatch[2]}`,
+      `${supportedMatch[1]}"ja-JP",\n${supportedMatch[1]}${langCode},\n${supportedMatch[2]}`,
     );
   }
 
@@ -464,7 +464,7 @@ function updateLanguageSettingsFile(
 
   // Find the languages array and add the new language
   const lastLanguageRegex =
-    /(\s*\{\s*code:\s*"ja",\s*name:\s*"日本語",\s*flag:\s*"🇯🇵"\s*\},?)\s*\n(\s*\];)/;
+    /(\s*\{\s*code:\s*"ja-JP",\s*name:\s*"日本語",\s*flag:\s*"🇯🇵"\s*\},?)\s*\n(\s*\];)/;
   const match = content.match(lastLanguageRegex);
 
   if (match) {
