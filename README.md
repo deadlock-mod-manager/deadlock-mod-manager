@@ -14,6 +14,7 @@
 [![GitHub Issues or Pull Requests][issues-status]][issues-url]
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1psci.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/deadlock-mod-manager/deadlock-mod-manager)
+[![Crowdin](https://badges.crowdin.net/deadlock-mod-manager/localized.svg)](https://crowdin.com/project/deadlock-mod-manager)
 [![License][license-status]][license-url]
 ![Discord](https://img.shields.io/discord/1322369530386710568?label=discord)
 [![Built with Tauri][tauri-status]][tauri-url]

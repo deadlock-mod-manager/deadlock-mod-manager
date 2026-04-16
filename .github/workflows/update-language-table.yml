@@ -8,6 +8,11 @@ on:
       - "languages.json"
     branches:
       - main
+  schedule:
+    - cron: "0 */6 * * *"
+  repository_dispatch:
+    types:
+      - file-fully-translated
   workflow_dispatch:
 
 jobs:
@@ -43,6 +48,9 @@ jobs:
         run: pnpm install
 
       - name: Generate language table
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
         run: pnpm bun scripts/generate-language-table.ts --update-readme
 
       - name: Check for changes
@@ -62,7 +70,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add README*.md
-          git commit -m "chore: update language table from languages.json"
+          git commit -m "chore: update language table with Crowdin progress"
           git push
 
       - name: Output summary
