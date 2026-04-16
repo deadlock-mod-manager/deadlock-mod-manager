@@ -1317,6 +1317,7 @@
     "available": "有可用更新",
     "downloadAndInstall": "下載並安裝",
     "downloading": "正在下載更新",
+    "failedWithMessage": "Update failed: {{message}}. You may need to manually update the app.",
     "installing": "正在安裝...",
     "later": "稍後",
     "newVersionAvailable": "新版本 ({{version}}) 可用。您目前使用的版本是 {{currentVersion}}。",
@@ -1349,28 +1350,6 @@
     "gotIt": "知道了！",
     "title": "更新日誌",
     "versions": {
-      "0.18.0": {
-        "title": "Downloads",
-        "features": [
-          "✨ Add GameBanana file server selection with latency testing",
-          "✨ Add HTTP request/response logging for outgoing fetch calls",
-          "✨ Add \"How to Play\" card with instructions for custom maps",
-          "🔧 Better image display in mod gallery and mod detail page.",
-          "✨ Add button to open installed map mods in file explorer",
-          "🔧 Apply pagination setting to Mod Library page",
-          "✨ Add tooltips to collapsed sidebar icons showing the navigation label on hover",
-          "✨ Add dedicated Maps section to sidebar for browsing custom maps",
-          "✨ Add ability to disable mod report submissions for specific mods",
-          "🔧 Replace report dialog with streamlined broken-mod reporting flow",
-          "✨ Add custom map support with sync, installation, and browsing",
-          "✨ Add Launch Map button with pre-launch safety warnings",
-          "📥 Add download server selection step to onboarding",
-          "🔧 Update game config error message to reference Settings > Game",
-          "🔧 Disable reports on maps",
-          "📥 Decouple archive extraction from the download queue",
-          "✨ Make the What's New dialog scroll when release notes are long"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1505,6 +1484,28 @@
         ],
         "title": "Mod store, themes, backups, logging, and fixes"
       },
+      "0.18.0": {
+        "features": [
+          "✨ Add GameBanana file server selection with latency testing",
+          "✨ Add HTTP request/response logging for outgoing fetch calls",
+          "✨ Add \"How to Play\" card with instructions for custom maps",
+          "🔧 Better image display in mod gallery and mod detail page.",
+          "✨ Add button to open installed map mods in file explorer",
+          "🔧 Apply pagination setting to Mod Library page",
+          "✨ Add tooltips to collapsed sidebar icons showing the navigation label on hover",
+          "✨ Add dedicated Maps section to sidebar for browsing custom maps",
+          "✨ Add ability to disable mod report submissions for specific mods",
+          "🔧 Replace report dialog with streamlined broken-mod reporting flow",
+          "✨ Add custom map support with sync, installation, and browsing",
+          "✨ Add Launch Map button with pre-launch safety warnings",
+          "📥 Add download server selection step to onboarding",
+          "🔧 Update game config error message to reference Settings > Game",
+          "🔧 Disable reports on maps",
+          "📥 Decouple archive extraction from the download queue",
+          "✨ Make the What's New dialog scroll when release notes are long"
+        ],
+        "title": "Downloads"
+      },
       "0.2.0": {
         "features": [
           "📊 新增了 Sentry 問題追蹤，便於更好的錯誤回報",
@@ -1567,7 +1568,9 @@
         "title": "音訊模組支援與啟動選項"
       },
       "0.6.1": {
-        "features": ["🔗 新增了對 GameBanana 上一鍵安裝連結的支援"],
+        "features": [
+          "🔗 新增了對 GameBanana 上一鍵安裝連結的支援"
+        ],
         "title": "深度連結與改進"
       },
       "0.7.0": {
@@ -1595,11 +1598,16 @@
         "title": "主要功能與 UI 更新 + 新語言支援"
       },
       "0.8.1": {
-        "features": ["🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"],
+        "features": [
+          "🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"
+        ],
         "title": "技術改進"
       },
       "0.8.2": {
-        "features": ["🐛 修正了各種錯誤並提高了穩定性", "⚡ 效能改進和最佳化"],
+        "features": [
+          "🐛 修正了各種錯誤並提高了穩定性",
+          "⚡ 效能改進和最佳化"
+        ],
         "title": "錯誤修正與改進"
       },
       "0.9.0": {
@@ -1614,7 +1622,9 @@
         "title": "模組管理與系統改進"
       },
       "0.9.2": {
-        "features": ["⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"],
+        "features": [
+          "⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"
+        ],
         "title": "設定與組態"
       }
     },

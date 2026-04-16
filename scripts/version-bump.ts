@@ -35,8 +35,7 @@ const EN_TRANSLATION_PATH = join(
   "desktop",
   "src",
   "locales",
-  "en",
-  "translation.json",
+  "en.json",
 );
 
 interface WhatsNewVersion {
@@ -298,12 +297,14 @@ function propagateWhatsNewToLocales(version: string): void {
     return;
   }
 
-  const localeDirs = readdirSync(LOCALES_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && d.name !== "en")
-    .map((d) => d.name);
+  const localeCodes = readdirSync(LOCALES_DIR, { withFileTypes: true })
+    .filter(
+      (e) => e.isFile() && e.name.endsWith(".json") && e.name !== "en.json",
+    )
+    .map((e) => e.name.replace(/\.json$/u, ""));
 
-  for (const locale of localeDirs) {
-    const localePath = join(LOCALES_DIR, locale, "translation.json");
+  for (const locale of localeCodes) {
+    const localePath = join(LOCALES_DIR, `${locale}.json`);
     if (!existsSync(localePath)) continue;
 
     const translation: TranslationFile = JSON.parse(

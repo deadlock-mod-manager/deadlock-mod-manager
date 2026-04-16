@@ -30,19 +30,19 @@ This will:
 
 - Sync the `apps/desktop/package.json` version to `apps/desktop/src-tauri/Cargo.toml`
 - Parse the CHANGELOG.md for the new version
-- Generate What's New content for `apps/desktop/src/locales/en/translation.json`
+- Generate What's New content for `apps/desktop/src/locales/en.json`
 
 ### 3. Review Generated Content
 
 Review the generated What's New content in the English translation file:
 
 ```bash
-cat apps/desktop/src/locales/en/translation.json | grep -A 20 '"whatsNew"'
+cat apps/desktop/src/locales/en.json | grep -A 20 '"whatsNew"'
 ```
 
 If the generated content needs adjustments:
 
-- Edit `apps/desktop/src/locales/en/translation.json`
+- Edit `apps/desktop/src/locales/en.json`
 - Update the title to be more descriptive
 - Refine feature descriptions to be user-friendly
 - Ensure emojis are appropriate
@@ -89,7 +89,7 @@ bun scripts/version-bump.ts --generate-whats-new --dry-run
 
 ## Manual What's New Entry
 
-If automatic generation doesn't produce good results, manually add an entry to `apps/desktop/src/locales/en/translation.json`:
+If automatic generation doesn't produce good results, manually add an entry to `apps/desktop/src/locales/en.json`:
 
 ```json
 {
@@ -146,4 +146,4 @@ If automatic generation doesn't produce good results, manually add an entry to `
 - `apps/desktop/package.json` - Desktop app version source of truth
 - `apps/desktop/src-tauri/Cargo.toml` - Rust version (must match package.json)
 - `apps/desktop/CHANGELOG.md` - Source for What's New content
-- `apps/desktop/src/locales/en/translation.json` - What's New translations
+- `apps/desktop/src/locales/en.json` - What's New translations

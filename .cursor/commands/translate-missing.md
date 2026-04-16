@@ -5,7 +5,7 @@ Find hardcoded user-facing strings in desktop React files that are not using the
 ## Scope
 
 - **Target:** All React files under `apps/desktop/src` (`.tsx` and `.jsx`).
-- **Source of truth:** `apps/desktop/src/locales/en/translation.json`. Add new keys there only.
+- **Source of truth:** `apps/desktop/src/locales/en.json`. Add new keys there only.
 - **Hook in use:** `useTranslation` from `react-i18next`; usage is `const { t } = useTranslation();` then `t("some.key")`.
 
 ## What Counts as “Hardcoded” (Candidate for Translation)
@@ -34,14 +34,14 @@ Find hardcoded user-facing strings in desktop React files that are not using the
 
 ### 2. Choose Key Names and Location
 
-- Use the existing nested structure in `apps/desktop/src/locales/en/translation.json` (e.g. `navigation.dashboard`, `myMods.tabs.all`).
+- Use the existing nested structure in `apps/desktop/src/locales/en.json` (e.g. `navigation.dashboard`, `myMods.tabs.all`).
 - Prefer a key path that matches the feature/screen (e.g. `mods.deleteConfirmTitle`).
 - Use camelCase for key segments.
 - If a section does not exist, add a new top-level or nested section; keep keys sorted within their block.
 
 ### 3. Add Keys to English Locale
 
-- In `apps/desktop/src/locales/en/translation.json`, add each new key with the current hardcoded string as the value.
+- In `apps/desktop/src/locales/en.json`, add each new key with the current hardcoded string as the value.
 - Preserve JSON structure and formatting style (indentation, no trailing commas).
 - Do not remove or change existing keys.
 
@@ -57,7 +57,7 @@ Find hardcoded user-facing strings in desktop React files that are not using the
 
 ## Key Points
 
-- Only add keys to `apps/desktop/src/locales/en/translation.json`; do not edit other locale files in this command except via sync-translations if desired.
+- Only add keys to `apps/desktop/src/locales/en.json`; do not edit other locale files in this command except via sync-translations if desired.
 - Every new key must be used in code via `t("key")` (or equivalent) so the string is no longer hardcoded.
 - Keep key names consistent with existing style and nesting in the English file.
 
@@ -68,11 +68,11 @@ Find hardcoded user-facing strings in desktop React files that are not using the
 **Response:**
 
 1. Scan desktop React files and list hardcoded user-facing strings.
-2. Add new keys to `en/translation.json` with those strings as values.
+2. Add new keys to `en.json` with those strings as values.
 3. Replace each hardcoded string in the React files with `t("new.key")`.
 4. Optionally suggest running sync-translations to propagate keys to other locales.
 
 ## Related Files
 
-- `apps/desktop/src/locales/en/translation.json` – English locale (add keys here).
+- `apps/desktop/src/locales/en.json` – English locale (add keys here).
 - `.cursor/commands/sync-translations.md` – Sync keys to other locales after adding to English.

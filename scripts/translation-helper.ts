@@ -1,12 +1,6 @@
 #!/usr/bin/env bun
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as readline from "node:readline";
 
@@ -47,7 +41,7 @@ interface FlattenedTranslation {
 // =============================================================================
 
 const LOCALES_DIR = join(process.cwd(), "apps/desktop/src/locales");
-const ENGLISH_FILE = join(LOCALES_DIR, "en/translation.json");
+const ENGLISH_FILE = join(LOCALES_DIR, "en.json");
 const LANGUAGES_JSON = join(process.cwd(), "languages.json");
 const I18N_FILE = join(process.cwd(), "apps/desktop/src/lib/i18n.ts");
 const LANGUAGE_SETTINGS_FILE = join(
@@ -133,8 +127,9 @@ function getExistingLanguages(): Language[] {
 
 function getExistingLocaleCodes(): string[] {
   return readdirSync(LOCALES_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && d.name !== "template")
-    .map((d) => d.name);
+    .filter((e) => e.isFile() && e.name.endsWith(".json"))
+    .map((e) => e.name.replace(/\.json$/u, ""))
+    .sort();
 }
 
 // =============================================================================
@@ -342,14 +337,9 @@ async function createNewTranslation(cli: ConsoleHelper): Promise<void> {
   cli.print("SAVING FILES...\n");
 
   // Create translation file
-  const localeDir = join(LOCALES_DIR, code);
-  if (!existsSync(localeDir)) {
-    mkdirSync(localeDir, { recursive: true });
-  }
-
   const translationObject = unflattenObject(translatedItems);
   const sortedTranslation = sortKeys(translationObject);
-  const translationFile = join(localeDir, "translation.json");
+  const translationFile = join(LOCALES_DIR, `${code}.json`);
   writeFileSync(
     translationFile,
     `${JSON.stringify(sortedTranslation, null, 2)}\n`,
@@ -416,8 +406,7 @@ function updateI18nFile(code: string, cli: ConsoleHelper): void {
   const needsMultiline = code.includes("-");
 
   // Add import statement after the last import
-  const importRegex =
-    /^import .+Translation from "@\/locales\/.+\/translation\.json".+$/gm;
+  const importRegex = /^import .+Translation from "@\/locales\/.+\.json".+$/gm;
   const matches = [...content.matchAll(importRegex)];
 
   if (matches.length > 0) {
@@ -426,9 +415,9 @@ function updateI18nFile(code: string, cli: ConsoleHelper): void {
 
     let newImport: string;
     if (needsMultiline) {
-      newImport = `\nimport ${varName} from "@/locales/${code}/translation.json" with {\n  type: "json",\n};`;
+      newImport = `\nimport ${varName} from "@/locales/${code}.json" with {\n  type: "json",\n};`;
     } else {
-      newImport = `\nimport ${varName} from "@/locales/${code}/translation.json" with { type: "json" };`;
+      newImport = `\nimport ${varName} from "@/locales/${code}.json" with { type: "json" };`;
     }
 
     content =
@@ -518,11 +507,7 @@ async function updateExistingTranslation(cli: ConsoleHelper): Promise<void> {
   const englishData: TranslationObject = JSON.parse(
     readFileSync(ENGLISH_FILE, "utf-8"),
   );
-  const targetFile = join(
-    LOCALES_DIR,
-    selectedLanguage.code,
-    "translation.json",
-  );
+  const targetFile = join(LOCALES_DIR, `${selectedLanguage.code}.json`);
 
   if (!existsSync(targetFile)) {
     cli.print(`Translation file not found: ${targetFile}`);

@@ -4,7 +4,7 @@ import { join } from "node:path";
 type TranslationObject = Record<string, unknown>;
 
 const LOCALES_DIR = join(process.cwd(), "apps/desktop/src/locales");
-const ENGLISH_FILE = join(LOCALES_DIR, "en/translation.json");
+const ENGLISH_FILE = join(LOCALES_DIR, "en.json");
 
 const LANGUAGE_CODES = [
   "ar",
@@ -66,7 +66,7 @@ function sortKeys(obj: TranslationObject): TranslationObject {
 }
 
 async function syncTranslationFile(languageCode: string): Promise<void> {
-  const filePath = join(LOCALES_DIR, languageCode, "translation.json");
+  const filePath = join(LOCALES_DIR, `${languageCode}.json`);
 
   try {
     const targetContent = await readFile(filePath, "utf-8");

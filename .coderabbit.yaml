@@ -77,7 +77,7 @@ reviews:
     - "!**/target/**"
     - "!**/.turbo/**"
     - "!**/node_modules/**"
-    - "!apps/desktop/src/locales/*/translation.json"
+    - "!apps/desktop/src/locales/*.json"
   path_instructions:
     # ── General Conventions ───────────────────────────────────────────
     - path: "**"

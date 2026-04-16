@@ -652,8 +652,8 @@ If you prefer manual setup:
 2. **Create translation files**:
 
    ```bash
-   # Copy English files as template
-   cp apps/desktop/src/locales/en/translation.json apps/desktop/src/locales/[lang-code]/translation.json
+   # Copy English file as template
+   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[lang-code].json
    ```
 
 3. **Translate the content** in the new file

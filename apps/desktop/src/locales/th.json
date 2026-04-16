@@ -1321,6 +1321,7 @@
     "available": "มีการอัปเดต",
     "downloadAndInstall": "ดาวน์โหลดและติดตั้ง",
     "downloading": "กำลังดาวน์โหลดการอัปเดต",
+    "failedWithMessage": "Update failed: {{message}}. You may need to manually update the app.",
     "installing": "กำลังติดตั้ง...",
     "later": "ไว้ทีหลัง",
     "newVersionAvailable": "มีเวอร์ชันใหม่ ({{version}}) พร้อมใช้งาน ขณะนี้คุณใช้เวอร์ชัน {{currentVersion}}",
@@ -1353,28 +1354,6 @@
     "gotIt": "รับทราบ!",
     "title": "มีอะไรใหม่",
     "versions": {
-      "0.18.0": {
-        "title": "Downloads",
-        "features": [
-          "✨ Add GameBanana file server selection with latency testing",
-          "✨ Add HTTP request/response logging for outgoing fetch calls",
-          "✨ Add \"How to Play\" card with instructions for custom maps",
-          "🔧 Better image display in mod gallery and mod detail page.",
-          "✨ Add button to open installed map mods in file explorer",
-          "🔧 Apply pagination setting to Mod Library page",
-          "✨ Add tooltips to collapsed sidebar icons showing the navigation label on hover",
-          "✨ Add dedicated Maps section to sidebar for browsing custom maps",
-          "✨ Add ability to disable mod report submissions for specific mods",
-          "🔧 Replace report dialog with streamlined broken-mod reporting flow",
-          "✨ Add custom map support with sync, installation, and browsing",
-          "✨ Add Launch Map button with pre-launch safety warnings",
-          "📥 Add download server selection step to onboarding",
-          "🔧 Update game config error message to reference Settings > Game",
-          "🔧 Disable reports on maps",
-          "📥 Decouple archive extraction from the download queue",
-          "✨ Make the What's New dialog scroll when release notes are long"
-        ]
-      },
       "0.10.0": {
         "features": [
           "🛠️ Developer mode toggle with dedicated developer tools page for mod creators",
@@ -1508,6 +1487,28 @@
           "🔧 Mod cards refresh correctly after enable, disable, or delete."
         ],
         "title": "Mod store, themes, backups, logging, and fixes"
+      },
+      "0.18.0": {
+        "features": [
+          "✨ Add GameBanana file server selection with latency testing",
+          "✨ Add HTTP request/response logging for outgoing fetch calls",
+          "✨ Add \"How to Play\" card with instructions for custom maps",
+          "🔧 Better image display in mod gallery and mod detail page.",
+          "✨ Add button to open installed map mods in file explorer",
+          "🔧 Apply pagination setting to Mod Library page",
+          "✨ Add tooltips to collapsed sidebar icons showing the navigation label on hover",
+          "✨ Add dedicated Maps section to sidebar for browsing custom maps",
+          "✨ Add ability to disable mod report submissions for specific mods",
+          "🔧 Replace report dialog with streamlined broken-mod reporting flow",
+          "✨ Add custom map support with sync, installation, and browsing",
+          "✨ Add Launch Map button with pre-launch safety warnings",
+          "📥 Add download server selection step to onboarding",
+          "🔧 Update game config error message to reference Settings > Game",
+          "🔧 Disable reports on maps",
+          "📥 Decouple archive extraction from the download queue",
+          "✨ Make the What's New dialog scroll when release notes are long"
+        ],
+        "title": "Downloads"
       },
       "0.2.0": {
         "features": [
