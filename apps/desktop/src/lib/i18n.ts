@@ -113,6 +113,7 @@ i18n
   .init({
     resources,
     fallbackLng: "en",
+    returnEmptyString: false,
     supportedLngs: [
       "en",
       "de-DE",

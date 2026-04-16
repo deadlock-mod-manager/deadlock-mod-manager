@@ -153,57 +153,38 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language | Native Name | Status | Contributors |
-|----------|-------------|--------|-------------|
-| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇧🇬 **Bulgarian** | Български | ✅ Complete | [macchiako](https://discordapp.com/users/macchiako./) |
-| 🇩🇪 **German** | Deutsch | ✅ Complete | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | ✅ Complete | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
-| 🇸🇦 **Arabic** | العربية | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | ✅ Complete | [_manio](https://discordapp.com/users/_manio/) |
-| 🇨🇭 **Swiss German** | Schwiizerdütsch | ✅ Complete | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇹🇭 **Thai** | ไทย | ✅ Complete | [altqx](https://discordapp.com/users/altq/) |
-| 🇹🇷 **Turkish** | Türkçe | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | ✅ Complete | [待到春深方挽柳](mailto:sfk_04@qq.com) |
-| 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
-| 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
-| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | ✅ Complete | [meneee](https://discordapp.com/users/meneee/) |
-| 🇮🇹 **Italian** | Italiano | ✅ Complete | [Constrat](https://github.com/Constrat) |
-| 🇯🇵 **Japanese** | 日本語 | ✅ Complete | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | ✅ Complete | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| Language                     | Native Name        | Status      | Contributors                                                                                         |
+| ---------------------------- | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------- |
+| 🇺🇸 **English** (Default)     | English            | ✅ Complete | -                                                                                                    |
+| 🇧🇬 **Bulgarian**             | Български          | ✅ Complete | [macchiako](https://discordapp.com/users/macchiako./)                                                |
+| 🇩🇪 **German**                | Deutsch            | ✅ Complete | [skeptic](https://github.com/Skeptic-systems)                                                        |
+| 🇫🇷 **French**                | Français           | ✅ Complete | [stormix](https://github.com/stormix)                                                                |
+| 🇷🇺 **Russian**               | Русский            | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
+| 🇸🇦 **Arabic**                | العربية            | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/)                                       |
+| 🇵🇱 **Polish**                | Polski             | ✅ Complete | [\_manio](https://discordapp.com/users/_manio/)                                                      |
+| 🇨🇭 **Swiss German**          | Schwiizerdütsch    | ✅ Complete | [degoods_deedos](https://discordapp.com/users/degoods_deedos/)                                       |
+| 🇹🇭 **Thai**                  | ไทย                | ✅ Complete | [altqx](https://discordapp.com/users/altq/)                                                          |
+| 🇹🇷 **Turkish**               | Türkçe             | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/)                                                   |
+| 🇨🇳 **Chinese (Simplified)**  | 简体中文           | ✅ Complete | [待到春深方挽柳](mailto:sfk_04@qq.com)                                                               |
+| 🇹🇼 **Chinese (Traditional)** | 繁體中文           | ✅ Complete | [白雲](https://github.com/phillychi3)                                                                |
+| 🇪🇸 **Spanish**               | Español            | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/)                                                 |
+| 🇧🇷 **Portuguese (Brazil)**   | Português (Brasil) | ✅ Complete | [meneee](https://discordapp.com/users/meneee/)                                                       |
+| 🇮🇹 **Italian**               | Italiano           | ✅ Complete | [Constrat](https://github.com/Constrat)                                                              |
+| 🇯🇵 **Japanese**              | 日本語             | ✅ Complete | [hiropiki](https://discordapp.com/users/hiropiki/)                                                   |
+| 🇰🇷 **Korean**                | 한국어             | ✅ Complete | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/)                                             |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
 
 ### How to Help
 
-1. **Join our Discord server**: First [join our Discord server](https://deadlockmods.app/discord) to access the translation channels
-2. **Visit the translation channel**: Head to the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel
-3. **Suggest a new language**: Open an issue to request support for your language
-4. **Improve existing translations**: Found an error or better phrasing? Submit a PR!
+All translations are managed on **[Crowdin](https://translate.deadlockmods.app/)**. Translations are synced back into this repository automatically via the [Crowdin GitHub action](.github/workflows/crowdin.yml), so you don't need to edit JSON files directly.
 
-### Translation Helper Script
+1. **Translate on Crowdin**: Head to [translate.deadlockmods.app](https://translate.deadlockmods.app/) and pick your language - approved translations are proposed as a PR automatically
+2. **Join our Discord server**: [join our Discord server](https://deadlockmods.app/discord) and visit the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel for coordination
+3. **Suggest a new language**: Open a request on Crowdin, or [file an issue](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new) if the language isn't listed there
 
-We provide an interactive CLI tool to make translating easier:
-
-```bash
-pnpm translate
-```
-
-The script offers two modes:
-
-- **Create a new translation**: Guides you through creating a complete translation for a new language
-- **Update an existing translation**: Finds missing strings and lets you translate only what's needed
-
-**Features:**
-
-- Step-by-step translation with English reference text
-- Pause anytime with `pause` command - your progress is saved
-- Continue later using "Update existing translation"
-- Automatic registration in all required files
-
-Translation files are located in `apps/desktop/src/locales/` - we use [react-i18next](https://react.i18next.com/) for internationalization.
+Translation files are located in `apps/desktop/src/locales/` and loaded via [react-i18next](https://react.i18next.com/). Only `en.json` is edited directly in the repo; all other locales are managed through Crowdin.
 
 ## Contributing
 

@@ -38,7 +38,6 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
-    "translate": "bun run scripts/translation-helper.ts",
     "publish-packages": "turbo run build && changeset version",
     "upgrade-dependencies": "bun run scripts/upgrade-dependencies.ts",
     "version:generate": "turbo run version:generate",

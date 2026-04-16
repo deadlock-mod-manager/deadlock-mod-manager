@@ -555,71 +555,28 @@ CREATE INDEX idx_mod_ratings_rating ON mod_ratings(rating DESC);
 
 ## Translation Contributions
 
-### Translation Helper Script
+All translations are managed on [Crowdin](https://translate.deadlockmods.app/). The English source (`apps/desktop/src/locales/en.json`) is the only locale file edited directly in the repo - every other locale is synced back from Crowdin automatically via the [Crowdin GitHub action](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/.github/workflows/crowdin.yml).
 
-We provide an interactive CLI tool that simplifies the translation process:
-
-```bash
-pnpm translate
-```
-
-<Callout type='info' title='Recommended Approach'>
-  The translation helper script is the easiest way to contribute translations.
-  It guides you through every step and handles all the technical setup
-  automatically.
+<Callout type='info' title='Where to translate'>
+  Contribute translations at
+  [translate.deadlockmods.app](https://translate.deadlockmods.app/). Do not edit
+  non-English JSON files in the repo directly - they will be overwritten on the
+  next Crowdin sync.
 </Callout>
 
-#### Creating a New Translation
+### Contributing a Translation
 
-1. Run `pnpm translate` and select **"Create a new translation"**
-2. Enter the language details:
-   - **Language code**: ISO 639-1 code (e.g., `ko`, `vi`, `nl`) or BCP 47 (e.g., `pt-BR`)
-   - **Language name**: English name (e.g., "Korean")
-   - **Native name**: Name in the target language (e.g., "한국어")
-   - **Flag emoji**: Country flag (e.g., 🇰🇷)
-3. Enter your contributor information (name + Discord/GitHub/Email)
-4. Translate each string step-by-step
+1. Go to [translate.deadlockmods.app](https://translate.deadlockmods.app/) and sign in
+2. Pick a language and translate strings in the Crowdin editor
+3. Approved translations are proposed as a PR on this repo automatically
 
-**Commands during translation:**
+### Requesting a New Language
 
-- Press `Enter` without typing to keep the English value
-- Type `pause` to save your progress and continue later
-- Type `quit` to abort without saving
+Request a new language on Crowdin, or [file an issue](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new) and coordinate in the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) Discord channel.
 
-#### Updating an Existing Translation
+### Adding or Changing Source Strings
 
-1. Run `pnpm translate` and select **"Update an existing translation"**
-2. Choose the language you want to update
-3. Only missing translations will be shown
-4. Your new translations are merged with existing ones
-
-### Manual Translation Setup
-
-If you prefer manual setup:
-
-1. **Join the Discord**: Connect with the translation team in [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067)
-
-2. **Create translation file**:
-
-   ```bash
-   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[language-code].json
-   ```
-
-3. **Translate the content** in the new file
-
-4. **Register the language** in these files:
-   - `languages.json` - Add language metadata and contributor info
-   - `apps/desktop/src/lib/i18n.ts` - Add import and resources entry
-   - `apps/desktop/src/components/settings/language-settings.tsx` - Add to dropdown
-
-5. **Test your translations**:
-
-   ```bash
-   pnpm --filter desktop dev
-   # Change language in settings to test
-   ```
-
-6. **Submit a PR** with your translations
+When adding new UI strings in a PR, add them to `apps/desktop/src/locales/en.json`. Once your PR is merged to `main`, the Crowdin action uploads the new source strings for translators.
 
 ### Translation Guidelines
 

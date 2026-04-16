@@ -298,17 +298,16 @@ nix run .#nightly
 
 ### Available Commands
 
-| Command            | Description                           |
-| ------------------ | ------------------------------------- |
-| `pnpm desktop:dev` | Start desktop app development         |
-| `pnpm api:dev`     | Start API server development          |
-| `pnpm build`       | Build all packages and applications   |
-| `pnpm lint`        | Run linting checks                    |
-| `pnpm format`      | Format code with Biome                |
-| `pnpm check-types` | Run TypeScript type checking          |
-| `pnpm db:push`     | Push schema changes to database       |
-| `pnpm db:seed`     | Seed database with initial data       |
-| `pnpm translate`   | Interactive translation helper script |
+| Command            | Description                         |
+| ------------------ | ----------------------------------- |
+| `pnpm desktop:dev` | Start desktop app development       |
+| `pnpm api:dev`     | Start API server development        |
+| `pnpm build`       | Build all packages and applications |
+| `pnpm lint`        | Run linting checks                  |
+| `pnpm format`      | Format code with Biome              |
+| `pnpm check-types` | Run TypeScript type checking        |
+| `pnpm db:push`     | Push schema changes to database     |
+| `pnpm db:seed`     | Seed database with initial data     |
 
 ## Project Structure
 
@@ -616,61 +615,21 @@ Include screenshots of UI changes
 
 ## Translation & Localization
 
-### Translation Helper Script
+All translations live on Crowdin: **[translate.deadlockmods.app](https://translate.deadlockmods.app/)**. The English source (`apps/desktop/src/locales/en.json`) is the only locale file edited directly in the repo - all other locales are synced back from Crowdin via the [Crowdin GitHub action](.github/workflows/crowdin.yml).
 
-We provide an interactive CLI tool that makes translating much easier:
+### Contributing a Translation
 
-```bash
-pnpm translate
-```
+1. Go to [translate.deadlockmods.app](https://translate.deadlockmods.app/) and sign in
+2. Pick a language and translate strings in the Crowdin editor
+3. Approved translations are automatically proposed as a PR on this repo
 
-The script guides you through the entire process:
+### Requesting a New Language
 
-1. **Create a new translation**:
-   - Enter language code, name, native name, and flag emoji
-   - Add your contributor info (name + Discord/GitHub/Email)
-   - Translate each string step-by-step with English reference
-   - All files are automatically created and registered
+Open a request on Crowdin, or [file an issue](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/new) and mention it in the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) Discord channel.
 
-2. **Update an existing translation**:
-   - Select a language from the list
-   - Only missing strings are shown for translation
-   - Merged automatically with existing translations
+### Adding or Changing Source Strings
 
-**Useful commands during translation:**
-
-- Press `Enter` to keep the English value
-- Type `pause` to save progress and continue later
-- Type `quit` to abort without saving
-
-### Manual Translation Setup
-
-If you prefer manual setup:
-
-1. **Join our Discord** server and visit the [#translations](https://discord.com/channels/1322369530386710568/1414203136939135067) channel
-
-2. **Create translation files**:
-
-   ```bash
-   # Copy English file as template
-   cp apps/desktop/src/locales/en.json apps/desktop/src/locales/[lang-code].json
-   ```
-
-3. **Translate the content** in the new file
-
-4. **Register the language** in:
-   - `languages.json` - Add language metadata and contributor info
-   - `apps/desktop/src/lib/i18n.ts` - Add import and resources entry
-   - `apps/desktop/src/components/settings/language-settings.tsx` - Add to dropdown
-
-5. **Test your translations**:
-
-   ```bash
-   pnpm desktop:dev
-   # Change language in settings to test
-   ```
-
-6. **Submit a PR** with your translations
+If you're adding UI strings, add them to `apps/desktop/src/locales/en.json` in your PR. Once merged to `main`, the Crowdin action uploads the new strings automatically.
 
 ### Translation Guidelines
 
