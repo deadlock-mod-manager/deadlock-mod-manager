@@ -1,6 +1,5 @@
 files:
   - source: /apps/desktop/src/locales/en.json
     translation: /apps/desktop/src/locales/%locale%.%file_extension%
-    languages_mapping:
-      locale:
-        gsw-CH: gsw
+    translation_replace:
+      gsw-CH: gsw
