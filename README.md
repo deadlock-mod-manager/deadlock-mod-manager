@@ -154,25 +154,25 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 
 <!-- LANGUAGE_TABLE_START -->
 
-| Language                     | Native Name        | Status      | Contributors                                                                                         |
-| ---------------------------- | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------- |
-| 🇺🇸 **English** (Default)     | English            | ✅ Complete | -                                                                                                    |
-| 🇧🇬 **Bulgarian**             | Български          | ✅ Complete | [macchiako](https://discordapp.com/users/macchiako./)                                                |
-| 🇩🇪 **German**                | Deutsch            | ✅ Complete | [skeptic](https://github.com/Skeptic-systems)                                                        |
-| 🇫🇷 **French**                | Français           | ✅ Complete | [stormix](https://github.com/stormix)                                                                |
-| 🇷🇺 **Russian**               | Русский            | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
-| 🇸🇦 **Arabic**                | العربية            | ✅ Complete | [archeroflegend](https://discordapp.com/users/archeroflegend/)                                       |
-| 🇵🇱 **Polish**                | Polski             | ✅ Complete | [\_manio](https://discordapp.com/users/_manio/)                                                      |
-| 🇨🇭 **Swiss German**          | Schwiizerdütsch    | ✅ Complete | [degoods_deedos](https://discordapp.com/users/degoods_deedos/)                                       |
-| 🇹🇭 **Thai**                  | ไทย                | ✅ Complete | [altqx](https://discordapp.com/users/altq/)                                                          |
-| 🇹🇷 **Turkish**               | Türkçe             | ✅ Complete | [kenanala](https://discordapp.com/users/kenanala/)                                                   |
-| 🇨🇳 **Chinese (Simplified)**  | 简体中文           | ✅ Complete | [待到春深方挽柳](mailto:sfk_04@qq.com)                                                               |
-| 🇹🇼 **Chinese (Traditional)** | 繁體中文           | ✅ Complete | [白雲](https://github.com/phillychi3)                                                                |
-| 🇪🇸 **Spanish**               | Español            | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/)                                                 |
-| 🇧🇷 **Portuguese (Brazil)**   | Português (Brasil) | ✅ Complete | [meneee](https://discordapp.com/users/meneee/)                                                       |
-| 🇮🇹 **Italian**               | Italiano           | ✅ Complete | [Constrat](https://github.com/Constrat)                                                              |
-| 🇯🇵 **Japanese**              | 日本語             | ✅ Complete | [hiropiki](https://discordapp.com/users/hiropiki/)                                                   |
-| 🇰🇷 **Korean**                | 한국어             | ✅ Complete | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/)                                             |
+| Language | Native Name | Status | Contributors |
+|----------|-------------|--------|-------------|
+| 🇺🇸 **English** (Default) | English | ✅ Complete | - |
+| 🇧🇬 **Bulgarian** | Български | 🚧 20% | [macchiako](https://discordapp.com/users/macchiako./) |
+| 🇩🇪 **German** | Deutsch | 🚧 57% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 44% | [stormix](https://github.com/stormix) |
+| 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
+| 🇸🇦 **Arabic** | العربية | 🚧 71% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
+| 🇵🇱 **Polish** | Polski | 🚧 39% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 34% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
+| 🇹🇭 **Thai** | ไทย | 🚧 49% | [altqx](https://discordapp.com/users/altq/) |
+| 🇹🇷 **Turkish** | Türkçe | 🚧 40% | [kenanala](https://discordapp.com/users/kenanala/) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 51% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
+| 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
+| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 42% | [meneee](https://discordapp.com/users/meneee/) |
+| 🇮🇹 **Italian** | Italiano | 🚧 44% | [Constrat](https://github.com/Constrat) |
+| 🇯🇵 **Japanese** | 日本語 | 🚧 69% | [hiropiki](https://discordapp.com/users/hiropiki/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 99% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
