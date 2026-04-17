@@ -28,7 +28,13 @@ runs:
       with:
         script: |
           const fs = require('fs');
-          const path = require('path');
+
+          function toGitHubAssetName(name) {
+            return name
+              .trim()
+              .replace(/[^a-zA-Z0-9_-]/g, '.')
+              .replace(/\.\./g, '.');
+          }
 
           const releaseId = parseInt(process.env.RELEASE_ID);
           const version = process.env.VERSION;
@@ -75,7 +81,15 @@ runs:
           const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
           console.log(`Read new signature from ${sigFile}`);
 
-          const exeAsset = release.assets.find(a => a.name === exeFile);
+          const githubAssetName = toGitHubAssetName(exeFile);
+          const exeAsset = release.assets.find(a => a.name === githubAssetName);
+
+          if (exeAsset) {
+            console.log(`Resolved Windows executable asset via GitHub asset name match: ${exeAsset.name}`);
+          } else {
+            console.log(`Could not match ${exeFile} to release asset ${githubAssetName}, falling back to encoded URL`);
+          }
+
           const exeUrl = exeAsset?.browser_download_url ?? `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${encodeURIComponent(exeFile)}`;
 
           // Update or add Windows NSIS entries
