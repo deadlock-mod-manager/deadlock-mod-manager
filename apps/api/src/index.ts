@@ -23,6 +23,7 @@ import { logger, loggerContext } from "./lib/logger";
 import { requestLogger } from "./middleware/request-logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
+import { RelayDiscoveryProcessor } from "./processors/relay-discovery";
 import artifactsRouter from "./routers/legacy/artifacts";
 import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
@@ -138,6 +139,13 @@ const main = async () => {
     name: GamebananaRssProcessor.name,
     pattern: GamebananaRssProcessor.cronPattern,
     processor: GamebananaRssProcessor.getInstance(),
+    enabled: true,
+  });
+
+  await cronService.defineJob({
+    name: RelayDiscoveryProcessor.name,
+    pattern: RelayDiscoveryProcessor.cronPattern,
+    processor: RelayDiscoveryProcessor.getInstance(),
     enabled: true,
   });
 

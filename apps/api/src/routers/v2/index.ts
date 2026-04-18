@@ -8,6 +8,7 @@ import { kvRouter } from "./kv";
 import { modsRouter } from "./mods";
 import { profilesRouter } from "./profiles";
 import { reportsRouter } from "./reports";
+import { serversRouter } from "./servers";
 import { vpkRouter } from "./vpk";
 
 export const v2Router = {
@@ -21,5 +22,6 @@ export const v2Router = {
   ...vpkRouter,
   ...profilesRouter,
   ...reportsRouter,
+  ...serversRouter,
   ...featureFlagsRouter,
 };

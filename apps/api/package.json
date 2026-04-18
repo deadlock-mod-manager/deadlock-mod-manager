@@ -24,6 +24,7 @@
     "@deadlock-mods/kv-parser": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
+    "@deadlock-mods/relay-client": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",
     "@hono/prometheus": "^1.0.2",
