@@ -190,6 +190,7 @@ export const ProfileShareDialog = () => {
           isLoading={isPending}
           icon={<ShareNetworkIcon className='size-3.5' />}
           variant='text'
+          size='sm'
           className='text-xs'
           disabled={!hardwareId || !version}
           onClick={onSubmit}>

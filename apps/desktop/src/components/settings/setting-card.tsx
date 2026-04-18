@@ -84,7 +84,7 @@ const Command = ({ setting }: Pick<SettingsCardProps, "setting">) => {
 
 export const SettingCardSkeleton = () => {
   return (
-    <div className='flex flex-row items-center justify-between pl-8'>
+    <div className='flex flex-row items-center justify-between rounded-md border border-border/30 bg-background/40 px-4 py-3'>
       <div className='flex flex-col gap-2'>
         <h3 className='font-medium text-lg'>
           <Skeleton className='h-6 w-48' />
@@ -167,8 +167,8 @@ const SettingCard = ({
 
   return (
     <>
-      <div className='flex flex-row items-center justify-between'>
-        <div className='flex flex-col gap-1'>
+      <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
+        <div className='flex min-w-0 flex-col gap-1'>
           <h3 className='font-bold text-sm'>
             {setting.description} {custom && <Badge>Custom</Badge>}
           </h3>
@@ -180,7 +180,7 @@ const SettingCard = ({
           </p>
         </div>
 
-        <div className='flex items-center space-x-2'>
+        <div className='flex shrink-0 items-center space-x-2'>
           {custom && !isAutoexecOption && (
             <>
               <Tooltip>

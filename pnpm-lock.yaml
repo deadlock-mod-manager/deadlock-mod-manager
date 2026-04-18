@@ -574,9 +574,12 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.0)
-      '@fontsource-variable/inter':
+      '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource-variable/geist-mono':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.0(react@19.2.0))
@@ -2868,8 +2871,11 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
-  '@fontsource-variable/inter@5.2.8':
-    resolution: {integrity: sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==}
+  '@fontsource-variable/geist-mono@5.2.7':
+    resolution: {integrity: sha512-ZKlZ5sjtalb2TwXKs400mAGDlt/+2ENLNySPx0wTz3bP3mWARCsUW+rpxzZc7e05d2qGch70pItt3K4qttbIYA==}
+
+  '@fontsource-variable/geist@5.2.8':
+    resolution: {integrity: sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw==}
 
   '@formatjs/fast-memoize@3.1.1':
     resolution: {integrity: sha512-CbNbf+tlJn1baRnPkNePnBqTLxGliG6DDgNa/UtV66abwIjwsliPMOt0172tzxABYzSuxZBZfcp//qI8AvBWPg==}
@@ -14123,7 +14129,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@fontsource-variable/inter@5.2.8': {}
+  '@fontsource-variable/geist-mono@5.2.7': {}
+
+  '@fontsource-variable/geist@5.2.8': {}
 
   '@formatjs/fast-memoize@3.1.1': {}
 

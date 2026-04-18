@@ -1,4 +1,3 @@
-import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -18,21 +17,26 @@ const Section = ({
   action?: React.ReactNode;
 }) => {
   return (
-    <div className={cn("flex flex-col py-4", className)}>
-      <div className='flex w-full flex-row items-center justify-between'>
-        <div className='flex flex-col gap-1'>
-          <h3 className='font-semibold text-primary text-xl'>{title}</h3>
+    <section
+      className={cn(
+        "flex flex-col rounded-lg border border-border/50 bg-card/50 p-5",
+        className,
+      )}>
+      <div className='flex w-full flex-row items-start justify-between gap-4 border-b border-border/30 pb-3'>
+        <div className='flex min-w-0 flex-col gap-1'>
+          <h3 className='font-semibold text-foreground text-lg leading-tight'>
+            {title}
+          </h3>
           {description && (
             <div className='flex-wrap text-muted-foreground text-sm'>
               {description}
             </div>
           )}
         </div>
-        {action && <div className='mt-2 flex flex-col'>{action}</div>}
+        {action && <div className='shrink-0'>{action}</div>}
       </div>
-      <Separator className='mt-2' />
       <div className={cn("mt-4", innerClassName)}>{children}</div>
-    </div>
+    </section>
   );
 };
 
@@ -43,7 +47,6 @@ export const SectionSkeleton = ({
 }) => {
   return (
     <Section
-      className='gap-2'
       description={<Skeleton className='h-4 w-96' />}
       innerClassName='flex flex-col gap-4'
       title={<Skeleton className='h-6 w-48' />}>

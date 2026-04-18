@@ -1,4 +1,5 @@
-import { CaretDownIcon } from "@phosphor-icons/react";
+import { CaretUpDownIcon } from "@phosphor-icons/react";
+import { Users } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
@@ -19,31 +20,27 @@ const Profile = () => {
 
   return (
     <>
-      <div className='flex min-w-0 flex-col gap-1'>
-        <p className='font-medium text-[10px] uppercase tracking-[0.08em] text-muted-foreground leading-none'>
-          {t("profiles.activeProfile", "Active Profile")}
-        </p>
-        <button
-          className={cn(
-            "group inline-flex min-w-0 items-center gap-1.5 rounded-sm text-left",
-            "font-semibold text-sm leading-none",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            isProfileManagementEnabled
-              ? "cursor-pointer hover:text-primary"
-              : "cursor-default",
-          )}
-          disabled={!isProfileManagementEnabled}
-          onClick={() => setShowProfileManager(true)}
-          type='button'>
-          <span className='truncate'>{profileName}</span>
-          {isProfileManagementEnabled && (
-            <CaretDownIcon
-              className='size-3 shrink-0 text-muted-foreground transition-transform group-hover:text-primary'
-              weight='bold'
-            />
-          )}
-        </button>
-      </div>
+      <button
+        className={cn(
+          "group inline-flex min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left",
+          "border border-transparent text-xs leading-none",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          isProfileManagementEnabled
+            ? "cursor-pointer hover:border-border hover:bg-secondary/50"
+            : "cursor-default",
+        )}
+        disabled={!isProfileManagementEnabled}
+        onClick={() => setShowProfileManager(true)}
+        type='button'>
+        <Users className='size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground' />
+        <span className='truncate font-medium'>{profileName}</span>
+        {isProfileManagementEnabled && (
+          <CaretUpDownIcon
+            className='size-3 shrink-0 text-muted-foreground/60 group-hover:text-muted-foreground'
+            weight='bold'
+          />
+        )}
+      </button>
 
       {isProfileManagementEnabled && (
         <ProfileManagerDialog

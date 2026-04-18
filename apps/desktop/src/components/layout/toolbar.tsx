@@ -45,8 +45,8 @@ export const Toolbar = () => {
 
   return (
     <div className='flex min-w-0 flex-1 items-stretch' data-tauri-drag-region>
-      <div className='flex min-w-0 shrink-0 items-center gap-2 px-3 py-1.5'>
-        <div className='min-w-0 max-w-48'>
+      <div className='flex min-w-0 shrink-0 items-center gap-1 pl-1.5 pr-3 py-1.5'>
+        <div className='min-w-0 max-w-52'>
           <Profile />
         </div>
         {isProfileSharingEnabled && (
@@ -101,7 +101,7 @@ export const Toolbar = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className='relative h-7 gap-1.5 overflow-hidden px-2.5 text-xs'
+              className='relative h-7 gap-1.5 overflow-hidden border border-transparent px-2.5 text-xs'
               disabled={!gamePath}
               onClick={() => {
                 if (isRunning) {

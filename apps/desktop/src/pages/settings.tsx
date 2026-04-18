@@ -28,6 +28,7 @@ import {
   GamepadIcon,
   Globe,
   InfoIcon,
+  type LucideIcon,
   MonitorIcon,
   PlugIcon,
   PlusIcon,
@@ -77,6 +78,7 @@ import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import type { LocalSetting } from "@/types/settings";
 
 const getAutoexecConfig = async () => {
@@ -96,6 +98,76 @@ const getAutoexecConfig = async () => {
 };
 
 const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
+
+type SettingsNavItemProps = {
+  value: string;
+  icon: LucideIcon;
+  label: string;
+};
+
+const SettingsNavItem = ({
+  value,
+  icon: Icon,
+  label,
+}: SettingsNavItemProps) => (
+  <TabsTrigger
+    className={cn(
+      "relative h-10 w-full justify-start gap-3 rounded-md px-3 py-2 font-medium text-sm",
+      "text-muted-foreground transition-colors",
+      "data-[state=inactive]:hover:bg-muted/50 data-[state=inactive]:hover:text-foreground",
+      "data-[state=active]:bg-primary/10 data-[state=active]:text-foreground",
+      "data-[state=active]:before:absolute data-[state=active]:before:left-0 data-[state=active]:before:top-1/2 data-[state=active]:before:h-5 data-[state=active]:before:w-[2px] data-[state=active]:before:-translate-y-1/2 data-[state=active]:before:rounded-r-full data-[state=active]:before:bg-primary",
+    )}
+    value={value}>
+    <Icon className='h-4 w-4 shrink-0' />
+    {label}
+  </TabsTrigger>
+);
+
+const SettingsNavGroup = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div className='flex flex-col gap-0.5'>
+    <p className='px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70'>
+      {label}
+    </p>
+    {children}
+  </div>
+);
+
+type CreditCardProps = {
+  title: string;
+  description: string;
+  url?: string;
+  buttonLabel?: string;
+};
+
+const CreditCard = ({
+  title,
+  description,
+  url,
+  buttonLabel,
+}: CreditCardProps) => (
+  <div className='rounded-lg border border-border/50 bg-card/50 p-4'>
+    <div className='flex flex-col gap-2'>
+      <h3 className='font-semibold text-primary'>{title}</h3>
+      <p className='text-muted-foreground text-sm'>{description}</p>
+      {url && buttonLabel && (
+        <Button
+          className='mt-2 w-fit'
+          onClick={() => openUrl(url)}
+          size='sm'
+          variant='outline'>
+          {buttonLabel}
+        </Button>
+      )}
+    </div>
+  </div>
+);
 
 const CustomSettingsData = () => {
   const { t } = useTranslation();
@@ -345,87 +417,83 @@ const CustomSettings = ({ value }: { value?: string }) => {
         defaultValue='launch-options'
         onValueChange={setActiveTab}
         value={activeTab}>
-        <div className='w-48 shrink-0 min-h-0 overflow-y-auto pr-1'>
-          <TabsList className='h-fit w-full flex-col gap-1 bg-background p-3'>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='launch-options'>
-              <Settings className='h-5 w-5' />
-              {t("settings.launchOptions")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='autoexec'>
-              <FileCog className='h-5 w-5' />
-              {t("settings.autoexec")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='game'>
-              <GamepadIcon className='h-5 w-5' />
-              {t("settings.game")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='application'>
-              <MonitorIcon className='h-5 w-5' />
-              {t("settings.application")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='network'>
-              <Globe className='h-5 w-5' />
-              {t("settings.network")}
-            </TabsTrigger>
-            {showPlugins && (
-              <TabsTrigger
-                className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-                value='plugin'>
-                <PlugIcon className='h-5 w-5' />
-                {t("settings.plugin")}
-              </TabsTrigger>
-            )}
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='tools'>
-              <WrenchIcon className='h-5 w-5' />
-              {t("settings.tools")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='backups'>
-              <Archive className='h-5 w-5' />
-              {t("settings.backups")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='logging'>
-              <ScrollTextIcon className='h-5 w-5' />
-              {t("settings.logging")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='experimental'>
-              <FlagIcon className='h-5 w-5' />
-              {t("settings.experimental")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='privacy'>
-              <ShieldIcon className='h-5 w-5' />
-              {t("settings.privacy")}
-            </TabsTrigger>
-            <TabsTrigger
-              className='h-12 w-full justify-start gap-3 px-4 py-3 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-secondary data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground'
-              value='about'>
-              <InfoIcon className='h-5 w-5' />
-              {t("settings.information")}
-            </TabsTrigger>
+        <div className='w-52 shrink-0 min-h-0 overflow-y-auto pr-1'>
+          <TabsList className='h-fit w-full flex-col items-stretch gap-1 bg-transparent p-2'>
+            <SettingsNavGroup label='Game'>
+              <SettingsNavItem
+                icon={Settings}
+                label={t("settings.launchOptions")}
+                value='launch-options'
+              />
+              <SettingsNavItem
+                icon={FileCog}
+                label={t("settings.autoexec")}
+                value='autoexec'
+              />
+              <SettingsNavItem
+                icon={GamepadIcon}
+                label={t("settings.game")}
+                value='game'
+              />
+            </SettingsNavGroup>
+
+            <SettingsNavGroup label='Application'>
+              <SettingsNavItem
+                icon={MonitorIcon}
+                label={t("settings.application")}
+                value='application'
+              />
+              <SettingsNavItem
+                icon={Globe}
+                label={t("settings.network")}
+                value='network'
+              />
+              {showPlugins && (
+                <SettingsNavItem
+                  icon={PlugIcon}
+                  label={t("settings.plugin")}
+                  value='plugin'
+                />
+              )}
+            </SettingsNavGroup>
+
+            <SettingsNavGroup label='Advanced'>
+              <SettingsNavItem
+                icon={WrenchIcon}
+                label={t("settings.tools")}
+                value='tools'
+              />
+              <SettingsNavItem
+                icon={Archive}
+                label={t("settings.backups")}
+                value='backups'
+              />
+              <SettingsNavItem
+                icon={ScrollTextIcon}
+                label={t("settings.logging")}
+                value='logging'
+              />
+              <SettingsNavItem
+                icon={FlagIcon}
+                label={t("settings.experimental")}
+                value='experimental'
+              />
+              <SettingsNavItem
+                icon={ShieldIcon}
+                label={t("settings.privacy")}
+                value='privacy'
+              />
+              <SettingsNavItem
+                icon={InfoIcon}
+                label={t("settings.information")}
+                value='about'
+              />
+            </SettingsNavGroup>
           </TabsList>
         </div>
 
-        <div className='min-h-0 flex-1 overflow-y-auto pr-4'>
-          <TabsContent className='mt-0 space-y-2' value='launch-options'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-1 pr-4'>
+          <TabsContent className='mt-0 space-y-4' value='launch-options'>
             <Suspense
               fallback={
                 <div className='grid grid-cols-1 gap-4'>
@@ -443,7 +511,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           {showPlugins && (
-            <TabsContent className='mt-0 space-y-2' value='plugin'>
+            <TabsContent className='mt-0 space-y-4' value='plugin'>
               <Section
                 description={t("settings.pluginDescription")}
                 title={t("settings.plugin")}>
@@ -452,7 +520,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </TabsContent>
           )}
 
-          <TabsContent className='mt-0 space-y-2' value='game'>
+          <TabsContent className='mt-0 space-y-4' value='game'>
             <Section
               description={t("settings.gamePathDescription")}
               title={t("settings.gamePath")}>
@@ -466,7 +534,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='application'>
+          <TabsContent className='mt-0 space-y-4' value='application'>
             <Section
               description={t("settings.systemSettingsDescription")}
               title={t("settings.systemSettings")}>
@@ -541,90 +609,104 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='network'>
+          <TabsContent className='mt-0 space-y-4' value='network'>
             <Section
               description={t("settings.networkDescription")}
-              title={
-                <span className='flex items-center gap-2'>
-                  <Globe className='h-5 w-5 text-primary' />
-                  {t("settings.fileserverSectionTitle")}
-                </span>
-              }>
+              title={t("settings.fileserverSectionTitle")}>
               <FileserverSettings />
             </Section>
 
             <Section
               description={t("settings.proxyDescription")}
-              title={
-                <span className='flex items-center gap-2'>
-                  <ShieldIcon className='h-5 w-5 text-primary' />
-                  {t("settings.proxy")}
-                </span>
-              }>
+              title={t("settings.proxy")}>
               <ProxySettings />
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='tools'>
+          <TabsContent className='mt-0 space-y-4' value='tools'>
             <Section
               description={t("settings.toolsDescription")}
               title={t("settings.tools")}>
-              <div className='flex flex-wrap gap-4'>
-                <Button
-                  className='w-fit'
-                  onClick={() => invoke("open_game_folder")}
-                  variant='outline'>
-                  <FolderOpen className='h-4 w-4' />
-                  {t("settings.openGameFolder")}
-                </Button>
-                <Button
-                  className='w-fit'
-                  onClick={async () => {
-                    const activeProfile = getActiveProfile();
-                    const profileFolder = activeProfile?.folderName ?? null;
-                    await invoke("open_mods_folder", { profileFolder });
-                  }}
-                  variant='outline'>
-                  <FolderOpen className='h-4 w-4' />
-                  {t("settings.openModsFolder")}
-                </Button>
-                <Button
-                  className='w-fit'
-                  onClick={() => invoke("open_mods_data_folder")}
-                  variant='outline'>
-                  <FolderOpen className='h-4 w-4' />
-                  {t("settings.openModsDataFolder")}
-                </Button>
-                <Button
-                  className='w-fit'
-                  onClick={clearDownloadCache}
-                  variant='destructive'>
-                  <TrashIcon className='h-4 w-4' />
-                  {t("settings.clearDownloadCache")}
-                </Button>
-                <Button
-                  className='w-fit'
-                  onClick={clearAllModsData}
-                  variant='destructive'>
-                  <TrashIcon className='h-4 w-4' />
-                  {t("settings.clearAllModsData")}
-                </Button>
-                <Button onClick={clearModsState} variant='destructive'>
-                  <TrashIcon className='h-4 w-4 mr-2' />
-                  {t("debug.clearModsState")}
-                </Button>
-                <Button
-                  className='w-fit'
-                  onClick={clearAllMods}
-                  variant='destructive'>
-                  <TrashIcon className='h-4 w-4' />
-                  {t("settings.clearAllMods")}
-                </Button>
+              <div className='flex flex-col gap-5'>
+                <div className='flex flex-col gap-2'>
+                  <p className='text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70'>
+                    Quick Access
+                  </p>
+                  <div className='flex flex-wrap gap-2'>
+                    <Button
+                      className='w-fit'
+                      onClick={() => invoke("open_game_folder")}
+                      variant='outline'>
+                      <FolderOpen className='h-4 w-4' />
+                      {t("settings.openGameFolder")}
+                    </Button>
+                    <Button
+                      className='w-fit'
+                      onClick={async () => {
+                        const activeProfile = getActiveProfile();
+                        const profileFolder = activeProfile?.folderName ?? null;
+                        await invoke("open_mods_folder", { profileFolder });
+                      }}
+                      variant='outline'>
+                      <FolderOpen className='h-4 w-4' />
+                      {t("settings.openModsFolder")}
+                    </Button>
+                    <Button
+                      className='w-fit'
+                      onClick={() => invoke("open_mods_data_folder")}
+                      variant='outline'>
+                      <FolderOpen className='h-4 w-4' />
+                      {t("settings.openModsDataFolder")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className='flex flex-col gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-4'>
+                  <div className='flex items-center gap-2'>
+                    <WarningCircle className='h-4 w-4 text-destructive' />
+                    <p className='text-[11px] font-semibold uppercase tracking-wider text-destructive'>
+                      Danger Zone
+                    </p>
+                  </div>
+                  <p className='text-muted-foreground text-xs'>
+                    These actions are permanent and cannot be undone.
+                  </p>
+                  <div className='mt-2 flex flex-wrap gap-2'>
+                    <Button
+                      className='w-fit'
+                      onClick={clearDownloadCache}
+                      variant='destructive'>
+                      <TrashIcon className='h-4 w-4' />
+                      {t("settings.clearDownloadCache")}
+                    </Button>
+                    <Button
+                      className='w-fit'
+                      onClick={clearAllModsData}
+                      variant='destructive'>
+                      <TrashIcon className='h-4 w-4' />
+                      {t("settings.clearAllModsData")}
+                    </Button>
+                    <Button
+                      className='w-fit'
+                      onClick={clearModsState}
+                      variant='destructive'>
+                      <TrashIcon className='h-4 w-4' />
+                      {t("debug.clearModsState")}
+                    </Button>
+                    <Button
+                      className='w-fit'
+                      onClick={clearAllMods}
+                      variant='destructive'>
+                      <TrashIcon className='h-4 w-4' />
+                      {t("settings.clearAllMods")}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='backups'>
+          <TabsContent className='mt-0 space-y-4' value='backups'>
             <Section
               description={t("settings.addonsBackupDescription")}
               title={t("settings.addonsBackup")}>
@@ -632,7 +714,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='logging'>
+          <TabsContent className='mt-0 space-y-4' value='logging'>
             <Section
               description={t("settings.loggingDescription")}
               title={t("settings.logging")}>
@@ -640,7 +722,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='experimental'>
+          <TabsContent className='mt-0 space-y-4' value='experimental'>
             <Section
               description={t("featureFlags.description")}
               title={t("featureFlags.title")}>
@@ -648,7 +730,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='privacy'>
+          <TabsContent className='mt-0 space-y-4' value='privacy'>
             <Section
               description={t("privacy.description")}
               title={t("privacy.title")}>
@@ -658,11 +740,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-2' value='about'>
-            <div className='rounded-lg border bg-card p-4'>
+          <TabsContent className='mt-0 space-y-4' value='about'>
+            <div className='rounded-lg border border-amber-500/30 bg-amber-500/5 p-4'>
               <div className='flex flex-col gap-2'>
                 <div className='flex items-center gap-2'>
-                  <WarningCircle className='h-5 w-5 text-amber-500' />
+                  <WarningCircle className='h-4 w-4 text-amber-500' />
                   <h3 className='font-semibold text-primary'>
                     {t("about.thirdPartyDisclaimerTitle")}
                   </h3>
@@ -675,72 +757,32 @@ const CustomSettings = ({ value }: { value?: string }) => {
             <Section
               description={t("about.description")}
               title={t("about.title")}>
-              <div className='space-y-4'>
-                <div className='rounded-lg border bg-card p-4'>
-                  <div className='flex flex-col gap-2'>
-                    <h3 className='font-semibold text-primary'>GameBanana</h3>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("about.gamebananaDescription")}
-                    </p>
-                    <Button
-                      className='mt-2 w-fit'
-                      onClick={() => openUrl("https://gamebanana.com/")}
-                      size='sm'
-                      variant='outline'>
-                      {t("about.visitGamebanana")}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='rounded-lg border bg-card p-4'>
-                  <div className='flex flex-col gap-2'>
-                    <h3 className='font-semibold text-primary'>Tauri</h3>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("about.tauriDescription")}
-                    </p>
-                    <Button
-                      className='mt-2 w-fit'
-                      onClick={() => openUrl("https://tauri.app/")}
-                      size='sm'
-                      variant='outline'>
-                      {t("about.visitTauri")}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='rounded-lg border bg-card p-4'>
-                  <div className='flex flex-col gap-2'>
-                    <h3 className='font-semibold text-primary'>shadcn/ui</h3>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("about.shadcnDescription")}
-                    </p>
-                    <Button
-                      className='mt-2 w-fit'
-                      onClick={() => openUrl("https://ui.shadcn.com/")}
-                      size='sm'
-                      variant='outline'>
-                      {t("about.visitShadcn")}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='rounded-lg border bg-card p-4'>
-                  <div className='flex flex-col gap-2'>
-                    <h3 className='font-semibold text-primary'>Tailwind CSS</h3>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("about.tailwindDescription")}
-                    </p>
-                    <Button
-                      className='mt-2 w-fit'
-                      onClick={() => openUrl("https://tailwindcss.com/")}
-                      size='sm'
-                      variant='outline'>
-                      {t("about.visitTailwind")}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='rounded-lg border bg-card p-4'>
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <CreditCard
+                  buttonLabel={t("about.visitGamebanana")}
+                  description={t("about.gamebananaDescription")}
+                  title='GameBanana'
+                  url='https://gamebanana.com/'
+                />
+                <CreditCard
+                  buttonLabel={t("about.visitTauri")}
+                  description={t("about.tauriDescription")}
+                  title='Tauri'
+                  url='https://tauri.app/'
+                />
+                <CreditCard
+                  buttonLabel={t("about.visitShadcn")}
+                  description={t("about.shadcnDescription")}
+                  title='shadcn/ui'
+                  url='https://ui.shadcn.com/'
+                />
+                <CreditCard
+                  buttonLabel={t("about.visitTailwind")}
+                  description={t("about.tailwindDescription")}
+                  title='Tailwind CSS'
+                  url='https://tailwindcss.com/'
+                />
+                <div className='rounded-lg border border-border/50 bg-card/50 p-4 sm:col-span-2'>
                   <div className='flex flex-col gap-2'>
                     <h3 className='font-semibold'>
                       {t("about.openSourceCommunity")}
@@ -751,7 +793,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </div>
                 </div>
 
-                <div className='rounded-lg border bg-card p-4'>
+                <div className='rounded-lg border border-border/50 bg-card/50 p-4 sm:col-span-2'>
                   <div className='flex flex-col gap-2'>
                     <h3 className='font-semibold text-primary'>
                       {t("about.resetOnboarding")}
@@ -776,7 +818,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               </div>
             </Section>
           </TabsContent>
-          <TabsContent className='mt-0 space-y-2' value='autoexec'>
+          <TabsContent className='mt-0 space-y-4' value='autoexec'>
             <ErrorBoundary>
               <AutoexecSettings />
             </ErrorBoundary>

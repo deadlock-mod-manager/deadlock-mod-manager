@@ -1447,7 +1447,15 @@
     "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
     "checkBackLater": "Check back later for updates",
     "noModsAvailable": "No mods available",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "featuredModOfTheWeek": "Featured Mod of the Week",
+    "trendingIn": "Trending in",
+    "seeAll": "See all",
+    "viewMod": "View Mod",
+    "installedMods": "Installed",
+    "pendingUpdates": "Updates",
+    "queued": "In Queue",
+    "browseStore": "Browse Store"
   },
   "debug": {
     "title": "Debug",

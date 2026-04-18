@@ -56,14 +56,7 @@ export default function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' sideOffset={8} className='w-48'>
         <DropdownMenuLabel className='font-normal'>
-          <div className='flex flex-col gap-1'>
-            <p className='text-sm font-medium leading-none'>{user.name}</p>
-            {user.email && (
-              <p className='text-xs leading-none text-muted-foreground'>
-                {user.email}
-              </p>
-            )}
-          </div>
+          <p className='text-sm font-medium leading-none'>{user.name}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>

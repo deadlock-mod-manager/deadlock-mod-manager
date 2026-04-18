@@ -1,4 +1,5 @@
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @tailwind base;
 @tailwind components;
@@ -117,7 +118,7 @@
   :root {
     --background: 20 9% 6%;
     --foreground: 38 65% 97%;
-    --card: 20 9% 6%;
+    --card: 20 8% 9%;
     --card-foreground: 38 65% 97%;
     --popover: 20 9% 6%;
     --popover-foreground: 38 65% 97%;
@@ -191,7 +192,7 @@
   .dark {
     --background: 20 9% 6%;
     --foreground: 38 65% 97%;
-    --card: 20 9% 6%;
+    --card: 20 8% 9%;
     --card-foreground: 38 65% 97%;
     --popover: 20 9% 6%;
     --popover-foreground: 38 65% 97%;
@@ -230,31 +231,30 @@
   * {
     @apply border-border min-h-0 min-w-0;
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary)) hsl(var(--secondary));
+    scrollbar-color: hsl(var(--primary) / 0.35) transparent;
   }
 
   *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   *::-webkit-scrollbar-track {
-    background: hsl(var(--secondary));
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 3px;
   }
 
   *::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary));
-    border-radius: 4px;
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 3px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.8);
+    background: hsl(var(--primary) / 0.5);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01", "ss03";
     font-optical-sizing: auto;
     transition:
       background-color 0.3s ease,
@@ -277,6 +277,72 @@
   .light img[src*="inverted"],
   .light svg.inverted {
     filter: invert(0.8);
+  }
+}
+
+/* Occult Geometry Animations */
+@keyframes occult-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes occult-rotate-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes occult-pulse-a {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes occult-pulse-b {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.occult-rotate-slow {
+  animation: occult-rotate 240s linear infinite;
+}
+
+.occult-rotate-reverse {
+  animation: occult-rotate-reverse 300s linear infinite;
+}
+
+.occult-pulse-a {
+  animation: occult-pulse-a 12s ease-in-out infinite;
+}
+
+.occult-pulse-b {
+  animation: occult-pulse-b 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .occult-rotate-slow,
+  .occult-rotate-reverse {
+    animation: none;
+  }
+  .occult-pulse-a,
+  .occult-pulse-b {
+    animation: none;
   }
 }
 

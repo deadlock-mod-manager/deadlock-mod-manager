@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Deadlock Mod Manager",
-        "width": 1280,
-        "height": 720,
+        "width": 1440,
+        "height": 900,
         "decorations": false,
         "label": "main",
         "dragDropEnabled": false

@@ -11,7 +11,8 @@ export default {
       },
       fontFamily: {
         primary: ['Forevs Demo', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Geist Variable', 'sans-serif'],
+        mono: ['Geist Mono Variable', 'monospace'],
       },
       colors: {
         background: {
