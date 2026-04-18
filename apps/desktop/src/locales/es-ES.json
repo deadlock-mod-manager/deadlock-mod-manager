@@ -119,10 +119,19 @@
       "missingMods_one": "",
       "missingMods_other": "",
       "installAll": "",
+      "enableMod": "",
+      "installMod": "",
       "passwordPrompt": "",
       "passwordPlaceholder": "",
       "openExternal": "",
       "unknown": ""
+    },
+    "requirementRow": {
+      "customProvider": "",
+      "notInDmm": "",
+      "ready": "",
+      "downloading": "",
+      "missing": ""
     },
     "empty": {
       "title": "",
@@ -1615,7 +1624,9 @@
     "lastModifiedAt": "Última modificación el",
     "installedAt": "Instalado el",
     "downloadsLabel": "Descargas",
-    "modStatusLabel": "Estado del mod",
+    "likesLabel": "",
+    "modStatusLabel": "",
+    "detectedHero": "",
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
@@ -1772,5 +1783,51 @@
     "skip": "",
     "installFailed": "",
     "discardFailed": ""
+  },
+  "heroConflict": {
+    "title": "",
+    "description": "",
+    "currentlyActive": "",
+    "switchingTo": "",
+    "swapAction": "",
+    "keepBothAction": "",
+    "keepBothHint": "",
+    "cancel": "",
+    "byAuthor": ""
+  },
+  "criticalPaths": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "confirm": ""
+  },
+  "heroTag": {
+    "hero": "",
+    "other": ""
+  },
+  "heroParser": {
+    "idle": "",
+    "scanning": "",
+    "scanningMod": "",
+    "settingsTitle": "",
+    "settingsDescription": "",
+    "statusIdle": "",
+    "statusScanning": "",
+    "indexedCount": "",
+    "forceRescan": "",
+    "forceRescanTitle": "",
+    "forceRescanBody": "",
+    "forceRescanConfirm": "",
+    "indexNow": "",
+    "indexNowTitle": "",
+    "indexNowBody": "",
+    "indexNowConfirm": "",
+    "stop": "",
+    "startBackgroundScan": "",
+    "clearIndex": "",
+    "clearIndexTitle": "",
+    "clearIndexBody": "",
+    "clearIndexConfirm": "",
+    "allIndexed": ""
   }
 }
