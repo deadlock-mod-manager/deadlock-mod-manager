@@ -1697,6 +1697,7 @@
   "fontInstall": {
     "title": "Fonts found in mod",
     "description": "The mod author included font files. Would you like to install and use them?",
+    "fontsLabel": "{{count}} font files",
     "install": "Install Fonts",
     "skip": "Skip",
     "installFailed": "Failed to install mod fonts. Please try again.",
