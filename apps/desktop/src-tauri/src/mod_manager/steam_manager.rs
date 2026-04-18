@@ -1,6 +1,8 @@
 use crate::errors::Error;
 use log;
-use std::path::{Path, PathBuf};
+#[cfg(any(target_os = "linux", test))]
+use std::path::Path;
+use std::path::PathBuf;
 
 const DEADLOCK_APP_ID: u32 = 1422450;
 
@@ -34,7 +36,7 @@ fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
 
 fn resolve_game_from_steam_dirs(
   steam_dirs: Vec<steamlocate::SteamDir>,
-) -> Result<Option<(steamlocate::SteamDir, PathBuf)>, Error> {
+) -> Option<(steamlocate::SteamDir, PathBuf)> {
   let total_candidates = steam_dirs.len();
 
   for (index, steam_dir) in steam_dirs.into_iter().enumerate() {
@@ -42,7 +44,7 @@ fn resolve_game_from_steam_dirs(
       Ok(Some((game, library))) => {
         let game_path = library.resolve_app_dir(&game);
         if game_path.exists() {
-          return Ok(Some((steam_dir, game_path)));
+          return Some((steam_dir, game_path));
         }
       }
       Ok(None) => {}
@@ -57,7 +59,7 @@ fn resolve_game_from_steam_dirs(
     }
   }
 
-  Ok(None)
+  None
 }
 
 impl SteamManager {
@@ -86,7 +88,7 @@ impl SteamManager {
   pub fn find_game(&mut self) -> Result<&PathBuf, Error> {
     if self.game_path.is_none() {
       let (steam_dir, game_path) =
-        resolve_game_from_steam_dirs(self.candidate_steam_dirs())?.ok_or(Error::GameNotFound)?;
+        resolve_game_from_steam_dirs(self.candidate_steam_dirs()).ok_or(Error::GameNotFound)?;
 
       log::info!("Game path found: {game_path:?}");
       self.steam_dir = Some(steam_dir);
@@ -305,7 +307,6 @@ mod tests {
       temp_steam_dir(".var/app/com.valvesoftware.Steam/data/Steam", true);
 
     let resolved = resolve_game_from_steam_dirs(vec![primary_steam_dir, flatpak_steam_dir])
-      .unwrap()
       .expect("expected Deadlock to be found in fallback Steam directory");
 
     assert!(
