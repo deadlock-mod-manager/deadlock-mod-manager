@@ -80,6 +80,16 @@ const parseFileUri = (value: string): string | null => {
   }
 };
 
+const isAbsoluteLocalPath = (value: string): boolean => {
+  if (value.startsWith("\\\\") || value.startsWith("//")) {
+    return true;
+  }
+  if (value.startsWith("/")) {
+    return true;
+  }
+  return /^[a-zA-Z]:[\\/]/.test(value);
+};
+
 const normalizeDroppedPath = (value: string): string | null => {
   if (!value) {
     return null;
@@ -89,7 +99,7 @@ const normalizeDroppedPath = (value: string): string | null => {
     return parseFileUri(value);
   }
 
-  return value;
+  return isAbsoluteLocalPath(value) ? value : null;
 };
 
 const extractPathsFromStringPayloads = (

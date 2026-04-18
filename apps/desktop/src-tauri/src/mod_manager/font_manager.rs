@@ -1,7 +1,7 @@
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::ffi::OsStr;
+use std::fs;
 use std::path::{Path, PathBuf};
 use vpk_parser::{VpkParseOptions, VpkParser};
 
@@ -48,15 +48,19 @@ impl FontManager {
       let path = entry.path();
       if path.is_dir() {
         self.walk_for_fonts(&path, base, result);
-      } else if path.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("ttf"))
+      } else if path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("ttf"))
         == Some(true)
-        && is_under_panorama_fonts(&path, base) {
-          result.push(path);
-        }
+        && is_under_panorama_fonts(&path, base)
+      {
+        result.push(path);
+      }
     }
   }
 
-  /// Parse the actual font name from the TTF name table (full name, then family, then filename)
+  /// Parse the actual font name from the TTF name table (family name, then full name, then filename)
   pub fn get_font_name(&self, ttf_path: &Path) -> String {
     let fallback = ttf_path
       .file_stem()
@@ -76,22 +80,26 @@ impl FontManager {
     for target_id in [1u16, 4u16] {
       for name in face.names() {
         if name.name_id == target_id
-          && let Some(s) = name.to_string() {
-            let trimmed = s.trim().to_string();
-            if !trimmed.is_empty() {
-              return trimmed;
-            }
+          && let Some(s) = name.to_string()
+        {
+          let trimmed = s.trim().to_string();
+          if !trimmed.is_empty() {
+            return trimmed;
           }
+        }
       }
     }
 
     fallback
   }
 
-  /// Copy fonts to a stash dir within the mod's cache folder, returning FontInfo for each
+  /// Copy fonts to a stash dir within the mod's cache folder, returning FontInfo for each.
+  /// Duplicate filenames are skipped so the on-disk stash and the returned `FontInfo`
+  /// list stay consistent (otherwise the second copy silently overwrites the first).
   pub fn stash_fonts(&self, fonts: &[PathBuf], stash_dir: &Path) -> Result<Vec<FontInfo>, Error> {
     fs::create_dir_all(stash_dir)?;
 
+    let mut seen = std::collections::HashSet::new();
     let mut infos = Vec::new();
     for font_path in fonts {
       let file_name = font_path
@@ -100,12 +108,20 @@ impl FontManager {
         .ok_or_else(|| Error::InvalidInput("Font file has no name".into()))?
         .to_string();
 
+      if !seen.insert(file_name.clone()) {
+        log::warn!("Skipping duplicate font filename in stash: {file_name} ({font_path:?})");
+        continue;
+      }
+
       let dest = stash_dir.join(&file_name);
       fs::copy(font_path, &dest)?;
 
       let font_name = self.get_font_name(font_path);
       log::info!("Stashed font: {file_name} -> \"{font_name}\"");
-      infos.push(FontInfo { file_name, font_name });
+      infos.push(FontInfo {
+        file_name,
+        font_name,
+      });
     }
 
     Ok(infos)
@@ -127,7 +143,10 @@ impl FontManager {
     for entry in fs::read_dir(stash_dir)? {
       let entry = entry?;
       let path = entry.path();
-      if path.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("ttf"))
+      if path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case("ttf"))
         != Some(true)
       {
         continue;
@@ -144,7 +163,10 @@ impl FontManager {
       log::info!("Installed font: {file_name} -> {dest:?}");
 
       let font_name = self.get_font_name(&path);
-      installed.push(FontInfo { file_name, font_name });
+      installed.push(FontInfo {
+        file_name,
+        font_name,
+      });
     }
 
     Ok(installed)
@@ -197,7 +219,10 @@ impl FontManager {
     fs::write(conf_path, &content)
       .map_err(|e| Error::InvalidInput(format!("Failed to write fonts.conf: {e}")))?;
 
-    log::info!("Patched fonts.conf for mod {mod_id} with {} font(s)", font_infos.len());
+    log::info!(
+      "Patched fonts.conf for mod {mod_id} with {} font(s)",
+      font_infos.len()
+    );
     Ok(())
   }
 
@@ -231,7 +256,10 @@ impl FontManager {
     };
 
     // Walk back to find the newline before the start marker
-    let section_start = content[..start_pos].rfind('\n').map(|i| i + 1).unwrap_or(start_pos);
+    let section_start = content[..start_pos]
+      .rfind('\n')
+      .map(|i| i + 1)
+      .unwrap_or(start_pos);
 
     let Some(end_pos) = content.find(&end_marker) else {
       return content.to_string();
@@ -267,7 +295,10 @@ impl FontManager {
     for entry in fs::read_dir(stash_dir)? {
       let entry = entry?;
       let path = entry.path();
-      if path.extension().and_then(OsStr::to_str).map(|ext| ext.eq_ignore_ascii_case("ttf"))
+      if path
+        .extension()
+        .and_then(OsStr::to_str)
+        .map(|ext| ext.eq_ignore_ascii_case("ttf"))
         != Some(true)
       {
         continue;
@@ -336,7 +367,10 @@ impl FontManager {
       include_merkle: false,
     };
 
-    let parsed = match VpkParser::parse(buffer.clone(), options) {
+    // Move the buffer into the parser to avoid keeping two full copies in memory.
+    // For inline (`archive_index == 0x7fff`) entries we lazily re-read the file
+    // only when the first inline font is encountered.
+    let parsed = match VpkParser::parse(buffer, options) {
       Ok(p) => p,
       Err(e) => {
         log::warn!("Font scan: failed to parse VPK {:?}: {e}", vpk_path);
@@ -345,14 +379,23 @@ impl FontManager {
     };
 
     let mut result = Vec::new();
+    let mut inline_buffer: Option<Vec<u8>> = None;
 
     for entry in &parsed.entries {
       // Only care about TTF files inside panorama/fonts/
       if !entry.ext.eq_ignore_ascii_case("ttf") {
         continue;
       }
-      let path_lower = entry.path.to_lowercase();
-      if !path_lower.contains("panorama") || !path_lower.contains("fonts") {
+      // Match an actual `panorama/fonts` segment so unrelated paths like
+      // `panorama_fonts_backup/foo` aren't treated as bundled fonts.
+      let path_components: Vec<&str> = entry
+        .path
+        .split(['/', '\\'])
+        .filter(|component| !component.is_empty())
+        .collect();
+      if !path_components.windows(2).any(|window| {
+        window[0].eq_ignore_ascii_case("panorama") && window[1].eq_ignore_ascii_case("fonts")
+      }) {
         continue;
       }
 
@@ -361,11 +404,27 @@ impl FontManager {
 
       if entry.entry_length > 0 {
         if entry.archive_index == 0x7fff {
-          // Inline in the dir file
+          let dir_buffer = match inline_buffer.as_ref() {
+            Some(buf) => buf,
+            None => match fs::read(vpk_path) {
+              Ok(buf) => {
+                inline_buffer = Some(buf);
+                inline_buffer.as_ref().unwrap()
+              }
+              Err(e) => {
+                log::warn!(
+                  "Font scan: failed to re-read VPK for inline entry {:?}: {e}",
+                  vpk_path
+                );
+                continue;
+              }
+            },
+          };
+
           let start = data_section_start + entry.entry_offset as usize;
           let end = start + entry.entry_length as usize;
-          if end <= buffer.len() {
-            font_bytes.extend_from_slice(&buffer[start..end]);
+          if end <= dir_buffer.len() {
+            font_bytes.extend_from_slice(&dir_buffer[start..end]);
           } else {
             log::warn!(
               "Font scan: VPK entry out of bounds for \"{}\" in {:?}",
@@ -376,10 +435,7 @@ impl FontManager {
           }
         } else {
           // In a companion archive file
-          let stem = vpk_path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
+          let stem = vpk_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
           let base = stem.strip_suffix("_dir").unwrap_or(stem);
           let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
           let archive_path = vpk_path
@@ -403,7 +459,10 @@ impl FontManager {
               }
             }
             Err(e) => {
-              log::warn!("Font scan: cannot read companion archive {:?}: {e}", archive_path);
+              log::warn!(
+                "Font scan: cannot read companion archive {:?}: {e}",
+                archive_path
+              );
               continue;
             }
           }
@@ -419,28 +478,34 @@ impl FontManager {
     result
   }
 
-  /// Scan all VPK files in `dir` (non-recursive) for packed TTF fonts.
+  /// Scan all VPK files under `dir` recursively for packed TTF fonts.
   /// Returns `(filename, bytes)` pairs ready to be stashed.
   pub fn scan_vpks_for_fonts(&self, dir: &Path) -> Vec<(String, Vec<u8>)> {
-    let Ok(entries) = fs::read_dir(dir) else {
-      return vec![];
-    };
     let mut result = Vec::new();
+    self.walk_for_vpk_fonts(dir, &mut result);
+    result
+  }
+
+  fn walk_for_vpk_fonts(&self, dir: &Path, result: &mut Vec<(String, Vec<u8>)>) {
+    let Ok(entries) = fs::read_dir(dir) else {
+      return;
+    };
     for entry in entries.flatten() {
       let path = entry.path();
-      if path
+      if path.is_dir() {
+        self.walk_for_vpk_fonts(&path, result);
+      } else if path
         .extension()
         .and_then(|e| e.to_str())
-        .map(|e| e.eq_ignore_ascii_case("vpk"))
-        == Some(true)
+        .is_some_and(|e| e.eq_ignore_ascii_case("vpk"))
       {
         result.extend(self.extract_fonts_from_vpk(&path));
       }
     }
-    result
   }
 
   /// Stash in-memory font bytes into `stash_dir`, returning `FontInfo` for each.
+  /// Duplicate filenames within the same call are skipped to avoid overwriting.
   pub fn stash_font_bytes(
     &self,
     fonts: &[(String, Vec<u8>)],
@@ -448,8 +513,13 @@ impl FontManager {
   ) -> Result<Vec<FontInfo>, Error> {
     fs::create_dir_all(stash_dir)?;
 
+    let mut seen = std::collections::HashSet::new();
     let mut infos = Vec::new();
     for (file_name, bytes) in fonts {
+      if !seen.insert(file_name.clone()) {
+        log::warn!("Skipping duplicate VPK font filename in stash: {file_name}");
+        continue;
+      }
       let dest = stash_dir.join(file_name);
       fs::write(&dest, bytes)?;
       let font_name = self.get_font_name(&dest);

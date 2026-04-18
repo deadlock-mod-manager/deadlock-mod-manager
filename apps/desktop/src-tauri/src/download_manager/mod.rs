@@ -500,25 +500,32 @@ impl DownloadManager {
                 }
               }
             }
-            Err(e) => log::warn!(
-              "Failed to stash loose fonts for mod {}: {e}",
-              task.mod_id
-            ),
+            Err(e) => log::warn!("Failed to stash loose fonts for mod {}: {e}", task.mod_id),
           }
         }
         if !found_vpk.is_empty() {
-          match font_manager.stash_font_bytes(&found_vpk, &stash_dir) {
-            Ok(fonts) => {
-              for font in fonts {
-                if seen_font_files.insert(font.file_name.clone()) {
-                  found_font_infos.push(font);
+          // Drop any VPK-packed font whose filename was already stashed from a
+          // loose `.ttf` so we never overwrite the loose font's bytes on disk
+          // while keeping its metadata in `found_font_infos`.
+          let vpk_to_stash: Vec<(String, Vec<u8>)> = found_vpk
+            .into_iter()
+            .filter(|(name, _)| !seen_font_files.contains(name))
+            .collect();
+
+          if !vpk_to_stash.is_empty() {
+            match font_manager.stash_font_bytes(&vpk_to_stash, &stash_dir) {
+              Ok(fonts) => {
+                for font in fonts {
+                  if seen_font_files.insert(font.file_name.clone()) {
+                    found_font_infos.push(font);
+                  }
                 }
               }
+              Err(e) => log::warn!(
+                "Failed to stash VPK-packed fonts for mod {}: {e}",
+                task.mod_id
+              ),
             }
-            Err(e) => log::warn!(
-              "Failed to stash VPK-packed fonts for mod {}: {e}",
-              task.mod_id
-            ),
           }
         }
       }

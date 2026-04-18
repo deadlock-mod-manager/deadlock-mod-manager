@@ -21,6 +21,7 @@ import {
   writeFileBytes,
   writeFileText,
 } from "@/lib/file-utils";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
 

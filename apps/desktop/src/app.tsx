@@ -1,8 +1,10 @@
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import usePromise from "react-promise-suspense";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
@@ -40,6 +42,7 @@ const App = () => {
   useLanguageListener();
   useModOrderMigration();
   useIngestToolInit();
+  const { t } = useTranslation();
 
   const [pendingFontInstalls, setPendingFontInstalls] = useState<
     PendingFontInstall[]
@@ -110,17 +113,45 @@ const App = () => {
                       isOpen={activePendingFontInstall !== null}
                       onInstall={async () => {
                         if (!activePendingFontInstall) return;
-                        await invoke("install_mod_fonts", {
-                          modId: activePendingFontInstall.modId,
-                        });
-                        dequeuePendingFontInstall();
+                        try {
+                          await invoke("install_mod_fonts", {
+                            modId: activePendingFontInstall.modId,
+                          });
+                          dequeuePendingFontInstall();
+                        } catch (error) {
+                          logger
+                            .withMetadata({
+                              modId: activePendingFontInstall.modId,
+                            })
+                            .withError(
+                              error instanceof Error
+                                ? error
+                                : new Error(String(error)),
+                            )
+                            .error("Failed to install mod fonts");
+                          toast.error(t("fontInstall.installFailed"));
+                        }
                       }}
                       onSkip={async () => {
                         if (!activePendingFontInstall) return;
-                        await invoke("discard_mod_fonts", {
-                          modId: activePendingFontInstall.modId,
-                        });
-                        dequeuePendingFontInstall();
+                        try {
+                          await invoke("discard_mod_fonts", {
+                            modId: activePendingFontInstall.modId,
+                          });
+                          dequeuePendingFontInstall();
+                        } catch (error) {
+                          logger
+                            .withMetadata({
+                              modId: activePendingFontInstall.modId,
+                            })
+                            .withError(
+                              error instanceof Error
+                                ? error
+                                : new Error(String(error)),
+                            )
+                            .error("Failed to discard mod fonts");
+                          toast.error(t("fontInstall.discardFailed"));
+                        }
                       }}
                     />
                   </TauriAppWindowProvider>

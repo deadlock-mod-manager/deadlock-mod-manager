@@ -472,10 +472,9 @@ fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Error> {
     );
   }
 
-  if let Err(error) = font_manager.remove_installed_fonts(
-    &cleanup.game_fonts_dir,
-    &cleanup.removable_font_files,
-  ) {
+  if let Err(error) =
+    font_manager.remove_installed_fonts(&cleanup.game_fonts_dir, &cleanup.removable_font_files)
+  {
     log::warn!(
       "Failed to remove installed fonts for mod {}: {error}",
       cleanup.mod_id
@@ -517,10 +516,7 @@ pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
     log::warn!("fonts.conf not found at {conf_path:?}, skipping patch");
   }
 
-  log::info!(
-    "Installed {} font(s) for mod {mod_id}",
-    installed.len()
-  );
+  log::info!("Installed {} font(s) for mod {mod_id}", installed.len());
   Ok(())
 }
 
@@ -550,7 +546,8 @@ pub async fn scan_and_stash_local_mod_fonts(
   let (mod_dir, validated_files_dir) = {
     let mod_manager = MANAGER.lock().unwrap();
     let mod_dir = mod_manager.get_validated_mod_folder_path(&mod_id)?;
-    let validated_files_dir = mod_manager.validate_extract_target_path(&PathBuf::from(&files_dir))?;
+    let validated_files_dir =
+      mod_manager.validate_extract_target_path(&PathBuf::from(&files_dir))?;
     let expected_files_dir = mod_dir.join("files");
 
     if validated_files_dir != expected_files_dir {
@@ -570,13 +567,19 @@ pub async fn scan_and_stash_local_mod_fonts(
   }
 
   let font_manager = FontManager::new();
+  let stash_dir = mod_dir.join("fonts");
+
+  // Drop any previously stashed fonts so a re-scan with fewer (or zero) fonts
+  // does not leave stale entries that would otherwise still be installable
+  // or end up being purged from the game directory later on.
+  font_manager.discard_stash(&stash_dir)?;
+
   let found_loose = font_manager.scan_for_fonts(search_dir);
   let found_vpk = font_manager.scan_vpks_for_fonts(search_dir);
   if found_loose.is_empty() && found_vpk.is_empty() {
     return Ok(());
   }
 
-  let stash_dir = mod_dir.join("fonts");
   let mut font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
   if !found_loose.is_empty() {
     font_infos.extend(font_manager.stash_fonts(&found_loose, &stash_dir)?);
@@ -635,11 +638,7 @@ pub async fn debug_trigger_font_install(
         fonts: font_infos,
       },
     )
-    .map_err(|e| {
-      Error::Io(std::io::Error::other(
-        e.to_string(),
-      ))
-    })?;
+    .map_err(|e| Error::Io(std::io::Error::other(e.to_string())))?;
 
   log::info!("debug_trigger_font_install: emitted download-fonts-found for mod {mod_id}");
   Ok(())
@@ -685,7 +684,11 @@ pub async fn debug_queue_local_zip(
 
   let task = DownloadTask {
     mod_id,
-    files: vec![DownloadFileDto { url: String::new(), name: file_name, size }],
+    files: vec![DownloadFileDto {
+      url: String::new(),
+      name: file_name,
+      size,
+    }],
     target_dir,
     profile_folder: None,
     is_profile_import: false,
@@ -725,14 +728,15 @@ pub async fn purge_mod(
 ) -> Result<(), Error> {
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
-    mod_manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
+    mod_manager.get_steam_manager().get_game_path().cloned()
   };
 
-  let prepared_font_cleanup = prepare_font_cleanup(&game_path, &mod_id)?;
+  let prepared_font_cleanup = if let Some(game_path) = game_path.as_ref() {
+    prepare_font_cleanup(game_path, &mod_id)?
+  } else {
+    log::warn!("Skipping font cleanup for mod {mod_id}: game path not configured");
+    None
+  };
 
   {
     let mut mod_manager = MANAGER.lock().unwrap();
@@ -1416,7 +1420,10 @@ pub async fn copy_local_mod_vpks(
 pub async fn read_dropped_mod_file(file_path: String) -> Result<Vec<u8>, Error> {
   let validated_path = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
 
-  log::info!("Reading dropped mod file from path: {}", validated_path.display());
+  log::info!(
+    "Reading dropped mod file from path: {}",
+    validated_path.display()
+  );
 
   tokio::fs::read(&validated_path).await.map_err(Error::from)
 }

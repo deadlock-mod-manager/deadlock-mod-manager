@@ -66,9 +66,8 @@ mod tests {
       .duration_since(UNIX_EPOCH)
       .expect("system clock should be after unix epoch")
       .as_nanos();
-    let dir = std::env::temp_dir().join(format!(
-      "deadlock-mod-manager-dropped-file-{unique_suffix}"
-    ));
+    let dir =
+      std::env::temp_dir().join(format!("deadlock-mod-manager-dropped-file-{unique_suffix}"));
     fs::create_dir_all(&dir).expect("temp dir should be created");
     dir
   }
@@ -86,7 +85,10 @@ mod tests {
     )
     .expect("supported dropped file should validate");
 
-    assert_eq!(validated, file_path.canonicalize().expect("path should resolve"));
+    assert_eq!(
+      validated,
+      file_path.canonicalize().expect("path should resolve")
+    );
 
     fs::remove_dir_all(&dir).expect("temp dir should be removed");
   }
@@ -112,7 +114,9 @@ mod tests {
     )
     .expect_err("unsupported extensions should be rejected");
 
-    assert!(matches!(error, Error::InvalidInput(message) if message.contains("supported mod file")));
+    assert!(
+      matches!(error, Error::InvalidInput(message) if message.contains("supported mod file"))
+    );
 
     fs::remove_dir_all(&dir).expect("temp dir should be removed");
   }
