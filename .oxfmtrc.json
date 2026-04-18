@@ -24,6 +24,8 @@
     "**/routeTree.gen.ts",
     "**/components/ui/**",
     "apps/desktop/src/components/ui/**",
+    "apps/desktop/src/locales/**",
+    "**/README.md",
     "apps/web/components/ui/**",
     "**/tsconfig*.json",
     "**/next.config.js",
