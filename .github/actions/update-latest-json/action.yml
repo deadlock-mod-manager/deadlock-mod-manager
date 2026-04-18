@@ -28,12 +28,13 @@ runs:
       with:
         script: |
           const fs = require('fs');
+          const path = require('path');
 
           function toGitHubAssetName(name) {
             return name
               .trim()
               .replace(/[^a-zA-Z0-9_-]/g, '.')
-              .replace(/\.\./g, '.');
+              .replace(/\.+/g, '.');
           }
 
           const releaseId = parseInt(process.env.RELEASE_ID);
@@ -87,7 +88,9 @@ runs:
           if (exeAsset) {
             console.log(`Resolved Windows executable asset via GitHub asset name match: ${exeAsset.name}`);
           } else {
-            console.log(`Could not match ${exeFile} to release asset ${githubAssetName}, falling back to encoded URL`);
+            const message = `Could not match ${exeFile} to release asset ${githubAssetName}, falling back to encoded URL`;
+            console.log(message);
+            core.warning(message);
           }
 
           const exeUrl = exeAsset?.browser_download_url ?? `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${encodeURIComponent(exeFile)}`;
