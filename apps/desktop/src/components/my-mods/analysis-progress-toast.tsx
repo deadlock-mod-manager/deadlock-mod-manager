@@ -1,6 +1,7 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Loader2, X } from "@deadlock-mods/ui/icons";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { AddonAnalysisProgress } from "@/types/mods";
 
@@ -19,8 +20,8 @@ export const AnalysisProgressToast = ({
 
   if (!isVisible) return null;
 
-  return (
-    <div className='fixed bottom-10 text-foreground right-16 z-50 w-80 bg-background border border-border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 fade-in-0 duration-300'>
+  return createPortal(
+    <div className='fixed bottom-10 text-foreground right-4 z-50 w-80 bg-background border border-border rounded-lg shadow-lg animate-in slide-in-from-bottom-2 fade-in-0 duration-300'>
       <div className='p-4'>
         <div className='flex items-center justify-between mb-3'>
           <div className='flex items-center gap-2'>
@@ -80,6 +81,7 @@ export const AnalysisProgressToast = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

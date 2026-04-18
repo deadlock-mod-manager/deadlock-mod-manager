@@ -171,6 +171,8 @@ pub fn run() {
       commands::switch_profile,
       commands::list_profile_folders,
       commands::get_profile_installed_vpks,
+      commands::delete_profile_vpk,
+      commands::show_profile_vpk_in_folder,
       commands::import_profile_batch,
       commands::register_analyzed_mod,
       commands::batch_update_mods,

@@ -232,11 +232,23 @@
     "disableError": "Failed to disable mod",
     "vpkScanAlert": {
       "title": "Unrecognized VPK files found",
-      "description": "Found {{count}} VPK file(s) in your mods folder that aren't in your mods list, to dismiss this alert, you can analyze your local addons folder to identify and add them to your mods list.",
+      "titleWithCount_one": "{{count}} unrecognized VPK file",
+      "titleWithCount_other": "{{count}} unrecognized VPK files",
+      "description": "Found {{count}} VPK file(s) in your mods folder that aren't in your mods list. Analyze your addons folder to identify them, or remove the files manually below.",
       "analyzeButton": "Analyze Local Addons",
       "showList": "Show files",
       "refresh": "Refresh",
-      "hideList": "Hide files"
+      "hideList": "Hide files",
+      "dismiss": "Dismiss",
+      "dismissTooltip": "Hide until new files appear",
+      "openInFolder": "Show in folder",
+      "delete": "Delete file",
+      "deleteConfirmTitle": "Delete VPK file?",
+      "deleteConfirmBody": "This will permanently delete \"{{name}}\" from your addons folder. This action cannot be undone.",
+      "deleteConfirmAction": "Delete",
+      "deleteSuccess": "Deleted {{name}}",
+      "deleteError": "Failed to delete {{name}}",
+      "openError": "Failed to open file location"
     }
   },
   "pagination": {
@@ -1460,7 +1472,7 @@
     "pendingUpdates": "Updates",
     "queued": "In Queue",
     "browseStore": "Browse Store",
-    "broadcast": "Broadcast",
+    "broadcast": "Announcements",
     "changelog": "Changelog",
     "moreFeatures": "+{{count}} more",
     "tickerPrev": "Previous announcement",

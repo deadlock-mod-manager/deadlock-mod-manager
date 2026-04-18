@@ -465,12 +465,8 @@ export const usePersistedStore = create<State>()(
             .info(
               "Migrating from version 16 to 17: Adding occult geometry toggles",
             );
-          if (typeof state.showOccultGeometry !== "boolean") {
-            state.showOccultGeometry = true;
-          }
-          if (typeof state.animateOccultGeometry !== "boolean") {
-            state.animateOccultGeometry = true;
-          }
+          state.showOccultGeometry = true;
+          state.animateOccultGeometry = true;
         }
 
         return state;

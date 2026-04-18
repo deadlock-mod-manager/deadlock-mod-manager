@@ -18,7 +18,7 @@ const ServerDetailEmptyState = ({ className }: ServerDetailEmptyStateProps) => {
   return (
     <aside
       className={cn(
-        "hidden h-full w-[360px] shrink-0 flex-col rounded-lg border border-border/60 bg-card/40 p-6 lg:flex",
+        "hidden h-full w-[360px] shrink-0 flex-col rounded-lg border border-border/60 bg-card p-6 lg:flex",
         className,
       )}>
       <Empty className='m-auto'>

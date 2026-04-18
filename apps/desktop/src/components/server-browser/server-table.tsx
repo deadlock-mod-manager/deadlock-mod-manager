@@ -32,10 +32,10 @@ const ServerTable = ({
   const { t } = useTranslation();
 
   return (
-    <div className='flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/30 shadow-[0_1px_0_rgb(255_255_255/0.04)_inset]'>
+    <div className='flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/60 bg-card shadow-[0_1px_0_rgb(255_255_255/0.04)_inset]'>
       <div className='flex-1 overflow-y-auto'>
         <table className='w-full border-separate border-spacing-0 text-sm'>
-          <thead className='sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/70'>
+          <thead className='sticky top-0 z-10 bg-card'>
             <tr className='text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground'>
               <th className='whitespace-nowrap border-b border-border/60 px-3 py-2'>
                 {t("servers.table.name")}

@@ -16,13 +16,14 @@ import { AnnouncementDetailDialog } from "./announcement-detail-dialog";
 import { getAnnouncementDate, getCategoryConfig } from "./announcement-utils";
 
 const TICKER_GLYPH = "✦";
+const MIN_TICKER_ITEMS = 8;
 
 const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(media.matches);
     const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);
@@ -37,7 +38,7 @@ const TickerItem = ({
   announcement: AnnouncementDto;
   onSelect: (a: AnnouncementDto) => void;
 }) => {
-  const { icon: Icon, label } = getCategoryConfig(announcement.category);
+  const { icon: Icon } = getCategoryConfig(announcement.category);
   const date = getAnnouncementDate(announcement);
 
   return (
@@ -46,9 +47,6 @@ const TickerItem = ({
       onClick={() => onSelect(announcement)}
       type='button'>
       <Icon className='size-3.5 shrink-0 text-primary/80' weight='duotone' />
-      <span className='font-bold text-[10px] text-primary/80 uppercase tracking-[0.25em]'>
-        {label}
-      </span>
       <span className='font-medium text-foreground/90 text-sm group-hover/item:text-primary'>
         {announcement.title}
       </span>
@@ -67,24 +65,35 @@ const TickerTrack = ({
   announcements: AnnouncementDto[];
   onSelect: (a: AnnouncementDto) => void;
   ariaHidden?: boolean;
-}) => (
-  <div
-    aria-hidden={ariaHidden}
-    className='flex shrink-0 items-center gap-8 pr-8'>
-    {announcements.map((announcement) => (
-      <div
-        className='inline-flex shrink-0 items-center gap-8'
-        key={`${ariaHidden ? "dup" : "src"}-${announcement.id}`}>
-        <TickerItem announcement={announcement} onSelect={onSelect} />
-        <span
-          aria-hidden='true'
-          className='select-none text-primary/40 text-xs'>
-          {TICKER_GLYPH}
-        </span>
-      </div>
-    ))}
-  </div>
-);
+}) => {
+  const repeats = Math.max(
+    1,
+    Math.ceil(MIN_TICKER_ITEMS / Math.max(1, announcements.length)),
+  );
+  const items = Array.from({ length: repeats }).flatMap((_, repeatIndex) =>
+    announcements.map((announcement) => ({
+      announcement,
+      key: `${ariaHidden ? "dup" : "src"}-${repeatIndex}-${announcement.id}`,
+    })),
+  );
+
+  return (
+    <div
+      aria-hidden={ariaHidden}
+      className='flex shrink-0 items-center gap-8 pr-8'>
+      {items.map(({ announcement, key }) => (
+        <div className='inline-flex shrink-0 items-center gap-8' key={key}>
+          <TickerItem announcement={announcement} onSelect={onSelect} />
+          <span
+            aria-hidden='true'
+            className='select-none text-primary/40 text-xs'>
+            {TICKER_GLYPH}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const StaticTicker = ({
   announcements,
@@ -148,8 +157,6 @@ export const AnnouncementsTicker = () => {
 
   const announcements = useMemo(() => data ?? [], [data]);
 
-  // When loading, we still render the eyebrow so the layout doesn't jump.
-  // When loaded with zero announcements, the entire ticker is hidden.
   if (!isLoading && announcements.length === 0) {
     return null;
   }
@@ -164,7 +171,10 @@ export const AnnouncementsTicker = () => {
         )}
         role='region'>
         <div className='flex shrink-0 items-center gap-2 border-primary/20 border-r bg-background/60 px-3 py-1.5'>
-          <MegaphoneIcon className='size-4 text-primary' weight='duotone' />
+          <MegaphoneIcon
+            className='size-4 -scale-x-100 text-primary'
+            weight='duotone'
+          />
           <span
             className='font-bold text-[10px] text-primary uppercase tracking-[0.4em]'
             style={{ fontFamily: '"Forevs Demo", serif' }}>

@@ -499,6 +499,7 @@ const MyMods = () => {
     unmatchedVpks,
     isRefetching: isVpkScanRefetching,
     refetch: refetchVpkScan,
+    activeProfileFolder,
   } = useVpkScan();
   const {
     updatableMods,
@@ -852,6 +853,7 @@ const MyMods = () => {
             unmatchedVpks={unmatchedVpks}
             isRefetching={isVpkScanRefetching}
             refetch={refetchVpkScan}
+            activeProfileFolder={activeProfileFolder}
           />
           {mods.length === 0 && <MyModsEmptyState />}
           {mods.length > 0 && (

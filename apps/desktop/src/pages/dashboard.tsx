@@ -51,9 +51,7 @@ const Dashboard = () => {
 
   return (
     <div className='relative z-10 flex h-full w-full flex-col gap-3'>
-      <div className='px-6'>
-        <AnnouncementsTicker />
-      </div>
+      <AnnouncementsTicker />
       <div className='px-6'>
         <PageTitle
           subtitle={t("dashboard.subtitle")}

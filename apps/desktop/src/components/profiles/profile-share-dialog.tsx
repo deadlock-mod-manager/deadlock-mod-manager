@@ -13,6 +13,11 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { CopyIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
@@ -23,6 +28,7 @@ import { useHardwareId } from "@/hooks/use-hardware-id";
 import { shareProfile } from "@/lib/api";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import type { ModFileTree } from "@/types/mods";
 
 export const ProfileShareDialog = () => {
@@ -185,18 +191,28 @@ export const ProfileShareDialog = () => {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          isLoading={isPending}
-          icon={<ShareNetworkIcon className='size-3.5' />}
-          variant='text'
-          size='sm'
-          className='text-xs'
-          disabled={!hardwareId || !version}
-          onClick={onSubmit}>
-          {t("profiles.share")}
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <button
+              aria-label={t("profiles.share")}
+              className='group/share relative flex h-full shrink-0 items-center justify-center rounded-r-md px-2 text-muted-foreground transition-colors duration-150 hover:bg-primary/[0.06] hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+              disabled={!hardwareId || !version || isPending}
+              onClick={onSubmit}
+              type='button'>
+              <ShareNetworkIcon
+                className={cn(
+                  "size-3.5 transition-transform duration-200 group-hover/share:-translate-y-px",
+                  isPending && "animate-pulse",
+                )}
+              />
+            </button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side='bottom' sideOffset={8}>
+          <p>{t("profiles.share")}</p>
+        </TooltipContent>
+      </Tooltip>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("profiles.share")}</DialogTitle>

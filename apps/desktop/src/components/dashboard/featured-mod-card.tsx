@@ -41,7 +41,7 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
 
   return (
     <div
-      className='group relative isolate w-full cursor-pointer overflow-hidden rounded-lg border border-primary/30'
+      className='group relative isolate w-full cursor-pointer overflow-hidden rounded-lg'
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

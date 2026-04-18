@@ -308,6 +308,23 @@ export const getProfileInstalledVpks = async (
   return await invoke("get_profile_installed_vpks", { profileFolder });
 };
 
+export const deleteProfileVpk = async (
+  vpkName: string,
+  profileFolder: string | null = null,
+): Promise<void> => {
+  return await invoke("delete_profile_vpk", { profileFolder, vpkName });
+};
+
+export const showProfileVpkInFolder = async (
+  vpkName: string,
+  profileFolder: string | null = null,
+): Promise<void> => {
+  return await invoke("show_profile_vpk_in_folder", {
+    profileFolder,
+    vpkName,
+  });
+};
+
 // Hash analysis for mod identification
 export const analyzeHashes = async (hashes: {
   sha256?: string;

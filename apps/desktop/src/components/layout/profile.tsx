@@ -21,22 +21,27 @@ const Profile = () => {
   return (
     <>
       <button
+        aria-label={t("profiles.activeProfile", "Active Profile")}
         className={cn(
-          "group inline-flex min-w-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-left",
-          "border border-transparent text-xs leading-none",
+          "group/profile relative flex h-full min-w-0 items-center gap-2 rounded-l-md px-2.5 text-left",
+          "transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           isProfileManagementEnabled
-            ? "cursor-pointer hover:border-border hover:bg-secondary/50"
+            ? "cursor-pointer hover:bg-primary/[0.06]"
             : "cursor-default",
         )}
         disabled={!isProfileManagementEnabled}
         onClick={() => setShowProfileManager(true)}
         type='button'>
-        <Users className='size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground' />
-        <span className='truncate font-medium'>{profileName}</span>
+        <Users className='size-3.5 shrink-0 text-muted-foreground transition-colors group-hover/profile:text-primary' />
+
+        <span className='truncate font-primary text-sm leading-none tracking-wide text-foreground'>
+          {profileName}
+        </span>
+
         {isProfileManagementEnabled && (
           <CaretUpDownIcon
-            className='size-3 shrink-0 text-muted-foreground/60 group-hover:text-muted-foreground'
+            className='size-3 shrink-0 text-muted-foreground/50 transition-colors group-hover/profile:text-primary'
             weight='bold'
           />
         )}

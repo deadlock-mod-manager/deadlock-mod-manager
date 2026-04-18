@@ -59,5 +59,6 @@ export const useVpkScan = () => {
     error,
     hasUnmatchedVpks: unmatchedVpkData.count > 0,
     refetch,
+    activeProfileFolder: activeProfile?.folderName ?? null,
   };
 };

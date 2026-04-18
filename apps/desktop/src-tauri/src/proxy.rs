@@ -68,11 +68,10 @@ where
 
   let mut builder = reqwest::Client::builder();
 
-  if let Some(ref cfg) = *config {
-    if cfg.enabled && !cfg.host.is_empty() && cfg.port > 0 {
+  if let Some(ref cfg) = *config
+    && cfg.enabled && !cfg.host.is_empty() && cfg.port > 0 {
       builder = apply_proxy(builder, cfg)?;
     }
-  }
 
   builder = configure(builder);
 

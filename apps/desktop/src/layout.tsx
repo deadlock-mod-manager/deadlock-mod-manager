@@ -30,9 +30,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <div className='relative z-[2] flex min-h-0 flex-1 flex-col overflow-hidden px-2 pt-4'>
                   {children}
                 </div>
-                <BottomBar />
               </SidebarInset>
             </div>
+            <BottomBar />
           </SidebarProvider>
         </ScrollBackButtonProvider>
       </div>

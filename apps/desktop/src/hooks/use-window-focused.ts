@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react";
 
-const getInitialFocused = (): boolean => {
-  if (typeof document === "undefined") return true;
-  const visible = document.visibilityState === "visible";
-  const focused =
-    typeof document.hasFocus === "function" ? document.hasFocus() : true;
-  return visible && focused;
-};
+const isWindowFocused = (): boolean =>
+  document.visibilityState === "visible" && document.hasFocus();
 
 export const useWindowFocused = (): boolean => {
-  const [focused, setFocused] = useState<boolean>(getInitialFocused);
+  const [focused, setFocused] = useState<boolean>(isWindowFocused);
 
   useEffect(() => {
-    const update = () => setFocused(getInitialFocused());
+    const update = () => setFocused(isWindowFocused());
 
     window.addEventListener("focus", update);
     window.addEventListener("blur", update);
     document.addEventListener("visibilitychange", update);
-
-    update();
 
     return () => {
       window.removeEventListener("focus", update);

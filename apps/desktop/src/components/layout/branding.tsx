@@ -110,7 +110,7 @@ export const BrandingHeader = ({
             ? "pointer-events-none max-w-0 -translate-x-1 opacity-0"
             : "max-w-[12rem] translate-x-0 opacity-100 delay-100",
         )}>
-        <span className='truncate font-primary text-lg leading-none tracking-tight'>
+        <span className='font-primary text-xl leading-none tracking-tight'>
           Deadlock Mod Manager
         </span>
         <div className='flex items-center gap-1.5'>

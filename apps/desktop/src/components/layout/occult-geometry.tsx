@@ -7,7 +7,7 @@ const GOLDEN_RATIO = 1.618033988749;
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
-    s = (s * 16807 + 0) % 2147483647;
+    s = (s * 16807) % 2147483647;
     return s / 2147483647;
   };
 }
@@ -90,9 +90,8 @@ function ConcentricRings({
   tickMarks?: boolean;
   seed?: number;
 }) {
-  const rng = seededRandom(seed);
-
   const rings = useMemo(() => {
+    const rng = seededRandom(seed);
     const items = [];
     for (let i = 0; i < ringCount; i++) {
       const r = baseRadius + i * baseRadius * (0.3 + rng() * 0.15);
@@ -107,29 +106,26 @@ function ConcentricRings({
       });
     }
     return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cx, cy, baseRadius, ringCount]);
+  }, [baseRadius, ringCount, seed]);
 
   const ticks = useMemo(() => {
     if (!tickMarks) return [];
     const items = [];
-    const primaryRadius = baseRadius;
     const tickCount = 36;
     for (let i = 0; i < tickCount; i++) {
       const angle = (i / tickCount) * Math.PI * 2;
       const isCardinal = i % 9 === 0;
       const len = isCardinal ? 8 : i % 3 === 0 ? 5 : 3;
       items.push({
-        x1: cx + Math.cos(angle) * (primaryRadius - len),
-        y1: cy + Math.sin(angle) * (primaryRadius - len),
-        x2: cx + Math.cos(angle) * (primaryRadius + 1),
-        y2: cy + Math.sin(angle) * (primaryRadius + 1),
+        x1: cx + Math.cos(angle) * (baseRadius - len),
+        y1: cy + Math.sin(angle) * (baseRadius - len),
+        x2: cx + Math.cos(angle) * (baseRadius + 1),
+        y2: cy + Math.sin(angle) * (baseRadius + 1),
         opacity: isCardinal ? 0.2 : 0.1,
         strokeWidth: isCardinal ? 0.7 : 0.4,
       });
     }
     return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cx, cy, baseRadius, tickMarks]);
 
   return (

@@ -1676,6 +1676,77 @@ pub async fn get_profile_installed_vpks(
   Ok(vpk_files)
 }
 
+fn resolve_profile_vpk_path(
+  profile_folder: Option<String>,
+  vpk_name: &str,
+) -> Result<std::path::PathBuf, Error> {
+  if vpk_name.is_empty()
+    || vpk_name.contains('/')
+    || vpk_name.contains('\\')
+    || vpk_name.contains("..")
+    || !vpk_name.to_lowercase().ends_with(".vpk")
+  {
+    return Err(Error::InvalidInput(format!(
+      "Invalid VPK file name: {vpk_name}"
+    )));
+  }
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let target_dir = if let Some(folder) = profile_folder {
+    addons_path.join(folder)
+  } else {
+    addons_path.clone()
+  };
+
+  let vpk_path = target_dir.join(vpk_name);
+
+  let addons_canonical = addons_path
+    .canonicalize()
+    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addons directory".to_string()))?;
+  let vpk_canonical = vpk_path.canonicalize().map_err(|_| {
+    Error::UnauthorizedPath(format!(
+      "Unable to resolve VPK path: {}",
+      vpk_path.display()
+    ))
+  })?;
+
+  if !vpk_canonical.starts_with(&addons_canonical) {
+    return Err(Error::UnauthorizedPath(
+      "VPK file must be within addons directory".to_string(),
+    ));
+  }
+
+  Ok(vpk_canonical)
+}
+
+#[tauri::command]
+pub async fn delete_profile_vpk(
+  profile_folder: Option<String>,
+  vpk_name: String,
+) -> Result<(), Error> {
+  log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
+  let vpk_path = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  std::fs::remove_file(&vpk_path)?;
+  log::info!("Deleted VPK file: {vpk_path:?}");
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn show_profile_vpk_in_folder(
+  profile_folder: Option<String>,
+  vpk_name: String,
+) -> Result<(), Error> {
+  log::info!("Revealing VPK {vpk_name} from profile {profile_folder:?}");
+  let vpk_path = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  crate::utils::show_in_folder(vpk_path.to_string_lossy().as_ref())
+}
+
 // ============================================================================
 // Ingest Tool Commands
 // ============================================================================
@@ -3046,9 +3117,7 @@ pub struct FileserverLatencyResult {
 pub async fn test_fileserver_latency(
   servers: Vec<FileserverLatencyRequest>,
 ) -> Result<Vec<FileserverLatencyResult>, Error> {
-  let client = crate::proxy::build_http_client(|b| {
-    b.timeout(std::time::Duration::from_secs(5))
-  })?;
+  let client = crate::proxy::build_http_client(|b| b.timeout(std::time::Duration::from_secs(5)))?;
 
   let futures_iter = servers.into_iter().map(|req| {
     let c = client.clone();

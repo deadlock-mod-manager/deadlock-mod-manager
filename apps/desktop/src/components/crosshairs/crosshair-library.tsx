@@ -188,7 +188,7 @@ const CrosshairLibraryData = () => {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className='min-h-0 flex-1 overflow-auto' ref={parentRef}>
+        <div className='min-h-0 flex-1 overflow-auto pt-4' ref={parentRef}>
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,

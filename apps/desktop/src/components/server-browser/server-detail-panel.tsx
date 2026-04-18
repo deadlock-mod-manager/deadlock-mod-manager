@@ -44,7 +44,7 @@ const ServerDetailPanel = ({
   return (
     <aside
       className={cn(
-        "flex h-full w-full shrink-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40 lg:w-[360px]",
+        "flex h-full w-full shrink-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card lg:w-[360px]",
         className,
       )}>
       <ServerDetailHeader

@@ -45,15 +45,31 @@ export const Toolbar = () => {
 
   return (
     <div className='flex min-w-0 flex-1 items-stretch' data-tauri-drag-region>
-      <div className='flex min-w-0 shrink-0 items-center gap-1 pl-1.5 pr-3 py-1.5'>
-        <div className='min-w-0 max-w-52'>
-          <Profile />
-        </div>
-        {isProfileSharingEnabled && (
-          <div className='shrink-0'>
-            <ProfileShareDialog />
+      <div className='flex min-w-0 shrink-0 items-center pl-1.5 pr-3 py-1.5'>
+        <div
+          className={cn(
+            "group relative flex h-7 min-w-0 items-stretch overflow-hidden rounded-md",
+            "border border-primary/20 bg-gradient-to-r from-primary/[0.05] via-background/40 to-primary/[0.03]",
+            "shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.06)]",
+            "transition-colors duration-200 hover:border-primary/35",
+          )}>
+          <span
+            aria-hidden='true'
+            className='pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-primary/[0.08] to-transparent opacity-0 transition-all duration-700 ease-out group-hover:left-full group-hover:opacity-100'
+          />
+          <div className='min-w-0 max-w-52'>
+            <Profile />
           </div>
-        )}
+          {isProfileSharingEnabled && (
+            <>
+              <span
+                aria-hidden='true'
+                className='my-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-primary/30 to-transparent'
+              />
+              <ProfileShareDialog />
+            </>
+          )}
+        </div>
       </div>
 
       <div
