@@ -36,6 +36,7 @@ export enum DeadlockHeroes {
   Vyper = "Vyper",
   Warden = "Warden",
   Wraith = "Wraith",
+  Wrecker = "Wrecker",
   Yamato = "Yamato",
 }
 

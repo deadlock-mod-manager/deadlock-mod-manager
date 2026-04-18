@@ -46,7 +46,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 17,
+      version: 18,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -469,6 +469,51 @@ export const usePersistedStore = create<State>()(
           state.animateOccultGeometry = true;
         }
 
+        // Migration from version 17 to 18: Reset detectedHero to re-trigger hero detection with fixed VPK lookup
+        if (version <= 17) {
+          logger
+            .withMetadata({
+              migrationFrom: version,
+              migrationTo: 18,
+              action: "reset-detected-hero",
+            })
+            .info(
+              "Migrating from version 17 to 18: Resetting detectedHero for re-scan",
+            );
+          if (Array.isArray(state.localMods)) {
+            for (const mod of state.localMods as Record<string, unknown>[]) {
+              delete mod.detectedHero;
+            }
+          }
+          if (
+            state.profiles &&
+            typeof state.profiles === "object" &&
+            !Array.isArray(state.profiles)
+          ) {
+            for (const profile of Object.values(
+              state.profiles as Record<string, Record<string, unknown>>,
+            )) {
+              if (Array.isArray(profile.mods)) {
+                for (const mod of profile.mods as Record<string, unknown>[]) {
+                  delete mod.detectedHero;
+                }
+              }
+            }
+          }
+        }
+
+        // Migration from version 15 to 16: Add hero parser interval setting
+        if (version <= 15) {
+          logger
+            .withMetadata({
+              migrationFrom: version,
+              migrationTo: 16,
+              action: "add-hero-parser-interval",
+            })
+            .info("Migrating to version 16: Adding heroParserIntervalSeconds");
+          state.heroParserIntervalSeconds = 30;
+        }
+
         return state;
       },
       partialize: (state) => {
@@ -485,6 +530,7 @@ export const usePersistedStore = create<State>()(
           // Exclude analysis dialog state (ephemeral)
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
+          heroDetection: _heroDetection,
           ...rest
         } = state;
         return rest;

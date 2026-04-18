@@ -44,6 +44,7 @@ chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.3"
 vpk-parser = { path = "../../../packages/vpk-parser" }
+hero-parser = { path = "../../../packages/hero-parser" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"

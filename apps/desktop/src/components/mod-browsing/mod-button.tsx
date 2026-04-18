@@ -16,12 +16,17 @@ import {
   XIcon,
 } from "@deadlock-mods/ui/icons";
 import { useHover } from "@uidotdev/usehooks";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
+import {
+  HeroConflictDialog,
+  type HeroConflictResolution,
+} from "@/components/mod-browsing/hero-conflict-dialog";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
@@ -31,7 +36,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { ModStatus } from "@/types/mods";
+import { type LocalMod, ModStatus } from "@/types/mods";
 
 interface ModButtonProps {
   remoteMod: Pick<ModDto, "remoteId" | "name" | "downloadable"> | undefined;
@@ -90,6 +95,8 @@ export const ModStatusIcon = ({
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
+  const confirm = useConfirm();
+  const localMods = usePersistedStore((state) => state.localMods);
 
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
@@ -121,6 +128,89 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   );
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
+  const [heroConflict, setHeroConflict] = useState<{
+    heroName: string;
+    currentMod: LocalMod;
+    newMod: LocalMod;
+  } | null>(null);
+  const heroConflictResolverRef = useRef<
+    ((resolution: HeroConflictResolution) => void) | null
+  >(null);
+
+  const performInstall = useCallback(
+    async (mod: typeof localMod) => {
+      if (!mod) {
+        return;
+      }
+      await install(mod, {
+        onStart: (m) => {
+          setModStatus(m.remoteId, ModStatus.Installing);
+        },
+        onComplete: (m, result) => {
+          setModStatus(m.remoteId, ModStatus.Installed);
+          setInstalledVpks(m.remoteId, result.installed_vpks, result.file_tree);
+          setModEnabledInCurrentProfile(m.remoteId, true);
+          toast.success(t("notifications.modInstalledSuccessfully"));
+          analytics.trackModInstalled(m.remoteId, {
+            vpk_count: result.installed_vpks.length,
+            file_tree_complexity: result.file_tree?.has_multiple_files
+              ? "complex"
+              : "simple",
+          });
+        },
+        onError: (m, error) => {
+          setModStatus(m.remoteId, ModStatus.Downloaded);
+          toast.error(error.message || t("notifications.failedToInstallMod"));
+          analytics.trackError(
+            "mod_installation",
+            error.message || "Unknown installation error",
+            { mod_id: m.remoteId },
+          );
+        },
+        onCancel: (m) => {
+          setModStatus(m.remoteId, ModStatus.Downloaded);
+          toast.info(t("notifications.installationCanceled"));
+        },
+        onFileTreeAnalyzed: (m, fileTree) => {
+          if (fileTree.has_multiple_files) {
+            toast.info(
+              t("notifications.modContainsFiles", {
+                modName: m.name,
+                fileCount: fileTree.total_files,
+              }),
+            );
+          }
+        },
+      });
+    },
+    [
+      install,
+      setModStatus,
+      setInstalledVpks,
+      setModEnabledInCurrentProfile,
+      t,
+      analytics,
+    ],
+  );
+
+  const askHeroConflict = useCallback(
+    (heroName: string, currentMod: LocalMod, newMod: LocalMod) =>
+      new Promise<HeroConflictResolution>((resolve) => {
+        heroConflictResolverRef.current = resolve;
+        setHeroConflict({ heroName, currentMod, newMod });
+      }),
+    [],
+  );
+
+  const handleHeroConflictResolve = useCallback(
+    (resolution: HeroConflictResolution) => {
+      const resolver = heroConflictResolverRef.current;
+      heroConflictResolverRef.current = null;
+      setHeroConflict(null);
+      resolver?.(resolution);
+    },
+    [],
+  );
 
   const action = useCallback(async () => {
     if (isActionInProgress) {
@@ -139,57 +229,46 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           );
           break;
         case ModStatus.Downloaded:
-        case ModStatus.FailedToInstall:
-          await install(localMod, {
-            onStart: (mod) => {
-              setModStatus(mod.remoteId, ModStatus.Installing);
-            },
-            onComplete: (mod, result) => {
-              setModStatus(mod.remoteId, ModStatus.Installed);
-              setInstalledVpks(
-                mod.remoteId,
-                result.installed_vpks,
-                result.file_tree,
+        case ModStatus.FailedToInstall: {
+          const detectedHero = localMod.detectedHero;
+          if (detectedHero) {
+            const conflictingMod = localMods.find(
+              (m) =>
+                m.remoteId !== localMod.remoteId &&
+                m.status === ModStatus.Installed &&
+                m.detectedHero === detectedHero,
+            );
+            if (conflictingMod) {
+              const resolution = await askHeroConflict(
+                detectedHero,
+                conflictingMod,
+                localMod,
               );
-              // Mark mod as enabled in current profile
-              setModEnabledInCurrentProfile(mod.remoteId, true);
-              toast.success(t("notifications.modInstalledSuccessfully"));
-              analytics.trackModInstalled(mod.remoteId, {
-                vpk_count: result.installed_vpks.length,
-                file_tree_complexity: result.file_tree?.has_multiple_files
-                  ? "complex"
-                  : "simple",
-              });
-            },
-            onError: (mod, error) => {
-              setModStatus(mod.remoteId, ModStatus.Downloaded);
-              toast.error(
-                error.message || t("notifications.failedToInstallMod"),
-              );
-              analytics.trackError(
-                "mod_installation",
-                error.message || "Unknown installation error",
-                {
-                  mod_id: mod.remoteId,
-                },
-              );
-            },
-            onCancel: (mod) => {
-              setModStatus(mod.remoteId, ModStatus.Downloaded);
-              toast.info(t("notifications.installationCanceled"));
-            },
-            onFileTreeAnalyzed: (mod, fileTree) => {
-              if (fileTree.has_multiple_files) {
-                toast.info(
-                  t("notifications.modContainsFiles", {
-                    modName: mod.name,
-                    fileCount: fileTree.total_files,
-                  }),
+              if (resolution === "cancel") {
+                break;
+              }
+              if (resolution === "swap") {
+                await uninstall(conflictingMod, false);
+                analytics.trackModUninstalled(
+                  conflictingMod.remoteId,
+                  "user_choice",
                 );
               }
-            },
-          });
+            }
+          }
+          if (localMod.usesCriticalPaths) {
+            const confirmed = await confirm({
+              title: t("criticalPaths.title"),
+              body: t("criticalPaths.body"),
+              tone: "destructive",
+              cancelButton: t("criticalPaths.cancel"),
+              actionButton: t("criticalPaths.confirm"),
+            });
+            if (!confirmed) break;
+          }
+          await performInstall(localMod);
           break;
+        }
         case ModStatus.Installed:
           await uninstall(localMod, false);
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
@@ -203,7 +282,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
       }
     } finally {
-      // Add a small delay to prevent rapid successive clicks
       setTimeout(() => {
         setIsActionInProgress(false);
       }, 300);
@@ -211,13 +289,13 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   }, [
     isActionInProgress,
     localMod,
+    localMods,
+    confirm,
     download,
-    install,
     uninstall,
     removeMod,
-    setModStatus,
-    setInstalledVpks,
-    setModEnabledInCurrentProfile,
+    askHeroConflict,
+    performInstall,
     t,
     analytics,
     remoteMod?.remoteId,
@@ -368,6 +446,14 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         modName={localMod?.name || t("modForm.unknownMod")}
         onClose={closeDialog}
         onDownload={downloadSelectedFiles}
+      />
+
+      <HeroConflictDialog
+        currentMod={heroConflict?.currentMod ?? null}
+        heroName={heroConflict?.heroName ?? ""}
+        newMod={heroConflict?.newMod ?? null}
+        onResolve={handleHeroConflictResolve}
+        open={heroConflict !== null}
       />
     </ErrorBoundary>
   );

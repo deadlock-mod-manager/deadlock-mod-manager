@@ -1613,7 +1613,9 @@
     "lastModifiedAt": "Last Modified At",
     "installedAt": "Installed At",
     "downloadsLabel": "Downloads",
-    "modStatusLabel": "Mod Status",
+    "likesLabel": "Likes",
+    "modStatusLabel": "Status",
+    "detectedHero": "Hero",
     "viewOriginalPost": "View Post on GameBanana",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",
@@ -1770,5 +1772,51 @@
     "skip": "Skip",
     "installFailed": "Failed to install mod fonts. Please try again.",
     "discardFailed": "Failed to discard mod fonts. Please try again."
+  },
+  "heroConflict": {
+    "title": "{{heroName}} already has a mod",
+    "description": "Pick which mod to use in-game. Only one mod per hero can be active at a time.",
+    "currentlyActive": "Currently active",
+    "switchingTo": "Switching to",
+    "swapAction": "Swap mods",
+    "keepBothAction": "Keep both",
+    "keepBothHint": "Not recommended — only one will load.",
+    "cancel": "Cancel",
+    "byAuthor": "by {{author}}"
+  },
+  "criticalPaths": {
+    "title": "Critical Game Files Warning",
+    "body": "This mod overwrites critical game files (abilities, heroes, or generic data). Enabling it may cause game instability or crashes. Do you want to enable this mod anyway?",
+    "cancel": "No",
+    "confirm": "Yes, enable anyway"
+  },
+  "heroTag": {
+    "hero": "Hero",
+    "other": "General"
+  },
+  "heroParser": {
+    "idle": "Hero Parser: Idle",
+    "scanning": "Scanning: {{current}}/{{total}}",
+    "scanningMod": "Analyzing: {{modName}}",
+    "settingsTitle": "Hero Parser",
+    "settingsDescription": "Automatically detects which hero a mod is for by analyzing VPK file contents.",
+    "statusIdle": "Idle",
+    "statusScanning": "Scanning mods...",
+    "indexedCount": "{{indexed}} of {{total}} mods indexed",
+    "forceRescan": "Force Rescan",
+    "forceRescanTitle": "Force Rescan All Mods",
+    "forceRescanBody": "This will re-analyze all mods without delays. The application may become unresponsive during the scan depending on the number and size of your mods.",
+    "forceRescanConfirm": "Rescan Now",
+    "indexNow": "Index Unindexed",
+    "indexNowTitle": "Index All Unindexed Mods",
+    "indexNowBody": "This will immediately analyze all unindexed mods without delays. The application may become unresponsive during the scan depending on the number and size of your mods.",
+    "indexNowConfirm": "Index Now",
+    "stop": "Stop",
+    "startBackgroundScan": "Start Background Scan",
+    "clearIndex": "Clear Index",
+    "clearIndexTitle": "Clear All Indexed Heroes",
+    "clearIndexBody": "This will remove all detected hero assignments from your mods. You will need to rescan or wait for the background scanner to re-index them.",
+    "clearIndexConfirm": "Clear Index",
+    "allIndexed": "All mods indexed"
   }
 }

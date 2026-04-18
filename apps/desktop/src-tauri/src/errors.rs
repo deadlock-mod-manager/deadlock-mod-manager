@@ -62,6 +62,8 @@ pub enum Error {
     "Operation failed and rollback was incomplete — VPK files may be in an inconsistent state: {0}"
   )]
   RollbackFailed(String),
+  #[error("Background task failed: {0}")]
+  BackgroundTaskFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -103,6 +105,7 @@ impl serde::Serialize for Error {
       Error::AutoexecReadFailed(_) => "autoexecReadFailed",
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
       Error::RollbackFailed(_) => "rollbackFailed",
+      Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
     };
 
     state.serialize_field("kind", kind)?;

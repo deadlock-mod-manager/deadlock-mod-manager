@@ -1,0 +1,16 @@
+[package]
+name = "hero-parser"
+version = "0.1.0"
+edition = "2024"
+description = "Hero detection for Deadlock mod VPK files"
+
+[lib]
+name = "hero_parser"
+crate-type = ["rlib"]
+path = "src-rs/lib.rs"
+
+[dependencies]
+rayon = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+vpk-parser = { path = "../vpk-parser" }

@@ -6,6 +6,8 @@ use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::hash::Hasher;
+use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
 use twox_hash::XxHash64;
 
 const VPK_SIGNATURE: u32 = 0x55aa1234;
@@ -23,6 +25,43 @@ impl VpkParser {
     pub fn parse(buffer: Vec<u8>, options: VpkParseOptions) -> Result<VpkParsed> {
         let mut parser = Self::new(buffer);
         parser.parse_internal(options)
+    }
+
+    /// Reads only the VPK header + directory tree from a file on disk,
+    /// returning just the entry list without generating any hashes or fingerprints.
+    pub fn parse_directory_from_file(path: &Path) -> Result<Vec<VpkEntry>> {
+        let mut file = std::fs::File::open(path)?;
+
+        let mut header_buf = [0u8; 28];
+        file.read_exact(&mut header_buf[..12])?;
+
+        let signature = u32::from_le_bytes([header_buf[0], header_buf[1], header_buf[2], header_buf[3]]);
+        if signature != VPK_SIGNATURE {
+            return Err(VpkError::InvalidSignature {
+                expected: VPK_SIGNATURE,
+                actual: signature,
+            });
+        }
+
+        let version = u32::from_le_bytes([header_buf[4], header_buf[5], header_buf[6], header_buf[7]]);
+        let tree_length = u32::from_le_bytes([header_buf[8], header_buf[9], header_buf[10], header_buf[11]]);
+
+        let header_size: usize = if version >= 2 {
+            file.seek(SeekFrom::Start(0))?;
+            file.read_exact(&mut header_buf)?;
+            28
+        } else {
+            12
+        };
+
+        let bytes_to_read = tree_length as usize;
+        let mut tree_buf = vec![0u8; header_size + bytes_to_read];
+        file.seek(SeekFrom::Start(0))?;
+        file.read_exact(&mut tree_buf)?;
+
+        let mut parser = Self::new(tree_buf);
+        parser.cursor = header_size;
+        parser.parse_directory_tree(header_size, tree_length as usize)
     }
 
     fn parse_internal(&mut self, options: VpkParseOptions) -> Result<VpkParsed> {

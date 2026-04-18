@@ -327,24 +327,6 @@ const GameInfoManagement = () => {
           {t("game.openInEditor")}
         </Button>
       </div>
-
-      <div className='rounded-lg border bg-muted/50 p-3'>
-        <div className='flex flex-col gap-2 text-sm'>
-          <div>
-            <span className='text-muted-foreground'>File Hash:</span>{" "}
-            <code className='font-mono'>{status.current_hash}</code>
-          </div>
-          <div>
-            <span className='text-muted-foreground'>Mod Paths:</span>{" "}
-            <span
-              className={
-                status.has_mod_paths ? "text-green-600" : "text-gray-500"
-              }>
-              {status.has_mod_paths ? "Present" : "Not Present"}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
