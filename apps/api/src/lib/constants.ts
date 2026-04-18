@@ -12,6 +12,7 @@ export const SENTRY_OPTIONS = {
 export enum MonitorSlug {
   MODS_SYNCHRONIZATION = "mods-synchronization",
   GAMEBANANA_RSS = "gamebanana-rss",
+  RELAY_DISCOVERY = "relay-discovery",
 }
 
 /**
@@ -29,6 +30,14 @@ export const CACHE_TTL = {
   REPORT_COUNTS: 7 * 24 * 60 * 60 * 1000,
   /** Fileserver geolocation cache - 7 days */
   FILESERVER_GEO: 7 * 24 * 60 * 60 * 1000,
+  /** Server browser - aggregated server list TTL (10s) */
+  SERVERS_LIST: 10 * 1000,
+  /** Server browser - facet options (game modes, regions) TTL (60s) */
+  SERVERS_FACETS: 60 * 1000,
+  /** Server browser - single server detail TTL (30s) */
+  SERVER_DETAIL: 30 * 1000,
+  /** Server browser - relays.json manifest TTL (10 min) */
+  RELAYS_MANIFEST: 10 * 60 * 1000,
   /** Default cache TTL - 10 minutes */
   DEFAULT: 60 * 60 * 1000,
 } as const;
