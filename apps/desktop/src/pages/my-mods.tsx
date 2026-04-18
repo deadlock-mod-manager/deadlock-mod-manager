@@ -744,7 +744,7 @@ const MyMods = () => {
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ModFilter)}>
-          <div className='mb-8 flex flex-row '>
+          <div className='mb-8 flex flex-row pt-4'>
             <div className='flex flex-col flex-grow'>
               <div className='flex items-baseline gap-3'>
                 <h1 className='text-2xl font-bold tracking-tight'>

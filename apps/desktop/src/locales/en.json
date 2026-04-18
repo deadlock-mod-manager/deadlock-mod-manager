@@ -1455,7 +1455,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "subtitle": "Your mod management overview",
+    "subtitle": "Discover featured, trending, and new mods",
     "announcements": "Announcements",
     "latestMods": "Latest Mods",
     "popularMods": "Popular Mods",

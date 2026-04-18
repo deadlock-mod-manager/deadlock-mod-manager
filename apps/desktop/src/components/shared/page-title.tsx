@@ -12,7 +12,7 @@ const PageTitle = ({
   className?: string;
 }) => {
   return (
-    <div className={cn("flex flex-col justify-center", className)}>
+    <div className={cn("flex flex-col justify-center pt-4", className)}>
       <div className='flex items-center gap-4'>
         <h1 className='font-bold text-2xl'>{title}</h1>
         {action ?? null}

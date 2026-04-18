@@ -167,7 +167,7 @@ export const AnnouncementsTicker = () => {
         aria-label={t("dashboard.broadcast")}
         className={cn(
           "relative flex h-9 w-full items-center gap-3 overflow-hidden",
-          "border-y border-primary/20 bg-card/40",
+          "border-b border-primary/20 bg-card/40",
         )}
         role='region'>
         <div className='flex shrink-0 items-center gap-2 border-primary/20 border-r bg-background/60 px-3 py-1.5'>
