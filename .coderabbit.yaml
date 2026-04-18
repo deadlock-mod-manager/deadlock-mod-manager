@@ -63,7 +63,7 @@ reviews:
       instructions: "Changes to packages/database/drizzle/ or schema files"
   auto_apply_labels: true
   suggested_reviewers: true
-  auto_assign_reviewers: true
+  auto_assign_reviewers: false
   in_progress_fortune: false
   poem: false
   enable_prompt_for_ai_agents: true

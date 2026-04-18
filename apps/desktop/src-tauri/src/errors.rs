@@ -63,7 +63,7 @@ pub enum Error {
   )]
   RollbackFailed(String),
   #[error("Background task failed: {0}")]
-  TaskJoinFailed(String),
+  BackgroundTaskFailed(String),
 }
 
 impl serde::Serialize for Error {
@@ -105,7 +105,7 @@ impl serde::Serialize for Error {
       Error::AutoexecReadFailed(_) => "autoexecReadFailed",
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
       Error::RollbackFailed(_) => "rollbackFailed",
-      Error::TaskJoinFailed(_) => "taskJoinFailed",
+      Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
     };
 
     state.serialize_field("kind", kind)?;

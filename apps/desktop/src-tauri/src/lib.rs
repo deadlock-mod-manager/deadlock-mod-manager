@@ -12,6 +12,7 @@ mod download_manager;
 mod dropped_mod_file;
 mod errors;
 mod flatpak;
+mod hero_detector;
 mod ingest_tool;
 mod logs;
 mod mod_manager;
@@ -137,9 +138,9 @@ pub fn run() {
       commands::extract_archive,
       commands::remove_mod_folder,
       commands::parse_vpk_file,
-      commands::detect_mod_hero,
-      commands::detect_mod_heroes_batch,
-      commands::clear_vpk_entry_cache,
+      hero_detector::detect_mod_hero,
+      hero_detector::detect_mod_heroes_batch,
+      hero_detector::clear_vpk_entry_cache,
       commands::check_addons_exist,
       commands::analyze_local_addons,
       commands::create_report,

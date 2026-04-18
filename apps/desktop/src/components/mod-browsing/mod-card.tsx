@@ -13,11 +13,12 @@ import {
 } from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
-import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { usePersistedStore } from "@/lib/store";
 import {
+  cn,
   isModOutdated,
   isUpdateAvailable,
   isUpdatedRecently,
@@ -48,11 +49,10 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
 
   const cardContent = (
     <Card
-      className={
-        readOnly
-          ? "shadow-none border [contain:layout_style_paint] h-full"
-          : "cursor-pointer shadow-none border [contain:layout_style_paint] h-full"
-      }
+      className={cn(
+        "shadow-none border [contain:layout_style_paint] h-full",
+        !readOnly && "cursor-pointer",
+      )}
       onClick={
         readOnly
           ? undefined

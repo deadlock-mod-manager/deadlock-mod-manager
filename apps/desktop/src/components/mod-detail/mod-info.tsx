@@ -1,4 +1,3 @@
-import { DeadlockHeroes } from "@deadlock-mods/shared";
 import type { ModDto } from "@deadlock-mods/shared";
 import {
   Avatar,
@@ -23,18 +22,14 @@ import {
   User,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { useHero } from "@/hooks/use-hero";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import { useHero } from "@/hooks/use-hero";
 import { DateDisplay } from "../date-display";
 
 interface ModInfoProps {
   mod: ModDto;
   hasHero?: boolean;
-}
-
-function isDeadlockHeroKey(key: string): key is keyof typeof DeadlockHeroes {
-  return key in DeadlockHeroes;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -45,12 +40,7 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
 
-  const heroLabel = localMod?.detectedHero
-    ? isDeadlockHeroKey(localMod.detectedHero)
-      ? DeadlockHeroes[localMod.detectedHero]
-      : localMod.detectedHero
-    : null;
-
+  const heroLabel = localMod?.detectedHero ?? null;
   const hasTags = mod.tags && mod.tags.length > 0;
 
   return (
@@ -129,8 +119,8 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
 
           {hasTags && <Separator />}
 
-          {hasTags && (
-            <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            {hasTags && (
               <div className='flex flex-wrap items-center gap-2'>
                 <Tag className='h-4 w-4 text-muted-foreground' />
                 {mod.tags?.map((tag) => (
@@ -139,23 +129,14 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
                   </Badge>
                 ))}
               </div>
-              <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                <Hash className='h-3 w-3' />
-                <span className='font-mono tabular-nums'>
-                  {t("modDetail.idLabel")}: {mod.remoteId}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {!hasTags && (
+            )}
             <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
               <Hash className='h-3 w-3' />
               <span className='font-mono tabular-nums'>
                 {t("modDetail.idLabel")}: {mod.remoteId}
               </span>
             </div>
-          )}
+          </div>
         </div>
       </CardContent>
     </>

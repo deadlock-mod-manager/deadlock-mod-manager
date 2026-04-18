@@ -1,3 +1,5 @@
+import { fetch } from "./fetch";
+
 const HERO_API = "https://assets.deadlock-api.com/v2/heroes/by-name";
 
 export interface DeadlockHero {
