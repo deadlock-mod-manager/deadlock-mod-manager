@@ -1,9 +1,6 @@
 use crate::ingest_tool::error::IngestError;
 use serde::Serialize;
-use std::sync::OnceLock;
 use tokio::time::{Duration, sleep};
-
-static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Salts {
@@ -55,12 +52,13 @@ impl Salts {
   pub async fn ingest(&self) -> Result<(), IngestError> {
     let max_retries = 10;
     let mut attempt = 0;
+    let client = crate::proxy::build_default_http_client()
+      .map_err(|e| IngestError::FailedToIngest(e.to_string()))?;
 
     loop {
       attempt += 1;
       log::info!("Ingesting salts: {self:?} ({attempt}/{max_retries})");
-      let response = HTTP_CLIENT
-        .get_or_init(reqwest::Client::new)
+      let response = client
         .post("https://api.deadlock-api.com/v1/matches/salts")
         .json(&[self])
         .send()
@@ -87,14 +85,15 @@ impl Salts {
   pub async fn ingest_many(salts: &[Salts]) -> Result<(), IngestError> {
     let max_retries = 10;
     let mut attempt = 0;
+    let client = crate::proxy::build_default_http_client()
+      .map_err(|e| IngestError::FailedToIngest(e.to_string()))?;
     loop {
       attempt += 1;
       log::info!(
         "Ingesting {n} salts ({attempt}/{max_retries})",
         n = salts.len()
       );
-      let response = HTTP_CLIENT
-        .get_or_init(reqwest::Client::new)
+      let response = client
         .post("https://api.deadlock-api.com/v1/matches/salts")
         .json(&salts)
         .send()

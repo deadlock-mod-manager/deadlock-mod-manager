@@ -47,7 +47,7 @@ vpk-parser = { path = "../../../packages/vpk-parser" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.12", features = ["json", "stream", "socks"] }
 futures = "0.3"
 tauri-plugin-dialog = "2.7.0"
 memchr = "2.8.0"

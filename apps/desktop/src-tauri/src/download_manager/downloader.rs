@@ -27,11 +27,10 @@ where
 {
   log::info!("Starting download from {url} to {target_path:?}");
 
-  let client = reqwest::Client::builder()
-    .connect_timeout(std::time::Duration::from_secs(30))
-    .read_timeout(std::time::Duration::from_secs(60))
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
+  let client = crate::proxy::build_http_client(|b| {
+    b.connect_timeout(std::time::Duration::from_secs(30))
+      .read_timeout(std::time::Duration::from_secs(60))
+  })?;
 
   let response = client
     .get(url)

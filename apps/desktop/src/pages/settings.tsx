@@ -60,6 +60,7 @@ import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
+import { ProxySettings } from "@/components/settings/proxy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
@@ -543,8 +544,24 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-2' value='network'>
             <Section
               description={t("settings.networkDescription")}
-              title={t("settings.network")}>
+              title={
+                <span className='flex items-center gap-2'>
+                  <Globe className='h-5 w-5 text-primary' />
+                  {t("settings.fileserverSectionTitle")}
+                </span>
+              }>
               <FileserverSettings />
+            </Section>
+
+            <Section
+              description={t("settings.proxyDescription")}
+              title={
+                <span className='flex items-center gap-2'>
+                  <ShieldIcon className='h-5 w-5 text-primary' />
+                  {t("settings.proxy")}
+                </span>
+              }>
+              <ProxySettings />
             </Section>
           </TabsContent>
 

@@ -1,5 +1,4 @@
 use crate::errors::Error;
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
@@ -154,7 +153,7 @@ impl AddonAnalyzer {
       merkle_root: vpk_parsed.fingerprint.merkle_root.clone(),
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::proxy::build_default_http_client()?;
 
     log::debug!(
       "Calling hash analysis API for file: {} with hashes: sha256={:?}, contentSig={}, fastHash={:?}",
