@@ -15,7 +15,6 @@ export interface ResolvedRequirementStatus extends Omit<
 > {
   mod?: ModDto;
   inLibrary: boolean;
-  isReady: boolean;
   isEnabled: boolean;
   status?: ModStatus;
   isDownloading: boolean;
@@ -23,11 +22,6 @@ export interface ResolvedRequirementStatus extends Omit<
 
 export const useServerJoin = (server: ServerBrowserEntry | null) => {
   const localMods = usePersistedStore((s) => s.localMods);
-  const profiles = usePersistedStore((s) => s.profiles);
-  const activeProfileId = usePersistedStore((s) => s.activeProfileId);
-  const isModEnabledInCurrentProfile = usePersistedStore(
-    (s) => s.isModEnabledInCurrentProfile,
-  );
 
   const hasRequirements = (server?.required_mods.length ?? 0) > 0;
 
@@ -45,54 +39,24 @@ export const useServerJoin = (server: ServerBrowserEntry | null) => {
       const local = remoteId
         ? localMods.find((m) => m.remoteId === remoteId)
         : undefined;
-      const inLibrary = !!local;
-      const status = local?.status;
-      const isInstalledOrDownloaded =
-        !!local &&
-        (status === ModStatus.Installed || status === ModStatus.Downloaded);
-      const isEnabled = remoteId
-        ? isModEnabledInCurrentProfile(remoteId)
-        : false;
-      const isReady = isInstalledOrDownloaded && isEnabled;
-      const isDownloading = status === ModStatus.Downloading;
+
       return {
         ...r,
         mod: r.mod as ModDto | undefined,
-        inLibrary,
-        isReady,
-        isEnabled,
-        status,
-        isDownloading,
+        inLibrary: !!local,
+        isEnabled: local?.status === ModStatus.Installed,
+        status: local?.status,
+        isDownloading: local?.status === ModStatus.Downloading,
       };
     });
-  }, [
-    query.data,
-    localMods,
-    profiles,
-    activeProfileId,
-    isModEnabledInCurrentProfile,
-  ]);
+  }, [query.data, localMods]);
 
-  const missing = requirements.filter(
-    (r) =>
-      r.resolved &&
-      !r.isReady &&
-      !(
-        r.inLibrary &&
-        (r.status === ModStatus.Installed || r.status === ModStatus.Downloaded)
-      ),
-  );
-  const disabled = requirements.filter(
-    (r) =>
-      r.resolved &&
-      r.inLibrary &&
-      (r.status === ModStatus.Installed || r.status === ModStatus.Downloaded) &&
-      !r.isEnabled,
-  );
+  const missing = requirements.filter((r) => r.resolved && !r.inLibrary);
+  const disabled = requirements.filter((r) => r.resolved && !r.isEnabled);
   const unresolved = requirements.filter((r) => !r.resolved);
   const allReady =
     !hasRequirements ||
-    (requirements.length > 0 && requirements.every((r) => r.isReady));
+    (requirements.length > 0 && requirements.every((r) => r.isEnabled));
 
   return {
     isLoading: query.isLoading,

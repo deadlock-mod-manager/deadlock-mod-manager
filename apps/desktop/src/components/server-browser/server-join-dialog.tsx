@@ -15,6 +15,7 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { ArrowSquareOutIcon, CopyIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import { useRequiredModInstall } from "@/hooks/use-required-mod-install";
 import { useServerJoin } from "@/hooks/use-server-join";
 import { joinServer } from "./server-join/join-action";
@@ -33,14 +34,8 @@ const ServerJoinDialog = ({
 }: ServerJoinDialogProps) => {
   const { t } = useTranslation();
   const join = useServerJoin(server);
-  const {
-    installingId,
-    installSingle,
-    installAll,
-    enablingId,
-    enableSingle,
-    enableAll,
-  } = useRequiredModInstall(join);
+  const { installingId, installSingle, installAll, collection } =
+    useRequiredModInstall(join);
   const [password, setPassword] = useState("");
 
   if (!server) return null;
@@ -59,7 +54,7 @@ const ServerJoinDialog = ({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className='max-w-xl border-0 shadow-2xl'>
+      <DialogContent className='max-w-xl'>
         <DialogHeader>
           <DialogTitle>{server.name}</DialogTitle>
           <DialogDescription>
@@ -101,15 +96,6 @@ const ServerJoinDialog = ({
                   {t("servers.detail.installAll")}
                 </Button>
               )}
-              {join.missing.length === 0 && join.disabled.length > 0 && (
-                <Button
-                  disabled={enablingId !== null}
-                  onClick={enableAll}
-                  size='sm'
-                  variant='outline'>
-                  {t("servers.detail.enableAll")}
-                </Button>
-              )}
             </header>
             <ScrollArea className='max-h-64 rounded-md border'>
               <div className='space-y-1 p-1.5'>
@@ -121,10 +107,8 @@ const ServerJoinDialog = ({
                 ) : (
                   join.requirements.map((req, i) => (
                     <RequirementRow
-                      enabling={enablingId === req.remoteId}
                       installing={installingId === req.remoteId}
                       key={`${req.name}-${i}`}
-                      onEnable={enableSingle}
                       onInstall={installSingle}
                       requirement={req}
                     />
@@ -136,13 +120,6 @@ const ServerJoinDialog = ({
               <p className='text-xs text-amber-400'>
                 {t("servers.detail.missingMods", {
                   count: join.missing.length,
-                })}
-              </p>
-            )}
-            {join.disabled.length > 0 && (
-              <p className='text-xs text-amber-400'>
-                {t("servers.detail.disabledMods", {
-                  count: join.disabled.length,
                 })}
               </p>
             )}
@@ -171,6 +148,18 @@ const ServerJoinDialog = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <FileSelectorDialog
+        fileTree={collection.currentFileTree}
+        isOpen={collection.showFileSelector}
+        modName={collection.currentMod?.name}
+        onCancel={collection.cancelInstallation}
+        onConfirm={collection.confirmInstallation}
+        onOpenChange={(o) => {
+          if (!o) {
+            collection.cancelInstallation();
+          }
+        }}
+      />
     </Dialog>
   );
 };

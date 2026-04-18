@@ -4,8 +4,8 @@ import { getModDownloads } from "@/lib/api";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
-import useInstall from "./use-install";
+import { type LocalMod, ModStatus } from "@/types/mods";
+import useInstallWithCollection from "./use-install-with-collection";
 import type {
   ResolvedRequirementStatus,
   useServerJoin,
@@ -15,7 +15,6 @@ type ServerJoinState = ReturnType<typeof useServerJoin>;
 
 export const useRequiredModInstall = (join: ServerJoinState) => {
   const [installingId, setInstallingId] = useState<string | null>(null);
-  const [enablingId, setEnablingId] = useState<string | null>(null);
 
   const addLocalMod = usePersistedStore((s) => s.addLocalMod);
   const setModStatus = usePersistedStore((s) => s.setModStatus);
@@ -25,16 +24,56 @@ export const useRequiredModInstall = (join: ServerJoinState) => {
     (s) => s.setModEnabledInCurrentProfile,
   );
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
-  const localMods = usePersistedStore((s) => s.localMods);
-  const { install } = useInstall();
+  const collection = useInstallWithCollection();
+
+  const runInstall = async (mod: LocalMod, displayName: string) => {
+    const remoteId = mod.remoteId;
+    return collection.install(mod, {
+      onStart: () => {
+        setModStatus(remoteId, ModStatus.Installing);
+      },
+      onComplete: (m, result) => {
+        setModStatus(remoteId, ModStatus.Installed);
+        setInstalledVpks(remoteId, result.installed_vpks, result.file_tree);
+        setModEnabledInCurrentProfile(remoteId, true);
+        toast.success(`${m.name} installed`);
+        join.refetch();
+      },
+      onError: (m, error) => {
+        setModStatus(remoteId, ModStatus.Downloaded);
+        toast.error(
+          `Failed to install ${m.name}: ${error.message ?? "Unknown error"}`,
+        );
+      },
+      onCancel: () => {
+        setModStatus(remoteId, ModStatus.Downloaded);
+        toast.info(`${displayName} installation canceled`);
+      },
+    });
+  };
 
   const installSingle = async (requirement: ResolvedRequirementStatus) => {
     if (!requirement.mod || !requirement.remoteId) return;
-    setInstallingId(requirement.remoteId);
+    const remoteId = requirement.remoteId;
+    const modName = requirement.mod.name;
+    setInstallingId(remoteId);
     try {
-      const downloads = await getModDownloads(requirement.remoteId);
+      const existing = usePersistedStore
+        .getState()
+        .localMods.find((m) => m.remoteId === remoteId);
+
+      if (
+        existing &&
+        (existing.status === ModStatus.Downloaded ||
+          existing.status === ModStatus.FailedToInstall)
+      ) {
+        await runInstall(existing, modName);
+        return;
+      }
+
+      const downloads = await getModDownloads(remoteId);
       if (!downloads || downloads.downloads.length === 0) {
-        toast.error(`No downloadable files for ${requirement.mod.name}`);
+        toast.error(`No downloadable files for ${modName}`);
         return;
       }
       const files = downloads.downloads;
@@ -44,8 +83,6 @@ export const useRequiredModInstall = (join: ServerJoinState) => {
       });
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
-      const remoteId = requirement.remoteId;
-      const modName = requirement.mod.name;
 
       downloadManager.addToQueue({
         ...requirement.mod,
@@ -57,10 +94,16 @@ export const useRequiredModInstall = (join: ServerJoinState) => {
         onProgress: (progress) => {
           setModProgress(remoteId, progress);
         },
-        onComplete: () => {
+        onComplete: async () => {
           setModStatus(remoteId, ModStatus.Downloaded);
-          toast.success(`${modName} downloaded`);
-          join.refetch();
+          const downloaded = usePersistedStore
+            .getState()
+            .localMods.find((m) => m.remoteId === remoteId);
+          if (!downloaded) {
+            toast.error(`Could not locate ${modName} after download`);
+            return;
+          }
+          await runInstall(downloaded, modName);
         },
         onError: (err) => {
           toast.error(`Failed to download ${modName}: ${err.message}`);
@@ -81,55 +124,10 @@ export const useRequiredModInstall = (join: ServerJoinState) => {
     }
   };
 
-  const enableSingle = async (requirement: ResolvedRequirementStatus) => {
-    if (!requirement.remoteId) return;
-    const remoteId = requirement.remoteId;
-    const local = localMods.find((m) => m.remoteId === remoteId);
-    if (!local) return;
-
-    setEnablingId(remoteId);
-    try {
-      const modToInstall =
-        local.status === ModStatus.Installed
-          ? { ...local, status: ModStatus.Downloaded }
-          : local;
-      const result = await install(modToInstall, {
-        onStart: (m) => {
-          setModStatus(m.remoteId, ModStatus.Installing);
-        },
-        onComplete: (m, res) => {
-          setModStatus(m.remoteId, ModStatus.Installed);
-          setInstalledVpks(m.remoteId, res.installed_vpks, res.file_tree);
-          setModEnabledInCurrentProfile(m.remoteId, true);
-          toast.success(`${m.name} enabled`);
-          join.refetch();
-        },
-        onError: (m, error) => {
-          setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.error(`Failed to enable ${m.name}: ${error.message}`);
-        },
-      });
-      return result;
-    } catch (err) {
-      logger.withError(err).error("Failed to enable required mod");
-      toast.error("Failed to enable mod");
-    } finally {
-      setEnablingId(null);
-    }
-  };
-
-  const enableAll = async () => {
-    for (const req of join.disabled) {
-      await enableSingle(req);
-    }
-  };
-
   return {
     installingId,
     installSingle,
     installAll,
-    enablingId,
-    enableSingle,
-    enableAll,
+    collection,
   };
 };

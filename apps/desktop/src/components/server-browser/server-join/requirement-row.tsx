@@ -8,22 +8,17 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ResolvedRequirementStatus } from "@/hooks/use-server-join";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
 
 interface RequirementRowProps {
   requirement: ResolvedRequirementStatus;
   installing: boolean;
-  enabling: boolean;
   onInstall: (req: ResolvedRequirementStatus) => void;
-  onEnable: (req: ResolvedRequirementStatus) => void;
 }
 
 const RequirementRow = ({
   requirement,
   installing,
-  enabling,
   onInstall,
-  onEnable,
 }: RequirementRowProps) => {
   const { t } = useTranslation();
   const progress = usePersistedStore((s) =>
@@ -34,10 +29,10 @@ const RequirementRow = ({
     if (!requirement.resolved) {
       const label =
         requirement.reason === "custom_provider"
-          ? "Custom"
+          ? t("servers.requirementRow.customProvider")
           : requirement.reason === "unknown_scheme"
-            ? "Unknown"
-            : "Not in DMM";
+            ? t("servers.detail.unknown")
+            : t("servers.requirementRow.notInDmm");
       return (
         <Badge className='gap-1' variant='destructive'>
           <WarningCircleIcon className='h-3 w-3' weight='fill' />
@@ -45,26 +40,11 @@ const RequirementRow = ({
         </Badge>
       );
     }
-    if (requirement.isReady) {
+    if (requirement.isEnabled) {
       return (
         <Badge className='gap-1' variant='secondary'>
           <CheckCircleIcon className='h-3 w-3' weight='fill' />
-          Ready
-        </Badge>
-      );
-    }
-    const isInstalledOrDownloaded =
-      requirement.status === ModStatus.Installed ||
-      requirement.status === ModStatus.Downloaded;
-    if (
-      requirement.inLibrary &&
-      isInstalledOrDownloaded &&
-      !requirement.isEnabled
-    ) {
-      return (
-        <Badge className='gap-1' variant='outline'>
-          <WarningCircleIcon className='h-3 w-3' weight='fill' />
-          Disabled
+          {t("servers.requirementRow.ready")}
         </Badge>
       );
     }
@@ -72,16 +52,17 @@ const RequirementRow = ({
       return (
         <Badge className='gap-1' variant='outline'>
           <DownloadIcon className='h-3 w-3 animate-pulse' />
-          {requirement.isDownloading && progress
-            ? `Downloading ${Math.round(progress.percentage)}%`
-            : "Queued…"}
+          {t("servers.requirementRow.downloading", {
+            percent: Math.round(progress?.percentage ?? 0),
+          })}
         </Badge>
       );
     }
+
     return (
       <Badge className='gap-1' variant='outline'>
         <DownloadIcon className='h-3 w-3' />
-        Missing
+        {t("servers.requirementRow.missing")}
       </Badge>
     );
   })();
@@ -99,40 +80,21 @@ const RequirementRow = ({
         )}
       </div>
       {statusBadge}
+
       {requirement.resolved &&
-        !requirement.isReady &&
-        (() => {
-          const isInstalledOrDownloaded =
-            requirement.status === ModStatus.Installed ||
-            requirement.status === ModStatus.Downloaded;
-          if (
-            requirement.inLibrary &&
-            isInstalledOrDownloaded &&
-            !requirement.isEnabled
-          ) {
-            return (
-              <Button
-                disabled={enabling}
-                onClick={() => onEnable(requirement)}
-                size='sm'
-                variant='outline'>
-                {enabling ? "…" : t("servers.detail.enableAll")}
-              </Button>
-            );
-          }
-          if (!requirement.inLibrary) {
-            return (
-              <Button
-                disabled={installing}
-                onClick={() => onInstall(requirement)}
-                size='sm'
-                variant='outline'>
-                {installing ? "…" : t("servers.detail.installAll")}
-              </Button>
-            );
-          }
-          return null;
-        })()}
+        !requirement.isEnabled &&
+        !requirement.isDownloading && (
+          <Button
+            disabled={installing}
+            onClick={() => onInstall(requirement)}
+            size='sm'
+            isLoading={installing}
+            variant='outline'>
+            {requirement.inLibrary
+              ? t("servers.detail.enableMod")
+              : t("servers.detail.installMod")}
+          </Button>
+        )}
     </div>
   );
 };

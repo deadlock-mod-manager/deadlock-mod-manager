@@ -5,6 +5,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import { useVpkScan } from "./use-vpk-scan";
 
 const useUninstall = () => {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ const useUninstall = () => {
     (state) => state.setModEnabledInCurrentProfile,
   );
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const { refetch: refetchVpkScan } = useVpkScan();
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {
@@ -69,8 +71,10 @@ const useUninstall = () => {
       }
 
       if (remove) {
-        await removeMod(mod.remoteId);
+        removeMod(mod.remoteId);
+        refetchVpkScan();
       }
+
       toast.success(
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );

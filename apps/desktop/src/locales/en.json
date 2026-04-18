@@ -118,14 +118,20 @@
       "joining": "Joining...",
       "missingMods_one": "{{count}} required mod is missing",
       "missingMods_other": "{{count}} required mods are missing",
-      "disabledMods_one": "{{count}} required mod is disabled in your active profile",
-      "disabledMods_other": "{{count}} required mods are disabled in your active profile",
       "installAll": "Install required mods",
-      "enableAll": "Enable required mods",
+      "enableMod": "Enable mod",
+      "installMod": "Install mod",
       "passwordPrompt": "This server requires a password",
       "passwordPlaceholder": "Server password",
       "openExternal": "Opening Deadlock...",
       "unknown": "Unknown"
+    },
+    "requirementRow": {
+      "customProvider": "Custom",
+      "notInDmm": "Not in DMM",
+      "ready": "Ready",
+      "downloading": "Downloading {{percent}}%",
+      "missing": "Missing"
     },
     "empty": {
       "title": "No servers found",
