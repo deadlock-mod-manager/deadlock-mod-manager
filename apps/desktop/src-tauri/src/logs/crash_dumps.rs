@@ -60,19 +60,21 @@ pub fn find_deadlock_crash_dumps(dir: &Path) -> Vec<CrashDumpFile> {
       continue;
     }
 
-    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let name = path
+      .file_name()
+      .unwrap_or_default()
+      .to_string_lossy()
+      .to_string();
     let name_lower = name.to_lowercase();
 
     if name_lower.contains("deadlock") && name_lower.ends_with(".mdmp") {
       let metadata = std::fs::metadata(&path).ok();
       let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
-      let modified = metadata
-        .and_then(|m| m.modified().ok())
-        .map(|t| {
-          chrono::DateTime::<chrono::Utc>::from(t)
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string()
-        });
+      let modified = metadata.and_then(|m| m.modified().ok()).map(|t| {
+        chrono::DateTime::<chrono::Utc>::from(t)
+          .format("%Y-%m-%d %H:%M:%S")
+          .to_string()
+      });
 
       files.push(CrashDumpFile {
         name,
@@ -97,10 +99,7 @@ pub fn parse_and_save_dmp(dmp_path: &Path, parsed_dir: &Path) -> Result<PathBuf,
   let parsed = dmp_parser::DmpParser::parse_file(dmp_path, options)
     .map_err(|e| format!("Failed to parse {}: {e}", dmp_path.display()))?;
 
-  let file_stem = dmp_path
-    .file_stem()
-    .unwrap_or_default()
-    .to_string_lossy();
+  let file_stem = dmp_path.file_stem().unwrap_or_default().to_string_lossy();
   let txt_path = parsed_dir.join(format!("{file_stem}.txt"));
 
   std::fs::write(&txt_path, &parsed.raw_text)
@@ -156,9 +155,10 @@ pub fn open_crash_dumps_folder() -> Result<(), Error> {
     let txt_path = parsed_dir.join(format!("{file_stem}.txt"));
 
     if !txt_path.exists()
-      && let Err(e) = parse_and_save_dmp(dmp_path, &parsed_dir) {
-        log::warn!("Failed to parse crash dump: {e}");
-      }
+      && let Err(e) = parse_and_save_dmp(dmp_path, &parsed_dir)
+    {
+      log::warn!("Failed to parse crash dump: {e}");
+    }
   }
 
   utils::show_in_folder(parsed_dir.to_string_lossy().as_ref())
@@ -180,7 +180,9 @@ pub fn parse_crash_dump(file_path: &str) -> Result<String, Error> {
 
   match dmp_parser::DmpParser::parse_file(path, options) {
     Ok(parsed) => Ok(parsed.raw_text),
-    Err(e) => Err(Error::InvalidInput(format!("Failed to parse crash dump: {e}"))),
+    Err(e) => Err(Error::InvalidInput(format!(
+      "Failed to parse crash dump: {e}"
+    ))),
   }
 }
 
@@ -190,7 +192,9 @@ pub fn parse_latest_crash_dump() -> Result<String, Error> {
   let dir = get_crash_dumps_dir()?;
 
   if !dir.exists() {
-    return Err(Error::InvalidInput("Crash dumps directory does not exist".to_string()));
+    return Err(Error::InvalidInput(
+      "Crash dumps directory does not exist".to_string(),
+    ));
   }
 
   let files = find_deadlock_crash_dumps(&dir);
@@ -206,7 +210,9 @@ pub fn parse_latest_crash_dump() -> Result<String, Error> {
 
   match dmp_parser::DmpParser::parse_file(Path::new(&latest.path), options) {
     Ok(parsed) => Ok(parsed.raw_text),
-    Err(e) => Err(Error::InvalidInput(format!("Failed to parse crash dump: {e}"))),
+    Err(e) => Err(Error::InvalidInput(format!(
+      "Failed to parse crash dump: {e}"
+    ))),
   }
 }
 
@@ -216,7 +222,9 @@ pub fn open_latest_crash_dump_parsed() -> Result<(), Error> {
   let dir = get_crash_dumps_dir()?;
 
   if !dir.exists() {
-    return Err(Error::InvalidInput("Crash dumps directory does not exist".to_string()));
+    return Err(Error::InvalidInput(
+      "Crash dumps directory does not exist".to_string(),
+    ));
   }
 
   let files = find_deadlock_crash_dumps(&dir);

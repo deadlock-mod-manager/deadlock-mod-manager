@@ -58,13 +58,14 @@ pub async fn watch_for_connect_code(
     }
 
     if let Some(chunk) = read_new_content(&log_path, &mut offset)
-      && let Some(caps) = re.captures(&chunk) {
-        let code = caps.get(1).map(|m| m.as_str().to_string());
-        if code.is_some() {
-          log::info!("Found connect code in console.log: {:?}", code);
-          return code;
-        }
+      && let Some(caps) = re.captures(&chunk)
+    {
+      let code = caps.get(1).map(|m| m.as_str().to_string());
+      if code.is_some() {
+        log::info!("Found connect code in console.log: {:?}", code);
+        return code;
       }
+    }
 
     tokio::time::sleep(std::time::Duration::from_millis(POLL_INTERVAL_MS)).await;
   }
