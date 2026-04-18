@@ -95,6 +95,18 @@ export class ExtractionError extends GenericError {
   }
 }
 
+export class RelayHttpError extends BaseError {
+  readonly code = ApiErrorCode.RELAY_HTTP_ERROR;
+  readonly relayUrl: string;
+  readonly status: number;
+
+  constructor(relayUrl: string, status: number, message?: string) {
+    super(message ?? `Relay ${relayUrl} responded with ${status}`);
+    this.relayUrl = relayUrl;
+    this.status = status;
+  }
+}
+
 export class MultipleErrors extends BaseError {
   readonly errors: BaseError[];
   readonly code = GenericErrorCode.MULTIPLE_ERRORS;
