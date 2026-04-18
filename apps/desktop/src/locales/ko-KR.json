@@ -6,7 +6,7 @@
     "addMods": "로컬 모드 추가",
     "downloads": "다운로드",
     "settings": "설정",
-    "developer": "개발자 도구",
+    "developer": "",
     "whatsNew": "새로운 소식",
     "needHelp": "도움이 필요하십니까?",
     "collapseMenu": "메뉴 접기",
@@ -17,7 +17,9 @@
     "autoexec": "자동 실행 구성",
     "maps": "지도",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "모드를 비활성화하지 못했습니다.",
     "vpkScanAlert": {
       "title": "인식할 수 없는 VPK 파일이 발견되었습니다.",
-      "description": "모드 목록에 없는 {{count}} VPK 파일을 모드 폴더에서 찾았습니다. 이 경고를 무시하려면 로컬 애드온 폴더를 분석하여 해당 파일을 식별하고 모드 목록에 추가할 수 있습니다.",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
+      "description": "",
       "analyzeButton": "로컬 애드온 분석",
       "showList": "파일 표시",
       "refresh": "새로 고치다",
-      "hideList": "파일 숨기기"
+      "hideList": "파일 숨기기",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "상태",
     "gameDetected": "게임 감지됨",
     "gameInstalledAt": "{{path}}에 설치된 게임",
-    "launchVanilla": "모드 없이 실행",
-    "launchModded": "모드 출시",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "게임 중지",
     "failedToFetchMods": "모드를 가져오지 못했습니다. 나중에 다시 시도하세요.",
     "mods": "모드",
@@ -361,6 +377,10 @@
     "appearanceDescription": "애플리케이션의 모양을 사용자 정의합니다.",
     "theme": "주제",
     "themeDescription": "밝은 테마, 어두운 테마, 시스템 테마 중에서 선택하세요",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "플래시뱅",
     "flashbangDescription": "선택한 테마에 관계없이 오후 8시에서 오전 8시 사이에 조명 모드를 강제 적용합니다.",
     "audioVolume": "오디오 볼륨",
@@ -1437,7 +1457,7 @@
   },
   "dashboard": {
     "title": "계기반",
-    "subtitle": "모드 관리 개요",
+    "subtitle": "",
     "announcements": "공지사항",
     "latestMods": "최신 모드",
     "popularMods": "인기 모드",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "현재 공지사항이 없습니다. 나중에 다시 업데이트와 소식을 확인하세요.",
     "checkBackLater": "나중에 다시 업데이트를 확인하세요.",
     "noModsAvailable": "사용 가능한 모드가 없습니다.",
-    "learnMore": "자세히 알아보기"
+    "learnMore": "자세히 알아보기",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "디버그",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "프로필 공유",
+    "activeProfile": "",
     "selectProfile": "프로필 선택",
     "manage": "프로필 관리",
     "manageDescription": "다양한 모드 프로필을 생성, 편집 및 전환하세요. 각 프로필은 귀하가 활성화한 모드를 기억합니다.",

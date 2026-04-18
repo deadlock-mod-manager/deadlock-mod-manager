@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "Статус",
     "gameDetected": "Игра зесечена",
     "gameInstalledAt": "Игра изтеглена в {{path}}",
-    "launchVanilla": "Стартиране в Стандартен Режим",
-    "launchModded": "Стартиране в Модифициран Режим",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Спри Играта",
     "failedToFetchMods": "Не успяхме да намерим модовете. Опитайте отново по-късно.",
     "mods": "",
@@ -361,6 +377,10 @@
     "appearanceDescription": "",
     "theme": "",
     "themeDescription": "",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "",
     "audioVolume": "",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "",
     "checkBackLater": "",
     "noModsAvailable": "",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "",
+    "activeProfile": "",
     "selectProfile": "",
     "manage": "",
     "manageDescription": "",

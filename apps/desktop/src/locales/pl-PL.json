@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Nie udało się wyłączyć moda",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "",
     "gameDetected": "Wykryto Grę",
     "gameInstalledAt": "Gra zainstalowana w {{path}}",
-    "launchVanilla": "Uruchom bez modów",
-    "launchModded": "Uruchom z modami",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Zatrzymaj Grę",
     "failedToFetchMods": "Nie udało się pobrać modów. Spróbuj ponownie później.",
     "mods": "Mody",
@@ -361,6 +377,10 @@
     "appearanceDescription": "Dostosuj wygląd aplikacji.",
     "theme": "Motyw",
     "themeDescription": "Wybierz między jasnym, ciemnym lub motywem systemowym",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "Wymusza tryb jasny między 20:00 a 8:00, niezależnie od wybranego motywu",
     "audioVolume": "Głośność audio",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "",
     "checkBackLater": "",
     "noModsAvailable": "",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "",
+    "activeProfile": "",
     "selectProfile": "Wybierz profil",
     "manage": "Zarządzaj profilami",
     "manageDescription": "Twórz, edytuj i przełączaj między różnymi profilami modów. Każdy profil pamięta, które mody masz włączone.",

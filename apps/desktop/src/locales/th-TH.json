@@ -6,7 +6,7 @@
     "addMods": "เพิ่มม็อดในเครื่อง",
     "downloads": "ดาวน์โหลด",
     "settings": "การตั้งค่า",
-    "developer": "เครื่องมือสำหรับนักพัฒนา",
+    "developer": "",
     "whatsNew": "มีอะไรใหม่",
     "needHelp": "ต้องการความช่วยเหลือ ?",
     "collapseMenu": "ยุบเมนู",
@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "ไม่สามารถปิดใช้งานม็อดได้",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "สถานะ",
     "gameDetected": "ตรวจพบเกม",
     "gameInstalledAt": "เกมติดตั้งอยู่ที่ {{path}}",
-    "launchVanilla": "เริ่มเกม (ไม่มีม็อด)",
-    "launchModded": "เริ่มเกม (มีม็อด)",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "หยุดเกม",
     "failedToFetchMods": "ไม่สามารถดึงข้อมูลม็อดได้ โปรดลองอีกครั้งในภายหลัง",
     "mods": "ม็อด",
@@ -361,6 +377,10 @@
     "appearanceDescription": "ปรับแต่งลักษณะที่ปรากฏของแอปพลิเคชัน",
     "theme": "ธีม",
     "themeDescription": "เลือกระหว่างธีมสว่าง, มืด หรือธีมตามระบบ",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "แฟลชแบง",
     "flashbangDescription": "บังคับใช้โหมดสว่างระหว่างเวลา 20:00 น. ถึง 8:00 น. โดยไม่คำนึงถึงธีมที่เลือก",
     "audioVolume": "ระดับเสียง",
@@ -1437,7 +1457,7 @@
   },
   "dashboard": {
     "title": "แดชบอร์ด",
-    "subtitle": "ภาพรวมการจัดการม็อดของคุณ",
+    "subtitle": "",
     "announcements": "ประกาศ",
     "latestMods": "ม็อดล่าสุด",
     "popularMods": "ม็อดยอดนิยม",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "ขณะนี้ไม่มีประกาศ โปรดกลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดตและข่าวสาร",
     "checkBackLater": "กลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดต",
     "noModsAvailable": "ไม่มีม็อด",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "ดีบัก",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "แชร์โปรไฟล์",
+    "activeProfile": "",
     "selectProfile": "เลือกโปรไฟล์",
     "manage": "จัดการโปรไฟล์",
     "manageDescription": "สร้าง แก้ไข และสลับระหว่างโปรไฟล์ม็อดต่างๆ แต่ละโปรไฟล์จะจดจำว่าคุณเปิดใช้งานม็อดใดไว้บ้าง",
