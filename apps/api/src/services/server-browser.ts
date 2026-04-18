@@ -87,7 +87,7 @@ export class ServerBrowserService {
   }
 
   async listFacets(): Promise<ServerBrowserFacetsResponse> {
-    const cacheKey = "server-browser:facets";
+    const cacheKey = "server-browser:v2:facets";
     const cached = await cache.get<ServerBrowserFacetsResponse>(cacheKey);
     if (cached) return cached;
 
@@ -126,7 +126,7 @@ export class ServerBrowserService {
   }
 
   async getServer(id: string): Promise<AggregatedServer | null> {
-    const cacheKey = `server-browser:detail:${id}`;
+    const cacheKey = `server-browser:v2:detail:${id}`;
     const cached = await cache.get<AggregatedServer>(cacheKey);
     if (cached) return cached;
 
@@ -198,7 +198,7 @@ export class ServerBrowserService {
   }
 
   async invalidateServer(id: string): Promise<void> {
-    await cache.del(`server-browser:detail:${id}`);
+    await cache.del(`server-browser:v2:detail:${id}`);
   }
 
   private async fetchAggregated(filters: ServerBrowserFilters): Promise<{
@@ -354,6 +354,6 @@ export class ServerBrowserService {
       limit: String(filters.limit ?? DEFAULT_LIMIT),
       cursor: String(filters.cursor ?? 0),
     };
-    return `server-browser:list:${JSON.stringify(norm)}`;
+    return `server-browser:v2:list:${JSON.stringify(norm)}`;
   }
 }

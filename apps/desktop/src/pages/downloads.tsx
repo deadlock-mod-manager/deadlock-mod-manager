@@ -25,12 +25,10 @@ const getDownloadTimestamp = (
     return 0;
   }
 
-  // If it's a Date object
   if (downloadedAt instanceof Date) {
     return downloadedAt.getTime();
   }
 
-  // If it's an ISO string
   if (typeof downloadedAt === "string") {
     return new Date(downloadedAt).getTime();
   }
@@ -53,10 +51,8 @@ const Downloads = () => {
     return downloads.filter((d) => d.status !== ModStatus.Downloading);
   }, [downloads, filter]);
 
-  // Sort downloads: in-progress first, then by downloadedAt date desc
   const sortedDownloads = useMemo(() => {
     return [...filteredDownloads].sort((a, b) => {
-      // If one is in progress and other isn't, in-progress goes first
       if (
         a.status === ModStatus.Downloading &&
         b.status !== ModStatus.Downloading
@@ -70,7 +66,6 @@ const Downloads = () => {
         return 1;
       }
 
-      // Otherwise sort by downloadedAt date desc, handling both Date and string formats
       return (
         getDownloadTimestamp(b.downloadedAt) -
         getDownloadTimestamp(a.downloadedAt)
@@ -88,26 +83,34 @@ const Downloads = () => {
     [downloads],
   );
 
+  const subtitle = `${activeCount} ${t("downloads.active").toLowerCase()} · ${completedCount} ${t("downloads.completed").toLowerCase()} · ${downloads.length} ${t("downloads.total").toLowerCase()}`;
+
   return (
     <div className='flex h-full min-h-0 w-full flex-col overflow-y-auto pl-4 pr-2'>
-      <div className='mb-6 flex items-center justify-between'>
-        <PageTitle title={t("downloads.title")} />
+      <div className='mb-6 flex items-start justify-between gap-4'>
+        <PageTitle subtitle={subtitle} title={t("downloads.title")} />
         <Tabs
-          className='w-auto'
+          className='w-auto pt-4'
           defaultValue='all'
           onValueChange={(value) =>
             setFilter(value as "all" | "active" | "completed")
           }
           value={filter}>
-          <TabsList>
-            <TabsTrigger value='all'>
+          <TabsList className='rounded-full bg-muted/60 p-1'>
+            <TabsTrigger
+              className='rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+              value='all'>
               {t("downloads.all")} ({downloads.length})
             </TabsTrigger>
-            <TabsTrigger value='active'>
+            <TabsTrigger
+              className='rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+              value='active'>
               <DownloadSimple className='mr-1' />
               {t("downloads.active")} ({activeCount})
             </TabsTrigger>
-            <TabsTrigger value='completed'>
+            <TabsTrigger
+              className='rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+              value='completed'>
               <Package className='mr-1' />
               {t("downloads.completed")} ({completedCount})
             </TabsTrigger>
@@ -117,7 +120,7 @@ const Downloads = () => {
 
       <ErrorBoundary>
         {sortedDownloads.length > 0 ? (
-          <div className='grid grid-cols-1 gap-4'>
+          <div className='space-y-3 pb-6'>
             {sortedDownloads.map((download) => (
               <DownloadCard download={download} key={download.id} />
             ))}
@@ -125,8 +128,10 @@ const Downloads = () => {
         ) : (
           <Empty className='min-h-0 flex-1'>
             <EmptyHeader>
-              <EmptyMedia variant='default'>
-                <Package className='h-16 w-16' />
+              <EmptyMedia
+                className='flex size-16 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20'
+                variant='default'>
+                <Package className='size-8 text-primary' />
               </EmptyMedia>
               <EmptyTitle>{t("downloads.noDownloadsFound")}</EmptyTitle>
               <EmptyDescription>

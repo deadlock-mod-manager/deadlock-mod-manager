@@ -9,21 +9,23 @@ const logger = mainLogger.child().withContext({
 
 export interface ResolvedRequirement {
   name: string;
-  version: string;
+  provider: ServerRequiredMod["provider"];
+  url: string;
+  version?: string;
   resolved: boolean;
   remoteId?: string;
   mod?: ReturnType<typeof toModDto>;
-  reason?: "unknown_scheme" | "not_in_database";
+  reason?: "unknown_scheme" | "not_in_database" | "custom_provider";
 }
 
-// Required mods are advertised as GameBanana submission URLs. The category segment
-// can be any submission type (e.g. `mods`, `sounds`, `maps`, `skins`, `wips`),
-// e.g. `https://gamebanana.com/mods/616792` or `https://gamebanana.com/sounds/12345`.
+// GameBanana submission URLs may use any category segment (e.g. `mods`, `sounds`,
+// `maps`, `skins`, `wips`), e.g. `https://gamebanana.com/mods/616792` or
+// `https://gamebanana.com/sounds/12345`.
 const GAMEBANANA_URL_RE =
   /^https?:\/\/(?:www\.)?gamebanana\.com\/[a-z]+\/(\d+)\/?$/i;
 
-const extractRemoteId = (raw: string): string | null => {
-  const m = raw.trim().match(GAMEBANANA_URL_RE);
+const extractGamebananaId = (url: string): string | null => {
+  const m = url.trim().match(GAMEBANANA_URL_RE);
   return m ? m[1] : null;
 };
 
@@ -54,8 +56,12 @@ export class ServerModsResolver {
     const remoteIds = new Set<string>();
     const lookup = new Map<string, string | null>();
     for (const req of required) {
-      const id = extractRemoteId(req.name);
-      lookup.set(req.name, id);
+      if (req.provider !== "gamebanana") {
+        lookup.set(req.id, null);
+        continue;
+      }
+      const id = extractGamebananaId(req.url);
+      lookup.set(req.id, id);
       if (id) remoteIds.add(id);
     }
 
@@ -66,11 +72,25 @@ export class ServerModsResolver {
     const modByRemoteId = new Map(mods.map((m) => [m.remoteId, m]));
 
     const resolved: ResolvedRequirement[] = required.map((req) => {
-      const remoteId = lookup.get(req.name) ?? null;
+      const base = {
+        name: req.id,
+        provider: req.provider,
+        url: req.url,
+        version: req.version,
+      };
+
+      if (req.provider === "custom") {
+        return {
+          ...base,
+          resolved: false,
+          reason: "custom_provider",
+        };
+      }
+
+      const remoteId = lookup.get(req.id) ?? null;
       if (!remoteId) {
         return {
-          name: req.name,
-          version: req.version,
+          ...base,
           resolved: false,
           reason: "unknown_scheme",
         };
@@ -78,16 +98,14 @@ export class ServerModsResolver {
       const mod = modByRemoteId.get(remoteId);
       if (!mod) {
         return {
-          name: req.name,
-          version: req.version,
+          ...base,
           resolved: false,
           remoteId,
           reason: "not_in_database",
         };
       }
       return {
-        name: req.name,
-        version: req.version,
+        ...base,
         resolved: true,
         remoteId,
         mod: toModDto(mod),

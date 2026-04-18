@@ -148,6 +148,7 @@ export function MultiFileDownloadDialog({
             <ul className='divide-y divide-border/60' role='list'>
               {sortedFiles.map((file) => {
                 const isSelected = selectedFiles.has(file.name);
+                const fileCheckboxId = `file-${file.name}`;
                 const timestamp = file.updatedAt ?? file.createdAt;
                 const timestampLabel = file.updatedAt
                   ? t("downloads.updatedAgo", {
@@ -170,22 +171,19 @@ export function MultiFileDownloadDialog({
 
                 return (
                   <li key={file.name}>
-                    <button
-                      aria-pressed={isSelected}
+                    <label
                       className={cn(
-                        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors",
-                        "hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
+                        "flex w-full cursor-pointer items-start gap-3 px-3 py-3 text-left transition-colors items-center",
+                        "hover:bg-muted/60 has-[:focus-visible]:bg-muted/60",
                         isSelected && "bg-primary/5 hover:bg-primary/10",
                         isDownloading && "pointer-events-none opacity-60",
                       )}
-                      disabled={isDownloading}
-                      onClick={() => handleFileToggle(file.name)}
-                      type='button'>
+                      htmlFor={fileCheckboxId}>
                       <span className='flex h-lh items-center'>
                         <Checkbox
                           checked={isSelected}
                           disabled={isDownloading}
-                          tabIndex={-1}
+                          id={fileCheckboxId}
                           onCheckedChange={() => handleFileToggle(file.name)}
                         />
                       </span>
@@ -208,14 +206,16 @@ export function MultiFileDownloadDialog({
                             <>
                               <span aria-hidden='true'>&middot;</span>
                               {timestampTooltip ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span>{timestampLabel}</span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {timestampTooltip}
-                                  </TooltipContent>
-                                </Tooltip>
+                                <span onClick={(e) => e.stopPropagation()}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>{timestampLabel}</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {timestampTooltip}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </span>
                               ) : (
                                 <span>{timestampLabel}</span>
                               )}
@@ -223,7 +223,7 @@ export function MultiFileDownloadDialog({
                           )}
                         </div>
                       </div>
-                    </button>
+                    </label>
                   </li>
                 );
               })}

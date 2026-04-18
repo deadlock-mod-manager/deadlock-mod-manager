@@ -1,8 +1,12 @@
 import { z } from "zod";
 
+const ModProviderSchema = z.enum(["gamebanana", "custom"]);
+
 const ModRequirementSchema = z.object({
-  name: z.string(),
-  version: z.string().default(""),
+  id: z.string(),
+  provider: ModProviderSchema,
+  url: z.string(),
+  version: z.string().optional(),
 });
 
 const ModInfoSchema = z.object({
@@ -117,14 +121,19 @@ export type ServerBrowserFacetsResponse = z.infer<
 export type RelayHealth = z.infer<typeof RelayHealthSchema>;
 export type RelaysHealthResponse = z.infer<typeof RelaysHealthResponseSchema>;
 export type ServerRequiredMod = z.infer<typeof ModRequirementSchema>;
+export type ServerModProvider = z.infer<typeof ModProviderSchema>;
 export type ServerPlayer = z.infer<typeof PlayerInfoSchema>;
 
 export const ResolvedRequirementSchema = z.object({
   name: z.string(),
-  version: z.string(),
+  provider: ModProviderSchema,
+  url: z.string(),
+  version: z.string().optional(),
   resolved: z.boolean(),
   remoteId: z.string().optional(),
-  reason: z.enum(["unknown_scheme", "not_in_database"]).optional(),
+  reason: z
+    .enum(["unknown_scheme", "not_in_database", "custom_provider"])
+    .optional(),
   mod: z.unknown().optional(),
 });
 

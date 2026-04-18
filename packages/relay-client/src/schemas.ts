@@ -1,8 +1,12 @@
 import { z } from "zod";
 
+export const ModProviderSchema = z.enum(["gamebanana", "custom"]);
+
 export const ModRequirementSchema = z.object({
-  name: z.string(),
-  version: z.string().optional().default(""),
+  id: z.string(),
+  provider: ModProviderSchema,
+  url: z.string(),
+  version: z.string().optional(),
 });
 
 export const ModInfoSchema = z.object({
@@ -83,6 +87,7 @@ export const RelaysManifestSchema = z.object({
   relays: z.array(RelaysManifestEntrySchema),
 });
 
+export type ModProvider = z.infer<typeof ModProviderSchema>;
 export type ModRequirement = z.infer<typeof ModRequirementSchema>;
 export type ModInfo = z.infer<typeof ModInfoSchema>;
 export type PlayerInfo = z.infer<typeof PlayerInfoSchema>;
