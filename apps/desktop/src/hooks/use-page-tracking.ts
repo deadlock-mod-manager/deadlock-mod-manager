@@ -27,6 +27,8 @@ export const usePageTracking = () => {
           return "add-mods";
         case "/downloads":
           return "downloads";
+        case "/servers":
+          return "server-browser";
         case "/settings":
           return "settings";
         case "/debug":
@@ -35,6 +37,9 @@ export const usePageTracking = () => {
           // Handle dynamic routes or unknown paths
           if (pathname.startsWith("/mods/")) {
             return "mod-details";
+          }
+          if (pathname.startsWith("/servers/")) {
+            return "server-details";
           }
           return pathname.replace(/^\//, "") || "unknown";
       }

@@ -16,8 +16,10 @@ import Mod from "./pages/mod";
 import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
+import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
 import Splash from "./pages/splash";
+import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import "./lib/i18n";
 
@@ -43,6 +45,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
+              <Route element={<Servers />} path='/servers' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Developer />} path='/developer' />
               <Route element={<PluginEntry />} path='/plugins/:id' />
