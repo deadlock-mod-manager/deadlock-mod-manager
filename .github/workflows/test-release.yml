@@ -1,0 +1,400 @@
+name: Test Release
+
+env:
+  NODE_VERSION: "24.8.0"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build from"
+        type: string
+        required: true
+        default: "main"
+      build_windows:
+        description: "Build for Windows"
+        type: boolean
+        default: true
+      build_linux:
+        description: "Build for Linux"
+        type: boolean
+        default: true
+  pull_request:
+    types: [labeled]
+
+jobs:
+  check-label:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'Test Release')
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.resolve.outputs.branch }}
+      branch_slug: ${{ steps.resolve.outputs.branch_slug }}
+    steps:
+      - name: Resolve branch
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="${{ inputs.branch }}"
+          else
+            BRANCH="${{ github.head_ref }}"
+          fi
+
+          BRANCH_SLUG=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9._-]/-/g' | cut -c1-50)
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "branch_slug=$BRANCH_SLUG" >> $GITHUB_OUTPUT
+          echo "Resolved branch: $BRANCH (slug: $BRANCH_SLUG)"
+
+  prepare-matrix:
+    needs: check-label
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Prepare build matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            matrix='{"platform":["windows-latest","ubuntu-24.04"]}'
+          else
+            platforms=""
+
+            if [ "${{ inputs.build_windows }}" = "true" ]; then
+              platforms="windows-latest"
+            fi
+
+            if [ "${{ inputs.build_linux }}" = "true" ]; then
+              if [ -z "$platforms" ]; then
+                platforms="ubuntu-24.04"
+              else
+                platforms="$platforms,ubuntu-24.04"
+              fi
+            fi
+
+            if [ -z "$platforms" ]; then
+              platforms="windows-latest,ubuntu-24.04"
+            fi
+
+            matrix=$(echo "$platforms" | jq -Rc 'split(",") | {platform: .}')
+          fi
+
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "Selected platforms: $matrix"
+
+  create-test-release:
+    needs: check-label
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+      package_version: ${{ steps.version.outputs.package_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check-label.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Get version and create tag
+        id: version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          DATE=$(date +%Y%m%d)
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          BRANCH_SLUG="${{ needs.check-label.outputs.branch_slug }}"
+          TAG_NAME="test-${BRANCH_SLUG}-${PACKAGE_VERSION}-${DATE}-${COMMIT_SHORT}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate commit list
+        id: commits
+        run: |
+          MERGE_BASE=$(git merge-base origin/main HEAD 2>/dev/null || echo "")
+          if [ -n "$MERGE_BASE" ] && [ "$MERGE_BASE" != "$(git rev-parse HEAD)" ]; then
+            COMMIT_LIST=$(git log "${MERGE_BASE}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMIT_LIST=$(git log -20 --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create test release
+        id: create-release
+        uses: actions/github-script@v7
+        env:
+          TAG_NAME: ${{ steps.version.outputs.tag_name }}
+          BRANCH: ${{ needs.check-label.outputs.branch }}
+          COMMITS: ${{ steps.commits.outputs.commits }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        with:
+          script: |
+            const tag = process.env.TAG_NAME;
+            const branch = process.env.BRANCH;
+            const commits = process.env.COMMITS;
+            const version = process.env.PACKAGE_VERSION;
+
+            const releaseBody = [
+              `**Test build from branch \`${branch}\`**`,
+              "",
+              `Version: ${version}`,
+              `Built: ${new Date().toISOString().split('T')[0]}`,
+              `Commit: ${context.sha.substring(0, 7)}`,
+              "",
+              "**Warning:** This is a test build from a feature branch and should not be used in production.",
+              "",
+              "## Commits",
+              "",
+              commits || "No commits found",
+              "",
+              "---",
+              `*This release was generated from branch \`${branch}\` via the Test Release workflow.*`
+            ].join('\n');
+
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              target_commitish: context.sha,
+              name: `Test Build: ${branch} (${tag})`,
+              body: releaseBody,
+              draft: true,
+              prerelease: true
+            });
+
+            console.log(`Release created with ID: ${data.id}`);
+            console.log(`Release URL: ${data.html_url}`);
+
+            core.setOutput('tag_name', tag);
+            return data.id;
+
+  build-test-release:
+    needs: [check-label, prepare-matrix, create-test-release]
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check-label.outputs.branch }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> apps/desktop/target
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install apt dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-0=2.44.0-2 \
+            libwebkit2gtk-4.1-dev=2.44.0-2 \
+            libjavascriptcoregtk-4.1-0=2.44.0-2 \
+            libjavascriptcoregtk-4.1-dev=2.44.0-2 \
+            gir1.2-javascriptcoregtk-4.1=2.44.0-2 \
+            gir1.2-webkit2-4.1=2.44.0-2 \
+            libappindicator3-dev \
+            librsvg2-dev \
+            flatpak \
+            flatpak-builder
+
+      - name: Install Flatpak SDK (ubuntu only)
+        if: matrix.platform == 'ubuntu-24.04'
+        uses: ./.github/actions/install-flatpak-sdk
+        with:
+          runtime-version: "49"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Linux build - upload directly to release
+      - name: Build the app (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        with:
+          projectPath: ./apps/desktop
+          releaseId: ${{ needs.create-test-release.outputs.release_id }}
+
+      - name: Build Flatpak bundle (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          DEB_PATH=$(find apps/desktop/target/release/bundle/deb -name '*.deb' | head -1)
+          cp "$DEB_PATH" apps/desktop/flatpak/deadlock-mod-manager.deb
+          cp apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml apps/desktop/flatpak/
+
+          flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.yml
+          flatpak build-bundle flatpak-repo deadlock-mod-manager.flatpak dev.stormix.deadlock-mod-manager
+
+      - name: Upload Flatpak to release (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-test-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const content = fs.readFileSync('deadlock-mod-manager.flatpak');
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: 'deadlock-mod-manager.flatpak',
+              data: content
+            });
+            console.log('Successfully uploaded Flatpak bundle');
+
+      # Windows build - don't upload to release yet, need to code-sign first
+      - name: Build the app (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        with:
+          projectPath: ./apps/desktop
+          args: "--bundles nsis,updater"
+
+      # Windows: SignPath code signing flow
+      - name: Sign Windows executables
+        if: matrix.platform == 'windows-latest'
+        id: signpath-sign
+        uses: ./.github/actions/signpath-sign
+        with:
+          unsigned-artifact-path: apps/desktop/target/release/bundle/nsis/*.exe
+          output-directory: ./artifact-output
+          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          signpath-project-slug: deadlock-mod-manager
+          signpath-signing-policy: test-signing
+          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+      - name: Upload signed Windows artifact
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-release-signed
+          path: ./artifact-output/*
+          if-no-files-found: error
+
+      - name: Upload signed artifacts to release
+        if: matrix.platform == 'windows-latest'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-test-release.outputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId
+            });
+            console.log(`Found release: ${release.name} (draft: ${release.draft})`);
+
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+
+              if (stats.isFile()) {
+                const sanitizedName = file.trim();
+                console.log(`Uploading "${sanitizedName}" to release...`);
+                const content = fs.readFileSync(filePath);
+
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: releaseId,
+                  name: sanitizedName,
+                  data: content
+                });
+                console.log(`Successfully uploaded ${sanitizedName}`);
+              }
+            }
+
+  cleanup-test-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [create-test-release, build-test-release]
+    if: failure()
+
+    steps:
+      - name: Delete failed test release
+        uses: actions/github-script@v7
+        env:
+          release_id: ${{ needs.create-test-release.outputs.release_id }}
+        with:
+          script: |
+            if (process.env.release_id) {
+              console.log(`Cleaning up failed test release: ${process.env.release_id}`);
+              try {
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: process.env.release_id
+                });
+                console.log('Successfully cleaned up failed release');
+              } catch (error) {
+                console.error(`Cleanup failed: ${error.message}`);
+              }
+            }
