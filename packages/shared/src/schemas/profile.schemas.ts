@@ -38,7 +38,15 @@ export const v1ProfileSchema = z.object({
   }),
 });
 
-export const profileSchema = z.union([v1ProfileSchema]);
+export const v2ProfileSchema = z.object({
+  version: z.literal("2"),
+  payload: z.object({
+    mods: z.array(profileModSchema),
+    loadOrder: z.array(z.string()),
+  }),
+});
+
+export const profileSchema = z.union([v1ProfileSchema, v2ProfileSchema]);
 
 export type SharedProfile = z.infer<typeof profileSchema>;
 export type ProfileModDownload = z.infer<typeof profileModDownloadSchema>;
