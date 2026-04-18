@@ -36,6 +36,8 @@ export type UIState = {
   modsFilters: ModsFilters;
   crosshairFilters: CrosshairFilters;
   hasCompletedOnboarding: boolean;
+  showOccultGeometry: boolean;
+  animateOccultGeometry: boolean;
 
   // Plugins
   enabledPlugins: Record<string, boolean>;
@@ -50,6 +52,8 @@ export type UIState = {
   updateCrosshairFilters: (filters: Partial<CrosshairFilters>) => void;
   resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
+  setShowOccultGeometry: (value: boolean) => void;
+  setAnimateOccultGeometry: (value: boolean) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
 };
@@ -82,6 +86,8 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   modsFilters: DEFAULT_MODS_FILTERS,
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
+  showOccultGeometry: true,
+  animateOccultGeometry: true,
   enabledPlugins: {},
   pluginSettings: {},
 
@@ -129,6 +135,16 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   setHasCompletedOnboarding: (completed: boolean) =>
     set(() => ({
       hasCompletedOnboarding: completed,
+    })),
+
+  setShowOccultGeometry: (value: boolean) =>
+    set(() => ({
+      showOccultGeometry: value,
+    })),
+
+  setAnimateOccultGeometry: (value: boolean) =>
+    set(() => ({
+      animateOccultGeometry: value,
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>

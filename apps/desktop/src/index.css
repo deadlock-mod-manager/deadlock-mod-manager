@@ -346,6 +346,31 @@
   }
 }
 
+/* Announcements Ticker */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker-scroll 60s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker {
+    animation: none;
+  }
+}
+
 /* Background Plugin Styles */
 .background-plugin-active [data-sidebar="sidebar"] {
   background-color: transparent;
@@ -749,11 +774,7 @@
 }
 
 .arcane-theme-active body,
-.arcane-theme-active main,
-.arcane-theme-active .group\/sidebar-wrapper,
-.arcane-theme-active .group\/sidebar-wrapper > div,
-.arcane-theme-active [data-sidebar-header="true"],
-.arcane-theme-active [data-titlebar="true"] {
+.arcane-theme-active main {
   background-color: hsl(var(--background));
 }
 

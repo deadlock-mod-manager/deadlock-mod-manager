@@ -17,7 +17,7 @@ export const SidebarCollapse = () => {
         tooltip={t(open ? "navigation.collapseMenu" : "navigation.expandMenu")}>
         <ArrowLineLeftIcon
           className={cn(
-            "transition-all duration-150 ease-linear",
+            "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
             open ? "" : "rotate-180",
           )}
           weight='duotone'

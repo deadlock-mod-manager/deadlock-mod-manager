@@ -73,6 +73,8 @@ export const BrandingHeader = ({
   }
 
   const iconSize = collapsed ? "size-7" : "size-9";
+  const iconTransition =
+    "transition-[width,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
   const renderIcon = () => {
     if (TopbarLogo) {
@@ -82,44 +84,48 @@ export const BrandingHeader = ({
       return (
         <img
           alt={t("accessibility.deadlockLogoAlt")}
-          className={cn("object-contain", iconSize)}
+          className={cn("object-contain", iconSize, iconTransition)}
           src={themedIconSrc}
         />
       );
     }
-    return <Logo className={iconSize} />;
+    return <Logo className={cn(iconSize, iconTransition)} />;
   };
 
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5",
-        collapsed ? "justify-center px-0 py-2" : "pl-1.5 py-3",
+        "flex items-center transition-[padding,gap] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 pl-1.5 py-3",
         className,
       )}
       data-sidebar-header='true'>
       <div className='flex shrink-0 items-center justify-center'>
         {renderIcon()}
       </div>
-      {!collapsed && (
-        <div className='flex min-w-0 flex-col gap-1'>
-          <span className='truncate font-primary text-lg leading-none tracking-tight'>
-            Deadlock Mod Manager
-          </span>
-          <div className='flex items-center gap-1.5'>
-            {version && (
-              <span className='text-muted-foreground text-xs leading-none tabular-nums'>
-                v{version}
-              </span>
-            )}
-            <Badge
-              className='h-4 px-1.5 py-0 text-[10px] font-medium'
-              variant='outline'>
-              Early Access
-            </Badge>
-          </div>
+      <div
+        className={cn(
+          "flex min-w-0 flex-col gap-1 overflow-hidden transition-[opacity,max-width,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          collapsed
+            ? "pointer-events-none max-w-0 -translate-x-1 opacity-0"
+            : "max-w-[12rem] translate-x-0 opacity-100 delay-100",
+        )}>
+        <span className='truncate font-primary text-lg leading-none tracking-tight'>
+          Deadlock Mod Manager
+        </span>
+        <div className='flex items-center gap-1.5'>
+          {version && (
+            <span className='text-muted-foreground text-xs leading-none tabular-nums'>
+              v{version}
+            </span>
+          )}
+          <Badge
+            className='h-4 px-1.5 py-0 font-medium text-[10px]'
+            variant='outline'>
+            Early Access
+          </Badge>
         </div>
-      )}
+      </div>
     </div>
   );
 };

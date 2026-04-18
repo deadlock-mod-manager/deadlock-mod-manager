@@ -365,6 +365,10 @@
     "appearanceDescription": "Customize the appearance of the application.",
     "theme": "Theme",
     "themeDescription": "Choose between light, dark, or system theme",
+    "occultGeometry": "Occult geometry",
+    "occultGeometryDescription": "Show the decorative occult sigils and mandalas in the background.",
+    "animateOccultGeometry": "Animate occult geometry",
+    "animateOccultGeometryDescription": "Slowly rotate and pulse the background sigils. Animations automatically pause when the window is in the background.",
     "flashbang": "Flashbang",
     "flashbangDescription": "Forces Light Mode between 8 PM and 8 AM, regardless of selected theme",
     "audioVolume": "Audio Volume",
@@ -1455,7 +1459,12 @@
     "installedMods": "Installed",
     "pendingUpdates": "Updates",
     "queued": "In Queue",
-    "browseStore": "Browse Store"
+    "browseStore": "Browse Store",
+    "broadcast": "Broadcast",
+    "changelog": "Changelog",
+    "moreFeatures": "+{{count}} more",
+    "tickerPrev": "Previous announcement",
+    "tickerNext": "Next announcement"
   },
   "debug": {
     "title": "Debug",

@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
+import { AnnouncementsTicker } from "@/components/dashboard/announcements-ticker";
+import { ChangelogRibbon } from "@/components/dashboard/changelog-ribbon";
 import { FeaturedModCard } from "@/components/dashboard/featured-mod-card";
 import { LatestModsCard } from "@/components/dashboard/latest-mods-card";
 import { QuickStatsStrip } from "@/components/dashboard/quick-stats-strip";
@@ -29,8 +31,6 @@ const Dashboard = () => {
   const featured = useFeaturedMod(mods);
   const trending = useTrendingByCategory(mods);
 
-  // Show only the categories that yielded any trending mods. Iterate via the
-  // canonical order so the page is stable across renders.
   const visibleCategories = useMemo(
     () =>
       MOD_CATEGORY_ORDER.filter((category) => trending[category]?.length > 0),
@@ -50,17 +50,22 @@ const Dashboard = () => {
   }
 
   return (
-    <div className='relative z-10 flex h-full w-full flex-col gap-4 px-6'>
-      <PageTitle
-        subtitle={t("dashboard.subtitle")}
-        title={t("dashboard.title")}
-      />
-      <div className='flex-1 space-y-6 overflow-y-auto overflow-x-hidden pb-8 pr-2'>
+    <div className='relative z-10 flex h-full w-full flex-col gap-3'>
+      <div className='px-6'>
+        <AnnouncementsTicker />
+      </div>
+      <div className='px-6'>
+        <PageTitle
+          subtitle={t("dashboard.subtitle")}
+          title={t("dashboard.title")}
+        />
+      </div>
+      <div className='flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-6 pb-8 pr-2'>
         <FeaturedModCard isLoading={isPending} mod={featured} />
 
         <QuickStatsStrip />
 
-        <div className='space-y-6'>
+        <div className='space-y-8'>
           {isPending
             ? MOD_CATEGORY_ORDER.slice(0, 3).map((category) => (
                 <TrendingCategoryRail
@@ -79,15 +84,7 @@ const Dashboard = () => {
               ))}
         </div>
 
-        <div className='grid grid-cols-1 gap-4 xl:grid-cols-3'>
-          <div className='xl:col-span-2'>
-            <LatestModsCard />
-          </div>
-          <div className='space-y-4'>
-            <AnnouncementsCard />
-            <WhatsNewCard />
-          </div>
-        </div>
+        <ChangelogRibbon />
       </div>
     </div>
   );

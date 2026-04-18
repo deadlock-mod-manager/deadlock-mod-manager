@@ -46,7 +46,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 16,
+      version: 17,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -452,6 +452,25 @@ export const usePersistedStore = create<State>()(
             password: "",
             noProxy: "",
           };
+        }
+
+        // Migration from version 16 to 17: Add occult geometry appearance toggles
+        if (version <= 16) {
+          logger
+            .withMetadata({
+              migrationFrom: 16,
+              migrationTo: 17,
+              action: "add-occult-geometry-toggles",
+            })
+            .info(
+              "Migrating from version 16 to 17: Adding occult geometry toggles",
+            );
+          if (typeof state.showOccultGeometry !== "boolean") {
+            state.showOccultGeometry = true;
+          }
+          if (typeof state.animateOccultGeometry !== "boolean") {
+            state.animateOccultGeometry = true;
+          }
         }
 
         return state;

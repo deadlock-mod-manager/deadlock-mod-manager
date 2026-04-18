@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useWindowFocused } from "@/hooks/use-window-focused";
+import { usePersistedStore } from "@/lib/store";
 
 const GOLDEN_RATIO = 1.618033988749;
 
@@ -161,6 +163,70 @@ function ConcentricRings({
   );
 }
 
+// Cog and wrench paths extracted from the Deadlock logo (logo.tsx).
+// Original logo viewBox is 1024x1024, centered around (~507, 509).
+// Rendered as faint primary-color strokes (no fills) so it blends as line art.
+const LOGO_COG =
+  "M874.08,468.44v81.66l-67.86,8.49c-8.07,1-14.62,6.96-16.43,14.88-7.33,32.35-20.08,62.66-37.27,89.91-4.33,6.88-3.89,15.71,1.09,22.13l42.04,54-57.77,57.77-54-42.02c-6.42-5-15.27-5.44-22.13-1.09-27.26,17.17-57.55,29.92-89.91,37.25-7.92,1.81-13.88,8.36-14.88,16.43l-8.49,67.86h-81.66l-8.49-67.86c-1.02-8.07-6.96-14.62-14.88-16.43-32.35-7.33-62.66-20.08-89.91-37.25-6.88-4.35-15.71-3.92-22.13,1.09l-54,42.02-57.77-57.77,42.02-54c4.98-6.42,5.42-15.25,1.09-22.13-17.19-27.24-29.94-57.55-37.27-89.91-1.78-7.92-8.36-13.88-16.41-14.88l-67.89-8.49v-81.66l67.89-8.49c8.05-1.02,14.62-6.96,16.41-14.88,7.33-32.35,20.08-62.66,37.27-89.91,4.33-6.88,3.89-15.71-1.09-22.13l-42.02-54,57.77-57.77,54,42.02c6.42,4.98,15.25,5.42,22.13,1.09,27.24-17.17,57.55-29.94,89.91-37.25,7.92-1.81,13.86-8.38,14.88-16.43l8.49-67.86h81.66l8.49,67.86c1,8.05,6.96,14.62,14.88,16.43,32.35,7.31,62.64,20.08,89.91,37.25,6.85,4.33,15.71,3.89,22.13-1.09l54-42.02,57.77,57.77-42.04,54c-4.98,6.42-5.42,15.25-1.09,22.13,17.19,27.24,29.94,57.55,37.27,89.91,1.81,7.92,8.36,13.86,16.43,14.88l67.86,8.49Z";
+
+const LOGO_WRENCH_PATHS = [
+  "M604.84,632.73c9.4,9.44,15.21,2.73,22.92-4.97,7.72-7.7,14.41-13.52,5.01-22.94,0,0-131.03-130.91-163.39-163.18l-27.93,27.92,163.39,163.18h0Z",
+  "M389.42,492.28l10.87-10.69s-4.8-13.15,2.23-19.46c7.03-6.3,18.89-2.41,18.89-2.41l38.15-36.87s-2.67-19.17.87-22.71c3.54-3.54,43.11-22.82,46.93-26.68l-8.13-8.13s-55.37,6.66-61.37,12.64c-3.52,3.54-29.88,30.17-48.68,48.97,0,0,4.71,13.44-1.49,19.63-6.21,6.21-20.2,1.77-20.2,1.77-6.6,6.6-11.03,11.01-11.03,11.01-4.66,4.69-1.91,11.28,3.81,16.99l12.14,12.14c5.75,5.74,12.36,8.44,17.01,3.79h0Z",
+  "M560.87,465.73c19.07,9.05,42.98,6.27,58.81-9.56,12.21-12.21,17.07-29.01,14.46-44.81l-26.93,26.89-22.91,5.68-25.88-25.53,6.07-23.67,26.68-26.34c-15.81-2.58-33.67,1.15-45.89,13.38-15.84,15.84-18,40.34-8.96,59.43l-17.6,17.58c7.74,7.7,16,15.97,24.57,24.52l17.56-17.58h0Z",
+  "M484.73,547.23l-26.64-26.62-23.15,23.17c-1.45,1.42-2.48,3.03-3.2,4.71-1.36-.53-2.12-.55-2.6-.35-4.43-1.47-9.1-2.46-14-2.46-24.45,0-44.26,19.56-44.26,43.71s19.81,43.71,44.26,43.71,44.26-19.56,44.26-43.71c0-5.01-1.04-9.75-2.58-14.23-.09-.42-.11-.81-.35-1.43,1.84-.76,3.58-1.79,5.1-3.33l23.19-23.15h0ZM415.12,614.83c-14.37,0-26.01-11.38-26.01-25.46s11.61-25.46,26.01-25.46,26.01,11.38,26.01,25.46-11.63,25.46-26.01,25.46h0Z",
+];
+
+function LogoSigil({
+  cx,
+  cy,
+  scale = 1,
+  rotation = 0,
+  opacity = 0.16,
+}: {
+  cx: number;
+  cy: number;
+  scale?: number;
+  rotation?: number;
+  opacity?: number;
+}) {
+  // Logo is 1024x1024; map down to ~20 sigil units, then multiply by caller's scale.
+  const baseScale = 0.08 * scale;
+  const stroke = "hsl(var(--primary))";
+  return (
+    <g
+      opacity={opacity}
+      transform={`translate(${cx},${cy}) rotate(${rotation}) scale(${baseScale}) translate(-507,-509)`}>
+      <circle
+        cx={507}
+        cy={509}
+        fill='none'
+        r={500}
+        stroke={stroke}
+        strokeWidth={3}
+      />
+      <path
+        d={LOGO_COG}
+        fill='none'
+        stroke={stroke}
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth={4}
+      />
+      {LOGO_WRENCH_PATHS.map((d, i) => (
+        <path
+          d={d}
+          fill='none'
+          key={`logo-wrench-${i}`}
+          stroke={stroke}
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={5}
+        />
+      ))}
+    </g>
+  );
+}
+
 function Sigil({
   cx,
   cy,
@@ -287,6 +353,13 @@ function CornerSigil({
 }
 
 export const OccultGeometry = () => {
+  const showOccultGeometry = usePersistedStore((s) => s.showOccultGeometry);
+  const animateOccultGeometry = usePersistedStore(
+    (s) => s.animateOccultGeometry,
+  );
+  const isWindowFocused = useWindowFocused();
+  const animationsEnabled = animateOccultGeometry && isWindowFocused;
+
   const elements = useMemo(() => {
     const rng = seededRandom(777);
     const sigils = [];
@@ -323,6 +396,10 @@ export const OccultGeometry = () => {
     return sigils;
   }, []);
 
+  if (!showOccultGeometry) {
+    return null;
+  }
+
   return (
     <div
       aria-hidden
@@ -354,7 +431,7 @@ export const OccultGeometry = () => {
 
         {/* Primary mandala - bottom right area, partially off-screen */}
         <g
-          className='occult-rotate-slow'
+          className={animationsEnabled ? "occult-rotate-slow" : undefined}
           style={{ transformOrigin: "780px 620px" }}>
           <ConcentricRings
             baseRadius={80}
@@ -371,19 +448,18 @@ export const OccultGeometry = () => {
             opacity={0.07}
             outerRadius={180}
           />
-          <Sigil
+          <LogoSigil
             cx={780}
             cy={620}
-            opacity={0.14}
-            pathIndex={4}
+            opacity={0.18}
             rotation={15}
-            scale={1.8}
+            scale={2.4}
           />
         </g>
 
         {/* Secondary mandala - top left, smaller */}
         <g
-          className='occult-rotate-reverse'
+          className={animationsEnabled ? "occult-rotate-reverse" : undefined}
           style={{ transformOrigin: "150px 140px" }}>
           <ConcentricRings
             baseRadius={50}
@@ -412,7 +488,7 @@ export const OccultGeometry = () => {
 
         {/* Tertiary mandala - center-left, very faint */}
         <g
-          className='occult-rotate-slow'
+          className={animationsEnabled ? "occult-rotate-slow" : undefined}
           style={{ transformOrigin: "80px 450px" }}>
           <ConcentricRings
             baseRadius={35}
@@ -434,7 +510,7 @@ export const OccultGeometry = () => {
 
         {/* Small mandala - top right */}
         <g
-          className='occult-rotate-reverse'
+          className={animationsEnabled ? "occult-rotate-reverse" : undefined}
           style={{ transformOrigin: "920px 80px" }}>
           <ConcentricRings
             baseRadius={30}
@@ -449,7 +525,13 @@ export const OccultGeometry = () => {
         {/* Scattered alchemical sigils */}
         {elements.map((el, i) => (
           <g
-            className={i % 2 === 0 ? "occult-pulse-a" : "occult-pulse-b"}
+            className={
+              animationsEnabled
+                ? i % 2 === 0
+                  ? "occult-pulse-a"
+                  : "occult-pulse-b"
+                : undefined
+            }
             key={`sigil-${i}`}>
             <Sigil
               cx={el.x}

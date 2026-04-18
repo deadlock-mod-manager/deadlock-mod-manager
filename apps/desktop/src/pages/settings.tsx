@@ -59,6 +59,7 @@ import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
+import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
@@ -564,6 +565,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
 
                 <VolumeControl />
+
+                <OccultGeometrySettings />
               </div>
             </Section>
 

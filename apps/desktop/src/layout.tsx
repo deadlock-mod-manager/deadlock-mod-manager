@@ -27,7 +27,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className='relative flex min-h-0 flex-1 overflow-hidden'>
               <AppSidebar />
               <SidebarInset className='flex min-h-0 flex-1 flex-col'>
-                <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-2 pt-4'>
+                <div className='relative z-[2] flex min-h-0 flex-1 flex-col overflow-hidden px-2 pt-4'>
                   {children}
                 </div>
                 <BottomBar />
