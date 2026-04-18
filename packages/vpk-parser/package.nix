@@ -12,7 +12,7 @@ rustPlatform.buildRustPackage {
   inherit src;
   sourceRoot = "source/packages/vpk-parser";
 
-  cargoHash = "sha256-ED1oUainokfMqMDFaEW9QkHBa15eoSsMtYtwkty7T6U=";
+  cargoHash = "sha256-w9FAiRlnbN4fiKVmnO7mFb6ZhsbWQ9BRrAHg9/QLALs=";
 
   nativeBuildInputs = [ rustToolchain ];
 
