@@ -6,7 +6,7 @@
     "addMods": "Añadir Mods",
     "downloads": "Descargas",
     "settings": "Configuración",
-    "developer": "Herramientas de Desarrollador",
+    "developer": "",
     "whatsNew": "Novedades",
     "needHelp": "Necesitas Ayuda?",
     "collapseMenu": "Ocultar menu",
@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Error al deshabilitar el Mod",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "Estado",
     "gameDetected": "Juego detectado",
     "gameInstalledAt": "Juego instalado en {{path}}",
-    "launchVanilla": "Iniciar sin Mods",
-    "launchModded": "Iniciar con Mods",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Detener juego",
     "failedToFetchMods": "Error al obtener Mods. Prueba otra vez mas adelante",
     "mods": "",
@@ -361,6 +377,10 @@
     "appearanceDescription": "Personaliza la apariencia de la aplicación.",
     "theme": "Tema",
     "themeDescription": "Elige entre tema claro, oscuro o del sistema",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "Fuerza el modo claro entre las 8 PM y 8 AM, independientemente del tema seleccionado",
     "audioVolume": "Volumen de Audio",
@@ -1437,7 +1457,7 @@
   },
   "dashboard": {
     "title": "Panel de Control",
-    "subtitle": "Tu resumen de gestión de mods",
+    "subtitle": "",
     "announcements": "Anuncios",
     "latestMods": "Mods Más Recientes",
     "popularMods": "Mods Populares",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "Actualmente no hay anuncios. Vuelve más tarde para actualizaciones y noticias.",
     "checkBackLater": "Vuelve más tarde para actualizaciones",
     "noModsAvailable": "No hay mods disponibles",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "Depuración",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "Compartir Perfil",
+    "activeProfile": "",
     "selectProfile": "Seleccionar Perfil",
     "manage": "Gestionar Perfiles",
     "manageDescription": "Crear, editar y cambiar entre diferentes perfiles de mod. Cada perfil recuerda qué mods tienes habilitados.",

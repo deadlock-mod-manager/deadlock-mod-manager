@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Fehler bim Deaktiviere vo de Mod",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "",
     "gameDetected": "Spiel erkännt",
     "gameInstalledAt": "Spiel installiert unter {{path}}",
-    "launchVanilla": "Vanilla starte",
-    "launchModded": "Modded starte",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Spiel stoppe",
     "failedToFetchMods": "Fehler bim Lade vo de Mods. Versuche Si es später nomal.",
     "mods": "",
@@ -361,6 +377,10 @@
     "appearanceDescription": "Passed Sie s'Erschiningsbild vo de Awendig a.",
     "theme": "Design",
     "themeDescription": "Wähle Sie zwüsched hellem und dunklem oder System-Design",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "Erzwingt Light Mode zwüsched 20:00 und 8:00 Uhr, unabhängig vom usgewählte Theme",
     "audioVolume": "Audiolautschtärchi",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "",
     "checkBackLater": "",
     "noModsAvailable": "",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "",
+    "activeProfile": "",
     "selectProfile": "Profil uswähle",
     "manage": "Profile verwalte",
     "manageDescription": "Erstelle, bearbeite und wechsle zwüsched verschiedene Mod-Profile. Jedes Profil merkt sich, welli Mods Sie aktiviert hend.",

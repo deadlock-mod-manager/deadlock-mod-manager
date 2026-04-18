@@ -6,7 +6,7 @@
     "addMods": "ローカルModを追加",
     "downloads": "ダウンロード",
     "settings": "設定",
-    "developer": "開発者ツール",
+    "developer": "",
     "whatsNew": "更新内容",
     "needHelp": "お困りですか？",
     "collapseMenu": "メニューを閉じる",
@@ -17,7 +17,9 @@
     "autoexec": "Autoexec設定",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Modを無効化できませんでした",
     "vpkScanAlert": {
       "title": "認識されていないVPKファイルが見つかりました",
-      "description": "Modフォルダーに{{count}}個のVPKファイルが見つかりましたが、Mod一覧に含まれていません。この警告を閉じるには、ローカルアドオンフォルダーを分析して、それらを識別し、Mod一覧に追加してください。",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
+      "description": "",
       "analyzeButton": "ローカルアドオンを分析",
       "showList": "ファイル一覧を表示",
       "refresh": "更新",
-      "hideList": "ファイル一覧を非表示"
+      "hideList": "ファイル一覧を非表示",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "ステータス",
     "gameDetected": "ゲームを検出しました",
     "gameInstalledAt": "ゲームは{{path}}にインストールされています",
-    "launchVanilla": "Modなしで起動",
-    "launchModded": "Mod有効で起動",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "ゲームを停止",
     "failedToFetchMods": "Modの取得に失敗しました。後でもう一度お試しください。",
     "mods": "Mod",
@@ -361,6 +377,10 @@
     "appearanceDescription": "アプリの表示をカスタマイズする",
     "theme": "テーマ",
     "themeDescription": "ライト・ダーク・システムからテーマを選択する",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "フラッシュバン",
     "flashbangDescription": "テーマ設定に関係なく20時～8時はライトモードを強制適用",
     "audioVolume": "音量設定",
@@ -1437,7 +1457,7 @@
   },
   "dashboard": {
     "title": "ダッシュボード",
-    "subtitle": "Mod管理の概要",
+    "subtitle": "",
     "announcements": "お知らせ",
     "latestMods": "最新のMod",
     "popularMods": "人気のMod",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "現在お知らせはありません。更新とニュースについては後で確認してください。",
     "checkBackLater": "後で更新を確認",
     "noModsAvailable": "利用可能なModはありません",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "デバッグ",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "プロファイルを共有",
+    "activeProfile": "",
     "selectProfile": "プロファイルを選択",
     "manage": "プロファイルを管理",
     "manageDescription": "異なるModプロファイルを作成、編集、切り替える。各プロファイルは有効にしたModを記憶します。",

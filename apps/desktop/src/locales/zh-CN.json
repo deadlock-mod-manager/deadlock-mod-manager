@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "禁用模组失败",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "状态",
     "gameDetected": "游戏已检测到",
     "gameInstalledAt": "游戏安装于 {{path}}",
-    "launchVanilla": "无模组启动",
-    "launchModded": "带模组启动",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "停止游戏",
     "failedToFetchMods": "获取模组失败，请稍后重试。",
     "mods": "模组",
@@ -361,6 +377,10 @@
     "appearanceDescription": "自定义应用程序的外观。",
     "theme": "主题",
     "themeDescription": "在浅色、深色或系统主题之间选择",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "闪光弹",
     "flashbangDescription": "无论选择何种主题，在晚上8点到早上8点之间强制使用浅色模式",
     "audioVolume": "音频音量",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "",
     "checkBackLater": "",
     "noModsAvailable": "",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "调试",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "分享配置",
+    "activeProfile": "",
     "selectProfile": "选择配置",
     "manage": "管理配置",
     "manageDescription": "创建、编辑和切换不同的模组配置。每个配置都会记住您启用了哪些模组。",

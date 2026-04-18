@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Mod devre dışı bırakılırken hata oluştu",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "Durum",
     "gameDetected": "Oyun algılandı",
     "gameInstalledAt": "Oyun burada kurulu {{path}}",
-    "launchVanilla": "Vanilla başlat",
-    "launchModded": "Modded başlat",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Oyunu durdur",
     "failedToFetchMods": "Modlar yüklenemedi. Daha sonra tekrar deneyin.",
     "mods": "Modlar",
@@ -361,6 +377,10 @@
     "appearanceDescription": "Uygulamaın görünümünü özelleştirin.",
     "theme": "Tema",
     "themeDescription": "Açık, koyu veya sistem temasını seçin",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "Seçilen tema ne olursa olsun, 20:00 ile 8:00 arasında açık modu zorlar",
     "audioVolume": "Ses Seviyesi",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "",
     "checkBackLater": "",
     "noModsAvailable": "",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "Profil Paylaş",
+    "activeProfile": "",
     "selectProfile": "Profil seç",
     "manage": "Profilleri yönet",
     "manageDescription": "Farklı mod profilleri oluşturun, düzenleyin ve aralarında geçiş yapın. Her profil hangi modları etkinleştirdiğinizi hatırlar.",

@@ -6,7 +6,7 @@
     "addMods": "Mods hinzufügen",
     "downloads": "",
     "settings": "Einstellungen",
-    "developer": "Entwicklertools",
+    "developer": "",
     "whatsNew": "Was ist neu",
     "needHelp": "Hilfe benötigt?",
     "collapseMenu": "Menü einklappen",
@@ -17,7 +17,9 @@
     "autoexec": "",
     "maps": "",
     "servers": "",
-    "multiplayer": ""
+    "multiplayer": "",
+    "general": "",
+    "mods": ""
   },
   "servers": {
     "title": "",
@@ -230,11 +232,23 @@
     "disableError": "Fehler beim Deaktivieren der Mod",
     "vpkScanAlert": {
       "title": "",
+      "titleWithCount_one": "",
+      "titleWithCount_other": "",
       "description": "",
       "analyzeButton": "",
       "showList": "",
       "refresh": "",
-      "hideList": ""
+      "hideList": "",
+      "dismiss": "",
+      "dismissTooltip": "",
+      "openInFolder": "",
+      "delete": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "deleteConfirmAction": "",
+      "deleteSuccess": "",
+      "deleteError": "",
+      "openError": ""
     }
   },
   "pagination": {
@@ -315,8 +329,10 @@
     "status": "",
     "gameDetected": "Spiel erkannt",
     "gameInstalledAt": "Spiel installiert unter {{path}}",
-    "launchVanilla": "Vanilla starten",
-    "launchModded": "Modded starten",
+    "launchVanilla": "",
+    "launchModded": "",
+    "launchModdedCount_one": "",
+    "launchModdedCount_other": "",
     "stopGame": "Spiel stoppen",
     "failedToFetchMods": "Fehler beim Laden der Mods. Versuchen Sie es später erneut.",
     "mods": "",
@@ -361,6 +377,10 @@
     "appearanceDescription": "Passen Sie das Erscheinungsbild der Anwendung an.",
     "theme": "Design",
     "themeDescription": "Wählen Sie zwischen hellem, dunklem oder System-Design",
+    "occultGeometry": "",
+    "occultGeometryDescription": "",
+    "animateOccultGeometry": "",
+    "animateOccultGeometryDescription": "",
     "flashbang": "",
     "flashbangDescription": "Erzwingt Light Mode zwischen 20:00 und 8:00 Uhr, unabhängig vom gewählten Theme",
     "audioVolume": "Audiolautstärke",
@@ -1437,7 +1457,7 @@
   },
   "dashboard": {
     "title": "",
-    "subtitle": "Ihre Mod-Verwaltungsübersicht",
+    "subtitle": "",
     "announcements": "Ankündigungen",
     "latestMods": "Neueste Mods",
     "popularMods": "Beliebte Mods",
@@ -1445,7 +1465,20 @@
     "noAnnouncementsDescription": "Derzeit gibt es keine Ankündigungen. Schauen Sie später erneut nach Updates und Neuigkeiten.",
     "checkBackLater": "Später erneut nach Updates suchen",
     "noModsAvailable": "Keine Mods verfügbar",
-    "learnMore": ""
+    "learnMore": "",
+    "featuredModOfTheWeek": "",
+    "trendingIn": "",
+    "seeAll": "",
+    "viewMod": "",
+    "installedMods": "",
+    "pendingUpdates": "",
+    "queued": "",
+    "browseStore": "",
+    "broadcast": "",
+    "changelog": "",
+    "moreFeatures": "",
+    "tickerPrev": "",
+    "tickerNext": ""
   },
   "debug": {
     "title": "",
@@ -1471,6 +1504,7 @@
   },
   "profiles": {
     "share": "Profil teilen",
+    "activeProfile": "",
     "selectProfile": "Profil auswählen",
     "manage": "Profile verwalten",
     "manageDescription": "Erstellen, bearbeiten und zwischen verschiedenen Mod-Profilen wechseln. Jedes Profil merkt sich, welche Mods Sie aktiviert haben.",
