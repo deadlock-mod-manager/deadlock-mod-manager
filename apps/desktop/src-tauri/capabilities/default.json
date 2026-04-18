@@ -52,6 +52,9 @@
         },
         {
           "url": "http://localhost:3004/**"
+        },
+        {
+          "url": "https://assets.deadlock-api.com/**"
         }
       ]
     },
