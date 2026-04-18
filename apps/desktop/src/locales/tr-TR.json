@@ -15,7 +15,132 @@
     "crosshairs": "",
     "customization": "",
     "autoexec": "",
-    "maps": ""
+    "maps": "",
+    "servers": "",
+    "multiplayer": ""
+  },
+  "servers": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "filters": {
+      "all": "",
+      "withPlayers": "",
+      "withPlayersOff": "",
+      "noPassword": "",
+      "passwordOnly": "",
+      "gameMode": "",
+      "anyGameMode": "",
+      "region": "",
+      "anyRegion": "",
+      "clear": "",
+      "clearN_one": "",
+      "clearN_other": "",
+      "refresh": "",
+      "joinable": "",
+      "joinableTooltip": "",
+      "activeFilters": "",
+      "count_one": "",
+      "count_other": "",
+      "passwordSegment": {
+        "allTooltip": "",
+        "openTooltip": "",
+        "passwordTooltip": ""
+      },
+      "regionGroup": {
+        "eu": "",
+        "na": "",
+        "sa": "",
+        "apac": "",
+        "oce": "",
+        "me": "",
+        "other": ""
+      },
+      "chip": {
+        "search": "",
+        "mode": "",
+        "region": "",
+        "status": "",
+        "players": "",
+        "preset": "",
+        "open": "",
+        "password": "",
+        "withPlayers": "",
+        "joinable": "",
+        "remove": ""
+      }
+    },
+    "stats": {
+      "totalServers_one": "",
+      "totalServers_other": "",
+      "relays": ""
+    },
+    "network": {
+      "title": "",
+      "summary": ""
+    },
+    "table": {
+      "name": "",
+      "players": "",
+      "map": "",
+      "mode": "",
+      "region": "",
+      "ping": "",
+      "tags": ""
+    },
+    "badges": {
+      "password": "",
+      "auth": "",
+      "mods": "",
+      "requiredMods_one": "",
+      "requiredMods_other": ""
+    },
+    "detail": {
+      "open": "",
+      "copyConnect": "",
+      "connectCopied": "",
+      "noGateway": "",
+      "noConnect": "",
+      "playersTitle": "",
+      "noPlayers": "",
+      "modsTitle": "",
+      "noMods": "",
+      "requiredModsTitle": "",
+      "noRequiredMods": "",
+      "metaTitle": "",
+      "metaPort": "",
+      "metaVersion": "",
+      "metaSourceRelay": "",
+      "metaLastSeen": "",
+      "join": "",
+      "joining": "",
+      "missingMods_one": "",
+      "missingMods_other": "",
+      "installAll": "",
+      "passwordPrompt": "",
+      "passwordPlaceholder": "",
+      "openExternal": "",
+      "unknown": ""
+    },
+    "empty": {
+      "title": "",
+      "description": "",
+      "errorTitle": "",
+      "errorDescription": ""
+    },
+    "relayBar": {
+      "online": "",
+      "degraded": "",
+      "offline": "",
+      "lastSeen": "",
+      "latency": ""
+    },
+    "hostCta": {
+      "title": "",
+      "description": "",
+      "action": "",
+      "openError": ""
+    }
   },
   "menu": {
     "about": "Bilgi",
