@@ -15,7 +15,132 @@
     "crosshairs": "Crosshairs",
     "customization": "Customization",
     "autoexec": "Autoexec Config",
-    "maps": "Maps"
+    "maps": "Maps",
+    "servers": "Server Browser",
+    "multiplayer": "Custom Servers"
+  },
+  "servers": {
+    "title": "Server Browser",
+    "subtitle": "Browse custom Deadlock servers",
+    "searchPlaceholder": "Search by name, map, or game mode",
+    "filters": {
+      "all": "All",
+      "withPlayers": "With players",
+      "withPlayersOff": "Show only servers with active players",
+      "noPassword": "Open",
+      "passwordOnly": "Password",
+      "gameMode": "Game mode",
+      "anyGameMode": "Any game mode",
+      "region": "Region",
+      "anyRegion": "Any region",
+      "clear": "Clear filters",
+      "clearN_one": "Clear ({{count}})",
+      "clearN_other": "Clear ({{count}})",
+      "refresh": "Refresh",
+      "joinable": "Joinable",
+      "joinableTooltip": "Open lobbies with players that aren't full",
+      "activeFilters": "Active",
+      "count_one": "{{count}} server",
+      "count_other": "{{count}} servers",
+      "passwordSegment": {
+        "allTooltip": "Show all servers",
+        "openTooltip": "Show servers without a password",
+        "passwordTooltip": "Show password-protected servers"
+      },
+      "regionGroup": {
+        "eu": "Europe",
+        "na": "North America",
+        "sa": "South America",
+        "apac": "Asia-Pacific",
+        "oce": "Oceania",
+        "me": "Middle East / Africa",
+        "other": "Other"
+      },
+      "chip": {
+        "search": "Search",
+        "mode": "Mode",
+        "region": "Region",
+        "status": "Status",
+        "players": "Players",
+        "preset": "Preset",
+        "open": "Open lobbies",
+        "password": "Password lobbies",
+        "withPlayers": "With players",
+        "joinable": "Joinable",
+        "remove": "Remove filter"
+      }
+    },
+    "stats": {
+      "totalServers_one": "{{count}} server",
+      "totalServers_other": "{{count}} servers",
+      "relays": "{{healthy}}/{{total}} servers online"
+    },
+    "network": {
+      "title": "Network status",
+      "summary": "{{healthy}}/{{total}} relays online"
+    },
+    "table": {
+      "name": "Name",
+      "players": "Players",
+      "map": "Map",
+      "mode": "Mode",
+      "region": "Region",
+      "ping": "Ping",
+      "tags": "Tags"
+    },
+    "badges": {
+      "password": "Password",
+      "auth": "Auth required",
+      "mods": "{{count}} mods",
+      "requiredMods_one": "{{count}} required mod",
+      "requiredMods_other": "{{count}} required mods"
+    },
+    "detail": {
+      "open": "Open in Deadlock",
+      "copyConnect": "Copy connect code",
+      "connectCopied": "Connect code copied",
+      "noGateway": "Open the Deadlock console and paste the connect code.",
+      "noConnect": "This server isn't accepting direct connections right now.",
+      "playersTitle": "Players",
+      "noPlayers": "No players online",
+      "modsTitle": "Server mods",
+      "noMods": "This server isn't running any mods.",
+      "requiredModsTitle": "Required mods",
+      "noRequiredMods": "No mods required to join.",
+      "metaTitle": "Server info",
+      "metaPort": "Port",
+      "metaVersion": "Version",
+      "metaSourceRelay": "Region",
+      "metaLastSeen": "Last seen",
+      "join": "Join server",
+      "joining": "Joining...",
+      "missingMods_one": "{{count}} required mod is missing",
+      "missingMods_other": "{{count}} required mods are missing",
+      "installAll": "Install required mods",
+      "passwordPrompt": "This server requires a password",
+      "passwordPlaceholder": "Server password",
+      "openExternal": "Opening Deadlock...",
+      "unknown": "Unknown"
+    },
+    "empty": {
+      "title": "No servers found",
+      "description": "Try clearing some filters or check back in a moment. The list refreshes automatically.",
+      "errorTitle": "Could not load servers",
+      "errorDescription": "We couldn't load servers right now. Please try again in a moment."
+    },
+    "relayBar": {
+      "online": "online",
+      "degraded": "degraded",
+      "offline": "offline",
+      "lastSeen": "Last contact",
+      "latency": "{{ms}} ms"
+    },
+    "hostCta": {
+      "title": "Running a custom Deadlock server?",
+      "description": "Share it here so other players can find and join it.",
+      "action": "List your server",
+      "openError": "Couldn't open the server hosting page."
+    }
   },
   "menu": {
     "about": "About",

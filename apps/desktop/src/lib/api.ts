@@ -6,18 +6,26 @@ import type {
   FileserverDto,
   ModDto,
   PublishedCrosshairDto,
+  RelaysHealthResponse,
+  ResolveModsResponse,
+  ServerBrowserEntry,
+  ServerBrowserFacetsResponse,
+  ServerBrowserListInput,
+  ServerBrowserListResponse,
   SharedProfile,
 } from "@deadlock-mods/shared";
-import { FileserversResponseSchema } from "@deadlock-mods/shared";
-import type { z } from "zod";
-import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
-
-type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
+import {
+  FileserversResponseSchema,
+  ModDownloadDtoSchema,
+} from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
-import { fetch } from "./fetch";
+import type { z } from "zod";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
+import { fetch } from "./fetch";
 import logger from "./logger";
+
+type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
 
@@ -213,6 +221,50 @@ export const getApiHealth = async () => {
     version: string;
     spec: string;
   }>("/");
+};
+
+export const getServerFacets = async (): Promise<ServerBrowserFacetsResponse> =>
+  apiRequest<ServerBrowserFacetsResponse>("/api/v2/servers/facets");
+
+export const getServers = async (
+  filters: ServerBrowserListInput = {},
+): Promise<ServerBrowserListResponse> => {
+  const params = new URLSearchParams();
+  if (filters.game_mode) params.set("game_mode", filters.game_mode);
+  if (typeof filters.has_players === "boolean")
+    params.set("has_players", String(filters.has_players));
+  if (filters.search) params.set("search", filters.search);
+  if (filters.region) params.set("region", filters.region);
+  if (typeof filters.password === "boolean")
+    params.set("password", String(filters.password));
+  if (typeof filters.limit === "number")
+    params.set("limit", String(filters.limit));
+  if (typeof filters.cursor === "number")
+    params.set("cursor", String(filters.cursor));
+  const qs = params.toString();
+  return await apiRequest<ServerBrowserListResponse>(
+    `/api/v2/servers${qs ? `?${qs}` : ""}`,
+  );
+};
+
+export const getServer = async (id: string): Promise<ServerBrowserEntry> => {
+  return await apiRequest<ServerBrowserEntry>(
+    `/api/v2/servers/${encodeURIComponent(id)}`,
+  );
+};
+
+export const getRelaysHealth = async (): Promise<RelaysHealthResponse> => {
+  return await apiRequest<RelaysHealthResponse>("/api/v2/relays/health");
+};
+
+export const resolveServerMods = async (
+  id: string,
+): Promise<ResolveModsResponse> => {
+  return await apiRequest<ResolveModsResponse>(
+    `/api/v2/servers/${encodeURIComponent(id)}/resolve-mods`,
+    undefined,
+    "POST",
+  );
 };
 
 export const getCrosshairs = async () => {

@@ -26,6 +26,7 @@ import {
   MapTrifoldIcon,
   PackageIcon,
   QuestionIcon,
+  HardDrivesIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
@@ -106,6 +107,14 @@ const getSidebarItems = (
       url: "/maps",
       icon: MapTrifoldIcon,
       group: "mods",
+    },
+    {
+      id: "servers",
+      title: () => <span>{t("navigation.servers")}</span>,
+      tooltipLabel: t("navigation.servers"),
+      url: "/servers",
+      icon: HardDrivesIcon,
+      group: "multiplayer",
     },
     {
       id: "downloads",
@@ -279,6 +288,7 @@ export const AppSidebar = () => {
   const groupLabels: Record<string, string> = {
     mods: "Mods",
     general: "General",
+    multiplayer: t("navigation.multiplayer"),
   };
 
   return (
