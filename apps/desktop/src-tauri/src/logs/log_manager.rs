@@ -31,25 +31,29 @@ pub async fn get_log_info(app_handle: &AppHandle) -> Result<LogInfo, Error> {
   let mut total_size = 0u64;
 
   if log_dir.exists()
-    && let Ok(entries) = std::fs::read_dir(&log_dir) {
-      for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_file()
-          && let Some(name) = path.file_name() {
-            let name_str = name.to_string_lossy().to_string();
-            if name_str.starts_with("deadlock-mod-manager") && name_str.ends_with(".log")
-              && let Ok(metadata) = std::fs::metadata(&path) {
-                let size = metadata.len();
-                total_size += size;
-                files.push(LogFileInfo {
-                  name: name_str,
-                  path: path.to_string_lossy().to_string(),
-                  size,
-                });
-              }
-          }
+    && let Ok(entries) = std::fs::read_dir(&log_dir)
+  {
+    for entry in entries.flatten() {
+      let path = entry.path();
+      if path.is_file()
+        && let Some(name) = path.file_name()
+      {
+        let name_str = name.to_string_lossy().to_string();
+        if name_str.starts_with("deadlock-mod-manager")
+          && name_str.ends_with(".log")
+          && let Ok(metadata) = std::fs::metadata(&path)
+        {
+          let size = metadata.len();
+          total_size += size;
+          files.push(LogFileInfo {
+            name: name_str,
+            path: path.to_string_lossy().to_string(),
+            size,
+          });
+        }
       }
     }
+  }
 
   files.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -145,32 +149,36 @@ pub async fn get_logs_for_ai(
     }
   }
 
-  if include_crash
-    && let Ok(crash_dumps_dir) = crash_dumps::get_crash_dumps_dir() {
-      let files = crash_dumps::find_deadlock_crash_dumps(&crash_dumps_dir);
-      if let Some(latest) = files.first() {
-        let options = dmp_parser::DmpParseOptions {
-          include_modules: true,
-          include_threads: true,
-          max_modules: Some(20),
+  if include_crash && let Ok(crash_dumps_dir) = crash_dumps::get_crash_dumps_dir() {
+    let files = crash_dumps::find_deadlock_crash_dumps(&crash_dumps_dir);
+    if let Some(latest) = files.first() {
+      let options = dmp_parser::DmpParseOptions {
+        include_modules: true,
+        include_threads: true,
+        max_modules: Some(20),
+      };
+
+      if let Ok(parsed) =
+        dmp_parser::DmpParser::parse_file(std::path::Path::new(&latest.path), options)
+      {
+        let header = format!("=== CRASH DUMP ({}) ===\n", latest.name);
+        output.push_str(&header);
+        remaining_chars = remaining_chars.saturating_sub(header.len());
+
+        let crash_content = if parsed.raw_text.len() > remaining_chars {
+          parsed
+            .raw_text
+            .chars()
+            .take(remaining_chars)
+            .collect::<String>()
+        } else {
+          parsed.raw_text
         };
 
-        if let Ok(parsed) = dmp_parser::DmpParser::parse_file(std::path::Path::new(&latest.path), options)
-        {
-          let header = format!("=== CRASH DUMP ({}) ===\n", latest.name);
-          output.push_str(&header);
-          remaining_chars = remaining_chars.saturating_sub(header.len());
-
-          let crash_content = if parsed.raw_text.len() > remaining_chars {
-            parsed.raw_text.chars().take(remaining_chars).collect::<String>()
-          } else {
-            parsed.raw_text
-          };
-
-          output.push_str(&crash_content);
-        }
+        output.push_str(&crash_content);
       }
     }
+  }
 
   if output.is_empty() {
     return Err(Error::InvalidInput("No log files found".to_string()));

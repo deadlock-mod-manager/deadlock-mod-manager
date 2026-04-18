@@ -58,7 +58,9 @@ pub enum Error {
   AutoexecReadFailed(String),
   #[error("Failed to write autoexec config: {0}")]
   AutoexecWriteFailed(String),
-  #[error("Operation failed and rollback was incomplete — VPK files may be in an inconsistent state: {0}")]
+  #[error(
+    "Operation failed and rollback was incomplete — VPK files may be in an inconsistent state: {0}"
+  )]
   RollbackFailed(String),
 }
 
