@@ -26,7 +26,12 @@ import { ModStatus } from "@/types/mods";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
-const ModCard = memo(({ mod }: { mod?: ModDto }) => {
+interface ModCardProps {
+  mod?: ModDto;
+  readOnly?: boolean;
+}
+
+const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
@@ -43,11 +48,19 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
 
   const cardContent = (
     <Card
-      className='cursor-pointer shadow-none border [contain:layout_style_paint] h-full'
-      onClick={(e) => {
-        e.stopPropagation();
-        navigate(`/mods/${mod.remoteId}`);
-      }}>
+      className={
+        readOnly
+          ? "shadow-none border [contain:layout_style_paint] h-full"
+          : "cursor-pointer shadow-none border [contain:layout_style_paint] h-full"
+      }
+      onClick={
+        readOnly
+          ? undefined
+          : (e) => {
+              e.stopPropagation();
+              navigate(`/mods/${mod.remoteId}`);
+            }
+      }>
       <div className='relative'>
         {mod.isAudio ? (
           <AudioPlayerPreview
@@ -135,7 +148,7 @@ const ModCard = memo(({ mod }: { mod?: ModDto }) => {
                   </span>
                 </div>
               </div>
-              <ModButton remoteMod={mod} variant='iconOnly' />
+              {!readOnly && <ModButton remoteMod={mod} variant='iconOnly' />}
             </div>
           </div>
         </div>

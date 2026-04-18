@@ -1613,7 +1613,9 @@
     "lastModifiedAt": "Last Modified At",
     "installedAt": "Installed At",
     "downloadsLabel": "Downloads",
-    "modStatusLabel": "Mod Status",
+    "likesLabel": "Likes",
+    "modStatusLabel": "Status",
+    "detectedHero": "Hero",
     "viewOriginalPost": "View Post on GameBanana",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",
@@ -1772,10 +1774,15 @@
     "discardFailed": "Failed to discard mod fonts. Please try again."
   },
   "heroConflict": {
-    "title": "Hero Mod Conflict",
-    "body": "\"{{modName}}\" is already enabled for {{heroName}}. Only one mod per hero can be loaded at a time. Do you want to enable this mod anyway?",
-    "cancel": "No",
-    "confirm": "Yes, enable anyway"
+    "title": "{{heroName}} already has a mod",
+    "description": "Pick which mod to use in-game. Only one mod per hero can be active at a time.",
+    "currentlyActive": "Currently active",
+    "switchingTo": "Switching to",
+    "swapAction": "Swap mods",
+    "keepBothAction": "Keep both",
+    "keepBothHint": "Not recommended — only one will load.",
+    "cancel": "Cancel",
+    "byAuthor": "by {{author}}"
   },
   "criticalPaths": {
     "title": "Critical Game Files Warning",

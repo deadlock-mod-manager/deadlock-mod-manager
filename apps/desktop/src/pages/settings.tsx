@@ -534,6 +534,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("settings.gameConfigManagement")}>
               <GameInfoManagement />
             </Section>
+
+            <Section
+              description={t("heroParser.settingsDescription")}
+              title={t("heroParser.settingsTitle")}>
+              <HeroParserSettings />
+            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='application'>
@@ -712,9 +718,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
           <TabsContent className='mt-0 space-y-4' value='backups'>
             <Section
-              description={t("heroParser.settingsDescription")}
-              title={t("heroParser.settingsTitle")}>
-              <HeroParserSettings />
+              description={t("settings.addonsBackupDescription")}
+              title={t("settings.addonsBackup")}>
+              <AddonsBackupManagement />
             </Section>
           </TabsContent>
 

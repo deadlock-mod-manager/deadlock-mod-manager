@@ -9,16 +9,16 @@ export type HeroDetectionResult = {
   criticalPaths: string[];
 };
 
-const CRITICAL_GAME_PATHS = [
+const CRITICAL_GAME_PATHS = new Set([
   "scripts/abilities.vdata_c",
   "scripts/heroes.vdata_c",
   "scripts/generic_data.vdata_c",
-];
+]);
 
 function findCriticalPaths(paths: string[]): string[] {
   const found: string[] = [];
   for (const path of paths) {
-    if (CRITICAL_GAME_PATHS.includes(path) && !found.includes(path)) {
+    if (CRITICAL_GAME_PATHS.has(path) && !found.includes(path)) {
       found.push(path);
     }
   }
