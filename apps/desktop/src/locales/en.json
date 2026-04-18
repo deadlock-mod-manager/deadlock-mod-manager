@@ -731,7 +731,6 @@
     "unsupportedSelection": "Unsupported selection.",
     "unsupportedFiles": "Unsupported file(s).",
     "failedToReadDroppedFiles": "Failed to read dropped files.",
-    "failedToReadSelectedFile": "Failed to read the selected file.",
     "noFilesDetected": "No files detected.",
     "noVpkFound": "No .vpk found inside .zip – stored archive for installer",
     "archiveExtractedSuccess": "{{format}} archive extracted successfully",

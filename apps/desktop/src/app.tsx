@@ -84,6 +84,28 @@ const App = () => {
     });
   }, []);
 
+  const handleFontDialogAction = useCallback(
+    async (
+      command: "install_mod_fonts" | "discard_mod_fonts",
+      failureToastKey: string,
+      failureLogMessage: string,
+    ) => {
+      if (!activePendingFontInstall) return;
+      const { modId } = activePendingFontInstall;
+      try {
+        await invoke(command, { modId });
+        dequeuePendingFontInstall();
+      } catch (error) {
+        logger
+          .withMetadata({ modId })
+          .withError(error)
+          .error(failureLogMessage);
+        toast.error(t(failureToastKey));
+      }
+    },
+    [activePendingFontInstall, dequeuePendingFontInstall, t],
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider storageKey='deadlock-theme-v2'>
@@ -111,48 +133,20 @@ const App = () => {
                     <FontInstallDialog
                       fonts={activePendingFontInstall?.fonts ?? []}
                       isOpen={activePendingFontInstall !== null}
-                      onInstall={async () => {
-                        if (!activePendingFontInstall) return;
-                        try {
-                          await invoke("install_mod_fonts", {
-                            modId: activePendingFontInstall.modId,
-                          });
-                          dequeuePendingFontInstall();
-                        } catch (error) {
-                          logger
-                            .withMetadata({
-                              modId: activePendingFontInstall.modId,
-                            })
-                            .withError(
-                              error instanceof Error
-                                ? error
-                                : new Error(String(error)),
-                            )
-                            .error("Failed to install mod fonts");
-                          toast.error(t("fontInstall.installFailed"));
-                        }
-                      }}
-                      onSkip={async () => {
-                        if (!activePendingFontInstall) return;
-                        try {
-                          await invoke("discard_mod_fonts", {
-                            modId: activePendingFontInstall.modId,
-                          });
-                          dequeuePendingFontInstall();
-                        } catch (error) {
-                          logger
-                            .withMetadata({
-                              modId: activePendingFontInstall.modId,
-                            })
-                            .withError(
-                              error instanceof Error
-                                ? error
-                                : new Error(String(error)),
-                            )
-                            .error("Failed to discard mod fonts");
-                          toast.error(t("fontInstall.discardFailed"));
-                        }
-                      }}
+                      onInstall={() =>
+                        handleFontDialogAction(
+                          "install_mod_fonts",
+                          "fontInstall.installFailed",
+                          "Failed to install mod fonts",
+                        )
+                      }
+                      onSkip={() =>
+                        handleFontDialogAction(
+                          "discard_mod_fonts",
+                          "fontInstall.discardFailed",
+                          "Failed to discard mod fonts",
+                        )
+                      }
                     />
                   </TauriAppWindowProvider>
                 </AlertDialogProvider>

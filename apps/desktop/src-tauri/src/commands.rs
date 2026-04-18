@@ -605,6 +605,8 @@ pub async fn scan_and_stash_local_mod_fonts(
 
   Ok(())
 }
+
+/// Debug-only: stash a known system TTF and emit `download-fonts-found` so the
 /// font-install dialog can be tested without a full mod download.
 #[cfg(debug_assertions)]
 #[tauri::command]

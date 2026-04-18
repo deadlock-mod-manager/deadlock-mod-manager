@@ -1,8 +1,12 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { DownloadableMod, ModFileTree, Progress } from "@/types/mods";
-import type { FontInfo } from "@/types/mods";
+import type {
+  DownloadableMod,
+  FontInfo,
+  ModFileTree,
+  Progress,
+} from "@/types/mods";
 import { getGameBananaFileservers } from "../api";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";

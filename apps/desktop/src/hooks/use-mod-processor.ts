@@ -234,7 +234,7 @@ export const useModProcessor = () => {
       }).catch((error) => {
         logger
           .withMetadata({ filesDir, modId })
-          .withError(error instanceof Error ? error : new Error(String(error)))
+          .withError(error)
           .warn("Failed to scan local mod for bundled fonts");
       });
 
