@@ -29,8 +29,8 @@ import { queryClient } from "./lib/client";
 import { STORE_NAME } from "./lib/constants";
 import { downloadManager } from "./lib/download/manager";
 import logger from "./lib/logger";
-import { usePersistedStore } from "./lib/store";
 import { syncProxyConfigToBackend } from "./lib/proxy";
+import { usePersistedStore } from "./lib/store";
 import type { FontInfo } from "./types/mods";
 
 interface PendingFontInstall {
