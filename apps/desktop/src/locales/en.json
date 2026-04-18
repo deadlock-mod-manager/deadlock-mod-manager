@@ -228,9 +228,6 @@
     "disableSuccess": "Mod disabled successfully",
     "deleteError": "Failed to delete mod",
     "disableError": "Failed to disable mod",
-    "customModDisableTitle": "Disable Custom Mod?",
-    "customModDisableBody": "This is a custom mod that was manually added to your library. If you disable it, you won't be able to re-enable it automatically since it's not from our database. You would need to manually reinstall the original file or re-add it through the addon analysis feature.",
-    "customModDisableAction": "Disable Anyway",
     "vpkScanAlert": {
       "title": "Unrecognized VPK files found",
       "description": "Found {{count}} VPK file(s) in your mods folder that aren't in your mods list, to dismiss this alert, you can analyze your local addons folder to identify and add them to your mods list.",
