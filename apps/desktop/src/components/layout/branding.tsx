@@ -93,8 +93,8 @@ export const BrandingHeader = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-2",
-        collapsed ? "justify-center px-0 py-2" : "pl-2 py-6",
+        "flex items-center gap-2.5",
+        collapsed ? "justify-center px-0 py-2" : "pl-1.5 py-3",
         className,
       )}
       data-sidebar-header='true'>
@@ -102,13 +102,13 @@ export const BrandingHeader = ({
         {renderIcon()}
       </div>
       {!collapsed && (
-        <div className='flex min-w-0 flex-col gap-0.5'>
-          <span className='truncate font-primary text-lg leading-tight'>
+        <div className='flex min-w-0 flex-col gap-1'>
+          <span className='truncate font-primary text-lg leading-none tracking-tight'>
             Deadlock Mod Manager
           </span>
           <div className='flex items-center gap-1.5'>
             {version && (
-              <span className='text-muted-foreground text-xs leading-none'>
+              <span className='text-muted-foreground text-xs leading-none tabular-nums'>
                 v{version}
               </span>
             )}

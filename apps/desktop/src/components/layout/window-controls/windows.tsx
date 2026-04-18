@@ -20,7 +20,7 @@ export function Windows({
     useContext(TauriAppWindowContext);
 
   return (
-    <div className={cn("flex items-center gap-4 px-2", className)} {...props}>
+    <div className={cn("flex items-center gap-3 px-2", className)} {...props}>
       <Button
         variant='transparent'
         size='no-padding'

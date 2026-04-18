@@ -3,16 +3,26 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
-import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@deadlock-mods/ui/components/dropdown-menu";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
+import { SignOutIcon } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import AuthModal from "./auth-modal";
 
 export default function UserMenu() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   if (isLoading) {
-    return <Skeleton className='h-8 w-8 rounded-full' />;
+    return <Skeleton className='size-8 rounded-full' />;
   }
 
   if (!isAuthenticated || !user) {
@@ -30,24 +40,37 @@ export default function UserMenu() {
     "U";
 
   return (
-    <div className='flex items-center gap-3'>
-      <div className='flex flex-col items-end gap-0.5 overflow-hidden'>
-        <p className='font-medium text-xs leading-none'>{user.name}</p>
-        <Button
-          variant='text'
-          size='text'
-          className='text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground'
-          onClick={logout}>
-          Sign out
-        </Button>
-      </div>
-      <Avatar className='h-8 w-8'>
-        <AvatarImage
-          src={user.picture || undefined}
-          alt={user.name || user.email || "User"}
-        />
-        <AvatarFallback className='text-xs'>{initials}</AvatarFallback>
-      </Avatar>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className='cursor-pointer rounded-full ring-offset-background transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+          type='button'>
+          <Avatar className='size-8'>
+            <AvatarImage
+              src={user.picture || undefined}
+              alt={user.name || user.email || "User"}
+            />
+            <AvatarFallback className='text-xs'>{initials}</AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' sideOffset={8} className='w-48'>
+        <DropdownMenuLabel className='font-normal'>
+          <div className='flex flex-col gap-1'>
+            <p className='text-sm font-medium leading-none'>{user.name}</p>
+            {user.email && (
+              <p className='text-xs leading-none text-muted-foreground'>
+                {user.email}
+              </p>
+            )}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout}>
+          <SignOutIcon className='size-4' />
+          {t("auth.signOut", "Sign out")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

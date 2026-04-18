@@ -26,7 +26,7 @@ const Profile = () => {
         <button
           className={cn(
             "group inline-flex min-w-0 items-center gap-1.5 rounded-sm text-left",
-            "font-bold text-sm leading-none",
+            "font-semibold text-sm leading-none",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             isProfileManagementEnabled
               ? "cursor-pointer hover:text-primary"

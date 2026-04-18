@@ -207,8 +207,8 @@ export const BottomBar = () => {
   const fsCfg = fsStatusConfig[fsStatus];
 
   return (
-    <div className='z-30 flex h-7 w-full items-center justify-between border-t bg-background py-2 pl-6 pr-4 text-xs text-muted-foreground'>
-      <div className='flex items-center gap-4'>
+    <div className='z-30 flex h-6 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'>
+      <div className='flex items-center gap-3'>
         {downloadingMods > 0 && (
           <>
             <div className='flex items-center gap-1'>

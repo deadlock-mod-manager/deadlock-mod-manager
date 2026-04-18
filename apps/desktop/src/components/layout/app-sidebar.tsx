@@ -307,7 +307,7 @@ export const AppSidebar = () => {
       className='absolute inset-y-0 left-0'
       collapsible='icon'
       variant='sidebar'>
-      <SidebarHeader className='pl-2'>
+      <SidebarHeader className='pl-2 pb-1'>
         <BrandingHeader />
       </SidebarHeader>
       <SidebarContent className='flex-grow'>

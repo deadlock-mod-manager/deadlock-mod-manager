@@ -90,7 +90,7 @@ const AuthModal = () => {
       <Button
         variant='ghost'
         size='sm'
-        className='h-9 gap-2 px-3 text-sm font-medium text-muted-foreground hover:text-foreground'
+        className='h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground'
         icon={<LogInIcon className='size-4' />}
         disabled={isLoading}
         onClick={handleSignInClick}>

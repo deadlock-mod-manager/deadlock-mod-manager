@@ -188,8 +188,9 @@ export const ProfileShareDialog = () => {
       <DialogTrigger asChild>
         <Button
           isLoading={isPending}
-          icon={<ShareNetworkIcon />}
+          icon={<ShareNetworkIcon className='size-3.5' />}
           variant='text'
+          className='text-xs'
           disabled={!hardwareId || !version}
           onClick={onSubmit}>
           {t("profiles.share")}

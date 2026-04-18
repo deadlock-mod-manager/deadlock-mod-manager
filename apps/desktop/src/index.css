@@ -253,7 +253,9 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01", "ss03";
+    font-optical-sizing: auto;
     transition:
       background-color 0.3s ease,
       color 0.3s ease;
@@ -318,7 +320,7 @@
 
 /* Target the bottom bar by its structure */
 .background-plugin-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: transparent;
 }
@@ -362,7 +364,7 @@
 }
 
 .tea-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: hsl(var(--border));
 }
@@ -444,7 +446,7 @@
 }
 
 .nightshift-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: hsl(var(--border));
 }
@@ -546,7 +548,7 @@
 }
 
 .bloodmoon-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: hsl(var(--border));
 }
@@ -648,7 +650,7 @@
 }
 
 .arcane-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: hsl(0 0% 6%);
   border-color: hsl(var(--border));
 }
@@ -728,7 +730,7 @@
 }
 
 .custom-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: transparent;
   border-color: hsl(var(--border));
 }
@@ -772,7 +774,7 @@
 }
 
 .deadlock-api-theme-active
-  .z-30.flex.h-8.w-full.items-center.justify-between.border-t.bg-background {
+  .z-30.flex.h-6.w-full.items-center.justify-between.border-t.bg-background {
   background-color: hsl(220 20% 2%);
   border-color: hsl(var(--border));
 }

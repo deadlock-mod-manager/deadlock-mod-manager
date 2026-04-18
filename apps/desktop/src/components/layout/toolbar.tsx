@@ -45,7 +45,7 @@ export const Toolbar = () => {
 
   return (
     <div className='flex min-w-0 flex-1 items-stretch' data-tauri-drag-region>
-      <div className='flex min-w-0 shrink-0 items-center gap-2 px-4 py-2'>
+      <div className='flex min-w-0 shrink-0 items-center gap-2 px-3 py-1.5'>
         <div className='min-w-0 max-w-48'>
           <Profile />
         </div>
@@ -57,7 +57,7 @@ export const Toolbar = () => {
       </div>
 
       <div
-        className='flex flex-1 items-center justify-end gap-2 px-4 py-2'
+        className='flex flex-1 items-center justify-end gap-1.5 px-3 py-1.5'
         data-tauri-drag-region>
         <div
           className={cn(
@@ -72,12 +72,12 @@ export const Toolbar = () => {
             <ArrowLeft className='h-4 w-4' />
             {t("common.back", "Back")}
           </Button>
-          <Separator className='h-6' orientation='vertical' />
+          <Separator className='h-4' orientation='vertical' />
         </div>
 
         {!isRunning && (
           <Button
-            className='relative h-8 gap-1.5 overflow-hidden px-3 text-xs'
+            className='relative h-7 gap-1.5 overflow-hidden px-2.5 text-xs'
             disabled={!gamePath}
             onClick={() => {
               setVanillaAnimating(true);
@@ -101,7 +101,7 @@ export const Toolbar = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className='relative h-8 gap-1.5 overflow-hidden px-3 text-xs'
+              className='relative h-7 gap-1.5 overflow-hidden px-2.5 text-xs'
               disabled={!gamePath}
               onClick={() => {
                 if (isRunning) {
@@ -155,7 +155,7 @@ export const Toolbar = () => {
           )}
         </Tooltip>
 
-        <Separator className='mx-1 h-6' orientation='vertical' />
+        <Separator className='mx-0.5 h-4' orientation='vertical' />
 
         <UserMenu />
       </div>
