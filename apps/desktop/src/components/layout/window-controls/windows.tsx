@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils";
 import { Icons } from "./icons";
 import TauriAppWindowContext from "./window-context";
 
+const baseButton =
+  "flex cursor-pointer items-center justify-center rounded-none " +
+  "bg-transparent p-0 text-foreground/60 outline-none ring-0 " +
+  "transition-colors duration-150 hover:bg-transparent focus-visible:ring-0 " +
+  "[&_svg]:size-3.5";
+
 export function Windows({
   className,
   ...props
@@ -14,15 +20,19 @@ export function Windows({
     useContext(TauriAppWindowContext);
 
   return (
-    <div className={cn("h-8", className)} {...props}>
+    <div className={cn("flex items-center gap-4 px-2", className)} {...props}>
       <Button
+        variant='transparent'
+        size='no-padding'
         onClick={minimizeWindow}
         aria-label={t("accessibility.minimize")}
         title={t("accessibility.minimize")}
-        className='max-h-8 w-[46px]  [&_svg]:size-2.5 cursor-default rounded-none bg-transparent text-black/90 hover:bg-black/[.05] active:bg-black/[.03]  dark:text-white dark:hover:bg-white/[.06] dark:active:bg-white/[.04]'>
+        className={cn(baseButton, "hover:text-primary")}>
         <Icons.MinimizeWin />
       </Button>
       <Button
+        variant='transparent'
+        size='no-padding'
         onClick={maximizeWindow}
         aria-label={
           isWindowMaximized
@@ -34,10 +44,7 @@ export function Windows({
             ? t("accessibility.restore")
             : t("accessibility.maximize")
         }
-        className={cn(
-          "max-h-8 w-[46px]  [&_svg]:size-2.5 cursor-default rounded-none bg-transparent",
-          "text-black/90 hover:bg-black/[.05] active:bg-black/[.03] dark:text-white dark:hover:bg-white/[.06] dark:active:bg-white/[.04]",
-        )}>
+        className={cn(baseButton, "hover:text-primary")}>
         {isWindowMaximized ? (
           <Icons.MaximizeRestoreWin />
         ) : (
@@ -45,10 +52,12 @@ export function Windows({
         )}
       </Button>
       <Button
+        variant='transparent'
+        size='no-padding'
         onClick={closeWindow}
         aria-label={t("accessibility.close")}
         title={t("accessibility.close")}
-        className='max-h-8 w-[46px]  [&_svg]:size-2.5 cursor-default rounded-none bg-transparent text-black/90 hover:bg-[#c42b1c] hover:text-white active:bg-[#c42b1c]/90 dark:text-white'>
+        className={cn(baseButton, "hover:text-primary")}>
         <Icons.CloseWin />
       </Button>
     </div>

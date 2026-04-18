@@ -426,7 +426,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   );
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex h-full min-h-0 flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
         mods={deferredData}
@@ -484,7 +484,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className='h-[calc(100vh-280px)] overflow-auto' ref={parentRef}>
+        <div className='min-h-0 flex-1 overflow-auto' ref={parentRef}>
           {paginationEnabled ? (
             <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
               {totalPages > 1 && (

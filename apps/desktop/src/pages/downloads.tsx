@@ -89,7 +89,7 @@ const Downloads = () => {
   );
 
   return (
-    <div className='w-full overflow-y-auto pl-4 pr-2'>
+    <div className='flex h-full min-h-0 w-full flex-col overflow-y-auto pl-4 pr-2'>
       <div className='mb-6 flex items-center justify-between'>
         <PageTitle title={t("downloads.title")} />
         <Tabs
@@ -123,7 +123,7 @@ const Downloads = () => {
             ))}
           </div>
         ) : (
-          <Empty className='h-[calc(100vh-300px)]'>
+          <Empty className='min-h-0 flex-1'>
             <EmptyHeader>
               <EmptyMedia variant='default'>
                 <Package className='h-16 w-16' />

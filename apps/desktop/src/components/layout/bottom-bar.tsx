@@ -29,10 +29,12 @@ import {
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
 import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
+import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -194,6 +196,7 @@ export const BottomBar = () => {
   const { status: apiStatus } = useApiStatus();
   const { status: authStatus } = useAuthStatus();
   const { status: fsStatus } = useFilesystemStatus();
+  const { relays } = useRelaysHealth();
 
   const downloadingMods = localMods.filter(
     (mod) => mod.status === ModStatus.Downloading,
@@ -238,6 +241,14 @@ export const BottomBar = () => {
               tooltip={t(fsCfg.key)}
             />
           )}
+          {relays.length > 0 && (
+            <RelayStatusPopover
+              align='start'
+              relays={relays}
+              side='top'
+              variant='compact'
+            />
+          )}
         </div>
 
         {!gamePath && (
@@ -250,7 +261,7 @@ export const BottomBar = () => {
         )}
       </div>
 
-      <div className='flex items-center gap-4'>
+      <div className='flex items-center'>
         {updateAvailable && (
           <>
             <Separator className='mx-1 h-3' orientation='vertical' />

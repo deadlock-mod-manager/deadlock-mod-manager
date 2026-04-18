@@ -6,7 +6,7 @@
     "addMods": "Add Local Mod",
     "downloads": "Downloads",
     "settings": "Settings",
-    "developer": "Developer Tools",
+    "developer": "Developer",
     "whatsNew": "What's New",
     "needHelp": "Need Help ?",
     "collapseMenu": "Collapse menu",
@@ -17,7 +17,9 @@
     "autoexec": "Autoexec Config",
     "maps": "Maps",
     "servers": "Server Browser",
-    "multiplayer": "Custom Servers"
+    "multiplayer": "Custom Servers",
+    "general": "General",
+    "mods": "Mods"
   },
   "servers": {
     "title": "Server Browser",
@@ -315,8 +317,10 @@
     "status": "Status",
     "gameDetected": "Game Detected",
     "gameInstalledAt": "Game installed at {{path}}",
-    "launchVanilla": "Launch Without Mods",
-    "launchModded": "Launch Modded",
+    "launchVanilla": "Launch without mods",
+    "launchModded": "Launch modded",
+    "launchModdedCount_one": "{{count}} mod",
+    "launchModdedCount_other": "{{count}} mods",
     "stopGame": "Stop Game",
     "failedToFetchMods": "Failed to fetch mods. Try again later.",
     "mods": "Mods",
@@ -1469,6 +1473,7 @@
   },
   "profiles": {
     "share": "Share Profile",
+    "activeProfile": "Active Profile",
     "selectProfile": "Select Profile",
     "manage": "Manage Profiles",
     "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",

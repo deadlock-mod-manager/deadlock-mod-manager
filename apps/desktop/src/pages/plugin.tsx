@@ -75,14 +75,14 @@ const PluginEntry = () => {
 
   if (!plugin) {
     return (
-      <div className='flex h-[calc(100vh-160px)] w-full items-center justify-center'>
+      <div className='flex h-full w-full items-center justify-center'>
         <div className='text-muted-foreground'>{t("common.notFound")}</div>
       </div>
     );
   }
 
   return (
-    <div className='flex h-[calc(100vh-160px)] w-full overflow-y-auto'>
+    <div className='flex h-full w-full overflow-y-auto'>
       <div className='flex w-full flex-col gap-4'>
         <div className='flex items-center justify-between px-4 pt-4 w-full'>
           <div className='flex items-start gap-2 flex-col py-8 w-full'>

@@ -22,7 +22,7 @@ import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { AboutDialog } from "./about-dialog";
-import Logo from "./logo";
+import { Toolbar } from "./toolbar";
 import { WindowTitlebar } from "./window-controls/window-titlebar";
 
 const logger = createLogger("titlebar");
@@ -46,12 +46,37 @@ export const Titlebar = () => {
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   const { getActiveProfile } = usePersistedStore();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
+  const [showMenubar, setShowMenubar] = useState(false);
   const [currentWindow, setCurrentWindow] = useState<ReturnType<
     typeof getCurrentWindow
   > | null>(null);
 
   useEffect(() => {
     setCurrentWindow(getCurrentWindow());
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Alt") {
+        event.preventDefault();
+        setShowMenubar(true);
+      }
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Alt") {
+        event.preventDefault();
+        setShowMenubar(false);
+      }
+    };
+    const handleBlur = () => setShowMenubar(false);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
+    };
   }, []);
 
   const handleOpenModsFolder = async () => {
@@ -309,13 +334,18 @@ export const Titlebar = () => {
 
   return (
     <>
-      <WindowTitlebar className='z-20 bg-background'>
-        <div className='inline-flex h-fit w-fit items-center gap-2 px-2 py-1'>
-          <Logo className='size-5' />
-          <Menubar className='border-none bg-transparent shadow-none h-auto p-0'>
+      <WindowTitlebar className='z-20 h-auto border-b bg-background'>
+        <Toolbar />
+      </WindowTitlebar>
+
+      {showMenubar && (
+        <div
+          className='z-20 flex h-8 w-full shrink-0 items-center border-b bg-background px-2'
+          data-tauri-drag-region>
+          <Menubar className='h-auto border-none bg-transparent p-0 shadow-none'>
             {menuItems.map((menu) => (
               <MenubarMenu key={menu.label}>
-                <MenubarTrigger className='text-xs px-2 py-1 h-auto'>
+                <MenubarTrigger className='h-auto px-2 py-1 text-xs'>
                   {menu.label}
                 </MenubarTrigger>
                 <MenubarContent>
@@ -341,11 +371,11 @@ export const Titlebar = () => {
                               .filter(Boolean)
                               .map((shortcutKey, idx, keys) => (
                                 <span
-                                  key={shortcutKey}
-                                  className='flex items-center gap-1'>
+                                  className='flex items-center gap-1'
+                                  key={shortcutKey}>
                                   <Kbd>{shortcutKey}</Kbd>
                                   {idx < keys.length - 1 && (
-                                    <span className='text-muted-foreground'></span>
+                                    <span className='text-muted-foreground' />
                                   )}
                                 </span>
                               ))}
@@ -359,7 +389,7 @@ export const Titlebar = () => {
             ))}
           </Menubar>
         </div>
-      </WindowTitlebar>
+      )}
 
       <Dialog onOpenChange={setShowAboutDialog} open={showAboutDialog}>
         <AboutDialog />

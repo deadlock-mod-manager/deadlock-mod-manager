@@ -125,10 +125,9 @@ const ServerRow = ({ server, isSelected, onSelect }: ServerRowProps) => {
         {server.game_mode && tone ? (
           <span
             className={cn(
-              "inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ring-inset",
+              "inline-flex max-w-full items-center  px-2 py-0.5 text-[11px] font-medium capitalize",
               tone.bg,
               tone.text,
-              tone.ring,
             )}>
             <span className='truncate'>
               {server.game_mode.replace(/_/g, " ")}

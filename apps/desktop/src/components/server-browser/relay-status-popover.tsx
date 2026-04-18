@@ -5,7 +5,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { BroadcastIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { FlagGlyph } from "./region-flag";
@@ -13,6 +18,9 @@ import { FlagGlyph } from "./region-flag";
 interface RelayStatusPopoverProps {
   relays: RelayHealth[];
   className?: string;
+  variant?: "default" | "compact";
+  side?: "top" | "bottom";
+  align?: "start" | "center" | "end";
 }
 
 const statusColor = (relay: RelayHealth): string => {
@@ -34,7 +42,20 @@ const overallColor = (healthy: number, total: number): string => {
   return "bg-amber-500";
 };
 
-const RelayStatusPopover = ({ relays, className }: RelayStatusPopoverProps) => {
+const overallIconColor = (healthy: number, total: number): string => {
+  if (total === 0) return "text-muted-foreground";
+  if (healthy === total) return "text-primary";
+  if (healthy === 0) return "text-red-500";
+  return "text-yellow-500";
+};
+
+const RelayStatusPopover = ({
+  relays,
+  className,
+  variant = "default",
+  side,
+  align = "end",
+}: RelayStatusPopoverProps) => {
   const { t } = useTranslation();
   const healthy = relays.filter((r) => r.healthy).length;
   const total = relays.length;
@@ -43,32 +64,64 @@ const RelayStatusPopover = ({ relays, className }: RelayStatusPopoverProps) => {
     return null;
   }
 
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          aria-label={t("servers.network.title")}
-          className={cn("h-8 gap-2 px-2 text-xs", className)}
-          size='sm'
-          variant='ghost'>
+  const isCompact = variant === "compact";
+  const summary = t("servers.network.summary", { healthy, total });
+
+  const trigger = (
+    <Button
+      aria-label={summary}
+      className={cn(
+        isCompact
+          ? "h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+          : "h-8 gap-2 px-2 text-xs",
+        className,
+      )}
+      size='sm'
+      variant='ghost'>
+      {isCompact ? (
+        <BroadcastIcon
+          className={cn("h-3.5 w-3.5", overallIconColor(healthy, total))}
+          weight='fill'
+        />
+      ) : (
+        <>
           <span className='relative inline-flex size-2'>
             {healthy === total && (
               <span className='absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60' />
             )}
             <span
               className={cn(
-                "relative inline-flex size-2 rounded-full",
+                "relative inline-flex size-full rounded-full",
                 overallColor(healthy, total),
               )}
             />
           </span>
-          <span className='font-mono tabular-nums'>
-            {t("servers.network.summary", { healthy, total })}
-          </span>
+          <span className='font-mono tabular-nums'>{summary}</span>
           <CaretDownIcon className='size-3 opacity-60' />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align='end' className='w-80 p-3'>
+        </>
+      )}
+    </Button>
+  );
+
+  return (
+    <Popover>
+      {isCompact ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side='top' sideOffset={8}>
+            <p>{summary}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      )}
+      <PopoverContent
+        align={align}
+        className='w-80 p-3'
+        side={side}
+        sideOffset={8}>
         <div className='mb-2 flex items-center justify-between'>
           <h4 className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
             {t("servers.network.title")}

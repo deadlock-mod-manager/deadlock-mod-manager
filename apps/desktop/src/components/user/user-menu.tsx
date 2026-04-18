@@ -12,7 +12,7 @@ export default function UserMenu() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   if (isLoading) {
-    return <Skeleton className='h-10 w-10 rounded-full' />;
+    return <Skeleton className='h-8 w-8 rounded-full' />;
   }
 
   if (!isAuthenticated || !user) {
@@ -30,19 +30,23 @@ export default function UserMenu() {
     "U";
 
   return (
-    <div className='flex items-center gap-4'>
-      <div className='flex flex-col gap-2 overflow-hidden items-end'>
-        <p className='font-medium leading-none'>{user.name}</p>
-        <Button variant='text' size='text' className='text-xs' onClick={logout}>
+    <div className='flex items-center gap-3'>
+      <div className='flex flex-col items-end gap-0.5 overflow-hidden'>
+        <p className='font-medium text-xs leading-none'>{user.name}</p>
+        <Button
+          variant='text'
+          size='text'
+          className='text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground'
+          onClick={logout}>
           Sign out
         </Button>
       </div>
-      <Avatar className='h-12 w-12'>
+      <Avatar className='h-8 w-8'>
         <AvatarImage
           src={user.picture || undefined}
           alt={user.name || user.email || "User"}
         />
-        <AvatarFallback>{initials}</AvatarFallback>
+        <AvatarFallback className='text-xs'>{initials}</AvatarFallback>
       </Avatar>
     </div>
   );

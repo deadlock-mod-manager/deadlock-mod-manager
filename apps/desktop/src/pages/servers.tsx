@@ -4,7 +4,6 @@ import { WarningIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import HostServerCta from "@/components/server-browser/host-server-cta";
-import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
 import ServerDetailPanel from "@/components/server-browser/server-detail-panel";
 import ServerFilters, {
   type ServerFiltersValue,
@@ -30,7 +29,6 @@ const Servers = () => {
   const {
     servers,
     total,
-    relays,
     availableGameModes,
     availableRegions,
     serversQuery,
@@ -56,9 +54,6 @@ const Servers = () => {
           subtitle={t("servers.subtitle")}
           title={t("servers.title")}
         />
-        <div className='flex items-center gap-2'>
-          <RelayStatusPopover relays={relays} />
-        </div>
       </div>
 
       <ServerFilters

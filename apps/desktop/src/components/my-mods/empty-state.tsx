@@ -21,7 +21,7 @@ export const MyModsEmptyState = () => {
   };
 
   return (
-    <Empty className='h-[calc(100vh-300px)]'>
+    <Empty className='h-full min-h-0 flex-1'>
       <EmptyHeader>
         <EmptyMedia variant='default'>
           <Package className='h-16 w-16' />

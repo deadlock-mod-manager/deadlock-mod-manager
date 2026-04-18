@@ -44,7 +44,7 @@ const Settings = () => {
   }, [settings.startHour, settings.endHour]);
 
   return (
-    <div className='flex flex-col gap-4 pl-4 max-h-[calc(100vh-16rem)] overflow-y-auto pr-4'>
+    <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pl-4 pr-4'>
       <div className='flex flex-col gap-2'>
         <Label htmlFor='flashbang-start'>
           {t("plugins.flashbang.startHour")}
