@@ -8,17 +8,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { Download, HardDrive } from "@deadlock-mods/ui/icons";
-import { format, formatDistanceToNow } from "date-fns";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { formatSize } from "@/lib/utils";
-import type { ModDownloadItem } from "@/types/mods";
+import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
+import { Download, HardDrive } from "@deadlock-mods/ui/icons";
+import { cn } from "@deadlock-mods/ui/lib/utils";
+import { format, formatDistanceToNow } from "date-fns";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { formatSize } from "@/lib/utils";
+import type { ModDownloadItem } from "@/types/mods";
 
 interface MultiFileDownloadDialogProps {
   readonly isOpen: boolean;
@@ -42,43 +44,51 @@ export function MultiFileDownloadDialog({
   const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
-  const handleFileToggle = (fileName: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const newSelected = new Set(selectedFiles);
-    if (newSelected.has(fileName)) {
-      newSelected.delete(fileName);
+  const sortedFiles = useMemo(
+    () => [...files].sort((a, b) => b.size - a.size),
+    [files],
+  );
+
+  const totalSize = useMemo(
+    () =>
+      sortedFiles.reduce(
+        (sum, file) =>
+          selectedFiles.has(file.name) ? sum + (file.size || 0) : sum,
+        0,
+      ),
+    [sortedFiles, selectedFiles],
+  );
+
+  const allSelected = files.length > 0 && selectedFiles.size === files.length;
+  const noneSelected = selectedFiles.size === 0;
+
+  const handleFileToggle = (fileName: string) => {
+    setSelectedFiles((prev) => {
+      const next = new Set(prev);
+      if (next.has(fileName)) {
+        next.delete(fileName);
+      } else {
+        next.add(fileName);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (allSelected) {
+      setSelectedFiles(new Set());
     } else {
-      newSelected.add(fileName);
+      setSelectedFiles(new Set(files.map((f) => f.name)));
     }
-    setSelectedFiles(newSelected);
   };
 
-  const handleSelectAll = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setSelectedFiles(new Set(files.map((f) => f.name)));
-  };
-
-  const handleSelectNone = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setSelectedFiles(new Set());
-  };
-
-  const handleDownload = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const selected = files.filter((file) => selectedFiles.has(file.name));
+  const handleDownload = () => {
+    const selected = sortedFiles.filter((file) => selectedFiles.has(file.name));
     onDownload(selected);
   };
 
-  const selectedFilesArray = files.filter((file) =>
-    selectedFiles.has(file.name),
-  );
-  const totalSize = selectedFilesArray.reduce(
-    (sum, file) => sum + (file.size || 0),
-    0,
-  );
-
   if (files.length <= 1) {
-    return null; // Don't show dialog for single file
+    return null;
   }
 
   const handleClose = (open: boolean) => {
@@ -90,13 +100,13 @@ export function MultiFileDownloadDialog({
   return (
     <Dialog onOpenChange={handleClose} open={isOpen}>
       <DialogContent
-        className='flex max-h-[80vh] max-w-2xl flex-col'
+        className='flex max-h-[80vh] max-w-2xl flex-col gap-4'
         onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <Download className='h-5 w-5' />
-            {t("downloads.selectFilesToDownload")}
-          </DialogTitle>
+          <div className='mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10'>
+            <Download className='h-5 w-5 text-primary' />
+          </div>
+          <DialogTitle>{t("downloads.selectFilesToDownload")}</DialogTitle>
           <DialogDescription>
             {t("notifications.modContainsFiles", {
               modName,
@@ -105,122 +115,138 @@ export function MultiFileDownloadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex items-center justify-between py-2'>
-          <div className='flex gap-2'>
-            <Button onClick={handleSelectAll} size='sm' variant='outline'>
-              {t("downloads.selectAll")}
-            </Button>
-            <Button onClick={handleSelectNone} size='sm' variant='outline'>
-              {t("downloads.selectNone")}
-            </Button>
-          </div>
-          <div className='flex items-center gap-2 text-muted-foreground text-sm'>
-            <HardDrive className='h-4 w-4' />
-            {t("downloads.total")}: {formatSize(totalSize)}
-          </div>
-        </div>
-
-        <div className='min-h-0 flex-1 space-y-3 overflow-y-auto'>
-          {[...files]
-            .sort((a, b) => b.size - a.size) // Sort by size, largest first
-            .map((file) => (
-              <button
-                type='button'
-                className='flex w-full items-center space-x-3 rounded-lg border p-4 text-left transition-colors hover:bg-muted/50 disabled:pointer-events-none'
-                key={file.name}
+        <div className='flex min-h-0 flex-col overflow-hidden rounded-md border bg-muted/40'>
+          <div className='flex items-center justify-between gap-2 border-b px-3 py-2'>
+            <div className='flex items-center gap-3'>
+              <Checkbox
+                aria-label={
+                  allSelected
+                    ? t("downloads.selectNone")
+                    : t("downloads.selectAll")
+                }
+                checked={
+                  allSelected ? true : noneSelected ? false : "indeterminate"
+                }
                 disabled={isDownloading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFileToggle(file.name, e);
-                }}>
-                <Checkbox
-                  checked={selectedFiles.has(file.name)}
-                  disabled={isDownloading}
-                  id={file.name}
-                  onCheckedChange={() => handleFileToggle(file.name)}
-                />
-                <div className='min-w-0 flex-1'>
-                  <div className='flex items-center gap-2'>
-                    <span
-                      className='truncate font-medium text-foreground'
-                      title={file.name}>
-                      {file.name}
-                    </span>
-                  </div>
-                  {file.description && (
-                    <p className='text-muted-foreground text-xs mt-0.5 line-clamp-2'>
-                      {file.description}
-                    </p>
-                  )}
-                  <div className='flex flex-col gap-1'>
-                    <div className='flex items-center justify-between'>
-                      <div className='text-muted-foreground text-sm'>
-                        <span className='font-medium'>
-                          {formatSize(file.size)}
-                        </span>
-                      </div>
-                      {(file.updatedAt || file.createdAt) && (
-                        <div className='text-muted-foreground text-xs'>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span className='text-muted-foreground text-xs'>
-                                {file.updatedAt
-                                  ? t("downloads.updatedAgo", {
-                                      when: formatDistanceToNow(file.updatedAt),
-                                    })
-                                  : t("downloads.createdAgo", {
-                                      when: formatDistanceToNow(
-                                        file.createdAt ?? new Date(),
-                                      ),
-                                    })}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <span className='text-muted-foreground text-xs'>
-                                {file.updatedAt
-                                  ? t("downloads.updatedAt", {
-                                      date: format(
-                                        file.updatedAt,
-                                        "dd-MM-yyyy HH:mm",
-                                      ),
-                                    })
-                                  : t("downloads.createdAt", {
-                                      date: format(
-                                        file.createdAt ?? new Date(),
-                                        "dd-MM-yyyy HH:mm",
-                                      ),
-                                    })}
-                              </span>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                id='select-all-files'
+                onCheckedChange={handleToggleAll}
+              />
+              <label
+                className='cursor-pointer font-medium text-muted-foreground text-xs uppercase tracking-wide'
+                htmlFor='select-all-files'>
+                {allSelected
+                  ? t("downloads.selectNone")
+                  : t("downloads.selectAll")}
+              </label>
+            </div>
+            <span className='font-mono text-muted-foreground text-xs tabular-nums'>
+              {selectedFiles.size}/{files.length}
+            </span>
+          </div>
+
+          <ScrollArea className='min-h-0 flex-1'>
+            <ul className='divide-y divide-border/60' role='list'>
+              {sortedFiles.map((file) => {
+                const isSelected = selectedFiles.has(file.name);
+                const timestamp = file.updatedAt ?? file.createdAt;
+                const timestampLabel = file.updatedAt
+                  ? t("downloads.updatedAgo", {
+                      when: formatDistanceToNow(file.updatedAt),
+                    })
+                  : file.createdAt
+                    ? t("downloads.createdAgo", {
+                        when: formatDistanceToNow(file.createdAt),
+                      })
+                    : null;
+                const timestampTooltip = file.updatedAt
+                  ? t("downloads.updatedAt", {
+                      date: format(file.updatedAt, "dd-MM-yyyy HH:mm"),
+                    })
+                  : file.createdAt
+                    ? t("downloads.createdAt", {
+                        date: format(file.createdAt, "dd-MM-yyyy HH:mm"),
+                      })
+                    : null;
+
+                return (
+                  <li key={file.name}>
+                    <button
+                      aria-pressed={isSelected}
+                      className={cn(
+                        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors",
+                        "hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
+                        isSelected && "bg-primary/5 hover:bg-primary/10",
+                        isDownloading && "pointer-events-none opacity-60",
                       )}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ))}
+                      disabled={isDownloading}
+                      onClick={() => handleFileToggle(file.name)}
+                      type='button'>
+                      <span className='flex h-lh items-center'>
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={isDownloading}
+                          tabIndex={-1}
+                          onCheckedChange={() => handleFileToggle(file.name)}
+                        />
+                      </span>
+                      <div className='min-w-0 flex-1'>
+                        <p
+                          className='truncate font-medium text-foreground text-sm'
+                          title={file.name}>
+                          {file.name}
+                        </p>
+                        {file.description && (
+                          <p className='mt-0.5 line-clamp-2 text-muted-foreground text-xs'>
+                            {file.description}
+                          </p>
+                        )}
+                        <div className='mt-1 flex items-center gap-2 text-muted-foreground text-xs'>
+                          <span className='font-medium tabular-nums'>
+                            {formatSize(file.size)}
+                          </span>
+                          {timestamp && timestampLabel && (
+                            <>
+                              <span aria-hidden='true'>&middot;</span>
+                              {timestampTooltip ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>{timestampLabel}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {timestampTooltip}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <span>{timestampLabel}</span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </ScrollArea>
         </div>
 
-        <DialogFooter className='flex-col space-y-2 items-center'>
-          <div className='text-muted-foreground text-sm w-full'>
-            {t("downloads.filesSelected", {
-              selected: selectedFiles.size,
-              total: files.length,
-            })}
+        <DialogFooter className='flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
+            <HardDrive className='h-3.5 w-3.5' />
+            <span className='tabular-nums'>
+              {t("downloads.total")}: {formatSize(totalSize)}
+            </span>
           </div>
-          <div className='flex w-full justify-end gap-2'>
+          <div className='flex gap-2 sm:gap-2'>
             <Button
               disabled={isDownloading}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
+              onClick={onClose}
               variant='outline'>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
-              className='min-w-24'
+              className='min-w-32'
               disabled={selectedFiles.size === 0 || isDownloading}
               icon={<Download className='h-4 w-4' />}
               isLoading={isDownloading}

@@ -2,6 +2,9 @@ import { debug, error, info, trace, warn } from "@tauri-apps/plugin-log";
 import { BlankTransport, ConsoleTransport, LogLayer, LogLevel } from "loglayer";
 import { serializeError } from "serialize-error";
 
+const canShipToTauriLogger =
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
 const serializeKeyValues = (
   data: Record<string, unknown>,
 ): Record<string, string> => {
@@ -31,6 +34,10 @@ const logger = new LogLayer({
     }),
     new BlankTransport({
       shipToLogger: ({ logLevel, messages, data, hasData }) => {
+        if (!canShipToTauriLogger) {
+          return messages;
+        }
+
         const message = messages
           .join(" ") // + (hasData ? JSON.stringify(data) : "")
           .trim();

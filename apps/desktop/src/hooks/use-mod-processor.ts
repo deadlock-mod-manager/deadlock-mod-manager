@@ -15,13 +15,19 @@ import {
 import {
   type DetectedSource,
   ensureDirectory,
+  getFileBaseName,
   fileToBytes,
   fileToDataUrl,
   writeFileBytes,
   writeFileText,
 } from "@/lib/file-utils";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
+
+interface PathBackedFile extends File {
+  path?: string;
+}
 
 export interface ModMetadata {
   name: string;
@@ -30,6 +36,21 @@ export interface ModMetadata {
   description?: string;
   imageFile?: File | null;
 }
+
+const getSourceFilePath = (file: File): string | null => {
+  const filePath = (file as PathBackedFile).path;
+  return typeof filePath === "string" && filePath.length > 0 ? filePath : null;
+};
+
+const readSourceFileBytes = async (file: File): Promise<Uint8Array> => {
+  const filePath = getSourceFilePath(file);
+  if (!filePath) {
+    return fileToBytes(file);
+  }
+
+  const bytes = await invoke<number[]>("read_dropped_mod_file", { filePath });
+  return new Uint8Array(bytes);
+};
 
 export const useModProcessor = () => {
   const { t } = useTranslation();
@@ -45,10 +66,12 @@ export const useModProcessor = () => {
     filesDir: string,
     modDir: string,
   ): Promise<void> => {
-    const fileName = file.name.toLowerCase();
+    const fileBaseName = getFileBaseName(file);
+    const fileName = fileBaseName.toLowerCase();
+    const fileBytes = await readSourceFileBytes(file);
 
     if (fileName.endsWith(".zip")) {
-      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const zip = await JSZip.loadAsync(fileBytes);
       const vpkEntry = Object.values(zip.files).find(
         (f) => !f.dir && VPK_PATTERN.test(f.name),
       );
@@ -58,25 +81,19 @@ export const useModProcessor = () => {
         const baseName = vpkEntry.name.split("/").pop() || "mod.vpk";
         await writeFileBytes(await join(filesDir, baseName), buffer);
       } else {
-        await writeFileBytes(
-          await join(modDir, file.name),
-          await fileToBytes(file),
-        );
+        await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
         toast.error(t("addMods.noVpkFound"));
       }
     } else if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
       const format = fileName.split(".").pop()?.toUpperCase();
 
       setProcessing(true, t("addMods.storingArchive", { format }));
-      await writeFileBytes(
-        await join(modDir, file.name),
-        await fileToBytes(file),
-      );
+      await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
 
       // Extract archive using backend
       try {
         setProcessing(true, t("addMods.extractingArchive", { format }));
-        const archivePath = await join(modDir, file.name);
+        const archivePath = await join(modDir, fileBaseName);
         await invoke("extract_archive", {
           archivePath: await archivePath,
           targetPath: await filesDir,
@@ -86,10 +103,7 @@ export const useModProcessor = () => {
         toast.error(t("addMods.failedToExtractArchive"));
       }
     } else {
-      await writeFileBytes(
-        await join(modDir, file.name),
-        await fileToBytes(file),
-      );
+      await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
     }
   };
 
@@ -135,7 +149,7 @@ export const useModProcessor = () => {
     }
 
     if (detectedSource.kind === "archive") {
-      const fileName = detectedSource.file.name.toLowerCase();
+      const fileName = getFileBaseName(detectedSource.file).toLowerCase();
       if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
         toast.info(t("addMods.archiveWillBeProcessed"));
         return true;
@@ -176,18 +190,20 @@ export const useModProcessor = () => {
     setProcessing(true, t("addMods.processingFiles"));
     try {
       if (detectedSource.kind === "vpk") {
+        const fileName = getFileBaseName(detectedSource.file);
         await writeFileBytes(
-          await join(filesDir, detectedSource.file.name),
-          await fileToBytes(detectedSource.file),
+          await join(filesDir, fileName),
+          await readSourceFileBytes(detectedSource.file),
         );
       } else {
         await processArchive(detectedSource.file, filesDir, modDir);
       }
     } catch {
+      const fileName = getFileBaseName(detectedSource.file);
       toast.error(t("addMods.failedToProcessArchive"));
       await writeFileBytes(
-        await join(modDir, detectedSource.file.name),
-        await fileToBytes(detectedSource.file),
+        await join(modDir, fileName),
+        await readSourceFileBytes(detectedSource.file),
       );
     }
 
@@ -208,6 +224,18 @@ export const useModProcessor = () => {
         modId: modId,
         profileFolder,
         isMap: category === ModCategory.MAPS,
+      });
+
+      // Scan the extracted files dir for fonts and emit the same event as the
+      // download pipeline so the FontInstallDialog appears if any are found.
+      await invoke("scan_and_stash_local_mod_fonts", {
+        modId,
+        filesDir,
+      }).catch((error) => {
+        logger
+          .withMetadata({ filesDir, modId })
+          .withError(error)
+          .warn("Failed to scan local mod for bundled fonts");
       });
 
       try {

@@ -1,25 +1,152 @@
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { resolveDroppedModSource } from "@/lib/dropped-file-source";
+import { createLogger } from "@/lib/logger";
 import {
   type DetectedSource,
   detectSource,
   readFromDataTransferItems,
 } from "@/lib/file-utils";
 
-/**
- * Custom hook for handling file drag and drop functionality
- */
+const logger = createLogger("use-file-drop");
+
+interface PathBackedFile extends File {
+  path?: string;
+}
+
+const readStringItem = (item: DataTransferItem): Promise<string> =>
+  new Promise((resolve) => {
+    item.getAsString((value) => resolve(value));
+  });
+
+const readStringPayloads = async (items: DataTransferItem[]) => {
+  const stringItems = items.filter((item) => item.kind === "string");
+  const payloads = await Promise.all(
+    stringItems.map(async (item) => ({
+      type: item.type || "unknown",
+      value: await readStringItem(item),
+    })),
+  );
+
+  return payloads.filter((payload) => payload.value.trim().length > 0);
+};
+
+const getPathFileName = (filePath: string): string =>
+  filePath.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
+
+const createPathBackedFile = (filePath: string): File => {
+  const file = new File([], getPathFileName(filePath)) as PathBackedFile;
+  file.path = filePath;
+  return file;
+};
+
+const parseFileUri = (value: string): string | null => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "file:") {
+      return null;
+    }
+
+    const decodedPath = decodeURIComponent(url.pathname);
+    const normalizedPath = /^\/[a-zA-Z]:\//.test(decodedPath)
+      ? decodedPath.slice(1)
+      : decodedPath;
+
+    if (url.hostname && url.hostname !== "localhost") {
+      return `//${url.hostname}${normalizedPath}`;
+    }
+
+    return normalizedPath;
+  } catch {
+    return null;
+  }
+};
+
+const isAbsoluteLocalPath = (value: string): boolean => {
+  if (value.startsWith("\\\\") || value.startsWith("//")) {
+    return true;
+  }
+  if (value.startsWith("/")) {
+    return true;
+  }
+  return /^[a-zA-Z]:[\\/]/.test(value);
+};
+
+const normalizeDroppedPath = (value: string): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (value.startsWith("file://")) {
+    return parseFileUri(value);
+  }
+
+  return isAbsoluteLocalPath(value) ? value : null;
+};
+
+const extractPathsFromStringPayloads = (
+  payloads: Array<{ type: string; value: string }>,
+): string[] => {
+  const extractedPaths = new Set<string>();
+
+  for (const payload of payloads) {
+    if (payload.type === "text/uri-list") {
+      for (const line of payload.value.split(/\r?\n/)) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.startsWith("#")) {
+          continue;
+        }
+
+        const normalizedPath = normalizeDroppedPath(trimmedLine);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
+        }
+      }
+      continue;
+    }
+
+    if (payload.type === "text/html") {
+      const uriMatches = payload.value.match(/file:\/\/[^"'\s<>]+/g) ?? [];
+      for (const uri of uriMatches) {
+        const normalizedPath = normalizeDroppedPath(uri);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
+        }
+      }
+      continue;
+    }
+
+    if (payload.type === "text/plain" || payload.type === "text/x-moz-url") {
+      for (const line of payload.value.split(/\r?\n/)) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) {
+          continue;
+        }
+
+        const normalizedPath = normalizeDroppedPath(trimmedLine);
+        if (normalizedPath) {
+          extractedPaths.add(normalizedPath);
+        }
+      }
+    }
+  }
+
+  return Array.from(extractedPaths);
+};
+
 export const useFileDrop = (
   onFilesDetected: (source: DetectedSource) => void,
   onError: (message: string) => void,
 ) => {
   const [isDragging, setIsDragging] = useState(false);
+  const { t } = useTranslation();
 
   const preventDefaults = useCallback((event: Event) => {
     event.preventDefault();
   }, []);
 
   useEffect(() => {
-    // Prevent default drag behaviors on the entire window
     window.addEventListener("dragenter", preventDefaults, { passive: false });
     window.addEventListener("dragover", preventDefaults, { passive: false });
     window.addEventListener("drop", preventDefaults, { passive: false });
@@ -56,32 +183,53 @@ export const useFileDrop = (
       event.stopPropagation();
       setIsDragging(false);
 
-      let files = Array.from(event.dataTransfer.files || []);
+      const droppedFiles = Array.from(event.dataTransfer.files || []);
+      const droppedItems = Array.from(event.dataTransfer.items || []);
+      const droppedUriList = event.dataTransfer.getData("text/uri-list");
 
-      // Handle case where files are empty but we have data transfer items
-      if (
-        (!files.length || files.every((f) => !f)) &&
-        event.dataTransfer.items?.length
-      ) {
-        const fromItems = await readFromDataTransferItems(
-          event.dataTransfer.items,
-        );
-        if (fromItems.length) {
-          files = fromItems;
-        }
+      let detectedSource: DetectedSource | null;
+
+      try {
+        const stringPayloads = await readStringPayloads(droppedItems);
+        const extractedStringPaths =
+          extractPathsFromStringPayloads(stringPayloads);
+
+        detectedSource = await resolveDroppedModSource(droppedFiles, {
+          getFilesFromItems: droppedItems.length
+            ? () => readFromDataTransferItems(droppedItems)
+            : undefined,
+          getFilesFromUriList:
+            droppedUriList || extractedStringPaths.length
+              ? async () => {
+                  const paths = droppedUriList
+                    ? droppedUriList
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter((line) => line && !line.startsWith("#"))
+                        .map(normalizeDroppedPath)
+                        .filter((path): path is string => Boolean(path))
+                    : extractedStringPaths;
+
+                  return paths.map(createPathBackedFile);
+                }
+              : undefined,
+        });
+      } catch (error) {
+        logger.withError(error).error("Failed to resolve dropped mod source");
+        onError(t("addMods.failedToReadDroppedFiles"));
+        return;
       }
 
-      const detectedSource = detectSource(files);
       if (!detectedSource) {
         onError(
-          "Unsupported files. Please select VPK files or archives (ZIP, RAR, 7Z).",
+          `${t("addMods.unsupportedFiles")} ${t("addMods.supportedFormats")}`,
         );
         return;
       }
 
       onFilesDetected(detectedSource);
     },
-    [onFilesDetected, onError],
+    [onFilesDetected, onError, t],
   );
 
   const handleFileSelect = useCallback(
@@ -91,15 +239,41 @@ export const useFileDrop = (
 
       if (!detectedSource) {
         onError(
-          "Unsupported selection. Please select VPK files or archives (ZIP, RAR, 7Z).",
+          `${t("addMods.unsupportedSelection")} ${t("addMods.supportedFormats")}`,
         );
         return;
       }
 
       onFilesDetected(detectedSource);
     },
-    [onFilesDetected, onError],
+    [onFilesDetected, onError, t],
   );
+
+  const openTauriFilePicker = useCallback(async () => {
+    const selected = await openDialog({
+      multiple: false,
+      filters: [
+        {
+          name: t("common.mods"),
+          extensions: ["vpk", "zip", "rar", "7z"],
+        },
+      ],
+    });
+
+    if (!selected) return;
+
+    const file = createPathBackedFile(selected);
+    const detectedSource = detectSource([file]);
+
+    if (!detectedSource) {
+      onError(
+        `${t("addMods.unsupportedSelection")} ${t("addMods.supportedFormats")}`,
+      );
+      return;
+    }
+
+    onFilesDetected(detectedSource);
+  }, [onFilesDetected, onError, t]);
 
   return {
     isDragging,
@@ -110,5 +284,6 @@ export const useFileDrop = (
       onDrop: handleDrop,
     },
     onFileSelect: handleFileSelect,
+    openTauriFilePicker,
   };
 };

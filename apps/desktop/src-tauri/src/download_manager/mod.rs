@@ -3,7 +3,7 @@ mod downloader;
 use crate::errors::Error;
 use downloader::{DownloadProgress as FileProgress, download_file};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
@@ -64,6 +64,13 @@ pub struct DownloadFileTreeEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadExtractingEvent {
   pub mod_id: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadFontsFoundEvent {
+  pub mod_id: String,
+  pub fonts: Vec<crate::mod_manager::FontInfo>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -400,6 +407,31 @@ impl DownloadManager {
 
     let vpk_manager = VpkManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
+    let font_manager = crate::mod_manager::FontManager::new();
+    let stash_dir = task.target_dir.join("fonts");
+    let mut found_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
+    let mut seen_font_files = HashSet::new();
+
+    let emit_fonts_found = |font_infos: &[crate::mod_manager::FontInfo]| {
+      if font_infos.is_empty() {
+        return;
+      }
+
+      log::info!(
+        "Found {} font(s) in mod {}, emitting fonts-found event",
+        font_infos.len(),
+        task.mod_id
+      );
+      app_handle
+        .emit(
+          "download-fonts-found",
+          DownloadFontsFoundEvent {
+            mod_id: task.mod_id.clone(),
+            fonts: font_infos.to_vec(),
+          },
+        )
+        .ok();
+    };
 
     for file_path in downloaded_files {
       if !ArchiveExtractor::new().is_supported_archive(file_path) {
@@ -454,6 +486,50 @@ impl DownloadManager {
         }
       }
 
+      // Scan for font files before processing VPKs and emit an event if any are found.
+      // Fonts may be loose files under panorama/fonts/ OR packed inside a .vpk.
+      let found_loose = font_manager.scan_for_fonts(&extracted_dir);
+      let found_vpk = font_manager.scan_vpks_for_fonts(&extracted_dir);
+      if !found_loose.is_empty() || !found_vpk.is_empty() {
+        if !found_loose.is_empty() {
+          match font_manager.stash_fonts(&found_loose, &stash_dir) {
+            Ok(fonts) => {
+              for font in fonts {
+                if seen_font_files.insert(font.file_name.clone()) {
+                  found_font_infos.push(font);
+                }
+              }
+            }
+            Err(e) => log::warn!("Failed to stash loose fonts for mod {}: {e}", task.mod_id),
+          }
+        }
+        if !found_vpk.is_empty() {
+          // Drop any VPK-packed font whose filename was already stashed from a
+          // loose `.ttf` so we never overwrite the loose font's bytes on disk
+          // while keeping its metadata in `found_font_infos`.
+          let vpk_to_stash: Vec<(String, Vec<u8>)> = found_vpk
+            .into_iter()
+            .filter(|(name, _)| !seen_font_files.contains(name))
+            .collect();
+
+          if !vpk_to_stash.is_empty() {
+            match font_manager.stash_font_bytes(&vpk_to_stash, &stash_dir) {
+              Ok(fonts) => {
+                for font in fonts {
+                  if seen_font_files.insert(font.file_name.clone()) {
+                    found_font_infos.push(font);
+                  }
+                }
+              }
+              Err(e) => log::warn!(
+                "Failed to stash VPK-packed fonts for mod {}: {e}",
+                task.mod_id
+              ),
+            }
+          }
+        }
+      }
+
       let archive_name = file_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -497,6 +573,7 @@ impl DownloadManager {
                   ));
                 }
 
+                emit_fonts_found(&found_font_infos);
                 Self::cleanup_extracted(&extracted_dir, file_path);
                 return Ok(());
               } else {
@@ -504,6 +581,7 @@ impl DownloadManager {
                   "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
                   task.mod_id
                 );
+                emit_fonts_found(&found_font_infos);
                 return Ok(());
               }
             }
@@ -523,6 +601,7 @@ impl DownloadManager {
               )
               .ok();
 
+            emit_fonts_found(&found_font_infos);
             return Ok(());
           }
 
@@ -595,6 +674,8 @@ impl DownloadManager {
       }
     }
 
+    emit_fonts_found(&found_font_infos);
+
     log::info!(
       "Finished processing downloaded files for mod: {}",
       task.mod_id
@@ -654,5 +735,15 @@ impl DownloadManager {
         })
         .collect(),
     )
+  }
+
+  /// Debug-only: run the post-download processing pipeline on an already-copied local file.
+  #[cfg(debug_assertions)]
+  pub async fn process_local_file(
+    task: DownloadTask,
+    file_path: std::path::PathBuf,
+    app_handle: AppHandle,
+  ) -> Result<(), Error> {
+    Self::process_downloaded_files(&task, &[file_path], &app_handle).await
   }
 }
