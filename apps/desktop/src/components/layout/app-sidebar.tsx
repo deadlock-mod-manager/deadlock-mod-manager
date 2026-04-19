@@ -289,9 +289,15 @@ export const AppSidebar = () => {
     "custom-maps",
     false,
   );
+  const { isEnabled: isServerBrowserEnabled } = useFeatureFlag(
+    "server-browser",
+    false,
+  );
 
   const allItems = getSidebarItems(t, developerMode).filter(
-    (item) => item.id !== "maps" || isCustomMapsEnabled,
+    (item) =>
+      (item.id !== "maps" || isCustomMapsEnabled) &&
+      (item.id !== "servers" || isServerBrowserEnabled),
   );
 
   const groupLabels: Record<GroupId, string> = {

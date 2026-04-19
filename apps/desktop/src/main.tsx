@@ -31,6 +31,14 @@ const MapsRouteGate = () => {
   return <GetMaps />;
 };
 
+const ServersRouteGate = () => {
+  const { isEnabled } = useFeatureFlag("server-browser", false);
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Servers />;
+};
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -45,7 +53,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
-              <Route element={<Servers />} path='/servers' />
+              <Route element={<ServersRouteGate />} path='/servers' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Developer />} path='/developer' />
               <Route element={<PluginEntry />} path='/plugins/:id' />

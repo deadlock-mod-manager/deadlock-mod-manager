@@ -58,4 +58,11 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     type: "boolean",
     defaultValue: false,
   },
+  {
+    name: "server-browser",
+    description: "Enable server browser feature",
+    type: "boolean",
+    defaultValue: false,
+    exposed: true,
+  },
 ];

@@ -37,6 +37,7 @@ import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -249,6 +250,10 @@ export const BottomBar = () => {
   const { status: authStatus } = useAuthStatus();
   const { status: fsStatus } = useFilesystemStatus();
   const { relays } = useRelaysHealth();
+  const { isEnabled: isServerBrowserEnabled } = useFeatureFlag(
+    "server-browser",
+    false,
+  );
 
   const downloadingMods = localMods.filter(
     (mod) => mod.status === ModStatus.Downloading,
@@ -293,7 +298,7 @@ export const BottomBar = () => {
               tooltip={t(fsCfg.key)}
             />
           )}
-          {relays.length > 0 && (
+          {isServerBrowserEnabled && relays.length > 0 && (
             <RelayStatusPopover
               align='start'
               relays={relays}

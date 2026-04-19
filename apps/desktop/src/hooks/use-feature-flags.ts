@@ -7,6 +7,8 @@ import {
 } from "@/lib/api";
 import logger from "@/lib/logger";
 
+const DEV_ALWAYS_ON_FLAGS = new Set(["custom-maps", "server-browser"]);
+
 export const useFeatureFlags = () => {
   return useQuery<FeatureFlag[]>({
     queryKey: ["feature-flags"],
@@ -25,7 +27,9 @@ export const useFeatureFlag = (
   const { data: featureFlags, ...rest } = useFeatureFlags();
 
   const flag = featureFlags?.find((flag) => flag.name === flagName);
-  const isEnabled = flag?.enabled ?? defaultValue;
+  const fromApi = flag?.enabled ?? defaultValue;
+  const isEnabled =
+    import.meta.env.DEV && DEV_ALWAYS_ON_FLAGS.has(flagName) ? true : fromApi;
 
   return {
     ...rest,
