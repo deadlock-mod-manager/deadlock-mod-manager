@@ -3,6 +3,7 @@ import { featureFlagDefinitions } from "@/config/feature-flags";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
+import { NightlyTestersSyncProcessor } from "@/processors/nightly-testers-sync.processor";
 import { cronService } from "@/services/cron";
 import { FeatureFlagsService } from "@/services/feature-flags";
 import { PatternSyncService } from "@/services/pattern-sync";
@@ -51,6 +52,14 @@ export class BotStartupService {
       name: DocumentationSyncProcessor.name,
       pattern: DocumentationSyncProcessor.cronPattern,
       processor: DocumentationSyncProcessor.instance,
+      enabled: true,
+    });
+
+    logger.info("Defining nightly testers sync cron job");
+    await cronService.defineJob({
+      name: NightlyTestersSyncProcessor.name,
+      pattern: NightlyTestersSyncProcessor.cronPattern,
+      processor: NightlyTestersSyncProcessor.instance,
       enabled: true,
     });
   }

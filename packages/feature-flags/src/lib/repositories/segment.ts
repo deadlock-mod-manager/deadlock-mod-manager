@@ -26,6 +26,19 @@ export class SegmentRepository extends BaseRepository {
     }
   }
 
+  async findByName(name: string) {
+    try {
+      const result = await this.db.query.segments.findFirst({
+        where: eq(segments.name, name),
+      });
+
+      return ok(result ?? null);
+    } catch (error) {
+      this.logger.withError(error).error("Failed to find segment by name");
+      return err(mapDrizzleError(error));
+    }
+  }
+
   async findById(segmentId: string) {
     try {
       const result = await this.db.query.segments.findFirst({
@@ -76,7 +89,18 @@ export class SegmentRepository extends BaseRepository {
       const [result] = await this.db
         .insert(segmentMembers)
         .values({ segmentId, userId })
+        .onConflictDoNothing()
         .returning();
+
+      if (!result) {
+        const existing = await this.db.query.segmentMembers.findFirst({
+          where: and(
+            eq(segmentMembers.segmentId, segmentId),
+            eq(segmentMembers.userId, userId),
+          ),
+        });
+        return ok(existing!);
+      }
 
       return ok(result);
     } catch (error) {

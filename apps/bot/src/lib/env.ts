@@ -16,6 +16,9 @@ export const envSchema = z.object({
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
   SUPPORT_CHANNEL_ID: z.string().default("1431734280463188100"),
   BUG_REPORT_CHANNEL_ID: z.string().default("1418618964925480990"),
+  NIGHTLY_TESTERS_CHANNEL_ID: z.string().default("1495462339175252220"),
+  NIGHTLY_TESTER_ROLE_ID: z.string().default("1495494477555433692"),
+  DMM_GUILD_ID: z.string().default("1322369530386710568"),
   API_URL: z.string().url().default("https://api.deadlockmods.app"),
   REPORT_MODERATOR_ROLES: z
     .string()

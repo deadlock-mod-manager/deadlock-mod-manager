@@ -10,6 +10,7 @@
     "start": "bun run --preload ./src/instrument.ts ./src/index.ts",
     "test:support": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/scripts/test-support.ts",
     "test:docs-sync": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/scripts/test-documentation-sync.ts",
+    "test:nightly-testers-sync": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/scripts/test-nightly-testers-sync.ts",
     "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts"
   },
   "dependencies": {
