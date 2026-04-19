@@ -86,8 +86,8 @@ const Downloads = () => {
   const subtitle = `${activeCount} ${t("downloads.active").toLowerCase()} · ${completedCount} ${t("downloads.completed").toLowerCase()} · ${downloads.length} ${t("downloads.total").toLowerCase()}`;
 
   return (
-    <div className='flex h-full min-h-0 w-full flex-col overflow-y-auto pl-4 pr-2'>
-      <div className='mb-6 flex items-start justify-between gap-4'>
+    <div className='flex h-full min-h-0 w-full flex-col'>
+      <div className='flex shrink-0 items-start justify-between gap-4 px-4 pr-2'>
         <PageTitle subtitle={subtitle} title={t("downloads.title")} />
         <Tabs
           className='w-auto pt-4'
@@ -120,10 +120,12 @@ const Downloads = () => {
 
       <ErrorBoundary>
         {sortedDownloads.length > 0 ? (
-          <div className='space-y-3 pb-6'>
-            {sortedDownloads.map((download) => (
-              <DownloadCard download={download} key={download.id} />
-            ))}
+          <div className='min-h-0 flex-1 overflow-y-auto px-4 pr-2 pt-6'>
+            <div className='space-y-3 pb-6'>
+              {sortedDownloads.map((download) => (
+                <DownloadCard download={download} key={download.id} />
+              ))}
+            </div>
           </div>
         ) : (
           <Empty className='min-h-0 flex-1'>

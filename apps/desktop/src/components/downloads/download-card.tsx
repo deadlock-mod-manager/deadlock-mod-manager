@@ -125,9 +125,11 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
         </div>
 
         <div className='flex shrink-0 flex-col items-end gap-1 text-right'>
-          <span className='text-foreground text-sm tabular-nums'>
-            {formatSize(totalSize)}
-          </span>
+          {totalSize > 0 && (
+            <span className='text-foreground text-sm tabular-nums'>
+              {formatSize(totalSize)}
+            </span>
+          )}
           <span
             className={cn(
               "text-xs tabular-nums",
