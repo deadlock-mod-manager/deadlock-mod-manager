@@ -10,6 +10,7 @@ import type {
 import { getGameBananaFileservers } from "../api";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
+import { ModStatus } from "@/types/mods";
 import { resolveDownloadFileUrls } from "./fileserver";
 
 const logger = createLogger("download-manager");
@@ -51,6 +52,14 @@ interface DownloadFontsFoundEvent {
 interface DownloadErrorEvent {
   modId: string;
   error: string;
+}
+
+interface DownloadPausedEvent {
+  modId: string;
+}
+
+interface DownloadResumedEvent {
+  modId: string;
 }
 
 class DownloadManager {
@@ -186,6 +195,30 @@ class DownloadManager {
       },
     );
 
+    const unlistenPaused = await listen<DownloadPausedEvent>(
+      "download-paused",
+      (event) => {
+        logger
+          .withMetadata({ mod: event.payload.modId })
+          .info("Download paused");
+        usePersistedStore
+          .getState()
+          .setModStatus(event.payload.modId, ModStatus.Paused);
+      },
+    );
+
+    const unlistenResumed = await listen<DownloadResumedEvent>(
+      "download-resumed",
+      (event) => {
+        logger
+          .withMetadata({ mod: event.payload.modId })
+          .info("Download resumed");
+        usePersistedStore
+          .getState()
+          .setModStatus(event.payload.modId, ModStatus.Downloading);
+      },
+    );
+
     this.unlistenFns.push(
       unlistenStarted,
       unlistenProgress,
@@ -193,6 +226,8 @@ class DownloadManager {
       unlistenExtracting,
       unlistenFileTree,
       unlistenFontsFound,
+      unlistenPaused,
+      unlistenResumed,
       unlistenError,
     );
 
@@ -278,6 +313,26 @@ class DownloadManager {
       logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
       logger.withError(error).error("Failed to cancel download");
+      throw error;
+    }
+  }
+
+  async pauseDownload(modId: string) {
+    try {
+      await invoke("pause_download", { modId });
+      logger.withMetadata({ mod: modId }).info("Pause requested");
+    } catch (error) {
+      logger.withError(error).error("Failed to pause download");
+      throw error;
+    }
+  }
+
+  async resumeDownload(modId: string) {
+    try {
+      await invoke("resume_download", { modId });
+      logger.withMetadata({ mod: modId }).info("Resume requested");
+    } catch (error) {
+      logger.withError(error).error("Failed to resume download");
       throw error;
     }
   }

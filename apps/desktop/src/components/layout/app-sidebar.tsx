@@ -233,7 +233,11 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
     count: item.id === "my-mods" ? mods.length : undefined,
     downloads:
       item.id === "downloads"
-        ? mods.filter((mod) => mod.status === ModStatus.Downloading).length
+        ? mods.filter(
+            (mod) =>
+              mod.status === ModStatus.Downloading ||
+              mod.status === ModStatus.Paused,
+          ).length
         : undefined,
   };
 

@@ -59,6 +59,8 @@ export const ModStatusIcon = ({
   ];
   const Icon = useMemo(() => {
     switch (status) {
+      case ModStatus.Paused:
+        return Loader2;
       case ModStatus.Downloading:
       case ModStatus.Removing:
       case ModStatus.Installing:
@@ -84,7 +86,10 @@ export const ModStatusIcon = ({
       className={cn(
         "h-4 w-4",
         {
-          "animate-spin": status && loadingStatuses.includes(status),
+          "animate-spin":
+            status &&
+            loadingStatuses.includes(status) &&
+            status !== ModStatus.Paused,
         },
         className,
       )}
@@ -441,7 +446,10 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           getModProgress(remoteMod?.remoteId ?? "")?.percentage ?? 0
         }
         files={availableFiles}
-        isDownloading={localMod?.status === ModStatus.Downloading}
+        isDownloading={
+          localMod?.status === ModStatus.Downloading ||
+          localMod?.status === ModStatus.Paused
+        }
         isOpen={isDialogOpen}
         modName={localMod?.name || t("modForm.unknownMod")}
         onClose={closeDialog}

@@ -1,6 +1,10 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
-import { useMemo } from "react";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Pause, Play } from "@phosphor-icons/react";
+import { type MouseEvent, useMemo } from "react";
 import { useNavigate } from "react-router";
+import { downloadManager } from "@/lib/download/manager";
 import { usePersistedStore } from "@/lib/store";
 import { cn, formatSize, formatSpeed } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -22,6 +26,12 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
         label: "Downloading",
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary animate-pulse",
+      };
+    case ModStatus.Paused:
+      return {
+        label: "Paused",
+        pillClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+        dotClass: "bg-amber-500",
       };
     case ModStatus.Downloaded:
       return {
@@ -78,7 +88,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const { getModProgress } = usePersistedStore();
   const modProgress = getModProgress(download.remoteId);
   const isDownloading = download.status === ModStatus.Downloading;
-  const percentage = isDownloading ? (modProgress?.percentage ?? 0) : 100;
+  const isPaused = download.status === ModStatus.Paused;
+  const isInProgress = isDownloading || isPaused;
+  const percentage = isInProgress ? (modProgress?.percentage ?? 0) : 100;
   const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
   const totalSize = useMemo(() => {
     if (!download.downloads || download.downloads.length === 0) {
@@ -88,6 +100,24 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   }, [download.downloads]);
 
   const handleOpen = () => navigate(`/mods/${download.remoteId}`);
+
+  const handlePause = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    downloadManager.pauseDownload(download.remoteId).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Could not pause download: ${message}`);
+    });
+  };
+
+  const handleResume = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    downloadManager.resumeDownload(download.remoteId).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Could not resume download: ${message}`);
+    });
+  };
 
   return (
     <Card
@@ -137,7 +167,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
             )}>
             {isDownloading
               ? `${formatSpeed(speed)} · ${percentage.toFixed(1)}%`
-              : `${percentage.toFixed(0)}%`}
+              : isPaused
+                ? `Paused · ${percentage.toFixed(1)}%`
+                : `${percentage.toFixed(0)}%`}
           </span>
         </div>
       </div>
@@ -151,6 +183,41 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
           style={{ width: `${percentage}%` }}
         />
       </div>
+
+      {(isDownloading || isPaused) && (
+        <div
+          className='mt-3 flex flex-wrap gap-2'
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
+          role='presentation'>
+          {isDownloading ? (
+            <Button
+              className='h-8'
+              onClick={handlePause}
+              size='sm'
+              type='button'
+              variant='outline'>
+              <Pause aria-hidden className='mr-1 size-4' weight='bold' />
+              Pause
+            </Button>
+          ) : null}
+          {isPaused ? (
+            <Button
+              className='h-8'
+              onClick={handleResume}
+              size='sm'
+              type='button'
+              variant='outline'>
+              <Play aria-hidden className='mr-1 size-4' weight='fill' />
+              Resume
+            </Button>
+          ) : null}
+        </div>
+      )}
     </Card>
   );
 };

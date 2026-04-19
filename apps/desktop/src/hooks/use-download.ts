@@ -100,9 +100,23 @@ export const useDownload = (
     setIsDialogOpen(true);
   };
 
+  const pauseDownload = () => {
+    if (mod) {
+      void downloadManager.pauseDownload(mod.remoteId);
+    }
+  };
+
+  const resumeDownload = () => {
+    if (mod) {
+      void downloadManager.resumeDownload(mod.remoteId);
+    }
+  };
+
   return {
     download: initiateDownload,
     downloadSelectedFiles,
+    pauseDownload,
+    resumeDownload,
     closeDialog: () => setIsDialogOpen(false),
     localMod,
     isDialogOpen,

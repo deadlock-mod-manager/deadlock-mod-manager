@@ -256,7 +256,8 @@ export const BottomBar = () => {
   );
 
   const downloadingMods = localMods.filter(
-    (mod) => mod.status === ModStatus.Downloading,
+    (mod) =>
+      mod.status === ModStatus.Downloading || mod.status === ModStatus.Paused,
   ).length;
 
   const apiCfg = apiStatusConfig[apiStatus];

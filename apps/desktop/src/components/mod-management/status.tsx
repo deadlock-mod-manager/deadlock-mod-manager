@@ -9,6 +9,8 @@ const Status = ({ status }: { status: ModStatus }) => {
     switch (status) {
       case ModStatus.Downloading:
         return Loader2;
+      case ModStatus.Paused:
+        return Loader2;
       case ModStatus.Installed:
         return Check;
       case ModStatus.Error:
@@ -24,6 +26,8 @@ const Status = ({ status }: { status: ModStatus }) => {
         return "Downloaded";
       case ModStatus.Downloading:
         return "Downloading";
+      case ModStatus.Paused:
+        return "Paused";
       case ModStatus.Installed:
         return "Installed";
       case ModStatus.Error:
