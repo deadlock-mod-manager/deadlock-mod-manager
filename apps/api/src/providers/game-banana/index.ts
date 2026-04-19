@@ -327,42 +327,24 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
   ): Promise<NewMod & { isTrashed: boolean }> {
-    const isSound = source === "sound";
-    const profile = isSound
-      ? await this.getMod(mod._idRow.toString(), "Sound")
-      : await this.getMod(mod._idRow.toString(), "Mod");
+    if (source === "sound") {
+      return this.createSoundModPayload(mod);
+    }
+    return this.createRegularModPayload(mod);
+  }
+
+  private async createSoundModPayload(
+    mod: GameBananaSubmission,
+  ): Promise<NewMod & { isTrashed: boolean }> {
+    const profile = await this.getMod(mod._idRow.toString(), "Sound");
 
     if (profile._bIsTrashed === true) {
-      return {
-        remoteId: profile._idRow.toString(),
-        name: profile._sName,
-        description: "",
-        tags: [],
-        author: profile._aSubmitter._sName,
-        likes: 0,
-        hero: null,
-        downloadCount: 0,
-        remoteUrl: profile._sProfileUrl,
-        category: "",
-        downloadable: false,
-        remoteAddedAt: new Date(profile._tsDateAdded * 1000),
-        remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
-        images: [],
-        isNSFW: false,
-        isObsolete: false,
-        isTrashed: true,
-        isMap: false,
-      };
+      return this.createTrashedPayload(profile);
     }
 
     const description = profile._sText || profile._sDescription || "";
-    const isMap = isSound
-      ? false
-      : categoryFromGameBananaProfile(
-          profile as GameBanana.GameBananaModProfile,
-        ) === MAPS_CATEGORY_NAME;
 
-    const basePayload: NewMod & { isTrashed: boolean } = {
+    return {
       remoteId: profile._idRow.toString(),
       name: profile._sName,
       description,
@@ -376,30 +358,89 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       downloadable: (profile._aFiles?.length ?? 0) > 0,
       remoteAddedAt: new Date(profile._tsDateAdded * 1000),
       remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
-      images: isSound
-        ? []
-        : (
-            profile as GameBanana.GameBananaModProfile
-          )._aPreviewMedia._aImages.map(
-            (image) => `${image._sBaseUrl}/${image._sFile}`,
-          ),
+      images: [],
+      isNSFW: classifyNSFW(profile),
+      isObsolete: profile._bIsObsolete ?? false,
+      isTrashed: false,
+      isMap: false,
+      isAudio: true,
+      audioUrl: profile._aPreviewMedia._aMetadata._sAudioUrl,
+      metadata: buildMetadata({
+        description,
+        isMap: false,
+        donationMethods: profile._aSubmitter._aDonationMethods,
+      }),
+    };
+  }
+
+  private async createRegularModPayload(
+    mod: GameBananaSubmission,
+  ): Promise<NewMod & { isTrashed: boolean }> {
+    const profile = await this.getMod(mod._idRow.toString(), "Mod");
+
+    if (profile._bIsTrashed === true) {
+      return this.createTrashedPayload(profile);
+    }
+
+    const description = profile._sText || profile._sDescription || "";
+    const category = categoryFromGameBananaProfile(profile);
+    const isMap = category === MAPS_CATEGORY_NAME;
+
+    return {
+      remoteId: profile._idRow.toString(),
+      name: profile._sName,
+      description,
+      tags: parseTags(profile._aTags),
+      author: profile._aSubmitter._sName,
+      likes: profile._nLikeCount ?? 0,
+      hero: guessHero(profile._sName),
+      downloadCount: profile._nDownloadCount ?? 0,
+      remoteUrl: profile._sProfileUrl,
+      category,
+      downloadable: (profile._aFiles?.length ?? 0) > 0,
+      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
+      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      images: profile._aPreviewMedia._aImages.map(
+        (image) => `${image._sBaseUrl}/${image._sFile}`,
+      ),
       isNSFW: classifyNSFW(profile),
       isObsolete: profile._bIsObsolete ?? false,
       isTrashed: false,
       isMap,
-      isAudio: isSound,
-      audioUrl: isSound
-        ? (profile as GameBanana.GameBananaSoundProfile)._aPreviewMedia
-            ._aMetadata._sAudioUrl
-        : undefined,
+      isAudio: false,
       metadata: buildMetadata({
         description,
         isMap,
         donationMethods: profile._aSubmitter._aDonationMethods,
       }),
     };
+  }
 
-    return basePayload;
+  private createTrashedPayload(
+    profile:
+      | GameBanana.GameBananaModProfile
+      | GameBanana.GameBananaSoundProfile,
+  ): NewMod & { isTrashed: boolean } {
+    return {
+      remoteId: profile._idRow.toString(),
+      name: profile._sName,
+      description: "",
+      tags: [],
+      author: profile._aSubmitter._sName,
+      likes: 0,
+      hero: null,
+      downloadCount: 0,
+      remoteUrl: profile._sProfileUrl,
+      category: "",
+      downloadable: false,
+      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
+      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      images: [],
+      isNSFW: false,
+      isObsolete: false,
+      isTrashed: true,
+      isMap: false,
+    };
   }
 
   async createMod(

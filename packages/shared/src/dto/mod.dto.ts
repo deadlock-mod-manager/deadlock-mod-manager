@@ -44,5 +44,5 @@ export const modDownloadOverridesToDto = (
   }));
 };
 
-export type ModDto = ReturnType<typeof toModDto>;
+export type ModDto = Omit<ReturnType<typeof toModDto>, "isTrashed">;
 export type ModDownloadDto = ReturnType<typeof toModDownloadDto>;
