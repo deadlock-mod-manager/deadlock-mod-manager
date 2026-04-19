@@ -74,7 +74,6 @@ import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { getCustomSettings } from "@/lib/api";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
@@ -345,7 +344,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
-  const { isEnabled: showPlugins } = useFeatureFlag("show-plugins", true);
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
@@ -450,13 +448,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 label={t("settings.network")}
                 value='network'
               />
-              {showPlugins && (
-                <SettingsNavItem
-                  icon={PlugIcon}
-                  label={t("settings.plugin")}
-                  value='plugin'
-                />
-              )}
+              <SettingsNavItem
+                icon={PlugIcon}
+                label={t("settings.plugin")}
+                value='plugin'
+              />
             </SettingsNavGroup>
 
             <SettingsNavGroup label='Advanced'>
@@ -512,15 +508,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Suspense>
           </TabsContent>
 
-          {showPlugins && (
-            <TabsContent className='mt-0 space-y-4' value='plugin'>
-              <Section
-                description={t("settings.pluginDescription")}
-                title={t("settings.plugin")}>
-                <PluginList />
-              </Section>
-            </TabsContent>
-          )}
+          <TabsContent className='mt-0 space-y-4' value='plugin'>
+            <Section
+              description={t("settings.pluginDescription")}
+              title={t("settings.plugin")}>
+              <PluginList />
+            </Section>
+          </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='game'>
             <Section

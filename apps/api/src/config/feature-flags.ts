@@ -23,12 +23,6 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     defaultValue: false,
   },
   {
-    name: "show-plugins",
-    description: "Show plugins feature in the application",
-    type: "boolean",
-    defaultValue: false,
-  },
-  {
     name: "plugin-themes",
     description: "Enable themes plugin functionality",
     type: "boolean",
