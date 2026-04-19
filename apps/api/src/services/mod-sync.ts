@@ -73,9 +73,10 @@ export class ModSyncService {
       wide?.merge({
         modCreated: !!result.mod,
         filesChanged: result.filesChanged,
+        handledAsTrashed: result.handledAsTrashed === true,
       });
 
-      if (!result.mod) {
+      if (!result.mod && !result.handledAsTrashed) {
         return {
           success: false,
           message: `Failed to synchronize mod ${remoteId}`,
@@ -88,7 +89,10 @@ export class ModSyncService {
 
       return {
         success: true,
-        message: `Mod ${remoteId} synchronized successfully`,
+        message:
+          result.handledAsTrashed === true
+            ? `Mod ${remoteId} is trashed on GameBanana and was hidden from the catalog`
+            : `Mod ${remoteId} synchronized successfully`,
       };
     } catch (error) {
       logger.withError(error).error("Error during single mod synchronization");

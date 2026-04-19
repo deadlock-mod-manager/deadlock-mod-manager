@@ -1,4 +1,4 @@
-import { ProviderError, ValidationError } from "@deadlock-mods/common";
+import { ProviderError } from "@deadlock-mods/common";
 import {
   db,
   type Mod,
@@ -326,152 +326,90 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<NewMod> {
-    if (source === "featured") {
-      const featuredSubmission = mod as GameBanana.GameBananaSubmission;
-      const submission = await this.getMod(
-        featuredSubmission._idRow.toString(),
-        "Mod",
-      );
-      const description = submission._sText || submission._sDescription || "";
-      const isMap =
-        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
-      return {
-        remoteId: featuredSubmission._idRow.toString(),
-        name: featuredSubmission._sName,
-        description,
-        tags: parseTags(submission._aTags),
-        author: featuredSubmission._aSubmitter._sName,
-        likes: featuredSubmission._nLikeCount ?? 0,
-        hero: guessHero(featuredSubmission._sName),
-        downloadCount: submission._nDownloadCount ?? 0,
-        remoteUrl: featuredSubmission._sProfileUrl,
-        category: categoryFromGameBananaProfile(submission),
-        downloadable: featuredSubmission._bHasFiles,
-        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
-        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
-        images: submission._aPreviewMedia._aImages.map(
-          (image) => `${image._sBaseUrl}/${image._sFile}`,
-        ),
-        isNSFW: classifyNSFW(submission),
-        isObsolete: submission._bIsObsolete ?? false,
-        isMap,
-        metadata: buildMetadata({
-          description,
-          isMap,
-          donationMethods: submission._aSubmitter._aDonationMethods,
-        }),
-      };
-    }
+  ): Promise<NewMod & { isTrashed: boolean }> {
+    const isSound = source === "sound";
+    const profile = isSound
+      ? await this.getMod(mod._idRow.toString(), "Sound")
+      : await this.getMod(mod._idRow.toString(), "Mod");
 
-    if (source === "top") {
-      const topSubmission = mod as GameBanana.GameBananaTopSubmission;
-      const submission = await this.getMod(
-        topSubmission._idRow.toString(),
-        "Mod",
-      );
-      const description = submission._sText || submission._sDescription || "";
-      const isMap =
-        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
+    if (profile._bIsTrashed === true) {
       return {
-        remoteId: topSubmission._idRow.toString(),
-        name: topSubmission._sName,
-        description,
-        tags: parseTags(submission._aTags),
-        author: topSubmission._aSubmitter._sName,
-        likes: topSubmission._nLikeCount,
-        hero: guessHero(topSubmission._sName),
-        downloadCount: submission._nDownloadCount,
-        remoteUrl: topSubmission._sProfileUrl,
-        category: categoryFromGameBananaProfile(submission),
-        downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
-        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
-        images: submission._aPreviewMedia._aImages.map(
-          (image) => `${image._sBaseUrl}/${image._sFile}`,
-        ),
-        isNSFW: classifyNSFW(submission),
-        isObsolete: submission._bIsObsolete ?? false,
-        isMap,
-        metadata: buildMetadata({
-          description,
-          isMap,
-          donationMethods: submission._aSubmitter._aDonationMethods,
-        }),
-      };
-    }
-
-    if (source === "all") {
-      const submission = await this.getMod(mod._idRow.toString(), "Mod");
-      const description = submission._sText || submission._sDescription || "";
-      const isMap =
-        categoryFromGameBananaProfile(submission) === MAPS_CATEGORY_NAME;
-      return {
-        remoteId: submission._idRow.toString(),
-        name: submission._sName,
-        description,
-        tags: parseTags(submission._aTags),
-        author: submission._aSubmitter._sName,
-        likes: submission._nLikeCount,
-        hero: guessHero(submission._sName),
-        downloadCount: submission._nDownloadCount,
-        remoteUrl: submission._sProfileUrl,
-        category: categoryFromGameBananaProfile(submission),
-        downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
-        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
-        images: submission._aPreviewMedia._aImages.map(
-          (image) => `${image._sBaseUrl}/${image._sFile}`,
-        ),
-        isNSFW: classifyNSFW(submission),
-        isObsolete: submission._bIsObsolete ?? false,
-        isMap,
-        metadata: buildMetadata({
-          description,
-          isMap,
-          donationMethods: submission._aSubmitter._aDonationMethods,
-        }),
-      };
-    }
-
-    if (source === "sound") {
-      const submission = await this.getMod(mod._idRow.toString(), "Sound");
-      const description = submission._sText || submission._sDescription || "";
-      return {
-        remoteId: submission._idRow.toString(),
-        name: submission._sName,
-        description,
-        tags: parseTags(submission._aTags),
-        author: submission._aSubmitter._sName,
-        likes: submission._nLikeCount,
-        hero: guessHero(submission._sName),
-        downloadCount: submission._nDownloadCount,
-        remoteUrl: submission._sProfileUrl,
-        category: categoryFromGameBananaProfile(submission),
-        downloadable: (submission?._aFiles?.length ?? 0) > 0,
-        remoteAddedAt: new Date(submission._tsDateAdded * 1000),
-        remoteUpdatedAt: new Date(submission._tsDateModified * 1000),
+        remoteId: profile._idRow.toString(),
+        name: profile._sName,
+        description: "",
+        tags: [],
+        author: profile._aSubmitter._sName,
+        likes: 0,
+        hero: null,
+        downloadCount: 0,
+        remoteUrl: profile._sProfileUrl,
+        category: "",
+        downloadable: false,
+        remoteAddedAt: new Date(profile._tsDateAdded * 1000),
+        remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
         images: [],
-        isAudio: true,
-        audioUrl: submission._aPreviewMedia._aMetadata._sAudioUrl,
-        isNSFW: classifyNSFW(submission),
-        isObsolete: submission._bIsObsolete ?? false,
+        isNSFW: false,
+        isObsolete: false,
+        isTrashed: true,
         isMap: false,
-        metadata: buildMetadata({
-          description,
-          isMap: false,
-          donationMethods: submission._aSubmitter._aDonationMethods,
-        }),
       };
     }
 
-    throw new ValidationError(`Invalid source: ${source}`);
+    const description = profile._sText || profile._sDescription || "";
+    const isMap = isSound
+      ? false
+      : categoryFromGameBananaProfile(
+          profile as GameBanana.GameBananaModProfile,
+        ) === MAPS_CATEGORY_NAME;
+
+    const basePayload: NewMod & { isTrashed: boolean } = {
+      remoteId: profile._idRow.toString(),
+      name: profile._sName,
+      description,
+      tags: parseTags(profile._aTags),
+      author: profile._aSubmitter._sName,
+      likes: profile._nLikeCount ?? 0,
+      hero: guessHero(profile._sName),
+      downloadCount: profile._nDownloadCount ?? 0,
+      remoteUrl: profile._sProfileUrl,
+      category: categoryFromGameBananaProfile(profile),
+      downloadable: (profile._aFiles?.length ?? 0) > 0,
+      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
+      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      images: isSound
+        ? []
+        : (
+            profile as GameBanana.GameBananaModProfile
+          )._aPreviewMedia._aImages.map(
+            (image) => `${image._sBaseUrl}/${image._sFile}`,
+          ),
+      isNSFW: classifyNSFW(profile),
+      isObsolete: profile._bIsObsolete ?? false,
+      isTrashed: false,
+      isMap,
+      isAudio: isSound,
+      audioUrl: isSound
+        ? (profile as GameBanana.GameBananaSoundProfile)._aPreviewMedia
+            ._aMetadata._sAudioUrl
+        : undefined,
+      metadata: buildMetadata({
+        description,
+        isMap,
+        donationMethods: profile._aSubmitter._aDonationMethods,
+      }),
+    };
+
+    return basePayload;
   }
 
   async createMod(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<{ mod: Mod | undefined; filesChanged: boolean }> {
+  ): Promise<{
+    mod: Mod | undefined;
+    filesChanged: boolean;
+    handledAsTrashed?: boolean;
+  }> {
     this.logger
       .withMetadata({
         modId: mod._idRow.toString(),
@@ -480,6 +418,32 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       .debug("Creating/updating mod");
     try {
       const payload = await this.createModPayload(mod, source);
+
+      if (payload.isTrashed) {
+        const { remoteId } = payload;
+        const exists = await modRepository.existsByRemoteId(remoteId);
+        if (!exists) {
+          this.logger
+            .withMetadata({ modId: remoteId, source })
+            .info("Skipping trashed GameBanana mod not in database");
+          return {
+            mod: undefined,
+            filesChanged: false,
+            handledAsTrashed: true,
+          };
+        }
+        await modRepository.markAsTrashed(remoteId);
+        await cache.del(`mod:${remoteId}`);
+        await cache.del("mods:listing");
+        this.logger
+          .withMetadata({ modId: remoteId, source })
+          .info("Marked GameBanana mod as trashed");
+        return {
+          mod: undefined,
+          filesChanged: false,
+          handledAsTrashed: true,
+        };
+      }
 
       const dbMod = await modRepository.upsertByRemoteId(payload);
 

@@ -11,7 +11,7 @@ export class ModRepository {
     return await this.db
       .select()
       .from(mods)
-      .where(eq(mods.isBlacklisted, false))
+      .where(and(eq(mods.isBlacklisted, false), eq(mods.isTrashed, false)))
       .orderBy(desc(mods.remoteUpdatedAt));
   }
 
@@ -28,7 +28,13 @@ export class ModRepository {
     const result = await this.db
       .select()
       .from(mods)
-      .where(and(eq(mods.remoteId, remoteId), eq(mods.isBlacklisted, false)))
+      .where(
+        and(
+          eq(mods.remoteId, remoteId),
+          eq(mods.isBlacklisted, false),
+          eq(mods.isTrashed, false),
+        ),
+      )
       .limit(1);
     return result.length > 0 ? result[0] : null;
   }
@@ -52,7 +58,11 @@ export class ModRepository {
       .select()
       .from(mods)
       .where(
-        and(inArray(mods.remoteId, remoteIds), eq(mods.isBlacklisted, false)),
+        and(
+          inArray(mods.remoteId, remoteIds),
+          eq(mods.isBlacklisted, false),
+          eq(mods.isTrashed, false),
+        ),
       )
       .orderBy(desc(mods.remoteUpdatedAt));
   }
@@ -94,6 +104,7 @@ export class ModRepository {
       blacklistReason: _blacklistReason,
       blacklistedAt: _blacklistedAt,
       blacklistedBy: _blacklistedBy,
+      isTrashed: _isTrashed,
       overrides: _overrides,
       metadata,
       ...updateableFields
@@ -175,6 +186,36 @@ export class ModRepository {
         blacklistReason: null,
         blacklistedAt: null,
         blacklistedBy: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(mods.remoteId, remoteId))
+      .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", remoteId);
+    }
+    return result[0];
+  }
+
+  async markAsTrashed(remoteId: string): Promise<Mod> {
+    const result = await this.db
+      .update(mods)
+      .set({
+        isTrashed: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(mods.remoteId, remoteId))
+      .returning();
+    if (result.length === 0) {
+      throw new EntityNotFoundError("mod", remoteId);
+    }
+    return result[0];
+  }
+
+  async unmarkAsTrashed(remoteId: string): Promise<Mod> {
+    const result = await this.db
+      .update(mods)
+      .set({
+        isTrashed: false,
         updatedAt: new Date(),
       })
       .where(eq(mods.remoteId, remoteId))

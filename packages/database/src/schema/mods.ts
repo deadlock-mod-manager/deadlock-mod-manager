@@ -53,6 +53,7 @@ export const mods = pgTable(
     downloadCount: integer("download_count").notNull().default(0),
     isNSFW: boolean("is_nsfw").notNull().default(false),
     isObsolete: boolean("is_obsolete").default(false),
+    isTrashed: boolean("is_trashed").notNull().default(false),
     isBlacklisted: boolean("is_blacklisted").notNull().default(false),
     blacklistReason: text("blacklist_reason"),
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
