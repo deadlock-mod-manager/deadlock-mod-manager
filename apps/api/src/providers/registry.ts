@@ -20,7 +20,11 @@ export abstract class Provider<T> {
   abstract createMod(
     mod: T,
     source: string,
-  ): Promise<{ mod: Mod | undefined; filesChanged: boolean }>;
+  ): Promise<{
+    mod: Mod | undefined;
+    filesChanged: boolean;
+    handledAsTrashed?: boolean;
+  }>;
   abstract getModDownload<D>(remoteId: string): Promise<D>;
 }
 

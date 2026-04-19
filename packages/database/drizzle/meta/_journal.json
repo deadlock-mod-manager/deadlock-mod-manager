@@ -351,6 +351,13 @@
       "when": 1775504692715,
       "tag": "0049_nostalgic_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1776618124163,
+      "tag": "0050_elite_yellowjacket",
+      "breakpoints": true
     }
   ]
 }
