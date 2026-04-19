@@ -124,7 +124,21 @@
       "passwordPrompt": "",
       "passwordPlaceholder": "",
       "openExternal": "",
-      "unknown": ""
+      "unknown": "",
+      "keepMyMods": ""
+    },
+    "staging": {
+      "creatingFolder": "",
+      "installing": "",
+      "installingNamed": "",
+      "awaitingFileSelection": "",
+      "awaitingCustomConfirm": "",
+      "customConfirmTitle": "",
+      "customConfirmDescription": "",
+      "customConfirm": "",
+      "customSkip": "",
+      "downloadingCustom": "",
+      "applying": ""
     },
     "requirementRow": {
       "customProvider": "",
