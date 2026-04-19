@@ -1,4 +1,4 @@
-mod downloader;
+pub mod downloader;
 
 use crate::errors::Error;
 use downloader::{DownloadProgress as FileProgress, download_file};

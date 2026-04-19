@@ -8,6 +8,10 @@ import { createModsSlice, type ModsState } from "./slices/mods";
 import { createNetworkSlice, type NetworkState } from "./slices/network";
 import { createProfilesSlice, type ProfilesState } from "./slices/profiles";
 import { createScrollSlice, type ScrollState } from "./slices/scroll";
+import {
+  createServerProfilesSlice,
+  type ServerProfilesState,
+} from "./slices/server-profiles";
 import { createSettingsSlice, type SettingsState } from "./slices/settings";
 import { createUISlice, type UIState } from "./slices/ui";
 import storage from "./storage";
@@ -25,6 +29,7 @@ const MigrationV10StateSchema = z.object({
 
 export type State = ModsState &
   ProfilesState &
+  ServerProfilesState &
   GameState &
   SettingsState &
   NetworkState &
@@ -37,6 +42,7 @@ export const usePersistedStore = create<State>()(
     (...a) => ({
       ...createModsSlice(...a),
       ...createProfilesSlice(...a),
+      ...createServerProfilesSlice(...a),
       ...createGameSlice(...a),
       ...createSettingsSlice(...a),
       ...createNetworkSlice(...a),

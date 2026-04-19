@@ -11,13 +11,13 @@ import { usePersistedStore } from "@/lib/store";
 
 interface RequirementRowProps {
   requirement: ResolvedRequirementStatus;
-  installing: boolean;
-  onInstall: (req: ResolvedRequirementStatus) => void;
+  installing?: boolean;
+  onInstall?: (req: ResolvedRequirementStatus) => void;
 }
 
 const RequirementRow = ({
   requirement,
-  installing,
+  installing = false,
   onInstall,
 }: RequirementRowProps) => {
   const { t } = useTranslation();
@@ -81,7 +81,8 @@ const RequirementRow = ({
       </div>
       {statusBadge}
 
-      {requirement.resolved &&
+      {onInstall &&
+        requirement.resolved &&
         !requirement.isEnabled &&
         !requirement.isDownloading && (
           <Button

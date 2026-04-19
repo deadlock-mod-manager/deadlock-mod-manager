@@ -823,20 +823,33 @@ impl GameConfigManager {
     self.game_setup
   }
 
-  /// Generate modded search paths with a custom profile folder
-  fn generate_modded_search_paths(profile_folder: Option<String>) -> String {
-    let addons_path = if let Some(folder) = profile_folder {
-      format!("citadel/addons/{}", folder)
+  /// Each entry produces one `Game citadel/addons[/<folder>]` line, in order.
+  /// `None` (and empty input) falls back to the root `addons` directory.
+  fn generate_modded_search_paths_multi(folders: &[Option<String>]) -> String {
+    let resolved: Vec<String> = if folders.is_empty() {
+      vec!["citadel/addons".to_string()]
     } else {
-      "citadel/addons".to_string()
+      folders
+        .iter()
+        .map(|f| match f {
+          Some(name) if !name.is_empty() => format!("citadel/addons/{}", name),
+          _ => "citadel/addons".to_string(),
+        })
+        .collect()
     };
+
+    let game_lines = resolved
+      .iter()
+      .map(|p| format!("            Game                {}", p))
+      .collect::<Vec<_>>()
+      .join("\n");
 
     let search_paths = format!(
       r#"
 		SearchPaths
         {{  
             Game_Language       citadel_*LANGUAGE*
-            Game                {}
+{}
             Mod                 citadel
             Write               citadel          
             Game                citadel
@@ -844,19 +857,66 @@ impl GameConfigManager {
             Write               core
             Game                core        
         }}"#,
-      addons_path
+      game_lines
     );
 
     Self::ensure_game_language_search_path(&search_paths)
   }
 
-  /// Update the mod path in gameinfo.gi for profile switching
+  /// `citadel/addons[/...]` paths inside the marker block, in source order.
+  /// Returns an empty vec when the markers are absent.
+  pub fn marker_addons_paths(&self, game_path: &Path) -> Result<Vec<String>, Error> {
+    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+
+    if !gameinfo_path.exists() {
+      return Ok(Vec::new());
+    }
+
+    let content = fs::read_to_string(&gameinfo_path)?;
+
+    let Some(start) = content.find(MOD_MANAGER_MARKER_START) else {
+      return Ok(Vec::new());
+    };
+    let block_start = start + MOD_MANAGER_MARKER_START.len();
+    if block_start > content.len() {
+      return Ok(Vec::new());
+    }
+    let Some(end_rel) = content[block_start..].find(MOD_MANAGER_MARKER_END) else {
+      return Ok(Vec::new());
+    };
+    let block = &content[block_start..block_start + end_rel];
+
+    let mut paths = Vec::new();
+    for line in block.lines() {
+      let trimmed = line.trim();
+      let Some(rest) = trimmed.strip_prefix("Game") else {
+        continue;
+      };
+      let value = rest.trim();
+      if value.starts_with("citadel/addons") {
+        paths.push(value.to_string());
+      }
+    }
+    Ok(paths)
+  }
+
+  /// Single-folder convenience wrapper around `update_mod_path_multi`.
   pub fn update_mod_path(
     &mut self,
     game_path: &Path,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
-    log::info!("Updating mod path for profile folder: {profile_folder:?}");
+    self.update_mod_path_multi(game_path, &[profile_folder])
+  }
+
+  /// Update gameinfo.gi with one or more `Game citadel/addons[/...]` entries.
+  /// The first folder is highest-precedence (engine reads it first).
+  pub fn update_mod_path_multi(
+    &mut self,
+    game_path: &Path,
+    folders: &[Option<String>],
+  ) -> Result<(), Error> {
+    log::info!("Updating mod path for folders: {folders:?}");
 
     if !self.game_setup {
       log::info!("Game not setup yet, setting up for mods...");
@@ -912,8 +972,7 @@ impl GameConfigManager {
         ));
       };
 
-    // Generate the replacement content with the new path
-    let modded_search_paths = Self::generate_modded_search_paths(profile_folder.clone());
+    let modded_search_paths = Self::generate_modded_search_paths_multi(folders);
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
 
@@ -956,7 +1015,7 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Successfully updated mod path to profile: {profile_folder:?}");
+    log::info!("Successfully updated mod path with folders: {folders:?}");
     Ok(())
   }
 
@@ -985,5 +1044,243 @@ impl GameConfigManager {
 impl Default for GameConfigManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use tempfile::TempDir;
+
+  fn setup_game_dir() -> (TempDir, std::path::PathBuf) {
+    let dir = TempDir::new().expect("tempdir");
+    let game_path = dir.path().to_path_buf();
+    let citadel = game_path.join("game").join("citadel");
+    std::fs::create_dir_all(&citadel).expect("create citadel dir");
+    (dir, game_path)
+  }
+
+  fn write_gameinfo(game_path: &Path, body: &str) {
+    let path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    std::fs::write(path, body).expect("write gameinfo");
+  }
+
+  #[test]
+  fn generate_modded_search_paths_multi_empty_falls_back_to_root() {
+    let out = GameConfigManager::generate_modded_search_paths_multi(&[]);
+    assert!(out.contains("Game                citadel/addons\n"));
+  }
+
+  #[test]
+  fn generate_modded_search_paths_multi_single_none_uses_root() {
+    let out = GameConfigManager::generate_modded_search_paths_multi(&[None]);
+    assert!(out.contains("Game                citadel/addons\n"));
+    assert!(!out.contains("citadel/addons/"));
+  }
+
+  #[test]
+  fn generate_modded_search_paths_multi_single_some_uses_subfolder() {
+    let out =
+      GameConfigManager::generate_modded_search_paths_multi(&[Some("profile_default".to_string())]);
+    assert!(out.contains("Game                citadel/addons/profile_default\n"));
+  }
+
+  #[test]
+  fn generate_modded_search_paths_multi_two_folders_preserve_order() {
+    let out = GameConfigManager::generate_modded_search_paths_multi(&[
+      Some("server_abc".to_string()),
+      Some("profile_default".to_string()),
+    ]);
+    let server_idx = out
+      .find("citadel/addons/server_abc")
+      .expect("server line present");
+    let profile_idx = out
+      .find("citadel/addons/profile_default")
+      .expect("profile line present");
+    assert!(
+      server_idx < profile_idx,
+      "server folder must precede profile folder for engine precedence"
+    );
+  }
+
+  #[test]
+  fn generate_modded_search_paths_multi_empty_string_treated_as_root() {
+    let out = GameConfigManager::generate_modded_search_paths_multi(&[Some(String::new())]);
+    assert!(out.contains("Game                citadel/addons\n"));
+  }
+
+  #[test]
+  fn marker_addons_paths_returns_empty_when_no_file() {
+    let (_dir, game_path) = setup_game_dir();
+    // Don't create gameinfo.gi at all.
+    let mgr = GameConfigManager::new();
+    let result = mgr.marker_addons_paths(&game_path).expect("ok");
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn marker_addons_paths_returns_empty_without_markers() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, "no markers here\nGame citadel/addons\n");
+    let mgr = GameConfigManager::new();
+    let result = mgr.marker_addons_paths(&game_path).expect("ok");
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn marker_addons_paths_parses_single_addon_entry() {
+    let (_dir, game_path) = setup_game_dir();
+    let body = format!(
+      "{start}\n  Game  citadel/addons/profile_default\n  Mod  citadel\n{end}\n",
+      start = MOD_MANAGER_MARKER_START,
+      end = MOD_MANAGER_MARKER_END,
+    );
+    write_gameinfo(&game_path, &body);
+    let mgr = GameConfigManager::new();
+    let result = mgr.marker_addons_paths(&game_path).expect("ok");
+    assert_eq!(result, vec!["citadel/addons/profile_default".to_string()]);
+  }
+
+  #[test]
+  fn marker_addons_paths_parses_multiple_entries_in_order() {
+    let (_dir, game_path) = setup_game_dir();
+    let body = format!(
+      "{start}\n  Game  citadel/addons/server_xyz\n  Game  citadel/addons/profile_default\n  Mod  citadel\n{end}\n",
+      start = MOD_MANAGER_MARKER_START,
+      end = MOD_MANAGER_MARKER_END,
+    );
+    write_gameinfo(&game_path, &body);
+    let mgr = GameConfigManager::new();
+    let result = mgr.marker_addons_paths(&game_path).expect("ok");
+    assert_eq!(
+      result,
+      vec![
+        "citadel/addons/server_xyz".to_string(),
+        "citadel/addons/profile_default".to_string(),
+      ]
+    );
+  }
+
+  #[test]
+  fn marker_addons_paths_ignores_non_addons_game_lines() {
+    let (_dir, game_path) = setup_game_dir();
+    let body = format!(
+      "{start}\n  Game  citadel\n  Game  citadel/addons/server_xyz\n{end}\n",
+      start = MOD_MANAGER_MARKER_START,
+      end = MOD_MANAGER_MARKER_END,
+    );
+    write_gameinfo(&game_path, &body);
+    let mgr = GameConfigManager::new();
+    let result = mgr.marker_addons_paths(&game_path).expect("ok");
+    assert_eq!(result, vec!["citadel/addons/server_xyz".to_string()]);
+  }
+
+  /// Build a minimally valid gameinfo.gi with the mod-manager marker block
+  /// containing a stale `server_xxx` Game entry. Used by the integration-style
+  /// tests that exercise `update_mod_path_multi` end-to-end without needing
+  /// the full Tauri MANAGER plumbing.
+  fn fixture_gameinfo_with_server_entry() -> String {
+    format!(
+      r#"
+"GameInfo"
+{{
+  game        "Deadlock"
+  title       "Deadlock"
+  FileSystem
+  {{
+    SearchPaths
+    {{
+      Game        citadel
+    }}
+{start}
+
+    SearchPaths
+    {{
+      Game_Language       citadel_*LANGUAGE*
+      Game                citadel/addons/server_stale
+      Game                citadel/addons/profile_default
+      Mod                 citadel
+      Write               citadel
+      Game                citadel
+      Mod                 core
+      Write               core
+      Game                core
+    }}
+{end}
+  }}
+}}
+"#,
+      start = MOD_MANAGER_MARKER_START,
+      end = MOD_MANAGER_MARKER_END,
+    )
+  }
+
+  #[test]
+  fn update_mod_path_multi_replaces_stale_server_with_profile() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true; // skip setup_game_for_mods (which expects vanilla layout)
+
+    mgr
+      .update_mod_path(&game_path, Some("profile_default".to_string()))
+      .expect("update should succeed");
+
+    let result = mgr.marker_addons_paths(&game_path).expect("read markers");
+    assert_eq!(
+      result,
+      vec!["citadel/addons/profile_default".to_string()],
+      "stale server_ entry must be gone after update"
+    );
+  }
+
+  #[test]
+  fn update_mod_path_multi_with_layered_server_then_profile() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true;
+
+    mgr
+      .update_mod_path_multi(
+        &game_path,
+        &[
+          Some("server_new".to_string()),
+          Some("profile_default".to_string()),
+        ],
+      )
+      .expect("update should succeed");
+
+    let result = mgr.marker_addons_paths(&game_path).expect("read markers");
+    assert_eq!(
+      result,
+      vec![
+        "citadel/addons/server_new".to_string(),
+        "citadel/addons/profile_default".to_string(),
+      ],
+      "layered server folder should precede profile folder"
+    );
+  }
+
+  #[test]
+  fn update_mod_path_multi_root_falls_back_when_none() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true;
+
+    mgr
+      .update_mod_path(&game_path, None)
+      .expect("update should succeed");
+
+    let result = mgr.marker_addons_paths(&game_path).expect("read markers");
+    assert_eq!(
+      result,
+      vec!["citadel/addons".to_string()],
+      "None profile must produce a single root addons line"
+    );
   }
 }

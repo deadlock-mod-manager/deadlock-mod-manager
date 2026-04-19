@@ -66,13 +66,11 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
         if let Ok(entries) = std::fs::read_dir(&dir) {
           for entry in entries.filter_map(|e| e.ok()) {
             let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-              if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with(&prefix) {
+            if path.extension().and_then(|e| e.to_str()) == Some("vpk")
+              && let Some(name) = path.file_name().and_then(|n| n.to_str())
+                && name.starts_with(&prefix) {
                   vpk_files.push(path);
                 }
-              }
-            }
           }
         }
       }
@@ -179,13 +177,11 @@ pub async fn detect_mod_heroes_batch(
               if let Ok(entries) = std::fs::read_dir(&dir) {
                 for entry in entries.filter_map(|e| e.ok()) {
                   let path = entry.path();
-                  if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                      if name.starts_with(&prefix) {
+                  if path.extension().and_then(|e| e.to_str()) == Some("vpk")
+                    && let Some(name) = path.file_name().and_then(|n| n.to_str())
+                      && name.starts_with(&prefix) {
                         vpk_files.push(path);
                       }
-                    }
-                  }
                 }
               }
             }

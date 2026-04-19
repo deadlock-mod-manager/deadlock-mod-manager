@@ -25,7 +25,24 @@ pub async fn download_file<F>(
 where
   F: Fn(DownloadProgress) + Send + 'static,
 {
-  log::info!("Starting download from {url} to {target_path:?}");
+  download_file_with_limit(url, target_path, on_progress, cancel_token, None).await
+}
+
+/// Download a file with an optional maximum byte size. When `max_bytes` is
+/// `Some`, the download is aborted (and the partial file deleted) as soon as
+/// the response body exceeds the limit, including the case where the server
+/// advertises a too-large `Content-Length` upfront.
+pub async fn download_file_with_limit<F>(
+  url: &str,
+  target_path: &Path,
+  on_progress: F,
+  cancel_token: CancellationToken,
+  max_bytes: Option<u64>,
+) -> Result<(), Error>
+where
+  F: Fn(DownloadProgress) + Send + 'static,
+{
+  log::info!("Starting download from {url} to {target_path:?} (max_bytes={max_bytes:?})");
 
   let client = crate::proxy::build_http_client(|b| {
     b.connect_timeout(std::time::Duration::from_secs(30))
@@ -48,6 +65,14 @@ where
   let total_size = response.content_length().unwrap_or(0);
   log::info!("Download size: {total_size} bytes");
 
+  if let Some(limit) = max_bytes
+    && total_size > limit
+  {
+    return Err(Error::Network(format!(
+      "Refusing to download {total_size} bytes (limit {limit})"
+    )));
+  }
+
   if let Some(parent) = target_path.parent() {
     tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
   }
@@ -64,17 +89,30 @@ where
   while let Some(chunk) = stream.next().await {
     if cancel_token.is_cancelled() {
       log::info!("Download cancelled");
+      drop(file);
+      let _ = tokio::fs::remove_file(target_path).await;
       return Err(Error::DownloadCancelled);
     }
 
     let chunk = chunk.map_err(|e| Error::Network(format!("Failed to read chunk: {e}")))?;
 
+    downloaded += chunk.len() as u64;
+
+    if let Some(limit) = max_bytes
+      && downloaded > limit
+    {
+      log::warn!("Download exceeded size limit ({downloaded} > {limit}), aborting");
+      drop(file);
+      let _ = tokio::fs::remove_file(target_path).await;
+      return Err(Error::Network(format!(
+        "Download exceeded size limit of {limit} bytes"
+      )));
+    }
+
     file
       .write_all(&chunk)
       .await
       .map_err(|e| Error::FileWriteFailed(format!("Failed to write to file: {e}")))?;
-
-    downloaded += chunk.len() as u64;
 
     let now = Instant::now();
     let elapsed_since_last = now.duration_since(last_progress_time).as_millis();

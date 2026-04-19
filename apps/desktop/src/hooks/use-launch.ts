@@ -20,6 +20,7 @@ export const useLaunch = () => {
     setModStatus,
     setModEnabledInCurrentProfile,
   } = usePersistedStore();
+  const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const launchVanillaNoArgs =
@@ -91,6 +92,22 @@ export const useLaunch = () => {
       const profileFolder = vanilla
         ? null
         : (activeProfile?.folderName ?? null);
+
+      // Restore the active profile in gameinfo.gi in case the previous run
+      // staged a server folder. No-op when no stale server entries exist.
+      try {
+        const reverted = await invoke<boolean>(
+          "cleanup_stale_server_gameinfo",
+          { activeProfileFolder: profileFolder },
+        );
+        if (reverted) {
+          clearLastJoin();
+        }
+      } catch (cleanupError) {
+        logger
+          .withError(cleanupError)
+          .warn("Stale server gameinfo cleanup failed; launching anyway");
+      }
 
       stopHeroDetection();
 

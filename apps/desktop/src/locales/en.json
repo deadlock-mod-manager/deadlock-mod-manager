@@ -124,7 +124,21 @@
       "passwordPrompt": "This server requires a password",
       "passwordPlaceholder": "Server password",
       "openExternal": "Opening Deadlock...",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "keepMyMods": "Keep my installed mods enabled (layer server mods on top of your active profile)"
+    },
+    "staging": {
+      "creatingFolder": "Preparing server addons folder...",
+      "installing": "Installing required mods...",
+      "installingNamed": "Installing {{name}}...",
+      "awaitingFileSelection": "Waiting for file selection...",
+      "awaitingCustomConfirm": "Waiting for confirmation to download custom mods...",
+      "customConfirmTitle": "This server wants to download custom-provider mods",
+      "customConfirmDescription": "These files come from third-party URLs (not GameBanana). Review the sources before allowing the download.",
+      "customConfirm": "Allow downloads",
+      "customSkip": "Skip custom mods",
+      "downloadingCustom": "Downloading custom-provider mods...",
+      "applying": "Applying server mods to gameinfo.gi..."
     },
     "requirementRow": {
       "customProvider": "Custom",
