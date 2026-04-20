@@ -323,13 +323,12 @@ impl DownloadManager {
       }
     }
 
-    {
-      let mut active = active_downloads.lock().await;
-      active.remove(&mod_id);
-    }
-
     if !errors.is_empty() {
       let error_message = errors.join("; ");
+      {
+        let mut active = active_downloads.lock().await;
+        active.remove(&mod_id);
+      }
       log::error!("Download failed for mod {mod_id}: {error_message}");
 
       app_handle
@@ -350,11 +349,26 @@ impl DownloadManager {
       downloaded_files.len()
     );
 
+    {
+      let mut active = active_downloads.lock().await;
+      if let Some(download) = active.get_mut(&mod_id) {
+        download.status = "processing".to_string();
+        download.progress = 100.0;
+        download.speed = 0.0;
+      }
+    }
+
     // Spawn extraction as a detached task so it doesn't block subsequent downloads
     let task_path = task.target_dir.to_string_lossy().to_string();
+    let active_downloads_for_processing = Arc::clone(&active_downloads);
     tokio::spawn(async move {
       if let Err(e) = Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await {
         log::error!("Failed to process downloaded files for mod {mod_id}: {e}");
+
+        {
+          let mut active = active_downloads_for_processing.lock().await;
+          active.remove(&mod_id);
+        }
 
         app_handle
           .emit(
@@ -367,6 +381,11 @@ impl DownloadManager {
           .ok();
 
         return;
+      }
+
+      {
+        let mut active = active_downloads_for_processing.lock().await;
+        active.remove(&mod_id);
       }
 
       app_handle

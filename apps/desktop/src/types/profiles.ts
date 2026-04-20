@@ -1,3 +1,4 @@
+import type { SharedProfile } from "@deadlock-mods/shared";
 import type { LocalMod } from "@/types/mods";
 
 export type ProfileId = string & { readonly __brand: unique symbol };
@@ -6,6 +7,12 @@ export interface ModProfileEntry {
   remoteId: string;
   enabled: boolean;
   lastModified: Date;
+}
+
+export interface ProfileImportMetadata {
+  sourceProfileId?: string;
+  sharedProfile: SharedProfile;
+  importedAt: string;
 }
 
 export interface ModProfile {
@@ -18,6 +25,7 @@ export interface ModProfile {
   isDefault: boolean;
   folderName: string | null;
   mods: LocalMod[];
+  importMetadata?: ProfileImportMetadata;
 }
 
 export interface ProfileSwitchResult {

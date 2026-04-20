@@ -455,8 +455,6 @@ impl ModManager {
     let mut sorted_data = mod_order_data;
     sorted_data.sort_by_key(|(_, _, order)| *order);
 
-    sorted_data.retain(|(remote_id, _, _)| self.mod_repository.get_mod(remote_id).is_some());
-
     // Log the sorted data
     log::info!("Sorted order:");
     for (i, (remote_id, vpks, order)) in sorted_data.iter().enumerate() {

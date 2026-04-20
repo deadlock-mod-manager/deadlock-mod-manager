@@ -49,10 +49,15 @@ export const ProfileImportDialog = () => {
     mutationFn: ({
       profile,
       availableMods,
+      sourceProfileId,
     }: {
       profile: SharedProfile;
       availableMods: ModDto[];
-    }) => createProfileFromImport(profile, availableMods),
+      sourceProfileId?: string;
+    }) =>
+      createProfileFromImport(profile, availableMods, {
+        sourceProfileId,
+      }),
     onSuccess: () => {
       handleCancel();
     },
@@ -62,7 +67,6 @@ export const ProfileImportDialog = () => {
     ? getOrderedSharedProfileMods(importedProfile)
     : [];
 
-  // Fetch mod details for each mod in the imported profile
   const modQueries = useQueries({
     queries: orderedImportedMods.map((mod) => ({
       queryKey: ["mod", mod.remoteId],
@@ -76,11 +80,14 @@ export const ProfileImportDialog = () => {
     .filter(Boolean) as ModDto[];
 
   const onSubmit = async (values: ProfileImportFormData) => {
-    if (!values.profileId?.trim()) {
+    const profileId = values.profileId?.trim();
+
+    if (!profileId) {
       toast.error(t("profiles.profileIdRequired"));
       return;
     }
-    await fetchProfileMutation.mutateAsync(values.profileId);
+
+    await fetchProfileMutation.mutateAsync(profileId);
   };
 
   const handleCancel = () => {
@@ -91,9 +98,12 @@ export const ProfileImportDialog = () => {
   const handleCreateNewProfile = () => {
     if (!importedProfile) return;
 
+    const sourceProfileId = fetchProfileMutation.variables?.trim();
+
     createProfileMutation.mutate({
       profile: importedProfile,
       availableMods: modsData,
+      sourceProfileId,
     });
   };
 

@@ -41,17 +41,13 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      if (mod.installedVpks && mod.installedVpks.length > 0) {
-        await invoke("show_mod_in_game", {
-          vpkFiles: mod.installedVpks,
-          profileFolder,
-          isMap: mod.isMap ?? false,
-        });
-        toast.success(t("contextMenu.openedModInGame"));
-      } else {
-        await invoke("open_game_folder");
-        toast.success(t("contextMenu.openedGameFolder"));
-      }
+      await invoke("show_mod_in_game", {
+        vpkFiles: mod.installedVpks ?? [],
+        profileFolder,
+        isMap: mod.isMap ?? false,
+      });
+
+      toast.success(t("contextMenu.openedModInGame"));
     } catch (error) {
       console.error("Failed to open game folder:", error);
       toast.error(t("contextMenu.failedToOpenGameFolder"));

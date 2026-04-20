@@ -112,7 +112,7 @@ export const ProfilePreview = ({
         <Button
           onClick={onCreateNew}
           className='justify-start'
-          disabled={isImporting}>
+          disabled={isImporting || modsLoading}>
           <UserPlus className='h-4 w-4 mr-2' />
           {t("profiles.createNewProfile")}
         </Button>

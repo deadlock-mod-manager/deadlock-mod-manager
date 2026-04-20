@@ -2471,12 +2471,16 @@ pub async fn import_profile_batch(
   profile_folder: String,
   mods: Vec<ProfileImportMod>,
   import_type: String, // "create" | "override"
+  skip_reorder: Option<bool>,
 ) -> Result<ProfileImportResult, Error> {
+  let skip_reorder = skip_reorder.unwrap_or(false);
+
   log::info!(
-    "Starting batch profile import: {} mods, type: {}, folder: {}",
+    "Starting batch profile import: {} mods, type: {}, folder: {}, skip_reorder: {}",
     mods.len(),
     import_type,
-    profile_folder
+    profile_folder,
+    skip_reorder
   );
 
   let total_mods = mods.len();
@@ -2566,12 +2570,7 @@ pub async fn import_profile_batch(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
-          }
-          download_complete = true;
-        }
+        Ok(Some(_)) => continue,
         Ok(None) => {
           download_complete = true;
         }
@@ -2719,7 +2718,7 @@ pub async fn import_profile_batch(
   }
 
   let reorder_data = build_profile_import_reorder_data(&installed_mods);
-  if !reorder_data.is_empty() {
+  if !skip_reorder && !reorder_data.is_empty() {
     let profile_folder = if final_profile_folder.is_empty() {
       None
     } else {
@@ -2729,7 +2728,9 @@ pub async fn import_profile_batch(
     let res = {
       let mut mod_manager = MANAGER.lock().unwrap();
       mod_manager.reorder_mods_by_remote_id(reorder_data, profile_folder)
-    }; match res {
+    };
+
+    match res {
       Ok(updated_mappings) => {
         apply_profile_import_reorder_mappings(&mut installed_mods, &updated_mappings);
       }
@@ -2740,6 +2741,11 @@ pub async fn import_profile_batch(
         );
       }
     }
+  } else if skip_reorder {
+    log::info!(
+      "Skipping subset reorder for partial profile import in {}",
+      final_profile_folder
+    );
   }
 
   app_handle
@@ -3098,12 +3104,7 @@ pub async fn batch_update_mods(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
-          }
-          download_complete = true;
-        }
+        Ok(Some(_)) => continue,
         Ok(None) => {
           download_complete = true;
         }
