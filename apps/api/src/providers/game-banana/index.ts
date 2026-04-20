@@ -260,11 +260,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     D = T extends "Mod"
       ? GameBanana.GameBananaModProfile
       : GameBanana.GameBananaSoundProfile,
-  >(remoteId: string, modType: T): Promise<D> {
+  >(remoteId: string, modType: T): Promise<D | null> {
     const response = await fetch(
       `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/ProfilePage`,
     );
-    const data = (await response.json()) as D;
+    const data = (await response.json()) as D | null;
     return data;
   }
 
@@ -327,7 +327,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<NewMod & { isTrashed: boolean }> {
+  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
     if (source === "sound") {
       return this.createSoundModPayload(mod);
     }
@@ -336,8 +336,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createSoundModPayload(
     mod: GameBananaSubmission,
-  ): Promise<NewMod & { isTrashed: boolean }> {
+  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
     const profile = await this.getMod(mod._idRow.toString(), "Sound");
+
+    if (!profile) return null;
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -376,8 +378,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createRegularModPayload(
     mod: GameBananaSubmission,
-  ): Promise<NewMod & { isTrashed: boolean }> {
+  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
     const profile = await this.getMod(mod._idRow.toString(), "Mod");
+
+    if (!profile) return null;
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -401,9 +405,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       downloadable: (profile._aFiles?.length ?? 0) > 0,
       remoteAddedAt: new Date(profile._tsDateAdded * 1000),
       remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
-      images: profile._aPreviewMedia._aImages.map(
-        (image) => `${image._sBaseUrl}/${image._sFile}`,
-      ),
+      images:
+        profile._aPreviewMedia?._aImages?.map(
+          (image) => `${image._sBaseUrl}/${image._sFile}`,
+        ) ?? [],
       isNSFW: classifyNSFW(profile),
       isObsolete: profile._bIsObsolete ?? false,
       isTrashed: false,
@@ -460,6 +465,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       .debug("Creating/updating mod");
     try {
       const payload = await this.createModPayload(mod, source);
+
+      if (!payload) {
+        this.logger
+          .withMetadata({ modId: mod._idRow.toString(), source })
+          .warn("Mod profile not found on GameBanana, skipping");
+        return { mod: undefined, filesChanged: false };
+      }
 
       if (payload.isTrashed) {
         const { remoteId } = payload;
