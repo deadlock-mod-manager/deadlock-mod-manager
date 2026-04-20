@@ -100,6 +100,8 @@
     "detail": {
       "open": "Open in Deadlock",
       "copyConnect": "Copy connect code",
+      "joinServer": "Join Server",
+      "downloadAndJoin": "Download mods and Join",
       "connectCopied": "Connect code copied",
       "noGateway": "Open the Deadlock console and paste the connect code.",
       "noConnect": "This server isn't accepting direct connections right now.",
@@ -145,7 +147,7 @@
       "notInDmm": "Not in DMM",
       "ready": "Ready",
       "downloading": "Downloading {{percent}}%",
-      "missing": "Missing"
+      "missing": "Missing Mods"
     },
     "empty": {
       "title": "No servers found",

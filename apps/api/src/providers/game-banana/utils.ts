@@ -32,9 +32,13 @@ export const parseTags = (
   if (!Array.isArray(tags)) {
     return [];
   }
-  return tags.map((tag) =>
-    typeof tag === "string" ? tag : `${tag._sTitle} ${tag._sValue}`,
-  );
+  return tags
+    .map((tag) =>
+      typeof tag === "string"
+        ? tag
+        : [tag._sTitle, tag._sValue].filter(Boolean).join(" "),
+    )
+    .filter(Boolean);
 };
 
 /**

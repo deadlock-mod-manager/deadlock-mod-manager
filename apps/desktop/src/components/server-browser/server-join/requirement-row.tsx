@@ -1,5 +1,4 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Button } from "@deadlock-mods/ui/components/button";
 import {
   CheckCircleIcon,
   DownloadIcon,
@@ -11,15 +10,9 @@ import { usePersistedStore } from "@/lib/store";
 
 interface RequirementRowProps {
   requirement: ResolvedRequirementStatus;
-  installing?: boolean;
-  onInstall?: (req: ResolvedRequirementStatus) => void;
 }
 
-const RequirementRow = ({
-  requirement,
-  installing = false,
-  onInstall,
-}: RequirementRowProps) => {
+const RequirementRow = ({ requirement }: RequirementRowProps) => {
   const { t } = useTranslation();
   const progress = usePersistedStore((s) =>
     requirement.remoteId ? s.modProgress[requirement.remoteId] : undefined,
@@ -80,22 +73,6 @@ const RequirementRow = ({
         )}
       </div>
       {statusBadge}
-
-      {onInstall &&
-        requirement.resolved &&
-        !requirement.isEnabled &&
-        !requirement.isDownloading && (
-          <Button
-            disabled={installing}
-            onClick={() => onInstall(requirement)}
-            size='sm'
-            isLoading={installing}
-            variant='outline'>
-            {requirement.inLibrary
-              ? t("servers.detail.enableMod")
-              : t("servers.detail.installMod")}
-          </Button>
-        )}
     </div>
   );
 };

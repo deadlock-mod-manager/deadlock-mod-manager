@@ -14,7 +14,11 @@ import { Label } from "@deadlock-mods/ui/components/label";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { ArrowSquareOutIcon, CopyIcon } from "@phosphor-icons/react";
+import {
+  ArrowSquareOutIcon,
+  DownloadSimpleIcon,
+  SignInIcon,
+} from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
@@ -237,8 +241,14 @@ const ServerJoinDialog = ({
               </>
             ) : (
               <>
-                <CopyIcon className='h-4 w-4' weight='bold' />
-                {t("servers.detail.copyConnect")}
+                {join.allReady ? (
+                  <SignInIcon className='h-4 w-4' weight='bold' />
+                ) : (
+                  <DownloadSimpleIcon className='h-4 w-4' weight='bold' />
+                )}
+                {join.allReady
+                  ? t("servers.detail.joinServer")
+                  : t("servers.detail.downloadAndJoin")}
               </>
             )}
           </Button>
