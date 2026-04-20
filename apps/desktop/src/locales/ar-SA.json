@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح",
@@ -368,6 +368,7 @@
     "mods": "تعديلات",
     "installed": "مثبت",
     "downloading": "يتم التحميل",
+    "paused": "",
     "gameRunning": "اللعبة تعمل",
     "gameReady": "اللعبة جاهزة",
     "gameNotDetected": "اللعبة غير مكتشفة",
@@ -830,6 +831,7 @@
     "added": "تمت الإضافة إلى تعديلاتي",
     "downloading": "جاري التحميل...",
     "downloaded": "تم التحميل",
+    "paused": "",
     "failedToDownload": "فشل التحميل",
     "installing": "جاري التثبيت...",
     "installed": "مثبت",
@@ -837,7 +839,8 @@
     "removing": "جاري الإزالة...",
     "removed": "تم الإزالة",
     "failedToRemove": "فشل الإزالة",
-    "error": "حدث خطأ"
+    "error": "حدث خطأ",
+    "unknown": ""
   },
   "modButton": {
     "add": "إضافة إلى التعديلات",

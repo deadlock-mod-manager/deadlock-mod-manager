@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Modをインストールしました",
@@ -368,6 +368,7 @@
     "mods": "Mod",
     "installed": "インストール完了",
     "downloading": "ダウンロード中",
+    "paused": "",
     "gameRunning": "起動中",
     "gameReady": "準備完了",
     "gameNotDetected": "ゲームが検出されませんでした。",
@@ -830,6 +831,7 @@
     "added": "Modに追加しました",
     "downloading": "ダウンロード中...",
     "downloaded": "ダウンロード完了",
+    "paused": "",
     "failedToDownload": "ダウンロードに失敗しました",
     "installing": "インストール中...",
     "installed": "インストール完了",
@@ -837,7 +839,8 @@
     "removing": "除外中",
     "removed": "除外完了",
     "failedToRemove": "除外に失敗しました",
-    "error": "エラー"
+    "error": "エラー",
+    "unknown": ""
   },
   "modButton": {
     "add": "Modをダウンロード",

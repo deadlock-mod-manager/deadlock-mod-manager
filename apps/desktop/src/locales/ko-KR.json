@@ -41,7 +41,7 @@
       "refresh": "",
       "joinable": "",
       "joinableTooltip": "",
-      "activeFilters": "",
+      "activeFilters": "활성됨",
       "count_one": "",
       "count_other": "",
       "passwordSegment": {
@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "{{when}} 전에 업데이트됨",
     "createdAgo": "{{when}} 전에 생성됨",
     "updatedAt": "{{date}}에 업데이트됨",
-    "createdAt": "{{date}}에 생성됨"
+    "createdAt": "{{date}}에 생성됨",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "모드가 성공적으로 설치되었습니다",
@@ -368,6 +368,7 @@
     "mods": "모드",
     "installed": "설치됨",
     "downloading": "다운로드 중",
+    "paused": "",
     "gameRunning": "게임 실행",
     "gameReady": "게임 준비",
     "gameNotDetected": "게임이 감지되지 않음",
@@ -830,6 +831,7 @@
     "added": "내 모드에 추가됨",
     "downloading": "다운로드 중...",
     "downloaded": "다운로드됨",
+    "paused": "",
     "failedToDownload": "다운로드 실패",
     "installing": "설치 중...",
     "installed": "설치됨",
@@ -837,7 +839,8 @@
     "removing": "풀이...",
     "removed": "제거됨",
     "failedToRemove": "제거하지 못했습니다.",
-    "error": "오류가 발생했습니다"
+    "error": "오류가 발생했습니다",
+    "unknown": ""
   },
   "modButton": {
     "add": "모드 다운로드",

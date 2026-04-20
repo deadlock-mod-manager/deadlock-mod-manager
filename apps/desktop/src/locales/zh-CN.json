@@ -6,7 +6,7 @@
     "addMods": "添加模组",
     "downloads": "下载",
     "settings": "设置",
-    "developer": "",
+    "developer": "开发者",
     "whatsNew": "更新日志",
     "needHelp": "需要帮助？",
     "collapseMenu": "折叠菜单",
@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "模组安装成功",
@@ -368,6 +368,7 @@
     "mods": "模组",
     "installed": "已安装",
     "downloading": "下载中",
+    "paused": "",
     "gameRunning": "游戏运行中",
     "gameReady": "游戏就绪",
     "gameNotDetected": "未检测到游戏",
@@ -830,6 +831,7 @@
     "added": "已添加到我的模组",
     "downloading": "下载中...",
     "downloaded": "已下载",
+    "paused": "",
     "failedToDownload": "下载失败",
     "installing": "安装中...",
     "installed": "已安装",
@@ -837,7 +839,8 @@
     "removing": "移除中...",
     "removed": "已移除",
     "failedToRemove": "移除失败",
-    "error": "发生错误"
+    "error": "发生错误",
+    "unknown": ""
   },
   "modButton": {
     "add": "下载模组",

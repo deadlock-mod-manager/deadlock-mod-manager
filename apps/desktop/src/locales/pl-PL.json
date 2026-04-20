@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod został zainstalowany",
@@ -368,6 +368,7 @@
     "mods": "Mody",
     "installed": "zainstalowane",
     "downloading": "pobieranie",
+    "paused": "",
     "gameRunning": "Gra działa",
     "gameReady": "Gra gotowa",
     "gameNotDetected": "Nie wykryto gry",
@@ -830,6 +831,7 @@
     "added": "Dodano do moich modów",
     "downloading": "Pobieranie...",
     "downloaded": "Pobrano",
+    "paused": "",
     "failedToDownload": "Nie udało się pobrać",
     "installing": "Instalowanie...",
     "installed": "Zainstalowany",
@@ -837,7 +839,8 @@
     "removing": "Usuwanie...",
     "removed": "Usunięty",
     "failedToRemove": "Nie udało się usunąć",
-    "error": "Wystąpił błąd"
+    "error": "Wystąpił błąd",
+    "unknown": ""
   },
   "modButton": {
     "add": "Dodaj do moich modów",

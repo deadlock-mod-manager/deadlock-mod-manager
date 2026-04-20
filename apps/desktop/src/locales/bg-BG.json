@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Модът е инсталиран успешно",
@@ -368,6 +368,7 @@
     "mods": "",
     "installed": "",
     "downloading": "",
+    "paused": "",
     "gameRunning": "",
     "gameReady": "",
     "gameNotDetected": "",
@@ -830,6 +831,7 @@
     "added": "",
     "downloading": "",
     "downloaded": "",
+    "paused": "",
     "failedToDownload": "",
     "installing": "",
     "installed": "",
@@ -837,7 +839,8 @@
     "removing": "",
     "removed": "",
     "failedToRemove": "",
-    "error": ""
+    "error": "",
+    "unknown": ""
   },
   "modButton": {
     "add": "",

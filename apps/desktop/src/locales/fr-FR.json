@@ -6,13 +6,13 @@
     "addMods": "Ajouter des mods",
     "downloads": "Téléchargements",
     "settings": "Paramètres",
-    "developer": "",
+    "developer": "Développeur",
     "whatsNew": "Quoi de neuf",
     "needHelp": "Besoin d'aide ?",
     "collapseMenu": "Réduire le menu",
     "expandMenu": "",
     "about": "À propos",
-    "crosshairs": "",
+    "crosshairs": "Réticules",
     "customization": "",
     "autoexec": "",
     "maps": "",
@@ -54,7 +54,7 @@
         "na": "",
         "sa": "",
         "apac": "",
-        "oce": "",
+        "oce": "Océanie",
         "me": "",
         "other": ""
       },
@@ -62,8 +62,8 @@
         "search": "",
         "mode": "",
         "region": "",
-        "status": "",
-        "players": "",
+        "status": "Statut",
+        "players": "Joueurs",
         "preset": "",
         "open": "",
         "password": "",
@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installé avec succès",
@@ -368,6 +368,7 @@
     "mods": "",
     "installed": "installé",
     "downloading": "téléchargement",
+    "paused": "",
     "gameRunning": "Jeu en cours",
     "gameReady": "Jeu prêt",
     "gameNotDetected": "Jeu non détecté",
@@ -830,6 +831,7 @@
     "added": "Ajouté à mes mods",
     "downloading": "Téléchargement...",
     "downloaded": "Téléchargé",
+    "paused": "",
     "failedToDownload": "Échec du téléchargement",
     "installing": "Installation...",
     "installed": "Installé",
@@ -837,7 +839,8 @@
     "removing": "Suppression...",
     "removed": "Supprimé",
     "failedToRemove": "Échec de la suppression",
-    "error": "Erreur survenue"
+    "error": "Erreur survenue",
+    "unknown": ""
   },
   "modButton": {
     "add": "Ajouter à mes mods",

@@ -47,7 +47,7 @@
       "passwordSegment": {
         "allTooltip": "",
         "openTooltip": "",
-        "passwordTooltip": ""
+        "passwordTooltip": "Mostrar servidores protegidos por contraseña"
       },
       "regionGroup": {
         "eu": "",
@@ -67,7 +67,7 @@
         "preset": "",
         "open": "",
         "password": "",
-        "withPlayers": "",
+        "withPlayers": "Con jugadores",
         "joinable": "",
         "remove": ""
       }
@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -120,7 +122,7 @@
       "missingMods_other": "",
       "installAll": "",
       "enableMod": "",
-      "installMod": "",
+      "installMod": "Instalar mods",
       "passwordPrompt": "",
       "passwordPlaceholder": "",
       "openExternal": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod instalado exitosamente",
@@ -368,6 +368,7 @@
     "mods": "",
     "installed": "Instalados",
     "downloading": "Descargando",
+    "paused": "",
     "gameRunning": "Juego iniciado",
     "gameReady": "Juego preparado",
     "gameNotDetected": "No se ha detectado el juego",
@@ -830,6 +831,7 @@
     "added": "Añadido a mis mods",
     "downloading": "Descargando...",
     "downloaded": "Descargado",
+    "paused": "",
     "failedToDownload": "Error al descargar",
     "installing": "Instalando...",
     "installed": "Instalado",
@@ -837,7 +839,8 @@
     "removing": "Eliminando...",
     "removed": "Eliminado",
     "failedToRemove": "Error al eliminar",
-    "error": "Error ocurrido"
+    "error": "Error ocurrido",
+    "unknown": ""
   },
   "modButton": {
     "add": "Descargar Mod",
