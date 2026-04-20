@@ -22,6 +22,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { getErrorMessage } from "@/lib/errors";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 
 type GameInfoStatus = {
@@ -130,7 +131,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.backupCreatedSuccess"));
     } catch (error) {
-      toast.error(`Failed to create backup: ${error}`);
+      toast.error(`Failed to create backup: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
     }
@@ -147,7 +148,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.restoreSuccess"));
     } catch (error) {
-      toast.error(`Failed to restore backup: ${error}`);
+      toast.error(`Failed to restore backup: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
     }
@@ -164,7 +165,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.resetSuccess"));
     } catch (error) {
-      toast.error(`Failed to reset to vanilla: ${error}`);
+      toast.error(`Failed to reset to vanilla: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
     }
@@ -178,7 +179,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.validationPassed"));
     } catch (error) {
-      toast.error(`Validation failed: ${error}`);
+      toast.error(`Validation failed: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
     }
@@ -190,7 +191,7 @@ const GameInfoManagement = () => {
       await invoke("open_gameinfo_editor");
       toast.success(t("game.openedInEditor"));
     } catch (error) {
-      toast.error(`Failed to open editor: ${error}`);
+      toast.error(`Failed to open editor: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
     }

@@ -231,7 +231,36 @@ class DownloadManager {
       unlistenError,
     );
 
+    await this.reconcilePausedDownloads();
+
     logger.info("Download manager initialized");
+  }
+
+  private async reconcilePausedDownloads() {
+    let activeDownloads: { modId: string }[] = [];
+    try {
+      activeDownloads = (await this.getAllDownloads()) as { modId: string }[];
+    } catch (error) {
+      logger
+        .withError(error)
+        .warn("Could not fetch active downloads for reconciliation");
+      return;
+    }
+
+    const activeIds = new Set(activeDownloads.map((d) => d.modId));
+    const store = usePersistedStore.getState();
+    const stalePaused = store.localMods.filter(
+      (mod) => mod.status === ModStatus.Paused && !activeIds.has(mod.remoteId),
+    );
+
+    for (const mod of stalePaused) {
+      logger
+        .withMetadata({ mod: mod.remoteId })
+        .warn(
+          "Stale Paused status on startup (no backend entry); marking as FailedToDownload",
+        );
+      store.setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+    }
   }
 
   setFontsFoundHandler(

@@ -83,6 +83,7 @@ import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
+import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -208,7 +209,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
       setDeleting(true);
       await uninstall(mod, true);
     } catch (error) {
-      toast.error(`Failed to remove mod: ${error}`);
+      toast.error(`Failed to remove mod: ${getErrorMessage(error)}`);
     } finally {
       setDeleting(false);
     }
@@ -336,7 +337,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
       setDeleting(true);
       await uninstall(mod, true);
     } catch (error) {
-      toast.error(`Failed to remove mod: ${error}`);
+      toast.error(`Failed to remove mod: ${getErrorMessage(error)}`);
     } finally {
       setDeleting(false);
     }

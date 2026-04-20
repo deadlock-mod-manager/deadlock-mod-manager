@@ -3,8 +3,10 @@ import { Card } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Pause, Play } from "@phosphor-icons/react";
 import { type MouseEvent, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { downloadManager } from "@/lib/download/manager";
+import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
 import { cn, formatSize, formatSpeed } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -67,7 +69,10 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
 };
 
 const StatusChip = ({ status }: { status: ModStatus }) => {
+  const { t } = useTranslation();
   const variant = getStatusVariant(status);
+  const label =
+    status === ModStatus.Paused ? t("downloads.paused") : variant.label;
   return (
     <span
       className={cn(
@@ -78,12 +83,13 @@ const StatusChip = ({ status }: { status: ModStatus }) => {
         aria-hidden
         className={cn("size-1.5 rounded-full", variant.dotClass)}
       />
-      {variant.label}
+      {label}
     </span>
   );
 };
 
 const DownloadCard = ({ download }: DownloadCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getModProgress } = usePersistedStore();
   const modProgress = getModProgress(download.remoteId);
@@ -105,8 +111,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
     e.stopPropagation();
     e.preventDefault();
     downloadManager.pauseDownload(download.remoteId).catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err);
-      toast.error(`Could not pause download: ${message}`);
+      toast.error(t("downloads.pauseError", { message: getErrorMessage(err) }));
     });
   };
 
@@ -114,8 +119,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
     e.stopPropagation();
     e.preventDefault();
     downloadManager.resumeDownload(download.remoteId).catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err);
-      toast.error(`Could not resume download: ${message}`);
+      toast.error(
+        t("downloads.resumeError", { message: getErrorMessage(err) }),
+      );
     });
   };
 
@@ -168,7 +174,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
             {isDownloading
               ? `${formatSpeed(speed)} · ${percentage.toFixed(1)}%`
               : isPaused
-                ? `Paused · ${percentage.toFixed(1)}%`
+                ? `${t("downloads.paused")} · ${percentage.toFixed(1)}%`
                 : `${percentage.toFixed(0)}%`}
           </span>
         </div>
@@ -189,12 +195,8 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
           className='mt-3 flex flex-wrap gap-2'
           onClick={(e) => {
             e.stopPropagation();
-          }}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-          }}
-          role='presentation'>
-          {isDownloading ? (
+          }}>
+          {isDownloading && (
             <Button
               className='h-8'
               onClick={handlePause}
@@ -202,10 +204,10 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               type='button'
               variant='outline'>
               <Pause aria-hidden className='mr-1 size-4' weight='bold' />
-              Pause
+              {t("downloads.pause")}
             </Button>
-          ) : null}
-          {isPaused ? (
+          )}
+          {isPaused && (
             <Button
               className='h-8'
               onClick={handleResume}
@@ -213,9 +215,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               type='button'
               variant='outline'>
               <Play aria-hidden className='mr-1 size-4' weight='fill' />
-              Resume
+              {t("downloads.resume")}
             </Button>
-          ) : null}
+          )}
         </div>
       )}
     </Card>

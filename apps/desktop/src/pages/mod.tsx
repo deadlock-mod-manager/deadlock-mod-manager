@@ -32,6 +32,7 @@ import { useReportCounts } from "@/hooks/use-report-counts";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
+import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
@@ -130,7 +131,7 @@ const Mod = () => {
       setDeleting(true);
       await uninstall(localMod, true);
     } catch (error) {
-      toast.error(`Failed to remove mod: ${error}`);
+      toast.error(`Failed to remove mod: ${getErrorMessage(error)}`);
     } finally {
       setDeleting(false);
     }

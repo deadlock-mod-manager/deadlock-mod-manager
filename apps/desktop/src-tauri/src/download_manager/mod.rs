@@ -734,22 +734,21 @@ impl DownloadManager {
   }
 
   pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {
-    {
-      let mut active = self.active_downloads.lock().await;
-      let Some(entry) = active.get_mut(mod_id) else {
-        return Err(Error::InvalidInput(format!(
-          "No active download found for mod: {mod_id}"
-        )));
-      };
-      if entry.status != "downloading" {
-        return Err(Error::InvalidInput(format!(
-          "Download for mod {mod_id} is not active (status: {})",
-          entry.status
-        )));
-      }
-      entry.pause.pause();
-      entry.status = "paused".to_string();
+    let mut active = self.active_downloads.lock().await;
+    let Some(entry) = active.get_mut(mod_id) else {
+      return Err(Error::InvalidInput(format!(
+        "No active download found for mod: {mod_id}"
+      )));
+    };
+    if entry.status != "downloading" {
+      return Err(Error::InvalidInput(format!(
+        "Download for mod {mod_id} is not active (status: {})",
+        entry.status
+      )));
     }
+    entry.pause.pause();
+    entry.status = "paused".to_string();
+    // Emit while holding the lock so the event cannot race with download completion.
     self
       .app_handle
       .emit(
@@ -763,22 +762,21 @@ impl DownloadManager {
   }
 
   pub async fn resume_download(&self, mod_id: &str) -> Result<(), Error> {
-    {
-      let mut active = self.active_downloads.lock().await;
-      let Some(entry) = active.get_mut(mod_id) else {
-        return Err(Error::InvalidInput(format!(
-          "No active download found for mod: {mod_id}"
-        )));
-      };
-      if entry.status != "paused" {
-        return Err(Error::InvalidInput(format!(
-          "Download for mod {mod_id} is not paused (status: {})",
-          entry.status
-        )));
-      }
-      entry.pause.resume();
-      entry.status = "downloading".to_string();
+    let mut active = self.active_downloads.lock().await;
+    let Some(entry) = active.get_mut(mod_id) else {
+      return Err(Error::InvalidInput(format!(
+        "No active download found for mod: {mod_id}"
+      )));
+    };
+    if entry.status != "paused" {
+      return Err(Error::InvalidInput(format!(
+        "Download for mod {mod_id} is not paused (status: {})",
+        entry.status
+      )));
     }
+    entry.pause.resume();
+    entry.status = "downloading".to_string();
+    // Emit while holding the lock so the event cannot race with download completion.
     self
       .app_handle
       .emit(

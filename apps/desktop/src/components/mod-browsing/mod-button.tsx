@@ -86,10 +86,7 @@ export const ModStatusIcon = ({
       className={cn(
         "h-4 w-4",
         {
-          "animate-spin":
-            status &&
-            loadingStatuses.includes(status) &&
-            status !== ModStatus.Paused,
+          "animate-spin": status && loadingStatuses.includes(status),
         },
         className,
       )}

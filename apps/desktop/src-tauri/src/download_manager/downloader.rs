@@ -2,7 +2,6 @@ use crate::errors::Error;
 use futures::StreamExt;
 use reqwest::header::{HeaderMap, RANGE};
 use serde::{Deserialize, Serialize};
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -69,13 +68,13 @@ impl Default for PauseHandle {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct PartialMeta {
   etag: Option<String>,
+  last_modified: Option<String>,
 }
 
 fn partial_download_path(target: &Path) -> PathBuf {
-  let name = target.file_name().unwrap_or_default().to_owned();
-  let mut new_name = name;
-  new_name.push(".partial");
-  target.with_file_name(new_name)
+  let mut name = target.file_name().unwrap_or_default().to_owned();
+  name.push(".partial");
+  target.with_file_name(name)
 }
 
 fn partial_meta_path(partial: &Path) -> PathBuf {
@@ -87,17 +86,19 @@ fn partial_meta_path(partial: &Path) -> PathBuf {
 fn header_etag(headers: &HeaderMap) -> Option<String> {
   headers
     .get(reqwest::header::ETAG)
-    .or_else(|| headers.get("etag"))
+    .and_then(|v| v.to_str().ok())
+    .map(std::string::ToString::to_string)
+}
+
+fn header_last_modified(headers: &HeaderMap) -> Option<String> {
+  headers
+    .get(reqwest::header::LAST_MODIFIED)
     .and_then(|v| v.to_str().ok())
     .map(std::string::ToString::to_string)
 }
 
 fn parse_content_range_total(headers: &HeaderMap) -> Option<u64> {
-  let value = headers
-    .get(reqwest::header::CONTENT_RANGE)
-    .or_else(|| headers.get("content-range"))?
-    .to_str()
-    .ok()?;
+  let value = headers.get(reqwest::header::CONTENT_RANGE)?.to_str().ok()?;
   let (_, rest) = value.split_once('/')?;
   rest.trim().parse().ok()
 }
@@ -123,8 +124,7 @@ async fn remove_partial_pair(partial_path: &Path, meta_path: &Path) {
   let _ = tokio::fs::remove_file(meta_path).await;
 }
 
-/// Non-pausing download (still staged via `*.partial` then renamed).
-#[allow(dead_code)] // Public helper; kept for tests and future callers.
+#[allow(dead_code)]
 pub async fn download_file<F>(
   url: &str,
   target_path: &Path,
@@ -194,10 +194,12 @@ where
       .read_timeout(std::time::Duration::from_secs(60))
   })?;
 
-  let start_time = Instant::now();
-  let mut last_progress_time = Instant::now();
+  let mut chunk_retries: u32 = 0;
 
   'retry: loop {
+    let start_time = Instant::now();
+    let mut last_progress_time = Instant::now();
+
     let stored_meta = read_partial_meta(&meta_path).await.unwrap_or_default();
     let resume_from = match tokio::fs::metadata(&partial_path).await {
       Ok(m) => m.len(),
@@ -206,7 +208,7 @@ where
 
     if resume_from == 0 {
       let _ = tokio::fs::remove_file(&meta_path).await;
-    } else if stored_meta.etag.is_none() {
+    } else if stored_meta.etag.is_none() && stored_meta.last_modified.is_none() {
       log::warn!("Partial file without resume metadata; restarting download");
       remove_partial_pair(&partial_path, &meta_path).await;
       continue 'retry;
@@ -242,6 +244,7 @@ where
 
     let headers = response.headers().clone();
     let resp_etag = header_etag(&headers);
+    let resp_last_modified = header_last_modified(&headers);
 
     if resume_from > 0 {
       if status != reqwest::StatusCode::PARTIAL_CONTENT {
@@ -250,15 +253,27 @@ where
         continue 'retry;
       }
 
-      if let Some(ref stored) = stored_meta.etag
-        && resp_etag.as_ref() != Some(stored) {
+      if let Some(ref stored_etag) = stored_meta.etag
+        && resp_etag.as_ref() != Some(stored_etag)
+      {
+        // ETag changed; accept the resume only if Last-Modified still matches.
+        if resp_last_modified.is_none() || resp_last_modified != stored_meta.last_modified {
           log::warn!("ETag changed since partial download; restarting");
           remove_partial_pair(&partial_path, &meta_path).await;
           continue 'retry;
         }
+        log::info!("ETag changed but Last-Modified matches; accepting resume");
+      }
 
       if let Some(total) = parse_content_range_total(&headers) {
         total_entity_size = total_entity_size.max(total);
+        if let Some(limit) = max_bytes
+          && total > limit
+        {
+          return Err(Error::Network(format!(
+            "Refusing to download {total} bytes (limit {limit})"
+          )));
+        }
       }
     } else {
       if let Some(limit) = max_bytes {
@@ -288,6 +303,7 @@ where
         .map_err(|e| Error::FileWriteFailed(format!("Failed to create partial file: {e}")))?;
       let meta = PartialMeta {
         etag: resp_etag.clone(),
+        last_modified: resp_last_modified.clone(),
       };
       if let Err(e) = write_partial_meta(&meta_path, &meta).await {
         log::warn!("Failed to write initial resume meta: {e}");
@@ -313,7 +329,20 @@ where
       }
 
       let chunk = match stream.next().await {
-        Some(c) => c.map_err(|e| Error::Network(format!("Failed to read chunk: {e}")))?,
+        Some(Ok(c)) => c,
+        Some(Err(e)) => {
+          // Stream errors after a long pause are typically stale TCP connections.
+          // Drop the stream and re-issue the Range request using the partial file.
+          if chunk_retries < 3 {
+            chunk_retries += 1;
+            log::warn!("Chunk read error (retry {chunk_retries}/3), re-issuing Range request: {e}");
+            drop(file);
+            continue 'retry;
+          }
+          return Err(Error::Network(format!(
+            "Failed to read chunk after {chunk_retries} retries: {e}"
+          )));
+        }
         None => break,
       };
 
