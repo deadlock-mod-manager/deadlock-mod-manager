@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว",
@@ -368,6 +368,7 @@
     "mods": "ม็อด",
     "installed": "ติดตั้งแล้ว",
     "downloading": "กำลังดาวน์โหลด",
+    "paused": "",
     "gameRunning": "เกมกำลังทำงาน",
     "gameReady": "เกมพร้อมเล่น",
     "gameNotDetected": "ตรวจไม่พบเกม",
@@ -830,6 +831,7 @@
     "added": "เพิ่มไปยังม็อดของฉันแล้ว",
     "downloading": "กำลังดาวน์โหลด...",
     "downloaded": "ดาวน์โหลดแล้ว",
+    "paused": "",
     "failedToDownload": "ดาวน์โหลดไม่สำเร็จ",
     "installing": "กำลังติดตั้ง...",
     "installed": "ติดตั้งแล้ว",
@@ -837,7 +839,8 @@
     "removing": "กำลังลบ...",
     "removed": "ลบแล้ว",
     "failedToRemove": "ลบไม่สำเร็จ",
-    "error": "เกิดข้อผิดพลาด"
+    "error": "เกิดข้อผิดพลาด",
+    "unknown": ""
   },
   "modButton": {
     "add": "ดาวน์โหลดม็อด",

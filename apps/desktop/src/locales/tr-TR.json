@@ -100,6 +100,8 @@
     "detail": {
       "open": "",
       "copyConnect": "",
+      "joinServer": "",
+      "downloadAndJoin": "",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -139,13 +141,6 @@
       "customSkip": "",
       "downloadingCustom": "",
       "applying": ""
-    },
-    "requirementRow": {
-      "customProvider": "",
-      "notInDmm": "",
-      "ready": "",
-      "downloading": "",
-      "missing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -307,7 +302,12 @@
     "updatedAgo": "",
     "createdAgo": "",
     "updatedAt": "",
-    "createdAt": ""
+    "createdAt": "",
+    "pause": "",
+    "resume": "",
+    "paused": "",
+    "pauseError": "",
+    "resumeError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod başarıyla yüklendi",
@@ -368,6 +368,7 @@
     "mods": "Modlar",
     "installed": "kurulu",
     "downloading": "indiriliyor",
+    "paused": "",
     "gameRunning": "Oyun Çalışıyor",
     "gameReady": "Oyun Hazır",
     "gameNotDetected": "Oyun Algılanmadı",
@@ -830,6 +831,7 @@
     "added": "Modlarıma eklendi",
     "downloading": "İndiriliyor...",
     "downloaded": "İndirildi",
+    "paused": "",
     "failedToDownload": "İndirme başarısız",
     "installing": "Kuruluyor...",
     "installed": "Kuruldu",
@@ -837,7 +839,8 @@
     "removing": "Kaldırılıyor...",
     "removed": "Kaldırıldı",
     "failedToRemove": "Kaldırma başarısız",
-    "error": "Hata oluştu"
+    "error": "Hata oluştu",
+    "unknown": ""
   },
   "modButton": {
     "add": "Modlarıma ekle",
