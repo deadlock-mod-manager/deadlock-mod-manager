@@ -30,6 +30,7 @@ import {
   classifyNSFW,
   mapGameBananaFileserverState,
   parseTags,
+  submitterDisplayName,
 } from "./utils";
 
 const modRepository = new ModRepository(db);
@@ -349,7 +350,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       name: profile._sName,
       description,
       tags: parseTags(profile._aTags),
-      author: profile._aSubmitter._sName,
+      author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
       hero: guessHero(profile._sName),
       downloadCount: profile._nDownloadCount ?? 0,
@@ -368,7 +369,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       metadata: buildMetadata({
         description,
         isMap: false,
-        donationMethods: profile._aSubmitter._aDonationMethods,
+        donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
       }),
     };
   }
@@ -391,7 +392,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       name: profile._sName,
       description,
       tags: parseTags(profile._aTags),
-      author: profile._aSubmitter._sName,
+      author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
       hero: guessHero(profile._sName),
       downloadCount: profile._nDownloadCount ?? 0,
@@ -411,7 +412,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       metadata: buildMetadata({
         description,
         isMap,
-        donationMethods: profile._aSubmitter._aDonationMethods,
+        donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
       }),
     };
   }
@@ -426,7 +427,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       name: profile._sName,
       description: "",
       tags: [],
-      author: profile._aSubmitter._sName,
+      author: submitterDisplayName(profile),
       likes: 0,
       hero: null,
       downloadCount: 0,

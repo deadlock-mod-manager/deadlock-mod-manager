@@ -26,6 +26,12 @@ export function categoryFromGameBananaProfile(
   return profile._aCategory?._sName ?? "Other";
 }
 
+export function submitterDisplayName(
+  profile: GameBananaProfileForCategory,
+): string {
+  return profile._aSubmitter?._sName?.trim() || "Unknown";
+}
+
 export const parseTags = (
   tags: GameBanana.GameBananaSubmission["_aTags"],
 ): string[] => {
