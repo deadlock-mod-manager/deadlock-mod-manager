@@ -255,8 +255,12 @@ export const BottomBar = () => {
     false,
   );
 
-  const downloadingMods = localMods.filter(
+  const downloadingCount = localMods.filter(
     (mod) => mod.status === ModStatus.Downloading,
+  ).length;
+
+  const pausedCount = localMods.filter(
+    (mod) => mod.status === ModStatus.Paused,
   ).length;
 
   const apiCfg = apiStatusConfig[apiStatus];
@@ -266,12 +270,23 @@ export const BottomBar = () => {
   return (
     <div className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'>
       <div className='flex items-center gap-3'>
-        {downloadingMods > 0 && (
+        {downloadingCount > 0 && (
           <>
             <div className='flex items-center gap-1'>
               <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
               <span>
-                {downloadingMods} {t("common.downloading")}
+                {downloadingCount} {t("common.downloading")}
+              </span>
+            </div>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+          </>
+        )}
+        {pausedCount > 0 && (
+          <>
+            <div className='flex items-center gap-1'>
+              <DownloadSimpleIcon className='h-3 w-3 text-amber-500' />
+              <span>
+                {pausedCount} {t("common.paused")}
               </span>
             </div>
             <Separator className='mx-1 h-3' orientation='vertical' />

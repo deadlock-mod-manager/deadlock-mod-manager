@@ -32,7 +32,9 @@ export const QuickStatsStrip = () => {
   ).length;
   const downloadingCount = localMods.filter(
     (m) =>
-      m.status === ModStatus.Downloading || m.status === ModStatus.Downloaded,
+      m.status === ModStatus.Downloading ||
+      m.status === ModStatus.Paused ||
+      m.status === ModStatus.Downloaded,
   ).length;
 
   return (

@@ -1,7 +1,7 @@
 pub mod downloader;
 
 use crate::errors::Error;
-use downloader::{DownloadProgress as FileProgress, download_file};
+use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -82,6 +82,18 @@ pub struct DownloadErrorEvent {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DownloadPausedEvent {
+  pub mod_id: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadResumedEvent {
+  pub mod_id: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DownloadStatus {
   pub mod_id: String,
   pub status: String,
@@ -91,6 +103,7 @@ pub struct DownloadStatus {
 
 struct ActiveDownload {
   cancel_token: CancellationToken,
+  pause: PauseHandle,
   status: String,
   progress: f64,
   speed: f64,
@@ -170,6 +183,7 @@ impl DownloadManager {
   ) -> Result<(), Error> {
     let mod_id = task.mod_id.clone();
     let cancel_token = CancellationToken::new();
+    let pause = PauseHandle::new();
 
     {
       let mut active = active_downloads.lock().await;
@@ -177,6 +191,7 @@ impl DownloadManager {
         mod_id.clone(),
         ActiveDownload {
           cancel_token: cancel_token.clone(),
+          pause: pause.clone(),
           status: "downloading".to_string(),
           progress: 0.0,
           speed: 0.0,
@@ -210,17 +225,20 @@ impl DownloadManager {
     for (file_index, file) in task.files.iter().enumerate() {
       let target_path = task.target_dir.join(&file.name);
       let url = file.url.clone();
+      let file_size = file.size;
       let mod_id_clone = mod_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
+      let pause_clone = pause.clone();
       let active_downloads_clone = Arc::clone(&active_downloads);
       let file_sizes_clone = file_sizes.clone();
       let file_downloaded_shared = Arc::new(Mutex::new(file_downloaded.clone()));
 
       let handle = tokio::spawn(async move {
-        let result = download_file(
+        let result = download_file_resumable(
           &url,
           &target_path,
+          file_size,
           {
             let app_handle = app_handle_clone.clone();
             let mod_id = mod_id_clone.clone();
@@ -277,6 +295,8 @@ impl DownloadManager {
             }
           },
           cancel_token_clone,
+          pause_clone,
+          None,
         )
         .await;
 
@@ -703,6 +723,7 @@ impl DownloadManager {
 
     let mut active = self.active_downloads.lock().await;
     if let Some(download) = active.remove(mod_id) {
+      download.pause.resume();
       download.cancel_token.cancel();
       Ok(())
     } else {
@@ -710,6 +731,62 @@ impl DownloadManager {
         "No active download found for mod: {mod_id}"
       )))
     }
+  }
+
+  pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {
+    let mut active = self.active_downloads.lock().await;
+    let Some(entry) = active.get_mut(mod_id) else {
+      return Err(Error::InvalidInput(format!(
+        "No active download found for mod: {mod_id}"
+      )));
+    };
+    if entry.status != "downloading" {
+      return Err(Error::InvalidInput(format!(
+        "Download for mod {mod_id} is not active (status: {})",
+        entry.status
+      )));
+    }
+    entry.pause.pause();
+    entry.status = "paused".to_string();
+    // Emit while holding the lock so the event cannot race with download completion.
+    self
+      .app_handle
+      .emit(
+        "download-paused",
+        DownloadPausedEvent {
+          mod_id: mod_id.to_string(),
+        },
+      )
+      .ok();
+    Ok(())
+  }
+
+  pub async fn resume_download(&self, mod_id: &str) -> Result<(), Error> {
+    let mut active = self.active_downloads.lock().await;
+    let Some(entry) = active.get_mut(mod_id) else {
+      return Err(Error::InvalidInput(format!(
+        "No active download found for mod: {mod_id}"
+      )));
+    };
+    if entry.status != "paused" {
+      return Err(Error::InvalidInput(format!(
+        "Download for mod {mod_id} is not paused (status: {})",
+        entry.status
+      )));
+    }
+    entry.pause.resume();
+    entry.status = "downloading".to_string();
+    // Emit while holding the lock so the event cannot race with download completion.
+    self
+      .app_handle
+      .emit(
+        "download-resumed",
+        DownloadResumedEvent {
+          mod_id: mod_id.to_string(),
+        },
+      )
+      .ok();
+    Ok(())
   }
 
   pub async fn get_download_status(&self, mod_id: &str) -> Result<Option<DownloadStatus>, Error> {

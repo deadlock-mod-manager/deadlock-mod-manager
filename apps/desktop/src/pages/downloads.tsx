@@ -36,6 +36,9 @@ const getDownloadTimestamp = (
   return 0;
 };
 
+const isDownloadInProgress = (status: ModStatus) =>
+  status === ModStatus.Downloading || status === ModStatus.Paused;
+
 const Downloads = () => {
   const { t } = useTranslation();
   const downloads = usePersistedStore((state) => state.localMods);
@@ -46,23 +49,19 @@ const Downloads = () => {
       return downloads;
     }
     if (filter === "active") {
-      return downloads.filter((d) => d.status === ModStatus.Downloading);
+      return downloads.filter((d) => isDownloadInProgress(d.status));
     }
-    return downloads.filter((d) => d.status !== ModStatus.Downloading);
+    return downloads.filter((d) => !isDownloadInProgress(d.status));
   }, [downloads, filter]);
 
   const sortedDownloads = useMemo(() => {
     return [...filteredDownloads].sort((a, b) => {
-      if (
-        a.status === ModStatus.Downloading &&
-        b.status !== ModStatus.Downloading
-      ) {
+      const aActive = isDownloadInProgress(a.status);
+      const bActive = isDownloadInProgress(b.status);
+      if (aActive && !bActive) {
         return -1;
       }
-      if (
-        b.status === ModStatus.Downloading &&
-        a.status !== ModStatus.Downloading
-      ) {
+      if (bActive && !aActive) {
         return 1;
       }
 
@@ -74,12 +73,12 @@ const Downloads = () => {
   }, [filteredDownloads]);
 
   const activeCount = useMemo(
-    () => downloads.filter((d) => d.status === ModStatus.Downloading).length,
+    () => downloads.filter((d) => isDownloadInProgress(d.status)).length,
     [downloads],
   );
 
   const completedCount = useMemo(
-    () => downloads.filter((d) => d.status !== ModStatus.Downloading).length,
+    () => downloads.filter((d) => !isDownloadInProgress(d.status)).length,
     [downloads],
   );
 

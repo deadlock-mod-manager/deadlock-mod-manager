@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { StateCreator } from "zustand";
+import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import {
@@ -244,7 +245,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         .withMetadata({ profileId })
         .withError(error)
         .error("Failed to switch profile");
-      result.errors.push(`Failed to switch profile: ${error}`);
+      result.errors.push(`Failed to switch profile: ${getErrorMessage(error)}`);
     } finally {
       set({ isSwitching: false });
     }

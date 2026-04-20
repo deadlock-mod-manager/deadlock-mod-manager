@@ -300,7 +300,12 @@
     "updatedAgo": "Updated {{when}} ago",
     "createdAgo": "Created {{when}} ago",
     "updatedAt": "Updated at {{date}}",
-    "createdAt": "Created at {{date}}"
+    "createdAt": "Created at {{date}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "paused": "Paused",
+    "pauseError": "Could not pause download: {{message}}",
+    "resumeError": "Could not resume download: {{message}}"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
@@ -361,6 +366,7 @@
     "mods": "Mods",
     "installed": "installed",
     "downloading": "downloading",
+    "paused": "paused",
     "gameRunning": "Game Running",
     "gameReady": "Game Ready",
     "gameNotDetected": "Game Not Detected",
@@ -823,6 +829,7 @@
     "added": "Added to my mods",
     "downloading": "Downloading...",
     "downloaded": "Downloaded",
+    "paused": "Paused",
     "failedToDownload": "Failed to download",
     "installing": "Installing...",
     "installed": "Installed",
@@ -830,7 +837,8 @@
     "removing": "Removing...",
     "removed": "Removed",
     "failedToRemove": "Failed to remove",
-    "error": "Error occurred"
+    "error": "Error occurred",
+    "unknown": "Unknown"
   },
   "modButton": {
     "add": "Download Mod",

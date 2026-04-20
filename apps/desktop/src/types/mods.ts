@@ -15,6 +15,7 @@ export type Progress = {
 
 export enum ModStatus {
   Downloading = "downloading",
+  Paused = "paused",
   Downloaded = "downloaded",
   FailedToDownload = "failedToDownload",
   Installing = "installing",

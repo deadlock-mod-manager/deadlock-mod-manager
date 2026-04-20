@@ -100,9 +100,29 @@ export const useDownload = (
     setIsDialogOpen(true);
   };
 
+  const pauseDownload = () => {
+    if (mod) {
+      downloadManager.pauseDownload(mod.remoteId).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        toast.error(`Could not pause download: ${message}`);
+      });
+    }
+  };
+
+  const resumeDownload = () => {
+    if (mod) {
+      downloadManager.resumeDownload(mod.remoteId).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        toast.error(`Could not resume download: ${message}`);
+      });
+    }
+  };
+
   return {
     download: initiateDownload,
     downloadSelectedFiles,
+    pauseDownload,
+    resumeDownload,
     closeDialog: () => setIsDialogOpen(false),
     localMod,
     isDialogOpen,
