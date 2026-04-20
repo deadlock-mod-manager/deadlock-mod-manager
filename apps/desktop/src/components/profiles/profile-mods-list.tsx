@@ -1,4 +1,8 @@
-import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
+import {
+  getOrderedSharedProfileMods,
+  type ModDto,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import { useTranslation } from "react-i18next";
 import { ProfileFallbackModCard } from "./profile-fallback-mod-card";
 import { ProfileModCard } from "./profile-mod-card";
@@ -16,8 +20,9 @@ export const ProfileModsList = ({
   modsData,
 }: ProfileModsListProps) => {
   const { t } = useTranslation();
+  const orderedImportedMods = getOrderedSharedProfileMods(importedProfile);
 
-  if (importedProfile.payload.mods.length === 0) {
+  if (orderedImportedMods.length === 0) {
     return (
       <p className='text-center text-muted-foreground text-sm'>
         {t("profiles.noModsIncluded")}
@@ -25,12 +30,15 @@ export const ProfileModsList = ({
     );
   }
 
-  const availableMods = modsData.filter((mod) =>
-    importedProfile.payload.mods.some((m) => m.remoteId === mod.remoteId),
+  const availableModsByRemoteId = new Map(
+    modsData.map((mod) => [mod.remoteId, mod]),
   );
+  const availableMods = orderedImportedMods
+    .map((mod) => availableModsByRemoteId.get(mod.remoteId))
+    .filter((mod): mod is ModDto => mod !== undefined);
 
-  const failedMods = importedProfile.payload.mods.filter(
-    (mod) => !modsData.some((m) => m.remoteId === mod.remoteId),
+  const failedMods = orderedImportedMods.filter(
+    (mod) => !availableModsByRemoteId.has(mod.remoteId),
   );
 
   return (

@@ -36,58 +36,71 @@ export const ProfileShareDialog = () => {
   const { version } = useAbout();
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const { getActiveProfile, localMods } = usePersistedStore();
+  const { getActiveProfile, getOrderedMods, localMods } = usePersistedStore();
   const [profileId, setProfileId] = useState<string | null>(null);
 
   const activeProfile = getActiveProfile();
-  const enabledMods = Object.values(activeProfile?.enabledMods ?? {})
-    .filter((mod) => mod.enabled)
-    .map((mod) => {
-      // Find the local mod to get installation details
-      const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
+  const enabledModIds = new Set(
+    Object.values(activeProfile?.enabledMods ?? {})
+      .filter((mod) => mod.enabled)
+      .map((mod) => mod.remoteId),
+  );
+  const localModsByRemoteId = new Map(
+    localMods.map((mod) => [mod.remoteId, mod]),
+  );
 
-      const baseModData: {
-        remoteId: string;
-        fileTree?: ModFileTree;
-        selectedDownloads?: ProfileModDownload[];
-      } = {
-        remoteId: mod.remoteId,
-      };
+  const toSharedProfileMod = (remoteId: string) => {
+    const localMod = localModsByRemoteId.get(remoteId);
+    const baseModData: {
+      remoteId: string;
+      fileTree?: ModFileTree;
+      selectedDownloads?: ProfileModDownload[];
+    } = {
+      remoteId,
+    };
 
-      // Add file tree information if available (for any mod that has file tree data)
-      if (localMod?.installedFileTree) {
-        // Ensure at least one file is selected in the file tree
-        // (fix for older mods that may not have proper selection info)
-        const hasAnySelected = localMod.installedFileTree.files.some(
-          (f) => f.is_selected,
-        );
+    if (localMod?.installedFileTree) {
+      const hasAnySelected = localMod.installedFileTree.files.some(
+        (file) => file.is_selected,
+      );
 
-        baseModData.fileTree = hasAnySelected
-          ? localMod.installedFileTree
-          : {
-              ...localMod.installedFileTree,
-              files: localMod.installedFileTree.files.map((f) => ({
-                ...f,
-                is_selected: true, // Select all if none selected
-              })),
-            };
-      }
+      baseModData.fileTree = hasAnySelected
+        ? localMod.installedFileTree
+        : {
+            ...localMod.installedFileTree,
+            files: localMod.installedFileTree.files.map((file) => ({
+              ...file,
+              is_selected: true,
+            })),
+          };
+    }
 
-      // Add selected download information if available
-      if (localMod?.downloads && localMod.downloads.length > 0) {
-        const selected = localMod.selectedDownloads?.length
-          ? localMod.selectedDownloads
-          : [localMod.downloads[0]];
-        baseModData.selectedDownloads = selected.map((d) => ({
-          remoteId: mod.remoteId,
-          file: d.name,
-          url: d.url,
-          size: d.size,
-        }));
-      }
+    if (localMod?.downloads && localMod.downloads.length > 0) {
+      const selectedDownloads = localMod.selectedDownloads?.length
+        ? localMod.selectedDownloads
+        : [localMod.downloads[0]];
+      baseModData.selectedDownloads = selectedDownloads.map((download) => ({
+        remoteId,
+        file: download.name,
+        url: download.url,
+        size: download.size,
+      }));
+    }
 
-      return baseModData;
-    });
+    return baseModData;
+  };
+
+  const orderedEnabledMods = getOrderedMods()
+    .filter((mod) => enabledModIds.has(mod.remoteId))
+    .map((mod) => toSharedProfileMod(mod.remoteId));
+  const orderedEnabledModIds = new Set(
+    orderedEnabledMods.map((mod) => mod.remoteId),
+  );
+  const missingEnabledMods = [...enabledModIds]
+    .filter((remoteId) => !orderedEnabledModIds.has(remoteId))
+    .map((remoteId) => toSharedProfileMod(remoteId));
+  const sharedMods = [...orderedEnabledMods, ...missingEnabledMods];
+  const sharedLoadOrder = sharedMods.map((mod) => mod.remoteId);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (params: {
@@ -118,27 +131,17 @@ export const ProfileShareDialog = () => {
       setProfileId(data?.id ?? null);
 
       if (data?.id) {
-        analytics.trackProfileShared(data.id, enabledMods.length, "link");
+        analytics.trackProfileShared(data.id, sharedMods.length, "link");
       }
     },
   });
 
   const onSubmit = () => {
-    logger
-      .withMetadata({
-        enabledModsCount: enabledMods.length,
-        enabledMods: enabledMods.map((mod) => ({
-          remoteId: mod.remoteId,
-          hasFileTree: !!mod.fileTree,
-          hasSelectedDownloads: !!mod.selectedDownloads?.length,
-        })),
-      })
-      .info("Creating profile with enhanced mod data");
-
     const validatedProfile = profileSchema.safeParse({
-      version: "1",
+      version: "2",
       payload: {
-        mods: enabledMods,
+        mods: sharedMods,
+        loadOrder: sharedLoadOrder,
       },
     });
 
@@ -146,22 +149,14 @@ export const ProfileShareDialog = () => {
       logger
         .withMetadata({
           profile: validatedProfile.error,
-          enabledMods,
+          enabledMods: sharedMods,
         })
         .error("Invalid profile");
       toast.error(t("profiles.shareError"));
       return;
     }
 
-    logger
-      .withMetadata({
-        validatedProfile: validatedProfile.data,
-        originalEnabledMods: enabledMods,
-        validatedMods: validatedProfile.data.payload.mods,
-      })
-      .info("Profile validation successful");
-
-    if (!validatedProfile || !hardwareId || !version) {
+    if (!hardwareId || !version) {
       logger.error("Hardware ID or version is missing");
       toast.error(t("profiles.noHardwareIdOrVersion"));
       return;
@@ -181,8 +176,9 @@ export const ProfileShareDialog = () => {
 
     logger
       .withMetadata({
-        payload: JSON.stringify(payload, null, 2),
-        profileMods: validatedProfile.data.payload.mods,
+        profileName: payload.name,
+        profileVersion: validatedProfile.data.version,
+        modsCount: validatedProfile.data.payload.mods.length,
       })
       .info("Sharing profile");
 

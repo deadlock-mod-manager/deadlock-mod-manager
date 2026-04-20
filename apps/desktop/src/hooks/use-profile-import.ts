@@ -1,4 +1,9 @@
-import type { ModDto, ProfileModDownload } from "@deadlock-mods/shared";
+import {
+  getOrderedSharedProfileMods,
+  type ModDto,
+  type ProfileModDownload,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -9,13 +14,12 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type {
   LocalMod,
-  ModFileTree,
   ProfileImportMod,
   ProfileImportProgressEvent,
   ProfileImportResult,
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
-import type { ModProfile, ProfileId } from "@/types/profiles";
+import type { ModProfile } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
 
 export interface ImportProgress {
@@ -25,13 +29,6 @@ export interface ImportProgress {
   totalMods: number;
   isDownloading: boolean;
   isInstalling: boolean;
-}
-
-interface ImportedMod {
-  remoteId: string;
-  fileTree?: ModFileTree;
-  selectedDownload?: ProfileModDownload;
-  selectedDownloads?: ProfileModDownload[];
 }
 
 const resolveSelectedFileNames = (
@@ -44,6 +41,42 @@ const resolveSelectedFileNames = (
       ? [selectedDownload.file]
       : null;
 
+type OrderedImportedMod = ReturnType<
+  typeof getOrderedSharedProfileMods
+>[number];
+
+interface AvailableImportedMod {
+  importedMod: OrderedImportedMod;
+  modData: ModDto;
+}
+
+const resolveImportContext = (
+  importedProfile: SharedProfile,
+  modsData: ModDto[],
+) => {
+  const importedMods = getOrderedSharedProfileMods(importedProfile);
+  const installOrderByRemoteId = new Map(
+    importedMods.map((mod, index) => [mod.remoteId, index]),
+  );
+  const modsDataByRemoteId = new Map(
+    modsData.map((mod) => [mod.remoteId, mod]),
+  );
+  const availableImportedMods = importedMods
+    .map((importedMod) => {
+      const modData = modsDataByRemoteId.get(importedMod.remoteId);
+      return modData ? { importedMod, modData } : null;
+    })
+    .filter((entry): entry is AvailableImportedMod => entry !== null);
+
+  return {
+    importedMods,
+    availableImportedMods,
+    installOrderByRemoteId,
+    modsDataByRemoteId,
+    unavailableModsCount: importedMods.length - availableImportedMods.length,
+  };
+};
+
 export const useProfileImport = () => {
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(
     null,
@@ -54,7 +87,7 @@ export const useProfileImport = () => {
     setModEnabledInProfile,
     setModEnabledInCurrentProfile,
   } = usePersistedStore();
-  const { addLocalMod, setInstalledVpks } = usePersistedStore();
+  const { addLocalMod, setInstalledVpks, setModOrder } = usePersistedStore();
 
   // Listen to profile import progress events
   useEffect(() => {
@@ -79,96 +112,98 @@ export const useProfileImport = () => {
   }, []);
 
   const createProfileFromImport = async (
-    importedMods: ImportedMod[],
+    importedProfile: SharedProfile,
     modsData: ModDto[],
   ): Promise<void> => {
+    const {
+      importedMods,
+      availableImportedMods,
+      installOrderByRemoteId,
+      modsDataByRemoteId,
+      unavailableModsCount,
+    } = resolveImportContext(importedProfile, modsData);
+
     logger
       .withMetadata({
         importedModsCount: importedMods.length,
-        modsDataCount: modsData.length,
+        availableModsCount: availableImportedMods.length,
+        unavailableModsCount,
       })
       .info("Starting profile import");
 
-    // Initialize progress tracking
-    setImportProgress({
-      currentStep: t("profiles.creatingProfile"),
-      completedMods: 0,
-      totalMods: importedMods.length,
-      isDownloading: false,
-      isInstalling: false,
-    });
-
-    // Create new profile in store without creating folder (batch import will create it)
-    const profileId = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newProfileId = createProfileId(profileId) as ProfileId;
-
-    const newProfile: ModProfile = {
-      id: newProfileId,
-      name: `Imported Profile - ${new Date().toLocaleDateString()}`,
-      description: "Profile imported from shared profile ID",
-      createdAt: new Date(),
-      lastUsed: new Date(),
-      enabledMods: {},
-      isDefault: false,
-      folderName: null, // Will be set after batch import creates the folder
-      mods: [],
-    };
-
-    usePersistedStore.setState((state) => ({
-      profiles: {
-        ...state.profiles,
-        [newProfileId]: newProfile,
-      },
-    }));
-
-    // Prepare mods for batch import
-    const profileImportMods: ProfileImportMod[] = await Promise.all(
-      importedMods.map(async (importedMod) => {
-        const modData = modsData.find(
-          (m) => m.remoteId === importedMod.remoteId,
-        );
-
-        if (!modData) {
-          throw new Error(`Mod ${importedMod.remoteId} not available`);
-        }
-
-        const downloadsResponse = await getModDownloads(modData.remoteId);
-        const downloadFiles = downloadsResponse.downloads || [];
-
-        const selectedFileNames = resolveSelectedFileNames(
-          importedMod.selectedDownloads,
-          importedMod.selectedDownload,
-        );
-        const selectedFiles =
-          selectedFileNames && downloadFiles.length > 0
-            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
-            : downloadFiles;
-
-        return {
-          modId: modData.remoteId,
-          modName: modData.name,
-          downloadFiles: selectedFiles.map((d) => ({
-            url: d.url,
-            name: d.name,
-            size: d.size || 0,
-          })),
-          fileTree: importedMod.fileTree
-            ? {
-                ...importedMod.fileTree,
-                files: importedMod.fileTree.files.some((f) => f.is_selected)
-                  ? importedMod.fileTree.files
-                  : importedMod.fileTree.files.map((f) => ({
-                      ...f,
-                      is_selected: true,
-                    })),
-              }
-            : undefined,
-          isMap: modData.isMap,
-        };
-      }),
-    );
-
     try {
+      if (availableImportedMods.length === 0) {
+        throw new Error("No available mods to import");
+      }
+
+      setImportProgress({
+        currentStep: t("profiles.creatingProfile"),
+        completedMods: 0,
+        totalMods: availableImportedMods.length,
+        isDownloading: false,
+        isInstalling: false,
+      });
+
+      const profileId = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newProfileId = createProfileId(profileId);
+
+      const newProfile: ModProfile = {
+        id: newProfileId,
+        name: `Imported Profile - ${new Date().toLocaleDateString()}`,
+        description: "Profile imported from shared profile ID",
+        createdAt: new Date(),
+        lastUsed: new Date(),
+        enabledMods: {},
+        isDefault: false,
+        folderName: null,
+        mods: [],
+      };
+
+      usePersistedStore.setState((state) => ({
+        profiles: {
+          ...state.profiles,
+          [newProfileId]: newProfile,
+        },
+      }));
+
+      const profileImportMods: ProfileImportMod[] = await Promise.all(
+        availableImportedMods.map(async ({ importedMod, modData }) => {
+          const downloadsResponse = await getModDownloads(modData.remoteId);
+          const downloadFiles = downloadsResponse.downloads || [];
+
+          const selectedFileNames = resolveSelectedFileNames(
+            importedMod.selectedDownloads,
+            importedMod.selectedDownload,
+          );
+          const selectedFiles =
+            selectedFileNames && downloadFiles.length > 0
+              ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
+              : downloadFiles;
+
+          return {
+            modId: modData.remoteId,
+            modName: modData.name,
+            downloadFiles: selectedFiles.map((d) => ({
+              url: d.url,
+              name: d.name,
+              size: d.size || 0,
+            })),
+            fileTree: importedMod.fileTree
+              ? {
+                  ...importedMod.fileTree,
+                  files: importedMod.fileTree.files.some((f) => f.is_selected)
+                    ? importedMod.fileTree.files
+                    : importedMod.fileTree.files.map((f) => ({
+                        ...f,
+                        is_selected: true,
+                      })),
+                }
+              : undefined,
+            isMap: modData.isMap,
+          };
+        }),
+      );
+
       // Call Rust batch import command - it will create the profile folder
       const result = (await invoke("import_profile_batch", {
         profileName: `Imported Profile - ${new Date().toLocaleDateString()}`,
@@ -183,12 +218,15 @@ export const useProfileImport = () => {
         .getState()
         .getProfile(newProfileId);
       if (currentProfile && result.profileFolder) {
-        const profiles = usePersistedStore.getState().profiles;
-        profiles[newProfileId] = {
-          ...currentProfile,
-          folderName: result.profileFolder,
-        };
-        usePersistedStore.setState({ profiles });
+        usePersistedStore.setState((state) => ({
+          profiles: {
+            ...state.profiles,
+            [newProfileId]: {
+              ...currentProfile,
+              folderName: result.profileFolder,
+            },
+          },
+        }));
       }
 
       // Enable mods in the profile and add them to state
@@ -196,10 +234,7 @@ export const useProfileImport = () => {
       const newMods: LocalMod[] = [];
 
       for (const installedModInfo of result.installedMods) {
-        // Find the mod data from the original modsData
-        const modData = modsData.find(
-          (m) => m.remoteId === installedModInfo.modId,
-        );
+        const modData = modsDataByRemoteId.get(installedModInfo.modId);
 
         if (modData) {
           // Check if mod already exists in localMods
@@ -213,6 +248,9 @@ export const useProfileImport = () => {
                 installedVpks: installedModInfo.installedVpks,
                 installedFileTree: installedModInfo.fileTree,
                 status: ModStatus.Installed,
+                installOrder: installOrderByRemoteId.get(
+                  installedModInfo.modId,
+                ),
               }
             : {
                 ...modData,
@@ -220,6 +258,9 @@ export const useProfileImport = () => {
                 installedVpks: installedModInfo.installedVpks,
                 installedFileTree: installedModInfo.fileTree,
                 downloadedAt: new Date(),
+                installOrder: installOrderByRemoteId.get(
+                  installedModInfo.modId,
+                ),
               };
 
           if (!existingMod) {
@@ -229,6 +270,7 @@ export const useProfileImport = () => {
               installedVpks: installedModInfo.installedVpks,
               installedFileTree: installedModInfo.fileTree,
               downloadedAt: new Date(),
+              installOrder: installOrderByRemoteId.get(installedModInfo.modId),
             });
           } else {
             // Update existing mod with installed VPKs
@@ -248,14 +290,22 @@ export const useProfileImport = () => {
 
       // Add mods to the new profile's mods array
       if (newMods.length > 0) {
+        const orderedNewMods = [...newMods].sort(
+          (left, right) =>
+            (left.installOrder ?? Number.MAX_SAFE_INTEGER) -
+            (right.installOrder ?? Number.MAX_SAFE_INTEGER),
+        );
         const profile = usePersistedStore.getState().getProfile(newProfileId);
         if (profile) {
-          const profiles = usePersistedStore.getState().profiles;
-          profiles[newProfileId] = {
-            ...profile,
-            mods: [...profile.mods, ...newMods],
-          };
-          usePersistedStore.setState({ profiles });
+          usePersistedStore.setState((state) => ({
+            profiles: {
+              ...state.profiles,
+              [newProfileId]: {
+                ...profile,
+                mods: orderedNewMods,
+              },
+            },
+          }));
         }
       }
 
@@ -263,11 +313,12 @@ export const useProfileImport = () => {
       setImportProgress(null);
 
       // Show results
-      if (result.failed.length > 0) {
+      if (result.failed.length > 0 || unavailableModsCount > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
             succeeded: result.succeeded.length,
+            unavailable: unavailableModsCount,
           })
           .warn("Some mods failed to import");
         toast.warning(
@@ -288,7 +339,7 @@ export const useProfileImport = () => {
   };
 
   const addToCurrentProfile = async (
-    importedMods: ImportedMod[],
+    importedProfile: SharedProfile,
     modsData: ModDto[],
   ): Promise<void> => {
     const activeProfile = getActiveProfile();
@@ -296,67 +347,74 @@ export const useProfileImport = () => {
       throw new Error("No active profile found");
     }
 
-    // Initialize progress tracking
-    setImportProgress({
-      currentStep: t("profiles.updatingProfile"),
-      completedMods: 0,
-      totalMods: importedMods.length,
-      isDownloading: false,
-      isInstalling: false,
-    });
+    const {
+      importedMods,
+      availableImportedMods,
+      installOrderByRemoteId,
+      modsDataByRemoteId,
+      unavailableModsCount,
+    } = resolveImportContext(importedProfile, modsData);
 
     logger
-      .withMetadata({ profileId: activeProfile.id })
+      .withMetadata({
+        profileId: activeProfile.id,
+        importedModsCount: importedMods.length,
+        availableModsCount: availableImportedMods.length,
+        unavailableModsCount,
+      })
       .info("Overriding current profile with imported mods");
 
-    // Prepare mods for batch import
-    const profileImportMods: ProfileImportMod[] = await Promise.all(
-      importedMods.map(async (importedMod) => {
-        const modData = modsData.find(
-          (m) => m.remoteId === importedMod.remoteId,
-        );
-
-        if (!modData) {
-          throw new Error(`Mod ${importedMod.remoteId} not available`);
-        }
-
-        const downloadsResponse = await getModDownloads(modData.remoteId);
-        const downloadFiles = downloadsResponse.downloads || [];
-
-        const selectedFileNames = resolveSelectedFileNames(
-          importedMod.selectedDownloads,
-          importedMod.selectedDownload,
-        );
-        const selectedFiles =
-          selectedFileNames && downloadFiles.length > 0
-            ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
-            : downloadFiles;
-
-        return {
-          modId: modData.remoteId,
-          modName: modData.name,
-          downloadFiles: selectedFiles.map((d) => ({
-            url: d.url,
-            name: d.name,
-            size: d.size || 0,
-          })),
-          fileTree: importedMod.fileTree
-            ? {
-                ...importedMod.fileTree,
-                files: importedMod.fileTree.files.some((f) => f.is_selected)
-                  ? importedMod.fileTree.files
-                  : importedMod.fileTree.files.map((f) => ({
-                      ...f,
-                      is_selected: true,
-                    })),
-              }
-            : undefined,
-          isMap: modData.isMap,
-        };
-      }),
-    );
-
     try {
+      if (availableImportedMods.length === 0) {
+        throw new Error("No available mods to import");
+      }
+
+      setImportProgress({
+        currentStep: t("profiles.updatingProfile"),
+        completedMods: 0,
+        totalMods: availableImportedMods.length,
+        isDownloading: false,
+        isInstalling: false,
+      });
+
+      const profileImportMods: ProfileImportMod[] = await Promise.all(
+        availableImportedMods.map(async ({ importedMod, modData }) => {
+          const downloadsResponse = await getModDownloads(modData.remoteId);
+          const downloadFiles = downloadsResponse.downloads || [];
+
+          const selectedFileNames = resolveSelectedFileNames(
+            importedMod.selectedDownloads,
+            importedMod.selectedDownload,
+          );
+          const selectedFiles =
+            selectedFileNames && downloadFiles.length > 0
+              ? downloadFiles.filter((d) => selectedFileNames.includes(d.name))
+              : downloadFiles;
+
+          return {
+            modId: modData.remoteId,
+            modName: modData.name,
+            downloadFiles: selectedFiles.map((d) => ({
+              url: d.url,
+              name: d.name,
+              size: d.size || 0,
+            })),
+            fileTree: importedMod.fileTree
+              ? {
+                  ...importedMod.fileTree,
+                  files: importedMod.fileTree.files.some((f) => f.is_selected)
+                    ? importedMod.fileTree.files
+                    : importedMod.fileTree.files.map((f) => ({
+                        ...f,
+                        is_selected: true,
+                      })),
+                }
+              : undefined,
+            isMap: modData.isMap,
+          };
+        }),
+      );
+
       // Call Rust batch import command
       const result = (await invoke("import_profile_batch", {
         profileName: activeProfile.name,
@@ -368,10 +426,7 @@ export const useProfileImport = () => {
 
       // Enable mods in the current profile and add them to state
       for (const installedModInfo of result.installedMods) {
-        // Find the mod data from the original modsData
-        const modData = modsData.find(
-          (m) => m.remoteId === installedModInfo.modId,
-        );
+        const modData = modsDataByRemoteId.get(installedModInfo.modId);
 
         if (modData) {
           // Check if mod already exists in localMods
@@ -386,6 +441,7 @@ export const useProfileImport = () => {
               installedVpks: installedModInfo.installedVpks,
               installedFileTree: installedModInfo.fileTree,
               downloadedAt: new Date(),
+              installOrder: installOrderByRemoteId.get(installedModInfo.modId),
             });
           } else {
             // Update existing mod with installed VPKs
@@ -394,6 +450,13 @@ export const useProfileImport = () => {
               installedModInfo.installedVpks,
               installedModInfo.fileTree,
             );
+
+            const installOrder = installOrderByRemoteId.get(
+              installedModInfo.modId,
+            );
+            if (installOrder !== undefined) {
+              setModOrder(installedModInfo.modId, installOrder);
+            }
           }
         }
 
@@ -405,11 +468,12 @@ export const useProfileImport = () => {
       setImportProgress(null);
 
       // Show results
-      if (result.failed.length > 0) {
+      if (result.failed.length > 0 || unavailableModsCount > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
             succeeded: result.succeeded.length,
+            unavailable: unavailableModsCount,
           })
           .warn("Some mods failed to import to current profile");
         toast.warning(
