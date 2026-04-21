@@ -1090,6 +1090,7 @@ version = "0.18.0"
 dependencies = [
  "chrono",
  "clap",
+ "dirs",
  "discord-rich-presence",
  "dmp-parser",
  "dotenvy",

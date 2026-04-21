@@ -13,6 +13,30 @@ const getCommitHash = (): string => {
   }
 };
 
+const getDateStamp = (): string => {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+};
+
+// Bump minor so nightlies sort above the current stable release.
+// e.g. stable 0.18.0 -> nightly base 0.19.0 -> 0.19.0-nightly.20260421.abc1234
+const bumpMinor = (version: string): string => {
+  const [major, minor] = version.split(".").map(Number);
+  return `${major}.${minor + 1}.0`;
+};
+
+const buildNightlyVersion = (
+  baseVersion: string,
+  commitHash: string,
+): string => {
+  const bumped = bumpMinor(baseVersion);
+  const dateStamp = getDateStamp();
+  return `${bumped}-nightly.${dateStamp}.${commitHash}`;
+};
+
 const updatePackageJson = (commitHash: string): string => {
   const packageJsonPath = join(
     process.cwd(),
@@ -23,7 +47,7 @@ const updatePackageJson = (commitHash: string): string => {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
   const baseVersion = packageJson.version;
-  const nightlyVersion = `${baseVersion}-${commitHash}`;
+  const nightlyVersion = buildNightlyVersion(baseVersion, commitHash);
 
   packageJson.version = nightlyVersion;
 
@@ -55,7 +79,7 @@ const updateCargoToml = (commitHash: string): void => {
   }
 
   const baseVersion = match[1];
-  const nightlyVersion = `${baseVersion}-${commitHash}`;
+  const nightlyVersion = buildNightlyVersion(baseVersion, commitHash);
 
   const updatedCargoToml = cargoToml.replace(
     versionRegex,
@@ -77,7 +101,7 @@ const main = () => {
   const version = updatePackageJson(commitHash);
   updateCargoToml(commitHash);
 
-  console.log(`✓ Successfully updated all versions to include commit hash`);
+  console.log(`Successfully updated all versions`);
   console.log(`  Final version: ${version}`);
 };
 

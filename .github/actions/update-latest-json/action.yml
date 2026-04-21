@@ -82,20 +82,10 @@ runs:
           const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
           console.log(`Read new signature from ${sigFile}`);
 
+          const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}`;
           const githubAssetName = toGitHubAssetName(exeFile);
-          const exeAsset = release.assets.find(a => a.name === githubAssetName);
+          const exeUrl = `${baseDownloadUrl}/${githubAssetName}`;
 
-          if (exeAsset) {
-            console.log(`Resolved Windows executable asset via GitHub asset name match: ${exeAsset.name}`);
-          } else {
-            const message = `Could not match ${exeFile} to release asset ${githubAssetName}, falling back to encoded URL`;
-            console.log(message);
-            core.warning(message);
-          }
-
-          const exeUrl = exeAsset?.browser_download_url ?? `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/${encodeURIComponent(exeFile)}`;
-
-          // Update or add Windows NSIS entries
           latestJson.platforms['windows-x86_64'] = {
             signature: newSignature,
             url: exeUrl
@@ -108,20 +98,36 @@ runs:
           };
           console.log('Updated windows-x86_64-nsis entry');
 
-          // Add Flatpak entry if the asset exists in the release
           const flatpakAsset = release.assets.find(a => a.name === 'deadlock-mod-manager.flatpak');
           if (flatpakAsset) {
-            const flatpakUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}/deadlock-mod-manager.flatpak`;
             latestJson.platforms['linux-x86_64-flatpak'] = {
               signature: '',
-              url: flatpakUrl
+              url: `${baseDownloadUrl}/deadlock-mod-manager.flatpak`
             };
             console.log('Added linux-x86_64-flatpak entry');
           } else {
             console.log('No Flatpak asset found, skipping linux-x86_64-flatpak entry');
           }
 
+          // Rewrite all platform URLs to use the version-pinned download path,
+          // fixing tauri-action's default /releases/latest/download/ URLs
+          for (const [platform, entry] of Object.entries(latestJson.platforms)) {
+            const filename = entry.url.split('/').pop();
+            const correctedUrl = `${baseDownloadUrl}/${filename}`;
+            if (entry.url !== correctedUrl) {
+              console.log(`Rewrote ${platform} URL: ${entry.url} -> ${correctedUrl}`);
+              entry.url = correctedUrl;
+            }
+          }
+
           console.log('Final platforms:', Object.keys(latestJson.platforms));
+
+          // Sanity check: no URL should contain draft-release or latest-redirect paths
+          for (const [platform, entry] of Object.entries(latestJson.platforms)) {
+            if (entry.url.includes('/releases/latest/download/') || entry.url.includes('/releases/download/untagged-')) {
+              throw new Error(`Platform ${platform} has a bad URL that will 404: ${entry.url}`);
+            }
+          }
 
           // Delete existing latest.json and upload new one
           await github.rest.repos.deleteReleaseAsset({

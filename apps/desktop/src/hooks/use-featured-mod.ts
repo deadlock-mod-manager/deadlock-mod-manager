@@ -29,7 +29,9 @@ export const useFeaturedMod = (
     if (!mods || mods.length === 0) return undefined;
 
     const eligible = mods
-      .filter((m) => m.downloadable && (m.hero || m.images.length > 0))
+      .filter(
+        (m) => m.downloadable && !m.isNSFW && (m.hero || m.images.length > 0),
+      )
       .sort((a, b) => b.downloadCount - a.downloadCount)
       .slice(0, FEATURED_POOL_SIZE);
 
