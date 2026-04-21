@@ -72,7 +72,7 @@ impl serde::Serialize for Error {
     S: serde::Serializer,
   {
     use serde::ser::SerializeStruct;
-    let mut state = serializer.serialize_struct("Error", 2)?;
+    let mut state = serializer.serialize_struct("Error", 3)?;
 
     // Map the error variant to the corresponding kind string
     let kind = match self {
@@ -108,8 +108,14 @@ impl serde::Serialize for Error {
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
     };
 
+    let detail = match self {
+      Error::GameConfigParse(detail) => Some(detail.as_str()),
+      _ => None,
+    };
+
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
+    state.serialize_field("detail", &detail)?;
     state.end()
   }
 }

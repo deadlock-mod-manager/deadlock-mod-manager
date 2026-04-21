@@ -1,14 +1,20 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { WarningIcon } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   type FallbackProps,
   ErrorBoundary as ReactErrorBoundary,
 } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
+import { openGameInfoFolder } from "@/lib/api";
 
 const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();
+
+  const isGameConfigError = error?.message?.includes(
+    "Failed to parse game configuration",
+  );
 
   return (
     <Alert>
@@ -16,7 +22,7 @@ const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
       <AlertDescription className='flex flex-grow flex-row items-center justify-between gap-2'>
         <div className='flex flex-col gap-2'>
           <p>{t("errors.genericMessage")}</p>
-          {error?.message?.includes("Failed to parse game configuration") && (
+          {isGameConfigError && (
             <div className='flex flex-col gap-2'>
               <p>{t("errors.failedToParseGameConfiguration.instruction")}</p>
               <ol className='list-decimal list-inside'>
@@ -28,6 +34,34 @@ const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
                   <li key={step}>{step}</li>
                 ))}
               </ol>
+              <p className='font-medium'>
+                Your addons folder or gameinfo.gi may be marked as read-only.
+                Uncheck it in File Explorer → Properties.
+              </p>
+              <video
+                src='/read-only-tutorial.mp4'
+                className='rounded-md max-w-sm'
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+              <div className='flex flex-row gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() =>
+                    invoke("open_mods_folder", { profileFolder: null })
+                  }>
+                  Open Addons Folder
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => openGameInfoFolder()}>
+                  Open Gameinfo Folder
+                </Button>
+              </div>
             </div>
           )}
           <pre>

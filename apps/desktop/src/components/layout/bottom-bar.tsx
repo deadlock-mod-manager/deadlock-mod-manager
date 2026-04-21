@@ -30,8 +30,9 @@ import {
   WifiXIcon,
 } from "@phosphor-icons/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
 import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
@@ -42,6 +43,9 @@ import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import { ReadonlyFilesystemDialog } from "@/components/shared/readonly-filesystem-dialog";
+
+const READONLY_FILESYSTEM_TOAST_ID = "readonly-filesystem";
 
 function StatusIndicator({
   icon: Icon,
@@ -239,6 +243,9 @@ export const BottomBar = () => {
   const { t } = useTranslation();
   const localMods = usePersistedStore((state) => state.localMods);
   const { gamePath } = usePersistedStore();
+  const [readonlyDialogOpen, setReadonlyDialogOpen] = useState(false);
+  const [isAttentionReady, setIsAttentionReady] = useState(false);
+  const readonlyToastFiredRef = useRef(false);
   const {
     updateAvailable,
     checkForUpdates,
@@ -248,8 +255,70 @@ export const BottomBar = () => {
   } = useCheckForUpdates();
   const { status: apiStatus } = useApiStatus();
   const { status: authStatus } = useAuthStatus();
-  const { status: fsStatus } = useFilesystemStatus();
+  const {
+    status: fsStatus,
+    refetch: refetchFilesystemStatus,
+    isFetching: isRecheckingFilesystemStatus,
+  } = useFilesystemStatus();
   const { relays } = useRelaysHealth();
+
+  const handleReadonlyFilesystemRecheck = async () => {
+    try {
+      const result = await refetchFilesystemStatus();
+
+      if (result.error || !result.data) {
+        toast.error("Failed to recheck filesystem permissions");
+        return;
+      }
+
+      if (result.data.addons_writable && result.data.gameinfo_writable) {
+        readonlyToastFiredRef.current = false;
+        toast.dismiss(READONLY_FILESYSTEM_TOAST_ID);
+        setReadonlyDialogOpen(false);
+        toast.success("Addons folder and gameinfo.gi are writable again");
+      }
+    } catch {
+      toast.error("Failed to recheck filesystem permissions");
+    }
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsAttentionReady(true);
+    }, 1400);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (
+      isAttentionReady &&
+      fsStatus === "readonly" &&
+      !readonlyToastFiredRef.current
+    ) {
+      readonlyToastFiredRef.current = true;
+      toast.warning("Addons folder or gameinfo.gi is read-only", {
+        id: READONLY_FILESYSTEM_TOAST_ID,
+        className: "readonly-fs-toast",
+        duration: Infinity,
+        action: {
+          label: "Show me how to fix",
+          onClick: () => setReadonlyDialogOpen(true),
+        },
+      });
+    }
+  }, [fsStatus, isAttentionReady]);
+
+  useEffect(() => {
+    if (fsStatus !== "writable") {
+      return;
+    }
+
+    readonlyToastFiredRef.current = false;
+    toast.dismiss(READONLY_FILESYSTEM_TOAST_ID);
+    setReadonlyDialogOpen(false);
+  }, [fsStatus]);
+
   const { isEnabled: isServerBrowserEnabled } = useFeatureFlag(
     "server-browser",
     false,
@@ -307,11 +376,40 @@ export const BottomBar = () => {
             tooltip={t(authCfg.key)}
           />
           {gamePath && (
-            <StatusIndicator
-              className={fsCfg.className}
-              icon={fsCfg.icon}
-              tooltip={t(fsCfg.key)}
-            />
+            <>
+              {fsStatus === "readonly" ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className='flex cursor-pointer items-center justify-center rounded-sm bg-amber-500/10 p-1 animate-jiggle [animation-duration:1.6s] shadow-[0_0_0_1px_rgba(245,158,11,0.18)]'
+                      onClick={() => setReadonlyDialogOpen(true)}
+                      type='button'>
+                      <fsCfg.icon
+                        className={cn(
+                          "h-4 w-4 drop-shadow-[0_0_3px_rgba(245,158,11,0.45)]",
+                          fsCfg.className,
+                        )}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' sideOffset={8}>
+                    <p>{t(fsCfg.key)} - Click for help</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <StatusIndicator
+                  className={fsCfg.className}
+                  icon={fsCfg.icon}
+                  tooltip={t(fsCfg.key)}
+                />
+              )}
+              <ReadonlyFilesystemDialog
+                isRechecking={isRecheckingFilesystemStatus}
+                onRecheck={handleReadonlyFilesystemRecheck}
+                open={readonlyDialogOpen}
+                onOpenChange={setReadonlyDialogOpen}
+              />
+            </>
           )}
           {isServerBrowserEnabled && relays.length > 0 && (
             <RelayStatusPopover

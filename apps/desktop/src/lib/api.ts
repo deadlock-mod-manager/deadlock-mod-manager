@@ -156,6 +156,10 @@ export const openGameInfoEditor = async () => {
   return await invoke("open_gameinfo_editor");
 };
 
+export const openGameInfoFolder = async () => {
+  return await invoke("open_gameinfo_folder");
+};
+
 // Auto-update management functions
 export const isAutoUpdateDisabled = async (): Promise<boolean> => {
   return await invoke("is_auto_update_disabled");

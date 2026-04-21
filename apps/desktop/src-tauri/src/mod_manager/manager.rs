@@ -601,6 +601,17 @@ impl ModManager {
       .open_folder(game_path.to_string_lossy().as_ref())
   }
 
+  pub fn open_gameinfo_folder(&self) -> Result<(), Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+    let gameinfo_folder = game_path.join("game").join("citadel");
+    self
+      .filesystem
+      .open_folder(gameinfo_folder.to_string_lossy().as_ref())
+  }
+
   pub fn open_mods_data_folder(&self) -> Result<(), Error> {
     let mods_path = self.get_mods_store_path()?;
     self.filesystem.create_directories(&mods_path)?;

@@ -370,6 +370,12 @@ pub async fn open_game_folder() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn open_gameinfo_folder() -> Result<(), Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.open_gameinfo_folder()
+}
+
+#[tauri::command]
 pub async fn open_mods_data_folder() -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   mod_manager.open_mods_data_folder()

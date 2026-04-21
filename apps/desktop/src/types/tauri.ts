@@ -21,4 +21,5 @@ export type ErrorKind = {
     | "failedToOpenFolder"
     | "modExtractionFailed";
   message: string;
+  detail?: string;
 };

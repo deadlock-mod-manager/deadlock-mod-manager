@@ -1023,6 +1023,44 @@
   }
 }
 
+@keyframes readonly-toast-attention {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(245, 158, 11, 0.18),
+      0 10px 24px rgba(0, 0, 0, 0.22);
+  }
+  35% {
+    box-shadow:
+      0 0 0 1px rgba(245, 158, 11, 0.45),
+      0 0 0 4px rgba(245, 158, 11, 0.14),
+      0 12px 28px rgba(0, 0, 0, 0.24),
+      0 0 22px rgba(245, 158, 11, 0.12);
+  }
+  65% {
+    box-shadow:
+      0 0 0 1px rgba(245, 158, 11, 0.3),
+      0 0 0 2px rgba(245, 158, 11, 0.08),
+      0 10px 24px rgba(0, 0, 0, 0.22),
+      0 0 14px rgba(245, 158, 11, 0.08);
+  }
+}
+
+.readonly-fs-toast {
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.18),
+    0 10px 24px rgba(0, 0, 0, 0.22) !important;
+  animation: readonly-toast-attention 2.6s ease-in-out 3;
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readonly-fs-toast {
+    animation: none;
+  }
+}
+
 .deadlock-api-theme-active .dl-electric-icon {
   animation: dl-electric-bolt 3.5s linear infinite;
   filter: drop-shadow(0 0 4px rgba(250, 68, 84, 0.6))

@@ -13,17 +13,25 @@ import {
   Database,
   Edit,
   FileCheck,
+  FolderOpen,
   RefreshCcw,
   RotateCcw,
   Shield,
 } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { getErrorMessage } from "@/lib/errors";
+import { openGameInfoFolder } from "@/lib/api";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
+
+const GAMEINFO_RECOVERY_TOAST_ID = "gameinfo-recovery-toast";
+const GAMEINFO_STATE_MISMATCH_DETAILS = new Set([
+  "File should be in vanilla state but contains mod paths",
+  "File should contain mod paths but appears to be vanilla",
+]);
 
 type GameInfoStatus = {
   current_hash: string;
@@ -97,6 +105,7 @@ const GameInfoManagement = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const [isOperating, setIsOperating] = useState(false);
+  const recoveryActionPendingRef = useRef(false);
 
   const { data: status, refetch } = useQuery<GameInfoStatus>({
     queryKey: ["gameinfo-status"],
@@ -124,6 +133,88 @@ const GameInfoManagement = () => {
     return items;
   }, [status, t]);
 
+  useEffect(() => {
+    if (status?.syntax_valid) {
+      toast.dismiss(GAMEINFO_RECOVERY_TOAST_ID);
+    }
+  }, [status?.syntax_valid]);
+
+  const showGameConfigRecoveryToast = (reason?: string) => {
+    toast.warning("gameinfo.gi needs repair", {
+      id: GAMEINFO_RECOVERY_TOAST_ID,
+      className: "w-[26rem] max-w-[calc(100vw-2rem)]",
+      duration: Infinity,
+      description: (
+        <div className='mt-2 flex flex-col gap-3'>
+          <p className='text-sm text-muted-foreground'>
+            {reason ?? "The file is not valid and may need to be reset."}
+          </p>
+          <p className='text-sm text-muted-foreground'>
+            Reset it to vanilla automatically, or open the folder to inspect it
+            yourself.
+          </p>
+          <div className='flex flex-wrap gap-2'>
+            <Button
+              size='sm'
+              onClick={() => {
+                if (recoveryActionPendingRef.current) {
+                  return;
+                }
+
+                recoveryActionPendingRef.current = true;
+
+                void handleResetToVanilla().finally(() => {
+                  recoveryActionPendingRef.current = false;
+                });
+              }}>
+              <RotateCcw className='h-4 w-4' />
+              Reset to Vanilla
+            </Button>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={() => {
+                void handleOpenGameInfoFolder();
+              }}>
+              <FolderOpen className='h-4 w-4' />
+              Open Gameinfo Folder
+            </Button>
+          </div>
+        </div>
+      ),
+    });
+  };
+
+  const handleOpenGameInfoFolder = async () => {
+    try {
+      await openGameInfoFolder();
+    } catch (error) {
+      toast.error(`Failed to open gameinfo folder: ${getErrorMessage(error)}`);
+    }
+  };
+
+  const getGameConfigErrorDetail = (error: object | null) => {
+    if (
+      error &&
+      "kind" in error &&
+      error.kind === "gameConfigParse" &&
+      "detail" in error &&
+      typeof error.detail === "string"
+    ) {
+      return error.detail;
+    }
+
+    return undefined;
+  };
+
+  const shouldOfferGameConfigRecovery = (detail?: string) => {
+    if (!detail) {
+      return false;
+    }
+
+    return !GAMEINFO_STATE_MISMATCH_DETAILS.has(detail);
+  };
+
   const handleBackupGameInfo = async () => {
     try {
       setIsOperating(true);
@@ -131,7 +222,17 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.backupCreatedSuccess"));
     } catch (error) {
-      toast.error(`Failed to create backup: ${getErrorMessage(error)}`);
+      const message = getErrorMessage(error);
+      const detail =
+        typeof error === "object" && error !== null
+          ? getGameConfigErrorDetail(error)
+          : undefined;
+
+      if (shouldOfferGameConfigRecovery(detail)) {
+        showGameConfigRecoveryToast(detail);
+      } else {
+        toast.error(`Failed to create backup: ${detail ?? message}`);
+      }
     } finally {
       setIsOperating(false);
     }
@@ -148,7 +249,17 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.restoreSuccess"));
     } catch (error) {
-      toast.error(`Failed to restore backup: ${getErrorMessage(error)}`);
+      const message = getErrorMessage(error);
+      const detail =
+        typeof error === "object" && error !== null
+          ? getGameConfigErrorDetail(error)
+          : undefined;
+
+      if (shouldOfferGameConfigRecovery(detail)) {
+        showGameConfigRecoveryToast(detail);
+      } else {
+        toast.error(`Failed to restore backup: ${detail ?? message}`);
+      }
     } finally {
       setIsOperating(false);
     }
@@ -163,9 +274,20 @@ const GameInfoManagement = () => {
       setIsOperating(true);
       await invoke("reset_to_vanilla");
       await refetch();
+      toast.dismiss(GAMEINFO_RECOVERY_TOAST_ID);
       toast.success(t("game.resetSuccess"));
     } catch (error) {
-      toast.error(`Failed to reset to vanilla: ${getErrorMessage(error)}`);
+      const message = getErrorMessage(error);
+      const detail =
+        typeof error === "object" && error !== null
+          ? getGameConfigErrorDetail(error)
+          : undefined;
+
+      if (shouldOfferGameConfigRecovery(detail)) {
+        showGameConfigRecoveryToast(detail);
+      } else {
+        toast.error(`Failed to reset to vanilla: ${detail ?? message}`);
+      }
     } finally {
       setIsOperating(false);
     }
@@ -179,7 +301,17 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.validationPassed"));
     } catch (error) {
-      toast.error(`Validation failed: ${getErrorMessage(error)}`);
+      const message = getErrorMessage(error);
+      const detail =
+        typeof error === "object" && error !== null
+          ? getGameConfigErrorDetail(error)
+          : undefined;
+
+      if (shouldOfferGameConfigRecovery(detail)) {
+        showGameConfigRecoveryToast(detail);
+      } else {
+        toast.error(`Validation failed: ${detail ?? message}`);
+      }
     } finally {
       setIsOperating(false);
     }
