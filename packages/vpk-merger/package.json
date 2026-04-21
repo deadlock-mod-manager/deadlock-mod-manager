@@ -1,0 +1,18 @@
+{
+  "name": "@deadlock-mods/vpk-merger",
+  "version": "1.0.0",
+  "description": "CLI and library to merge multiple VPK _dir packages into one VPK",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",
+    "directory": "packages/vpk-merger"
+  },
+  "scripts": {
+    "build": "cargo build --release",
+    "check": "cargo check",
+    "test": "cargo test",
+    "vpk-merger": "cargo run --release --bin vpk-merger --",
+    "clean": "cargo clean"
+  }
+}
