@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { isGameRunning } from "@/lib/api";
 import { createLogger } from "@/lib/logger";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import type { CompressionLevel } from "@/lib/store/slices/compression";
 import { ModStatus } from "@/types/mods";
 
 const logger = createLogger("mod-compression");
@@ -21,19 +24,73 @@ type CompressionModUpdatePayload = {
   modId: string;
   installedVpks: string[];
   usesCompression: boolean;
+  originalVpkNames?: string[];
 };
 
 type CompressionCompletedPayload = {
+  bucketId?: number;
   shardCount: number;
   totalBytes: number;
   shardFiles?: string[];
   modUpdates?: CompressionModUpdatePayload[];
 };
 
+type AddonsBackupRestoredPayload = {
+  hasCompressionManifest: boolean;
+  compressionLevel: string | null;
+  modUpdates?: CompressionModUpdatePayload[];
+};
+
+const levelToBackend = (l: CompressionLevel): string => l;
+
+function applyCompressionModUpdates(modUpdates: CompressionModUpdatePayload[]) {
+  usePersistedStore.setState((s) => ({
+    localMods: s.localMods.map((m) => {
+      const u = modUpdates.find(
+        (x) => x.modId === m.remoteId || x.modId === m.id,
+      );
+      if (!u) return m;
+      const originalVpkNames =
+        u.originalVpkNames && u.originalVpkNames.length > 0
+          ? u.originalVpkNames
+          : (m.compression?.originalVpkNames ?? []);
+      if (u.usesCompression) {
+        return {
+          ...m,
+          installedVpks: u.installedVpks,
+          usesCompression: true,
+          compression: {
+            mergedShards: u.installedVpks,
+            originalVpkNames,
+            loadOrder: m.compression?.loadOrder ?? m.installOrder ?? 0,
+            assetKeys: m.compression?.assetKeys ?? [],
+          },
+        };
+      }
+      return {
+        ...m,
+        installedVpks: u.installedVpks,
+        usesCompression: false,
+        compression: undefined,
+      };
+    }),
+  }));
+}
+
 export const useModCompression = () => {
+  const { t } = useTranslation();
   const gamePath = usePersistedStore((state) => state.gamePath);
   const compressionEnabled = usePersistedStore(
     (state) => state.compressionEnabled,
+  );
+  const compressionLevel = usePersistedStore(
+    (state) => state.compressionLevel,
+  );
+  const setCompressionLevel = usePersistedStore(
+    (state) => state.setCompressionLevel,
+  );
+  const maxBackupCount = usePersistedStore(
+    (state) => state.maxBackupCount,
   );
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
   const profiles = usePersistedStore((state) => state.profiles);
@@ -56,17 +113,22 @@ export const useModCompression = () => {
   useEffect(() => {
     const profileFolder = profiles[activeProfileId]?.folderName ?? null;
     logger
-      .withMetadata({ enabled: compressionEnabled, profileFolder })
+      .withMetadata({
+        enabled: compressionEnabled,
+        profileFolder,
+        level: compressionLevel,
+      })
       .info("Syncing compression config to backend");
     void invoke("mod_compression_set_config", {
       enabled: compressionEnabled,
+      level: levelToBackend(compressionLevel),
       profileFolder,
     }).catch((e) => {
       logger
         .withError(e instanceof Error ? e : new Error(String(e)))
         .warn("mod_compression_set_config failed");
     });
-  }, [compressionEnabled, activeProfileId, profiles]);
+  }, [compressionEnabled, compressionLevel, activeProfileId, profiles]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -102,40 +164,26 @@ export const useModCompression = () => {
       (event) => {
         const p = event.payload;
         const modUpdates = p.modUpdates;
+        const shardFiles = p.shardFiles ?? [];
         usePersistedStore.getState().setCompressionProgress({
           status: "idle",
           current: 0,
           total: 0,
           currentModName: null,
+          shardCount: p.shardCount,
+          shardFiles,
         });
         if (modUpdates !== undefined && modUpdates.length > 0) {
-          usePersistedStore.setState((s) => ({
-            localMods: s.localMods.map((m) => {
-              const u = modUpdates.find(
-                (x) => x.modId === m.remoteId || x.modId === m.id,
-              );
-              if (!u) return m;
-              return {
-                ...m,
-                installedVpks: u.installedVpks,
-                usesCompression: u.usesCompression,
-                compression: undefined,
-              };
-            }),
-          }));
+          applyCompressionModUpdates(modUpdates);
           return;
         }
-        if (
-          p.shardCount > 0 &&
-          p.shardFiles !== undefined &&
-          p.shardFiles.length > 0
-        ) {
+        if (p.shardCount > 0 && shardFiles.length > 0) {
           usePersistedStore.setState((s) => ({
             localMods: s.localMods.map((m) => {
               if (m.status === ModStatus.Installed && m.isMap !== true) {
                 return {
                   ...m,
-                  installedVpks: p.shardFiles,
+                  installedVpks: shardFiles,
                   usesCompression: true,
                 };
               }
@@ -153,6 +201,59 @@ export const useModCompression = () => {
   }, []);
 
   useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void listen<AddonsBackupRestoredPayload>(
+      "addons-backup-restored",
+      (ev) => {
+        const p = ev.payload;
+        if (p.hasCompressionManifest) {
+          if (
+            p.compressionLevel === "low" ||
+            p.compressionLevel === "medium" ||
+            p.compressionLevel === "high" ||
+            p.compressionLevel === "extreme"
+          ) {
+            setCompressionLevel(p.compressionLevel);
+          }
+          setCompressionEnabled(true);
+        } else {
+          setCompressionEnabled(false);
+          usePersistedStore.setState((s) => ({
+            localMods: s.localMods.map((m) =>
+              m.status === ModStatus.Installed && m.isMap !== true
+                ? { ...m, usesCompression: false, compression: undefined }
+                : m,
+            ),
+          }));
+        }
+        if (p.modUpdates !== undefined && p.modUpdates.length > 0) {
+          applyCompressionModUpdates(p.modUpdates);
+        }
+        const profileFolder = profiles[activeProfileId]?.folderName ?? null;
+        const enabled = p.hasCompressionManifest;
+        const lev = usePersistedStore.getState().compressionLevel;
+        void invoke("mod_compression_set_config", {
+          enabled,
+          level: levelToBackend(lev),
+          profileFolder,
+        }).catch(() => undefined);
+        toast.success(t("settings.backupRestored"));
+      },
+    ).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, [
+    setCompressionEnabled,
+    setCompressionLevel,
+    activeProfileId,
+    profiles,
+    t,
+  ]);
+
+  useEffect(() => {
     const wasRunning = prevGameRunning.current;
     const isRunning = gameRunning === true;
     prevGameRunning.current = isRunning;
@@ -165,6 +266,20 @@ export const useModCompression = () => {
         total: 0,
         currentModName: null,
       });
+      return;
+    }
+
+    if (wasRunning && !isRunning) {
+      const currentStatus =
+        usePersistedStore.getState().compressionProgress.status;
+      if (currentStatus === "paused") {
+        setCompressionProgress({
+          status: "idle",
+          current: 0,
+          total: 0,
+          currentModName: null,
+        });
+      }
     }
   }, [gameRunning, setCompressionProgress]);
 
@@ -193,48 +308,94 @@ export const useModCompression = () => {
       }));
   };
 
-  const enableCompression = async () => {
-    const profileFolder = getProfileFolder();
+  const enableCompression = async (opts: { createBackup: boolean }) => {
     const mods = collectInstalledMods();
+    const level = usePersistedStore.getState().compressionLevel;
+    const pf = getProfileFolder();
     logger
-      .withMetadata({ mods: mods.length })
-      .info("enableCompression: sending mod list to backend");
-    setCompressionEnabled(true);
-    await invoke("mod_compression_set_config", {
-      enabled: true,
-      profileFolder,
-    });
+      .withMetadata({ mods: mods.length, createBackup: opts.createBackup })
+      .info("enableCompression");
+    if (opts.createBackup) {
+      await invoke("create_addons_backup", {
+        maxBackups: maxBackupCount,
+        profileFolder: pf,
+      });
+    }
     setCompressionProgress({
       status: "merging",
       current: 0,
-      total: 1,
+      total: Math.max(mods.length, 1),
       currentModName: null,
+      shardCount: 0,
+      shardFiles: [],
     });
-    await invoke("mod_compression_rebuild", { profileFolder, mods });
-    setCompressionProgress({
-      status: "idle",
-      current: 0,
-      total: 0,
-      currentModName: null,
-    });
+    try {
+      await invoke("mod_compression_set_config", {
+        enabled: true,
+        level: levelToBackend(level),
+        profileFolder: pf,
+      });
+      setCompressionEnabled(true);
+      await invoke("mod_compression_rebuild", {
+        profileFolder: pf,
+        mods,
+        level: levelToBackend(level),
+      });
+    } catch (e) {
+      setCompressionEnabled(false);
+      void invoke("mod_compression_set_config", {
+        enabled: false,
+        level: levelToBackend(level),
+        profileFolder: pf,
+      }).catch(() => undefined);
+      throw e;
+    } finally {
+      setCompressionProgress({
+        status: "idle",
+        current: 0,
+        total: 0,
+        currentModName: null,
+      });
+    }
+  };
+
+  const changeCompressionLevel = async (next: CompressionLevel) => {
+    const profileFolder = getProfileFolder();
+    const mods = collectInstalledMods();
+    const prev = usePersistedStore.getState().compressionLevel;
+    try {
+      await invoke("mod_compression_change_level", {
+        profileFolder,
+        mods,
+        level: levelToBackend(next),
+      });
+      setCompressionLevel(next);
+    } catch (e) {
+      setCompressionLevel(prev);
+      throw e;
+    }
   };
 
   const disableCompression = async () => {
     const profileFolder = getProfileFolder();
     const mods = collectInstalledMods();
+    const level = usePersistedStore.getState().compressionLevel;
     logger
       .withMetadata({ mods: mods.length })
-      .info("disableCompression: sending mod list to backend");
+      .info("disableCompression");
     setCompressionProgress({
       status: "extracting",
       current: 0,
-      total: 1,
+      total: Math.max(mods.length, 1),
       currentModName: null,
+      shardCount: 0,
+      shardFiles: [],
     });
     await invoke("mod_compression_disable", { profileFolder, mods });
     setCompressionEnabled(false);
     await invoke("mod_compression_set_config", {
       enabled: false,
+      level: levelToBackend(level),
       profileFolder,
     });
     setCompressionProgress({
@@ -242,6 +403,8 @@ export const useModCompression = () => {
       current: 0,
       total: 0,
       currentModName: null,
+      shardCount: 0,
+      shardFiles: [],
     });
   };
 
@@ -257,6 +420,7 @@ export const useModCompression = () => {
 
   return {
     enableCompression,
+    changeCompressionLevel,
     disableCompression,
     cancelCompression,
   };

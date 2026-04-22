@@ -646,15 +646,35 @@
       "title": "Mod Compression",
       "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
       "enableLabel": "Enable mod compression",
-      "warningTitle": "Slower operations",
-      "warningBody": "With mod compression enabled, installing, updating, removing, or reordering mods can take longer because the manager rebuilds merged VPKs in the background.",
       "enableConfirmTitle": "Enable mod compression?",
-      "enableConfirmBody": "Operations such as installing, updating, or removing mods may take longer. You can turn this off later.",
+      "enableConfirmBody": "Operations such as installing, updating, or removing mods take longer while compression is on. Higher compression levels pack more mods per file and make these operations slower. You can turn this off later.",
       "enableConfirmAction": "Enable",
       "disableConfirmTitle": "Disable mod compression?",
       "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
       "disableConfirmAction": "Disable",
-      "gameRunning": "Close Deadlock before changing mod compression."
+      "gameRunning": "Close Deadlock before changing mod compression.",
+      "level": {
+        "title": "Compression level",
+        "description": "How many mods are merged into each VPK. Higher levels mean fewer, larger files and slower install, update, remove, and reorder.",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "extreme": "Extreme",
+        "lowSubtitle": "2 mods / file",
+        "mediumSubtitle": "4 mods / file",
+        "highSubtitle": "6 mods / file",
+        "extremeSubtitle": "Merge everything into as few shards as possible (1.5 GiB cap per VPK)",
+        "recommended": "Recommended",
+        "changeConfirmTitle": "Change compression level?",
+        "changeConfirmBody": "All merged VPKs will be rebuilt with the new level. This may take a while."
+      },
+      "backupPrompt": {
+        "title": "Create a backup first?",
+        "body": "Enabling compression replaces your installed mods' VPK files with merged bundles. Disabling restores individual files.",
+        "createBackupOption": "Create a backup of the addons folder before enabling",
+        "confirmEnable": "Enable compression",
+        "cancel": "Cancel"
+      }
     }
   },
   "featureFlags": {

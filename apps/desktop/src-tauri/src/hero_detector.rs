@@ -56,6 +56,38 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
       );
       return vpk_files;
     }
+    if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+      let mut addons_path = game_path.join("game").join("citadel").join("addons");
+      if let Some(folder) = crate::mod_compression::state::get_compression_profile_folder() {
+        addons_path = addons_path.join(folder);
+      }
+      if let Some(mm) = mod_manager.get_mod_repository().get_mod(mod_id) {
+        for v in &mm.installed_vpks {
+          let p = addons_path.join(v);
+          if p.exists() {
+            vpk_files.push(p);
+          }
+        }
+      }
+      if vpk_files.is_empty() {
+        let root_addons = game_path.join("game").join("citadel").join("addons");
+        if let Some(mm) = mod_manager.get_mod_repository().get_mod(mod_id) {
+          for v in &mm.installed_vpks {
+            let p = root_addons.join(v);
+            if p.exists() {
+              vpk_files.push(p);
+            }
+          }
+        }
+      }
+      if !vpk_files.is_empty() {
+        log::debug!(
+          "Hero detection using {} merged bucket VPK(s) for compressed mod {mod_id}",
+          vpk_files.len()
+        );
+        return vpk_files;
+      }
+    }
   }
 
   if !uses_compression
@@ -194,6 +226,29 @@ pub async fn detect_mod_heroes_batch(
             let p = staged.join(orig);
             if p.exists() {
               vpk_files.push(p);
+            }
+          }
+          if vpk_files.is_empty()
+            && let Some(ref gp) = game_path
+          {
+            let mut addons_path = gp.join("game").join("citadel").join("addons");
+            if let Some(folder) = crate::mod_compression::state::get_compression_profile_folder() {
+              addons_path = addons_path.join(folder);
+            }
+            for v in &m.installed_vpks {
+              let p = addons_path.join(v);
+              if p.exists() {
+                vpk_files.push(p);
+              }
+            }
+            if vpk_files.is_empty() {
+              let root_addons = gp.join("game").join("citadel").join("addons");
+              for v in &m.installed_vpks {
+                let p = root_addons.join(v);
+                if p.exists() {
+                  vpk_files.push(p);
+                }
+              }
             }
           }
         }

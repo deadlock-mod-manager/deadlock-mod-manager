@@ -354,7 +354,7 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   },
 
   getEnabledModsCount: (profileId?: ProfileId) => {
-    const { profiles, activeProfileId } = get();
+    const { profiles, activeProfileId, localMods } = get();
     const targetProfileId = profileId ?? activeProfileId;
     const profile = profiles[targetProfileId];
 
@@ -362,8 +362,15 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       return 0;
     }
 
-    return Object.values(profile.enabledMods).filter((mod) => mod.enabled)
-      .length;
+    const installedIds = new Set(
+      localMods
+        .filter((m) => m.status === ModStatus.Installed)
+        .map((m) => m.remoteId ?? m.id),
+    );
+
+    return Object.values(profile.enabledMods).filter(
+      (mod) => mod.enabled && installedIds.has(mod.remoteId),
+    ).length;
   },
 
   activeProfile: () => {

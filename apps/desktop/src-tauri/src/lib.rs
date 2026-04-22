@@ -103,6 +103,24 @@ pub fn run() {
               "Mod compression manifest is inconsistent with shard files on disk (default profile)"
             );
           }
+          if let Ok(rd) = std::fs::read_dir(&addons) {
+            for entry in rd.flatten() {
+              let p = entry.path();
+              if !p.is_dir() {
+                continue;
+              }
+              let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+              if name.starts_with('.') {
+                continue;
+              }
+              mod_compression::service::cleanup_stale_compression_tmp_files(&p);
+              if let Ok(false) = mod_compression::service::validate_manifest_on_disk(&p) {
+                log::warn!(
+                  "Mod compression manifest inconsistent (profile folder: {name})"
+                );
+              }
+            }
+          }
         }
       }
 
@@ -136,6 +154,7 @@ pub fn run() {
       commands::purge_mod,
       mod_compression::commands::mod_compression_set_config,
       mod_compression::commands::mod_compression_rebuild,
+      mod_compression::commands::mod_compression_change_level,
       mod_compression::commands::mod_compression_disable,
       mod_compression::commands::mod_compression_cancel,
       commands::reorder_mods,

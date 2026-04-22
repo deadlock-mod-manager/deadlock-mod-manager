@@ -147,6 +147,10 @@ export default {
         heartbeat: 'heartbeat 2s ease-in-out infinite',
         jiggle: 'jiggle 3s ease-in-out infinite',
       },
+
+      transitionTimingFunction: {
+        'smooth-out': 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
     },
   },
 

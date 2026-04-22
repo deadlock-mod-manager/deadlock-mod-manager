@@ -162,6 +162,12 @@ function ModCompressionIndicator() {
             </p>
             <Progress className='h-1' value={percentage} />
           </>
+        ) : compressionProgress.shardCount > 0 ? (
+          <p className='text-xs font-medium'>
+            {t("modCompression.shardCount", {
+              count: compressionProgress.shardCount,
+            })}
+          </p>
         ) : (
           <p className='text-xs'>{t("modCompression.idle")}</p>
         )}

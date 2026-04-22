@@ -114,6 +114,7 @@ pub fn merge_mod_inputs_last_wins(inputs: &[ModRebuildInput]) -> Result<LastWins
                 original_vpk_names: inp.original_vpk_names.clone(),
                 asset_keys: keys,
                 blake3_fingerprint: Some(fingerprint),
+                bucket_id: 0,
             },
         );
     }

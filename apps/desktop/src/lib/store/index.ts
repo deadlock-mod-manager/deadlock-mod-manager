@@ -58,7 +58,7 @@ export const usePersistedStore = create<State>()(
     }),
     {
       name: "local-config",
-      version: 19,
+      version: 20,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -479,6 +479,12 @@ export const usePersistedStore = create<State>()(
             );
           state.showOccultGeometry = true;
           state.animateOccultGeometry = true;
+        }
+
+        if (version <= 19) {
+          if (typeof (state as { compressionLevel?: string }).compressionLevel !== "string") {
+            (state as { compressionLevel: string }).compressionLevel = "low";
+          }
         }
 
         // Migration from version 17 to 18: Reset detectedHero to re-trigger hero detection with fixed VPK lookup
