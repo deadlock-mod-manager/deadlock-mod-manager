@@ -23,6 +23,7 @@ import type { z } from "zod";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 import { ensureValidToken } from "./auth/token";
 import { fetch } from "./fetch";
+import { HttpError } from "./http-error";
 import logger from "./logger";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
@@ -35,19 +36,6 @@ export const initializeApiUrl = async (): Promise<void> => {
   } catch (error) {
     logger.withError(error).error("Failed to set API URL in Rust backend");
   }
-};
-
-const handleHttpError = (status: number) => {
-  const messages: Record<number, string> = {
-    404: "Some mods may be missing from the database. Please try again later. If the issue persists, try using a VPN or a different network.",
-    500: "An internal server error occurred. Please try again later and check the status page at status.deadlockmods.app",
-    403: "You are not authorized to access this resource.",
-  };
-
-  throw new Error(
-    messages[status] ??
-      `Something went wrong. Please try again later. Status: ${status}`,
-  );
 };
 
 const apiRequest = async <T>(
@@ -64,19 +52,25 @@ const apiRequest = async <T>(
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method: method ?? (body ? "POST" : "GET"),
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: method ?? (body ? "POST" : "GET"),
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "include",
+    });
+  } catch (cause) {
+    logger.withError(cause).error("API network failure");
+    throw new HttpError("backend", 0, endpoint);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
     logger
       .withMetadata({ status: response.status, errorText })
       .error("API request failed");
-    return handleHttpError(response.status);
+    throw new HttpError("backend", response.status, endpoint);
   }
 
   return response.json();

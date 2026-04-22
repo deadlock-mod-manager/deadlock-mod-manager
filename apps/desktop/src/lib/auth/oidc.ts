@@ -9,6 +9,7 @@ import {
 import { fetch } from "../fetch";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { AUTH_URL } from "../config";
+import { HttpError } from "../http-error";
 
 const CLIENT_ID = "deadlockmods-desktop";
 const REDIRECT_URI = `${AUTH_URL}/auth/desktop-callback`;
@@ -65,21 +66,17 @@ export async function exchangeCodeForTokens(
   });
 
   if (!response.ok) {
-    const error = await response.text();
     sessionStorage.removeItem(CODE_VERIFIER_STORAGE_KEY);
-    throw new Error(`Token exchange failed: ${error}`);
+    throw new HttpError("auth", response.status, "/api/auth/oauth2/token");
   }
 
   sessionStorage.removeItem(CODE_VERIFIER_STORAGE_KEY);
   return response.json() as Promise<TokenResponse>;
 }
 
-export class TokenRefreshError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
+export class TokenRefreshError extends HttpError {
+  constructor(status: number) {
+    super("auth", status, "/api/auth/oauth2/token");
     this.name = "TokenRefreshError";
   }
 
@@ -104,11 +101,7 @@ export async function refreshTokens(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new TokenRefreshError(
-      `Token refresh failed: ${error}`,
-      response.status,
-    );
+    throw new TokenRefreshError(response.status);
   }
 
   return response.json() as Promise<TokenResponse>;

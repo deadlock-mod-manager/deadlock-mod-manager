@@ -1,6 +1,6 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { getErrorMessage } from "@/lib/errors";
+import { formatUserError } from "@/lib/format-error";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -9,7 +9,8 @@ export const queryClient = new QueryClient({
       if (skipGlobalError) {
         return;
       }
-      toast.error(`Error: ${getErrorMessage(error)}`);
+      const { title, description } = formatUserError(error);
+      toast.error(title, { description });
     },
   }),
   mutationCache: new MutationCache({
@@ -18,9 +19,8 @@ export const queryClient = new QueryClient({
       if (skipGlobalError) {
         return;
       }
-      const { mutationKey } = mutation.options;
-      const key = mutationKey ? `: ${mutationKey.join(" ")}` : "";
-      toast.error(`Error${key}: ${getErrorMessage(error)}`);
+      const { title, description } = formatUserError(error);
+      toast.error(title, { description });
     },
   }),
 });
