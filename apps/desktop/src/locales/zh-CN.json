@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "已添加到我的模组",
     "downloading": "下载中...",
+    "extracting": "",
     "downloaded": "已下载",
     "paused": "",
     "failedToDownload": "下载失败",
@@ -852,6 +853,7 @@
     "add": "下载模组",
     "added": "下载模组",
     "downloading": "下载中...",
+    "extracting": "",
     "downloaded": "已下载",
     "failedToDownload": "下载失败",
     "installing": "安装中...",
@@ -995,6 +997,72 @@
         "",
         ""
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {

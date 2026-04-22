@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "Modに追加しました",
     "downloading": "ダウンロード中...",
+    "extracting": "",
     "downloaded": "ダウンロード完了",
     "paused": "",
     "failedToDownload": "ダウンロードに失敗しました",
@@ -852,6 +853,7 @@
     "add": "Modをダウンロード",
     "added": "Modをダウンロードしました",
     "downloading": "ダウンロード中...",
+    "extracting": "",
     "downloaded": "ダウンロード完了",
     "failedToDownload": "ダウンロードに失敗しました",
     "installing": "インストール中",
@@ -995,6 +997,72 @@
         "Steamでゲームファイルを検証してください。",
         "Modマネージャーを再起動し、「Mod有効で起動」をクリックしてください。"
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {
