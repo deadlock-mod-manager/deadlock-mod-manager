@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "Aggiunta alle mie mod",
     "downloading": "Download...",
+    "extracting": "",
     "downloaded": "Scaricata",
     "paused": "",
     "failedToDownload": "Download fallito",
@@ -852,6 +853,7 @@
     "add": "Scarica Mod",
     "added": "Scarica Mod",
     "downloading": "Download...",
+    "extracting": "",
     "downloaded": "Scaricata",
     "failedToDownload": "Download fallito",
     "installing": "Installazione...",
@@ -995,6 +997,72 @@
         "",
         ""
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {

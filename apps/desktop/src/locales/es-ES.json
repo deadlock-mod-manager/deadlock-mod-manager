@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "Añadido a mis mods",
     "downloading": "Descargando...",
+    "extracting": "",
     "downloaded": "Descargado",
     "paused": "",
     "failedToDownload": "Error al descargar",
@@ -852,6 +853,7 @@
     "add": "Descargar Mod",
     "added": "Descargar Mod",
     "downloading": "Descargando...",
+    "extracting": "",
     "downloaded": "Descargado",
     "failedToDownload": "Error al descargar",
     "installing": "Instalando...",
@@ -995,6 +997,72 @@
         "Verifica los archivos del juego en Steam.",
         "Reinicia el Mod Manager y haz clic en 'Iniciar con Mods'."
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {

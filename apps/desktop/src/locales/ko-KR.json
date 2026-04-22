@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "내 모드에 추가됨",
     "downloading": "다운로드 중...",
+    "extracting": "",
     "downloaded": "다운로드됨",
     "paused": "",
     "failedToDownload": "다운로드 실패",
@@ -852,6 +853,7 @@
     "add": "모드 다운로드",
     "added": "모드 다운로드",
     "downloading": "다운로드 중...",
+    "extracting": "",
     "downloaded": "다운로드됨",
     "failedToDownload": "다운로드 실패",
     "installing": "설치 중...",
@@ -995,6 +997,72 @@
         "Steam에서 게임 파일을 확인하세요.",
         "Mod Manager를 다시 시작하고 'Launch Modded'를 클릭하세요."
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {

@@ -836,6 +836,7 @@
   "modStatus": {
     "added": "Zu meinen Mods hinzugefügt",
     "downloading": "Herunterladen...",
+    "extracting": "",
     "downloaded": "Heruntergeladen",
     "paused": "",
     "failedToDownload": "Download fehlgeschlagen",
@@ -852,6 +853,7 @@
     "add": "Mod herunterladen",
     "added": "Mod herunterladen",
     "downloading": "Herunterladen...",
+    "extracting": "",
     "downloaded": "Heruntergeladen",
     "failedToDownload": "Download fehlgeschlagen",
     "installing": "Installiere...",
@@ -995,6 +997,72 @@
         "Spieldateien in Steam überprüfen.",
         "Mod Manager neu starten und auf \"Mit Mods starten\" klicken."
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {
