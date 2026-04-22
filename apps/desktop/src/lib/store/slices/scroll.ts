@@ -8,6 +8,9 @@ export type ScrollState = {
   clearScrollPosition: (key: string) => void;
 };
 
+export const scrollDeepMergeKeys =
+  [] as const satisfies readonly (keyof ScrollState)[];
+
 export const createScrollSlice: StateCreator<State, [], [], ScrollState> = (
   set,
   get,

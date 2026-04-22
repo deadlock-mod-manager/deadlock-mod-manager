@@ -6,6 +6,9 @@ export type GameState = {
   setGamePath: (path: string) => void;
 };
 
+export const gameDeepMergeKeys =
+  [] as const satisfies readonly (keyof GameState)[];
+
 export const createGameSlice: StateCreator<State, [], [], GameState> = (
   set,
 ) => ({

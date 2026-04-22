@@ -1833,6 +1833,10 @@
     "hero": "Hero",
     "other": "General"
   },
+  "persist": {
+    "loadFailed": "Failed to load saved settings",
+    "loadFailedDescription": "Your settings couldn't be loaded ({{reason}}). Changes won't be saved this session — try restarting the app."
+  },
   "heroParser": {
     "idle": "Hero Parser: Idle",
     "scanning": "Scanning: {{current}}/{{total}}",

@@ -79,6 +79,11 @@ const DEFAULT_CROSSHAIR_FILTERS: CrosshairFilters = {
   searchQuery: "",
 };
 
+export const uiDeepMergeKeys = [
+  "modsFilters",
+  "crosshairFilters",
+] as const satisfies readonly (keyof UIState)[];
+
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   showWhatsNew: false,
   lastSeenVersion: null,

@@ -62,6 +62,9 @@ const createDefaultProfile = (): ModProfile => ({
   mods: [],
 });
 
+export const profilesDeepMergeKeys =
+  [] as const satisfies readonly (keyof ProfilesState)[];
+
 export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   set,
   get,

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "bun test",
     "ui:dev": "vite",
     "check-types": "tsgo --noEmit --skipLibCheck",
     "ui:build": "vite build",

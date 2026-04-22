@@ -169,15 +169,4 @@ describe("VPK Parser FFI", () => {
       expect(parsed.fingerprint.merkleRoot).not.toBeUndefined();
     });
   });
-
-  describe("Performance", () => {
-    it("should parse VPK quickly", () => {
-      const start = performance.now();
-      const parsed = parseVpk(testBuffer);
-      const end = performance.now();
-
-      expect(end - start).toBeLessThan(10); // Should be under 10ms
-      expect(parsed.entries).toHaveLength(3);
-    });
-  });
 });

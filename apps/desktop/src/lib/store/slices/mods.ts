@@ -75,6 +75,9 @@ export type ModsState = {
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
 };
 
+export const modsDeepMergeKeys =
+  [] as const satisfies readonly (keyof ModsState)[];
+
 export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   set,
   get,

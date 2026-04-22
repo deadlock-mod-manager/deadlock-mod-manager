@@ -71,6 +71,11 @@ export type SettingsState = {
   isPluginEnabled: (pluginId: string) => boolean;
 };
 
+export const settingsDeepMergeKeys = [
+  "nsfwSettings",
+  "telemetrySettings",
+] as const satisfies readonly (keyof SettingsState)[];
+
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   set,
   get,
