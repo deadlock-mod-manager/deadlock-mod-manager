@@ -1,0 +1,44 @@
+---
+title: Update Channels
+description: How to use stable and nightly update channels for Deadlock Mod Manager
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Update Channels
+
+Deadlock Mod Manager offers two update channels: **Stable** and **Nightly**. You can choose how you receive updates depending on whether you prefer reliability or early access to new features.
+
+## Stable Channel
+
+The default channel. Stable releases are thoroughly tested and signed with the production code-signing policy. This is the recommended channel for most users.
+
+## Nightly Channel
+
+Nightly builds are generated automatically every day from the latest development branch. They include the newest features and bug fixes, but may contain unstable or incomplete functionality.
+
+<Callout type='warn'>
+  Nightly builds use a test code-signing policy. Windows SmartScreen may show a
+  warning when you first run a nightly build.
+</Callout>
+
+### Versioning
+
+Nightly versions follow the format `X.Y.Z-nightly.YYYYMMDD.hash`, where:
+
+- `X.Y.Z` is the next minor version above the current stable release
+- `YYYYMMDD` is the build date
+- `hash` is the short git commit hash
+
+For example, if stable is `0.18.0`, a nightly might be `0.19.0-nightly.20260421.abc1234`.
+
+## Switching to the Nightly Channel
+
+You opt in from within the app so there is a single installation and one place for app data (including mod state). Do not run two different builds of Deadlock Mod Manager against the same game install.
+
+1. Open **Settings**
+2. Under **System Settings**, find **Update Channel**
+3. Select **Nightly**
+4. Restart the application
+
+After restarting, the app will check for updates from the nightly channel. To switch back, change the setting to **Stable** and restart again.
