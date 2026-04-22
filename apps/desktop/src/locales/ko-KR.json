@@ -577,6 +577,12 @@
     },
     "autoUpdate": "자동 업데이트",
     "autoUpdateDescription": "시작 시 애플리케이션 업데이트를 자동으로 확인하고 알립니다.",
+    "updateChannel": "",
+    "updateChannelDescription": "",
+    "updateChannelStable": "",
+    "updateChannelNightly": "",
+    "updateChannelRestartRequired": "",
+    "updateChannelChangeFailed": "",
     "linuxGpuCompat": "NVIDIA Wayland 호환성",
     "linuxGpuCompatDescription": "Wayland를 사용하는 NVIDIA GPU의 webkit2gtk 렌더링 버그에 대한 해결 방법입니다. 자동 모드는 시작 시 GPU 및 디스플레이 서버를 감지합니다. 필요하지 않을 때 이를 강제로 설정하면 스크롤 성능이 저하됩니다.",
     "linuxGpuCompatAuto": "자동",
@@ -1828,6 +1834,10 @@
   "heroTag": {
     "hero": "",
     "other": ""
+  },
+  "persist": {
+    "loadFailed": "",
+    "loadFailedDescription": ""
   },
   "heroParser": {
     "idle": "",
