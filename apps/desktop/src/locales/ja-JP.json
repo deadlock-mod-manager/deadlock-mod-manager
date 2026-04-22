@@ -577,6 +577,12 @@
     },
     "autoUpdate": "自動更新",
     "autoUpdateDescription": "起動時にアプリケーションの更新を自動でチェックして通知する。",
+    "updateChannel": "",
+    "updateChannelDescription": "",
+    "updateChannelStable": "",
+    "updateChannelNightly": "",
+    "updateChannelRestartRequired": "",
+    "updateChannelChangeFailed": "",
     "linuxGpuCompat": "",
     "linuxGpuCompatDescription": "",
     "linuxGpuCompatAuto": "",
@@ -1828,6 +1834,10 @@
   "heroTag": {
     "hero": "",
     "other": ""
+  },
+  "persist": {
+    "loadFailed": "",
+    "loadFailedDescription": ""
   },
   "heroParser": {
     "idle": "",

@@ -577,6 +577,12 @@
     },
     "autoUpdate": "التحديثات التلقائية",
     "autoUpdateDescription": "التحقق تلقائيًا من التحديثات وإشعارك بتحديثات التطبيق عند البدء.",
+    "updateChannel": "",
+    "updateChannelDescription": "",
+    "updateChannelStable": "",
+    "updateChannelNightly": "",
+    "updateChannelRestartRequired": "",
+    "updateChannelChangeFailed": "",
     "linuxGpuCompat": "",
     "linuxGpuCompatDescription": "",
     "linuxGpuCompatAuto": "",
@@ -1828,6 +1834,10 @@
   "heroTag": {
     "hero": "",
     "other": ""
+  },
+  "persist": {
+    "loadFailed": "",
+    "loadFailedDescription": ""
   },
   "heroParser": {
     "idle": "",
