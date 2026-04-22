@@ -111,6 +111,18 @@ For help and support:
   Certificate by <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=deadlock-mod-manager">SignPath Foundation</a>
 </p>
 
+<br/>
+
+<p align="center">
+  <a href="https://crabnebula.dev/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">
+    <img src="./docs/assets/sponsors/crabnebula.svg" alt="CrabNebula" height="40" />
+  </a>
+</p>
+
+<p align="center">
+  Tauri tooling and distribution infrastructure provided by <a href="https://crabnebula.dev/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">CrabNebula</a>. Thanks for sponsoring Deadlock Mod Manager!
+</p>
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Development
