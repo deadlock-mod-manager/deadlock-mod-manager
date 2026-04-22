@@ -28,7 +28,7 @@ export async function initiateOIDCLogin(): Promise<void> {
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     response_type: "code",
-    scope: "openid profile email",
+    scope: "openid profile email offline_access",
     state: encodedState,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
