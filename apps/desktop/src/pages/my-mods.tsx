@@ -715,12 +715,22 @@ const MyMods = () => {
 
   const installedMods = getOrderedMods();
 
-  const enabledModsCount = mods.filter(
-    (mod) =>
-      mod.status === ModStatus.Installed &&
-      mod.installedVpks &&
-      mod.installedVpks.length > 0,
-  ).length;
+  const enabledModsCount = (() => {
+    const uniqueVpks = new Set<string>();
+    for (const mod of mods) {
+      if (
+        mod.status !== ModStatus.Installed ||
+        !mod.installedVpks ||
+        mod.installedVpks.length === 0
+      ) {
+        continue;
+      }
+      for (const vpk of mod.installedVpks) {
+        uniqueVpks.add(vpk);
+      }
+    }
+    return uniqueVpks.size;
+  })();
   const disabledModsCount = mods.filter(
     (mod) =>
       mod.status !== ModStatus.Installed ||

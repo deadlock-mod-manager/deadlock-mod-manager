@@ -23,6 +23,7 @@ import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useHeroDetection } from "./hooks/use-hero-detection";
+import { useModCompression } from "./hooks/use-mod-compression";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/api";
@@ -44,6 +45,7 @@ const App = () => {
   useLanguageListener();
   useModOrderMigration();
   useHeroDetection();
+  useModCompression();
   useIngestToolInit();
   const { t } = useTranslation();
 

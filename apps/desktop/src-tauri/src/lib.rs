@@ -15,6 +15,7 @@ mod flatpak;
 mod hero_detector;
 mod ingest_tool;
 mod logs;
+mod mod_compression;
 mod mod_manager;
 pub mod proxy;
 mod reports;
@@ -90,6 +91,21 @@ pub fn run() {
         mod_manager.set_app_handle(app.handle().clone());
       }
 
+      {
+        let mod_manager = commands::MANAGER
+          .lock()
+          .map_err(|e| format!("Failed to acquire mod manager lock: {e}"))?;
+        if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+          let addons = game_path.join("game").join("citadel").join("addons");
+          mod_compression::service::cleanup_stale_compression_tmp_files(&addons);
+          if let Ok(false) = mod_compression::service::validate_manifest_on_disk(&addons) {
+            log::warn!(
+              "Mod compression manifest is inconsistent with shard files on disk (default profile)"
+            );
+          }
+        }
+      }
+
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
@@ -118,6 +134,10 @@ pub fn run() {
       commands::clear_all_mods_data,
       commands::uninstall_mod,
       commands::purge_mod,
+      mod_compression::commands::mod_compression_set_config,
+      mod_compression::commands::mod_compression_rebuild,
+      mod_compression::commands::mod_compression_disable,
+      mod_compression::commands::mod_compression_cancel,
       commands::reorder_mods,
       commands::reorder_mods_by_remote_id,
       commands::is_game_running,

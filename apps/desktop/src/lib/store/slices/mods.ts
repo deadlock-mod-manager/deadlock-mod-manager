@@ -51,6 +51,7 @@ export type ModsState = {
     remoteId: string,
     vpks: string[],
     fileTree?: ModFileTree,
+    usesCompression?: boolean,
   ) => void;
   setSelectedDownloads: (
     remoteId: string,
@@ -313,6 +314,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     remoteId: string,
     vpks: string[],
     fileTree?: ModFileTree,
+    usesCompression?: boolean,
   ) =>
     set((state) => ({
       localMods: state.localMods.map((mod) => ({
@@ -321,6 +323,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+        usesCompression:
+          mod.remoteId === remoteId && usesCompression !== undefined
+            ? usesCompression
+            : mod.usesCompression,
       })),
     })),
 

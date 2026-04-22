@@ -20,6 +20,7 @@ use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashSet;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time::Instant;
@@ -27,6 +28,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_store::StoreExt;
 use tokio::sync::OnceCell;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
+use vpkmerger::CancelToken;
 
 pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
   LazyLock::new(|| Mutex::new(ModManager::new()));
@@ -43,6 +45,25 @@ static INGEST_WATCHER_GEN: LazyLock<Arc<AtomicUsize>> =
 // Console log watcher state (for map connect codes)
 static CONSOLE_LOG_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
   LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+
+fn rebuild_compressed_addon_if_enabled(
+  app: &AppHandle,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
+  if !crate::mod_compression::state::is_compression_enabled() {
+    return Ok(());
+  }
+  let mut mod_manager = MANAGER
+    .lock()
+    .map_err(|_| Error::InvalidInput("manager lock".into()))?;
+  let cancel = CancelToken::new();
+  crate::mod_compression::service::rebuild_compressed_addon(
+    app,
+    &mut mod_manager,
+    profile_folder,
+    &cancel,
+  )
+}
 
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
@@ -269,9 +290,29 @@ pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
 }
 
 #[tauri::command]
-pub async fn install_mod(deadlock_mod: Mod, profile_folder: Option<String>) -> Result<Mod, Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.install_mod(deadlock_mod, profile_folder)
+pub async fn install_mod(
+  app: AppHandle,
+  deadlock_mod: Mod,
+  profile_folder: Option<String>,
+) -> Result<Mod, Error> {
+  let mut m = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.install_mod(deadlock_mod, profile_folder.clone())?
+  };
+  if crate::mod_compression::state::is_compression_enabled() && !m.is_map {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let cancel = CancelToken::new();
+    crate::mod_compression::service::rebuild_compressed_addon(
+      &app,
+      &mut mod_manager,
+      profile_folder.clone(),
+      &cancel,
+    )?;
+    if let Some(updated) = mod_manager.get_mod_repository().get_mod(&m.id).cloned() {
+      m = updated;
+    }
+  }
+  Ok(m)
 }
 
 #[tauri::command]
@@ -714,16 +755,59 @@ pub async fn clear_all_mods_data() -> Result<u64, Error> {
 
 #[tauri::command]
 pub async fn uninstall_mod(
+  app: AppHandle,
   mod_id: String,
   vpks: Vec<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
+  let local_mod = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.get_mod_repository().get_mod(&mod_id).cloned()
+  };
+  if let Some(ref m) = local_mod
+    && m.uses_compression
+  {
+    let mods_store = {
+      let mod_manager = MANAGER.lock().unwrap();
+      mod_manager.get_mods_store_path()?
+    };
+    let staged = crate::mod_compression::paths::compression_staged_dir(&mods_store, &mod_id);
+    {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      mod_manager.get_mod_repository_mut().remove_mod(&mod_id);
+      let cancel = CancelToken::new();
+      crate::mod_compression::service::rebuild_compressed_addon(
+        &app,
+        &mut mod_manager,
+        profile_folder.clone(),
+        &cancel,
+      )?;
+    }
+    let addons_path = {
+      let mod_manager = MANAGER.lock().unwrap();
+      crate::mod_compression::service::addons_path_for(&mod_manager, profile_folder.as_deref())?
+    };
+    for orig in &m.original_vpk_names {
+      let src = staged.join(orig);
+      if src.exists() {
+        let name = format!("{mod_id}_{orig}");
+        fs::copy(&src, addons_path.join(&name)).map_err(Error::Io)?;
+      }
+    }
+    let mut disabled = m.clone();
+    disabled.installed_vpks = Vec::new();
+    disabled.uses_compression = false;
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.get_mod_repository_mut().add_mod(disabled);
+    return Ok(());
+  }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.uninstall_mod(mod_id, vpks, profile_folder)
 }
 
 #[tauri::command]
 pub async fn purge_mod(
+  app: AppHandle,
   mod_id: String,
   vpks: Vec<String>,
   profile_folder: Option<String>,
@@ -740,6 +824,37 @@ pub async fn purge_mod(
     None
   };
 
+  let use_compression = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .get_mod_repository()
+      .get_mod(&mod_id)
+      .map(|m| m.uses_compression)
+      .unwrap_or(false)
+  };
+
+  if use_compression {
+    {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      mod_manager.get_mod_repository_mut().remove_mod(&mod_id);
+      let cancel = CancelToken::new();
+      crate::mod_compression::service::rebuild_compressed_addon(
+        &app,
+        &mut mod_manager,
+        profile_folder.clone(),
+        &cancel,
+      )?;
+    }
+    {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      mod_manager.purge_mod_after_compression_rebuild(&mod_id, profile_folder.clone())?;
+    }
+    if let Some(cleanup) = prepared_font_cleanup {
+      apply_font_cleanup(cleanup)?;
+    }
+    return Ok(());
+  }
+
   {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.purge_mod(mod_id.clone(), vpks, profile_folder)?;
@@ -754,20 +869,75 @@ pub async fn purge_mod(
 
 #[tauri::command]
 pub async fn reorder_mods(
+  app: AppHandle,
   mod_order_data: Vec<(String, u32)>,
   profile_folder: Option<String>,
 ) -> Result<Vec<Mod>, Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.reorder_mods(mod_order_data, profile_folder)
+  let mut mods = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.reorder_mods(mod_order_data, profile_folder.clone())?
+  };
+  if crate::mod_compression::state::is_compression_enabled() {
+    {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      let cancel = CancelToken::new();
+      crate::mod_compression::service::rebuild_compressed_addon(
+        &app,
+        &mut mod_manager,
+        profile_folder.clone(),
+        &cancel,
+      )?;
+    }
+    let mod_manager = MANAGER.lock().unwrap();
+    mods = mods
+      .into_iter()
+      .map(|m| {
+        mod_manager
+          .get_mod_repository()
+          .get_mod(&m.id)
+          .cloned()
+          .unwrap_or(m)
+      })
+      .collect();
+  }
+  Ok(mods)
 }
 
 #[tauri::command]
 pub async fn reorder_mods_by_remote_id(
+  app: AppHandle,
   mod_order_data: Vec<(String, Vec<String>, u32)>,
   profile_folder: Option<String>,
 ) -> Result<Vec<(String, Vec<String>)>, Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.reorder_mods_by_remote_id(mod_order_data, profile_folder)
+  let mut out = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.reorder_mods_by_remote_id(mod_order_data, profile_folder.clone())?
+  };
+  if crate::mod_compression::state::is_compression_enabled() {
+    {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      let cancel = CancelToken::new();
+      crate::mod_compression::service::rebuild_compressed_addon(
+        &app,
+        &mut mod_manager,
+        profile_folder.clone(),
+        &cancel,
+      )?;
+    }
+    let mod_manager = MANAGER.lock().unwrap();
+    out = out
+      .into_iter()
+      .map(|(id, _)| {
+        let vpks = mod_manager
+          .get_mod_repository()
+          .get_mod(&id)
+          .map(|m| m.installed_vpks.clone())
+          .unwrap_or_default();
+        (id, vpks)
+      })
+      .collect();
+  }
+  Ok(out)
 }
 
 #[tauri::command]
@@ -1444,6 +1614,7 @@ pub async fn read_dropped_mod_file(file_path: String) -> Result<Vec<u8>, Error> 
 
 #[tauri::command]
 pub async fn replace_mod_vpks(
+  app: AppHandle,
   mod_id: String,
   source_vpk_paths: Vec<String>,
   installed_vpks: Option<Vec<String>>,
@@ -1468,13 +1639,29 @@ pub async fn replace_mod_vpks(
     }
   }
 
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.replace_mod_vpks(
-    mod_id,
-    source_paths,
-    installed_vpks.unwrap_or_default(),
-    profile_folder,
-  )?;
+  let profile_for_rebuild = profile_folder.clone();
+  {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.replace_mod_vpks(
+      mod_id.clone(),
+      source_paths,
+      installed_vpks.unwrap_or_default(),
+      profile_folder,
+    )?;
+  }
+
+  if crate::mod_compression::state::is_compression_enabled() {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let cancel = CancelToken::new();
+    crate::mod_compression::service::rebuild_compressed_addon(
+      &app,
+      &mut mod_manager,
+      profile_for_rebuild,
+      &cancel,
+    )?;
+  }
+
+  crate::hero_detector::clear_vpk_entry_cache();
 
   log::info!("VPK replacement command completed successfully");
   Ok(())
@@ -2661,6 +2848,7 @@ pub async fn import_profile_batch(
         file_tree: mod_data.file_tree.clone(),
         install_order: None,
         original_vpk_names: Vec::new(),
+        uses_compression: false,
       };
 
       mod_manager.install_mod(deadlock_mod, Some(final_profile_folder.clone()))
@@ -2704,6 +2892,8 @@ pub async fn import_profile_batch(
     failed.len()
   );
 
+  rebuild_compressed_addon_if_enabled(&app_handle, Some(final_profile_folder.clone()))?;
+
   Ok(ProfileImportResult {
     profile_folder: final_profile_folder,
     succeeded,
@@ -2735,6 +2925,7 @@ pub async fn register_analyzed_mod(
       file_tree: None,
       install_order: None,
       original_vpk_names: Vec::new(),
+      uses_compression: false,
     };
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
   } else {
@@ -3142,6 +3333,7 @@ pub async fn batch_update_mods(
         file_tree: mod_data.file_tree.clone(),
         install_order: None,
         original_vpk_names: Vec::new(),
+        uses_compression: false,
       };
 
       mod_manager.install_mod(
@@ -3191,6 +3383,15 @@ pub async fn batch_update_mods(
     succeeded.len(),
     failed.len()
   );
+
+  rebuild_compressed_addon_if_enabled(
+    &app_handle,
+    if profile_folder.is_empty() {
+      None
+    } else {
+      Some(profile_folder.clone())
+    },
+  )?;
 
   Ok(BatchUpdateResult {
     backup_name: filename,

@@ -575,6 +575,20 @@
       "title": "Matchdata Ingest Tool",
       "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
     },
+    "modCompression": {
+      "title": "Mod Compression",
+      "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
+      "enableLabel": "Enable mod compression",
+      "warningTitle": "Slower operations",
+      "warningBody": "With mod compression enabled, installing, updating, removing, or reordering mods can take longer because the manager rebuilds merged VPKs in the background.",
+      "enableConfirmTitle": "Enable mod compression?",
+      "enableConfirmBody": "Operations such as installing, updating, or removing mods may take longer. You can turn this off later.",
+      "enableConfirmAction": "Enable",
+      "disableConfirmTitle": "Disable mod compression?",
+      "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
+      "disableConfirmAction": "Disable",
+      "gameRunning": "Close Deadlock before changing mod compression."
+    },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "linuxGpuCompat": "NVIDIA Wayland Compatibility",
@@ -1826,6 +1840,15 @@
   "heroTag": {
     "hero": "Hero",
     "other": "General"
+  },
+  "modCompression": {
+    "idle": "Mod compression: idle",
+    "merging": "Merging: {{current}}/{{total}}",
+    "extracting": "Extracting: {{current}}/{{total}}",
+    "paused": "Paused (game running)",
+    "indicatorTooltip": "Mod compression",
+    "shardCount": "{{count}} merged VPK files",
+    "progress": "{{current}}/{{total}}"
   },
   "heroParser": {
     "idle": "Hero Parser: Idle",

@@ -376,6 +376,36 @@ impl ModManager {
     Ok(())
   }
 
+  pub fn purge_mod_after_compression_rebuild(
+    &mut self,
+    mod_id: &str,
+    profile_folder: Option<String>,
+  ) -> Result<(), Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+    let addons_path = if let Some(ref folder) = profile_folder {
+      game_path
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .join(folder)
+    } else {
+      game_path.join("game").join("citadel").join("addons")
+    };
+    self
+      .vpk_manager
+      .remove_vpks_by_mod_id(&addons_path, mod_id)?;
+    let mods_path = self.get_mods_store_path()?;
+    let user_mod_dir = mods_path.join(mod_id);
+    if user_mod_dir.exists() {
+      log::info!("Removing user-mod folder: {user_mod_dir:?}");
+      self.filesystem.remove_directory_recursive(&user_mod_dir)?;
+    }
+    Ok(())
+  }
+
   /// Reorder all mods based on their current install_order for a specific profile
   fn reorder_all_mods_for_profile(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let game_path = self
@@ -669,6 +699,17 @@ impl ModManager {
   /// Get a mutable reference to the mod repository
   pub fn get_mod_repository_mut(&mut self) -> &mut ModRepository {
     &mut self.mod_repository
+  }
+
+  pub fn enable_mod_prefixed_vpks(
+    &self,
+    addons_path: &std::path::Path,
+    mod_id: &str,
+    prefixed_vpks: &[String],
+  ) -> Result<Vec<String>, Error> {
+    self
+      .vpk_manager
+      .enable_vpks(addons_path, mod_id, prefixed_vpks)
   }
 
   pub fn set_app_handle(&mut self, app_handle: tauri::AppHandle) {

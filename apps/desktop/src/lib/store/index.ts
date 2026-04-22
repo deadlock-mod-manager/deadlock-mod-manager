@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { z } from "zod";
 import logger from "@/lib/logger";
+import {
+  type CompressionSliceState,
+  createCompressionSlice,
+} from "./slices/compression";
 import { type CrosshairState, createCrosshairSlice } from "./slices/crosshair";
 import { createGameSlice, type GameState } from "./slices/game";
 import { createModsSlice, type ModsState } from "./slices/mods";
@@ -35,7 +39,8 @@ export type State = ModsState &
   NetworkState &
   UIState &
   ScrollState &
-  CrosshairState;
+  CrosshairState &
+  CompressionSliceState;
 
 export const usePersistedStore = create<State>()(
   persist(
@@ -49,10 +54,11 @@ export const usePersistedStore = create<State>()(
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
+      ...createCompressionSlice(...a),
     }),
     {
       name: "local-config",
-      version: 18,
+      version: 19,
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: (persistedState: unknown, version: number) => {
@@ -537,6 +543,7 @@ export const usePersistedStore = create<State>()(
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
           heroDetection: _heroDetection,
+          compressionProgress: _compressionProgress,
           ...rest
         } = state;
         return rest;

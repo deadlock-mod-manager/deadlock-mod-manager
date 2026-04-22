@@ -27,6 +27,13 @@ export enum ModStatus {
   Error = "error",
 }
 
+export interface LocalModCompressionMeta {
+  mergedShards: string[];
+  originalVpkNames: string[];
+  loadOrder: number;
+  assetKeys: string[];
+}
+
 export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
@@ -37,6 +44,8 @@ export interface LocalMod extends ModDto {
   installOrder?: number;
   detectedHero?: string | null;
   usesCriticalPaths?: boolean;
+  usesCompression?: boolean;
+  compression?: LocalModCompressionMeta;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {
@@ -57,6 +66,7 @@ export type InstallableMod = {
   name: string;
   installed_vpks: string[];
   file_tree?: ModFileTree;
+  usesCompression?: boolean;
 };
 
 export interface ModFile {

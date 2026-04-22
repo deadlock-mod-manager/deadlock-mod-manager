@@ -1244,7 +1244,21 @@
     "toolsDescription": "用於管理模組的實用功能",
     "unlimitedBackups": "Unlimited",
     "value": "值",
-    "valuePlaceholder": "true 或 false 或任意值"
+    "valuePlaceholder": "true 或 false 或任意值",
+    "modCompression": {
+      "title": "Mod Compression",
+      "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
+      "enableLabel": "Enable mod compression",
+      "warningTitle": "Slower operations",
+      "warningBody": "With mod compression enabled, installing, updating, removing, or reordering mods can take longer because the manager rebuilds merged VPKs in the background.",
+      "enableConfirmTitle": "Enable mod compression?",
+      "enableConfirmBody": "Operations such as installing, updating, or removing mods may take longer. You can turn this off later.",
+      "enableConfirmAction": "Enable",
+      "disableConfirmTitle": "Disable mod compression?",
+      "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
+      "disableConfirmAction": "Disable",
+      "gameRunning": "Close Deadlock before changing mod compression."
+    }
   },
   "sorting": {
     "default": "預設",
@@ -1568,7 +1582,9 @@
         "title": "音訊模組支援與啟動選項"
       },
       "0.6.1": {
-        "features": ["🔗 新增了對 GameBanana 上一鍵安裝連結的支援"],
+        "features": [
+          "🔗 新增了對 GameBanana 上一鍵安裝連結的支援"
+        ],
         "title": "深度連結與改進"
       },
       "0.7.0": {
@@ -1596,11 +1612,16 @@
         "title": "主要功能與 UI 更新 + 新語言支援"
       },
       "0.8.1": {
-        "features": ["🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"],
+        "features": [
+          "🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"
+        ],
         "title": "技術改進"
       },
       "0.8.2": {
-        "features": ["🐛 修正了各種錯誤並提高了穩定性", "⚡ 效能改進和最佳化"],
+        "features": [
+          "🐛 修正了各種錯誤並提高了穩定性",
+          "⚡ 效能改進和最佳化"
+        ],
         "title": "錯誤修正與改進"
       },
       "0.9.0": {
@@ -1615,10 +1636,21 @@
         "title": "模組管理與系統改進"
       },
       "0.9.2": {
-        "features": ["⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"],
+        "features": [
+          "⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"
+        ],
         "title": "設定與組態"
       }
     },
     "welcome": "歡迎使用 {{appName}} 的最新版本！"
+  },
+  "modCompression": {
+    "idle": "Mod compression: idle",
+    "merging": "Merging: {{current}}/{{total}}",
+    "extracting": "Extracting: {{current}}/{{total}}",
+    "paused": "Paused (game running)",
+    "indicatorTooltip": "Mod compression",
+    "shardCount": "{{count}} merged VPK files",
+    "progress": "{{current}}/{{total}}"
   }
 }
