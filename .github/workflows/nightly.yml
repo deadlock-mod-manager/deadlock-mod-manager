@@ -3,6 +3,10 @@ name: Nightly Build
 env:
   NODE_VERSION: "24.8.0"
 
+concurrency:
+  group: nightly-build
+  cancel-in-progress: true
+
 on:
   schedule:
     # Run at 2 AM UTC every day
@@ -198,6 +202,30 @@ jobs:
             } catch (error) {
               if (error.status !== 422) throw error;
               console.log('No previous nightly tag found');
+            }
+
+            // Sweep any stale draft Nightly releases left behind by previously cancelled/killed runs
+            let page = 1;
+            while (true) {
+              const { data: releases } = await github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+              if (releases.length === 0) break;
+              for (const r of releases) {
+                if (r.draft && r.name?.startsWith('Nightly ')) {
+                  console.log(`Deleting stale draft nightly: ${r.name} (${r.id})`);
+                  await github.rest.repos.deleteRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: r.id
+                  });
+                }
+              }
+              if (releases.length < 100) break;
+              page++;
             }
 
       - name: Create nightly release
@@ -623,7 +651,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       [check-commits, prepare-matrix, create-nightly-release, build-nightly]
-    if: failure() && needs.check-commits.outputs.should_build == 'true'
+    if: (failure() || cancelled()) && needs.check-commits.outputs.should_build == 'true'
 
     steps:
       - name: Delete failed nightly release
