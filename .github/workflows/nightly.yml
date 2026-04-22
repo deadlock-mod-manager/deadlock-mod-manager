@@ -20,7 +20,7 @@ on:
 
 jobs:
   check-commits:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     permissions:
       contents: read
     outputs:
@@ -68,7 +68,7 @@ jobs:
           echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   prepare-matrix:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     permissions:
       contents: read
     outputs:
@@ -79,26 +79,26 @@ jobs:
         run: |
           # For scheduled runs, build all platforms
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            matrix='{"platform":["windows-latest","ubuntu-24.04"]}'
+            matrix='{"platform":["depot-windows-latest","depot-ubuntu-24.04"]}'
           else
             # For manual dispatch, build based on inputs
             platforms=""
             
             if [ "${{ inputs.build_windows }}" = "true" ]; then
-              platforms="windows-latest"
+              platforms="depot-windows-latest"
             fi
             
             if [ "${{ inputs.build_linux }}" = "true" ]; then
               if [ -z "$platforms" ]; then
-                platforms="ubuntu-24.04"
+                platforms="depot-ubuntu-24.04"
               else
-                platforms="$platforms,ubuntu-24.04"
+                platforms="$platforms,depot-ubuntu-24.04"
               fi
             fi
             
             # If no platforms selected, default to all
             if [ -z "$platforms" ]; then
-              platforms="windows-latest,ubuntu-24.04"
+              platforms="depot-windows-latest,depot-ubuntu-24.04"
             fi
             
             # Convert to JSON array
@@ -113,7 +113,7 @@ jobs:
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
       nightly_version: ${{ steps.version.outputs.nightly_version }}
@@ -293,7 +293,7 @@ jobs:
       - uses: pnpm/action-setup@v4
 
       - name: Install apt dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'depot-ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -309,7 +309,7 @@ jobs:
             flatpak-builder
 
       - name: Install Flatpak SDK (ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'depot-ubuntu-24.04'
         uses: ./.github/actions/install-flatpak-sdk
         with:
           runtime-version: "49"
@@ -330,7 +330,7 @@ jobs:
 
       # Linux build - upload directly to release
       - name: Build the app (Linux)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'depot-ubuntu-24.04'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -345,7 +345,7 @@ jobs:
           tauriScript: pnpm tauri
 
       - name: Build Flatpak bundle (Linux)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'depot-ubuntu-24.04'
         run: |
           DEB_PATH=$(find apps/desktop/target/release/bundle/deb -name '*.deb' | head -1)
           cp "$DEB_PATH" apps/desktop/flatpak/deadlock-mod-manager.deb
@@ -355,7 +355,7 @@ jobs:
           flatpak build-bundle flatpak-repo deadlock-mod-manager.flatpak dev.stormix.deadlock-mod-manager
 
       - name: Upload Flatpak to release (Linux)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'depot-ubuntu-24.04'
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
@@ -375,7 +375,7 @@ jobs:
 
       # Windows build - don't upload to release yet, need to code-sign first
       - name: Build the app (Windows)
-        if: matrix.platform == 'windows-latest'
+        if: matrix.platform == 'depot-windows-latest'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -390,7 +390,7 @@ jobs:
 
       # Windows: SignPath code signing flow
       - name: Sign Windows executables
-        if: matrix.platform == 'windows-latest'
+        if: matrix.platform == 'depot-windows-latest'
         id: signpath-sign
         uses: ./.github/actions/signpath-sign
         with:
@@ -403,7 +403,7 @@ jobs:
           tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
       - name: Upload signed Windows artifact
-        if: matrix.platform == 'windows-latest'
+        if: matrix.platform == 'depot-windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: windows-nightly-signed
@@ -411,7 +411,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload signed artifacts to release
-        if: matrix.platform == 'windows-latest'
+        if: matrix.platform == 'depot-windows-latest'
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
@@ -474,7 +474,7 @@ jobs:
             }
 
       - name: Upload latest.json to release (Windows-only nightly)
-        if: matrix.platform == 'windows-latest' && !contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'ubuntu-24.04')
+        if: matrix.platform == 'depot-windows-latest' && !contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'depot-ubuntu-24.04')
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
@@ -558,7 +558,7 @@ jobs:
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -581,7 +581,7 @@ jobs:
   publish-nightly:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     needs:
       [
         check-commits,
@@ -620,7 +620,7 @@ jobs:
   cleanup-nightly:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     needs:
       [check-commits, prepare-matrix, create-nightly-release, build-nightly]
     if: failure() && needs.check-commits.outputs.should_build == 'true'
