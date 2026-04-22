@@ -11,6 +11,7 @@ const Status = ({ status }: { status: ModStatus }) => {
   const StatusIcon = useMemo(() => {
     switch (status) {
       case ModStatus.Downloading:
+      case ModStatus.Extracting:
       case ModStatus.Paused:
         return Loader2;
       case ModStatus.Installed:
@@ -28,6 +29,8 @@ const Status = ({ status }: { status: ModStatus }) => {
         return t("modStatus.downloaded");
       case ModStatus.Downloading:
         return t("modStatus.downloading");
+      case ModStatus.Extracting:
+        return t("modStatus.extracting");
       case ModStatus.Paused:
         return t("modStatus.paused");
       case ModStatus.Installed:
@@ -43,7 +46,8 @@ const Status = ({ status }: { status: ModStatus }) => {
     <Badge className='flex w-fit items-center gap-2' variant='secondary'>
       <StatusIcon
         className={cn("h-4 w-4", {
-          "animate-spin": status === ModStatus.Downloading,
+          "animate-spin":
+            status === ModStatus.Downloading || status === ModStatus.Extracting,
         })}
       />
       {StatusText}

@@ -256,7 +256,9 @@ export const BottomBar = () => {
   );
 
   const downloadingCount = localMods.filter(
-    (mod) => mod.status === ModStatus.Downloading,
+    (mod) =>
+      mod.status === ModStatus.Downloading ||
+      mod.status === ModStatus.Extracting,
   ).length;
 
   const pausedCount = localMods.filter(

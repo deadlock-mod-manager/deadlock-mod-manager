@@ -236,6 +236,7 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
         ? mods.filter(
             (mod) =>
               mod.status === ModStatus.Downloading ||
+              mod.status === ModStatus.Extracting ||
               mod.status === ModStatus.Paused,
           ).length
         : undefined,

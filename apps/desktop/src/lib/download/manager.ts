@@ -141,6 +141,9 @@ class DownloadManager {
         logger
           .withMetadata({ mod: event.payload.modId })
           .info("Extracting archive for mod");
+        usePersistedStore
+          .getState()
+          .setModStatus(event.payload.modId, ModStatus.Extracting);
       },
     );
 
