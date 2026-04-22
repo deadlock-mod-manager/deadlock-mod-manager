@@ -20,7 +20,7 @@ on:
 
 jobs:
   check-commits:
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -68,7 +68,7 @@ jobs:
           echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   prepare-matrix:
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -113,7 +113,7 @@ jobs:
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
       nightly_version: ${{ steps.version.outputs.nightly_version }}
@@ -558,7 +558,7 @@ jobs:
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -581,7 +581,7 @@ jobs:
   publish-nightly:
     permissions:
       contents: write
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       [
         check-commits,
@@ -620,7 +620,7 @@ jobs:
   cleanup-nightly:
     permissions:
       contents: write
-    runs-on: depot-ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       [check-commits, prepare-matrix, create-nightly-release, build-nightly]
     if: failure() && needs.check-commits.outputs.should_build == 'true'
