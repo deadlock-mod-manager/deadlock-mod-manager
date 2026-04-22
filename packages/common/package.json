@@ -5,7 +5,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsgo --noEmit"
   },
   "dependencies": {
     "@isaacs/ttlcache": "catalog:",
@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
-    "@types/pg": "^8.20.0"
+    "@types/pg": "^8.20.0",
+    "@typescript/native-preview": "catalog:"
   }
 }

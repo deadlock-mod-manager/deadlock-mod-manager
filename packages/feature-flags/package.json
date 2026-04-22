@@ -6,7 +6,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsgo --noEmit"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
@@ -16,6 +16,7 @@
     "neverthrow": "^8.2.0"
   },
   "devDependencies": {
-    "@deadlock-mods/typescript-config": "workspace:*"
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@typescript/native-preview": "catalog:"
   }
 }

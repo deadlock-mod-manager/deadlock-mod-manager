@@ -105,7 +105,7 @@ Work outside-in. Do **not** start from the UI; types must flow downward.
 1. **Relay client schemas** (`packages/relay-client/src/schemas.ts`)
    - Mirror the spec exactly. This package is the boundary with the relay mesh.
    - Use `.optional().default(...)` for fields the spec marks optional with a documented default; use plain `.optional()` otherwise.
-   - Run `pnpm --filter @deadlock-mods/relay-client build` (or `tsc --noEmit`) to type-check.
+   - Run `pnpm --filter @deadlock-mods/relay-client build` (or `tsgo --noEmit`) to type-check.
 2. **Relay client transport** (`packages/relay-client/src/client.ts`)
    - Add/remove methods to match new endpoints (e.g. if events, auth challenge, or gossip endpoints become client-relevant).
    - Keep the circuit breaker and retry behavior — those are DMM concerns, not protocol.
