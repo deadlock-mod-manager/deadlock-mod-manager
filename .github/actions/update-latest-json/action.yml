@@ -1,5 +1,5 @@
 name: "Update latest.json"
-description: "Update latest.json with new Windows NSIS signature after code signing"
+description: "Merge Windows NSIS signatures into latest.json. Requires an existing release asset (from the Linux tauri-action upload, or from the Windows-only nightly step in nightly.yml)."
 
 inputs:
   release-id:

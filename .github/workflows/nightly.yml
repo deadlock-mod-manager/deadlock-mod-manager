@@ -473,6 +473,86 @@ jobs:
               }
             }
 
+      - name: Upload latest.json to release (Windows-only nightly)
+        if: matrix.platform == 'windows-latest' && !contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'ubuntu-24.04')
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
+          NIGHTLY_VERSION: ${{ needs.create-nightly-release.outputs.nightly_version }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            function toGitHubAssetName(name) {
+              return name
+                .trim()
+                .replace(/[^a-zA-Z0-9_-]/g, '.')
+                .replace(/\.+/g, '.');
+            }
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const nightlyVersion = process.env.NIGHTLY_VERSION;
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+            const sigFile = files.find(f => f.endsWith('.exe.sig'));
+            const exeFile = files.find(f => f.endsWith('.exe') && !f.endsWith('.exe.sig'));
+
+            if (!sigFile) {
+              throw new Error('No .exe.sig file found in artifact-output');
+            }
+            if (!exeFile) {
+              throw new Error('No .exe file found in artifact-output');
+            }
+
+            const signature = fs.readFileSync(path.join(artifactDir, sigFile), 'utf8').trim();
+            const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/nightly`;
+            const githubAssetName = toGitHubAssetName(exeFile);
+            const exeUrl = `${baseDownloadUrl}/${githubAssetName}`;
+
+            const latestJson = {
+              version: nightlyVersion,
+              notes: 'Nightly build',
+              pub_date: new Date().toISOString(),
+              platforms: {
+                'windows-x86_64': {
+                  signature: signature,
+                  url: exeUrl
+                },
+                'windows-x86_64-nsis': {
+                  signature: signature,
+                  url: exeUrl
+                }
+              }
+            };
+
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId
+            });
+
+            const existingLatest = release.assets.find(a => a.name === 'latest.json');
+            if (existingLatest) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: existingLatest.id
+              });
+              console.log('Deleted existing latest.json before upload');
+            }
+
+            const newContent = JSON.stringify(latestJson, null, 2);
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: 'latest.json',
+              data: Buffer.from(newContent)
+            });
+
+            console.log('Successfully uploaded latest.json (Windows-only nightly)');
+
   update-latest-json:
     needs: [check-commits, create-nightly-release, build-nightly]
     if: needs.check-commits.outputs.should_build == 'true'
