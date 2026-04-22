@@ -14,6 +14,9 @@ pub enum VpkMergerError {
     #[error("Invalid VPK: {message}")]
     Invalid { message: String },
 
+    #[error("Operation cancelled")]
+    Cancelled,
+
     #[error(
         "Missing archive chunk for entry \"{entry_path}\" (expected {})",
         .expected_archive.display()

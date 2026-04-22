@@ -1328,7 +1328,10 @@ pub async fn create_addons_backup(
 
     let base = backup_manager.get_addons_path()?;
     let addons_path = match profile_folder.as_deref() {
-      Some(folder) if !folder.is_empty() => base.join(folder),
+      Some(folder) if !folder.is_empty() => {
+        crate::mod_compression::service::validate_profile_folder_component(folder)?;
+        base.join(folder)
+      }
       _ => base,
     };
     let backup_dir = backup_manager.get_backup_directory()?;
@@ -1382,7 +1385,10 @@ pub async fn restore_addons_backup(
     crate::mod_manager::addons_backup_manager::RestoreStrategy::from_str(&strategy)?;
   let base = backup_manager.get_addons_path()?;
   let addons_target = match profile_folder.as_deref() {
-    Some(folder) if !folder.is_empty() => base.join(folder),
+    Some(folder) if !folder.is_empty() => {
+      crate::mod_compression::service::validate_profile_folder_component(folder)?;
+      base.join(folder)
+    }
     _ => base,
   };
   backup_manager
@@ -1705,19 +1711,31 @@ pub async fn replace_mod_vpks(
         .get_mod_repository()
         .get_mod(&mod_id)
         .cloned()
-        .ok_or_else(|| {
-          Error::InvalidInput("mod not in repository for VPK replace".to_string())
-        })?;
+        .ok_or_else(|| Error::InvalidInput("mod not in repository for VPK replace".to_string()))?;
       let ms = mod_manager.get_mods_store_path()?;
       let staged = crate::mod_compression::paths::compression_staged_dir(&ms, &mod_id);
+      let new_original_vpk_names: Vec<String> = source_paths
+        .iter()
+        .map(|p| {
+          p.file_name()
+            .and_then(|n| n.to_str())
+            .map(String::from)
+            .ok_or_else(|| Error::InvalidInput("VPK path has no file name".to_string()))
+        })
+        .collect::<Result<_, _>>()?;
+      for name in &new_original_vpk_names {
+        crate::mod_compression::service::validate_vpk_basename(name)?;
+      }
+      if staged.exists() {
+        fs::remove_dir_all(&staged).map_err(Error::Io)?;
+      }
       fs::create_dir_all(&staged).map_err(Error::Io)?;
+      let mut updated = m;
+      updated.original_vpk_names = new_original_vpk_names.clone();
+      mod_manager.get_mod_repository_mut().add_mod(updated);
       for (i, src) in source_paths.iter().enumerate() {
-        let orig = m
-          .original_vpk_names
-          .get(i)
-          .cloned()
-          .unwrap_or_else(|| format!("file_{i}.vpk"));
-        let dst = staged.join(&orig);
+        let orig = new_original_vpk_names[i].as_str();
+        let dst = staged.join(orig);
         fs::copy(src, &dst).map_err(Error::Io)?;
       }
     } else {
@@ -3221,22 +3239,22 @@ pub async fn batch_update_mods(
             .remove_mod(&mod_data.mod_id);
           Ok(0)
         } else {
-        let mut removed_count = 0;
-        for vpk in &existing_mod.installed_vpks {
-          let vpk_path = addons_path_for_profile.join(vpk);
-          if vpk_path.exists() {
-            if let Err(e) = std::fs::remove_file(&vpk_path) {
-              log::error!("Failed to remove installed VPK {:?}: {:?}", vpk_path, e);
-            } else {
-              log::info!("Removed old installed VPK: {:?}", vpk_path);
-              removed_count += 1;
+          let mut removed_count = 0;
+          for vpk in &existing_mod.installed_vpks {
+            let vpk_path = addons_path_for_profile.join(vpk);
+            if vpk_path.exists() {
+              if let Err(e) = std::fs::remove_file(&vpk_path) {
+                log::error!("Failed to remove installed VPK {:?}: {:?}", vpk_path, e);
+              } else {
+                log::info!("Removed old installed VPK: {:?}", vpk_path);
+                removed_count += 1;
+              }
             }
           }
-        }
-        mod_manager
-          .get_mod_repository_mut()
-          .remove_mod(&mod_data.mod_id);
-        Ok(removed_count)
+          mod_manager
+            .get_mod_repository_mut()
+            .remove_mod(&mod_data.mod_id);
+          Ok(removed_count)
         }
       } else {
         Ok(0)

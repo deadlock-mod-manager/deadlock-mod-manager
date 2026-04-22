@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub trait ProgressSink: Send + Sync {
     fn report(&self, done: u64, total: u64);
@@ -33,9 +33,7 @@ impl CancelToken {
 
     pub fn check(&self) -> Result<(), crate::error::VpkMergerError> {
         if self.is_cancelled() {
-            return Err(crate::error::VpkMergerError::Invalid {
-                message: "operation cancelled".to_string(),
-            });
+            return Err(crate::error::VpkMergerError::Cancelled);
         }
         Ok(())
     }

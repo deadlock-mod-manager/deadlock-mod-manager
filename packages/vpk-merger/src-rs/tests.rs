@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use crate::bucket_plan::{
-    insert_mod_into_next_slot, plan_full_rebuild, remove_mod_from_buckets, BucketSpec,
+    BucketSpec, insert_mod_into_next_slot, plan_full_rebuild, remove_mod_from_buckets,
 };
 use crate::incremental::apply_bucket_rebuild;
 use crate::last_wins::ModRebuildInput;
 use crate::manifest::{
-    parse_manifest_json, BucketEntry, CompressionLevel, CompressionManifest, ModManifestEntry,
-    MANIFEST_VERSION,
+    BucketEntry, CompressionLevel, CompressionManifest, MANIFEST_VERSION, ModManifestEntry,
+    parse_manifest_json,
 };
 
 #[test]
@@ -85,10 +85,7 @@ fn remove_mod_from_buckets_returns_containing_bucket_id() {
             shard_files: vec![],
         },
     ];
-    assert_eq!(
-        remove_mod_from_buckets(&mut buckets, "a"),
-        Some(1u32)
-    );
+    assert_eq!(remove_mod_from_buckets(&mut buckets, "a"), Some(1u32));
     assert_eq!(buckets.len(), 2);
     assert_eq!(buckets[0].mod_ids, vec!["b"]);
 }

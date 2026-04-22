@@ -6,8 +6,8 @@ use rayon::prelude::*;
 use crate::error::{Result, VpkMergerError};
 use crate::filter::is_ignored_readme;
 use crate::manifest::ModManifestEntry;
-use crate::read::{load_dir_vpk, manifest_key, LoadedEntry};
-use crate::write::{sort_output_rows, OutputRow};
+use crate::read::{LoadedEntry, load_dir_vpk, manifest_key};
+use crate::write::{OutputRow, sort_output_rows};
 
 #[derive(Debug, Clone)]
 pub struct ModRebuildInput {
@@ -51,10 +51,8 @@ pub fn merge_mod_inputs_last_wins(inputs: &[ModRebuildInput]) -> Result<LastWins
         });
     }
 
-    let load_results: Vec<Result<Vec<TaggedEntry>>> = inputs
-        .par_iter()
-        .map(|inp| load_one_mod(inp))
-        .collect();
+    let load_results: Vec<Result<Vec<TaggedEntry>>> =
+        inputs.par_iter().map(|inp| load_one_mod(inp)).collect();
 
     let mut tagged: Vec<TaggedEntry> = Vec::new();
     for r in load_results {

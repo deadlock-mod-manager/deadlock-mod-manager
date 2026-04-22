@@ -483,6 +483,13 @@ export const usePersistedStore = create<State>()(
 
         if (version <= 19) {
           if (typeof (state as { compressionLevel?: string }).compressionLevel !== "string") {
+            logger
+              .withMetadata({
+                migrationFrom: version,
+                migrationTo: 20,
+                action: "default-compression-level-string",
+              })
+              .info("Migrated compressionLevel to 'low' where missing");
             (state as { compressionLevel: string }).compressionLevel = "low";
           }
         }

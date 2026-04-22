@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -85,8 +85,9 @@ impl CompressionManifest {
             .flat_map(|b| b.shard_files.iter().cloned())
             .collect();
         if !self.shard_files.is_empty() {
+            let mut seen: HashSet<String> = out.iter().cloned().collect();
             for s in &self.shard_files {
-                if !out.contains(s) {
+                if seen.insert(s.clone()) {
                     out.push(s.clone());
                 }
             }
@@ -152,29 +153,32 @@ fn migrate_v1_to_v2(v1: CompressionManifestV1) -> CompressionManifest {
 }
 
 pub fn parse_manifest_json(data: &str) -> crate::error::Result<CompressionManifest> {
-    let value: serde_json::Value = serde_json::from_str(data).map_err(|e| {
-        crate::error::VpkMergerError::Invalid {
+    let value: serde_json::Value =
+        serde_json::from_str(data).map_err(|e| crate::error::VpkMergerError::Invalid {
             message: format!("manifest parse: {e}"),
-        }
-    })?;
-    let version = value
-        .get("version")
-        .and_then(|v| v.as_u64())
-        .map(|n| n as u32)
-        .unwrap_or(1);
-    if version == 1 {
-        let v1: CompressionManifestV1 = serde_json::from_value(value).map_err(|e| {
-            crate::error::VpkMergerError::Invalid {
-                message: format!("manifest v1 parse: {e}"),
-            }
         })?;
+    let v = value
+        .get("version")
+        .ok_or_else(|| crate::error::VpkMergerError::Invalid {
+            message: "manifest JSON missing required \"version\" field".to_string(),
+        })?;
+    let version =
+        v.as_u64()
+            .map(|n| n as u32)
+            .ok_or_else(|| crate::error::VpkMergerError::Invalid {
+                message: "manifest \"version\" must be a JSON number (u64)".to_string(),
+            })?;
+    if version == 1 {
+        let v1: CompressionManifestV1 =
+            serde_json::from_value(value).map_err(|e| crate::error::VpkMergerError::Invalid {
+                message: format!("manifest v1 parse: {e}"),
+            })?;
         return Ok(migrate_v1_to_v2(v1));
     }
-    let mut m: CompressionManifest = serde_json::from_value(value).map_err(|e| {
-        crate::error::VpkMergerError::Invalid {
+    let mut m: CompressionManifest =
+        serde_json::from_value(value).map_err(|e| crate::error::VpkMergerError::Invalid {
             message: format!("manifest parse: {e}"),
-        }
-    })?;
+        })?;
     if m.version < MANIFEST_VERSION {
         m.version = MANIFEST_VERSION;
     }

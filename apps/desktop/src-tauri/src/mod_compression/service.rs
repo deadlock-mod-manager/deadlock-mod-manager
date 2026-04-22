@@ -5,18 +5,18 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, Emitter};
 use vpkmerger::{
-  apply_bucket_rebuild, default_max_shard_bytes, find_bucket_id_for_mod, insert_mod_into_next_slot,
-  read_manifest, remove_mod_from_buckets, remove_mod_from_manifest, rebuild_bucket,
-  rebuild_addon_compressed_bucketing, write_manifest_atomic, CancelToken, CompressionLevel,
-  CompressionManifest, ModRebuildInput,
+  CancelToken, CompressionLevel, CompressionManifest, ModRebuildInput, apply_bucket_rebuild,
+  default_max_shard_bytes, find_bucket_id_for_mod, insert_mod_into_next_slot, read_manifest,
+  rebuild_addon_compressed_bucketing, rebuild_bucket, remove_mod_from_buckets,
+  remove_mod_from_manifest, write_manifest_atomic,
 };
 
 use crate::errors::Error;
 use crate::mod_compression::paths::compression_staged_dir;
 use crate::mod_compression::paths::manifest_merge_base_name;
 use crate::mod_compression::state;
-use crate::mod_manager::mod_repository::Mod;
 use crate::mod_manager::ModManager;
+use crate::mod_manager::mod_repository::Mod;
 
 fn install_order_pair_flipped(
   mod_ids: &[String],
@@ -66,8 +66,7 @@ pub fn rebuild_compression_after_reorder(
   if !manifest_path.exists() {
     return rebuild_compressed_addon(app, manager, profile_folder, cancel);
   }
-  let mut manifest =
-    read_manifest(&manifest_path).map_err(|e| Error::ModInvalid(e.to_string()))?;
+  let mut manifest = read_manifest(&manifest_path).map_err(|e| Error::ModInvalid(e.to_string()))?;
   let level = state::get_compression_level();
   let to_rebuild: Vec<u32> = manifest
     .buckets
@@ -95,6 +94,54 @@ pub fn rebuild_compression_after_reorder(
   Ok(())
 }
 
+/// Validates a user-supplied addons subfolder (profile scope). See SECURITY.md.
+pub fn validate_profile_folder_component(folder: &str) -> Result<(), Error> {
+  if folder.is_empty() {
+    return Err(Error::InvalidInput(
+      "Profile folder name cannot be empty".to_string(),
+    ));
+  }
+  if folder.contains("..") || folder.contains('/') || folder.contains('\\') {
+    return Err(Error::InvalidInput(
+      "Invalid profile folder name".to_string(),
+    ));
+  }
+  let p = Path::new(folder);
+  let mut it = p.components();
+  let first = it.next();
+  let second = it.next();
+  if let (Some(std::path::Component::Normal(_)), None) = (first, second) {
+    Ok(())
+  } else {
+    Err(Error::InvalidInput(
+      "Invalid profile folder name".to_string(),
+    ))
+  }
+}
+
+/// SECURITY.md: VPK names in mod records must be single-segment .vpk basenames.
+pub fn validate_vpk_basename(s: &str) -> Result<&str, Error> {
+  if s.is_empty() {
+    return Err(Error::InvalidInput("VPK name cannot be empty".to_string()));
+  }
+  if s.contains("..") || s.contains('/') || s.contains('\\') {
+    return Err(Error::InvalidInput("Invalid VPK name".to_string()));
+  }
+  let p = Path::new(s);
+  let Some(b) = p.file_name().and_then(|n| n.to_str()) else {
+    return Err(Error::InvalidInput("Invalid VPK name".to_string()));
+  };
+  if b != s {
+    return Err(Error::InvalidInput("Invalid VPK name".to_string()));
+  }
+  if !s.to_ascii_lowercase().ends_with(".vpk") {
+    return Err(Error::InvalidInput(
+      "VPK name must end with .vpk".to_string(),
+    ));
+  }
+  Ok(s)
+}
+
 pub fn addons_path_for(
   manager: &ModManager,
   profile_folder: Option<&str>,
@@ -104,6 +151,7 @@ pub fn addons_path_for(
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
   Ok(if let Some(folder) = profile_folder {
+    validate_profile_folder_component(folder)?;
     game_path
       .join("game")
       .join("citadel")
@@ -133,6 +181,8 @@ pub fn stage_mod_vpks(mods_store: &Path, addons_path: &Path, m: &Mod) -> Result<
   let names = effective_original_names(m);
   for (i, vpk) in m.installed_vpks.iter().enumerate() {
     let orig = &names[i];
+    let vpk = validate_vpk_basename(vpk)?;
+    let orig = validate_vpk_basename(orig)?;
     let src = addons_path.join(vpk);
     let dst = dir.join(orig);
     if src.exists() {
@@ -234,8 +284,7 @@ fn bucket_inputs(
 
 fn apply_manifest_to_repository(manager: &mut ModManager, manifest: &CompressionManifest) {
   let id_to_shards: std::collections::HashMap<String, Vec<String>> = {
-    let mut m: std::collections::HashMap<String, Vec<String>> =
-      std::collections::HashMap::new();
+    let mut m: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
     for b in &manifest.buckets {
       for id in &b.mod_ids {
         m.insert(id.clone(), b.shard_files.clone());
@@ -304,13 +353,7 @@ pub fn rebuild_compressed_addon(
   cancel: &CancelToken,
 ) -> Result<(), Error> {
   let level = state::get_compression_level();
-  rebuild_compressed_addon_with_level(
-    app,
-    manager,
-    profile_folder,
-    cancel,
-    level,
-  )
+  rebuild_compressed_addon_with_level(app, manager, profile_folder, cancel, level)
 }
 
 pub fn rebuild_compressed_addon_with_level(
@@ -398,11 +441,7 @@ pub fn rebuild_compressed_addon_with_level(
       "currentMod": serde_json::Value::Null,
     }),
   );
-  let new_set: HashSet<String> = report
-    .manifest
-    .all_shard_file_names()
-    .into_iter()
-    .collect();
+  let new_set: HashSet<String> = report.manifest.all_shard_file_names().into_iter().collect();
   delete_obsolete_shards(&addons_path, &previous, &new_set);
   state::set_compression_level(level);
   write_manifest_atomic(&manifest_path, &report.manifest)
@@ -411,8 +450,7 @@ pub fn rebuild_compressed_addon_with_level(
   let total_bytes: u64 = report.output_files.iter().map(|(_, s)| s).sum();
   let shard_list: Vec<String> = report.manifest.all_shard_file_names();
   let id_to_shards: std::collections::HashMap<String, Vec<String>> = {
-    let mut m: std::collections::HashMap<String, Vec<String>> =
-      std::collections::HashMap::new();
+    let mut m: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
     for b in &report.manifest.buckets {
       for id in &b.mod_ids {
         m.insert(id.clone(), b.shard_files.clone());
@@ -427,10 +465,7 @@ pub fn rebuild_compressed_addon_with_level(
   let mod_updates: Vec<serde_json::Value> = id_to_shards
     .iter()
     .map(|(mod_id, vpks)| {
-      let originals = id_to_originals
-        .get(mod_id)
-        .cloned()
-        .unwrap_or_default();
+      let originals = id_to_originals.get(mod_id).cloned().unwrap_or_default();
       serde_json::json!({
         "modId": mod_id,
         "installedVpks": vpks,
@@ -541,10 +576,7 @@ fn rebuild_and_apply_one_bucket(
     .mod_manifest_entries
     .keys()
     .map(|mod_id| {
-      let originals = id_to_originals
-        .get(mod_id)
-        .cloned()
-        .unwrap_or_default();
+      let originals = id_to_originals.get(mod_id).cloned().unwrap_or_default();
       serde_json::json!({
         "modId": mod_id,
         "installedVpks": vpks_for_bucket,
@@ -579,13 +611,7 @@ pub fn add_mod_to_compression(
   let addons_path = addons_path_for(manager, profile_ref)?;
   let manifest_path = vpkmerger::manifest_path(&addons_path);
   if !manifest_path.exists() {
-    return rebuild_compressed_addon_with_level(
-      app,
-      manager,
-      profile_folder,
-      cancel,
-      level,
-    );
+    return rebuild_compressed_addon_with_level(app, manager, profile_folder, cancel, level);
   }
   let mut manifest = read_manifest(&manifest_path).map_err(|e| Error::ModInvalid(e.to_string()))?;
   if let Some(same_bucket) = find_bucket_id_for_mod(&manifest.buckets, new_mod_id) {
@@ -704,11 +730,10 @@ pub fn replace_mod_in_compression(
     return rebuild_compressed_addon(app, manager, profile_folder, cancel);
   }
   let mut manifest = read_manifest(&manifest_path).map_err(|e| Error::ModInvalid(e.to_string()))?;
-  let bid = find_bucket_id_for_mod(&manifest.buckets, mod_id).ok_or_else(|| {
-    Error::ModInvalid("mod not in manifest".to_string())
-  })?;
+  let bid = find_bucket_id_for_mod(&manifest.buckets, mod_id)
+    .ok_or_else(|| Error::ModInvalid("mod not in manifest".to_string()))?;
   if let Some(m) = manager.get_mod_repository().get_mod(mod_id) {
-    if !m.is_map {
+    if !m.is_map && !m.uses_compression {
       let ms = manager.get_mods_store_path()?;
       stage_mod_vpks(&ms, &addons_path, m)?;
     }
@@ -732,13 +757,7 @@ pub fn change_compression_level(
   new_level: CompressionLevel,
 ) -> Result<(), Error> {
   state::set_compression_level(new_level);
-  rebuild_compressed_addon_with_level(
-    app,
-    manager,
-    profile_folder,
-    cancel,
-    new_level,
-  )
+  rebuild_compressed_addon_with_level(app, manager, profile_folder, cancel, new_level)
 }
 
 pub fn disable_compressed_addon(

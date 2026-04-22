@@ -1,4 +1,4 @@
-use crate::write::{encode_presorted_vpk, OutputRow};
+use crate::write::{OutputRow, encode_presorted_vpk};
 
 pub fn encoded_size_for_rows(rows: &[OutputRow]) -> crate::error::Result<u64> {
     if rows.is_empty() {

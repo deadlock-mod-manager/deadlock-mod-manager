@@ -32,14 +32,11 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
   let mut vpk_files: Vec<PathBuf> = Vec::new();
 
   let mod_manager = MANAGER.lock().unwrap();
-  let uses_compression = mod_manager
-    .get_mod_repository()
-    .get_mod(mod_id)
-    .map(|m| m.uses_compression)
-    .unwrap_or(false);
+  let repo_mod = mod_manager.get_mod_repository().get_mod(mod_id);
+  let uses_compression = repo_mod.map(|m| m.uses_compression).unwrap_or(false);
 
   if uses_compression
-    && let Some(m) = mod_manager.get_mod_repository().get_mod(mod_id)
+    && let Some(m) = repo_mod
     && let Ok(mods_store) = mod_manager.get_mods_store_path()
   {
     let staged = crate::mod_compression::paths::compression_staged_dir(&mods_store, mod_id);
@@ -61,22 +58,18 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
       if let Some(folder) = crate::mod_compression::state::get_compression_profile_folder() {
         addons_path = addons_path.join(folder);
       }
-      if let Some(mm) = mod_manager.get_mod_repository().get_mod(mod_id) {
-        for v in &mm.installed_vpks {
-          let p = addons_path.join(v);
-          if p.exists() {
-            vpk_files.push(p);
-          }
+      for v in &m.installed_vpks {
+        let p = addons_path.join(v);
+        if p.exists() {
+          vpk_files.push(p);
         }
       }
       if vpk_files.is_empty() {
         let root_addons = game_path.join("game").join("citadel").join("addons");
-        if let Some(mm) = mod_manager.get_mod_repository().get_mod(mod_id) {
-          for v in &mm.installed_vpks {
-            let p = root_addons.join(v);
-            if p.exists() {
-              vpk_files.push(p);
-            }
+        for v in &m.installed_vpks {
+          let p = root_addons.join(v);
+          if p.exists() {
+            vpk_files.push(p);
           }
         }
       }
@@ -90,16 +83,11 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
     }
   }
 
-  if !uses_compression
-    && let Some(game_path) = mod_manager.get_steam_manager().get_game_path()
-  {
+  if !uses_compression && let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
     let addons_path = game_path.join("game").join("citadel").join("addons");
     if addons_path.exists() {
-      let repo_vpks = mod_manager
-        .get_mod_repository()
-        .get_mod(mod_id)
-        .map(|m| m.installed_vpks.clone());
-      let known_vpks = repo_vpks
+      let known_vpks = repo_mod
+        .map(|m| m.installed_vpks.clone())
         .filter(|v| !v.is_empty())
         .or(installed_vpks)
         .unwrap_or_default();
@@ -151,7 +139,7 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
     }
   }
 
-  if uses_compression {
+  if uses_compression && !vpk_files.is_empty() {
     log::debug!(
       "Hero detection using {} source VPK(s) (LOCALAPPDATA fallback) for compressed mod {mod_id}",
       vpk_files.len()

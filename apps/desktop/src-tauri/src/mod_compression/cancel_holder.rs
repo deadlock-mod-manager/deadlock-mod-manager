@@ -10,7 +10,11 @@ pub fn register_cancel(token: CancelToken) -> Result<(), Error> {
   let mut g = ACTIVE_CANCEL
     .lock()
     .map_err(|_| Error::InvalidInput("compression cancel lock".into()))?;
+  let old = g.take();
   *g = Some(token);
+  if let Some(t) = old {
+    t.cancel();
+  }
   Ok(())
 }
 

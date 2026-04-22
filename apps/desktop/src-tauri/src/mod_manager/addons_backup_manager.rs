@@ -153,15 +153,20 @@ impl AddonsBackupManager {
       }
     }
 
-    let manifest_src = addons_path.join(".deadlock-compression").join("manifest.json");
+    let manifest_src = addons_path
+      .join(".deadlock-compression")
+      .join("manifest.json");
     if manifest_src.is_file() {
       let dest_dir = backup_path.join(".deadlock-compression");
       fs::create_dir_all(&dest_dir).map_err(|e| {
-        Error::BackupCreationFailed(format!("Failed to create .deadlock-compression in backup: {e}"))
+        Error::BackupCreationFailed(format!(
+          "Failed to create .deadlock-compression in backup: {e}"
+        ))
       })?;
       let manifest_dest = dest_dir.join("manifest.json");
-      fs::copy(&manifest_src, &manifest_dest)
-        .map_err(|e| Error::BackupCreationFailed(format!("Failed to copy compression manifest: {e}")))?;
+      fs::copy(&manifest_src, &manifest_dest).map_err(|e| {
+        Error::BackupCreationFailed(format!("Failed to copy compression manifest: {e}"))
+      })?;
     }
 
     // Emit progress: finalizing
@@ -395,13 +400,10 @@ impl AddonsBackupManager {
 
     let backup_comp = backup_path.join(".deadlock-compression");
     if backup_comp.is_dir() {
-      copy_dir_recursive(
-        &backup_comp,
-        &addons_path.join(".deadlock-compression"),
-      )?;
+      copy_dir_recursive(&backup_comp, &addons_path.join(".deadlock-compression"))?;
     }
 
-    if !backup_has_manifest {
+    if matches!(strategy, RestoreStrategy::Replace) && !backup_has_manifest {
       let comp = addons_path.join(".deadlock-compression");
       if comp.exists() {
         let _ = fs::remove_dir_all(&comp);
@@ -422,10 +424,16 @@ impl AddonsBackupManager {
         let mut v: Vec<serde_json::Value> = Vec::new();
         for b in &manifest.buckets {
           for id in &b.mod_ids {
+            let originals = manifest
+              .mods
+              .get(id)
+              .map(|e| e.original_vpk_names.clone())
+              .unwrap_or_default();
             v.push(serde_json::json!({
               "modId": id,
               "installedVpks": b.shard_files,
               "usesCompression": true,
+              "originalVpkNames": originals,
             }));
           }
         }
@@ -538,8 +546,8 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), Error> {
   for entry in fs::read_dir(src)
     .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read {src:?}: {e}")))?
   {
-    let entry = entry
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read entry: {e}")))?;
+    let entry =
+      entry.map_err(|e| Error::BackupRestoreFailed(format!("Failed to read entry: {e}")))?;
     let p = entry.path();
     let name = entry.file_name();
     let out = dst.join(&name);

@@ -9,27 +9,19 @@ pub struct BucketSpec {
     pub mod_ids: Vec<String>,
 }
 
-pub fn plan_full_rebuild(
-    inputs: &[ModRebuildInput],
-    level: CompressionLevel,
-) -> Vec<BucketSpec> {
+pub fn plan_full_rebuild(inputs: &[ModRebuildInput], level: CompressionLevel) -> Vec<BucketSpec> {
     if inputs.is_empty() {
         return Vec::new();
     }
     let mut sorted: Vec<ModRebuildInput> = inputs.to_vec();
     sorted.sort_by_key(|i| i.load_order);
-    let cap = level
-        .mods_per_bucket()
-        .unwrap_or(sorted.len().max(1));
+    let cap = level.mods_per_bucket().unwrap_or(sorted.len().max(1));
     let mut out: Vec<BucketSpec> = Vec::new();
     let mut id: u32 = 1;
     let mut i = 0usize;
     while i < sorted.len() {
         let end = (i + cap).min(sorted.len());
-        let mod_ids: Vec<String> = sorted[i..end]
-            .iter()
-            .map(|m| m.mod_id.clone())
-            .collect();
+        let mod_ids: Vec<String> = sorted[i..end].iter().map(|m| m.mod_id.clone()).collect();
         out.push(BucketSpec { id, mod_ids });
         id += 1;
         i = end;
@@ -100,7 +92,12 @@ pub fn remove_mod_from_buckets(buckets: &mut Vec<BucketEntry>, mod_id: &str) -> 
 }
 
 pub fn next_bucket_id(buckets: &[BucketEntry]) -> u32 {
-    buckets.iter().map(|b| b.id).max().map(|m| m + 1).unwrap_or(1)
+    buckets
+        .iter()
+        .map(|b| b.id)
+        .max()
+        .map(|m| m + 1)
+        .unwrap_or(1)
 }
 
 pub fn sort_bucket_mod_ids_by_load_order(

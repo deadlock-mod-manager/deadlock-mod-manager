@@ -275,13 +275,7 @@ mod tests {
     fn output_path_for_shard_naming() {
         let p = PathBuf::from("merged.vpk");
         assert_eq!(output_path_for_shard(&p, 0), PathBuf::from("merged.vpk"));
-        assert_eq!(
-            output_path_for_shard(&p, 1),
-            PathBuf::from("merged_2.vpk")
-        );
-        assert_eq!(
-            output_path_for_shard(&p, 2),
-            PathBuf::from("merged_3.vpk")
-        );
+        assert_eq!(output_path_for_shard(&p, 1), PathBuf::from("merged_2.vpk"));
+        assert_eq!(output_path_for_shard(&p, 2), PathBuf::from("merged_3.vpk"));
     }
 }

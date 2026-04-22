@@ -1,9 +1,8 @@
+use std::error::Error;
 use std::path::PathBuf;
 
 use clap::Parser;
-use vpkmerger::{
-    default_output_path, merge_vpks, MergeOptions, DEFAULT_MAX_OUTPUT_VPK_BYTES,
-};
+use vpkmerger::{DEFAULT_MAX_OUTPUT_VPK_BYTES, MergeOptions, default_output_path, merge_vpks};
 
 #[derive(Parser)]
 #[command(name = "vpk-merger")]
@@ -45,13 +44,18 @@ fn main() -> std::process::ExitCode {
                 eprintln!("dry-run: no files written");
             } else {
                 for (path, bytes) in &report.output_files {
-                    eprintln!("wrote {} ({} bytes)", path.display(), bytes);
+                    println!("wrote {} ({} bytes)", path.display(), bytes);
                 }
             }
             std::process::ExitCode::SUCCESS
         }
         Err(e) => {
-            eprintln!("{e}");
+            eprintln!("{e:#}");
+            let mut cur = e.source();
+            while let Some(c) = cur {
+                eprintln!("  caused by: {c:#}");
+                cur = c.source();
+            }
             std::process::ExitCode::from(1)
         }
     }

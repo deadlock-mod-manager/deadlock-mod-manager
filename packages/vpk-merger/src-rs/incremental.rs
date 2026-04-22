@@ -4,15 +4,15 @@ use std::path::{Path, PathBuf};
 
 use rayon::prelude::*;
 
-use crate::bucket_plan::{plan_full_rebuild, BucketSpec};
+use crate::bucket_plan::{BucketSpec, plan_full_rebuild};
 use crate::error::{Result, VpkMergerError};
-use crate::last_wins::{merge_mod_inputs_last_wins, ModRebuildInput};
+use crate::last_wins::{ModRebuildInput, merge_mod_inputs_last_wins};
 use crate::manifest::{
-    parse_manifest_json, BucketEntry, CompressionLevel, CompressionManifest, ModManifestEntry,
+    BucketEntry, CompressionLevel, CompressionManifest, ModManifestEntry, parse_manifest_json,
 };
 use crate::progress::{CancelToken, ProgressSink};
 use crate::write::{
-    encode_presorted_vpk, output_path_for_shard, sort_output_rows, OutputRow, MAX_MERGED_VPK_BYTES,
+    MAX_MERGED_VPK_BYTES, OutputRow, encode_presorted_vpk, output_path_for_shard, sort_output_rows,
 };
 
 pub struct RebuildReport {
@@ -57,14 +57,15 @@ pub fn rebuild_bucket(
     let entry_count = merged.rows.len();
     let mut mod_manifest_entries = merged.per_mod;
     apply_bucket_id_to_mod_entries(&mut mod_manifest_entries, bucket_id);
-    let parent = output_base.parent().ok_or_else(|| VpkMergerError::Invalid {
-        message: "output base has no parent".to_string(),
-    })?;
+    let parent = output_base
+        .parent()
+        .ok_or_else(|| VpkMergerError::Invalid {
+            message: "output base has no parent".to_string(),
+        })?;
     fs::create_dir_all(parent)?;
     let rows = merged.rows;
-    let output_files = write_sharded_presorted_vpk_files_atomic(
-        output_base, &rows, max_bytes, cancel,
-    )?;
+    let output_files =
+        write_sharded_presorted_vpk_files_atomic(output_base, &rows, max_bytes, cancel)?;
     let shard_file_names: Vec<String> = output_files
         .iter()
         .map(|(p, _)| {
@@ -88,11 +89,9 @@ fn collect_inputs_for_bucket(
 ) -> Result<Vec<ModRebuildInput>> {
     let mut v: Vec<ModRebuildInput> = Vec::new();
     for id in &spec.mod_ids {
-        let inp = all_by_id
-            .get(id)
-            .ok_or_else(|| VpkMergerError::Invalid {
-                message: format!("unknown mod in bucket: {id}"),
-            })?;
+        let inp = all_by_id.get(id).ok_or_else(|| VpkMergerError::Invalid {
+            message: format!("unknown mod in bucket: {id}"),
+        })?;
         v.push(inp.clone());
     }
     v.sort_by_key(|i| i.load_order);
@@ -118,23 +117,14 @@ fn build_manifest_from_bucket_reports(
     let mut buckets: Vec<BucketEntry> = Vec::new();
     for br in reports {
         let mut mod_ids: Vec<String> = br.mod_manifest_entries.keys().cloned().collect();
-        mod_ids.sort_by_key(|id| {
-            all_mods
-                .get(id)
-                .map(|e| e.load_order)
-                .unwrap_or(0)
-        });
+        mod_ids.sort_by_key(|id| all_mods.get(id).map(|e| e.load_order).unwrap_or(0));
         buckets.push(BucketEntry {
             id: br.bucket_id,
             mod_ids,
             shard_files: br.shard_file_names.clone(),
         });
     }
-    let mut manifest = CompressionManifest::new(
-        base_name.to_string(),
-        max_bytes,
-        level,
-    );
+    let mut manifest = CompressionManifest::new(base_name.to_string(), max_bytes, level);
     manifest.buckets = buckets;
     manifest.mods = all_mods;
     Ok(manifest)
@@ -171,13 +161,7 @@ pub fn rebuild_addon_compressed_bucketing(
             cancel.check()?;
             let bucket_inputs = collect_inputs_for_bucket(&all_by_id, spec)?;
             let out_base = addons_path.join(format!("pak{:02}_dir.vpk", spec.id));
-            rebuild_bucket(
-                spec.id,
-                &bucket_inputs,
-                &out_base,
-                max_bytes,
-                cancel,
-            )
+            rebuild_bucket(spec.id, &bucket_inputs, &out_base, max_bytes, cancel)
         })
         .collect();
     let bucket_reports = bucket_reports?;
@@ -186,12 +170,8 @@ pub fn rebuild_addon_compressed_bucketing(
     for b in &bucket_reports {
         all_output_files.extend(b.output_files.iter().cloned());
     }
-    let manifest = build_manifest_from_bucket_reports(
-        level,
-        max_bytes,
-        base_name,
-        &bucket_reports,
-    )?;
+    let manifest =
+        build_manifest_from_bucket_reports(level, max_bytes, base_name, &bucket_reports)?;
     Ok(RebuildReport {
         entry_count,
         output_files: all_output_files,
@@ -350,11 +330,7 @@ pub fn apply_bucket_rebuild(
             .map(|e| e.load_order)
             .unwrap_or(0)
     });
-    if let Some(b) = manifest
-        .buckets
-        .iter_mut()
-        .find(|b| b.id == br.bucket_id)
-    {
+    if let Some(b) = manifest.buckets.iter_mut().find(|b| b.id == br.bucket_id) {
         b.shard_files = br.shard_file_names.clone();
         b.mod_ids = mod_ids;
     } else {
@@ -382,7 +358,5 @@ pub fn apply_bucket_rebuild(
 
 pub fn drop_bucket_from_manifest(manifest: &mut CompressionManifest, bucket_id: u32) {
     manifest.buckets.retain(|b| b.id != bucket_id);
-    manifest
-        .mods
-        .retain(|_, e| e.bucket_id != bucket_id);
+    manifest.mods.retain(|_, e| e.bucket_id != bucket_id);
 }

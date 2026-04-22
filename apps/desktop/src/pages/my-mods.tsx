@@ -715,7 +715,7 @@ const MyMods = () => {
 
   const installedMods = getOrderedMods();
 
-  const enabledModsCount = (() => {
+  const enabledVpksCount = (() => {
     const uniqueVpks = new Set<string>();
     for (const mod of mods) {
       if (
@@ -731,6 +731,12 @@ const MyMods = () => {
     }
     return uniqueVpks.size;
   })();
+  const enabledModsCount = mods.filter(
+    (m) =>
+      m.status === ModStatus.Installed &&
+      m.installedVpks &&
+      m.installedVpks.length > 0,
+  ).length;
   const disabledModsCount = mods.filter(
     (mod) =>
       mod.status !== ModStatus.Installed ||
@@ -767,13 +773,13 @@ const MyMods = () => {
                       <span
                         className={cn(
                           "text-sm font-medium cursor-help",
-                          enabledModsCount >= 99
+                          enabledVpksCount >= 99
                             ? "text-destructive"
-                            : enabledModsCount >= 85
+                            : enabledVpksCount >= 85
                               ? "text-orange-600"
                               : "text-muted-foreground",
                         )}>
-                        ({enabledModsCount}/99)
+                        ({enabledVpksCount}/99)
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>

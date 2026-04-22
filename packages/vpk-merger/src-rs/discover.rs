@@ -17,8 +17,7 @@ fn is_chunk_vpk_name(name: &str) -> bool {
     if stem.ends_with("_dir") {
         return true;
     }
-    stem
-        .rsplit_once('_')
+    stem.rsplit_once('_')
         .and_then(|(_, tail)| tail.parse::<u32>().ok())
         .is_some()
 }

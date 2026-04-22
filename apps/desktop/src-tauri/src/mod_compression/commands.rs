@@ -60,8 +60,13 @@ pub async fn mod_compression_set_config(
 fn sync_mods_into_repository(
   manager: &mut crate::mod_manager::ModManager,
   mods: Vec<CompressionModInput>,
-) {
+) -> Result<(), Error> {
   let count = mods.len();
+  for m in &mods {
+    for s in m.installed_vpks.iter().chain(m.original_vpk_names.iter()) {
+      service::validate_vpk_basename(s)?;
+    }
+  }
   for m in mods {
     manager.get_mod_repository_mut().add_mod(m.into());
   }
@@ -69,6 +74,7 @@ fn sync_mods_into_repository(
     "mod_compression: synced {} mod(s) from frontend into backend repository",
     count
   );
+  Ok(())
 }
 
 #[tauri::command]
@@ -90,15 +96,9 @@ pub async fn mod_compression_rebuild(
     let mut manager = MANAGER
       .lock()
       .map_err(|_| Error::InvalidInput("manager lock".into()))?;
-    sync_mods_into_repository(&mut manager, mods);
+    sync_mods_into_repository(&mut manager, mods)?;
     state::set_compression_level(level);
-    service::rebuild_compressed_addon_with_level(
-      &app2,
-      &mut manager,
-      pf,
-      &token,
-      level,
-    )
+    service::rebuild_compressed_addon_with_level(&app2, &mut manager, pf, &token, level)
   })
   .await
   .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?;
@@ -120,14 +120,8 @@ pub async fn mod_compression_change_level(
     let mut manager = MANAGER
       .lock()
       .map_err(|_| Error::InvalidInput("manager lock".into()))?;
-    sync_mods_into_repository(&mut manager, mods);
-    service::change_compression_level(
-      &app2,
-      &mut manager,
-      pf,
-      &token,
-      level,
-    )
+    sync_mods_into_repository(&mut manager, mods)?;
+    service::change_compression_level(&app2, &mut manager, pf, &token, level)
   })
   .await
   .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?;
@@ -152,7 +146,7 @@ pub async fn mod_compression_disable(
     let mut manager = MANAGER
       .lock()
       .map_err(|_| Error::InvalidInput("manager lock".into()))?;
-    sync_mods_into_repository(&mut manager, mods);
+    sync_mods_into_repository(&mut manager, mods)?;
     service::disable_compressed_addon(&app2, &mut manager, pf, &token)
   })
   .await

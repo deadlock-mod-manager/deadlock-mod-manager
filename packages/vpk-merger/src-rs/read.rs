@@ -80,11 +80,12 @@ pub fn load_dir_vpk(dir_vpk_path: &Path) -> Result<Vec<LoadedEntry>> {
                     break;
                 }
 
-                let entry = parse_entry_metadata(&ext, &path, &filename, &buffer, &mut cursor)?;
+                let entry =
+                    parse_entry_metadata(&ext, &path, &filename, &buffer, tree_end, &mut cursor)?;
                 let preload_len = entry.preload_bytes as usize;
-                if cursor + preload_len > buffer.len() {
+                if cursor + preload_len > tree_end {
                     return Err(VpkMergerError::Invalid {
-                        message: "preload extends past file".to_string(),
+                        message: "preload extends past VPK tree".to_string(),
                     });
                 }
                 if crate::filter::is_ignored_readme(&entry) {
@@ -95,17 +96,15 @@ pub fn load_dir_vpk(dir_vpk_path: &Path) -> Result<Vec<LoadedEntry>> {
                 cursor += preload_len;
 
                 if entry.entry_length > 0 {
-                    let body = read_entry_body(
-                        parent,
-                        archive_base,
-                        &entry,
-                        &buffer,
-                        data_section_start,
-                    )?;
+                    let body =
+                        read_entry_body(parent, archive_base, &entry, &buffer, data_section_start)?;
                     payload.extend_from_slice(&body);
                 }
 
-                loaded.push(LoadedEntry { meta: entry, payload });
+                loaded.push(LoadedEntry {
+                    meta: entry,
+                    payload,
+                });
             }
         }
     }
@@ -128,8 +127,7 @@ fn read_entry_body(
             return Err(VpkMergerError::Invalid {
                 message: format!(
                     "inline entry out of bounds: {} + {}",
-                    entry.full_path,
-                    entry.entry_length
+                    entry.full_path, entry.entry_length
                 ),
             });
         }
@@ -164,8 +162,13 @@ fn read_u32_at(buf: &[u8], offset: usize) -> u32 {
 fn read_cstring(buf: &[u8], cursor: &mut usize, limit: usize) -> Result<String> {
     let start = *cursor;
     let mut pos = start;
-    while pos < buf.len() && pos < limit && buf[pos] != 0 {
+    while pos < limit && pos < buf.len() && buf[pos] != 0 {
         pos += 1;
+    }
+    if pos >= limit {
+        return Err(VpkMergerError::Invalid {
+            message: "unterminated string in VPK tree".to_string(),
+        });
     }
     if pos >= buf.len() || buf[pos] != 0 {
         return Err(VpkMergerError::Invalid {
@@ -182,9 +185,10 @@ fn parse_entry_metadata(
     path: &str,
     filename: &str,
     buf: &[u8],
+    tree_end: usize,
     cursor: &mut usize,
 ) -> Result<VpkEntry> {
-    if *cursor + 18 > buf.len() {
+    if *cursor + 18 > tree_end {
         return Err(VpkMergerError::Invalid {
             message: "truncated VPK entry metadata".to_string(),
         });
@@ -231,4 +235,3 @@ fn parse_entry_metadata(
 pub fn manifest_key(full_path: &str) -> String {
     full_path.to_lowercase().replace('\\', "/")
 }
-

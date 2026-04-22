@@ -131,8 +131,7 @@ export const useModCompression = () => {
   }, [compressionEnabled, compressionLevel, activeProfileId, profiles]);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void listen<CompressionProgressPayload>(
+    const unlistenPromise = listen<CompressionProgressPayload>(
       "mod-compression-progress",
       (event) => {
         const p = event.payload;
@@ -149,17 +148,14 @@ export const useModCompression = () => {
           currentModName: p.currentMod,
         });
       },
-    ).then((fn) => {
-      unlisten = fn;
-    });
+    );
     return () => {
-      unlisten?.();
+      void unlistenPromise.then((unlisten) => unlisten());
     };
   }, [setCompressionProgress]);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void listen<CompressionCompletedPayload>(
+    const unlistenPromise = listen<CompressionCompletedPayload>(
       "mod-compression-completed",
       (event) => {
         const p = event.payload;
@@ -192,17 +188,14 @@ export const useModCompression = () => {
           }));
         }
       },
-    ).then((fn) => {
-      unlisten = fn;
-    });
+    );
     return () => {
-      unlisten?.();
+      void unlistenPromise.then((unlisten) => unlisten());
     };
   }, []);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void listen<AddonsBackupRestoredPayload>(
+    const unlistenPromise = listen<AddonsBackupRestoredPayload>(
       "addons-backup-restored",
       (ev) => {
         const p = ev.payload;
@@ -219,11 +212,26 @@ export const useModCompression = () => {
         } else {
           setCompressionEnabled(false);
           usePersistedStore.setState((s) => ({
-            localMods: s.localMods.map((m) =>
-              m.status === ModStatus.Installed && m.isMap !== true
-                ? { ...m, usesCompression: false, compression: undefined }
-                : m,
-            ),
+            localMods: s.localMods.map((m) => {
+              if (m.status !== ModStatus.Installed || m.isMap === true) {
+                return m;
+              }
+              // Restore stale shard-based installedVpks back to the
+              // pre-compression slot names (e.g. pak01_dir.vpk). The restored
+              // backup contains those exact filenames on disk, so re-enabling
+              // compression will find them again.
+              const originalNames = m.compression?.originalVpkNames ?? [];
+              const nextInstalledVpks =
+                m.usesCompression === true && originalNames.length > 0
+                  ? originalNames
+                  : (m.installedVpks ?? []);
+              return {
+                ...m,
+                installedVpks: nextInstalledVpks,
+                usesCompression: false,
+                compression: undefined,
+              };
+            }),
           }));
         }
         if (p.modUpdates !== undefined && p.modUpdates.length > 0) {
@@ -239,11 +247,9 @@ export const useModCompression = () => {
         }).catch(() => undefined);
         toast.success(t("settings.backupRestored"));
       },
-    ).then((fn) => {
-      unlisten = fn;
-    });
+    );
     return () => {
-      unlisten?.();
+      void unlistenPromise.then((unlisten) => unlisten());
     };
   }, [
     setCompressionEnabled,
@@ -391,21 +397,29 @@ export const useModCompression = () => {
       shardCount: 0,
       shardFiles: [],
     });
-    await invoke("mod_compression_disable", { profileFolder, mods });
-    setCompressionEnabled(false);
-    await invoke("mod_compression_set_config", {
-      enabled: false,
-      level: levelToBackend(level),
-      profileFolder,
-    });
-    setCompressionProgress({
-      status: "idle",
-      current: 0,
-      total: 0,
-      currentModName: null,
-      shardCount: 0,
-      shardFiles: [],
-    });
+    try {
+      await invoke("mod_compression_disable", { profileFolder, mods });
+      setCompressionEnabled(false);
+      await invoke("mod_compression_set_config", {
+        enabled: false,
+        level: levelToBackend(level),
+        profileFolder,
+      });
+    } catch (e) {
+      logger
+        .withError(e instanceof Error ? e : new Error(String(e)))
+        .error("disableCompression failed");
+      throw e;
+    } finally {
+      setCompressionProgress({
+        status: "idle",
+        current: 0,
+        total: 0,
+        currentModName: null,
+        shardCount: 0,
+        shardFiles: [],
+      });
+    }
   };
 
   const cancelCompression = async () => {

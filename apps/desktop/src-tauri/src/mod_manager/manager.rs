@@ -50,6 +50,21 @@ impl ModManager {
     manager
   }
 
+  fn game_addons_path(&self, profile_folder: Option<&str>) -> Result<PathBuf, Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+    Ok(match profile_folder {
+      Some(folder) if !folder.is_empty() => game_path
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .join(folder),
+      _ => game_path.join("game").join("citadel").join("addons"),
+    })
+  }
+
   pub fn find_steam(&mut self) -> Result<(), Error> {
     self.steam_manager.find_steam()?;
     Ok(())
@@ -147,20 +162,7 @@ impl ModManager {
       self.setup_game_for_mods()?;
     }
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
@@ -254,20 +256,7 @@ impl ModManager {
   ) -> Result<(), Error> {
     log::info!("Uninstalling (disabling) mod: {mod_id} (profile: {profile_folder:?})");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     if !addons_path.exists() {
       return Err(Error::GamePathNotSet);
@@ -322,20 +311,7 @@ impl ModManager {
   ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     if let Some(local_mod) = self.mod_repository.remove_mod(&mod_id) {
       log::info!("Mod found in memory: {}", local_mod.name);
@@ -381,19 +357,7 @@ impl ModManager {
     mod_id: &str,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
     self
       .vpk_manager
       .remove_vpks_by_mod_id(&addons_path, mod_id)?;
@@ -408,20 +372,7 @@ impl ModManager {
 
   /// Reorder all mods based on their current install_order for a specific profile
   fn reorder_all_mods_for_profile(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
@@ -455,20 +406,7 @@ impl ModManager {
     mod_order_data: Vec<(String, Vec<String>, u32)>, // (remote_id, current_vpks, order)
     profile_folder: Option<String>,
   ) -> Result<Vec<(String, Vec<String>)>, Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     log::info!(
       "Reordering mods by remote ID for {} mods in profile: {:?}",
@@ -521,20 +459,7 @@ impl ModManager {
     mod_order_data: Vec<(String, u32)>,
     profile_folder: Option<String>,
   ) -> Result<Vec<Mod>, Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     log::info!(
       "Reordering {} mods for profile: {profile_folder:?}",
@@ -581,40 +506,14 @@ impl ModManager {
   }
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     self.vpk_manager.clear_all_vpks(&addons_path)?;
     Ok(())
   }
 
   pub fn open_mods_folder(&self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     self
       .filesystem
@@ -739,20 +638,7 @@ impl ModManager {
     log::info!("Replacing VPK files for mod: {mod_id} (profile: {profile_folder:?})");
     log::info!("Installed VPKs from frontend: {installed_vpks_from_frontend:?}");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.game_addons_path(profile_folder.as_deref())?;
 
     // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
     let (installed_vpks, original_names) = if !installed_vpks_from_frontend.is_empty() {

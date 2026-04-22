@@ -7,10 +7,10 @@ use rayon::prelude::*;
 use crate::discover::collect_dir_vpks;
 use crate::error::{Result, VpkMergerError};
 use crate::filter::is_ignored_readme;
-use crate::preflight::{run_preflight, ExcludedVpk};
+use crate::preflight::{ExcludedVpk, run_preflight};
 use crate::read::{load_dir_vpk, manifest_key};
 use crate::write::{
-    sort_output_rows, write_sharded_presorted_vpk_files, OutputRow, MAX_MERGED_VPK_BYTES,
+    MAX_MERGED_VPK_BYTES, OutputRow, sort_output_rows, write_sharded_presorted_vpk_files,
 };
 
 pub struct MergeOptions {
@@ -34,10 +34,7 @@ pub fn merge_vpks(options: MergeOptions) -> Result<MergeReport> {
     let sources = collect_dir_vpks(&options.root, options.recursive)?;
     if sources.is_empty() {
         return Err(VpkMergerError::Invalid {
-            message: format!(
-                "no *_dir.vpk files under {}",
-                options.root.display()
-            ),
+            message: format!("no *_dir.vpk files under {}", options.root.display()),
         });
     }
 
@@ -72,10 +69,10 @@ pub fn merge_vpks(options: MergeOptions) -> Result<MergeReport> {
     let indexed: Vec<
         std::result::Result<(PathBuf, Vec<crate::read::LoadedEntry>), VpkMergerError>,
     > = preflight
-            .included
-            .par_iter()
-            .map(|p| load_dir_vpk(p).map(|entries| (p.clone(), entries)))
-            .collect();
+        .included
+        .par_iter()
+        .map(|p| load_dir_vpk(p).map(|entries| (p.clone(), entries)))
+        .collect();
 
     let mut pairs: Vec<(PathBuf, Vec<crate::read::LoadedEntry>)> =
         Vec::with_capacity(indexed.len());
@@ -120,11 +117,8 @@ pub fn merge_vpks(options: MergeOptions) -> Result<MergeReport> {
     sort_output_rows(&mut rows);
     let entry_count = rows.len();
 
-    let output_files = write_sharded_presorted_vpk_files(
-        &options.output,
-        &rows,
-        options.max_output_vpk_bytes,
-    )?;
+    let output_files =
+        write_sharded_presorted_vpk_files(&options.output, &rows, options.max_output_vpk_bytes)?;
 
     Ok(MergeReport {
         source_vpks: sources,
