@@ -203,6 +203,13 @@ This provides:
 
 This project uses changesets for version management. See [090-changesets.mdc](mdc:.cursor/rules/090-changesets.mdc) for details on when and how to create changesets alongside commits.
 
+### Current branch (agents)
+
+When running `/commit` or creating commits for the user, use the **checked-out
+branch** as-is. Do not create, switch to, or require a feature branch only
+because the current branch is `main` or `master`, unless the user explicitly
+asks for a different branch.
+
 ## References
 
 - [Conventional Commits Specification](https://www.conventionalcommits.org/)

@@ -2,6 +2,8 @@
 
 Generate a conventional commit message and commit staged changes, respecting the project's commitlint configuration.
 
+**Branch:** Commit on the current branch. Do not create or switch to a feature branch unless the user asks (see [100-git-conventions](mdc:.cursor/rules/100-git-conventions.mdc) — *Current branch (agents)*).
+
 ## Instructions
 
 ### 1. Gather Context
