@@ -1,5 +1,25 @@
 import type { ProfileModDownload } from "@deadlock-mods/shared";
 
+const TRUSTED_DOWNLOAD_HOSTS = new Set([
+  "gamebanana.com",
+  "www.gamebanana.com",
+  "files.gamebanana.com",
+  "deadlockmods.app",
+  "www.deadlockmods.app",
+]);
+
+const isTrustedDownloadUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return false;
+    }
+    return TRUSTED_DOWNLOAD_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
 export interface ProfileImportDownloadFile {
   url: string;
   name: string;
@@ -106,6 +126,9 @@ export const resolveProfileImportDownloadFiles = ({
     }
 
     resolvedWithPersistedFallbackNames.push(selection.file);
+    if (!isTrustedDownloadUrl(selection.url)) {
+      return toImportDownloadFile({ ...selection, url: "" });
+    }
     return toImportDownloadFile(selection);
   });
 

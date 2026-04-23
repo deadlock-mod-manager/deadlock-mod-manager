@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "i18next";
 import type { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
@@ -74,7 +75,10 @@ const toRecoveredProfileName = (value: string) => {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  return displayName || "Unknown Profile";
+  return (
+    displayName ||
+    i18n.t("profiles.unknownProfile", { defaultValue: "Unknown Profile" })
+  );
 };
 
 const getRecoveredProfileDetails = (folderName: string) => {
@@ -237,6 +241,7 @@ export const createProfilesSlice: StateCreator<
     const isDeletingActiveProfile = activeProfileId === profileId;
     const fallbackProfile =
       profiles[DEFAULT_PROFILE_ID] ?? createDefaultProfile();
+    let switchedToFallback = false;
 
     try {
       if (isDeletingActiveProfile) {
@@ -245,6 +250,7 @@ export const createProfilesSlice: StateCreator<
         await invoke("switch_profile", {
           profileFolder: fallbackProfile.folderName,
         });
+        switchedToFallback = true;
         logger
           .withMetadata({
             deletedProfileId: profileId,
@@ -300,11 +306,18 @@ export const createProfilesSlice: StateCreator<
 
       return true;
     } catch (error) {
+      if (switchedToFallback) {
+        set({
+          activeProfileId: DEFAULT_PROFILE_ID,
+          localMods: [...fallbackProfile.mods],
+        });
+      }
       logger
         .withMetadata({
           profileId,
           folderName: profile.folderName,
           isDeletingActiveProfile,
+          switchedToFallback,
         })
         .withError(error)
         .error("Failed to delete profile");

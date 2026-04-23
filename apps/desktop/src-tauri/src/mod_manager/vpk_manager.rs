@@ -49,7 +49,7 @@ impl VpkManager {
   }
 
   fn find_next_free_vpk_name(&self, addons_path: &Path) -> Result<String, Error> {
-    let mut next_number = self.find_next_available_vpk_number(addons_path)?;
+    let mut next_number = 1u32;
 
     loop {
       let candidate = format!("pak{next_number:02}_dir.vpk");

@@ -1605,7 +1605,8 @@
     "noUrlAvailable": "No URL available for this mod",
     "openedGameFolder": "Opened game folder",
     "openedModInGame": "Opened mod files in game folder",
-    "failedToOpenGameFolder": "Failed to open game folder"
+    "failedToOpenGameFolder": "Failed to open game folder",
+    "failedToOpenModInGame": "Failed to show mod in game"
   },
   "profiles": {
     "share": "Share Profile",
@@ -1688,7 +1689,18 @@
     "creatingProfile": "Creating new profile...",
     "updatingProfile": "Updating current profile...",
     "processingMods": "Processing mods...",
-    "modsProcessed": "Mods processed"
+    "modsProcessed": "Mods processed",
+    "importedProfileDescription": "Profile imported from shared profile ID",
+    "importedProfileName": "Imported Profile - {{date}}",
+    "modsImportedCount": "{{imported}}/{{total}} mods imported",
+    "activateProfileLabel": "Activate {{profileName}} profile",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "hideModList": "Hide",
+    "showModList": "Show",
+    "modId": "ID: {{id}}",
+    "unknownProfile": "Unknown Profile",
+    "recoveredProfileDescription": "Profile detected from filesystem"
   },
   "mapInvite": {
     "title": "Invite Friends",

@@ -554,7 +554,12 @@ impl AddonAnalyzer {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+        if path.is_file()
+          && path
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("vpk"))
+        {
           vpk_paths.push(path);
         }
       }

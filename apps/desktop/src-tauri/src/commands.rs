@@ -2570,7 +2570,13 @@ pub async fn import_profile_batch(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(_)) => continue,
+        Ok(Some(status)) => match status.status.as_str() {
+          "downloading" | "paused" | "processing" => continue,
+          _ => {
+            download_error = Some(format!("Unexpected download status: {}", status.status));
+            break;
+          }
+        },
         Ok(None) => {
           download_complete = true;
         }
@@ -3104,7 +3110,13 @@ pub async fn batch_update_mods(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(_)) => continue,
+        Ok(Some(status)) => match status.status.as_str() {
+          "downloading" | "paused" | "processing" => continue,
+          _ => {
+            download_error = Some(format!("Unexpected download status: {}", status.status));
+            break;
+          }
+        },
         Ok(None) => {
           download_complete = true;
         }

@@ -741,7 +741,14 @@ impl DownloadManager {
     log::info!("Cancelling download for mod: {mod_id}");
 
     let mut active = self.active_downloads.lock().await;
-    if let Some(download) = active.remove(mod_id) {
+    if let Some(download) = active.get(mod_id) {
+      if download.status == "processing" {
+        return Err(Error::InvalidInput(format!(
+          "Cannot cancel mod {mod_id}: download is already being processed"
+        )));
+      }
+
+      let download = active.remove(mod_id).unwrap();
       download.pause.resume();
       download.cancel_token.cancel();
       Ok(())

@@ -96,7 +96,7 @@ interface RetryProfileImportResult {
   remainingCount: number;
 }
 
-const IMPORTED_PROFILE_DESCRIPTION = "Profile imported from shared profile ID";
+const IMPORTED_PROFILE_DESCRIPTION_KEY = "profiles.importedProfileDescription";
 
 const serializeError = (error: unknown): string => {
   if (error instanceof Error) {
@@ -106,8 +106,7 @@ const serializeError = (error: unknown): string => {
   return String(error);
 };
 
-const createImportedProfileName = () =>
-  `Imported Profile - ${new Date().toLocaleDateString()}`;
+const IMPORTED_PROFILE_NAME_KEY = "profiles.importedProfileName";
 
 const createImportMetadata = (
   importedProfile: SharedProfile,
@@ -588,10 +587,12 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
         isInstalling: false,
       });
 
-      const profileId = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const profileId = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       const createdProfileId = createProfileId(profileId);
       newProfileId = createdProfileId;
-      const profileName = createImportedProfileName();
+      const profileName = t(IMPORTED_PROFILE_NAME_KEY, {
+        date: new Date().toLocaleDateString(),
+      });
       const folderName = await createProfileFolder(
         createdProfileId,
         profileName,
@@ -600,7 +601,7 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
       const newProfile: ModProfile = {
         id: createdProfileId,
         name: profileName,
-        description: IMPORTED_PROFILE_DESCRIPTION,
+        description: t(IMPORTED_PROFILE_DESCRIPTION_KEY),
         createdAt: new Date(),
         lastUsed: new Date(),
         enabledMods: {},
@@ -631,13 +632,13 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
       };
 
       if (preparedMods.length > 0) {
-        result = (await invoke("import_profile_batch", {
+        result = await invoke<ProfileImportResult>("import_profile_batch", {
           profileName,
-          profileDescription: IMPORTED_PROFILE_DESCRIPTION,
+          profileDescription: t(IMPORTED_PROFILE_DESCRIPTION_KEY),
           profileFolder: folderName,
           mods: preparedMods.map((entry) => entry.profileImportMod),
           importType: "override",
-        })) as ProfileImportResult;
+        });
 
         if (result.profileFolder && result.profileFolder !== folderName) {
           setProfileFolderName(newProfileId, result.profileFolder);
@@ -676,7 +677,7 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
           .warn("Some mods failed to import");
         toast.warning(
           t("profiles.createSuccess", { profileName }) +
-            ` (${totalImportedMods - missingRemoteIds.length}/${totalImportedMods} mods imported)`,
+            ` (${t("profiles.modsImportedCount", { imported: totalImportedMods - missingRemoteIds.length, total: totalImportedMods })})`,
         );
       } else {
         toast.success(t("profiles.createSuccess", { profileName }));
@@ -747,13 +748,13 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
       };
 
       if (preparedMods.length > 0) {
-        result = (await invoke("import_profile_batch", {
+        result = await invoke<ProfileImportResult>("import_profile_batch", {
           profileName: activeProfile.name,
           profileDescription: activeProfile.description || "",
           profileFolder: activeProfile.folderName || "",
           mods: preparedMods.map((entry) => entry.profileImportMod),
           importType: "override",
-        })) as ProfileImportResult;
+        });
 
         applyImportedModsToProfileState(
           activeProfile.id,
@@ -786,7 +787,7 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
           .warn("Some mods failed to import to current profile");
         toast.warning(
           t("profiles.overrideSuccess") +
-            ` (${totalImportedMods - missingRemoteIds.length}/${totalImportedMods} mods imported)`,
+            ` (${t("profiles.modsImportedCount", { imported: totalImportedMods - missingRemoteIds.length, total: totalImportedMods })})`,
         );
       } else {
         toast.success(t("profiles.overrideSuccess"));
@@ -849,14 +850,14 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
     };
 
     if (preparedMods.length > 0) {
-      result = (await invoke("import_profile_batch", {
+      result = await invoke<ProfileImportResult>("import_profile_batch", {
         profileName: profile.name,
         profileDescription: profile.description || "",
         profileFolder: profile.folderName || "",
         mods: preparedMods.map((entry) => entry.profileImportMod),
         importType: "override",
         skipReorder: true,
-      })) as ProfileImportResult;
+      });
 
       applyImportedModsToProfileState(
         profileId,

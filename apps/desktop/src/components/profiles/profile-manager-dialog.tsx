@@ -311,12 +311,12 @@ export const ProfileManagerDialog = ({
                                   handleSetActive(profile.id);
                                 }
                               }}
-                              aria-label={`Activate ${profile.name} profile`}
+                              aria-label={t("profiles.activateProfileLabel", { profileName: profile.name })}
                             />
                             <span className='text-sm font-medium'>
                               {profile.id === activeProfile?.id
-                                ? "Active"
-                                : "Inactive"}
+                                ? t("profiles.statusActive")
+                                : t("profiles.statusInactive")}
                             </span>
                           </div>
                           {!profile.isDefault && (
@@ -361,7 +361,7 @@ export const ProfileManagerDialog = ({
                           <Button
                             variant='outline'
                             size='sm'
-                            disabled={isRetryingImport}
+                            disabled={retryingProfileId !== null}
                             onClick={() => handleRetryImportedProfile(profile)}
                             icon={
                               <RefreshCw
@@ -385,8 +385,8 @@ export const ProfileManagerDialog = ({
                             className='flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer'>
                             <span>
                               {expandedProfiles.has(profile.id)
-                                ? "Hide"
-                                : "Show"}
+                                ? t("profiles.hideModList")
+                                : t("profiles.showModList")}
                             </span>
                             {expandedProfiles.has(profile.id) ? (
                               <ChevronUp className='w-3 h-3' />
@@ -415,7 +415,7 @@ export const ProfileManagerDialog = ({
                                     {mod.name}
                                   </p>
                                   <p className='text-xs text-muted-foreground'>
-                                    ID: {mod.remoteId}
+                                    {t("profiles.modId", { id: mod.remoteId })}
                                   </p>
                                 </div>
                               </div>
