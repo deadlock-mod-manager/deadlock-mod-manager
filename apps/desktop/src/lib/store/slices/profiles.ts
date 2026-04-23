@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import {
   createProfileId,
@@ -43,7 +44,7 @@ export interface ProfilesState {
   getProfile: (profileId: ProfileId) => ModProfile | undefined;
   getAllProfiles: () => ModProfile[];
   getProfilesCount: () => number;
-  getEnabledModsCount: (profileId?: ProfileId) => number;
+  getEnabledModsCount: () => number;
   syncProfilesWithFilesystem: () => Promise<void>;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
   saveCurrentModsToProfile: () => void;
@@ -356,17 +357,9 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     return Object.keys(profiles).length;
   },
 
-  getEnabledModsCount: (profileId?: ProfileId) => {
-    const { profiles, activeProfileId } = get();
-    const targetProfileId = profileId ?? activeProfileId;
-    const profile = profiles[targetProfileId];
-
-    if (!profile) {
-      return 0;
-    }
-
-    return Object.values(profile.enabledMods).filter((mod) => mod.enabled)
-      .length;
+  getEnabledModsCount: () => {
+    const { localMods } = get();
+    return localMods.filter(isInstalledModWithVpks).length;
   },
 
   activeProfile: () => {
