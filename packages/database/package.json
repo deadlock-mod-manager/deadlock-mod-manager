@@ -16,7 +16,7 @@
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "dotenv": "^16.6.1",
-    "drizzle-orm": "^0.42.0",
+    "drizzle-orm": "^0.45.2",
     "neverthrow": "^8.2.0",
     "pg": "^8.20.0",
     "typeid-js": "^1.2.0"

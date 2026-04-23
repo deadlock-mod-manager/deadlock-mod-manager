@@ -23,7 +23,7 @@
     "@sentry/node": "catalog:",
     "dotenv-cli": "^7.4.4",
     "genversion": "^3.2.0",
-    "hono": "^4.12.9",
+    "hono": "^4.12.14",
     "ioredis": "^5.10.1",
     "neverthrow": "^8.2.0",
     "zod": "catalog:"
