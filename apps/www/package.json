@@ -68,7 +68,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "dotenv-cli": "^7.4.4",
     "jsdom": "^27.4.0",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
     "tanstack-start-sitemap": "^0.0.5",
     "tsx": "^4.21.0",
