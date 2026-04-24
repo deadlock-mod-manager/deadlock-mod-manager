@@ -44,6 +44,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     const {
       importedMods,
       availableImportedMods,
+      installOrderByRemoteId,
       modsDataByRemoteId,
       unavailableModsCount,
     } = resolveImportContext(importedProfile, modsData);
@@ -126,6 +127,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           newProfileId,
           result.installedMods,
           modsDataByRemoteId,
+          installOrderByRemoteId,
         );
       }
 
@@ -180,6 +182,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     const {
       importedMods,
       availableImportedMods,
+      installOrderByRemoteId,
       modsDataByRemoteId,
       unavailableModsCount,
     } = resolveImportContext(importedProfile, modsData);
@@ -230,6 +233,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           activeProfile.id,
           result.installedMods,
           modsDataByRemoteId,
+          installOrderByRemoteId,
         );
       }
 

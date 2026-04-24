@@ -49,4 +49,47 @@ export const v2ProfileSchema = z.object({
 export const profileSchema = z.union([v1ProfileSchema, v2ProfileSchema]);
 
 export type SharedProfile = z.infer<typeof profileSchema>;
+type SharedProfileMod = z.infer<typeof profileModSchema>;
 export type ProfileModDownload = z.infer<typeof profileModDownloadSchema>;
+
+export const getSharedProfileLoadOrder = (profile: SharedProfile): string[] => {
+  const availableModIds = new Set(
+    profile.payload.mods.map((mod) => mod.remoteId),
+  );
+  const explicitLoadOrder =
+    profile.version === "2" ? profile.payload.loadOrder : [];
+  const normalizedLoadOrder: string[] = [];
+  const seenModIds = new Set<string>();
+
+  for (const remoteId of explicitLoadOrder) {
+    if (!availableModIds.has(remoteId) || seenModIds.has(remoteId)) {
+      continue;
+    }
+
+    normalizedLoadOrder.push(remoteId);
+    seenModIds.add(remoteId);
+  }
+
+  for (const mod of profile.payload.mods) {
+    if (seenModIds.has(mod.remoteId)) {
+      continue;
+    }
+
+    normalizedLoadOrder.push(mod.remoteId);
+    seenModIds.add(mod.remoteId);
+  }
+
+  return normalizedLoadOrder;
+};
+
+export const getOrderedSharedProfileMods = (
+  profile: SharedProfile,
+): SharedProfileMod[] => {
+  const modsByRemoteId = new Map(
+    profile.payload.mods.map((mod) => [mod.remoteId, mod]),
+  );
+
+  return getSharedProfileLoadOrder(profile)
+    .map((remoteId) => modsByRemoteId.get(remoteId))
+    .filter((mod): mod is SharedProfileMod => mod !== undefined);
+};

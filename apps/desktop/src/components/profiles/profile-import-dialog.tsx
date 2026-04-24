@@ -1,4 +1,8 @@
-import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
+import {
+  getOrderedSharedProfileMods,
+  type ModDto,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -60,7 +64,7 @@ export const ProfileImportDialog = () => {
   });
 
   const orderedImportedMods = importedProfile
-    ? importedProfile.payload.mods
+    ? getOrderedSharedProfileMods(importedProfile)
     : [];
 
   const modQueries = useQueries({

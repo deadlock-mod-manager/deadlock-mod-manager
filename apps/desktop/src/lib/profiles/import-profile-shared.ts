@@ -1,4 +1,8 @@
-import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
+import {
+  getOrderedSharedProfileMods,
+  type ModDto,
+  type SharedProfile,
+} from "@deadlock-mods/shared";
 import type { AvailableImportedMod } from "@/lib/profiles/types";
 import type { LocalMod } from "@/types/mods";
 
@@ -13,7 +17,10 @@ export const resolveImportContext = (
   importedProfile: SharedProfile,
   modsData: ModDto[],
 ) => {
-  const importedMods = importedProfile.payload.mods;
+  const importedMods = getOrderedSharedProfileMods(importedProfile);
+  const installOrderByRemoteId = new Map(
+    importedMods.map((mod, index) => [mod.remoteId, index]),
+  );
   const modsDataByRemoteId = new Map(
     modsData.map((mod) => [mod.remoteId, mod]),
   );
@@ -27,6 +34,7 @@ export const resolveImportContext = (
   return {
     importedMods,
     availableImportedMods,
+    installOrderByRemoteId,
     modsDataByRemoteId,
     unavailableModsCount: importedMods.length - availableImportedMods.length,
   };

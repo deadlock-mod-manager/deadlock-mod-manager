@@ -1,7 +1,7 @@
-import type {
-  ModDto,
-  ProfileModDownload,
-  SharedProfile,
+import {
+  getOrderedSharedProfileMods,
+  type ModDto,
+  type ProfileModDownload,
 } from "@deadlock-mods/shared";
 import type { ProfileImportMod } from "@/types/mods";
 
@@ -14,7 +14,9 @@ export interface ImportProgress {
   isInstalling: boolean;
 }
 
-export type OrderedImportedMod = SharedProfile["payload"]["mods"][number];
+export type OrderedImportedMod = ReturnType<
+  typeof getOrderedSharedProfileMods
+>[number];
 
 export interface AvailableImportedMod {
   importedMod: OrderedImportedMod;

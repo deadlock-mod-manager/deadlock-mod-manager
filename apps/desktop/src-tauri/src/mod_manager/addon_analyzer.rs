@@ -547,16 +547,14 @@ impl AddonAnalyzer {
     })
   }
 
-  /// Recursively find all VPK file paths in a directory
+  /// Find VPK file paths in the active addons directory without recursing.
   fn find_vpk_file_paths(&self, dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
     if dir.is_dir() {
       for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_dir() {
-          self.find_vpk_file_paths(&path, vpk_paths)?;
-        } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
           vpk_paths.push(path);
         }
       }
@@ -624,5 +622,65 @@ impl AddonAnalyzer {
       remote_id: None,
       match_info: None,
     })
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn find_vpk_file_paths_only_scans_top_level_directory() {
+    let temp_dir = tempfile::tempdir().expect("tempdir");
+    let addons_path = temp_dir.path().to_path_buf();
+    let nested_profile_path = addons_path.join("profile_other");
+
+    std::fs::write(addons_path.join("pak01_dir.vpk"), b"root").expect("write root vpk");
+    std::fs::create_dir_all(&nested_profile_path).expect("create nested dir");
+    std::fs::write(nested_profile_path.join("pak02_dir.vpk"), b"nested").expect("write nested vpk");
+
+    let analyzer = AddonAnalyzer::new();
+    let mut vpk_paths = Vec::new();
+    analyzer
+      .find_vpk_file_paths(&addons_path, &mut vpk_paths)
+      .expect("scan addons path");
+
+    let file_names: Vec<String> = vpk_paths
+      .into_iter()
+      .map(|path| {
+        path
+          .file_name()
+          .expect("file name")
+          .to_string_lossy()
+          .to_string()
+      })
+      .collect();
+
+    assert_eq!(file_names, vec!["pak01_dir.vpk".to_string()]);
+  }
+
+  #[test]
+  fn find_vpk_file_paths_ignores_non_vpk_entries() {
+    let temp_dir = tempfile::tempdir().expect("tempdir");
+    let addons_path = temp_dir.path().to_path_buf();
+
+    std::fs::write(addons_path.join("pak01_dir.vpk"), b"root").expect("write vpk");
+    std::fs::write(addons_path.join("notes.txt"), b"ignore").expect("write text file");
+    std::fs::create_dir_all(addons_path.join("replays")).expect("create replays dir");
+
+    let analyzer = AddonAnalyzer::new();
+    let mut vpk_paths = Vec::new();
+    analyzer
+      .find_vpk_file_paths(&addons_path, &mut vpk_paths)
+      .expect("scan addons path");
+
+    assert_eq!(vpk_paths.len(), 1);
+    assert_eq!(
+      vpk_paths[0]
+        .file_name()
+        .expect("file name")
+        .to_string_lossy(),
+      "pak01_dir.vpk"
+    );
   }
 }

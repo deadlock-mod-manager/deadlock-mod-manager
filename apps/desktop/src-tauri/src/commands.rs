@@ -19,7 +19,7 @@ use crate::reports::{CreateReportRequest, CreateReportResponse, ReportCounts, Re
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time::Instant;
@@ -2430,6 +2430,39 @@ pub struct ProfileImportResult {
   pub installed_mods: Vec<InstalledModInfo>, // Mods that were successfully installed
 }
 
+fn build_profile_import_reorder_data(
+  installed_mods: &[InstalledModInfo],
+) -> Vec<(String, Vec<String>, u32)> {
+  installed_mods
+    .iter()
+    .filter(|installed_mod| !installed_mod.installed_vpks.is_empty())
+    .enumerate()
+    .map(|(index, installed_mod)| {
+      (
+        installed_mod.mod_id.clone(),
+        installed_mod.installed_vpks.clone(),
+        index as u32,
+      )
+    })
+    .collect()
+}
+
+fn apply_profile_import_reorder_mappings(
+  installed_mods: &mut [InstalledModInfo],
+  updated_mappings: &[(String, Vec<String>)],
+) {
+  let updated_vpks_by_mod_id: HashMap<&str, &Vec<String>> = updated_mappings
+    .iter()
+    .map(|(mod_id, installed_vpks)| (mod_id.as_str(), installed_vpks))
+    .collect();
+
+  for installed_mod in installed_mods {
+    if let Some(updated_vpks) = updated_vpks_by_mod_id.get(installed_mod.mod_id.as_str()) {
+      installed_mod.installed_vpks = (*updated_vpks).clone();
+    }
+  }
+}
+
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
@@ -2443,7 +2476,7 @@ pub async fn import_profile_batch(
     "Starting batch profile import: {} mods, type: {}, folder: {}",
     mods.len(),
     import_type,
-    profile_folder
+    profile_folder,
   );
 
   let total_mods = mods.len();
@@ -2533,12 +2566,13 @@ pub async fn import_profile_batch(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
+        Ok(Some(status)) => match status.status.as_str() {
+          "downloading" | "paused" => continue,
+          _ => {
+            download_error = Some(format!("Unexpected download status: {}", status.status));
+            break;
           }
-          download_complete = true;
-        }
+        },
         Ok(None) => {
           download_complete = true;
         }
@@ -2681,6 +2715,32 @@ pub async fn import_profile_batch(
       Err(e) => {
         log::error!("Failed to install mod {}: {:?}", mod_data.mod_id, e);
         failed.push((mod_data.mod_id.clone(), format!("{:?}", e)));
+      }
+    }
+  }
+
+  let reorder_data = build_profile_import_reorder_data(&installed_mods);
+  if !reorder_data.is_empty() {
+    let profile_folder = if final_profile_folder.is_empty() {
+      None
+    } else {
+      Some(final_profile_folder.clone())
+    };
+
+    let res = {
+      let mut mod_manager = MANAGER.lock().unwrap();
+      mod_manager.reorder_mods_by_remote_id(reorder_data, profile_folder)
+    };
+
+    match res {
+      Ok(updated_mappings) => {
+        apply_profile_import_reorder_mappings(&mut installed_mods, &updated_mappings);
+      }
+      Err(error) => {
+        log::warn!(
+          "Failed to reorder imported profile mods in addons folder: {:?}",
+          error
+        );
       }
     }
   }
@@ -3041,12 +3101,13 @@ pub async fn batch_update_mods(
       tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
       match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
+        Ok(Some(status)) => match status.status.as_str() {
+          "downloading" | "paused" => continue,
+          _ => {
+            download_error = Some(format!("Unexpected download status: {}", status.status));
+            break;
           }
-          download_complete = true;
-        }
+        },
         Ok(None) => {
           download_complete = true;
         }
@@ -3669,5 +3730,99 @@ mod server_addons_tests {
     assert!(validate_custom_file_name("foo/bar.vpk").is_err());
     assert!(validate_custom_file_name("foo\\bar.vpk").is_err());
     assert!(validate_custom_file_name("").is_err());
+  }
+}
+
+#[cfg(test)]
+mod profile_import_tests {
+  use super::*;
+
+  #[test]
+  fn build_profile_import_reorder_data_preserves_install_sequence() {
+    let installed_mods = vec![
+      InstalledModInfo {
+        mod_id: "mod-b".to_string(),
+        mod_name: "Mod B".to_string(),
+        installed_vpks: vec!["pak03_dir.vpk".to_string()],
+        file_tree: None,
+      },
+      InstalledModInfo {
+        mod_id: "mod-a".to_string(),
+        mod_name: "Mod A".to_string(),
+        installed_vpks: vec!["pak07_dir.vpk".to_string(), "pak08_dir.vpk".to_string()],
+        file_tree: None,
+      },
+    ];
+
+    let reorder_data = build_profile_import_reorder_data(&installed_mods);
+
+    assert_eq!(
+      reorder_data,
+      vec![
+        ("mod-b".to_string(), vec!["pak03_dir.vpk".to_string()], 0),
+        (
+          "mod-a".to_string(),
+          vec!["pak07_dir.vpk".to_string(), "pak08_dir.vpk".to_string()],
+          1,
+        ),
+      ]
+    );
+  }
+
+  #[test]
+  fn build_profile_import_reorder_data_skips_mods_without_vpks() {
+    let installed_mods = vec![
+      InstalledModInfo {
+        mod_id: "mod-empty".to_string(),
+        mod_name: "Empty".to_string(),
+        installed_vpks: vec![],
+        file_tree: None,
+      },
+      InstalledModInfo {
+        mod_id: "mod-a".to_string(),
+        mod_name: "Mod A".to_string(),
+        installed_vpks: vec!["pak01_dir.vpk".to_string()],
+        file_tree: None,
+      },
+    ];
+
+    let reorder_data = build_profile_import_reorder_data(&installed_mods);
+
+    assert_eq!(
+      reorder_data,
+      vec![("mod-a".to_string(), vec!["pak01_dir.vpk".to_string()], 0)]
+    );
+  }
+
+  #[test]
+  fn apply_profile_import_reorder_mappings_updates_matching_mods() {
+    let mut installed_mods = vec![
+      InstalledModInfo {
+        mod_id: "mod-a".to_string(),
+        mod_name: "Mod A".to_string(),
+        installed_vpks: vec!["pak07_dir.vpk".to_string()],
+        file_tree: None,
+      },
+      InstalledModInfo {
+        mod_id: "mod-b".to_string(),
+        mod_name: "Mod B".to_string(),
+        installed_vpks: vec!["pak03_dir.vpk".to_string()],
+        file_tree: None,
+      },
+    ];
+
+    apply_profile_import_reorder_mappings(
+      &mut installed_mods,
+      &[("mod-b".to_string(), vec!["pak01_dir.vpk".to_string()])],
+    );
+
+    assert_eq!(
+      installed_mods[0].installed_vpks,
+      vec!["pak07_dir.vpk".to_string()]
+    );
+    assert_eq!(
+      installed_mods[1].installed_vpks,
+      vec!["pak01_dir.vpk".to_string()]
+    );
   }
 }

@@ -4,6 +4,8 @@ import i18n from "i18next";
 import type { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import { sortModsByInstallOrder } from "@/lib/profiles/import-profile-shared";
+import { applyUpdatedVpkMappings } from "@/lib/profiles/profile-reorder";
 import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
@@ -39,6 +41,11 @@ export interface ProfilesState {
     profileId: ProfileId,
     installedMods: InstalledModInfo[],
     modsDataByRemoteId: Map<string, ModDto>,
+    installOrderByRemoteId: Map<string, number>,
+  ) => void;
+  applyImportReorderVpksToProfile: (
+    profileId: ProfileId,
+    updatedVpkMappings: Array<[string, string[]]>,
   ) => void;
 
   switchToProfile: (profileId: ProfileId) => Promise<ProfileSwitchResult>;
@@ -407,6 +414,7 @@ export const createProfilesSlice: StateCreator<
     profileId: ProfileId,
     installedMods: InstalledModInfo[],
     modsDataByRemoteId: Map<string, ModDto>,
+    installOrderByRemoteId: Map<string, number>,
   ) => {
     set((state) => {
       const profile = state.profiles[profileId];
@@ -436,6 +444,7 @@ export const createProfilesSlice: StateCreator<
           continue;
         }
 
+        const installOrder = installOrderByRemoteId.get(installedMod.modId);
         const existingProfileIndex = profileIndexesByRemoteId.get(
           installedMod.modId,
         );
@@ -458,6 +467,7 @@ export const createProfilesSlice: StateCreator<
           status: ModStatus.Installed,
           installedVpks: installedMod.installedVpks,
           installedFileTree: installedMod.fileTree,
+          installOrder: installOrder ?? baseMod?.installOrder,
         };
 
         if (existingProfileIndex === undefined) {
@@ -495,13 +505,49 @@ export const createProfilesSlice: StateCreator<
           [profileId]: {
             ...profile,
             enabledMods: nextEnabledMods,
-            mods: nextProfileMods,
+            mods: sortModsByInstallOrder(nextProfileMods),
           },
         },
       };
 
       if (updateActiveLocalMods) {
-        nextPartial.localMods = nextLocalMods;
+        nextPartial.localMods = sortModsByInstallOrder(nextLocalMods);
+      }
+
+      return nextPartial;
+    });
+  },
+
+  applyImportReorderVpksToProfile: (
+    profileId: ProfileId,
+    updatedVpkMappings: Array<[string, string[]]>,
+  ) => {
+    if (updatedVpkMappings.length === 0) {
+      return;
+    }
+
+    set((state) => {
+      const profile = state.profiles[profileId];
+
+      if (!profile) {
+        return state;
+      }
+
+      const nextPartial: Partial<ProfilesSliceStore> = {
+        profiles: {
+          ...state.profiles,
+          [profileId]: {
+            ...profile,
+            mods: applyUpdatedVpkMappings(profile.mods, updatedVpkMappings),
+          },
+        },
+      };
+
+      if (state.activeProfileId === profileId) {
+        nextPartial.localMods = applyUpdatedVpkMappings(
+          state.localMods,
+          updatedVpkMappings,
+        );
       }
 
       return nextPartial;

@@ -24,13 +24,15 @@ import {
   Trash2,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useSyncProfiles } from "@/hooks/use-sync-profiles";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import type { LocalMod } from "@/types/mods";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
 import { ProfileEditDialog } from "./profile-edit-dialog";
@@ -64,8 +66,6 @@ export const ProfileManagerDialog = ({
   const [expandedProfiles, setExpandedProfiles] = useState<Set<ProfileId>>(
     new Set(),
   );
-  const [isSyncing, setIsSyncing] = useState(false);
-
   useSyncProfiles(open);
 
   const {
@@ -78,6 +78,22 @@ export const ProfileManagerDialog = ({
 
   const profiles = getAllProfiles();
   const activeProfile = getActiveProfile();
+
+  const localModsByRemoteId = useMemo(
+    () => new Map(localMods.map((mod) => [mod.remoteId, mod] as const)),
+    [localMods],
+  );
+
+  const syncProfilesMutation = useMutation({
+    mutationFn: () => syncProfilesWithFilesystem(),
+    onSuccess: () => {
+      toast.success(t("profiles.syncSuccess"));
+    },
+    onError: (error) => {
+      logger.withError(error).error("Failed to sync profiles");
+      toast.error(t("profiles.syncError"));
+    },
+  });
 
   const handleDeleteProfile = async (
     profileId: ProfileId,
@@ -159,16 +175,17 @@ export const ProfileManagerDialog = ({
     });
   };
 
-  const getEnabledModsInfo = (profile: ModProfile): EnabledModsInfo => {
+  const getEnabledModsInfo = (
+    profile: ModProfile,
+    modsByRemoteId: Map<string, LocalMod>,
+  ): EnabledModsInfo => {
     const enabledEntries = Object.values(profile.enabledMods || {}).filter(
       (entry: ModProfileEntry) => entry.enabled,
     );
 
     const enabledMods: ModInfo[] = enabledEntries
       .map((entry) => {
-        const localMod = localMods.find(
-          (mod) => mod.remoteId === entry.remoteId,
-        );
+        const localMod = modsByRemoteId.get(entry.remoteId);
         return localMod
           ? { name: localMod.name, remoteId: entry.remoteId }
           : null;
@@ -179,19 +196,6 @@ export const ProfileManagerDialog = ({
       count: enabledEntries.length,
       mods: enabledMods,
     };
-  };
-
-  const handleSyncProfiles = async () => {
-    setIsSyncing(true);
-    try {
-      await syncProfilesWithFilesystem();
-      toast.success(t("profiles.syncSuccess"));
-    } catch (error) {
-      logger.withError(error).error("Failed to sync profiles");
-      toast.error(t("profiles.syncError"));
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   return (
@@ -211,116 +215,128 @@ export const ProfileManagerDialog = ({
           </div>
           <div className='flex-1 overflow-auto'>
             <div className='grid gap-4 pb-4'>
-              {profiles.map((profile) => (
-                <Card key={profile.id}>
-                  <CardHeader className='pb-3'>
-                    <div className='flex items-start justify-between'>
-                      <div className='flex-1 min-w-0'>
-                        <div className='flex items-center gap-2 mb-1'>
-                          <h3 className='font-semibold text-lg truncate'>
-                            {profile.name}
-                          </h3>
-                          {profile.id === activeProfile?.id && (
-                            <Badge variant='default' className='shrink-0'>
-                              {t("profiles.active")}
-                            </Badge>
+              {profiles.map((profile) => {
+                const enabledModsInfo = getEnabledModsInfo(
+                  profile,
+                  localModsByRemoteId,
+                );
+
+                return (
+                  <Card key={profile.id}>
+                    <CardHeader className='pb-3'>
+                      <div className='flex items-start justify-between'>
+                        <div className='flex-1 min-w-0'>
+                          <div className='flex items-center gap-2 mb-1'>
+                            <h3 className='font-semibold text-lg truncate'>
+                              {profile.name}
+                            </h3>
+                            {profile.id === activeProfile?.id && (
+                              <Badge variant='default' className='shrink-0'>
+                                {t("profiles.active")}
+                              </Badge>
+                            )}
+                            {profile.isDefault && (
+                              <Badge variant='secondary' className='shrink-0'>
+                                {t("profiles.default")}
+                              </Badge>
+                            )}
+                            <Button
+                              variant='transparent'
+                              size='sm'
+                              onClick={() => setEditingProfile(profile.id)}>
+                              <Edit className='w-4 h-4' />
+                            </Button>
+                          </div>
+                          {profile.description && (
+                            <p className='text-sm text-muted-foreground line-clamp-2'>
+                              {profile.description}
+                            </p>
                           )}
-                          {profile.isDefault && (
-                            <Badge variant='secondary' className='shrink-0'>
-                              {t("profiles.default")}
-                            </Badge>
-                          )}
-                          <Button
-                            variant='transparent'
-                            size='sm'
-                            onClick={() => setEditingProfile(profile.id)}>
-                            <Edit className='w-4 h-4' />
-                          </Button>
                         </div>
-                        {profile.description && (
-                          <p className='text-sm text-muted-foreground line-clamp-2'>
-                            {profile.description}
-                          </p>
+                        <div className='flex items-center gap-2 ml-4'>
+                          <div className='flex items-center gap-2'>
+                            <Switch
+                              checked={profile.id === activeProfile?.id}
+                              onCheckedChange={(checked) => {
+                                if (
+                                  checked &&
+                                  profile.id !== activeProfile?.id
+                                ) {
+                                  handleSetActive(profile.id);
+                                }
+                              }}
+                              aria-label={t("profiles.activateProfileLabel", {
+                                profileName: profile.name,
+                              })}
+                            />
+                            <span className='text-sm font-medium'>
+                              {profile.id === activeProfile?.id
+                                ? t("profiles.statusActive")
+                                : t("profiles.statusInactive")}
+                            </span>
+                          </div>
+                          {!profile.isDefault && (
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() =>
+                                handleDeleteProfile(profile.id, profile.name)
+                              }>
+                              <Trash2 className='w-4 h-4' />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className='space-y-4'>
+                      <div className='grid grid-cols-3 gap-4 text-sm'>
+                        <div>
+                          <div className='font-medium text-muted-foreground mb-1'>
+                            {t("profiles.lastUsed")}
+                          </div>
+                          <div className='text-foreground'>
+                            {formatDate(profile.lastUsed)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className='font-medium text-muted-foreground mb-1'>
+                            {t("profiles.created")}
+                          </div>
+                          <div className='text-foreground'>
+                            {formatDate(profile.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                          {t("profiles.enabledMods")}:{" "}
+                          <Badge variant='secondary'>
+                            {enabledModsInfo.count}
+                          </Badge>
+                        </div>
+                        {enabledModsInfo.count > 0 && (
+                          <button
+                            onClick={() => toggleProfileExpanded(profile.id)}
+                            className='flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer'>
+                            <span>
+                              {expandedProfiles.has(profile.id)
+                                ? t("profiles.hideModList")
+                                : t("profiles.showModList")}
+                            </span>
+                            {expandedProfiles.has(profile.id) ? (
+                              <ChevronUp className='w-3 h-3' />
+                            ) : (
+                              <ChevronDown className='w-3 h-3' />
+                            )}
+                          </button>
                         )}
                       </div>
-                      <div className='flex items-center gap-2 ml-4'>
-                        <div className='flex items-center gap-2'>
-                          <Switch
-                            checked={profile.id === activeProfile?.id}
-                            onCheckedChange={(checked) => {
-                              if (checked && profile.id !== activeProfile?.id) {
-                                handleSetActive(profile.id);
-                              }
-                            }}
-                            aria-label={`Activate ${profile.name} profile`}
-                          />
-                          <span className='text-sm font-medium'>
-                            {profile.id === activeProfile?.id
-                              ? "Active"
-                              : "Inactive"}
-                          </span>
-                        </div>
-                        {!profile.isDefault && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            onClick={() =>
-                              handleDeleteProfile(profile.id, profile.name)
-                            }>
-                            <Trash2 className='w-4 h-4' />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <div className='grid grid-cols-3 gap-4 text-sm'>
-                      <div>
-                        <div className='font-medium text-muted-foreground mb-1'>
-                          {t("profiles.lastUsed")}
-                        </div>
-                        <div className='text-foreground'>
-                          {formatDate(profile.lastUsed)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className='font-medium text-muted-foreground mb-1'>
-                          {t("profiles.created")}
-                        </div>
-                        <div className='text-foreground'>
-                          {formatDate(profile.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                        {t("profiles.enabledMods")}:{" "}
-                        <Badge variant='secondary'>
-                          {getEnabledModsInfo(profile).count}
-                        </Badge>
-                      </div>
-                      {getEnabledModsInfo(profile).count > 0 && (
-                        <button
-                          onClick={() => toggleProfileExpanded(profile.id)}
-                          className='flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer'>
-                          <span>
-                            {expandedProfiles.has(profile.id) ? "Hide" : "Show"}
-                          </span>
-                          {expandedProfiles.has(profile.id) ? (
-                            <ChevronUp className='w-3 h-3' />
-                          ) : (
-                            <ChevronDown className='w-3 h-3' />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </CardContent>
-                  {expandedProfiles.has(profile.id) && (
-                    <div className='px-6 pb-6'>
-                      {getEnabledModsInfo(profile).mods.length > 0 && (
-                        <div className='grid gap-2'>
-                          {getEnabledModsInfo(profile).mods.map(
-                            (mod, index) => (
+                    </CardContent>
+                    {expandedProfiles.has(profile.id) && (
+                      <div className='px-6 pb-6'>
+                        {enabledModsInfo.mods.length > 0 && (
+                          <div className='grid gap-2'>
+                            {enabledModsInfo.mods.map((mod, index) => (
                               <div
                                 key={mod.remoteId}
                                 className='flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors'>
@@ -334,28 +350,28 @@ export const ProfileManagerDialog = ({
                                     {mod.name}
                                   </p>
                                   <p className='text-xs text-muted-foreground'>
-                                    ID: {mod.remoteId}
+                                    {t("profiles.modId", { id: mod.remoteId })}
                                   </p>
                                 </div>
                               </div>
-                            ),
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              ))}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           </div>
           <DialogFooter>
             <Button
-              onClick={handleSyncProfiles}
-              disabled={isSyncing}
+              onClick={() => syncProfilesMutation.mutate()}
+              disabled={syncProfilesMutation.isPending}
               variant='outline'
               icon={
                 <RefreshCw
-                  className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
+                  className={`w-4 h-4 ${syncProfilesMutation.isPending ? "animate-spin" : ""}`}
                 />
               }>
               {t("profiles.sync")}

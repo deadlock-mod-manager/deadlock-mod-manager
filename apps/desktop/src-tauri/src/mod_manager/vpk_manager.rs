@@ -48,6 +48,20 @@ impl VpkManager {
     Ok(next_number)
   }
 
+  fn find_next_free_vpk_name(&self, addons_path: &Path) -> Result<String, Error> {
+    let mut next_number = 1u32;
+
+    loop {
+      let candidate = format!("pak{next_number:02}_dir.vpk");
+
+      if !addons_path.join(&candidate).exists() {
+        return Ok(candidate);
+      }
+
+      next_number += 1;
+    }
+  }
+
   pub fn reorder_vpks(
     &self,
     mod_vpk_mapping: &[(String, Vec<String>)], // (mod_id, vpk_filenames)
@@ -427,9 +441,7 @@ impl VpkManager {
         continue;
       }
 
-      // Find next available number (fills gaps)
-      let next_number = self.find_next_available_vpk_number(addons_path)?;
-      let new_name = format!("pak{next_number:02}_dir.vpk");
+      let new_name = self.find_next_free_vpk_name(addons_path)?;
       let new_path = addons_path.join(&new_name);
 
       if let Err(e) = fs::rename(&old_path, &new_path) {
@@ -641,5 +653,102 @@ impl VpkManager {
 impl Default for VpkManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn enable_vpks_uses_next_free_slot_without_overwriting_existing_profile_vpks() {
+    let temp_dir = tempfile::tempdir().expect("tempdir");
+    let addons_path = temp_dir.path();
+
+    for number in 1..=7 {
+      let file_name = format!("pak{number:02}_dir.vpk");
+      std::fs::write(addons_path.join(file_name), format!("existing-{number}").as_bytes())
+        .expect("write existing vpk");
+    }
+
+    std::fs::write(addons_path.join("669198_pak96_dir.vpk"), b"beginnings")
+      .expect("write prefixed retry vpk");
+
+    let vpk_manager = VpkManager::new();
+    let enabled_vpks = vpk_manager
+      .enable_vpks(
+        addons_path,
+        "669198",
+        &["669198_pak96_dir.vpk".to_string()],
+      )
+      .expect("enable vpk");
+
+    assert_eq!(enabled_vpks, vec!["pak08_dir.vpk".to_string()]);
+    assert!(addons_path.join("pak08_dir.vpk").exists());
+    assert!(addons_path.join("pak01_dir.vpk").exists());
+    assert!(!addons_path.join("669198_pak96_dir.vpk").exists());
+  }
+
+  #[test]
+  fn retry_insert_reorders_existing_profile_to_drop_recovered_mod_into_expected_slot() {
+    let temp_dir = tempfile::tempdir().expect("tempdir");
+    let addons_path = temp_dir.path();
+
+    for number in 1..=7 {
+      let file_name = format!("pak{number:02}_dir.vpk");
+      std::fs::write(addons_path.join(file_name), format!("existing-{number}").as_bytes())
+        .expect("write existing vpk");
+    }
+
+    std::fs::write(addons_path.join("669198_pak96_dir.vpk"), b"beginnings")
+      .expect("write prefixed retry vpk");
+
+    let vpk_manager = VpkManager::new();
+    let enabled_vpks = vpk_manager
+      .enable_vpks(
+        addons_path,
+        "669198",
+        &["669198_pak96_dir.vpk".to_string()],
+      )
+      .expect("enable vpk");
+
+    assert_eq!(enabled_vpks, vec!["pak08_dir.vpk".to_string()]);
+
+    let updated_mappings = vpk_manager
+      .reorder_vpks(
+        &[
+          ("669781".to_string(), vec!["pak01_dir.vpk".to_string()]),
+          ("640378".to_string(), vec!["pak02_dir.vpk".to_string()]),
+          ("659570".to_string(), vec!["pak03_dir.vpk".to_string()]),
+          ("669521".to_string(), vec!["pak04_dir.vpk".to_string()]),
+          ("634638".to_string(), vec!["pak05_dir.vpk".to_string()]),
+          ("669198".to_string(), vec!["pak08_dir.vpk".to_string()]),
+          ("658931".to_string(), vec!["pak06_dir.vpk".to_string()]),
+          ("667277".to_string(), vec!["pak07_dir.vpk".to_string()]),
+        ],
+        addons_path,
+      )
+      .expect("reorder vpks");
+
+    assert_eq!(
+      updated_mappings,
+      vec![
+        ("669781".to_string(), vec!["pak01_dir.vpk".to_string()]),
+        ("640378".to_string(), vec!["pak02_dir.vpk".to_string()]),
+        ("659570".to_string(), vec!["pak03_dir.vpk".to_string()]),
+        ("669521".to_string(), vec!["pak04_dir.vpk".to_string()]),
+        ("634638".to_string(), vec!["pak05_dir.vpk".to_string()]),
+        ("669198".to_string(), vec!["pak06_dir.vpk".to_string()]),
+        ("658931".to_string(), vec!["pak07_dir.vpk".to_string()]),
+        ("667277".to_string(), vec!["pak08_dir.vpk".to_string()]),
+      ]
+    );
+
+    for number in 1..=8 {
+      assert!(
+        addons_path.join(format!("pak{number:02}_dir.vpk")).exists(),
+        "expected pak{number:02}_dir.vpk to exist after reorder"
+      );
+    }
   }
 }
