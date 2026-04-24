@@ -4,7 +4,7 @@ import { DialogFooter } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Download, Package, UserPlus } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import type { ImportProgress } from "@/hooks/use-profile-import";
+import type { ImportProgress } from "@/lib/profiles/types";
 import { ProfileModsList } from "./profile-mods-list";
 
 interface ProfilePreviewProps {
