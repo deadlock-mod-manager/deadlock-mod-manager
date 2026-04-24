@@ -26,11 +26,10 @@ export const ProfileImportDialog = () => {
   const [importedProfile, setImportedProfile] = useState<SharedProfile | null>(
     null,
   );
-  const [isImporting, setIsImporting] = useState(false);
   const { t } = useTranslation();
   const { createProfileFromImport, importProgress } = useProfileImport();
 
-  const { isPending, mutate } = useMutation({
+  const fetchProfileMutation = useMutation({
     mutationFn: (profileId: string) => getProfile(profileId.trim()),
     onSuccess: (data) => {
       setImportedProfile(data);
@@ -42,14 +41,33 @@ export const ProfileImportDialog = () => {
     },
   });
 
-  // Fetch mod details for each mod in the imported profile
+  const createProfileMutation = useMutation({
+    mutationFn: ({
+      profile,
+      availableMods,
+      sourceProfileId,
+    }: {
+      profile: SharedProfile;
+      availableMods: ModDto[];
+      sourceProfileId?: string;
+    }) =>
+      createProfileFromImport(profile, availableMods, {
+        sourceProfileId,
+      }),
+    onSuccess: () => {
+      handleCancel();
+    },
+  });
+
+  const orderedImportedMods = importedProfile
+    ? importedProfile.payload.mods
+    : [];
+
   const modQueries = useQueries({
-    queries:
-      importedProfile?.payload.mods.map((mod) => ({
-        queryKey: ["mod", mod.remoteId],
-        queryFn: () => getMod(mod.remoteId),
-        enabled: !!importedProfile,
-      })) || [],
+    queries: orderedImportedMods.map((mod) => ({
+      queryKey: ["mod", mod.remoteId],
+      queryFn: () => getMod(mod.remoteId),
+    })),
   });
 
   const modsLoading = modQueries.some((query) => query.isPending);
@@ -58,11 +76,14 @@ export const ProfileImportDialog = () => {
     .filter(Boolean) as ModDto[];
 
   const onSubmit = async (values: ProfileImportFormData) => {
-    if (!values.profileId?.trim()) {
+    const profileId = values.profileId?.trim();
+
+    if (!profileId) {
       toast.error(t("profiles.profileIdRequired"));
       return;
     }
-    return mutate(values.profileId);
+
+    await fetchProfileMutation.mutateAsync(profileId);
   };
 
   const handleCancel = () => {
@@ -70,20 +91,16 @@ export const ProfileImportDialog = () => {
     setOpen(false);
   };
 
-  const handleCreateNewProfile = async () => {
+  const handleCreateNewProfile = () => {
     if (!importedProfile) return;
 
-    setIsImporting(true);
+    const sourceProfileId = fetchProfileMutation.variables?.trim();
 
-    try {
-      await createProfileFromImport(importedProfile.payload.mods, modsData);
-      handleCancel();
-    } catch (error) {
-      console.error("Failed to create profile from import:", error);
-      toast.error(t("profiles.createError"));
-    } finally {
-      setIsImporting(false);
-    }
+    createProfileMutation.mutate({
+      profile: importedProfile,
+      availableMods: modsData,
+      sourceProfileId,
+    });
   };
 
   return (
@@ -114,14 +131,14 @@ export const ProfileImportDialog = () => {
             modsData={modsData}
             onCreateNew={handleCreateNewProfile}
             onCancel={handleCancel}
-            isImporting={isImporting}
+            isImporting={createProfileMutation.isPending}
             importProgress={importProgress}
           />
         ) : (
           <ProfileImportForm
             onSubmit={onSubmit}
             onCancel={handleCancel}
-            isLoading={isPending}
+            isLoading={fetchProfileMutation.isPending}
           />
         )}
       </DialogContent>
