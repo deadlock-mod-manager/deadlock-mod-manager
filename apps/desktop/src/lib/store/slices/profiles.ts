@@ -1,8 +1,10 @@
+import { type ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "i18next";
 import type { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
-import { type LocalMod, ModStatus } from "@/types/mods";
+import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
   DEFAULT_PROFILE_ID,
@@ -12,7 +14,6 @@ import {
   type ProfileId,
   type ProfileSwitchResult,
 } from "@/types/profiles";
-import type { State } from "..";
 
 export interface ProfilesState {
   profiles: Record<ProfileId, ModProfile>;
@@ -28,6 +29,17 @@ export interface ProfilesState {
     profileId: ProfileId,
     updates: Partial<Pick<ModProfile, "name" | "description">>,
   ) => boolean;
+  setProfileFolderName: (profileId: ProfileId, folderName: string) => void;
+  upsertProfile: (profile: ModProfile) => void;
+  createImportProfileFolder: (
+    profileId: ProfileId,
+    profileName: string,
+  ) => Promise<string>;
+  applyImportInstalledModsToProfile: (
+    profileId: ProfileId,
+    installedMods: InstalledModInfo[],
+    modsDataByRemoteId: Map<string, ModDto>,
+  ) => void;
 
   switchToProfile: (profileId: ProfileId) => Promise<ProfileSwitchResult>;
   setModEnabledInProfile: (
@@ -65,10 +77,114 @@ const createDefaultProfile = (): ModProfile => ({
 export const profilesDeepMergeKeys =
   [] as const satisfies readonly (keyof ProfilesState)[];
 
-export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
-  set,
-  get,
-) => ({
+const RECOVERED_PROFILE_DESCRIPTION = "Profile detected from filesystem";
+const PROFILE_FOLDER_NAME_PATTERN = /^(profile_\d+_[^_]+)(?:_(.+))?$/;
+
+const toRecoveredProfileName = (value: string) => {
+  const displayName = value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  return (
+    displayName ||
+    i18n.t("profiles.unknownProfile", { defaultValue: "Unknown Profile" })
+  );
+};
+
+const getRecoveredProfileDetails = (folderName: string) => {
+  const match = folderName.match(PROFILE_FOLDER_NAME_PATTERN);
+
+  return {
+    profileId: createProfileId(match?.[1] ?? folderName),
+    displayName: toRecoveredProfileName(match?.[2] ?? folderName),
+  };
+};
+
+const shouldReplaceRecoveredProfileName = (profile: ModProfile) =>
+  profile.description === RECOVERED_PROFILE_DESCRIPTION || !profile.name.trim();
+
+const pickRecoveredProfileSource = (
+  existingProfile: ModProfile | undefined,
+  recoveredProfile: ModProfile,
+) => {
+  if (!existingProfile) {
+    return recoveredProfile;
+  }
+
+  if (existingProfile.mods.length !== recoveredProfile.mods.length) {
+    return existingProfile.mods.length > recoveredProfile.mods.length
+      ? existingProfile
+      : recoveredProfile;
+  }
+
+  return Object.keys(existingProfile.enabledMods).length >=
+    Object.keys(recoveredProfile.enabledMods).length
+    ? existingProfile
+    : recoveredProfile;
+};
+
+const normalizeRecoveredProfileIds = (
+  profiles: Record<ProfileId, ModProfile>,
+  activeProfileId: ProfileId,
+) => {
+  const nextProfiles = { ...profiles };
+  let nextActiveProfileId = activeProfileId;
+  let changed = false;
+
+  for (const profile of Object.values(profiles)) {
+    if (profile.isDefault || !profile.folderName) {
+      continue;
+    }
+
+    const { profileId, displayName } = getRecoveredProfileDetails(
+      profile.folderName,
+    );
+
+    if (profile.id === profileId) {
+      continue;
+    }
+
+    const sourceProfile = pickRecoveredProfileSource(
+      nextProfiles[profileId],
+      profile,
+    );
+
+    delete nextProfiles[profile.id];
+    nextProfiles[profileId] = {
+      ...sourceProfile,
+      id: profileId,
+      folderName: profile.folderName,
+      name: shouldReplaceRecoveredProfileName(sourceProfile)
+        ? displayName
+        : sourceProfile.name,
+    };
+
+    if (nextActiveProfileId === profile.id) {
+      nextActiveProfileId = profileId;
+    }
+
+    changed = true;
+  }
+
+  return {
+    profiles: changed ? nextProfiles : profiles,
+    activeProfileId: nextActiveProfileId,
+    changed,
+  };
+};
+
+type ProfilesSliceStore = ProfilesState & {
+  localMods: LocalMod[];
+};
+
+export const createProfilesSlice: StateCreator<
+  ProfilesSliceStore,
+  [],
+  [],
+  ProfilesState
+> = (set, get, _store): ProfilesState => ({
   profiles: {
     [DEFAULT_PROFILE_ID]: createDefaultProfile(),
   },
@@ -126,8 +242,29 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       return false;
     }
 
-    if (profile.folderName) {
-      try {
+    const isDeletingActiveProfile = activeProfileId === profileId;
+    const fallbackProfile =
+      profiles[DEFAULT_PROFILE_ID] ?? createDefaultProfile();
+    let switchedToFallback = false;
+
+    try {
+      if (isDeletingActiveProfile) {
+        set({ isSwitching: true });
+
+        await invoke("switch_profile", {
+          profileFolder: fallbackProfile.folderName,
+        });
+        switchedToFallback = true;
+        logger
+          .withMetadata({
+            deletedProfileId: profileId,
+            fallbackProfileId: DEFAULT_PROFILE_ID,
+            fallbackFolderName: fallbackProfile.folderName,
+          })
+          .info("Switched to fallback profile before deletion");
+      }
+
+      if (profile.folderName) {
         await invoke("delete_profile_folder", {
           profileFolder: profile.folderName,
         });
@@ -137,29 +274,63 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
             folderName: profile.folderName,
           })
           .info("Deleted profile folder");
-      } catch (error) {
-        logger
-          .withMetadata({
-            profileId,
-            folderName: profile.folderName,
-          })
-          .withError(error)
-          .error("Failed to delete profile folder");
+      }
+
+      const deletedAt = new Date();
+
+      set((state) => {
+        const remainingProfiles = { ...state.profiles };
+
+        if (!remainingProfiles[DEFAULT_PROFILE_ID]) {
+          remainingProfiles[DEFAULT_PROFILE_ID] = fallbackProfile;
+        }
+
+        delete remainingProfiles[profileId];
+
+        if (!isDeletingActiveProfile) {
+          return {
+            profiles: remainingProfiles,
+          };
+        }
+
+        const nextActiveProfile = remainingProfiles[DEFAULT_PROFILE_ID];
+
+        return {
+          profiles: {
+            ...remainingProfiles,
+            [DEFAULT_PROFILE_ID]: {
+              ...nextActiveProfile,
+              lastUsed: deletedAt,
+            },
+          },
+          activeProfileId: DEFAULT_PROFILE_ID,
+          localMods: [...nextActiveProfile.mods],
+        };
+      });
+
+      return true;
+    } catch (error) {
+      if (switchedToFallback) {
+        set({
+          activeProfileId: DEFAULT_PROFILE_ID,
+          localMods: [...fallbackProfile.mods],
+        });
+      }
+      logger
+        .withMetadata({
+          profileId,
+          folderName: profile.folderName,
+          isDeletingActiveProfile,
+          switchedToFallback,
+        })
+        .withError(error)
+        .error("Failed to delete profile");
+      return false;
+    } finally {
+      if (isDeletingActiveProfile) {
+        set({ isSwitching: false });
       }
     }
-
-    const newProfiles = { ...profiles };
-    delete newProfiles[profileId];
-
-    set((state) => ({
-      profiles: newProfiles,
-      activeProfileId:
-        activeProfileId === profileId
-          ? DEFAULT_PROFILE_ID
-          : state.activeProfileId,
-    }));
-
-    return true;
   },
 
   updateProfile: (
@@ -188,6 +359,153 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     }));
 
     return true;
+  },
+
+  setProfileFolderName: (profileId: ProfileId, folderName: string) => {
+    set((state) => {
+      const profile = state.profiles[profileId];
+
+      if (!profile) {
+        return state;
+      }
+
+      return {
+        profiles: {
+          ...state.profiles,
+          [profileId]: {
+            ...profile,
+            folderName,
+          },
+        },
+      };
+    });
+  },
+
+  upsertProfile: (profile: ModProfile) => {
+    set((state) => ({
+      profiles: {
+        ...state.profiles,
+        [profile.id]: profile,
+      },
+    }));
+  },
+
+  createImportProfileFolder: async (
+    profileId: ProfileId,
+    profileName: string,
+  ): Promise<string> => {
+    const folderName = await invoke<string>("create_profile_folder", {
+      profileId,
+      profileName,
+    });
+
+    get().setProfileFolderName(profileId, folderName);
+    return folderName;
+  },
+
+  applyImportInstalledModsToProfile: (
+    profileId: ProfileId,
+    installedMods: InstalledModInfo[],
+    modsDataByRemoteId: Map<string, ModDto>,
+  ) => {
+    set((state) => {
+      const profile = state.profiles[profileId];
+
+      if (!profile) {
+        return state;
+      }
+
+      const now = new Date();
+      const updateActiveLocalMods = state.activeProfileId === profileId;
+      const nextProfileMods = [...profile.mods];
+      const profileIndexesByRemoteId = new Map(
+        nextProfileMods.map((mod, index) => [mod.remoteId, index]),
+      );
+      const nextEnabledMods = { ...profile.enabledMods };
+      const nextLocalMods = updateActiveLocalMods
+        ? [...state.localMods]
+        : state.localMods;
+      const localIndexesByRemoteId = updateActiveLocalMods
+        ? new Map(nextLocalMods.map((mod, index) => [mod.remoteId, index]))
+        : null;
+
+      for (const installedMod of installedMods) {
+        const modData = modsDataByRemoteId.get(installedMod.modId);
+
+        if (!modData) {
+          continue;
+        }
+
+        const existingProfileIndex = profileIndexesByRemoteId.get(
+          installedMod.modId,
+        );
+        const existingProfileMod =
+          existingProfileIndex === undefined
+            ? undefined
+            : nextProfileMods[existingProfileIndex];
+        const existingLocalIndex = localIndexesByRemoteId?.get(
+          installedMod.modId,
+        );
+        const existingLocalMod =
+          existingLocalIndex === undefined
+            ? undefined
+            : nextLocalMods[existingLocalIndex];
+        const baseMod = existingProfileMod ?? existingLocalMod;
+
+        const nextMod: LocalMod = {
+          ...(baseMod ?? modData),
+          downloadedAt: baseMod?.downloadedAt ?? now,
+          status: ModStatus.Installed,
+          installedVpks: installedMod.installedVpks,
+          installedFileTree: installedMod.fileTree,
+        };
+
+        if (existingProfileIndex === undefined) {
+          profileIndexesByRemoteId.set(
+            installedMod.modId,
+            nextProfileMods.length,
+          );
+          nextProfileMods.push(nextMod);
+        } else {
+          nextProfileMods[existingProfileIndex] = nextMod;
+        }
+
+        nextEnabledMods[installedMod.modId] = {
+          remoteId: installedMod.modId,
+          enabled: true,
+          lastModified: now,
+        };
+
+        if (updateActiveLocalMods && localIndexesByRemoteId) {
+          if (existingLocalIndex === undefined) {
+            localIndexesByRemoteId.set(
+              installedMod.modId,
+              nextLocalMods.length,
+            );
+            nextLocalMods.push(nextMod);
+          } else {
+            nextLocalMods[existingLocalIndex] = nextMod;
+          }
+        }
+      }
+
+      const nextPartial: Partial<ProfilesSliceStore> = {
+        profiles: {
+          ...state.profiles,
+          [profileId]: {
+            ...profile,
+            enabledMods: nextEnabledMods,
+            mods: nextProfileMods,
+          },
+        },
+      };
+
+      if (updateActiveLocalMods) {
+        nextPartial.localMods = nextLocalMods;
+      }
+
+      return nextPartial;
+    });
   },
 
   switchToProfile: async (profileId: ProfileId) => {
@@ -369,11 +687,6 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
       .length;
   },
 
-  activeProfile: () => {
-    const { activeProfileId, profiles } = get();
-    return profiles[activeProfileId];
-  },
-
   saveCurrentModsToProfile: () => {
     const { activeProfileId, profiles, localMods } = get();
     const profile = profiles[activeProfileId];
@@ -539,7 +852,22 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   syncProfilesWithFilesystem: async () => {
     try {
       const filesystemFolders = await invoke<string[]>("list_profile_folders");
-      const { profiles, activeProfileId } = get();
+      const state = get();
+      const normalizedState = normalizeRecoveredProfileIds(
+        state.profiles,
+        state.activeProfileId,
+      );
+
+      if (normalizedState.changed) {
+        set({
+          profiles: normalizedState.profiles,
+          activeProfileId: normalizedState.activeProfileId,
+        });
+
+        logger.info("Normalized recovered profile IDs from filesystem folders");
+      }
+
+      const { profiles, activeProfileId } = normalizedState;
 
       const filesystemFoldersSet = new Set(filesystemFolders);
       const knownFolders = new Set(
@@ -606,28 +934,29 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
         const newProfiles: Record<ProfileId, ModProfile> = {};
 
         for (const folderName of unknownFolders) {
-          const parts = folderName.split("_");
-          const profileIdPart = parts[0];
-          const namePart = parts.slice(1).join("_") || "Unknown Profile";
+          const { profileId, displayName } =
+            getRecoveredProfileDetails(folderName);
+          const existingProfile = profiles[profileId];
 
-          const displayName = namePart
-            .split(/[-_]/)
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-
-          const profileId = createProfileId(profileIdPart);
-
-          newProfiles[profileId] = {
-            id: profileId,
-            name: displayName,
-            description: "Profile detected from filesystem",
-            createdAt: new Date(),
-            lastUsed: new Date(),
-            enabledMods: {},
-            isDefault: false,
-            folderName: folderName,
-            mods: [],
-          };
+          newProfiles[profileId] = existingProfile
+            ? {
+                ...existingProfile,
+                folderName,
+                name: shouldReplaceRecoveredProfileName(existingProfile)
+                  ? displayName
+                  : existingProfile.name,
+              }
+            : {
+                id: profileId,
+                name: displayName,
+                description: RECOVERED_PROFILE_DESCRIPTION,
+                createdAt: new Date(),
+                lastUsed: new Date(),
+                enabledMods: {},
+                isDefault: false,
+                folderName,
+                mods: [],
+              };
         }
 
         set((state) => ({
