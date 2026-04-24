@@ -24,7 +24,8 @@ import {
   Trash2,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
@@ -33,6 +34,7 @@ import { useSyncProfiles } from "@/hooks/use-sync-profiles";
 import logger from "@/lib/logger";
 import { getImportedProfileMissingRemoteIds } from "@/lib/profiles/import-recovery";
 import { usePersistedStore } from "@/lib/store";
+import type { LocalMod } from "@/types/mods";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { ProfileCreateDialog } from "./profile-create-dialog";
 import { ProfileEditDialog } from "./profile-edit-dialog";
@@ -66,10 +68,6 @@ export const ProfileManagerDialog = ({
   const [expandedProfiles, setExpandedProfiles] = useState<Set<ProfileId>>(
     new Set(),
   );
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [retryingProfileId, setRetryingProfileId] = useState<ProfileId | null>(
-    null,
-  );
   const { retryImportedProfile } = useProfileImport({
     listenToProgress: false,
   });
@@ -86,6 +84,53 @@ export const ProfileManagerDialog = ({
 
   const profiles = getAllProfiles();
   const activeProfile = getActiveProfile();
+
+  const localModsByRemoteId = useMemo(
+    () => new Map(localMods.map((mod) => [mod.remoteId, mod] as const)),
+    [localMods],
+  );
+
+  const syncProfilesMutation = useMutation({
+    mutationFn: () => syncProfilesWithFilesystem(),
+    onSuccess: () => {
+      toast.success(t("profiles.syncSuccess"));
+    },
+    onError: (error) => {
+      logger.withError(error).error("Failed to sync profiles");
+      toast.error(t("profiles.syncError"));
+    },
+  });
+
+  const retryImportedProfileMutation = useMutation({
+    mutationFn: (profile: ModProfile) => retryImportedProfile(profile.id),
+    onSuccess: (result, profile) => {
+      if (result.attemptedCount === 0) {
+        toast.success(t("profiles.retryImportNoMissing"));
+        return;
+      }
+
+      if (result.remainingCount === 0) {
+        toast.success(
+          t("profiles.retryImportSuccess", {
+            profileName: profile.name,
+          }),
+        );
+        return;
+      }
+
+      toast.warning(
+        t("profiles.retryImportPartial", {
+          profileName: profile.name,
+          recovered: result.recoveredCount,
+          remaining: result.remainingCount,
+        }),
+      );
+    },
+    onError: (error) => {
+      logger.withError(error).error("Failed to retry imported profile");
+      toast.error(t("profiles.retryImportError"));
+    },
+  });
 
   const handleDeleteProfile = async (
     profileId: ProfileId,
@@ -167,16 +212,17 @@ export const ProfileManagerDialog = ({
     });
   };
 
-  const getEnabledModsInfo = (profile: ModProfile): EnabledModsInfo => {
+  const getEnabledModsInfo = (
+    profile: ModProfile,
+    modsByRemoteId: Map<string, LocalMod>,
+  ): EnabledModsInfo => {
     const enabledEntries = Object.values(profile.enabledMods || {}).filter(
       (entry: ModProfileEntry) => entry.enabled,
     );
 
     const enabledMods: ModInfo[] = enabledEntries
       .map((entry) => {
-        const localMod = localMods.find(
-          (mod) => mod.remoteId === entry.remoteId,
-        );
+        const localMod = modsByRemoteId.get(entry.remoteId);
         return localMod
           ? { name: localMod.name, remoteId: entry.remoteId }
           : null;
@@ -187,54 +233,6 @@ export const ProfileManagerDialog = ({
       count: enabledEntries.length,
       mods: enabledMods,
     };
-  };
-
-  const handleSyncProfiles = async () => {
-    setIsSyncing(true);
-    try {
-      await syncProfilesWithFilesystem();
-      toast.success(t("profiles.syncSuccess"));
-    } catch (error) {
-      logger.withError(error).error("Failed to sync profiles");
-      toast.error(t("profiles.syncError"));
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleRetryImportedProfile = async (profile: ModProfile) => {
-    setRetryingProfileId(profile.id);
-
-    try {
-      const result = await retryImportedProfile(profile.id);
-
-      if (result.attemptedCount === 0) {
-        toast.success(t("profiles.retryImportNoMissing"));
-        return;
-      }
-
-      if (result.remainingCount === 0) {
-        toast.success(
-          t("profiles.retryImportSuccess", {
-            profileName: profile.name,
-          }),
-        );
-        return;
-      }
-
-      toast.warning(
-        t("profiles.retryImportPartial", {
-          profileName: profile.name,
-          recovered: result.recoveredCount,
-          remaining: result.remainingCount,
-        }),
-      );
-    } catch (error) {
-      logger.withError(error).error("Failed to retry imported profile");
-      toast.error(t("profiles.retryImportError"));
-    } finally {
-      setRetryingProfileId(null);
-    }
   };
 
   return (
@@ -255,10 +253,15 @@ export const ProfileManagerDialog = ({
           <div className='flex-1 overflow-auto'>
             <div className='grid gap-4 pb-4'>
               {profiles.map((profile) => {
-                const enabledModsInfo = getEnabledModsInfo(profile);
+                const enabledModsInfo = getEnabledModsInfo(
+                  profile,
+                  localModsByRemoteId,
+                );
                 const missingImportedModCount =
                   getImportedProfileMissingRemoteIds(profile).length;
-                const isRetryingImport = retryingProfileId === profile.id;
+                const isRetryingImport =
+                  retryImportedProfileMutation.isPending &&
+                  retryImportedProfileMutation.variables?.id === profile.id;
 
                 return (
                   <Card key={profile.id}>
@@ -311,7 +314,9 @@ export const ProfileManagerDialog = ({
                                   handleSetActive(profile.id);
                                 }
                               }}
-                              aria-label={t("profiles.activateProfileLabel", { profileName: profile.name })}
+                              aria-label={t("profiles.activateProfileLabel", {
+                                profileName: profile.name,
+                              })}
                             />
                             <span className='text-sm font-medium'>
                               {profile.id === activeProfile?.id
@@ -361,8 +366,10 @@ export const ProfileManagerDialog = ({
                           <Button
                             variant='outline'
                             size='sm'
-                            disabled={retryingProfileId !== null}
-                            onClick={() => handleRetryImportedProfile(profile)}
+                            disabled={retryImportedProfileMutation.isPending}
+                            onClick={() =>
+                              retryImportedProfileMutation.mutate(profile)
+                            }
                             icon={
                               <RefreshCw
                                 className={`w-4 h-4 ${isRetryingImport ? "animate-spin" : ""}`}
@@ -431,12 +438,12 @@ export const ProfileManagerDialog = ({
           </div>
           <DialogFooter>
             <Button
-              onClick={handleSyncProfiles}
-              disabled={isSyncing}
+              onClick={() => syncProfilesMutation.mutate()}
+              disabled={syncProfilesMutation.isPending}
               variant='outline'
               icon={
                 <RefreshCw
-                  className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`}
+                  className={`w-4 h-4 ${syncProfilesMutation.isPending ? "animate-spin" : ""}`}
                 />
               }>
               {t("profiles.sync")}

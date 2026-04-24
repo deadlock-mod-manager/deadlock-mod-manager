@@ -494,11 +494,7 @@ impl FontManager {
       let path = entry.path();
       if path.is_dir() {
         self.walk_for_vpk_fonts(&path, result);
-      } else if path
-        .extension()
-        .and_then(|e| e.to_str())
-        .is_some_and(|e| e.eq_ignore_ascii_case("vpk"))
-      {
+      } else if path.extension().is_some_and(|ext| ext == "vpk") {
         result.extend(self.extract_fonts_from_vpk(&path));
       }
     }

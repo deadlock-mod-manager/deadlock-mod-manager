@@ -1,20 +1,9 @@
 import type { ProfileModDownload } from "@deadlock-mods/shared";
 
-const TRUSTED_DOWNLOAD_HOSTS = new Set([
-  "gamebanana.com",
-  "www.gamebanana.com",
-  "files.gamebanana.com",
-  "deadlockmods.app",
-  "www.deadlockmods.app",
-]);
-
-const isTrustedDownloadUrl = (url: string): boolean => {
+const isHttpOrHttpsUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-      return false;
-    }
-    return TRUSTED_DOWNLOAD_HOSTS.has(parsed.hostname);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
   } catch {
     return false;
   }
@@ -76,7 +65,9 @@ export const resolveProfileImportDownloadFiles = ({
 
   if (persistedSelections.length === 0) {
     return {
-      downloadFiles: availableDownloads.map(toImportDownloadFile),
+      downloadFiles: availableDownloads
+        .map(toImportDownloadFile)
+        .filter((file) => file.url.length > 0),
       missingSelectionNames: [],
       resolvedWithLiveFallbackNames: [],
       resolvedWithPersistedFallbackNames: [],
@@ -110,11 +101,11 @@ export const resolveProfileImportDownloadFiles = ({
     ? [...remainingAvailableDownloads]
     : [];
 
-  const downloadFiles = persistedSelections.map((selection) => {
+  const downloadFiles = persistedSelections.flatMap((selection) => {
     const matchedDownload = availableDownloadsByName.get(selection.file);
 
     if (matchedDownload) {
-      return toImportDownloadFile(matchedDownload);
+      return [toImportDownloadFile(matchedDownload)];
     }
 
     missingSelectionNames.push(selection.file);
@@ -122,14 +113,14 @@ export const resolveProfileImportDownloadFiles = ({
     const fallbackLiveDownload = liveFallbackQueue.shift();
     if (fallbackLiveDownload) {
       resolvedWithLiveFallbackNames.push(selection.file);
-      return toImportDownloadFile(fallbackLiveDownload);
+      return [toImportDownloadFile(fallbackLiveDownload)];
     }
 
     resolvedWithPersistedFallbackNames.push(selection.file);
-    if (!isTrustedDownloadUrl(selection.url)) {
-      return toImportDownloadFile({ ...selection, url: "" });
+    if (!isHttpOrHttpsUrl(selection.url)) {
+      return [];
     }
-    return toImportDownloadFile(selection);
+    return [toImportDownloadFile(selection)];
   });
 
   return {

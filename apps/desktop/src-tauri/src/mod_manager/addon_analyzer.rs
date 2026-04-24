@@ -554,12 +554,7 @@ impl AddonAnalyzer {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file()
-          && path
-            .extension()
-            .and_then(|e| e.to_str())
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("vpk"))
-        {
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
           vpk_paths.push(path);
         }
       }
@@ -642,8 +637,7 @@ mod tests {
 
     std::fs::write(addons_path.join("pak01_dir.vpk"), b"root").expect("write root vpk");
     std::fs::create_dir_all(&nested_profile_path).expect("create nested dir");
-    std::fs::write(nested_profile_path.join("pak02_dir.vpk"), b"nested")
-      .expect("write nested vpk");
+    std::fs::write(nested_profile_path.join("pak02_dir.vpk"), b"nested").expect("write nested vpk");
 
     let analyzer = AddonAnalyzer::new();
     let mut vpk_paths = Vec::new();
@@ -654,7 +648,8 @@ mod tests {
     let file_names: Vec<String> = vpk_paths
       .into_iter()
       .map(|path| {
-        path.file_name()
+        path
+          .file_name()
           .expect("file name")
           .to_string_lossy()
           .to_string()

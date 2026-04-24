@@ -41,8 +41,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      const hasVpkFiles =
-        mod.installedVpks && mod.installedVpks.length > 0;
+      const hasVpkFiles = mod.installedVpks && mod.installedVpks.length > 0;
 
       await invoke("show_mod_in_game", {
         vpkFiles: mod.installedVpks ?? [],

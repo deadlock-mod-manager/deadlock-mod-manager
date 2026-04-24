@@ -113,21 +113,14 @@ describe("getOrderedSharedProfileMods", () => {
 
     const ordered = getOrderedSharedProfileMods(profile);
 
-    expect(ordered.map((m) => m.remoteId)).toEqual([
-      "mod-b",
-      "mod-a",
-      "mod-c",
-    ]);
+    expect(ordered.map((m) => m.remoteId)).toEqual(["mod-b", "mod-a", "mod-c"]);
   });
 
   it("returns mods in payload order for v1 profiles", () => {
     const profile: SharedProfile = {
       version: "1",
       payload: {
-        mods: [
-          { remoteId: "mod-b" },
-          { remoteId: "mod-a" },
-        ],
+        mods: [{ remoteId: "mod-b" }, { remoteId: "mod-a" }],
       },
     };
 
