@@ -164,7 +164,7 @@ async function processLargeFile(filePath: string) {
 
 ## Git Commit Guidelines
 
-For detailed git commit message format, branch naming conventions, and version control practices, see [100-git-conventions.mdc](mdc:.cursor/rules/100-git-conventions.mdc).
+For detailed git commit message format, branch naming conventions, and version control practices, see [git-conventions](../skills/git-conventions/SKILL.md).
 
 **Quick Reference:**
 - Use conventional commits format: `<type>(<scope>): <description>`
