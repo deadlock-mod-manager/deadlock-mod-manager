@@ -1944,5 +1944,12 @@
     "clearIndexBody": "This will remove all detected hero assignments from your mods. You will need to rescan or wait for the background scanner to re-index them.",
     "clearIndexConfirm": "Clear Index",
     "allIndexed": "All mods indexed"
+  },
+  "gamePresence": {
+    "title": "Discord Game Presence",
+    "description": "Show your live Deadlock status on Discord — hero, match mode, party size, and match timer.",
+    "toggle": "Enable",
+    "condebugOption": "Console Debug Log",
+    "condebugSubtitle": ""
   }
 }

@@ -54,6 +54,7 @@ import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
+import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
@@ -100,6 +101,7 @@ const getAutoexecConfig = async () => {
 };
 
 const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
+const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 
 type SettingsNavItemProps = {
   value: string;
@@ -184,7 +186,7 @@ const CustomSettingsData = () => {
     retry: false,
     refetchOnWindowFocus: false,
   });
-  const { settings, toggleSetting } = usePersistedStore();
+  const { settings, toggleSetting, gamePresenceEnabled } = usePersistedStore();
 
   useEffect(() => {
     if (error) {
@@ -249,6 +251,19 @@ const CustomSettingsData = () => {
     };
   }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
 
+  const condebugLaunchOption: LocalSetting = useMemo(() => {
+    return {
+      id: CONDEBUG_LAUNCH_OPTION_ID,
+      key: "-condebug",
+      value: "",
+      type: CustomSettingType.LAUNCH_OPTION,
+      description: t("gamePresence.condebugOption"),
+      enabled: gamePresenceEnabled,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }, [gamePresenceEnabled, t]);
+
   return (
     <>
       {Object.values(CustomSettingType).map((type: CustomSettingType) => {
@@ -259,6 +274,7 @@ const CustomSettingsData = () => {
           ...(isLaunchOption && autoexecLaunchOption
             ? [autoexecLaunchOption]
             : []),
+          ...(isLaunchOption ? [condebugLaunchOption] : []),
         ];
 
         return (
@@ -289,8 +305,11 @@ const CustomSettingsData = () => {
               {settingsForType.map((setting) => {
                 const isAutoexecOption =
                   setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
-                const canToggle = !isAutoexecOption || hasAutoexecConfig;
-                const isDisabled = isAutoexecOption && !hasAutoexecConfig;
+                const isCondebugOption =
+                  setting.id === CONDEBUG_LAUNCH_OPTION_ID;
+                const isDisabled =
+                  isCondebugOption || (isAutoexecOption && !hasAutoexecConfig);
+                const canToggle = !isDisabled;
 
                 return (
                   <SettingCard
@@ -303,11 +322,13 @@ const CustomSettingsData = () => {
                     }}
                     setting={{
                       ...setting,
-                      enabled:
-                        settingStatusById?.[setting.id] ??
-                        (setting as LocalSetting).enabled ??
-                        false,
+                      enabled: isCondebugOption
+                        ? gamePresenceEnabled
+                        : (settingStatusById?.[setting.id] ??
+                          (setting as LocalSetting).enabled ??
+                          false),
                     }}
+                    subtitle={undefined}
                   />
                 );
               })}
@@ -535,6 +556,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("heroParser.settingsTitle")}>
               <HeroParserSettings />
             </Section>
+
+            <GamePresenceSettings />
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='application'>

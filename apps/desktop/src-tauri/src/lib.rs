@@ -9,6 +9,7 @@ mod commands;
 mod deep_link;
 mod discord_rpc;
 mod download_manager;
+mod game_state_watcher;
 mod dropped_mod_file;
 mod errors;
 mod flatpak;
@@ -174,6 +175,8 @@ pub fn run() {
       commands::set_discord_presence,
       commands::clear_discord_presence,
       commands::disconnect_discord,
+      commands::start_game_presence_watcher,
+      commands::stop_game_presence_watcher,
       commands::create_profile_folder,
       commands::delete_profile_folder,
       commands::switch_profile,

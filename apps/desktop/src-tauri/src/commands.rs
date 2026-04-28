@@ -2386,6 +2386,52 @@ pub async fn disconnect_discord(state: State<'_, DiscordState>) -> Result<(), Er
 }
 
 // ============================================================================
+// Game Presence Watcher Commands
+// ============================================================================
+
+static GAME_PRESENCE_RUNNING: LazyLock<Arc<AtomicBool>> =
+  LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+
+#[tauri::command]
+pub async fn start_game_presence_watcher() -> Result<(), Error> {
+  if GAME_PRESENCE_RUNNING.load(Ordering::Relaxed) {
+    log::info!("Game presence watcher already running");
+    return Ok(());
+  }
+
+  let game_path = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .find_game()
+      .map_err(|e| Error::InvalidInput(format!("Cannot find game path: {e}")))?
+  };
+
+  GAME_PRESENCE_RUNNING.store(true, Ordering::Relaxed);
+  let running = Arc::clone(&GAME_PRESENCE_RUNNING);
+
+  tokio::spawn(async move {
+    let watcher =
+      crate::game_state_watcher::GamePresenceWatcher::new(game_path, running);
+    watcher.run().await;
+    GAME_PRESENCE_RUNNING.store(false, Ordering::Relaxed);
+  });
+
+  log::info!("Game presence watcher started");
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_game_presence_watcher() -> Result<(), Error> {
+  if !GAME_PRESENCE_RUNNING.load(Ordering::Relaxed) {
+    return Ok(());
+  }
+
+  GAME_PRESENCE_RUNNING.store(false, Ordering::Relaxed);
+  log::info!("Game presence watcher stop signal sent");
+  Ok(())
+}
+
+// ============================================================================
 // Profile Import Batch Command
 // ============================================================================
 
