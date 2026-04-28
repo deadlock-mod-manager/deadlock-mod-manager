@@ -573,6 +573,8 @@
 		"cl_aggregate_particles" "true"
 		
 		"citadel_enable_vdata_sound_preload" "true"
+		"r_add_views_in_pre_output"		"1"
+
 	}
 
 	Memory
