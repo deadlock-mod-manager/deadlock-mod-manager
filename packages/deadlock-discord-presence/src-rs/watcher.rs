@@ -15,7 +15,7 @@ const IDLE_POLL_INTERVAL_MS: u64 = 5000;
 const PRESENCE_UPDATE_INTERVAL_MS: u64 = 15000;
 const RESYNC_MAX_BYTES: u64 = 10 * 1024 * 1024;
 const PROCESS_NAMES: &[&str] = &["project8.exe", "deadlock.exe", "project8"];
-const DISCORD_APP_ID: &str = "1498796149581152358";
+const DISCORD_APP_ID: &str = "1474302474474094634";
 const GAME_PRESENCE_CONNECT_ATTEMPTS: u8 = 10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
