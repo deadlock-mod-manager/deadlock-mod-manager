@@ -12,6 +12,7 @@ mod download_manager;
 mod dropped_mod_file;
 mod errors;
 mod flatpak;
+mod game_presence;
 mod hero_detector;
 mod ingest_tool;
 mod logs;
@@ -174,6 +175,9 @@ pub fn run() {
       commands::set_discord_presence,
       commands::clear_discord_presence,
       commands::disconnect_discord,
+      commands::get_game_presence_status,
+      commands::start_game_presence_watcher,
+      commands::stop_game_presence_watcher,
       commands::create_profile_folder,
       commands::delete_profile_folder,
       commands::switch_profile,
