@@ -58,8 +58,10 @@ function deriveDiscordPresenceUi(
       return "connected";
     case "error":
       return "error";
-    case "inactive":
-      return "waiting";
+    default: {
+      const exhaustivePhase: never = phase;
+      return exhaustivePhase;
+    }
   }
 }
 
