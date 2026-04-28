@@ -195,6 +195,7 @@
     "vpkFilesNoun": "addon files",
     "vpkLimitBadgeNear": "Near limit",
     "vpkLimitBadgeAtLimit": "At limit",
+    "vpkLimitCompressionWarning": "Your active addon files exceed the {{max}}-file engine limit. Enable <compressionLink>Mod Compression</compressionLink> to merge VPKs and stay within the cap.",
     "modLimitTooltipP1": "Deadlock limits how many addon files the game can load at once. The usual cap is {{max}}.",
     "modLimitTooltipP2": "Your library can still list more mods than that, because one mod can ship several addon files.",
     "modLimitTooltipP3": "The first pair is enabled mods versus your full library. The second is how many addon files those enabled mods use, next to the cap.",

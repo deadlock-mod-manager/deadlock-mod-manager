@@ -5,10 +5,10 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, Emitter};
 use vpkmerger::{
-  CancelToken, CompressionLevel, CompressionManifest, ModRebuildInput, apply_bucket_rebuild,
-  default_max_shard_bytes, find_bucket_id_for_mod, insert_mod_into_next_slot, read_manifest,
-  rebuild_addon_compressed_bucketing, rebuild_bucket, remove_mod_from_buckets,
-  remove_mod_from_manifest, write_manifest_atomic,
+  CancelToken, CompressionLevel, CompressionManifest, ModRebuildInput, ProgressSink,
+  apply_bucket_rebuild, default_max_shard_bytes, find_bucket_id_for_mod,
+  insert_mod_into_next_slot, read_manifest, rebuild_addon_compressed_bucketing_with_progress,
+  rebuild_bucket, remove_mod_from_buckets, remove_mod_from_manifest, write_manifest_atomic,
 };
 
 use crate::errors::Error;
@@ -17,6 +17,34 @@ use crate::mod_compression::paths::manifest_merge_base_name;
 use crate::mod_compression::state;
 use crate::mod_manager::ModManager;
 use crate::mod_manager::mod_repository::Mod;
+
+struct TauriProgressSink {
+  app: AppHandle,
+  stage: String,
+}
+
+impl TauriProgressSink {
+  fn new(app: &AppHandle, stage: &str) -> Self {
+    Self {
+      app: app.clone(),
+      stage: stage.to_string(),
+    }
+  }
+}
+
+impl ProgressSink for TauriProgressSink {
+  fn report(&self, done: u64, total: u64) {
+    let _ = self.app.emit(
+      "mod-compression-progress",
+      serde_json::json!({
+        "stage": self.stage,
+        "current": done,
+        "total": total,
+        "currentMod": serde_json::Value::Null,
+      }),
+    );
+  }
+}
 
 fn install_order_pair_flipped(
   mod_ids: &[String],
@@ -303,6 +331,10 @@ fn apply_manifest_to_repository(manager: &mut ModManager, manifest: &Compression
         continue;
       }
       if !manifest.mods.contains_key(&id) {
+        // Clear stale compression data for mods not in the manifest
+        entry.installed_vpks = Vec::new();
+        entry.uses_compression = false;
+        manager.get_mod_repository_mut().add_mod(entry);
         continue;
       }
       if let Some(vpks) = id_to_shards.get(&id) {
@@ -402,16 +434,6 @@ pub fn rebuild_compressed_addon_with_level(
     state::set_compression_enabled(false, profile_folder.clone());
     return Ok(());
   }
-  let total_mods = inputs.len() as u64;
-  let _ = app.emit(
-    "mod-compression-progress",
-    serde_json::json!({
-      "stage": "merging",
-      "current": 0,
-      "total": total_mods,
-      "currentMod": serde_json::Value::Null,
-    }),
-  );
   let manifest_path = vpkmerger::manifest_path(&addons_path);
   if manifest_path.exists() {
     if let Ok(prev_manifest) = read_manifest(&manifest_path) {
@@ -420,27 +442,20 @@ pub fn rebuild_compressed_addon_with_level(
       }
     }
   }
-  let report = rebuild_addon_compressed_bucketing(
+  let progress_sink = TauriProgressSink::new(app, "merging");
+  let report = rebuild_addon_compressed_bucketing_with_progress(
     &inputs,
     &addons_path,
     level,
     default_max_shard_bytes(),
     manifest_merge_base_name(),
     cancel,
+    &progress_sink,
   )
   .map_err(|e| {
     try_remove_stale_manifest(&addons_path);
     Error::ModInvalid(e.to_string())
   })?;
-  let _ = app.emit(
-    "mod-compression-progress",
-    serde_json::json!({
-      "stage": "merging",
-      "current": total_mods,
-      "total": total_mods,
-      "currentMod": serde_json::Value::Null,
-    }),
-  );
   let new_set: HashSet<String> = report.manifest.all_shard_file_names().into_iter().collect();
   delete_obsolete_shards(&addons_path, &previous, &new_set);
   state::set_compression_level(level);
@@ -524,13 +539,12 @@ fn rebuild_and_apply_one_bucket(
   if inps.is_empty() {
     return Ok(());
   }
-  let total_mods = inps.len() as u64;
   let _ = app.emit(
     "mod-compression-progress",
     serde_json::json!({
       "stage": "merging",
       "current": 0,
-      "total": total_mods,
+      "total": 1,
       "currentMod": serde_json::Value::Null,
     }),
   );
@@ -550,8 +564,8 @@ fn rebuild_and_apply_one_bucket(
     "mod-compression-progress",
     serde_json::json!({
       "stage": "merging",
-      "current": total_mods,
-      "total": total_mods,
+      "current": 1,
+      "total": 1,
       "currentMod": serde_json::Value::Null,
     }),
   );
@@ -807,13 +821,38 @@ pub fn disable_compressed_addon(
     .check()
     .map_err(|_| Error::InvalidInput("cancelled".into()))?;
   let mods_store = manager.get_mods_store_path()?;
+  let compressed_mods: Vec<&Mod> = ordered
+    .iter()
+    .filter(|m| !m.is_map && m.uses_compression)
+    .collect();
+  let total_extract = compressed_mods.len() as u64;
+  let _ = app.emit(
+    "mod-compression-progress",
+    serde_json::json!({
+      "stage": "extracting",
+      "current": 0u64,
+      "total": total_extract,
+      "currentMod": serde_json::Value::Null,
+    }),
+  );
   let mut mod_updates: Vec<serde_json::Value> = Vec::new();
+  let mut extract_done: u64 = 0;
   for mut m in ordered {
     if m.is_map || !m.uses_compression {
       continue;
     }
     let staged = compression_staged_dir(&mods_store, &m.id);
     if !staged.exists() {
+      extract_done += 1;
+      let _ = app.emit(
+        "mod-compression-progress",
+        serde_json::json!({
+          "stage": "extracting",
+          "current": extract_done,
+          "total": total_extract,
+          "currentMod": m.name,
+        }),
+      );
       continue;
     }
     let mut prefixed_names: Vec<String> = Vec::new();
@@ -827,6 +866,16 @@ pub fn disable_compressed_addon(
       }
     }
     if prefixed_names.is_empty() {
+      extract_done += 1;
+      let _ = app.emit(
+        "mod-compression-progress",
+        serde_json::json!({
+          "stage": "extracting",
+          "current": extract_done,
+          "total": total_extract,
+          "currentMod": m.name,
+        }),
+      );
       continue;
     }
     let installed = manager.enable_mod_prefixed_vpks(&addons_path, &m.id, &prefixed_names)?;
@@ -838,7 +887,17 @@ pub fn disable_compressed_addon(
       "usesCompression": false,
       "originalVpkNames": m.original_vpk_names,
     }));
-    manager.get_mod_repository_mut().add_mod(m);
+    manager.get_mod_repository_mut().add_mod(m.clone());
+    extract_done += 1;
+    let _ = app.emit(
+      "mod-compression-progress",
+      serde_json::json!({
+        "stage": "extracting",
+        "current": extract_done,
+        "total": total_extract,
+        "currentMod": m.name,
+      }),
+    );
   }
   let _ = app.emit(
     "mod-compression-completed",

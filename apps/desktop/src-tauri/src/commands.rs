@@ -1372,6 +1372,7 @@ pub async fn list_addons_backups() -> Result<Vec<AddonsBackup>, Error> {
 
 #[tauri::command]
 pub async fn restore_addons_backup(
+  app_handle: tauri::AppHandle,
   file_name: String,
   strategy: String,
   profile_folder: Option<String>,
@@ -1380,6 +1381,7 @@ pub async fn restore_addons_backup(
     "Restoring addons backup: {file_name} with strategy: {strategy} profile={profile_folder:?}"
   );
   let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.set_backup_manager_app_handle(app_handle.clone());
   let backup_manager = mod_manager.get_addons_backup_manager();
   let restore_strategy =
     crate::mod_manager::addons_backup_manager::RestoreStrategy::from_str(&strategy)?;
@@ -1730,14 +1732,14 @@ pub async fn replace_mod_vpks(
         fs::remove_dir_all(&staged).map_err(Error::Io)?;
       }
       fs::create_dir_all(&staged).map_err(Error::Io)?;
-      let mut updated = m;
-      updated.original_vpk_names = new_original_vpk_names.clone();
-      mod_manager.get_mod_repository_mut().add_mod(updated);
       for (i, src) in source_paths.iter().enumerate() {
         let orig = new_original_vpk_names[i].as_str();
         let dst = staged.join(orig);
         fs::copy(src, &dst).map_err(Error::Io)?;
       }
+      let mut updated = m;
+      updated.original_vpk_names = new_original_vpk_names.clone();
+      mod_manager.get_mod_repository_mut().add_mod(updated);
     } else {
       mod_manager.replace_mod_vpks(
         mod_id.clone(),

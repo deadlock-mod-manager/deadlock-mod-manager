@@ -137,30 +137,54 @@ function ModCompressionIndicator() {
         )
       : 0;
 
+  const statusLabel = isBusy
+    ? compressionProgress.status === "merging"
+      ? t("modCompression.merging", {
+          current: compressionProgress.current,
+          total: compressionProgress.total,
+        })
+      : t("modCompression.extracting", {
+          current: compressionProgress.current,
+          total: compressionProgress.total,
+        })
+    : null;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className='flex cursor-default items-center justify-center p-0.5'>
+        <div className='flex cursor-default items-center gap-1.5 p-0.5'>
           {isBusy ? (
             <ArrowsClockwiseIcon className='h-3.5 w-3.5 animate-spin text-blue-500' />
           ) : (
             <ArchiveIcon className='h-3.5 w-3.5 text-primary' />
           )}
+          {isBusy && statusLabel ? (
+            <span className='text-xs tabular-nums text-muted-foreground'>
+              {statusLabel}
+            </span>
+          ) : compressionProgress.shardCount > 0 ? (
+            <span className='text-xs tabular-nums text-muted-foreground'>
+              {compressionProgress.shardCount} VPKs
+            </span>
+          ) : null}
         </div>
       </TooltipTrigger>
       <TooltipContent
-        className='w-48 space-y-1.5 p-2'
+        className='w-52 space-y-1.5 p-2'
         side='top'
         sideOffset={8}>
         {isBusy ? (
           <>
-            <p className='text-xs font-medium'>
-              {t("modCompression.progress", {
-                current: compressionProgress.current,
-                total: compressionProgress.total,
-              })}
-            </p>
+            <p className='text-xs font-medium'>{statusLabel}</p>
+            {compressionProgress.currentModName ? (
+              <p className='truncate text-xs text-muted-foreground'>
+                {compressionProgress.currentModName}
+              </p>
+            ) : null}
             <Progress className='h-1' value={percentage} />
+            <p className='text-xs tabular-nums text-muted-foreground'>
+              {percentage}%
+            </p>
           </>
         ) : compressionProgress.shardCount > 0 ? (
           <p className='text-xs font-medium'>
