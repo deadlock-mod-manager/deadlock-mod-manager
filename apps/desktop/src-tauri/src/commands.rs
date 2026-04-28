@@ -2354,16 +2354,9 @@ pub async fn set_discord_presence(
 pub async fn clear_discord_presence(state: State<'_, DiscordState>) -> Result<(), Error> {
   log::info!("Clearing Discord presence");
 
-  let mut client_lock = state
-    .client
-    .lock()
-    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
-
-  if let Some(client) = client_lock.as_mut() {
-    discord_rpc::clear_presence(client)
-      .map_err(|e| Error::InvalidInput(format!("Failed to clear presence: {}", e)))?;
-  }
-
+  discord_rpc::clear_presence(&state)
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to clear presence: {e}")))?;
   Ok(())
 }
 
@@ -2371,17 +2364,9 @@ pub async fn clear_discord_presence(state: State<'_, DiscordState>) -> Result<()
 pub async fn disconnect_discord(state: State<'_, DiscordState>) -> Result<(), Error> {
   log::info!("Disconnecting from Discord");
 
-  let mut client_lock = state
-    .client
-    .lock()
-    .map_err(|e| Error::InvalidInput(format!("Failed to acquire Discord client lock: {}", e)))?;
-
-  if let Some(client) = client_lock.as_mut() {
-    discord_rpc::disconnect_discord(client)
-      .map_err(|e| Error::InvalidInput(format!("Failed to disconnect: {}", e)))?;
-    *client_lock = None;
-  }
-
+  discord_rpc::disconnect_discord(&state)
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to disconnect: {e}")))?;
   Ok(())
 }
 

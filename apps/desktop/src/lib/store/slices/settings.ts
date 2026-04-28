@@ -1,4 +1,8 @@
 import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/shared";
+import type {
+  PresenceTextTemplatePair,
+  PresenceTextTemplates,
+} from "@deadlock-mods/deadlock-discord-presence";
 import { DEFAULT_NSFW_SETTINGS } from "@deadlock-mods/shared";
 import { v4 as uuidv4 } from "uuid";
 import type { StateCreator } from "zustand";
@@ -11,9 +15,28 @@ export type TelemetrySettings = {
   analyticsEnabled: boolean;
 };
 
+export type GamePresenceHeroOverrides = Record<string, PresenceTextTemplates>;
+
 const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
   analyticsEnabled: false,
 };
+
+const createEmptyPresenceTextTemplatePair = (): PresenceTextTemplatePair => ({
+  details: "",
+  state: "",
+});
+
+export const createDefaultGamePresenceTextTemplates =
+  (): PresenceTextTemplates => ({
+    mainMenu: createEmptyPresenceTextTemplatePair(),
+    soloHideout: createEmptyPresenceTextTemplatePair(),
+    partyHideout: createEmptyPresenceTextTemplatePair(),
+    inQueue: createEmptyPresenceTextTemplatePair(),
+    soloMatch: createEmptyPresenceTextTemplatePair(),
+    partyMatch: createEmptyPresenceTextTemplatePair(),
+    postMatch: createEmptyPresenceTextTemplatePair(),
+    spectating: createEmptyPresenceTextTemplatePair(),
+  });
 
 export type SettingsState = {
   settings: Record<LocalSetting["id"], LocalSetting>;
@@ -26,6 +49,9 @@ export type SettingsState = {
   crosshairsEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
+  gamePresenceEnabled: boolean;
+  gamePresenceTextTemplates: PresenceTextTemplates;
+  gamePresenceHeroOverrides: GamePresenceHeroOverrides;
   backupEnabled: boolean;
   maxBackupCount: number; // 0 means unlimited
 
@@ -62,6 +88,22 @@ export type SettingsState = {
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
+  setGamePresenceEnabled: (enabled: boolean) => void;
+  setGamePresenceTextTemplates: (templates: PresenceTextTemplates) => void;
+  setGamePresenceHeroOverrides: (
+    heroOverrides: GamePresenceHeroOverrides,
+  ) => void;
+  setGamePresenceHeroOverride: (
+    heroCodename: string,
+    templates: PresenceTextTemplates,
+  ) => void;
+  removeGamePresenceHeroOverride: (heroCodename: string) => void;
+  updateGamePresenceTextTemplate: (
+    key: keyof PresenceTextTemplates,
+    template: PresenceTextTemplatePair,
+  ) => void;
+  resetGamePresenceTextTemplates: () => void;
+
   // Backup settings management
   setBackupEnabled: (enabled: boolean) => void;
   setMaxBackupCount: (count: number) => void;
@@ -74,6 +116,8 @@ export type SettingsState = {
 export const settingsDeepMergeKeys = [
   "nsfwSettings",
   "telemetrySettings",
+  "gamePresenceTextTemplates",
+  "gamePresenceHeroOverrides",
 ] as const satisfies readonly (keyof SettingsState)[];
 
 export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
@@ -90,6 +134,9 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
+  gamePresenceEnabled: true,
+  gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
+  gamePresenceHeroOverrides: {},
   backupEnabled: true,
   maxBackupCount: 5,
   addSetting: (setting: LocalSetting) =>
@@ -211,6 +258,58 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       linuxGpuOptimization: value,
     })),
 
+  setGamePresenceEnabled: (enabled: boolean) =>
+    set((state) => ({
+      gamePresenceEnabled: enabled,
+      ...(enabled
+        ? { enabledPlugins: { ...state.enabledPlugins, discord: false } }
+        : {}),
+    })),
+
+  setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>
+    set(() => ({
+      gamePresenceTextTemplates: templates,
+    })),
+
+  setGamePresenceHeroOverrides: (heroOverrides: GamePresenceHeroOverrides) =>
+    set(() => ({
+      gamePresenceHeroOverrides: heroOverrides,
+    })),
+
+  setGamePresenceHeroOverride: (
+    heroCodename: string,
+    templates: PresenceTextTemplates,
+  ) =>
+    set((state) => ({
+      gamePresenceHeroOverrides: {
+        ...state.gamePresenceHeroOverrides,
+        [heroCodename]: templates,
+      },
+    })),
+
+  removeGamePresenceHeroOverride: (heroCodename: string) =>
+    set((state) => {
+      const next = { ...state.gamePresenceHeroOverrides };
+      delete next[heroCodename];
+      return { gamePresenceHeroOverrides: next };
+    }),
+
+  updateGamePresenceTextTemplate: (
+    key: keyof PresenceTextTemplates,
+    template: PresenceTextTemplatePair,
+  ) =>
+    set((state) => ({
+      gamePresenceTextTemplates: {
+        ...state.gamePresenceTextTemplates,
+        [key]: template,
+      },
+    })),
+
+  resetGamePresenceTextTemplates: () =>
+    set(() => ({
+      gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
+    })),
+
   setBackupEnabled: (enabled: boolean) =>
     set(() => ({
       backupEnabled: enabled,
@@ -253,7 +352,10 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       for (const id of forwardDisable) next[id] = false;
       for (const id of reverseDisable) next[id] = false;
 
-      return { enabledPlugins: next };
+      return {
+        enabledPlugins: next,
+        ...(pluginId === "discord" ? { gamePresenceEnabled: false } : {}),
+      };
     }),
 
   isPluginEnabled: (pluginId: string) => {

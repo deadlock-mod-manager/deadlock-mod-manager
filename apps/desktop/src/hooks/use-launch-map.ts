@@ -36,9 +36,11 @@ export const useLaunchMap = (onSuccess?: () => void) => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      const updatedSettings = usePersistedStore.getState().settings;
-      const baseArgs = await getAdditionalArgs(Object.values(updatedSettings));
-      const additionalArgs = baseArgs ? `${baseArgs} -condebug` : "-condebug";
+      const storeState = usePersistedStore.getState();
+      const additionalArgs = await getAdditionalArgs(
+        Object.values(storeState.settings),
+        storeState.gamePresenceEnabled,
+      );
 
       await invoke("start_game", {
         vanilla: false,

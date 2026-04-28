@@ -17,6 +17,7 @@ import {
   ArrowsClockwiseIcon,
   CheckCircleIcon,
   CloudArrowDownIcon,
+  DiscordLogoIcon,
   DownloadSimpleIcon,
   HardDrivesIcon,
   LockSimpleIcon,
@@ -38,6 +39,7 @@ import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
 import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -63,6 +65,44 @@ function StatusIndicator({
         <p>{tooltip}</p>
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+const discordPresenceIndicatorConfig = {
+  disabled: {
+    className: "text-muted-foreground",
+    key: "gamePresence.indicatorDisabled",
+  },
+  waiting: {
+    className: "text-muted-foreground",
+    key: "gamePresence.indicatorWaiting",
+  },
+  connecting: {
+    className: "text-blue-500",
+    key: "gamePresence.indicatorConnecting",
+  },
+  connected: {
+    className: "text-primary",
+    key: "gamePresence.indicatorConnected",
+  },
+  error: {
+    className: "text-red-500",
+    key: "gamePresence.indicatorError",
+  },
+} as const;
+
+function DiscordPresenceIndicator() {
+  const { t } = useTranslation();
+  const discordPhase = useDiscordGamePresenceIndicator();
+
+  const cfg = discordPresenceIndicatorConfig[discordPhase];
+
+  return (
+    <StatusIndicator
+      className={cfg.className}
+      icon={DiscordLogoIcon}
+      tooltip={t(cfg.key)}
+    />
   );
 }
 
@@ -324,6 +364,7 @@ export const BottomBar = () => {
             />
           )}
           <HeroParserIndicator />
+          <DiscordPresenceIndicator />
         </div>
 
         {!gamePath && (

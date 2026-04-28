@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "Unsaved changes",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
+    "discord": "Discord",
     "privacy": "Privacy",
     "about": "About",
     "systemSettings": "System Settings",
@@ -718,6 +719,8 @@
     "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
     "gamebananaDescription": "Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.",
     "visitGamebanana": "Visit GameBanana",
+    "deadlockRichPresenceDescription": "Discord Game Presence was only possible thanks to Jelloge's Deadlock Rich Presence project and its work mapping Deadlock console log events for rich presence.",
+    "visitDeadlockRichPresence": "Visit Deadlock Rich Presence",
     "tauriDescription": "The powerful framework that enables this cross-platform desktop application. Tauri combines the best of web technologies with native performance and security.",
     "visitTauri": "Visit Tauri",
     "shadcnDescription": "Beautiful and accessible React components that provide the foundation for our modern user interface. Copy, paste, and customize to perfection.",
@@ -1944,5 +1947,93 @@
     "clearIndexBody": "This will remove all detected hero assignments from your mods. You will need to rescan or wait for the background scanner to re-index them.",
     "clearIndexConfirm": "Clear Index",
     "allIndexed": "All mods indexed"
+  },
+  "gamePresence": {
+    "title": "Discord Game Presence",
+    "description": "Show your live Deadlock status on Discord: hero, match mode, party size, and match timer.",
+    "settingsDescription": "Customize how Deadlock appears on your Discord profile.",
+    "condebugOption": "Console Debug Log",
+    "condebugOptionDescription": "Lets the mod manager read game info so your Discord status stays up to date.",
+    "indicatorDisabled": "Discord Game Presence Disabled",
+    "indicatorWaiting": "Discord Game Presence Enabled",
+    "indicatorConnecting": "Connecting to Discord Game Presence",
+    "indicatorConnected": "Discord Game Presence Connected",
+    "indicatorError": "Discord Game Presence Connection Issue",
+    "previewTitle": "Preview",
+    "previewDescription": "See how your Discord status will look with example values.",
+    "previewNoDetails": "No details line",
+    "placeholdersTitle": "Placeholders",
+    "placeholdersDescription": "Click a placeholder to append it to the last template field you focused.",
+    "templatesTitle": "What shows on Discord",
+    "templatesDescription": "Customize the text people see on your Discord profile. Leave a field empty to use the default.",
+    "detailsTemplate": "Top line",
+    "stateTemplate": "Bottom line",
+    "defaultValue": "If empty: {{value}}",
+    "fallbackValue": "If empty: {{value}}",
+    "emptyLine": "nothing shown",
+    "phaseSelectorTitle": "Phase",
+    "insertIntoDetails": "Add to top line",
+    "insertIntoState": "Add to bottom line",
+    "preview": "Preview",
+    "previewing": "Previewing",
+    "resetRow": "Reset this tab",
+    "resetAll": "Reset all",
+    "discardChanges": "Discard",
+    "saveTemplates": "Save changes",
+    "templatesSaved": "Discord status saved",
+    "phases": {
+      "mainMenu": "Main menu",
+      "soloHideout": "Hideout (solo)",
+      "partyHideout": "Hideout (party)",
+      "inQueue": "Finding match",
+      "soloMatch": "In match (solo)",
+      "partyMatch": "In match (party)",
+      "postMatch": "After match",
+      "spectating": "Spectating"
+    },
+    "phaseDescriptions": {
+      "mainMenu": "Before you pick a hero or start a match.",
+      "soloHideout": "When you're in the hideout by yourself.",
+      "partyHideout": "When you're in the hideout with your party.",
+      "inQueue": "While searching for a match.",
+      "soloMatch": "During a match when you're playing alone.",
+      "partyMatch": "During a match when you're in a party.",
+      "postMatch": "After a match ends.",
+      "spectating": "While watching someone else's match."
+    },
+    "placeholderTooltips": {
+      "hero": {
+        "description": "The name of the hero you're currently playing.",
+        "example": "Vindicta"
+      },
+      "heroPresence": {
+        "description": "The hero's hideout status line (set by Valve per hero).",
+        "example": "Sleep Walking in the Hideout"
+      },
+      "mode": {
+        "description": "The current match mode.",
+        "example": "Playing Standard (6v6)"
+      },
+      "partySize": {
+        "description": "The number of players in your party.",
+        "example": "3"
+      },
+      "partyMax": {
+        "description": "The maximum number of players allowed in this mode.",
+        "example": "6"
+      }
+    },
+    "heroOverrides": {
+      "title": "Per-hero text",
+      "description": "This text only shows when you're playing this hero.",
+      "selectHero": "Choose a hero",
+      "scopeLabel": "Customize for",
+      "globalTemplates": "All heroes (default)",
+      "editingHero": "{{hero}}",
+      "overrideActive": "Custom text active",
+      "noOverride": "Using the default text. Type something to customize it for this hero.",
+      "removeOverride": "Reset to default",
+      "inheritPlaceholder": "Leave empty to use the default"
+    }
   }
 }

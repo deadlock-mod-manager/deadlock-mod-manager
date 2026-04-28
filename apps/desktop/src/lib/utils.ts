@@ -37,8 +37,15 @@ export function isMacOS(osType: string): boolean {
 export const formatSize = formatByteSize;
 export const formatSpeed = formatByteRate;
 
-export const getAdditionalArgs = async (settings: LocalSetting[]) => {
+export const getAdditionalArgs = async (
+  settings: LocalSetting[],
+  gamePresenceEnabled: boolean,
+) => {
   const additionalArgs: string[] = [];
+
+  if (gamePresenceEnabled) {
+    additionalArgs.push("-condebug");
+  }
 
   for (const setting of settings.filter(
     (s) =>

@@ -14,6 +14,7 @@ export const useLaunch = () => {
   const { t } = useTranslation();
   const {
     settings,
+    gamePresenceEnabled,
     getActiveProfile,
     localMods,
     isModEnabledInCurrentProfile,
@@ -116,7 +117,10 @@ export const useLaunch = () => {
         additionalArgs:
           vanilla && launchVanillaNoArgs
             ? ""
-            : await getAdditionalArgs(Object.values(settings)),
+            : await getAdditionalArgs(
+                Object.values(settings),
+                gamePresenceEnabled,
+              ),
         profileFolder,
       });
 
