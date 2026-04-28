@@ -384,10 +384,3 @@ impl LogParser {
     self.party_members.clear();
   }
 }
-
-fn now_epoch() -> f64 {
-  std::time::SystemTime::now()
-    .duration_since(std::time::UNIX_EPOCH)
-    .unwrap_or_default()
-    .as_secs_f64()
-}

@@ -35,8 +35,6 @@ pub fn build_presence(state: &GameState, hero_store: &HeroDataStore) -> Option<D
   }
 
   match state.phase {
-    GamePhase::NotRunning => return None,
-
     GamePhase::MainMenu => {
       details = Some("Main Menu".to_string());
       large_image_key = Some(LOGO_ASSET.to_string());
@@ -110,6 +108,8 @@ pub fn build_presence(state: &GameState, hero_store: &HeroDataStore) -> Option<D
       small_image_key = None;
       small_image_text = None;
     }
+
+    GamePhase::NotRunning => unreachable!(),
   }
 
   if start_timestamp.is_none() {
