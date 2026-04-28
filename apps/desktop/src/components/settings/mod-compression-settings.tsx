@@ -42,9 +42,7 @@ export const ModCompressionSettings = () => {
   const compressionEnabled = usePersistedStore(
     (state) => state.compressionEnabled,
   );
-  const compressionLevel = usePersistedStore(
-    (state) => state.compressionLevel,
-  );
+  const compressionLevel = usePersistedStore((state) => state.compressionLevel);
   const setCompressionLevel = usePersistedStore(
     (state) => state.setCompressionLevel,
   );
@@ -148,9 +146,7 @@ export const ModCompressionSettings = () => {
     <div className='space-y-4'>
       <div className='flex items-center justify-between gap-4'>
         <div className='space-y-1'>
-          <Label
-            className='font-bold text-sm'
-            htmlFor='toggle-mod-compression'>
+          <Label className='font-bold text-sm' htmlFor='toggle-mod-compression'>
             {t("settings.modCompression.enableLabel")}
           </Label>
         </div>

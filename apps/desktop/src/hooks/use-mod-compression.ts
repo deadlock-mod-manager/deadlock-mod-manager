@@ -83,15 +83,11 @@ export const useModCompression = () => {
   const compressionEnabled = usePersistedStore(
     (state) => state.compressionEnabled,
   );
-  const compressionLevel = usePersistedStore(
-    (state) => state.compressionLevel,
-  );
+  const compressionLevel = usePersistedStore((state) => state.compressionLevel);
   const setCompressionLevel = usePersistedStore(
     (state) => state.setCompressionLevel,
   );
-  const maxBackupCount = usePersistedStore(
-    (state) => state.maxBackupCount,
-  );
+  const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
   const profiles = usePersistedStore((state) => state.profiles);
   const setCompressionProgress = usePersistedStore(
@@ -265,8 +261,13 @@ export const useModCompression = () => {
     prevGameRunning.current = isRunning;
 
     if (!wasRunning && isRunning) {
-      const compressionProgress = usePersistedStore.getState().compressionProgress;
-      if (compressionProgress.status === "running" || compressionProgress.currentModName != null || compressionProgress.total > 0) {
+      const compressionProgress =
+        usePersistedStore.getState().compressionProgress;
+      if (
+        compressionProgress.status === "running" ||
+        compressionProgress.currentModName != null ||
+        compressionProgress.total > 0
+      ) {
         void invoke("mod_compression_cancel").catch(() => undefined);
         setCompressionProgress({
           status: "paused",
@@ -389,9 +390,7 @@ export const useModCompression = () => {
     const profileFolder = getProfileFolder();
     const mods = collectInstalledMods();
     const level = usePersistedStore.getState().compressionLevel;
-    logger
-      .withMetadata({ mods: mods.length })
-      .info("disableCompression");
+    logger.withMetadata({ mods: mods.length }).info("disableCompression");
     setCompressionProgress({
       status: "extracting",
       current: 0,

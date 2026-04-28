@@ -22,8 +22,8 @@ pub use error::{Result as VpkMergerResult, VpkMergerError};
 pub use incremental::{
     BucketRebuildReport, RebuildReport, apply_bucket_id_to_mod_entries, apply_bucket_rebuild,
     default_max_shard_bytes, drop_bucket_from_manifest, read_manifest, rebuild_addon_compressed,
-    rebuild_addon_compressed_bucketing, rebuild_bucket, remove_mod_from_manifest,
-    replace_mod_in_manifest, write_manifest_atomic,
+    rebuild_addon_compressed_bucketing, rebuild_addon_compressed_bucketing_with_progress,
+    rebuild_bucket, remove_mod_from_manifest, replace_mod_in_manifest, write_manifest_atomic,
 };
 pub use last_wins::{LastWinsMergeResult, ModRebuildInput, merge_mod_inputs_last_wins};
 pub use manifest::{

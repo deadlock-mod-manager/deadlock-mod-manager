@@ -138,6 +138,26 @@ pub fn rebuild_addon_compressed_bucketing(
     base_name: &str,
     cancel: &CancelToken,
 ) -> Result<RebuildReport> {
+    rebuild_addon_compressed_bucketing_with_progress(
+        inputs,
+        addons_path,
+        level,
+        max_bytes,
+        base_name,
+        cancel,
+        &crate::progress::NoProgress,
+    )
+}
+
+pub fn rebuild_addon_compressed_bucketing_with_progress(
+    inputs: &[ModRebuildInput],
+    addons_path: &Path,
+    level: CompressionLevel,
+    max_bytes: u64,
+    base_name: &str,
+    cancel: &CancelToken,
+    progress: &dyn ProgressSink,
+) -> Result<RebuildReport> {
     cancel.check()?;
     if inputs.is_empty() {
         return Err(VpkMergerError::Invalid {
@@ -154,14 +174,19 @@ pub fn rebuild_addon_compressed_bucketing(
         .iter()
         .map(|i| (i.mod_id.clone(), i.clone()))
         .collect();
-    let _total_buckets = (specs.len() as u64).max(1u64);
+    let total_buckets = specs.len() as u64;
+    let completed = std::sync::atomic::AtomicU64::new(0);
+    progress.report(0, total_buckets);
     let bucket_reports: Result<Vec<BucketRebuildReport>> = specs
         .par_iter()
         .map(|spec| {
             cancel.check()?;
             let bucket_inputs = collect_inputs_for_bucket(&all_by_id, spec)?;
             let out_base = addons_path.join(format!("pak{:02}_dir.vpk", spec.id));
-            rebuild_bucket(spec.id, &bucket_inputs, &out_base, max_bytes, cancel)
+            let report = rebuild_bucket(spec.id, &bucket_inputs, &out_base, max_bytes, cancel)?;
+            let done = completed.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+            progress.report(done, total_buckets);
+            Ok(report)
         })
         .collect();
     let bucket_reports = bucket_reports?;

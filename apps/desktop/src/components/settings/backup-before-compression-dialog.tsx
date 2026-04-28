@@ -34,25 +34,25 @@ export const BackupBeforeCompressionDialog = ({
 
   return (
     <AlertDialog onOpenChange={onOpenChange} open={open}>
-      <AlertDialogContent className="sm:max-w-md">
+      <AlertDialogContent className='sm:max-w-md'>
         <AlertDialogHeader>
           <AlertDialogTitle>
             {t("settings.modCompression.backupPrompt.title")}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="space-y-4 pt-2">
-              <p className="text-muted-foreground text-sm">
+            <div className='space-y-4 pt-2'>
+              <p className='text-muted-foreground text-sm'>
                 {t("settings.modCompression.backupPrompt.body")}
               </p>
-              <div className="flex items-start gap-3">
+              <div className='flex items-start gap-3'>
                 <Checkbox
                   checked={createBackup}
-                  id="backup-before-compression-checkbox"
+                  id='backup-before-compression-checkbox'
                   onCheckedChange={(v) => setCreateBackup(v === true)}
                 />
                 <Label
-                  className="cursor-pointer font-normal leading-tight"
-                  htmlFor="backup-before-compression-checkbox">
+                  className='cursor-pointer font-normal leading-tight'
+                  htmlFor='backup-before-compression-checkbox'>
                   {t("settings.modCompression.backupPrompt.createBackupOption")}
                 </Label>
               </div>
@@ -62,8 +62,8 @@ export const BackupBeforeCompressionDialog = ({
         <AlertDialogFooter>
           <Button
             onClick={() => onOpenChange(false)}
-            type="button"
-            variant="outline">
+            type='button'
+            variant='outline'>
             {t("settings.modCompression.backupPrompt.cancel")}
           </Button>
           <Button
@@ -71,8 +71,8 @@ export const BackupBeforeCompressionDialog = ({
               onOpenChange(false);
               onConfirm(createBackup);
             }}
-            type="button"
-            variant="default">
+            type='button'
+            variant='default'>
             {t("settings.modCompression.backupPrompt.confirmEnable")}
           </Button>
         </AlertDialogFooter>
