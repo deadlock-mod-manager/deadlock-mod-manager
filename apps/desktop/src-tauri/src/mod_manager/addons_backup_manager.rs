@@ -410,37 +410,37 @@ impl AddonsBackupManager {
       }
     }
 
-    let mut level_str: Option<String> = None;
     let mpath = vpkmerger::manifest_path(&addons_path);
-    if mpath.is_file() {
-      if let Ok(m) = vpkmerger::read_manifest(&mpath) {
-        level_str = serde_json::to_value(m.compression_level)
-          .ok()
-          .and_then(|v| v.as_str().map(|s| s.to_string()));
-      }
-    }
-    let mod_updates: Vec<serde_json::Value> = if mpath.is_file() {
-      if let Ok(manifest) = vpkmerger::read_manifest(&mpath) {
-        let mut v: Vec<serde_json::Value> = Vec::new();
-        for b in &manifest.buckets {
-          for id in &b.mod_ids {
-            let originals = manifest
-              .mods
-              .get(id)
-              .map(|e| e.original_vpk_names.clone())
-              .unwrap_or_default();
-            v.push(serde_json::json!({
-              "modId": id,
-              "installedVpks": b.shard_files,
-              "usesCompression": true,
-              "originalVpkNames": originals,
-            }));
-          }
+    let parsed_manifest = if mpath.is_file() {
+      vpkmerger::read_manifest(&mpath).ok()
+    } else {
+      None
+    };
+
+    let level_str: Option<String> = parsed_manifest.as_ref().and_then(|m| {
+      serde_json::to_value(m.compression_level)
+        .ok()
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+    });
+
+    let mod_updates: Vec<serde_json::Value> = if let Some(ref manifest) = parsed_manifest {
+      let mut v: Vec<serde_json::Value> = Vec::new();
+      for b in &manifest.buckets {
+        for id in &b.mod_ids {
+          let originals = manifest
+            .mods
+            .get(id)
+            .map(|e| e.original_vpk_names.clone())
+            .unwrap_or_default();
+          v.push(serde_json::json!({
+            "modId": id,
+            "installedVpks": b.shard_files,
+            "usesCompression": true,
+            "originalVpkNames": originals,
+          }));
         }
-        v
-      } else {
-        Vec::new()
       }
+      v
     } else {
       Vec::new()
     };
@@ -449,7 +449,7 @@ impl AddonsBackupManager {
       let _ = a.emit(
         "addons-backup-restored",
         serde_json::json!({
-          "hasCompressionManifest": mpath.is_file(),
+          "hasCompressionManifest": parsed_manifest.is_some(),
           "compressionLevel": level_str,
           "modUpdates": mod_updates,
         }),

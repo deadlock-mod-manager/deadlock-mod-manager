@@ -303,6 +303,10 @@ fn apply_manifest_to_repository(manager: &mut ModManager, manifest: &Compression
         continue;
       }
       if !manifest.mods.contains_key(&id) {
+        // Clear stale compression data for mods not in the manifest
+        entry.installed_vpks = Vec::new();
+        entry.uses_compression = false;
+        manager.get_mod_repository_mut().add_mod(entry);
         continue;
       }
       if let Some(vpks) = id_to_shards.get(&id) {

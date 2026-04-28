@@ -265,13 +265,16 @@ export const useModCompression = () => {
     prevGameRunning.current = isRunning;
 
     if (!wasRunning && isRunning) {
-      void invoke("mod_compression_cancel").catch(() => undefined);
-      setCompressionProgress({
-        status: "paused",
-        current: 0,
-        total: 0,
-        currentModName: null,
-      });
+      const compressionProgress = usePersistedStore.getState().compressionProgress;
+      if (compressionProgress.status === "running" || compressionProgress.currentModName != null || compressionProgress.total > 0) {
+        void invoke("mod_compression_cancel").catch(() => undefined);
+        setCompressionProgress({
+          status: "paused",
+          current: 0,
+          total: 0,
+          currentModName: null,
+        });
+      }
       return;
     }
 
