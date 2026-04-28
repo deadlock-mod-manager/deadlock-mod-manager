@@ -1,0 +1,10 @@
+{
+  "name": "@deadlock-mods/deadlock-discord-presence",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cargo build --release",
+    "check": "cargo check",
+    "test": "cargo test"
+  }
+}
