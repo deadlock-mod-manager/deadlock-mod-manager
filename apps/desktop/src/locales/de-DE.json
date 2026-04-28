@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "Plugins und Integrationen für die Desktop‑App verwalten.",
+    "discord": "",
     "privacy": "Datenschutz",
     "about": "Über",
     "systemSettings": "Systemeinstellungen",
@@ -718,6 +719,8 @@
     "thirdPartyDisclaimerShort": "Mods sind Inhalte von Drittanbietern, die nicht von Deadlock Mod Manager erstellt, überprüft oder unterstützt werden.",
     "gamebananaDescription": "Unsere primäre Mod-Quelle und das Rückgrat dieser Anwendung. GameBanana bietet die umfassende Mod-Datenbank und API, die das Durchsuchen, Entdecken und Herunterladen von Deadlock-Mods ermöglicht.",
     "visitGamebanana": "GameBanana besuchen",
+    "deadlockRichPresenceDescription": "",
+    "visitDeadlockRichPresence": "",
     "tauriDescription": "Das leistungsstarke Framework, das diese plattformübergreifende Desktop-Anwendung ermöglicht. Tauri kombiniert die besten Web-Technologien mit nativer Leistung und Sicherheit.",
     "visitTauri": "Tauri besuchen",
     "shadcnDescription": "Schöne und zugängliche React-Komponenten, die die Grundlage für unsere moderne Benutzeroberfläche bilden. Kopieren, einfügen und perfekt anpassen.",
@@ -1946,5 +1949,93 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
+  },
+  "gamePresence": {
+    "title": "",
+    "description": "",
+    "settingsDescription": "",
+    "condebugOption": "",
+    "condebugOptionDescription": "",
+    "indicatorDisabled": "",
+    "indicatorWaiting": "",
+    "indicatorConnecting": "",
+    "indicatorConnected": "",
+    "indicatorError": "",
+    "previewTitle": "",
+    "previewDescription": "",
+    "previewNoDetails": "",
+    "placeholdersTitle": "",
+    "placeholdersDescription": "",
+    "templatesTitle": "",
+    "templatesDescription": "",
+    "detailsTemplate": "",
+    "stateTemplate": "",
+    "defaultValue": "",
+    "fallbackValue": "",
+    "emptyLine": "",
+    "phaseSelectorTitle": "",
+    "insertIntoDetails": "",
+    "insertIntoState": "",
+    "preview": "",
+    "previewing": "",
+    "resetRow": "",
+    "resetAll": "",
+    "discardChanges": "",
+    "saveTemplates": "",
+    "templatesSaved": "",
+    "phases": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "phaseDescriptions": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "placeholderTooltips": {
+      "hero": {
+        "description": "",
+        "example": ""
+      },
+      "heroPresence": {
+        "description": "",
+        "example": ""
+      },
+      "mode": {
+        "description": "",
+        "example": ""
+      },
+      "partySize": {
+        "description": "",
+        "example": ""
+      },
+      "partyMax": {
+        "description": "",
+        "example": ""
+      }
+    },
+    "heroOverrides": {
+      "title": "",
+      "description": "",
+      "selectHero": "",
+      "scopeLabel": "",
+      "globalTemplates": "",
+      "editingHero": "",
+      "overrideActive": "",
+      "noOverride": "",
+      "removeOverride": "",
+      "inheritPlaceholder": ""
+    }
   }
 }

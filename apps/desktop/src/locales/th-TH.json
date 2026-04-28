@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "discord": "",
     "privacy": "ความเป็นส่วนตัว",
     "about": "เกี่ยวกับ",
     "systemSettings": "การตั้งค่าระบบ",
@@ -718,6 +719,8 @@
     "thirdPartyDisclaimerShort": "ม็อดเป็นเนื้อหาจากบุคคลที่สามที่ไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดย Deadlock Mod Manager",
     "gamebananaDescription": "แหล่งม็อดหลักและแกนหลักของแอปพลิเคชันนี้ GameBanana ให้บริการฐานข้อมูลม็อดและ API ที่ครอบคลุมซึ่งทำให้การเรียกดู ค้นหา และดาวน์โหลดม็อด Deadlock เป็นไปได้",
     "visitGamebanana": "เยี่ยมชม GameBanana",
+    "deadlockRichPresenceDescription": "",
+    "visitDeadlockRichPresence": "",
     "tauriDescription": "เฟรมเวิร์กที่ทรงพลังซึ่งช่วยให้แอปพลิเคชันเดสก์ท็อปข้ามแพลตฟอร์มนี้เป็นไปได้ Tauri ผสมผสานสิ่งที่ดีที่สุดของเทคโนโลยีเว็บเข้ากับประสิทธิภาพและความปลอดภัยแบบเนทีฟ",
     "visitTauri": "เยี่ยมชม Tauri",
     "shadcnDescription": "คอมโพเนนต์ React ที่สวยงามและเข้าถึงได้ซึ่งเป็นรากฐานสำหรับส่วนติดต่อผู้ใช้ที่ทันสมัยของเรา คัดลอก วาง และปรับแต่งให้สมบูรณ์แบบ",
@@ -1946,5 +1949,93 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
+  },
+  "gamePresence": {
+    "title": "",
+    "description": "",
+    "settingsDescription": "",
+    "condebugOption": "",
+    "condebugOptionDescription": "",
+    "indicatorDisabled": "",
+    "indicatorWaiting": "",
+    "indicatorConnecting": "",
+    "indicatorConnected": "",
+    "indicatorError": "",
+    "previewTitle": "",
+    "previewDescription": "",
+    "previewNoDetails": "",
+    "placeholdersTitle": "",
+    "placeholdersDescription": "",
+    "templatesTitle": "",
+    "templatesDescription": "",
+    "detailsTemplate": "",
+    "stateTemplate": "",
+    "defaultValue": "",
+    "fallbackValue": "",
+    "emptyLine": "",
+    "phaseSelectorTitle": "",
+    "insertIntoDetails": "",
+    "insertIntoState": "",
+    "preview": "",
+    "previewing": "",
+    "resetRow": "",
+    "resetAll": "",
+    "discardChanges": "",
+    "saveTemplates": "",
+    "templatesSaved": "",
+    "phases": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "phaseDescriptions": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "placeholderTooltips": {
+      "hero": {
+        "description": "",
+        "example": ""
+      },
+      "heroPresence": {
+        "description": "",
+        "example": ""
+      },
+      "mode": {
+        "description": "",
+        "example": ""
+      },
+      "partySize": {
+        "description": "",
+        "example": ""
+      },
+      "partyMax": {
+        "description": "",
+        "example": ""
+      }
+    },
+    "heroOverrides": {
+      "title": "",
+      "description": "",
+      "selectHero": "",
+      "scopeLabel": "",
+      "globalTemplates": "",
+      "editingHero": "",
+      "overrideActive": "",
+      "noOverride": "",
+      "removeOverride": "",
+      "inheritPlaceholder": ""
+    }
   }
 }
