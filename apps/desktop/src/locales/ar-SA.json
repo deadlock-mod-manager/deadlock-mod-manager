@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "الإضافات",
     "pluginDescription": "إدارة الإضافات والتكاملات لتطبيق سطح المكتب.",
+    "discord": "",
     "privacy": "الخصوصية",
     "about": "عن التطبيق",
     "systemSettings": "إعدادات النظام",
@@ -718,6 +719,8 @@
     "thirdPartyDisclaimerShort": "التعديلات هي محتوى من طرف ثالث لم يتم إنشاؤه أو مراجعته أو تأييده من قبل Deadlock Mod Manager.",
     "gamebananaDescription": "مصدر التعديل الأساسي لدينا لهذا التطبيق. يوفر GameBanana قاعدة بيانات التعديل الشاملة وواجهة برمجة التطبيقات التي تجعل تصفح تعديلات Deadlock واكتشافها وتنزيلها ممكنًا.",
     "visitGamebanana": "قم بزيارة GameBanana",
+    "deadlockRichPresenceDescription": "",
+    "visitDeadlockRichPresence": "",
     "tauriDescription": "إطار العمل القوي الذي يتيح هذا التطبيق المكتبي متعدد المنصات. يجمع Tauri بين أفضل تقنيات الويب والأداء والأمان الأصليين.",
     "visitTauri": "قم بزيارة Tauri",
     "shadcnDescription": "مكونات React جميلة ويمكن الوصول إليها والتي توفر الأساس لواجهة المستخدم الحديثة. انسخ والصق وخصصها بشكل مثالي.",
@@ -1946,5 +1949,93 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
+  },
+  "gamePresence": {
+    "title": "",
+    "description": "",
+    "settingsDescription": "",
+    "condebugOption": "",
+    "condebugOptionDescription": "",
+    "indicatorDisabled": "",
+    "indicatorWaiting": "",
+    "indicatorConnecting": "",
+    "indicatorConnected": "",
+    "indicatorError": "",
+    "previewTitle": "",
+    "previewDescription": "",
+    "previewNoDetails": "",
+    "placeholdersTitle": "",
+    "placeholdersDescription": "",
+    "templatesTitle": "",
+    "templatesDescription": "",
+    "detailsTemplate": "",
+    "stateTemplate": "",
+    "defaultValue": "",
+    "fallbackValue": "",
+    "emptyLine": "",
+    "phaseSelectorTitle": "",
+    "insertIntoDetails": "",
+    "insertIntoState": "",
+    "preview": "",
+    "previewing": "",
+    "resetRow": "",
+    "resetAll": "",
+    "discardChanges": "",
+    "saveTemplates": "",
+    "templatesSaved": "",
+    "phases": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "phaseDescriptions": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "placeholderTooltips": {
+      "hero": {
+        "description": "",
+        "example": ""
+      },
+      "heroPresence": {
+        "description": "",
+        "example": ""
+      },
+      "mode": {
+        "description": "",
+        "example": ""
+      },
+      "partySize": {
+        "description": "",
+        "example": ""
+      },
+      "partyMax": {
+        "description": "",
+        "example": ""
+      }
+    },
+    "heroOverrides": {
+      "title": "",
+      "description": "",
+      "selectHero": "",
+      "scopeLabel": "",
+      "globalTemplates": "",
+      "editingHero": "",
+      "overrideActive": "",
+      "noOverride": "",
+      "removeOverride": "",
+      "inheritPlaceholder": ""
+    }
   }
 }

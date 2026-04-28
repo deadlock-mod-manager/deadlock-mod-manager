@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "discord": "",
     "privacy": "隐私",
     "about": "关于",
     "systemSettings": "系统设置",
@@ -718,6 +719,8 @@
     "thirdPartyDisclaimerShort": "模组为第三方内容，并非由 Deadlock Mod Manager 创建、审查或认可。",
     "gamebananaDescription": "我们的主要模组来源和本应用程序的支柱。GameBanana 提供了全面的模组数据库和API，使得浏览、发现和下载 Deadlock 模组成为可能。",
     "visitGamebanana": "访问 GameBanana",
+    "deadlockRichPresenceDescription": "",
+    "visitDeadlockRichPresence": "",
     "tauriDescription": "强大的框架，支持此跨平台桌面应用程序。Tauri 将最佳的Web技术与原生性能和安全性相结合。",
     "visitTauri": "访问 Tauri",
     "shadcnDescription": "美观且易于访问的 React 组件，为我们现代化的用户界面奠定了基础。可复制、粘贴并完美自定义。",
@@ -1946,5 +1949,93 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
+  },
+  "gamePresence": {
+    "title": "",
+    "description": "",
+    "settingsDescription": "",
+    "condebugOption": "",
+    "condebugOptionDescription": "",
+    "indicatorDisabled": "",
+    "indicatorWaiting": "",
+    "indicatorConnecting": "",
+    "indicatorConnected": "",
+    "indicatorError": "",
+    "previewTitle": "",
+    "previewDescription": "",
+    "previewNoDetails": "",
+    "placeholdersTitle": "",
+    "placeholdersDescription": "",
+    "templatesTitle": "",
+    "templatesDescription": "",
+    "detailsTemplate": "",
+    "stateTemplate": "",
+    "defaultValue": "",
+    "fallbackValue": "",
+    "emptyLine": "",
+    "phaseSelectorTitle": "",
+    "insertIntoDetails": "",
+    "insertIntoState": "",
+    "preview": "",
+    "previewing": "",
+    "resetRow": "",
+    "resetAll": "",
+    "discardChanges": "",
+    "saveTemplates": "",
+    "templatesSaved": "",
+    "phases": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "phaseDescriptions": {
+      "mainMenu": "",
+      "soloHideout": "",
+      "partyHideout": "",
+      "inQueue": "",
+      "soloMatch": "",
+      "partyMatch": "",
+      "postMatch": "",
+      "spectating": ""
+    },
+    "placeholderTooltips": {
+      "hero": {
+        "description": "",
+        "example": ""
+      },
+      "heroPresence": {
+        "description": "",
+        "example": ""
+      },
+      "mode": {
+        "description": "",
+        "example": ""
+      },
+      "partySize": {
+        "description": "",
+        "example": ""
+      },
+      "partyMax": {
+        "description": "",
+        "example": ""
+      }
+    },
+    "heroOverrides": {
+      "title": "",
+      "description": "",
+      "selectHero": "",
+      "scopeLabel": "",
+      "globalTemplates": "",
+      "editingHero": "",
+      "overrideActive": "",
+      "noOverride": "",
+      "removeOverride": "",
+      "inheritPlaceholder": ""
+    }
   }
 }
