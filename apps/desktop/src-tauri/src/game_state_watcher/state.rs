@@ -129,9 +129,7 @@ impl GameState {
 
   pub fn start_match(&mut self, mode: MatchMode) {
     self.phase = GamePhase::InMatch;
-    if mode != MatchMode::Unknown {
-      self.match_mode = mode;
-    }
+    self.match_mode = mode;
     if self.match_start_time.is_none() {
       self.match_start_time = Some(now_epoch());
     }

@@ -83,23 +83,23 @@ impl GamePresenceWatcher {
         resync(&self.console_log_path, &mut parser, &mut state, &mut last_offset);
       }
 
+      let mut changed = false;
       if let Some(new_content) = read_new_content(&self.console_log_path, &mut last_offset) {
-        let mut changed = false;
         for line in new_content.lines() {
           let trimmed = line.trim();
           if !trimmed.is_empty() {
             changed |= parser.process_line(trimmed, &mut state);
           }
         }
+      }
 
-        if changed || last_presence_update.elapsed().as_millis() > PRESENCE_UPDATE_INTERVAL_MS as u128
-        {
-          if discord_client.is_none() {
-            discord_client = connect_discord();
-          }
-          update_presence(&mut discord_client, &state, &hero_store, &mut last_presence_hash);
-          last_presence_update = std::time::Instant::now();
+      if changed || last_presence_update.elapsed().as_millis() > PRESENCE_UPDATE_INTERVAL_MS as u128
+      {
+        if discord_client.is_none() {
+          discord_client = connect_discord();
         }
+        update_presence(&mut discord_client, &state, &hero_store, &mut last_presence_hash);
+        last_presence_update = std::time::Instant::now();
       }
 
       tokio::time::sleep(tokio::time::Duration::from_millis(POLL_INTERVAL_MS)).await;
@@ -151,7 +151,6 @@ fn update_presence(
   if last_hash.as_ref() == Some(&hash) {
     return;
   }
-  *last_hash = Some(hash);
 
   let mut act = activity::Activity::new();
 
@@ -202,6 +201,8 @@ fn update_presence(
 
   if let Err(e) = client.set_activity(act) {
     log::warn!("[GamePresence] Failed to set activity: {e}");
+  } else {
+    *last_hash = Some(hash);
   }
 }
 
@@ -262,29 +263,39 @@ fn resync(path: &Path, parser: &mut LogParser, state: &mut GameState, last_offse
   };
   let read_start = file_len.saturating_sub(RESYNC_MAX_BYTES);
 
-  match std::fs::read_to_string(path) {
-    Ok(content) => {
-      let start_byte = read_start as usize;
-      let slice = if start_byte > 0 && start_byte < content.len() {
-        let rest = &content[start_byte..];
-        rest.find('\n').map(|pos| &rest[pos + 1..]).unwrap_or(rest)
-      } else {
-        &content
-      };
+  let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+    let mut file = std::fs::File::open(path)?;
+    file.seek(SeekFrom::Start(read_start))?;
 
-      for line in slice.lines() {
-        let trimmed = line.trim();
-        if !trimmed.is_empty() {
-          parser.process_line(trimmed, state);
-        }
+    let bytes_to_read = (file_len - read_start) as usize;
+    let mut buf = vec![0u8; bytes_to_read];
+    file.read_exact(&mut buf)?;
+
+    // Drop initial partial line if we started mid-file
+    let content_start = if read_start > 0 {
+      buf.iter().position(|&b| b == b'\n').map(|pos| pos + 1).unwrap_or(0)
+    } else {
+      0
+    };
+
+    let content = String::from_utf8(buf[content_start..].to_vec())?;
+
+    for line in content.lines() {
+      let trimmed = line.trim();
+      if !trimmed.is_empty() {
+        parser.process_line(trimmed, state);
       }
-      *last_offset = file_len;
-      log::info!(
-        "[GamePresence] Resynced from {} lines",
-        slice.lines().count()
-      );
     }
-    Err(e) => log::warn!("[GamePresence] Resync error: {e}"),
+    *last_offset = file_len;
+    log::info!(
+      "[GamePresence] Resynced from {} lines",
+      content.lines().count()
+    );
+    Ok(())
+  })();
+
+  if let Err(e) = result {
+    log::warn!("[GamePresence] Resync error: {e}");
   }
 }
 

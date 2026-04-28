@@ -93,7 +93,6 @@ impl LogParser {
         state.leave_queue();
       }
     } else if p.lobby_created.is_match(line) {
-      state.match_start_time = Some(now_epoch());
       state.queue_start_time = None;
       self.prepare_match_hero_tracking(state);
       if matches!(
@@ -268,8 +267,8 @@ impl LogParser {
       return;
     }
 
-    if MAP_TO_MODE.iter().any(|m| m.map == map_trimmed) {
-      state.phase = GamePhase::InMatch;
+    if let Some(mapped) = MAP_TO_MODE.iter().find(|m| m.map == map_trimmed) {
+      state.start_match(mapped.mode);
       self.prepare_match_hero_tracking(state);
       self.hideout_loaded = false;
     }
