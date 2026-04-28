@@ -17,6 +17,7 @@
     "**/tailwind.config.js",
     "**/vite.config.ts",
     "apps/desktop/src-tauri/gen/**",
+    "packages/deadlock-discord-presence/src/generated/**",
     "packages/vpk-parser/src/generated/**",
     "packages/kv-parser/src-rs/generated/**",
     "apps/docs/.source/**",

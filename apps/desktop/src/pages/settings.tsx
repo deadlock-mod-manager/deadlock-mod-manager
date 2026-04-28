@@ -28,7 +28,6 @@ import {
   GamepadIcon,
   Globe,
   InfoIcon,
-  type LucideIcon,
   MonitorIcon,
   PlugIcon,
   PlusIcon,
@@ -38,6 +37,7 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
+import { DiscordLogoIcon } from "@phosphor-icons/react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -105,7 +105,7 @@ const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 
 type SettingsNavItemProps = {
   value: string;
-  icon: LucideIcon;
+  icon: React.ElementType<{ className?: string }>;
   label: string;
 };
 
@@ -328,6 +328,11 @@ const CustomSettingsData = () => {
                           (setting as LocalSetting).enabled ??
                           false),
                     }}
+                    subtitle={
+                      isCondebugOption
+                        ? t("gamePresence.condebugOptionDescription")
+                        : undefined
+                    }
                   />
                 );
               })}
@@ -474,6 +479,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 label={t("settings.plugin")}
                 value='plugin'
               />
+              <SettingsNavItem
+                icon={DiscordLogoIcon}
+                label={t("settings.discord")}
+                value='discord'
+              />
             </SettingsNavGroup>
 
             <SettingsNavGroup label='Advanced'>
@@ -555,8 +565,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("heroParser.settingsTitle")}>
               <HeroParserSettings />
             </Section>
+          </TabsContent>
 
-            <GamePresenceSettings />
+          <TabsContent className='mt-0 space-y-4' value='discord'>
+            <Section
+              description={t("gamePresence.settingsDescription")}
+              title={t("settings.discord")}>
+              <GamePresenceSettings />
+            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='application'>
