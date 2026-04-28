@@ -17,6 +17,8 @@ pub struct Mod {
   pub install_order: Option<u32>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  #[serde(default, rename = "usesCompression")]
+  pub uses_compression: bool,
 }
 
 /// Manages the repository of installed and tracked mods

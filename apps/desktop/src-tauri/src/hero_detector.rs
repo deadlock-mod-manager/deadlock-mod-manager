@@ -32,14 +32,62 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
   let mut vpk_files: Vec<PathBuf> = Vec::new();
 
   let mod_manager = MANAGER.lock().unwrap();
-  if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+  let repo_mod = mod_manager.get_mod_repository().get_mod(mod_id);
+  let uses_compression = repo_mod.map(|m| m.uses_compression).unwrap_or(false);
+
+  if uses_compression
+    && let Some(m) = repo_mod
+    && let Ok(mods_store) = mod_manager.get_mods_store_path()
+  {
+    let staged = crate::mod_compression::paths::compression_staged_dir(&mods_store, mod_id);
+    for orig in &m.original_vpk_names {
+      let p = staged.join(orig);
+      if p.exists() {
+        vpk_files.push(p);
+      }
+    }
+    if !vpk_files.is_empty() {
+      log::debug!(
+        "Hero detection using {} staged VPK(s) for compressed mod {mod_id}",
+        vpk_files.len()
+      );
+      return vpk_files;
+    }
+    if let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
+      let mut addons_path = game_path.join("game").join("citadel").join("addons");
+      if let Some(folder) = crate::mod_compression::state::get_compression_profile_folder() {
+        addons_path = addons_path.join(folder);
+      }
+      for v in &m.installed_vpks {
+        let p = addons_path.join(v);
+        if p.exists() {
+          vpk_files.push(p);
+        }
+      }
+      if vpk_files.is_empty() {
+        let root_addons = game_path.join("game").join("citadel").join("addons");
+        for v in &m.installed_vpks {
+          let p = root_addons.join(v);
+          if p.exists() {
+            vpk_files.push(p);
+          }
+        }
+      }
+      if !vpk_files.is_empty() {
+        log::debug!(
+          "Hero detection using {} merged bucket VPK(s) for compressed mod {mod_id}",
+          vpk_files.len()
+        );
+        return vpk_files;
+      }
+    }
+  }
+
+  if !uses_compression && let Some(game_path) = mod_manager.get_steam_manager().get_game_path() {
     let addons_path = game_path.join("game").join("citadel").join("addons");
     if addons_path.exists() {
-      let repo_vpks = mod_manager
-        .get_mod_repository()
-        .get_mod(mod_id)
-        .map(|m| m.installed_vpks.clone());
-      let known_vpks = repo_vpks
+      let known_vpks = repo_mod
+        .map(|m| m.installed_vpks.clone())
         .filter(|v| !v.is_empty())
         .or(installed_vpks)
         .unwrap_or_default();
@@ -68,9 +116,10 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
             let path = entry.path();
             if path.extension().and_then(|e| e.to_str()) == Some("vpk")
               && let Some(name) = path.file_name().and_then(|n| n.to_str())
-                && name.starts_with(&prefix) {
-                  vpk_files.push(path);
-                }
+              && name.starts_with(&prefix)
+            {
+              vpk_files.push(path);
+            }
           }
         }
       }
@@ -78,7 +127,9 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
   }
   drop(mod_manager);
 
-  if let Ok(app_data) = std::env::var("LOCALAPPDATA") {
+  if vpk_files.is_empty()
+    && let Ok(app_data) = std::env::var("LOCALAPPDATA")
+  {
     let mod_data_path = PathBuf::from(app_data)
       .join("dev.stormix.deadlock-mod-manager")
       .join("mods")
@@ -86,6 +137,13 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
     if mod_data_path.exists() {
       collect_vpk_files_recursive(&mod_data_path, &mut vpk_files);
     }
+  }
+
+  if uses_compression && !vpk_files.is_empty() {
+    log::debug!(
+      "Hero detection using {} source VPK(s) (LOCALAPPDATA fallback) for compressed mod {mod_id}",
+      vpk_files.len()
+    );
   }
 
   vpk_files
@@ -143,13 +201,53 @@ pub async fn detect_mod_heroes_batch(
       .map(|req| {
         let mut vpk_files: Vec<PathBuf> = Vec::new();
 
-        if let Some(ref gp) = game_path {
+        let repo_mod = mod_manager.get_mod_repository().get_mod(&req.mod_id);
+        let uses_compression = repo_mod.map(|m| m.uses_compression).unwrap_or(false);
+
+        if uses_compression
+          && let Some(m) = repo_mod
+          && let Ok(mods_store) = mod_manager.get_mods_store_path()
+        {
+          let staged =
+            crate::mod_compression::paths::compression_staged_dir(&mods_store, &req.mod_id);
+          for orig in &m.original_vpk_names {
+            let p = staged.join(orig);
+            if p.exists() {
+              vpk_files.push(p);
+            }
+          }
+          if vpk_files.is_empty()
+            && let Some(ref gp) = game_path
+          {
+            let mut addons_path = gp.join("game").join("citadel").join("addons");
+            if let Some(folder) = crate::mod_compression::state::get_compression_profile_folder() {
+              addons_path = addons_path.join(folder);
+            }
+            for v in &m.installed_vpks {
+              let p = addons_path.join(v);
+              if p.exists() {
+                vpk_files.push(p);
+              }
+            }
+            if vpk_files.is_empty() {
+              let root_addons = gp.join("game").join("citadel").join("addons");
+              for v in &m.installed_vpks {
+                let p = root_addons.join(v);
+                if p.exists() {
+                  vpk_files.push(p);
+                }
+              }
+            }
+          }
+        }
+
+        if !uses_compression
+          && vpk_files.is_empty()
+          && let Some(ref gp) = game_path
+        {
           let addons_path = gp.join("game").join("citadel").join("addons");
           if addons_path.exists() {
-            let repo_vpks = mod_manager
-              .get_mod_repository()
-              .get_mod(&req.mod_id)
-              .map(|m| m.installed_vpks.clone());
+            let repo_vpks = repo_mod.map(|m| m.installed_vpks.clone());
             let known_vpks = repo_vpks
               .filter(|v| !v.is_empty())
               .or(req.installed_vpks)
@@ -179,16 +277,19 @@ pub async fn detect_mod_heroes_batch(
                   let path = entry.path();
                   if path.extension().and_then(|e| e.to_str()) == Some("vpk")
                     && let Some(name) = path.file_name().and_then(|n| n.to_str())
-                      && name.starts_with(&prefix) {
-                        vpk_files.push(path);
-                      }
+                    && name.starts_with(&prefix)
+                  {
+                    vpk_files.push(path);
+                  }
                 }
               }
             }
           }
         }
 
-        if let Some(ref ad) = app_data {
+        if vpk_files.is_empty()
+          && let Some(ref ad) = app_data
+        {
           let mod_data_path = PathBuf::from(ad)
             .join("dev.stormix.deadlock-mod-manager")
             .join("mods")

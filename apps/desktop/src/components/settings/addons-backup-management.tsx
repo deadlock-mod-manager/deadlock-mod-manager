@@ -82,6 +82,9 @@ export const AddonsBackupManagement = () => {
   const setMaxBackupCount = usePersistedStore(
     (state) => state.setMaxBackupCount,
   );
+  const activeProfileId = usePersistedStore((state) => state.activeProfileId);
+  const profiles = usePersistedStore((state) => state.profiles);
+  const profileFolder = profiles[activeProfileId]?.folderName ?? null;
 
   const loadBackups = useCallback(async () => {
     try {
@@ -143,6 +146,7 @@ export const AddonsBackupManagement = () => {
       setBackupProgress(null);
       const backup = await invoke<AddonsBackup>("create_addons_backup", {
         maxBackups: maxBackupCount,
+        profileFolder,
       });
       logger.withMetadata({ backup }).info("Backup created");
     } catch (error) {
@@ -166,6 +170,7 @@ export const AddonsBackupManagement = () => {
       await invoke("restore_addons_backup", {
         fileName: selectedBackup,
         strategy,
+        profileFolder,
       });
       toast.dismiss();
       toast.success(t("settings.backupRestored"));

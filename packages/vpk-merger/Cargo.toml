@@ -1,0 +1,27 @@
+[package]
+name = "vpk-merger"
+version = "0.1.0"
+edition = "2024"
+description = "Merge multiple Valve VPK directory packages into a single VPK"
+license = "GPL-3.0"
+
+[lib]
+name = "vpkmerger"
+path = "src-rs/lib.rs"
+
+[[bin]]
+name = "vpk-merger"
+path = "src-rs/main.rs"
+
+[dependencies]
+vpk-parser = { path = "../vpk-parser" }
+thiserror = "2.0"
+clap = { version = "4.6", features = ["derive"] }
+crc32fast = "1.5"
+rayon = "1.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+blake3 = "1.5"
+
+[dev-dependencies]
+tempfile = "3"

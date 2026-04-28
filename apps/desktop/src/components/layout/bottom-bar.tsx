@@ -14,6 +14,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import {
+  ArchiveIcon,
   ArrowsClockwiseIcon,
   CheckCircleIcon,
   CloudArrowDownIcon,
@@ -109,6 +110,90 @@ function HeroParserIndicator() {
           </>
         ) : (
           <p className='text-xs'>{t("heroParser.idle")}</p>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function ModCompressionIndicator() {
+  const { t } = useTranslation();
+  const compressionEnabled = usePersistedStore(
+    (state) => state.compressionEnabled,
+  );
+  const compressionProgress = usePersistedStore(
+    (state) => state.compressionProgress,
+  );
+  if (!compressionEnabled) {
+    return null;
+  }
+  const isBusy =
+    compressionProgress.status === "merging" ||
+    compressionProgress.status === "extracting";
+  const percentage =
+    compressionProgress.total > 0
+      ? Math.round(
+          (compressionProgress.current / compressionProgress.total) * 100,
+        )
+      : 0;
+
+  const statusLabel = isBusy
+    ? compressionProgress.status === "merging"
+      ? t("modCompression.merging", {
+          current: compressionProgress.current,
+          total: compressionProgress.total,
+        })
+      : t("modCompression.extracting", {
+          current: compressionProgress.current,
+          total: compressionProgress.total,
+        })
+    : null;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className='flex cursor-default items-center gap-1.5 p-0.5'>
+          {isBusy ? (
+            <ArrowsClockwiseIcon className='h-3.5 w-3.5 animate-spin text-blue-500' />
+          ) : (
+            <ArchiveIcon className='h-3.5 w-3.5 text-primary' />
+          )}
+          {isBusy && statusLabel ? (
+            <span className='text-xs tabular-nums text-muted-foreground'>
+              {statusLabel}
+            </span>
+          ) : compressionProgress.shardCount > 0 ? (
+            <span className='text-xs tabular-nums text-muted-foreground'>
+              {compressionProgress.shardCount} VPKs
+            </span>
+          ) : null}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent
+        className='w-52 space-y-1.5 p-2'
+        side='top'
+        sideOffset={8}>
+        {isBusy ? (
+          <>
+            <p className='text-xs font-medium'>{statusLabel}</p>
+            {compressionProgress.currentModName ? (
+              <p className='truncate text-xs text-muted-foreground'>
+                {compressionProgress.currentModName}
+              </p>
+            ) : null}
+            <Progress className='h-1' value={percentage} />
+            <p className='text-xs tabular-nums text-muted-foreground'>
+              {percentage}%
+            </p>
+          </>
+        ) : compressionProgress.shardCount > 0 ? (
+          <p className='text-xs font-medium'>
+            {t("modCompression.shardCount", {
+              count: compressionProgress.shardCount,
+            })}
+          </p>
+        ) : (
+          <p className='text-xs'>{t("modCompression.idle")}</p>
         )}
       </TooltipContent>
     </Tooltip>
@@ -323,6 +408,7 @@ export const BottomBar = () => {
               variant='compact'
             />
           )}
+          <ModCompressionIndicator />
           <HeroParserIndicator />
         </div>
 

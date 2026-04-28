@@ -4,6 +4,10 @@ import logger from "@/lib/logger";
 import { buildPersistMerge } from "./merge";
 import { LATEST_VERSION, safeMigrate } from "./migrate";
 import {
+  type CompressionSliceState,
+  createCompressionSlice,
+} from "./slices/compression";
+import {
   type CrosshairState,
   createCrosshairSlice,
   crosshairDeepMergeKeys,
@@ -54,7 +58,8 @@ export type State = ModsState &
   NetworkState &
   UIState &
   ScrollState &
-  CrosshairState;
+  CrosshairState &
+  CompressionSliceState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -80,6 +85,7 @@ export const usePersistedStore = create<State>()(
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
+      ...createCompressionSlice(...a),
     }),
     {
       name: "local-config",
@@ -112,6 +118,7 @@ export const usePersistedStore = create<State>()(
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
           heroDetection: _heroDetection,
+          compressionProgress: _compressionProgress,
           ...rest
         } = state;
         return rest;

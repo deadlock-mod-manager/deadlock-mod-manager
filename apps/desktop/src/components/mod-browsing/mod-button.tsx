@@ -150,7 +150,12 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         },
         onComplete: (m, result) => {
           setModStatus(m.remoteId, ModStatus.Installed);
-          setInstalledVpks(m.remoteId, result.installed_vpks, result.file_tree);
+          setInstalledVpks(
+            m.remoteId,
+            result.installed_vpks,
+            result.file_tree,
+            result.usesCompression,
+          );
           setModEnabledInCurrentProfile(m.remoteId, true);
           toast.success(t("notifications.modInstalledSuccessfully"));
           analytics.trackModInstalled(m.remoteId, {

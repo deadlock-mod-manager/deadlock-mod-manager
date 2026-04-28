@@ -56,6 +56,7 @@ import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
+import { ModCompressionSettings } from "@/components/settings/mod-compression-settings";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
@@ -534,6 +535,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               description={t("heroParser.settingsDescription")}
               title={t("heroParser.settingsTitle")}>
               <HeroParserSettings />
+            </Section>
+
+            <Section
+              description={t("settings.modCompression.description")}
+              title={t("settings.modCompression.title")}>
+              <ModCompressionSettings />
             </Section>
           </TabsContent>
 

@@ -52,6 +52,7 @@ import {
   Loader2,
   RefreshCw,
   ScanSearch,
+  TriangleAlert,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -59,6 +60,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Trans } from "react-i18next";
 import { useNavigate } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
@@ -494,6 +496,9 @@ const MyMods = () => {
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const compressionEnabled = usePersistedStore(
+    (state) => state.compressionEnabled,
+  );
   const modsStorePaginationEnabled = usePersistedStore(
     (state) => state.settings[MODS_STORE_PAGINATION_SETTING_ID]?.enabled,
   );
@@ -945,6 +950,30 @@ const MyMods = () => {
               </DropdownMenu>
             </div>
           </div>
+          {enabledVpkFileCount >= ENGINE_VPK_LIMIT && !compressionEnabled && (
+            <div className='flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive dark:border-destructive/40 dark:bg-destructive/15'>
+              <TriangleAlert className='h-4 w-4 shrink-0' />
+              <p>
+                <Trans
+                  i18nKey='myMods.vpkLimitCompressionWarning'
+                  values={{ max: ENGINE_VPK_LIMIT }}
+                  components={{
+                    compressionLink: (
+                      <button
+                        type='button'
+                        className='inline font-medium underline underline-offset-2 hover:text-destructive/80'
+                        onClick={() =>
+                          navigate("/settings", {
+                            state: { activeTab: "game" },
+                          })
+                        }
+                      />
+                    ),
+                  }}
+                />
+              </p>
+            </div>
+          )}
           <VpkScanAlert
             unmatchedVpkCount={unmatchedVpkCount}
             unmatchedVpks={unmatchedVpks}

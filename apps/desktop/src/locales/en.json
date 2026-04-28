@@ -195,6 +195,7 @@
     "vpkFilesNoun": "addon files",
     "vpkLimitBadgeNear": "Near limit",
     "vpkLimitBadgeAtLimit": "At limit",
+    "vpkLimitCompressionWarning": "Your active addon files exceed the {{max}}-file engine limit. Enable <compressionLink>Mod Compression</compressionLink> to merge VPKs and stay within the cap.",
     "modLimitTooltipP1": "Deadlock limits how many addon files the game can load at once. The usual cap is {{max}}.",
     "modLimitTooltipP2": "Your library can still list more mods than that, because one mod can ship several addon files.",
     "modLimitTooltipP3": "The first pair is enabled mods versus your full library. The second is how many addon files those enabled mods use, next to the cap.",
@@ -589,6 +590,40 @@
     "ingestTool": {
       "title": "Matchdata Ingest Tool",
       "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
+    },
+    "modCompression": {
+      "title": "Mod Compression",
+      "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
+      "enableLabel": "Enable mod compression",
+      "enableConfirmTitle": "Enable mod compression?",
+      "enableConfirmBody": "Operations such as installing, updating, or removing mods take longer while compression is on. Higher compression levels pack more mods per file and make these operations slower. You can turn this off later.",
+      "enableConfirmAction": "Enable",
+      "disableConfirmTitle": "Disable mod compression?",
+      "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
+      "disableConfirmAction": "Disable",
+      "gameRunning": "Close Deadlock before changing mod compression.",
+      "level": {
+        "title": "Compression level",
+        "description": "How many mods are merged into each VPK. Higher levels mean fewer, larger files and slower install, update, remove, and reorder.",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "extreme": "Extreme",
+        "lowSubtitle": "2 mods / file",
+        "mediumSubtitle": "4 mods / file",
+        "highSubtitle": "6 mods / file",
+        "extremeSubtitle": "Merge everything into as few shards as possible (1.5 GiB cap per VPK)",
+        "recommended": "Recommended",
+        "changeConfirmTitle": "Change compression level?",
+        "changeConfirmBody": "All merged VPKs will be rebuilt with the new level. This may take a while."
+      },
+      "backupPrompt": {
+        "title": "Create a backup first?",
+        "body": "Enabling compression replaces your installed mods' VPK files with merged bundles. Disabling restores individual files.",
+        "createBackupOption": "Create a backup of the addons folder before enabling",
+        "confirmEnable": "Enable compression",
+        "cancel": "Cancel"
+      }
     },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
@@ -1915,6 +1950,15 @@
   "heroTag": {
     "hero": "Hero",
     "other": "General"
+  },
+  "modCompression": {
+    "idle": "Mod compression: idle",
+    "merging": "Merging: {{current}}/{{total}}",
+    "extracting": "Extracting: {{current}}/{{total}}",
+    "paused": "Paused (game running)",
+    "indicatorTooltip": "Mod compression",
+    "shardCount": "{{count}} merged VPK files",
+    "progress": "{{current}}/{{total}}"
   },
   "persist": {
     "loadFailed": "Failed to load saved settings",

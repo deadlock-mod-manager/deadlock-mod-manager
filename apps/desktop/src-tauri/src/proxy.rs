@@ -36,7 +36,12 @@ impl ProxyProtocol {
 static PROXY_CONFIG: Mutex<Option<ProxyConfig>> = Mutex::new(None);
 
 fn get_proxy_url(config: &ProxyConfig) -> String {
-  format!("{}://{}:{}", config.protocol.scheme(), config.host, config.port)
+  format!(
+    "{}://{}:{}",
+    config.protocol.scheme(),
+    config.host,
+    config.port
+  )
 }
 
 fn apply_proxy(
@@ -69,9 +74,12 @@ where
   let mut builder = reqwest::Client::builder();
 
   if let Some(ref cfg) = *config
-    && cfg.enabled && !cfg.host.is_empty() && cfg.port > 0 {
-      builder = apply_proxy(builder, cfg)?;
-    }
+    && cfg.enabled
+    && !cfg.host.is_empty()
+    && cfg.port > 0
+  {
+    builder = apply_proxy(builder, cfg)?;
+  }
 
   builder = configure(builder);
 
@@ -89,7 +97,12 @@ pub async fn set_proxy_config(config: Option<ProxyConfig>) -> Result<(), Error> 
   if let Some(ref c) = config {
     log::info!(
       "Updating proxy configuration: enabled={}, protocol={:?}, host={}, port={}, auth_enabled={}, no_proxy={}",
-      c.enabled, c.protocol, c.host, c.port, c.auth_enabled, c.no_proxy
+      c.enabled,
+      c.protocol,
+      c.host,
+      c.port,
+      c.auth_enabled,
+      c.no_proxy
     );
   } else {
     log::info!("Clearing proxy configuration");

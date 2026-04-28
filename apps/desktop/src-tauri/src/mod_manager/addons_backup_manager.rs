@@ -153,6 +153,22 @@ impl AddonsBackupManager {
       }
     }
 
+    let manifest_src = addons_path
+      .join(".deadlock-compression")
+      .join("manifest.json");
+    if manifest_src.is_file() {
+      let dest_dir = backup_path.join(".deadlock-compression");
+      fs::create_dir_all(&dest_dir).map_err(|e| {
+        Error::BackupCreationFailed(format!(
+          "Failed to create .deadlock-compression in backup: {e}"
+        ))
+      })?;
+      let manifest_dest = dest_dir.join("manifest.json");
+      fs::copy(&manifest_src, &manifest_dest).map_err(|e| {
+        Error::BackupCreationFailed(format!("Failed to copy compression manifest: {e}"))
+      })?;
+    }
+
     // Emit progress: finalizing
     let _ = app_handle.emit(
       "backup-progress",
@@ -319,7 +335,12 @@ impl AddonsBackupManager {
     Ok(backups)
   }
 
-  pub fn restore_backup(&self, file_name: &str, strategy: RestoreStrategy) -> Result<(), Error> {
+  pub fn restore_backup_to(
+    &self,
+    file_name: &str,
+    strategy: RestoreStrategy,
+    addons_path: &Path,
+  ) -> Result<(), Error> {
     log::info!(
       "Restoring backup: {file_name} with strategy: {:?}",
       match strategy {
@@ -335,22 +356,31 @@ impl AddonsBackupManager {
       return Err(Error::BackupNotFound);
     }
 
-    let addons_path = self.get_addons_path()?;
-
     if matches!(strategy, RestoreStrategy::Replace) {
       if addons_path.exists() {
         log::info!("Clearing addons folder before restore");
-        fs::remove_dir_all(&addons_path)
+        fs::remove_dir_all(addons_path)
           .map_err(|e| Error::BackupRestoreFailed(format!("Failed to clear addons folder: {e}")))?;
       }
-      fs::create_dir_all(&addons_path)
+      fs::create_dir_all(addons_path)
         .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
     } else {
-      fs::create_dir_all(&addons_path)
+      fs::create_dir_all(addons_path)
         .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
     }
 
     log::info!("Restoring backup from {backup_path:?} to {addons_path:?}");
+
+    let backup_has_manifest = backup_path
+      .join(".deadlock-compression")
+      .join("manifest.json")
+      .is_file();
+    if matches!(strategy, RestoreStrategy::Replace) {
+      let comp = addons_path.join(".deadlock-compression");
+      if comp.exists() {
+        let _ = fs::remove_dir_all(&comp);
+      }
+    }
 
     for entry in fs::read_dir(&backup_path)
       .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
@@ -366,6 +396,64 @@ impl AddonsBackupManager {
         fs::copy(&path, &dest_path)
           .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {e}")))?;
       }
+    }
+
+    let backup_comp = backup_path.join(".deadlock-compression");
+    if backup_comp.is_dir() {
+      copy_dir_recursive(&backup_comp, &addons_path.join(".deadlock-compression"))?;
+    }
+
+    if matches!(strategy, RestoreStrategy::Replace) && !backup_has_manifest {
+      let comp = addons_path.join(".deadlock-compression");
+      if comp.exists() {
+        let _ = fs::remove_dir_all(&comp);
+      }
+    }
+
+    let mpath = vpkmerger::manifest_path(&addons_path);
+    let parsed_manifest = if mpath.is_file() {
+      vpkmerger::read_manifest(&mpath).ok()
+    } else {
+      None
+    };
+
+    let level_str: Option<String> = parsed_manifest.as_ref().and_then(|m| {
+      serde_json::to_value(m.compression_level)
+        .ok()
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+    });
+
+    let mod_updates: Vec<serde_json::Value> = if let Some(ref manifest) = parsed_manifest {
+      let mut v: Vec<serde_json::Value> = Vec::new();
+      for b in &manifest.buckets {
+        for id in &b.mod_ids {
+          let originals = manifest
+            .mods
+            .get(id)
+            .map(|e| e.original_vpk_names.clone())
+            .unwrap_or_default();
+          v.push(serde_json::json!({
+            "modId": id,
+            "installedVpks": b.shard_files,
+            "usesCompression": true,
+            "originalVpkNames": originals,
+          }));
+        }
+      }
+      v
+    } else {
+      Vec::new()
+    };
+
+    if let Some(ref a) = self.app_handle {
+      let _ = a.emit(
+        "addons-backup-restored",
+        serde_json::json!({
+          "hasCompressionManifest": parsed_manifest.is_some(),
+          "compressionLevel": level_str,
+          "modUpdates": mod_updates,
+        }),
+      );
     }
 
     log::info!("Backup restored successfully");
@@ -450,4 +538,26 @@ impl AddonsBackupManager {
       addons_count,
     })
   }
+}
+
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), Error> {
+  fs::create_dir_all(dst)
+    .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create dir {dst:?}: {e}")))?;
+  for entry in fs::read_dir(src)
+    .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read {src:?}: {e}")))?
+  {
+    let entry =
+      entry.map_err(|e| Error::BackupRestoreFailed(format!("Failed to read entry: {e}")))?;
+    let p = entry.path();
+    let name = entry.file_name();
+    let out = dst.join(&name);
+    if p.is_dir() {
+      copy_dir_recursive(&p, &out)?;
+    } else {
+      fs::copy(&p, &out).map_err(|e| {
+        Error::BackupRestoreFailed(format!("Failed to copy {:?} to {:?}: {e}", p, out))
+      })?;
+    }
+  }
+  Ok(())
 }

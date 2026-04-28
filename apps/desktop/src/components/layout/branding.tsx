@@ -74,7 +74,7 @@ export const BrandingHeader = ({
 
   const iconSize = collapsed ? "size-7" : "size-9";
   const iconTransition =
-    "transition-[width,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]";
+    "transition-[width,height] duration-300 ease-smooth-out";
 
   const renderIcon = () => {
     if (TopbarLogo) {
@@ -95,7 +95,7 @@ export const BrandingHeader = ({
   return (
     <div
       className={cn(
-        "flex items-center transition-[padding,gap] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "flex items-center transition-[padding,gap] duration-300 ease-smooth-out",
         collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 pl-1.5 py-3",
         className,
       )}
@@ -105,7 +105,7 @@ export const BrandingHeader = ({
       </div>
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-1 overflow-hidden transition-[opacity,max-width,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "flex min-w-0 flex-col gap-1 overflow-hidden transition-[opacity,max-width,transform] duration-200 ease-smooth-out",
           collapsed
             ? "pointer-events-none max-w-0 -translate-x-1 opacity-0"
             : "max-w-[12rem] translate-x-0 opacity-100 delay-100",
