@@ -98,6 +98,7 @@ export function alertDialogReducer(
     case "prompt":
       return {
         ...state,
+        body: "",
         open: true,
         ...action,
         tone: ("tone" in action && action.tone) || "default",
