@@ -19,6 +19,7 @@
   "dependencies": {
     "@crabnebula/plugin-ota-updater": "^2.0.1",
     "@deadlock-mods/crosshair": "workspace:*",
+    "@deadlock-mods/deadlock-discord-presence": "workspace:*",
     "@deadlock-mods/hero-parser": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",

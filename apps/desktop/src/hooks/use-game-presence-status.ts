@@ -43,22 +43,13 @@ function deriveDiscordPresenceUi(
   presenceEnabled: boolean,
   backend: GamePresenceStatusPayload | null,
 ): DiscordPresenceUiPhase {
-  if (!presenceEnabled) {
-    return "disabled";
-  }
+  if (!presenceEnabled) return "disabled";
+  if (backend === null) return "waiting";
 
-  if (backend === null) {
-    return "waiting";
-  }
+  const phase = coercePhase(backend.phase);
+  if (!backend.watcherActive || phase === "inactive") return "waiting";
 
-  if (
-    backend.watcherActive !== true ||
-    coercePhase(backend.phase) === "inactive"
-  ) {
-    return "waiting";
-  }
-
-  switch (coercePhase(backend.phase)) {
+  switch (phase) {
     case "waiting":
       return "waiting";
     case "connecting":

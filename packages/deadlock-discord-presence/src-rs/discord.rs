@@ -273,12 +273,10 @@ fn set_presence(
     let mut activity_builder = activity::Activity::new();
 
     if let Some(ref details) = activity_data.details {
-        log::debug!("Set details: {details}");
         activity_builder = activity_builder.details(details);
     }
 
     if let Some(ref state) = activity_data.state {
-        log::debug!("Set state: {state}");
         activity_builder = activity_builder.state(state);
     }
 
@@ -297,13 +295,11 @@ fn set_presence(
         if let Some(ref large_key) = activity_data.large_image_key
             && !large_key.is_empty()
         {
-            log::debug!("Set large image: {large_key}");
             assets = assets.large_image(large_key);
 
             if let Some(ref large_text) = activity_data.large_image_text
                 && !large_text.is_empty()
             {
-                log::debug!("Set large image text: {large_text}");
                 assets = assets.large_text(large_text);
             }
         }
@@ -311,30 +307,24 @@ fn set_presence(
         if let Some(ref small_key) = activity_data.small_image_key
             && !small_key.is_empty()
         {
-            log::debug!("Set small image: {small_key}");
             assets = assets.small_image(small_key);
 
             if let Some(ref small_text) = activity_data.small_image_text
                 && !small_text.is_empty()
             {
-                log::debug!("Set small image text: {small_text}");
                 assets = assets.small_text(small_text);
             }
         }
 
         activity_builder = activity_builder.assets(assets);
-    } else {
-        log::debug!("No assets to set");
     }
 
     if let Some(timestamp) = activity_data.start_timestamp {
-        log::debug!("Set start timestamp: {timestamp}");
         activity_builder =
             activity_builder.timestamps(activity::Timestamps::new().start(timestamp));
     }
 
     if let Some(party_size) = activity_data.party_size {
-        log::debug!("Set party size: {} of {}", party_size[0], party_size[1]);
         activity_builder = activity_builder.party(activity::Party::new().size(party_size));
     }
 

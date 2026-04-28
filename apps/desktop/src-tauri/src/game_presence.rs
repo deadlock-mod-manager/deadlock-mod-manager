@@ -2,10 +2,14 @@ use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, LazyLock};
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, State};
 
 pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
-use deadlock_discord_presence::PresencePhase;
+use deadlock_discord_presence::{HeroDataStore, PresenceBuildConfig, PresencePhase};
+
+use crate::commands::MANAGER;
+use crate::discord_rpc::DiscordState;
+use crate::errors::Error;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -97,4 +101,100 @@ pub(crate) fn mark_stopped(app_handle: Option<&AppHandle>) {
   RUNNING.store(false, Ordering::Relaxed);
   STATUS.store(Status::Inactive as u8, Ordering::Relaxed);
   emit_status(app_handle);
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GamePresenceHeroDto {
+  pub codename: String,
+  pub name: String,
+  pub hideout_text: String,
+}
+
+#[tauri::command]
+pub async fn get_game_presence_status() -> Result<GamePresenceStatusDto, Error> {
+  Ok(snapshot())
+}
+
+#[tauri::command]
+pub async fn get_game_presence_heroes() -> Result<Vec<GamePresenceHeroDto>, Error> {
+  let cache_dir = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .find_game()
+      .ok()
+      .map(|p| p.join("game").join("citadel"))
+  };
+  let cache_path = cache_dir
+    .as_deref()
+    .unwrap_or_else(|| std::path::Path::new("."));
+  let mut hero_store = HeroDataStore::new(cache_path);
+  hero_store.load().await;
+  Ok(
+    hero_store
+      .heroes_detailed()
+      .into_iter()
+      .map(|(codename, name, hideout_text)| GamePresenceHeroDto {
+        codename,
+        name,
+        hideout_text,
+      })
+      .collect(),
+  )
+}
+
+#[tauri::command]
+pub async fn start_game_presence_watcher(
+  app_handle: AppHandle,
+  discord_state: State<'_, DiscordState>,
+  presence_config: Option<PresenceBuildConfig>,
+) -> Result<(), Error> {
+  if is_running() {
+    log::info!("Game presence watcher already running");
+    return Ok(());
+  }
+
+  let game_path = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .find_game()
+      .map_err(|e| Error::InvalidInput(format!("Cannot find game path: {e}")))?
+  };
+
+  mark_started(&app_handle);
+
+  let running = running_handle();
+  let app_spawn = app_handle.clone();
+  let discord_presence = discord_state.inner().clone();
+  let presence_config = presence_config.unwrap_or_default();
+
+  tokio::spawn(async move {
+    let status_app = app_spawn.clone();
+    let status_callback = Arc::new(move |phase| {
+      set_phase_emit(Some(&status_app), phase);
+    });
+    let watcher = GamePresenceWatcher::new(
+      game_path,
+      running,
+      discord_presence,
+      Some(status_callback),
+      presence_config,
+    );
+    watcher.run().await;
+    mark_stopped(Some(&app_spawn));
+  });
+
+  log::info!("Game presence watcher started");
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_game_presence_watcher(app_handle: AppHandle) -> Result<(), Error> {
+  if !is_running() {
+    return Ok(());
+  }
+
+  mark_stopped(Some(&app_handle));
+  log::info!("Game presence watcher stop signal sent");
+  Ok(())
 }

@@ -2,9 +2,13 @@
   "name": "@deadlock-mods/deadlock-discord-presence",
   "version": "0.1.0",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "cargo build --release",
     "check": "cargo check",
+    "generate-types": "cargo test --lib --quiet || node -e \"process.exit(0)\"",
     "test": "cargo test"
   }
 }

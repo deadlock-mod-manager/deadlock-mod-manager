@@ -1,3 +1,4 @@
+pub mod config;
 mod discord;
 mod patterns;
 
@@ -7,6 +8,7 @@ pub mod presence_builder;
 pub mod state;
 pub mod watcher;
 
+pub use config::{PresenceBuildConfig, PresenceTextTemplatePair, PresenceTextTemplates};
 pub use discord::{DiscordActivity, DiscordPresenceState, PresenceOwner, SetActivityOptions};
 pub use hero_data::{HeroDataStore, HeroInfo};
 pub use log_parser::LogParser;

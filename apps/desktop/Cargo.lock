@@ -1096,6 +1096,7 @@ dependencies = [
  "serde_json",
  "sysinfo",
  "tokio",
+ "ts-rs",
 ]
 
 [[package]]

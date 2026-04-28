@@ -1,3 +1,4 @@
+use crate::config::PresenceBuildConfig;
 use crate::hero_data::HeroDataStore;
 use crate::log_parser::LogParser;
 use crate::presence_builder::build_presence;
@@ -10,10 +11,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 const POLL_INTERVAL_MS: u64 = 1500;
+const IDLE_POLL_INTERVAL_MS: u64 = 5000;
 const PRESENCE_UPDATE_INTERVAL_MS: u64 = 15000;
 const RESYNC_MAX_BYTES: u64 = 10 * 1024 * 1024;
 const PROCESS_NAMES: &[&str] = &["project8.exe", "deadlock.exe", "project8"];
-const DISCORD_APP_ID: &str = "1474302474474094634";
+const DISCORD_APP_ID: &str = "1498796149581152358";
 const GAME_PRESENCE_CONNECT_ATTEMPTS: u8 = 10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +34,7 @@ pub struct GamePresenceWatcher {
     running: Arc<AtomicBool>,
     discord_presence: DiscordPresenceState,
     status_callback: Option<PresenceStatusCallback>,
+    presence_config: PresenceBuildConfig,
 }
 
 impl GamePresenceWatcher {
@@ -40,6 +43,7 @@ impl GamePresenceWatcher {
         running: Arc<AtomicBool>,
         discord_presence: DiscordPresenceState,
         status_callback: Option<PresenceStatusCallback>,
+        presence_config: PresenceBuildConfig,
     ) -> Self {
         let console_log_path = game_path.join("game").join("citadel").join("console.log");
         Self {
@@ -48,6 +52,7 @@ impl GamePresenceWatcher {
             running,
             discord_presence,
             status_callback,
+            presence_config,
         }
     }
 
@@ -62,6 +67,7 @@ impl GamePresenceWatcher {
         let mut game_was_running = false;
         let mut last_presence_hash: Option<String> = None;
         let mut last_presence_update = std::time::Instant::now();
+        let mut sys = sysinfo::System::new();
 
         log::info!(
             "[GamePresence] Watcher started, monitoring: {:?}",
@@ -69,7 +75,7 @@ impl GamePresenceWatcher {
         );
 
         while self.running.load(Ordering::Relaxed) {
-            let game_running = is_game_running(&self.console_log_path);
+            let game_running = is_game_running(&mut sys, &self.console_log_path);
 
             if game_running && !game_was_running {
                 log::info!("[GamePresence] Deadlock detected");
@@ -91,6 +97,7 @@ impl GamePresenceWatcher {
                     self.status_callback.as_ref(),
                     &state,
                     &hero_store,
+                    &self.presence_config,
                     &mut last_presence_hash,
                 )
                 .await;
@@ -112,7 +119,7 @@ impl GamePresenceWatcher {
                     last_presence_hash = None;
                     last_offset = 0;
                 }
-                tokio::time::sleep(tokio::time::Duration::from_millis(POLL_INTERVAL_MS * 3)).await;
+                tokio::time::sleep(tokio::time::Duration::from_millis(IDLE_POLL_INTERVAL_MS)).await;
                 continue;
             }
 
@@ -146,6 +153,7 @@ impl GamePresenceWatcher {
                     self.status_callback.as_ref(),
                     &state,
                     &hero_store,
+                    &self.presence_config,
                     &mut last_presence_hash,
                 )
                 .await;
@@ -177,9 +185,10 @@ async fn update_presence(
     status_callback: Option<&PresenceStatusCallback>,
     state: &GameState,
     hero_store: &HeroDataStore,
+    presence_config: &PresenceBuildConfig,
     last_hash: &mut Option<String>,
 ) {
-    let Some(activity_data) = build_presence(state, hero_store) else {
+    let Some(activity_data) = build_presence(state, hero_store, presence_config) else {
         if let Err(error) = discord_presence
             .clear_activity(PresenceOwner::GamePresence)
             .await
@@ -230,9 +239,11 @@ fn emit_phase(status_callback: Option<&PresenceStatusCallback>, phase: PresenceP
     }
 }
 
-fn is_game_running(console_log_path: &Path) -> bool {
-    let sys = sysinfo::System::new_with_specifics(
-        sysinfo::RefreshKind::nothing().with_processes(sysinfo::ProcessRefreshKind::nothing()),
+fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
+    sys.refresh_processes_specifics(
+        sysinfo::ProcessesToUpdate::All,
+        true,
+        sysinfo::ProcessRefreshKind::nothing(),
     );
     for proc_name in PROCESS_NAMES {
         if sys
@@ -342,6 +353,14 @@ fn resync(
 }
 
 #[cfg(test)]
+fn now_epoch_for_test() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos()
+}
+
+#[cfg(test)]
 mod tests {
     use super::read_new_content;
     use std::path::PathBuf;
@@ -368,12 +387,4 @@ mod tests {
         );
         std::env::temp_dir().join(unique)
     }
-}
-
-#[cfg(test)]
-fn now_epoch_for_test() -> u128 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos()
 }

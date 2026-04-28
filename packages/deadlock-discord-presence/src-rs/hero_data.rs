@@ -42,6 +42,32 @@ impl HeroDataStore {
         self.data.get(&codename.to_lowercase())
     }
 
+    pub fn heroes(&self) -> Vec<(String, String)> {
+        let mut heroes = self
+            .data
+            .iter()
+            .map(|(codename, info)| (codename.clone(), info.name.clone()))
+            .collect::<Vec<_>>();
+        heroes.sort_by(|a, b| a.1.cmp(&b.1));
+        heroes
+    }
+
+    pub fn heroes_detailed(&self) -> Vec<(String, String, String)> {
+        let mut heroes = self
+            .data
+            .iter()
+            .map(|(codename, info)| {
+                (
+                    codename.clone(),
+                    info.name.clone(),
+                    self.hideout_text(codename),
+                )
+            })
+            .collect::<Vec<_>>();
+        heroes.sort_by(|a, b| a.1.cmp(&b.1));
+        heroes
+    }
+
     pub fn display_name(&self, codename: &str) -> String {
         if let Some(info) = self.get(codename) {
             return info.name.clone();
@@ -58,11 +84,10 @@ impl HeroDataStore {
     }
 
     pub fn hideout_text(&self, codename: &str) -> String {
-        if let Some(info) = self.get(codename) {
-            if !info.hideout_text.is_empty() && info.hideout_text != "In the Hideout" {
+        if let Some(info) = self.get(codename)
+            && !info.hideout_text.is_empty() && info.hideout_text != "In the Hideout" {
                 return info.hideout_text.clone();
             }
-        }
         "In the Hideout".to_string()
     }
 

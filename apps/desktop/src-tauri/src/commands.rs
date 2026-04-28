@@ -2371,69 +2371,6 @@ pub async fn disconnect_discord(state: State<'_, DiscordState>) -> Result<(), Er
 }
 
 // ============================================================================
-// Game Presence Watcher Commands
-// ============================================================================
-
-#[tauri::command]
-pub async fn get_game_presence_status() -> Result<crate::game_presence::GamePresenceStatusDto, Error>
-{
-  Ok(crate::game_presence::snapshot())
-}
-
-#[tauri::command]
-pub async fn start_game_presence_watcher(
-  app_handle: AppHandle,
-  discord_state: State<'_, DiscordState>,
-) -> Result<(), Error> {
-  if crate::game_presence::is_running() {
-    log::info!("Game presence watcher already running");
-    return Ok(());
-  }
-
-  let game_path = {
-    let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager
-      .find_game()
-      .map_err(|e| Error::InvalidInput(format!("Cannot find game path: {e}")))?
-  };
-
-  crate::game_presence::mark_started(&app_handle);
-
-  let running = crate::game_presence::running_handle();
-  let app_spawn = app_handle.clone();
-  let discord_presence = discord_state.inner().clone();
-
-  tokio::spawn(async move {
-    let status_app = app_spawn.clone();
-    let status_callback = Arc::new(move |phase| {
-      crate::game_presence::set_phase_emit(Some(&status_app), phase);
-    });
-    let watcher = crate::game_presence::GamePresenceWatcher::new(
-      game_path,
-      running,
-      discord_presence,
-      Some(status_callback),
-    );
-    watcher.run().await;
-    crate::game_presence::mark_stopped(Some(&app_spawn));
-  });
-
-  log::info!("Game presence watcher started");
-  Ok(())
-}
-
-#[tauri::command]
-pub async fn stop_game_presence_watcher(app_handle: AppHandle) -> Result<(), Error> {
-  if !crate::game_presence::is_running() {
-    return Ok(());
-  }
-
-  crate::game_presence::mark_stopped(Some(&app_handle));
-  log::info!("Game presence watcher stop signal sent");
-  Ok(())
-}
-
-// ============================================================================
 // Profile Import Batch Command
 // ============================================================================
 

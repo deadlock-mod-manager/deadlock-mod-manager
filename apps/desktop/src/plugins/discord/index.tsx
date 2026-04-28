@@ -17,7 +17,7 @@ export const manifest = {
 } as const;
 
 // Official Discord Application ID for Deadlock Mod Manager
-const DISCORD_APP_ID = "1425598471842562068" as const;
+const DISCORD_APP_ID = "1498796149581152358" as const;
 
 type DiscordSettings = {
   details?: string;
