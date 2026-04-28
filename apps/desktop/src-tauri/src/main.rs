@@ -2,13 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[cfg(target_os = "linux")]
-fn is_nvidia_on_wayland() -> bool {
-  let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
-  if session_type != "wayland" {
-    eprintln!("[GPU Compat] Session type is '{session_type}', not wayland — skipping workaround");
-    return false;
-  }
-
+fn is_nvidia_gpu_present() -> bool {
   if std::path::Path::new("/proc/driver/nvidia/version").exists() {
     eprintln!("[GPU Compat] Detected NVIDIA driver via /proc/driver/nvidia/version");
     return true;
@@ -117,8 +111,9 @@ fn should_enable_gpu_compat_workaround() -> bool {
       false
     }
     _ => {
-      eprintln!("[GPU Compat] Auto-detecting NVIDIA + Wayland...");
-      is_nvidia_on_wayland()
+      let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
+      eprintln!("[GPU Compat] Auto-detecting NVIDIA on {session_type}...");
+      is_nvidia_gpu_present()
     }
   }
 }
