@@ -718,6 +718,8 @@
     "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
     "gamebananaDescription": "Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.",
     "visitGamebanana": "Visit GameBanana",
+    "deadlockRichPresenceDescription": "Discord Game Presence was only possible thanks to Jelloge's Deadlock Rich Presence project and its work mapping Deadlock console log events for rich presence.",
+    "visitDeadlockRichPresence": "Visit Deadlock Rich Presence",
     "tauriDescription": "The powerful framework that enables this cross-platform desktop application. Tauri combines the best of web technologies with native performance and security.",
     "visitTauri": "Visit Tauri",
     "shadcnDescription": "Beautiful and accessible React components that provide the foundation for our modern user interface. Copy, paste, and customize to perfection.",
@@ -1944,5 +1946,15 @@
     "clearIndexBody": "This will remove all detected hero assignments from your mods. You will need to rescan or wait for the background scanner to re-index them.",
     "clearIndexConfirm": "Clear Index",
     "allIndexed": "All mods indexed"
+  },
+  "gamePresence": {
+    "title": "Discord Game Presence",
+    "description": "Show your live Deadlock status on Discord — hero, match mode, party size, and match timer.",
+    "condebugOption": "Console Debug Log",
+    "indicatorDisabled": "Discord Game Presence Disabled",
+    "indicatorWaiting": "Discord Game Presence Enabled",
+    "indicatorConnecting": "Connecting to Discord Game Presence",
+    "indicatorConnected": "Discord Game Presence Connected",
+    "indicatorError": "Discord Game Presence Connection Issue"
   }
 }

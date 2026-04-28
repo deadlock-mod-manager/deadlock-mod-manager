@@ -35,6 +35,11 @@ export const useAutoUpdate = () => {
           return;
         }
 
+        if (import.meta.env.DEV) {
+          logger.info("Skipping auto-update on launch in dev mode");
+          return;
+        }
+
         if (!autoUpdateEnabled) {
           logger.info("Auto-update is disabled via GUI setting");
           return;

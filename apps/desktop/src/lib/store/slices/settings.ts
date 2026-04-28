@@ -26,6 +26,7 @@ export type SettingsState = {
   crosshairsEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
+  gamePresenceEnabled: boolean;
   backupEnabled: boolean;
   maxBackupCount: number; // 0 means unlimited
 
@@ -62,6 +63,8 @@ export type SettingsState = {
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
+  setGamePresenceEnabled: (enabled: boolean) => void;
+
   // Backup settings management
   setBackupEnabled: (enabled: boolean) => void;
   setMaxBackupCount: (count: number) => void;
@@ -90,6 +93,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
+  gamePresenceEnabled: true,
   backupEnabled: true,
   maxBackupCount: 5,
   addSetting: (setting: LocalSetting) =>
@@ -211,6 +215,14 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       linuxGpuOptimization: value,
     })),
 
+  setGamePresenceEnabled: (enabled: boolean) =>
+    set((state) => ({
+      gamePresenceEnabled: enabled,
+      ...(enabled
+        ? { enabledPlugins: { ...state.enabledPlugins, discord: false } }
+        : {}),
+    })),
+
   setBackupEnabled: (enabled: boolean) =>
     set(() => ({
       backupEnabled: enabled,
@@ -253,7 +265,10 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       for (const id of forwardDisable) next[id] = false;
       for (const id of reverseDisable) next[id] = false;
 
-      return { enabledPlugins: next };
+      return {
+        enabledPlugins: next,
+        ...(pluginId === "discord" ? { gamePresenceEnabled: false } : {}),
+      };
     }),
 
   isPluginEnabled: (pluginId: string) => {
