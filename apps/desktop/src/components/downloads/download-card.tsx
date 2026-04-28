@@ -29,6 +29,12 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary animate-pulse",
       };
+    case ModStatus.Extracting:
+      return {
+        label: "Extracting",
+        pillClass: "bg-primary/15 text-primary",
+        dotClass: "bg-primary animate-pulse",
+      };
     case ModStatus.Paused:
       return {
         label: "Paused",
@@ -95,7 +101,8 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const modProgress = getModProgress(download.remoteId);
   const isDownloading = download.status === ModStatus.Downloading;
   const isPaused = download.status === ModStatus.Paused;
-  const isInProgress = isDownloading || isPaused;
+  const isExtracting = download.status === ModStatus.Extracting;
+  const isInProgress = isDownloading || isPaused || isExtracting;
   const percentage = isInProgress ? (modProgress?.percentage ?? 0) : 100;
   const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
   const totalSize = useMemo(() => {
@@ -175,7 +182,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               ? `${formatSpeed(speed)} · ${percentage.toFixed(1)}%`
               : isPaused
                 ? `${t("downloads.paused")} · ${percentage.toFixed(1)}%`
-                : `${percentage.toFixed(0)}%`}
+                : isExtracting
+                  ? t("modStatus.extracting")
+                  : `${percentage.toFixed(0)}%`}
           </span>
         </div>
       </div>
@@ -184,7 +193,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
         <div
           className={cn(
             "h-full rounded-full bg-primary transition-[width] duration-500 ease-out",
-            isDownloading && "downloads-shimmer",
+            (isDownloading || isExtracting) && "downloads-shimmer",
           )}
           style={{ width: `${percentage}%` }}
         />

@@ -9,7 +9,7 @@
       "source.fixAll.oxc": "always",
     },
     "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.experimental.useTsgo": false,
+    "typescript.experimental.useTsgo": true,
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "typescript.preferences.importModuleSpecifier": "shortest",
     "typescript.preferences.importModuleSpecifierEnding": "auto",
@@ -71,6 +71,9 @@
     "[xml]": {
       "editor.defaultFormatter": "redhat.vscode-xml",
     },
-    "cSpell.words": ["dlmm", "modmanager"],
+    "cSpell.words": [
+      "dlmm",
+      "modmanager"
+    ],
   },
 }

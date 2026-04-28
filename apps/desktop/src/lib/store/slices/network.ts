@@ -36,6 +36,10 @@ export type NetworkState = {
   setProxyConfig: (config: ProxyConfig) => void;
 };
 
+export const networkDeepMergeKeys = [
+  "proxyConfig",
+] as const satisfies readonly (keyof NetworkState)[];
+
 export const createNetworkSlice: StateCreator<State, [], [], NetworkState> = (
   set,
 ) => ({

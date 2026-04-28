@@ -37,7 +37,9 @@ const getDownloadTimestamp = (
 };
 
 const isDownloadInProgress = (status: ModStatus) =>
-  status === ModStatus.Downloading || status === ModStatus.Paused;
+  status === ModStatus.Downloading ||
+  status === ModStatus.Extracting ||
+  status === ModStatus.Paused;
 
 const Downloads = () => {
   const { t } = useTranslation();

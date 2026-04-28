@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use log;
-#[cfg(any(target_os = "linux", test))]
+#[cfg(target_os = "linux")]
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -216,7 +216,7 @@ impl Default for SteamManager {
   }
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 mod tests {
   use super::*;
   use std::fs;
@@ -268,7 +268,6 @@ mod tests {
     )
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn linux_candidates_include_flatpak_data_steam_path() {
     let candidates = linux_steam_dir_candidates(Path::new("/home/tester"));
@@ -299,7 +298,6 @@ mod tests {
     );
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn resolve_game_from_steam_dirs_finds_deadlock_in_fallback_directory() {
     let (_primary_temp_dir, primary_steam_dir) = temp_steam_dir(".local/share/Steam", false);

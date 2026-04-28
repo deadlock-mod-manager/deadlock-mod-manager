@@ -71,6 +71,7 @@ import SettingCard, {
 } from "@/components/settings/setting-card";
 import SystemSettings from "@/components/settings/system-settings";
 import ThemeSwitcher from "@/components/settings/theme-switcher";
+import { UpdateChannelSelect } from "@/components/settings/update-channel-select";
 import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
@@ -550,6 +551,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <div className='grid grid-cols-1 gap-4'>
                 <SystemSettings />
                 <AutoUpdateToggle />
+                <UpdateChannelSelect />
                 <DeveloperModeToggle />
                 <IngestToolToggle />
                 <LinuxGpuToggle />

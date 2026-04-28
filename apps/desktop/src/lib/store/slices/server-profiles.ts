@@ -30,6 +30,9 @@ export type ServerProfilesState = {
   getStagedServer: (serverId: string) => StagedServer | undefined;
 };
 
+export const serverProfilesDeepMergeKeys =
+  [] as const satisfies readonly (keyof ServerProfilesState)[];
+
 export const createServerProfilesSlice: StateCreator<
   State,
   [],

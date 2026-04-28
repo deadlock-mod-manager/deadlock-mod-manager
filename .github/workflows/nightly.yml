@@ -3,6 +3,10 @@ name: Nightly Build
 env:
   NODE_VERSION: "24.8.0"
 
+concurrency:
+  group: nightly-build
+  cancel-in-progress: true
+
 on:
   schedule:
     # Run at 2 AM UTC every day
@@ -20,7 +24,7 @@ on:
 
 jobs:
   check-commits:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -36,21 +40,21 @@ jobs:
       - name: Check for new commits since last nightly
         id: check
         run: |
-          # Get the latest nightly release tag
-          LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
+          LAST_NIGHTLY_COMMIT=""
 
-          # Paths to monitor for changes
+          # The rolling "nightly" tag points at the commit used in the previous build
+          if git rev-parse "nightly" >/dev/null 2>&1; then
+            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 nightly)
+            echo "Last nightly commit: $LAST_NIGHTLY_COMMIT"
+          fi
+
           PATHS="apps/desktop packages"
 
-          if [ -z "$LAST_NIGHTLY" ]; then
+          if [ -z "$LAST_NIGHTLY_COMMIT" ]; then
             echo "No previous nightly build found, will build"
             COMMIT_COUNT=$(git rev-list --count HEAD)
             echo "should_build=true" >> $GITHUB_OUTPUT
           else
-            echo "Last nightly: $LAST_NIGHTLY"
-            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY)
-
-            # Check if any desktop files changed
             CHANGED_FILES=$(git diff --name-only ${LAST_NIGHTLY_COMMIT}..HEAD -- $PATHS)
 
             if [ -n "$CHANGED_FILES" ]; then
@@ -68,7 +72,7 @@ jobs:
           echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   prepare-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -113,11 +117,10 @@ jobs:
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
-      tag_name: ${{ steps.create-release.outputs.tag_name }}
-      package_version: ${{ steps.version.outputs.package_version }}
+      nightly_version: ${{ steps.version.outputs.nightly_version }}
 
     steps:
       - name: Checkout repository
@@ -133,30 +136,31 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - name: Get version and create tag
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Compute nightly version label
         id: version
         run: |
           PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
           DATE=$(date +%Y%m%d)
           COMMIT_SHORT=${{ needs.check-commits.outputs.latest_commit }}
-          TAG_NAME="nightly-${PACKAGE_VERSION}-${DATE}-${COMMIT_SHORT}"
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-
-      - name: Get last nightly tag
-        id: last-nightly
-        run: |
-          LAST_NIGHTLY=$(git tag -l "nightly-*" --sort=-version:refname | head -1)
-          echo "last_nightly=$LAST_NIGHTLY" >> $GITHUB_OUTPUT
-          echo "Last nightly tag: $LAST_NIGHTLY"
+          # This mirrors what update-nightly-version.ts will produce
+          MAJOR=$(echo "$PACKAGE_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$PACKAGE_VERSION" | cut -d. -f2)
+          BUMPED_MINOR=$((MINOR + 1))
+          NIGHTLY_VERSION="${MAJOR}.${BUMPED_MINOR}.0-nightly.${DATE}.${COMMIT_SHORT}"
+          echo "nightly_version=$NIGHTLY_VERSION" >> $GITHUB_OUTPUT
+          echo "Nightly version: $NIGHTLY_VERSION"
 
       - name: Generate commit list
         id: commits
         run: |
-          if [ -n "${{ steps.last-nightly.outputs.last_nightly }}" ]; then
-            COMMIT_RANGE="${{ steps.last-nightly.outputs.last_nightly }}..HEAD"
+          if git rev-parse "nightly" >/dev/null 2>&1; then
+            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 nightly)
+            COMMIT_RANGE="${LAST_NIGHTLY_COMMIT}..HEAD"
           else
             COMMIT_RANGE="HEAD"
           fi
@@ -167,22 +171,81 @@ jobs:
           echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Delete previous nightly release and tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: 'nightly'
+              });
+              console.log(`Deleting previous nightly release: ${release.id}`);
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id
+              });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              console.log('No previous nightly release found');
+            }
+
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: 'tags/nightly'
+              });
+              console.log('Deleted previous nightly tag');
+            } catch (error) {
+              if (error.status !== 422) throw error;
+              console.log('No previous nightly tag found');
+            }
+
+            // Sweep any stale draft Nightly releases left behind by previously cancelled/killed runs
+            let page = 1;
+            while (true) {
+              const { data: releases } = await github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+              if (releases.length === 0) break;
+              for (const r of releases) {
+                if (r.draft && r.name?.startsWith('Nightly ')) {
+                  console.log(`Deleting stale draft nightly: ${r.name} (${r.id})`);
+                  await github.rest.repos.deleteRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: r.id
+                  });
+                }
+              }
+              if (releases.length < 100) break;
+              page++;
+            }
+
       - name: Create nightly release
         id: create-release
         uses: actions/github-script@v7
         env:
           COMMITS: ${{ steps.commits.outputs.commits }}
+          NIGHTLY_VERSION: ${{ steps.version.outputs.nightly_version }}
         with:
           script: |
-            const tag = process.env.TAG_NAME;
+            const nightlyVersion = process.env.NIGHTLY_VERSION;
             const commitCount = ${{ needs.check-commits.outputs.commit_count }};
             const commits = process.env.COMMITS;
 
-            console.log(`Creating nightly release: ${tag}`);
+            console.log(`Creating nightly release for ${nightlyVersion}`);
 
             const releaseBody = [
               "**Nightly build from latest development**",
               "",
+              `Version: ${nightlyVersion}`,
               `Built: ${new Date().toISOString().split('T')[0]}`,
               `Commits since last nightly: ${commitCount}`,
               `Latest Commit: ${context.sha.substring(0, 7)}`,
@@ -200,8 +263,9 @@ jobs:
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: tag,
-              name: `Nightly ${tag}`,
+              tag_name: 'nightly',
+              target_commitish: context.sha,
+              name: `Nightly ${nightlyVersion}`,
               body: releaseBody,
               draft: true,
               prerelease: true
@@ -210,7 +274,6 @@ jobs:
             console.log(`Release created with ID: ${data.id}`);
             console.log(`Release URL: ${data.html_url}`);
 
-            // Verify the release was created successfully
             const { data: verifyRelease } = await github.rest.repos.getRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -223,7 +286,6 @@ jobs:
 
             console.log(`Release verified: ${verifyRelease.name} (ID: ${verifyRelease.id}, draft: ${verifyRelease.draft})`);
 
-            core.setOutput('tag_name', tag);
             return data.id;
 
   build-nightly:
@@ -308,6 +370,7 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
+          tauriScript: pnpm tauri
 
       - name: Build Flatpak bundle (Linux)
         if: matrix.platform == 'ubuntu-24.04'
@@ -389,7 +452,6 @@ jobs:
             console.log(`Release ID from env: ${process.env.RELEASE_ID}`);
             console.log(`Parsed release ID: ${releaseId}`);
 
-            // Verify the release exists before uploading
             try {
               const { data: release } = await github.rest.repos.getRelease({
                 owner: context.repo.owner,
@@ -411,7 +473,6 @@ jobs:
               const stats = fs.statSync(filePath);
               
               if (stats.isFile()) {
-                // Sanitize filename - remove any trailing whitespace or special chars
                 const sanitizedName = file.trim();
                 console.log(`Uploading "${sanitizedName}" (original: "${file}") to release...`);
                 console.log(`File size: ${stats.size} bytes`);
@@ -440,12 +501,92 @@ jobs:
               }
             }
 
+      - name: Upload latest.json to release (Windows-only nightly)
+        if: matrix.platform == 'windows-latest' && !contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'ubuntu-24.04')
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
+          NIGHTLY_VERSION: ${{ needs.create-nightly-release.outputs.nightly_version }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            function toGitHubAssetName(name) {
+              return name
+                .trim()
+                .replace(/[^a-zA-Z0-9_-]/g, '.')
+                .replace(/\.+/g, '.');
+            }
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const nightlyVersion = process.env.NIGHTLY_VERSION;
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+            const sigFile = files.find(f => f.endsWith('.exe.sig'));
+            const exeFile = files.find(f => f.endsWith('.exe') && !f.endsWith('.exe.sig'));
+
+            if (!sigFile) {
+              throw new Error('No .exe.sig file found in artifact-output');
+            }
+            if (!exeFile) {
+              throw new Error('No .exe file found in artifact-output');
+            }
+
+            const signature = fs.readFileSync(path.join(artifactDir, sigFile), 'utf8').trim();
+            const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/nightly`;
+            const githubAssetName = toGitHubAssetName(exeFile);
+            const exeUrl = `${baseDownloadUrl}/${githubAssetName}`;
+
+            const latestJson = {
+              version: nightlyVersion,
+              notes: 'Nightly build',
+              pub_date: new Date().toISOString(),
+              platforms: {
+                'windows-x86_64': {
+                  signature: signature,
+                  url: exeUrl
+                },
+                'windows-x86_64-nsis': {
+                  signature: signature,
+                  url: exeUrl
+                }
+              }
+            };
+
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId
+            });
+
+            const existingLatest = release.assets.find(a => a.name === 'latest.json');
+            if (existingLatest) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: existingLatest.id
+              });
+              console.log('Deleted existing latest.json before upload');
+            }
+
+            const newContent = JSON.stringify(latestJson, null, 2);
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: 'latest.json',
+              data: Buffer.from(newContent)
+            });
+
+            console.log('Successfully uploaded latest.json (Windows-only nightly)');
+
   update-latest-json:
     needs: [check-commits, create-nightly-release, build-nightly]
     if: needs.check-commits.outputs.should_build == 'true'
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -462,13 +603,13 @@ jobs:
         with:
           release-id: ${{ needs.create-nightly-release.outputs.release_id }}
           signed-artifact-path: ./release-artifacts/windows
-          version: ${{ needs.create-nightly-release.outputs.tag_name }}
+          version: nightly
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-nightly:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       [
         check-commits,
@@ -504,51 +645,13 @@ jobs:
               throw error;
             }
 
-      - name: Cleanup old nightly releases
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: releases } = await github.rest.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100
-            });
-
-            const nightlyReleases = releases
-              .filter(release => release.tag_name.startsWith('nightly-'))
-              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-            const releasesToDelete = nightlyReleases.slice(7);
-
-            for (const release of releasesToDelete) {
-              console.log(`Deleting old nightly release: ${release.tag_name}`);
-              
-              try {
-                await github.rest.repos.deleteRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: release.id
-                });
-                
-                await github.rest.git.deleteRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: `tags/${release.tag_name}`
-                });
-                
-                console.log(`Successfully deleted ${release.tag_name}`);
-              } catch (error) {
-                console.error(`Failed to delete ${release.tag_name}: ${error.message}`);
-              }
-            }
-
   cleanup-nightly:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       [check-commits, prepare-matrix, create-nightly-release, build-nightly]
-    if: failure() && needs.check-commits.outputs.should_build == 'true'
+    if: (failure() || cancelled()) && needs.check-commits.outputs.should_build == 'true'
 
     steps:
       - name: Delete failed nightly release

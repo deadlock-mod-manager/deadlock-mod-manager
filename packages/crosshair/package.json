@@ -14,7 +14,7 @@
     "./backgrounds": "./src/backgrounds.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit --skipLibCheck"
+    "check-types": "tsgo --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@deadlock-mods/shared": "workspace:*",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/node": "^22.19.15",
+    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

@@ -179,6 +179,7 @@
   },
   "myMods": {
     "checkForUpdates": "업데이트 확인",
+    "checkForUpdatesTooltip": "",
     "checkForUpdatesError": "모드 업데이트를 확인하지 못했습니다.",
     "allModsUpToDate": "모든 모드가 최신 상태입니다",
     "subtitle": "다운로드했거나 설치한 모드",
@@ -189,7 +190,21 @@
     "enabledModsCount": "{{count}}/99 모드 활성화됨",
     "enabledModsCountNearLimit": "{{count}}/99 모드 활성화됨(한계에 접근함)",
     "enabledModsCountAtLimit": "{{count}}/99 모드 활성화됨(제한 있음)",
-    "modLimitTooltip": "교착 상태는 애드온 수를 최대 99개로 제한합니다.",
+    "libraryModsNoun_one": "",
+    "libraryModsNoun_other": "",
+    "vpkFilesNoun": "",
+    "vpkLimitBadgeNear": "",
+    "vpkLimitBadgeAtLimit": "",
+    "modLimitTooltipP1": "",
+    "modLimitTooltipP2": "",
+    "modLimitTooltipP3": "",
+    "modLimitTooltipStatHeading": "",
+    "modLimitTooltipStatEnabled_one": "",
+    "modLimitTooltipStatEnabled_other": "",
+    "modLimitTooltipStatLibrary_one": "",
+    "modLimitTooltipStatLibrary_other": "",
+    "modLimitTooltipStatVpks_one": "",
+    "modLimitTooltipStatVpks_other": "",
     "updateAll": "모두 업데이트",
     "updateAllDescription": "모든 모드의 최신 버전을 다운로드하고 설치하세요.",
     "updateAvailableCount_one": "{{count}} 업데이트 가능",
@@ -577,6 +592,12 @@
     },
     "autoUpdate": "자동 업데이트",
     "autoUpdateDescription": "시작 시 애플리케이션 업데이트를 자동으로 확인하고 알립니다.",
+    "updateChannel": "",
+    "updateChannelDescription": "",
+    "updateChannelStable": "",
+    "updateChannelNightly": "",
+    "updateChannelRestartRequired": "",
+    "updateChannelChangeFailed": "",
     "linuxGpuCompat": "NVIDIA Wayland 호환성",
     "linuxGpuCompatDescription": "Wayland를 사용하는 NVIDIA GPU의 webkit2gtk 렌더링 버그에 대한 해결 방법입니다. 자동 모드는 시작 시 GPU 및 디스플레이 서버를 감지합니다. 필요하지 않을 때 이를 강제로 설정하면 스크롤 성능이 저하됩니다.",
     "linuxGpuCompatAuto": "자동",
@@ -641,41 +662,7 @@
     "modifications": "수정",
     "modManager": "모드 관리자",
     "external": "외부",
-    "syntax": "통사론",
-    "modCompression": {
-      "title": "Mod Compression",
-      "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
-      "enableLabel": "Enable mod compression",
-      "enableConfirmTitle": "Enable mod compression?",
-      "enableConfirmBody": "Operations such as installing, updating, or removing mods take longer while compression is on. Higher compression levels pack more mods per file and make these operations slower. You can turn this off later.",
-      "enableConfirmAction": "Enable",
-      "disableConfirmTitle": "Disable mod compression?",
-      "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
-      "disableConfirmAction": "Disable",
-      "gameRunning": "Close Deadlock before changing mod compression.",
-      "level": {
-        "title": "Compression level",
-        "description": "How many mods are merged into each VPK. Higher levels mean fewer, larger files and slower install, update, remove, and reorder.",
-        "low": "Low",
-        "medium": "Medium",
-        "high": "High",
-        "extreme": "Extreme",
-        "lowSubtitle": "2 mods / file",
-        "mediumSubtitle": "4 mods / file",
-        "highSubtitle": "6 mods / file",
-        "extremeSubtitle": "Merge everything into as few shards as possible (1.5 GiB cap per VPK)",
-        "recommended": "Recommended",
-        "changeConfirmTitle": "Change compression level?",
-        "changeConfirmBody": "All merged VPKs will be rebuilt with the new level. This may take a while."
-      },
-      "backupPrompt": {
-        "title": "Create a backup first?",
-        "body": "Enabling compression replaces your installed mods' VPK files with merged bundles. Disabling restores individual files.",
-        "createBackupOption": "Create a backup of the addons folder before enabling",
-        "confirmEnable": "Enable compression",
-        "cancel": "Cancel"
-      }
-    }
+    "syntax": "통사론"
   },
   "featureFlags": {
     "title": "실험적 기능",
@@ -864,6 +851,7 @@
   "modStatus": {
     "added": "내 모드에 추가됨",
     "downloading": "다운로드 중...",
+    "extracting": "",
     "downloaded": "다운로드됨",
     "paused": "",
     "failedToDownload": "다운로드 실패",
@@ -880,6 +868,7 @@
     "add": "모드 다운로드",
     "added": "모드 다운로드",
     "downloading": "다운로드 중...",
+    "extracting": "",
     "downloaded": "다운로드됨",
     "failedToDownload": "다운로드 실패",
     "installing": "설치 중...",
@@ -1023,6 +1012,72 @@
         "Steam에서 게임 파일을 확인하세요.",
         "Mod Manager를 다시 시작하고 'Launch Modded'를 클릭하세요."
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {
@@ -1863,6 +1918,10 @@
     "hero": "",
     "other": ""
   },
+  "persist": {
+    "loadFailed": "",
+    "loadFailedDescription": ""
+  },
   "heroParser": {
     "idle": "",
     "scanning": "",
@@ -1887,14 +1946,5 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
-  },
-  "modCompression": {
-    "idle": "Mod compression: idle",
-    "merging": "Merging: {{current}}/{{total}}",
-    "extracting": "Extracting: {{current}}/{{total}}",
-    "paused": "Paused (game running)",
-    "indicatorTooltip": "Mod compression",
-    "shardCount": "{{count}} merged VPK files",
-    "progress": "{{current}}/{{total}}"
   }
 }

@@ -19,6 +19,7 @@ mod mod_compression;
 mod mod_manager;
 pub mod proxy;
 mod reports;
+mod updater_channel;
 mod utils;
 
 use tauri_plugin_log::{Target, TargetKind};
@@ -47,7 +48,8 @@ pub fn run() {
       deep_link::on_second_instance,
     ));
   }
-  let context = tauri::generate_context!();
+  let mut context = tauri::generate_context!();
+  updater_channel::apply_to_context(&mut context);
   let (ota_plugin, context) = tauri_plugin_ota_updater::init(context);
 
   builder = builder
@@ -273,7 +275,9 @@ pub fn run() {
       commands::test_fileserver_latency,
       proxy::set_proxy_config,
       proxy::get_proxy_config,
-      proxy::test_proxy_connection
+      proxy::test_proxy_connection,
+      updater_channel::get_update_channel,
+      updater_channel::set_update_channel
     ])
     .run(context)
     .expect("error while running tauri application");

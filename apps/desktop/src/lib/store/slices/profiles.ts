@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import {
   createProfileId,
@@ -43,7 +44,7 @@ export interface ProfilesState {
   getProfile: (profileId: ProfileId) => ModProfile | undefined;
   getAllProfiles: () => ModProfile[];
   getProfilesCount: () => number;
-  getEnabledModsCount: (profileId?: ProfileId) => number;
+  getEnabledModsCount: () => number;
   syncProfilesWithFilesystem: () => Promise<void>;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
   saveCurrentModsToProfile: () => void;
@@ -61,6 +62,9 @@ const createDefaultProfile = (): ModProfile => ({
   folderName: null,
   mods: [],
 });
+
+export const profilesDeepMergeKeys =
+  [] as const satisfies readonly (keyof ProfilesState)[];
 
 export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
   set,
@@ -353,24 +357,9 @@ export const createProfilesSlice: StateCreator<State, [], [], ProfilesState> = (
     return Object.keys(profiles).length;
   },
 
-  getEnabledModsCount: (profileId?: ProfileId) => {
-    const { profiles, activeProfileId, localMods } = get();
-    const targetProfileId = profileId ?? activeProfileId;
-    const profile = profiles[targetProfileId];
-
-    if (!profile) {
-      return 0;
-    }
-
-    const installedIds = new Set(
-      localMods
-        .filter((m) => m.status === ModStatus.Installed)
-        .map((m) => m.remoteId),
-    );
-
-    return Object.values(profile.enabledMods).filter(
-      (mod) => mod.enabled && installedIds.has(mod.remoteId),
-    ).length;
+  getEnabledModsCount: () => {
+    const { localMods } = get();
+    return localMods.filter(isInstalledModWithVpks).length;
   },
 
   activeProfile: () => {

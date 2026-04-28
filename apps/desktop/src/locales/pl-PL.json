@@ -179,6 +179,7 @@
   },
   "myMods": {
     "checkForUpdates": "",
+    "checkForUpdatesTooltip": "",
     "checkForUpdatesError": "",
     "allModsUpToDate": "",
     "subtitle": "",
@@ -189,7 +190,21 @@
     "enabledModsCount": "",
     "enabledModsCountNearLimit": "",
     "enabledModsCountAtLimit": "",
-    "modLimitTooltip": "",
+    "libraryModsNoun_one": "",
+    "libraryModsNoun_other": "",
+    "vpkFilesNoun": "",
+    "vpkLimitBadgeNear": "",
+    "vpkLimitBadgeAtLimit": "",
+    "modLimitTooltipP1": "",
+    "modLimitTooltipP2": "",
+    "modLimitTooltipP3": "",
+    "modLimitTooltipStatHeading": "",
+    "modLimitTooltipStatEnabled_one": "",
+    "modLimitTooltipStatEnabled_other": "",
+    "modLimitTooltipStatLibrary_one": "",
+    "modLimitTooltipStatLibrary_other": "",
+    "modLimitTooltipStatVpks_one": "",
+    "modLimitTooltipStatVpks_other": "",
     "updateAll": "",
     "updateAllDescription": "",
     "updateAvailableCount_one": "",
@@ -577,6 +592,12 @@
     },
     "autoUpdate": "",
     "autoUpdateDescription": "",
+    "updateChannel": "",
+    "updateChannelDescription": "",
+    "updateChannelStable": "",
+    "updateChannelNightly": "",
+    "updateChannelRestartRequired": "",
+    "updateChannelChangeFailed": "",
     "linuxGpuCompat": "",
     "linuxGpuCompatDescription": "",
     "linuxGpuCompatAuto": "",
@@ -641,41 +662,7 @@
     "modifications": "",
     "modManager": "",
     "external": "",
-    "syntax": "",
-    "modCompression": {
-      "title": "Mod Compression",
-      "description": "Merge installed VPKs into fewer files to work around the 99-addon limit. Install, update, uninstall, and reorder may take longer while compression is on.",
-      "enableLabel": "Enable mod compression",
-      "enableConfirmTitle": "Enable mod compression?",
-      "enableConfirmBody": "Operations such as installing, updating, or removing mods take longer while compression is on. Higher compression levels pack more mods per file and make these operations slower. You can turn this off later.",
-      "enableConfirmAction": "Enable",
-      "disableConfirmTitle": "Disable mod compression?",
-      "disableConfirmBody": "Merged VPKs will be unpacked back into individual addon files. This may take a while.",
-      "disableConfirmAction": "Disable",
-      "gameRunning": "Close Deadlock before changing mod compression.",
-      "level": {
-        "title": "Compression level",
-        "description": "How many mods are merged into each VPK. Higher levels mean fewer, larger files and slower install, update, remove, and reorder.",
-        "low": "Low",
-        "medium": "Medium",
-        "high": "High",
-        "extreme": "Extreme",
-        "lowSubtitle": "2 mods / file",
-        "mediumSubtitle": "4 mods / file",
-        "highSubtitle": "6 mods / file",
-        "extremeSubtitle": "Merge everything into as few shards as possible (1.5 GiB cap per VPK)",
-        "recommended": "Recommended",
-        "changeConfirmTitle": "Change compression level?",
-        "changeConfirmBody": "All merged VPKs will be rebuilt with the new level. This may take a while."
-      },
-      "backupPrompt": {
-        "title": "Create a backup first?",
-        "body": "Enabling compression replaces your installed mods' VPK files with merged bundles. Disabling restores individual files.",
-        "createBackupOption": "Create a backup of the addons folder before enabling",
-        "confirmEnable": "Enable compression",
-        "cancel": "Cancel"
-      }
-    }
+    "syntax": ""
   },
   "featureFlags": {
     "title": "",
@@ -864,6 +851,7 @@
   "modStatus": {
     "added": "Dodano do moich modów",
     "downloading": "Pobieranie...",
+    "extracting": "",
     "downloaded": "Pobrano",
     "paused": "",
     "failedToDownload": "Nie udało się pobrać",
@@ -880,6 +868,7 @@
     "add": "Dodaj do moich modów",
     "added": "Pobierz mod",
     "downloading": "Pobieranie...",
+    "extracting": "",
     "downloaded": "Zainstaluj mod",
     "failedToDownload": "Nie udało się pobrać",
     "installing": "Instalowanie...",
@@ -1023,6 +1012,72 @@
         "",
         ""
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "",
+        "description": ""
+      },
+      "429": {
+        "title": "",
+        "description": ""
+      },
+      "generic": {
+        "title": "",
+        "description": ""
+      },
+      "backend": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "503": {
+          "title": "",
+          "description": ""
+        },
+        "mods": {
+          "403": {
+            "title": "",
+            "description": ""
+          },
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "server": {
+          "404": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "",
+            "description": ""
+          },
+          "403": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "",
+          "description": ""
+        },
+        "generic": {
+          "title": "",
+          "description": ""
+        }
+      }
     }
   },
   "auth": {
@@ -1863,6 +1918,10 @@
     "hero": "",
     "other": ""
   },
+  "persist": {
+    "loadFailed": "",
+    "loadFailedDescription": ""
+  },
   "heroParser": {
     "idle": "",
     "scanning": "",
@@ -1887,14 +1946,5 @@
     "clearIndexBody": "",
     "clearIndexConfirm": "",
     "allIndexed": ""
-  },
-  "modCompression": {
-    "idle": "Mod compression: idle",
-    "merging": "Merging: {{current}}/{{total}}",
-    "extracting": "Extracting: {{current}}/{{total}}",
-    "paused": "Paused (game running)",
-    "indicatorTooltip": "Mod compression",
-    "shardCount": "{{count}} merged VPK files",
-    "progress": "{{current}}/{{total}}"
   }
 }

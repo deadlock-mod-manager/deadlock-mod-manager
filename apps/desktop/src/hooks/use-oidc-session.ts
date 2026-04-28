@@ -10,6 +10,7 @@ import {
   onTokenChange,
 } from "@/lib/auth/token";
 import { AUTH_URL } from "@/lib/config";
+import { HttpError } from "@/lib/http-error";
 
 export type { OIDCSession, OIDCUser };
 
@@ -61,7 +62,7 @@ export function useOIDCSession(): UseOIDCSessionResult {
           },
         });
       } catch {
-        throw new Error("Unable to reach server. Check your connection.");
+        throw new HttpError("auth", 0, "/api/auth/oauth2/userinfo");
       }
 
       if (!response.ok) {
@@ -69,12 +70,11 @@ export function useOIDCSession(): UseOIDCSessionResult {
           await clearTokens();
           return null;
         }
-        if (response.status >= 500) {
-          throw new Error(
-            "Server temporarily unavailable. Please try again later.",
-          );
-        }
-        throw new Error("Failed to fetch user info");
+        throw new HttpError(
+          "auth",
+          response.status,
+          "/api/auth/oauth2/userinfo",
+        );
       }
 
       const userInfo = (await response.json()) as OIDCUser;

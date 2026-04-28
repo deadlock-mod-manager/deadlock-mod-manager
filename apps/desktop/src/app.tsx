@@ -33,6 +33,7 @@ import { downloadManager } from "./lib/download/manager";
 import logger from "./lib/logger";
 import { syncProxyConfigToBackend } from "./lib/proxy";
 import { usePersistedStore } from "./lib/store";
+import { markStorageReady, storageReady } from "./lib/store/storage";
 import type { FontInfo } from "./types/mods";
 
 interface PendingFontInstall {
@@ -65,7 +66,19 @@ const App = () => {
 
   const hydrateStore = async () => {
     await load(STORE_NAME, { autoSave: true, defaults: {} });
-    await usePersistedStore.persist.rehydrate();
+    try {
+      await usePersistedStore.persist.rehydrate();
+    } finally {
+      markStorageReady();
+    }
+    const status = await storageReady();
+    if (!status.ok) {
+      toast.error(t("persist.loadFailed"), {
+        description: t("persist.loadFailedDescription", {
+          reason: status.reason ?? "unknown",
+        }),
+      });
+    }
     await initializeApiUrl();
     await syncProxyConfigToBackend();
     await downloadManager.init();

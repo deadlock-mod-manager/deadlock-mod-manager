@@ -60,6 +60,7 @@ urlencoding = "2.1"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-ota-updater = "2.0.7"
 tauri-plugin-clipboard-manager = "2"
+dirs = "6"
 ttf-parser = "0.24"
 
 [dev-dependencies]

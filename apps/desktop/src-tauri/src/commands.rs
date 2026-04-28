@@ -3884,6 +3884,25 @@ pub async fn test_fileserver_latency(
   Ok(join_all(futures_iter).await)
 }
 
+async fn test_one_fileserver(
+  client: &reqwest::Client,
+  req: FileserverLatencyRequest,
+) -> FileserverLatencyResult {
+  let start = Instant::now();
+  match client.head(&req.test_url).send().await {
+    Ok(_response) => FileserverLatencyResult {
+      id: req.id,
+      latency_ms: Some(start.elapsed().as_millis() as u64),
+      reachable: true,
+    },
+    Err(_) => FileserverLatencyResult {
+      id: req.id,
+      latency_ms: None,
+      reachable: false,
+    },
+  }
+}
+
 #[cfg(test)]
 mod server_addons_tests {
   use super::*;
@@ -3978,24 +3997,5 @@ mod server_addons_tests {
     assert!(validate_custom_file_name("foo/bar.vpk").is_err());
     assert!(validate_custom_file_name("foo\\bar.vpk").is_err());
     assert!(validate_custom_file_name("").is_err());
-  }
-}
-
-async fn test_one_fileserver(
-  client: &reqwest::Client,
-  req: FileserverLatencyRequest,
-) -> FileserverLatencyResult {
-  let start = Instant::now();
-  match client.head(&req.test_url).send().await {
-    Ok(_response) => FileserverLatencyResult {
-      id: req.id,
-      latency_ms: Some(start.elapsed().as_millis() as u64),
-      reachable: true,
-    },
-    Err(_) => FileserverLatencyResult {
-      id: req.id,
-      latency_ms: None,
-      reachable: false,
-    },
   }
 }

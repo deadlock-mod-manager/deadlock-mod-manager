@@ -13,6 +13,9 @@ export type CrosshairState = {
   getActiveCrosshair: () => CrosshairConfig | null;
 };
 
+export const crosshairDeepMergeKeys =
+  [] as const satisfies readonly (keyof CrosshairState)[];
+
 export const createCrosshairSlice: StateCreator<
   State,
   [],

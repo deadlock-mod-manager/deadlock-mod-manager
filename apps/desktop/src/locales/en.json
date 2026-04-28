@@ -179,6 +179,7 @@
   },
   "myMods": {
     "checkForUpdates": "Check for updates",
+    "checkForUpdatesTooltip": "Check if your mods have updates",
     "checkForUpdatesError": "Failed to check for mod updates",
     "allModsUpToDate": "All mods are up to date",
     "subtitle": "Mods you have downloaded or installed",
@@ -189,7 +190,21 @@
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
-    "modLimitTooltip": "Deadlock limits the number of addons to 99 maximum",
+    "libraryModsNoun_one": "mod",
+    "libraryModsNoun_other": "mods",
+    "vpkFilesNoun": "addon files",
+    "vpkLimitBadgeNear": "Near limit",
+    "vpkLimitBadgeAtLimit": "At limit",
+    "modLimitTooltipP1": "Deadlock limits how many addon files the game can load at once. The usual cap is {{max}}.",
+    "modLimitTooltipP2": "Your library can still list more mods than that, because one mod can ship several addon files.",
+    "modLimitTooltipP3": "The first pair is enabled mods versus your full library. The second is how many addon files those enabled mods use, next to the cap.",
+    "modLimitTooltipStatHeading": "What each number is:",
+    "modLimitTooltipStatEnabled_one": "{{count}} mod enabled.",
+    "modLimitTooltipStatEnabled_other": "{{count}} mods enabled.",
+    "modLimitTooltipStatLibrary_one": "{{count}} mod in your library.",
+    "modLimitTooltipStatLibrary_other": "{{count}} mods in your library.",
+    "modLimitTooltipStatVpks_one": "{{count}} addon file from enabled mods.",
+    "modLimitTooltipStatVpks_other": "{{count}} addon files from enabled mods.",
     "updateAll": "Update All",
     "updateAllDescription": "Download and install the latest versions of all your mods",
     "updateAvailableCount_one": "{{count}} update available",
@@ -611,6 +626,12 @@
     },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
+    "updateChannel": "Update Channel",
+    "updateChannelDescription": "Choose which release channel to receive updates from.",
+    "updateChannelStable": "Stable",
+    "updateChannelNightly": "Nightly",
+    "updateChannelRestartRequired": "Restart Deadlock Mod Manager to switch update channels.",
+    "updateChannelChangeFailed": "Failed to change update channel.",
     "linuxGpuCompat": "NVIDIA Wayland Compatibility",
     "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
     "linuxGpuCompatAuto": "Auto",
@@ -864,6 +885,7 @@
   "modStatus": {
     "added": "Added to my mods",
     "downloading": "Downloading...",
+    "extracting": "Extracting...",
     "downloaded": "Downloaded",
     "paused": "Paused",
     "failedToDownload": "Failed to download",
@@ -880,6 +902,7 @@
     "add": "Download Mod",
     "added": "Download Mod",
     "downloading": "Downloading...",
+    "extracting": "Extracting...",
     "downloaded": "Downloaded",
     "failedToDownload": "Failed to download",
     "installing": "Installing...",
@@ -1023,6 +1046,72 @@
         "Verify game files on Steam.",
         "Restart the Mod Manager and click 'Launch Modded'."
       ]
+    },
+    "http": {
+      "offline": {
+        "title": "You appear to be offline",
+        "description": "Check your internet connection and try again."
+      },
+      "429": {
+        "title": "Too many requests",
+        "description": "Slow down a moment, then try again."
+      },
+      "generic": {
+        "title": "Something didn't work",
+        "description": "Please try again. If the problem continues, restart the app."
+      },
+      "backend": {
+        "500": {
+          "title": "Our servers are having trouble",
+          "description": "We're working on it. Please try again in a few minutes. Live status at status.deadlockmods.app."
+        },
+        "503": {
+          "title": "Service is temporarily unavailable",
+          "description": "Please try again shortly."
+        },
+        "mods": {
+          "403": {
+            "title": "GameBanana is temporarily blocking us",
+            "description": "GameBanana sometimes throttles traffic during heavy load or attacks. Please wait a few minutes and try again — a VPN or different network can also help."
+          },
+          "404": {
+            "title": "We couldn't find that mod",
+            "description": "It may have been deleted from GameBanana, or it hasn't been synced to our database yet. Please try again later."
+          }
+        },
+        "profile": {
+          "404": {
+            "title": "Profile link not found",
+            "description": "This shared profile link is no longer valid. Ask the owner to share a new one."
+          }
+        },
+        "server": {
+          "404": {
+            "title": "Server is no longer online",
+            "description": "This server has shut down or stopped reporting. Refresh the server list to see what's currently available."
+          }
+        },
+        "crosshair": {
+          "404": {
+            "title": "Crosshair not found",
+            "description": "This crosshair was removed by its author or never existed."
+          },
+          "403": {
+            "title": "Sign in to do that",
+            "description": "You need to be signed in to like or publish a crosshair."
+          }
+        }
+      },
+      "auth": {
+        "500": {
+          "title": "Sign-in is temporarily unavailable",
+          "description": "Our authentication service is having trouble. Please try again in a few minutes."
+        },
+        "generic": {
+          "title": "Couldn't reach sign-in",
+          "description": "We couldn't talk to the authentication service. Check your connection and try again."
+        }
+      }
     }
   },
   "auth": {
@@ -1869,6 +1958,10 @@
     "indicatorTooltip": "Mod compression",
     "shardCount": "{{count}} merged VPK files",
     "progress": "{{current}}/{{total}}"
+  },
+  "persist": {
+    "loadFailed": "Failed to load saved settings",
+    "loadFailedDescription": "Your settings couldn't be loaded ({{reason}}). Changes won't be saved this session — try restarting the app."
   },
   "heroParser": {
     "idle": "Hero Parser: Idle",

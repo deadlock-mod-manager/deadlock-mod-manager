@@ -317,7 +317,9 @@ export const BottomBar = () => {
   );
 
   const downloadingCount = localMods.filter(
-    (mod) => mod.status === ModStatus.Downloading,
+    (mod) =>
+      mod.status === ModStatus.Downloading ||
+      mod.status === ModStatus.Extracting,
   ).length;
 
   const pausedCount = localMods.filter(
@@ -397,17 +399,14 @@ export const BottomBar = () => {
       </div>
 
       <div className='flex items-center'>
-        {updateAvailable && (
-          <>
-            <Separator className='mx-1 h-3' orientation='vertical' />
-            <Badge className='h-5 px-2 py-0 text-xs' variant='secondary'>
-              {t("update.available")}
-            </Badge>
-          </>
-        )}
         <Separator className='mx-1 h-3' orientation='vertical' />
         <BottomBarVolume />
         <Separator className='mx-1 h-3' orientation='vertical' />
+        {updateAvailable && (
+          <Badge className='h-5 px-2 py-0 text-xs mr-1' variant='secondary'>
+            {t("update.available")}
+          </Badge>
+        )}
         <Button
           className='h-5 gap-1 px-2 text-xs'
           disabled={isCheckingForUpdates || isInstallingUpdate}
