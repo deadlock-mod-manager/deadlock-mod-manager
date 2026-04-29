@@ -34,11 +34,11 @@ impl MatchMode {
             Self::Unranked => "Playing Standard (6v6)",
             Self::Ranked => "Playing Ranked (6v6)",
             Self::HeroLabs => "Playing Hero Labs",
-            Self::PrivateLobby => "Playing Private Lobby",
-            Self::BotMatch => "Playing in a Bot Match",
-            Self::Tutorial => "Tutorial",
+            Self::PrivateLobby => "Playing in Private Lobby",
+            Self::BotMatch => "Playing Bot Match",
+            Self::Tutorial => "Viewing Tutorial",
             Self::Sandbox => "Training in Sandbox Mode",
-            Self::Calibration => "Placement Match",
+            Self::Calibration => "Playing Placement Match",
             Self::StreetBrawl => "Playing Street Brawl (4v4)",
         }
     }

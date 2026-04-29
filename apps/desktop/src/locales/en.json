@@ -1327,7 +1327,9 @@
       },
       "0.6.1": {
         "title": "Deep Links & Improvements",
-        "features": ["🔗 Added support for 1-click install links on GameBanana"]
+        "features": [
+          "🔗 Added support for 1-click install links on GameBanana"
+        ]
       },
       "0.6.0": {
         "title": "Audio Mod Support & Launch Options",
@@ -1982,44 +1984,44 @@
     "saveTemplates": "Save changes",
     "templatesSaved": "Discord status saved",
     "phases": {
-      "mainMenu": "Main menu",
-      "soloHideout": "Hideout (solo)",
-      "partyHideout": "Hideout (party)",
-      "inQueue": "Finding match",
-      "soloMatch": "In match (solo)",
-      "partyMatch": "In match (party)",
-      "postMatch": "After match",
+      "mainMenu": "Main Menu",
+      "soloHideout": "Hideout (Solo)",
+      "partyHideout": "Hideout (Party)",
+      "inQueue": "Finding Fatch",
+      "soloMatch": "In Match (Solo)",
+      "partyMatch": "In Match (Party)",
+      "postMatch": "Post-Match",
       "spectating": "Spectating"
     },
     "phaseDescriptions": {
-      "mainMenu": "Before you pick a hero or start a match.",
-      "soloHideout": "When you're in the hideout by yourself.",
-      "partyHideout": "When you're in the hideout with your party.",
-      "inQueue": "While searching for a match.",
-      "soloMatch": "During a match when you're playing alone.",
-      "partyMatch": "During a match when you're in a party.",
-      "postMatch": "After a match ends.",
-      "spectating": "While watching someone else's match."
+      "mainMenu": "Before you pick a hero or start a match",
+      "soloHideout": "When you're in the hideout by yourself",
+      "partyHideout": "When you're in the hideout with your party",
+      "inQueue": "While searching for a match",
+      "soloMatch": "During a match when you're playing alone",
+      "partyMatch": "During a match when you're in a party",
+      "postMatch": "After a match ends during post-match stats screen",
+      "spectating": "While watching someone else's match"
     },
     "placeholderTooltips": {
       "hero": {
-        "description": "The name of the hero you're currently playing.",
+        "description": "The name of the hero you're currently playing",
         "example": "Vindicta"
       },
       "heroPresence": {
-        "description": "The hero's hideout status line (set by Valve per hero).",
+        "description": "The hero's hideout status line (set by Valve per hero)",
         "example": "Sleep Walking in the Hideout"
       },
       "mode": {
-        "description": "The current match mode.",
+        "description": "The current match mode",
         "example": "Playing Standard (6v6)"
       },
       "partySize": {
-        "description": "The number of players in your party.",
+        "description": "The number of players in your party",
         "example": "3"
       },
       "partyMax": {
-        "description": "The maximum number of players allowed in this mode.",
+        "description": "The maximum number of players allowed in this mode",
         "example": "6"
       }
     },
