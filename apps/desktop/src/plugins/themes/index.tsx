@@ -6,8 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
@@ -17,12 +19,15 @@ import {
   type CustomExportedTheme,
   CustomTheme,
   cancelEditingUserTheme,
+  DEFAULT_CUSTOM_THEME,
   deleteUserTheme,
   ExportCustomThemeButton,
   getUserThemes,
-  LineColorPicker,
+  mergeCustomThemePalette,
   saveEditingUserTheme,
   type ThemeSettings,
+  ThemePreviewSkeleton,
+  ThemeSettingsPanel,
 } from "./custom";
 import {
   ArcaneAccentPicker,
@@ -69,14 +74,7 @@ export type { ThemeSettings };
 const DEFAULT_SETTINGS: ThemeSettings = {
   activeSection: "pre-defined",
   activeTheme: undefined,
-  customTheme: {
-    lineColor: "#6b7280",
-    iconData: "",
-    backgroundSource: "url",
-    backgroundUrl: "",
-    backgroundData: "",
-    backgroundOpacity: 30,
-  },
+  customTheme: DEFAULT_CUSTOM_THEME,
 };
 
 const PRE_DEFINED_THEMES = [
@@ -122,6 +120,19 @@ const PRE_DEFINED_THEMES = [
   },
 ] as const;
 
+const APPLY_DRAFT_GRACE_MS = 15_000;
+
+function revertDraftTheme() {
+  const state = usePersistedStore.getState();
+  const raw = state.pluginSettings[manifest.id] as ThemeSettings | undefined;
+  if (raw?.activeTheme === "custom") {
+    state.setPluginSettings(manifest.id, {
+      ...raw,
+      activeTheme: undefined,
+    });
+  }
+}
+
 const Settings = () => {
   const { t } = useTranslation();
   const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]) as
@@ -130,8 +141,35 @@ const Settings = () => {
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
   const current = settings ?? DEFAULT_SETTINGS;
 
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearGraceTimer = useCallback(() => {
+    if (graceTimerRef.current !== null) {
+      clearTimeout(graceTimerRef.current);
+      graceTimerRef.current = null;
+    }
+  }, []);
+
+  const startGraceTimer = useCallback(() => {
+    clearGraceTimer();
+    const toastId = toast(t("plugins.themes.applyDraftGraceHint"), {
+      duration: APPLY_DRAFT_GRACE_MS,
+      action: {
+        label: t("plugins.themes.applyDraftConfirmKeep"),
+        onClick: () => {
+          clearGraceTimer();
+        },
+      },
+    });
+    graceTimerRef.current = setTimeout(() => {
+      graceTimerRef.current = null;
+      toast.dismiss(toastId);
+      revertDraftTheme();
+    }, APPLY_DRAFT_GRACE_MS);
+  }, [t, clearGraceTimer]);
+
   return (
-    <div className='flex flex-col gap-4 pb-20'>
+    <div className='flex min-h-0 flex-1 flex-col gap-4 pb-20'>
       <div className='flex gap-2 border-b pb-4'>
         <Button
           variant={
@@ -403,231 +441,83 @@ const Settings = () => {
           </div>
         </div>
       ) : (
-        <div className='flex flex-col gap-4'>
-          <p className='text-sm text-muted-foreground'>
-            {t("plugins.themes.customDescription")}
-          </p>
-
-          <Card>
-            <CardHeader>
-              <div className='flex items-center justify-between'>
-                <CardTitle>{t("plugins.themes.customThemeBuilder")}</CardTitle>
-                <div className='flex items-center gap-2'>
-                  <Switch
-                    checked={current.activeTheme === "custom"}
-                    onCheckedChange={(checked) =>
-                      setSettings(manifest.id, {
-                        ...current,
-                        activeTheme: checked ? "custom" : undefined,
-                      })
-                    }
-                  />
-                  <label
-                    className='text-sm font-medium cursor-pointer'
-                    onClick={() =>
-                      setSettings(manifest.id, {
-                        ...current,
-                        activeTheme:
-                          current.activeTheme === "custom"
-                            ? undefined
-                            : "custom",
-                      })
-                    }>
-                    {current.activeTheme === "custom"
-                      ? t("plugins.themes.active")
-                      : t("plugins.themes.inactive")}
-                  </label>
-                </div>
-              </div>
-              <CardDescription>
-                {t("plugins.themes.customThemeBuilderDescription")}
-              </CardDescription>
+        <div className='flex min-h-0 flex-1 flex-col gap-3'>
+          <Card className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+            <CardHeader className='shrink-0 border-b border-border/70 px-4 py-3 sm:px-5'>
+              <CardTitle>{t("plugins.themes.customThemeBuilder")}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className='grid gap-4 grid-cols-1 sm:grid-cols-2'>
-                <LineColorPicker
-                  value={current.customTheme?.lineColor ?? "#6b7280"}
-                  onChange={(hex) =>
-                    setSettings(manifest.id, {
-                      ...current,
-                      customTheme: {
-                        ...current.customTheme!,
-                        lineColor: hex,
-                      },
-                    })
-                  }
-                />
-
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3'>
-                    <label className='text-sm font-medium'>
-                      {t("plugins.themes.themeIcon")}
-                    </label>
-                    <input
-                      accept='image/*'
-                      id='custom-theme-icon-input'
-                      type='file'
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const dataUrl = reader.result as string;
-                          setSettings(manifest.id, {
-                            ...current,
-                            customTheme: {
-                              ...current.customTheme!,
-                              iconData: dataUrl,
-                            },
-                          });
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                    <Button
-                      variant='outline'
-                      onClick={() =>
-                        document
-                          .getElementById("custom-theme-icon-input")
-                          ?.click()
-                      }>
-                      {t("plugins.themes.chooseIcon")}
-                    </Button>
-                    {current.customTheme?.iconData ? (
-                      <img
-                        alt={t("plugins.themes.themeIconAlt")}
-                        src={current.customTheme.iconData}
-                        className='h-8 w-8 rounded'
-                      />
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className='space-y-3 sm:col-span-2'>
-                  <label className='text-sm font-medium'>
-                    {t("plugins.themes.backgroundImage")}
-                  </label>
-                  <div className='flex flex-col gap-3'>
-                    <input
-                      placeholder={t("plugins.themes.backgroundUrlPlaceholder")}
-                      value={
-                        current.customTheme?.backgroundSource === "url"
-                          ? (current.customTheme?.backgroundUrl ?? "")
-                          : ""
-                      }
-                      onChange={(e) =>
+            <CardContent className='flex min-h-0 flex-1 flex-col overflow-hidden p-0'>
+              <div className='grid min-h-0 flex-1 grid-cols-1 overflow-hidden xl:grid-cols-[minmax(260px,min(380px,38vw))_minmax(0,1fr)] xl:min-h-[min(400px,52vh)]'>
+                <div className='flex min-h-0 flex-col overflow-hidden border-b border-border xl:border-b-0 xl:border-r xl:border-border'>
+                  <div className='min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5'>
+                    <ThemeSettingsPanel
+                      palette={mergeCustomThemePalette(current.customTheme)}
+                      onPaletteChange={(patch) =>
                         setSettings(manifest.id, {
                           ...current,
-                          customTheme: {
-                            ...current.customTheme!,
-                            backgroundSource: "url",
-                            backgroundUrl: e.target.value,
-                          },
+                          customTheme: mergeCustomThemePalette({
+                            ...current.customTheme,
+                            ...patch,
+                          }),
                         })
                       }
-                      className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm'
                     />
-                    <div className='flex items-center gap-3'>
-                      <input
-                        accept='image/*'
-                        id='custom-theme-bg-input'
-                        type='file'
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            const dataUrl = reader.result as string;
-                            setSettings(manifest.id, {
-                              ...current,
-                              customTheme: {
-                                ...current.customTheme!,
-                                backgroundSource: "local",
-                                backgroundData: dataUrl,
-                                backgroundUrl: "",
-                              },
-                            });
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                      <Button
-                        variant='outline'
-                        onClick={() =>
-                          document
-                            .getElementById("custom-theme-bg-input")
-                            ?.click()
-                        }>
-                        {t("plugins.themes.chooseImage")}
-                      </Button>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-sm'>
-                          {t("plugins.themes.opacity")}
-                        </span>
-                        <input
-                          type='range'
-                          min={0}
-                          max={100}
-                          value={current.customTheme?.backgroundOpacity ?? 30}
-                          onChange={(e) =>
-                            setSettings(manifest.id, {
-                              ...current,
-                              customTheme: {
-                                ...current.customTheme!,
-                                backgroundOpacity: Number(e.target.value),
-                              },
-                            })
-                          }
-                        />
-                        <span className='text-xs text-muted-foreground w-8'>
-                          {current.customTheme?.backgroundOpacity ?? 30}%
-                        </span>
-                      </div>
-                    </div>
-                    {(current.customTheme?.backgroundSource === "local" &&
-                      current.customTheme?.backgroundData) ||
-                    (current.customTheme?.backgroundSource === "url" &&
-                      current.customTheme?.backgroundUrl) ? (
-                      <div className='relative w-full aspect-[16/9] rounded-md border overflow-hidden bg-muted'>
-                        <img
-                          src={
-                            current.customTheme?.backgroundSource === "local"
-                              ? current.customTheme?.backgroundData
-                              : current.customTheme?.backgroundUrl
-                          }
-                          alt={t("plugins.themes.customBackgroundAlt")}
-                          className='absolute inset-0 h-full w-full object-cover'
-                        />
-                      </div>
-                    ) : null}
                   </div>
                 </div>
+                <div className='isolate flex min-h-0 min-w-0 flex-1 flex-col bg-muted/10 p-3 sm:p-4 xl:p-5'>
+                  <ThemePreviewSkeleton
+                    palette={mergeCustomThemePalette(current.customTheme)}
+                  />
+                </div>
               </div>
-
-              <div className='mt-6 flex items-center gap-2'>
+              <div className='flex shrink-0 flex-wrap items-center gap-2 border-t border-border px-4 py-3 sm:px-5'>
+                <Button
+                  size='sm'
+                  type='button'
+                  variant={
+                    current.activeTheme === "custom" ? "secondary" : "outline"
+                  }
+                  onClick={() => {
+                    const nextActiveTheme =
+                      current.activeTheme === "custom" ? undefined : "custom";
+                    setSettings(manifest.id, {
+                      ...current,
+                      activeTheme: nextActiveTheme,
+                    });
+                    if (nextActiveTheme === "custom") {
+                      startGraceTimer();
+                    } else {
+                      clearGraceTimer();
+                    }
+                  }}>
+                  {current.activeTheme === "custom"
+                    ? t("plugins.themes.draftActive")
+                    : t("plugins.themes.applyDraft")}
+                </Button>
                 <ExportCustomThemeButton />
                 <Button
                   variant='outline'
                   onClick={() =>
                     setSettings(manifest.id, {
                       ...current,
-                      customTheme: DEFAULT_SETTINGS.customTheme,
+                      customTheme: DEFAULT_CUSTOM_THEME,
                     })
-                  }>
+                  }
+                  type='button'>
                   {t("plugins.themes.clear")}
                 </Button>
                 {current.editingThemeId ? (
                   <>
                     <Button
-                      variant='default'
-                      onClick={() => saveEditingUserTheme()}>
+                      onClick={() => saveEditingUserTheme()}
+                      type='button'
+                      variant='default'>
                       {t("plugins.themes.save")}
                     </Button>
                     <Button
-                      variant='outline'
-                      onClick={() => cancelEditingUserTheme()}>
+                      onClick={() => cancelEditingUserTheme()}
+                      type='button'
+                      variant='outline'>
                       {t("plugins.themes.cancel")}
                     </Button>
                   </>

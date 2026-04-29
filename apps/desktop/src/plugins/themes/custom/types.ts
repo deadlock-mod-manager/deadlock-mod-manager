@@ -1,14 +1,24 @@
+export type CustomThemePalette = {
+  lineColor: string;
+  accentColor: string;
+  cardColor: string;
+  popoverColor: string;
+  secondaryColor: string;
+  mutedColor: string;
+  foregroundColor: string;
+  mutedForegroundColor: string;
+  sidebarOpacity: number;
+  ambientBackgroundEnabled: boolean;
+  ambientAccentColor: string;
+  ambientIntensity: number;
+  ambientSpread: number;
+  cornerRadiusPx: number;
+};
+
 export type ThemeSettings = {
   activeSection: "pre-defined" | "custom";
   activeTheme?: string;
-  customTheme?: {
-    lineColor: string;
-    iconData?: string;
-    backgroundSource?: "url" | "local";
-    backgroundUrl?: string;
-    backgroundData?: string;
-    backgroundOpacity?: number;
-  };
+  customTheme?: Partial<CustomThemePalette>;
   userThemes?: CustomExportedTheme[];
   editingThemeId?: string;
   arcaneAccentColor?: string;
@@ -21,13 +31,7 @@ export type CustomExportedTheme = {
   description?: string;
   subDescription?: string;
   previewData?: string;
-  lineColor: string;
-  iconData?: string;
-  backgroundSource?: "url" | "local";
-  backgroundUrl?: string;
-  backgroundData?: string;
-  backgroundOpacity?: number;
   userCreated: true;
-};
+} & CustomThemePalette;
 
 export type CustomThemeProps = { theme?: CustomExportedTheme };

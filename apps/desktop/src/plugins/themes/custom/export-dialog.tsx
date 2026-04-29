@@ -10,82 +10,98 @@ import {
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
-import { useState } from "react";
+import { toPng } from "html-to-image";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import { usePersistedStore } from "@/lib/store";
-import type { CustomExportedTheme, ThemeSettings } from "./types";
+import { DEFAULT_CUSTOM_THEME } from "./theme-defaults";
+import type {
+  CustomExportedTheme,
+  CustomThemePalette,
+  ThemeSettings,
+} from "./types";
+import { mergeCustomThemePalette } from "./utils";
+import { ThemePreviewSkeleton } from "./theme-preview-skeleton";
+
+function themeGradientPlaceholderDataUrl(palette: CustomThemePalette): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${palette.cardColor}"/><stop offset="100%" stop-color="${palette.accentColor}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 
 export const ExportCustomThemeButton = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const snapshotRef = useRef<HTMLDivElement>(null);
   const settings = usePersistedStore((s) => s.pluginSettings.themes) as
     | ThemeSettings
     | undefined;
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
   const current: ThemeSettings = settings ?? {
     activeSection: "custom",
-    activeTheme: "custom",
-    customTheme: {
-      lineColor: "#6b7280",
-      backgroundSource: "url",
-      backgroundUrl: "",
-      backgroundData: "",
-      backgroundOpacity: 30,
-      iconData: "",
-    },
+    customTheme: DEFAULT_CUSTOM_THEME,
     userThemes: [],
   };
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [subDescription, setSubDescription] = useState("");
-  const [previewData, setPreviewData] = useState<string>("");
+  const [captureBusy, setCaptureBusy] = useState(false);
 
   const canSave = name.trim().length > 0;
 
-  const handleFile = (file?: File | null) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setPreviewData(reader.result as string);
-    reader.readAsDataURL(file);
-  };
+  const capturePreview = useCallback(async (): Promise<string | undefined> => {
+    const node = snapshotRef.current;
+    if (node === null) {
+      return undefined;
+    }
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2,
+      cacheBust: true,
+    });
+    return dataUrl;
+  }, []);
 
   const handleSave = () => {
-    const id = uuidv4();
-    const c = current.customTheme ?? {
-      lineColor: "#6b7280",
-      backgroundSource: "url" as const,
-      backgroundUrl: "",
-      backgroundData: "",
-      backgroundOpacity: 30,
-    };
-    const next: CustomExportedTheme = {
-      id,
-      name: name.trim(),
-      description: description.trim() || undefined,
-      subDescription: subDescription.trim() || undefined,
-      previewData: previewData || undefined,
-      lineColor: c.lineColor,
-      iconData: c.iconData,
-      backgroundSource: c.backgroundSource,
-      backgroundUrl: c.backgroundUrl,
-      backgroundData: c.backgroundData,
-      backgroundOpacity: c.backgroundOpacity,
-      userCreated: true,
-    };
+    void (async () => {
+      const palette = mergeCustomThemePalette(current.customTheme);
+      setCaptureBusy(true);
+      let previewData: string | undefined;
+      try {
+        previewData = await capturePreview();
+      } catch {
+        previewData = undefined;
+      } finally {
+        setCaptureBusy(false);
+      }
 
-    const list = Array.isArray(current.userThemes) ? current.userThemes : [];
-    setSettings("themes", {
-      ...current,
-      userThemes: [next, ...list],
-    });
-    setOpen(false);
-    setName("");
-    setDescription("");
-    setSubDescription("");
-    setPreviewData("");
+      const resolvedPreview =
+        previewData ?? themeGradientPlaceholderDataUrl(palette);
+
+      const id = uuidv4();
+      const next: CustomExportedTheme = {
+        id,
+        name: name.trim(),
+        description: description.trim() || undefined,
+        subDescription: subDescription.trim() || undefined,
+        previewData: resolvedPreview,
+        ...palette,
+        userCreated: true,
+      };
+
+      const list = Array.isArray(current.userThemes) ? current.userThemes : [];
+      setSettings("themes", {
+        ...current,
+        userThemes: [next, ...list],
+      });
+      setOpen(false);
+      setName("");
+      setDescription("");
+      setSubDescription("");
+    })();
   };
+
+  const draftPalette = mergeCustomThemePalette(current.customTheme);
 
   return (
     <>
@@ -93,13 +109,19 @@ export const ExportCustomThemeButton = () => {
         {t("plugins.themes.exportAsPreDefined")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className='sm:max-w-[520px]'>
+        <DialogContent className='sm:max-w-[560px]'>
           <DialogHeader>
             <DialogTitle>{t("plugins.themes.exportCustomTheme")}</DialogTitle>
             <DialogDescription>
               {t("plugins.themes.exportCustomThemeDescription")}
             </DialogDescription>
           </DialogHeader>
+
+          <div
+            ref={snapshotRef}
+            className='aspect-[16/10] w-full overflow-hidden rounded-lg border border-border/70 bg-muted/25 p-2'>
+            <ThemePreviewSkeleton palette={draftPalette} />
+          </div>
 
           <div className='flex flex-col gap-4'>
             <div className='flex flex-col gap-2'>
@@ -136,42 +158,16 @@ export const ExportCustomThemeButton = () => {
                 placeholder={t("plugins.themes.subDescriptionPlaceholder")}
               />
             </div>
-
-            <div className='flex flex-col gap-2'>
-              <Label>{t("plugins.themes.previewImage")}</Label>
-              <div className='flex items-center gap-3'>
-                <input
-                  accept='image/*'
-                  id='export-theme-preview-input'
-                  type='file'
-                  style={{ display: "none" }}
-                  onChange={(e) => handleFile(e.target.files?.[0])}
-                />
-                <Button
-                  variant='outline'
-                  onClick={() =>
-                    document
-                      .getElementById("export-theme-preview-input")
-                      ?.click()
-                  }>
-                  {t("plugins.themes.choosePreview")}
-                </Button>
-                {previewData ? (
-                  <img
-                    src={previewData}
-                    alt={t("plugins.themes.previewAlt")}
-                    className='h-10 w-16 object-cover rounded'
-                  />
-                ) : null}
-              </div>
-            </div>
           </div>
 
           <DialogFooter>
             <Button variant='outline' onClick={() => setOpen(false)}>
               {t("plugins.themes.cancel")}
             </Button>
-            <Button onClick={handleSave} disabled={!canSave}>
+            <Button
+              disabled={!canSave || captureBusy}
+              onClick={handleSave}
+              type='button'>
               {t("plugins.themes.save")}
             </Button>
           </DialogFooter>

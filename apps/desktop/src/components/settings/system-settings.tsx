@@ -1,45 +1,40 @@
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { platform } from "@tauri-apps/plugin-os";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { NOOP } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
-import type { SystemSetting } from "@/types/settings";
-import SettingCard from "./setting-card";
+
+type SystemSettingDef = {
+  id: string;
+  label: string;
+  description: string;
+  defaultEnabled: boolean;
+};
 
 const getSystemSettings = (
   t: (key: string) => string,
   isLinux: boolean,
-): (SystemSetting & { subtitle: string })[] =>
-  [
-    {
-      id: "auto-reapply-mods",
-      description: t("settings.autoReapplyMods"),
-      subtitle: t("settings.autoReapplyModsDescription"),
-      enabled: false,
-      onChange: NOOP,
-    },
-    {
-      id: "launch-vanilla-no-args",
-      description: t("settings.launchVanillaNoArgs"),
-      subtitle: t("settings.launchVanillaNoArgsDescription"),
-      enabled: false,
-      onChange: NOOP,
-    },
-    {
-      id: "mods-store-pagination",
-      description: t("settings.modsStorePagination"),
-      subtitle: t("settings.modsStorePaginationDescription"),
-      enabled: isLinux,
-      onChange: NOOP,
-    },
-  ].map((setting) => ({
-    ...setting,
-    key: "",
-    value: "",
-    type: "boolean",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
+): SystemSettingDef[] => [
+  {
+    id: "auto-reapply-mods",
+    label: t("settings.autoReapplyMods"),
+    description: t("settings.autoReapplyModsDescription"),
+    defaultEnabled: false,
+  },
+  {
+    id: "launch-vanilla-no-args",
+    label: t("settings.launchVanillaNoArgs"),
+    description: t("settings.launchVanillaNoArgsDescription"),
+    defaultEnabled: false,
+  },
+  {
+    id: "mods-store-pagination",
+    label: t("settings.modsStorePagination"),
+    description: t("settings.modsStorePaginationDescription"),
+    defaultEnabled: isLinux,
+  },
+];
 
 const SystemSettings = () => {
   const { t } = useTranslation();
@@ -52,26 +47,42 @@ const SystemSettings = () => {
     );
   }, [settings]);
 
-  const systemSettings = useMemo(() => {
-    return getSystemSettings(t, isLinux).map((setting) => ({
-      ...setting,
-      enabled: settingStatusById[setting.id] ?? setting.enabled,
-      onChange: (newValue: boolean) => {
-        toggleSetting(setting.id, setting, newValue);
-      },
-    }));
-  }, [isLinux, settingStatusById, toggleSetting, t]);
+  const systemSettings = getSystemSettings(t, isLinux);
 
   return (
     <>
-      {systemSettings.map((setting) => (
-        <SettingCard
-          key={setting.id}
-          onChange={setting.onChange}
-          setting={setting}
-          subtitle={setting.subtitle}
-        />
-      ))}
+      {systemSettings.map((def) => {
+        const enabled = settingStatusById[def.id] ?? def.defaultEnabled;
+        return (
+          <div className='flex items-center justify-between' key={def.id}>
+            <div className='space-y-1'>
+              <Label className='font-bold text-sm'>{def.label}</Label>
+              <p className='text-muted-foreground text-sm'>{def.description}</p>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Switch
+                checked={enabled}
+                id={`toggle-setting-${def.id}`}
+                onCheckedChange={(newValue) => {
+                  toggleSetting(def.id, {
+                    id: def.id,
+                    key: "",
+                    value: "",
+                    type: "boolean",
+                    description: def.label,
+                    enabled,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  }, newValue);
+                }}
+              />
+              <Label htmlFor={`toggle-setting-${def.id}`}>
+                {enabled ? t("status.enabled") : t("status.disabled")}
+              </Label>
+            </div>
+          </div>
+        );
+      })}
     </>
   );
 };

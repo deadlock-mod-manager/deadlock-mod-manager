@@ -1,26 +1,75 @@
 import { usePersistedStore } from "@/lib/store";
-import type { CustomExportedTheme, ThemeSettings } from "./types";
+import { DEFAULT_CUSTOM_THEME } from "./theme-defaults";
+import type {
+  CustomExportedTheme,
+  CustomThemePalette,
+  ThemeSettings,
+} from "./types";
+
+type LegacyGlowPartial = Partial<{
+  glowEnabled: boolean;
+  glowColor: string;
+  glowIntensity: number;
+  glowSpread: number;
+}>;
+
+export function mergeCustomThemePalette(
+  partial?: Partial<CustomThemePalette> | CustomExportedTheme,
+): CustomThemePalette {
+  const merged = { ...DEFAULT_CUSTOM_THEME, ...partial };
+  const legacy = partial as LegacyGlowPartial | undefined;
+
+  const ambientBackgroundEnabled =
+    merged.ambientBackgroundEnabled ??
+    legacy?.glowEnabled ??
+    DEFAULT_CUSTOM_THEME.ambientBackgroundEnabled;
+
+  const ambientAccentColor =
+    merged.ambientAccentColor ??
+    legacy?.glowColor ??
+    DEFAULT_CUSTOM_THEME.ambientAccentColor;
+
+  const ambientIntensity =
+    merged.ambientIntensity ??
+    legacy?.glowIntensity ??
+    DEFAULT_CUSTOM_THEME.ambientIntensity;
+
+  const ambientSpread =
+    merged.ambientSpread ??
+    legacy?.glowSpread ??
+    DEFAULT_CUSTOM_THEME.ambientSpread;
+
+  const palette: CustomThemePalette = {
+    lineColor: merged.lineColor,
+    accentColor: merged.accentColor,
+    cardColor: merged.cardColor,
+    popoverColor: merged.popoverColor,
+    secondaryColor: merged.secondaryColor,
+    mutedColor: merged.mutedColor,
+    foregroundColor: merged.foregroundColor,
+    mutedForegroundColor: merged.mutedForegroundColor,
+    sidebarOpacity:
+      merged.sidebarOpacity ?? DEFAULT_CUSTOM_THEME.sidebarOpacity,
+    ambientBackgroundEnabled,
+    ambientAccentColor,
+    ambientIntensity,
+    ambientSpread,
+    cornerRadiusPx:
+      merged.cornerRadiusPx ?? DEFAULT_CUSTOM_THEME.cornerRadiusPx,
+  };
+
+  return palette;
+}
 
 export const getActiveThemeConfig = (
   current: ThemeSettings | undefined,
   override?: CustomExportedTheme,
-) => {
-  if (override) return override;
+): CustomThemePalette => {
+  if (override) {
+    return mergeCustomThemePalette(override);
+  }
   const c = current?.customTheme;
-  return {
-    id: "custom",
-    name: "Custom",
-    description: undefined,
-    subDescription: undefined,
-    previewData: undefined,
-    lineColor: c?.lineColor ?? "#6b7280",
-    iconData: c?.iconData,
-    backgroundSource: c?.backgroundSource,
-    backgroundUrl: c?.backgroundUrl,
-    backgroundData: c?.backgroundData,
-    backgroundOpacity: c?.backgroundOpacity,
-    userCreated: true as const,
-  } satisfies CustomExportedTheme;
+  return mergeCustomThemePalette(c);
 };
 
 export const getUserThemes = (settings: ThemeSettings | undefined) => {
@@ -44,19 +93,12 @@ export const beginEditingUserTheme = (id: string) => {
   const list = Array.isArray(settings.userThemes) ? settings.userThemes : [];
   const theme = list.find((t) => t.id === id);
   if (!theme) return;
+  const merged = mergeCustomThemePalette(theme);
   setSettings("themes", {
     ...settings,
     activeSection: "custom",
-    activeTheme: "custom",
     editingThemeId: id,
-    customTheme: {
-      lineColor: theme.lineColor,
-      iconData: theme.iconData,
-      backgroundSource: theme.backgroundSource,
-      backgroundUrl: theme.backgroundUrl,
-      backgroundData: theme.backgroundData,
-      backgroundOpacity: theme.backgroundOpacity,
-    },
+    customTheme: merged,
   });
 };
 
@@ -67,18 +109,12 @@ export const saveEditingUserTheme = () => {
   const id = settings.editingThemeId;
   if (!id) return;
   const list = Array.isArray(settings.userThemes) ? settings.userThemes : [];
-  const c = settings.customTheme;
-  if (!c) return;
+  const c = mergeCustomThemePalette(settings.customTheme);
   const next = list.map((t) =>
     t.id === id
       ? {
           ...t,
-          lineColor: c.lineColor,
-          iconData: c.iconData,
-          backgroundSource: c.backgroundSource,
-          backgroundUrl: c.backgroundUrl,
-          backgroundData: c.backgroundData,
-          backgroundOpacity: c.backgroundOpacity,
+          ...c,
         }
       : t,
   );

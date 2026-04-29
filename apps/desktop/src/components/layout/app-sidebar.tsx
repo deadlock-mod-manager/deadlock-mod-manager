@@ -329,6 +329,12 @@ export const AppSidebar = () => {
             <SidebarGroup
               className={group === "developer" ? "mt-auto" : undefined}
               key={group}>
+              {group === "developer" ? (
+                <>
+                  {SidebarFooterExtra ? <SidebarFooterExtra /> : null}
+                  {SidebarContentExtra ? <SidebarContentExtra /> : null}
+                </>
+              ) : null}
               <SidebarGroupLabel>{groupLabels[group]}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -346,10 +352,8 @@ export const AppSidebar = () => {
             </SidebarGroup>
           );
         })}
-        {SidebarContentExtra ? <SidebarContentExtra /> : null}
       </SidebarContent>
       <SidebarFooter>
-        {SidebarFooterExtra ? <SidebarFooterExtra /> : null}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>

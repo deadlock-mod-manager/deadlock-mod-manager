@@ -173,7 +173,11 @@ const CreditCard = ({
   </div>
 );
 
-const CustomSettingsData = () => {
+const CustomSettingsData = ({
+  onNavigateToDiscord,
+}: {
+  onNavigateToDiscord: () => void;
+}) => {
   const { t } = useTranslation();
   const { data, error } = useSuspenseQuery({
     queryKey: ["custom-settings"],
@@ -186,7 +190,14 @@ const CustomSettingsData = () => {
     retry: false,
     refetchOnWindowFocus: false,
   });
-  const { settings, toggleSetting, gamePresenceEnabled } = usePersistedStore();
+  const { settings, toggleSetting, gamePresenceEnabled, setGamePresenceEnabled } = usePersistedStore();
+  const [showCondebugWarning, setShowCondebugWarning] = useState(false);
+
+  useEffect(() => {
+    if (!gamePresenceEnabled) {
+      setShowCondebugWarning(false);
+    }
+  }, [gamePresenceEnabled]);
 
   useEffect(() => {
     if (error) {
@@ -269,12 +280,12 @@ const CustomSettingsData = () => {
       {Object.values(CustomSettingType).map((type: CustomSettingType) => {
         const isLaunchOption = type === CustomSettingType.LAUNCH_OPTION;
         const settingsForType = [
+          ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
           ...(isLaunchOption && autoexecLaunchOption
             ? [autoexecLaunchOption]
             : []),
-          ...(isLaunchOption ? [condebugLaunchOption] : []),
         ];
 
         return (
@@ -302,21 +313,43 @@ const CustomSettingsData = () => {
                   ]?.title || ""
             }>
             <div className='grid grid-cols-1 gap-4'>
+              {isLaunchOption && showCondebugWarning && (
+                <div className='flex items-center gap-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-4 py-3'>
+                  <WarningCircle className='size-5 shrink-0 text-yellow-400' />
+                  <p className='text-sm'>{t("gamePresence.condebugDisableWarning")}</p>
+                  <Button
+                    className='ml-auto shrink-0'
+                    onClick={() => {
+                      setShowCondebugWarning(false);
+                      onNavigateToDiscord();
+                    }}
+                    size='sm'
+                    variant='outline'>
+                    {t("gamePresence.goToDiscordSettings")}
+                  </Button>
+                </div>
+              )}
               {settingsForType.map((setting) => {
                 const isAutoexecOption =
                   setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
                 const isCondebugOption =
                   setting.id === CONDEBUG_LAUNCH_OPTION_ID;
-                const isDisabled =
-                  isCondebugOption || (isAutoexecOption && !hasAutoexecConfig);
-                const canToggle = !isDisabled;
+                const isDisabled = isAutoexecOption && !hasAutoexecConfig;
 
                 return (
                   <SettingCard
                     disabled={isDisabled}
                     key={setting.id}
                     onChange={() => {
-                      if (canToggle) {
+                      if (isCondebugOption) {
+                        if (gamePresenceEnabled) {
+                          setShowCondebugWarning(true);
+                        } else {
+                          setGamePresenceEnabled(true);
+                        }
+                        return;
+                      }
+                      if (!isDisabled) {
                         toggleSetting(setting.id, setting);
                       }
                     }}
@@ -328,11 +361,6 @@ const CustomSettingsData = () => {
                           (setting as LocalSetting).enabled ??
                           false),
                     }}
-                    subtitle={
-                      isCondebugOption
-                        ? t("gamePresence.condebugOptionDescription")
-                        : undefined
-                    }
                   />
                 );
               })}
@@ -534,7 +562,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
               }>
               <ErrorBoundary>
-                <CustomSettingsData />
+                <CustomSettingsData onNavigateToDiscord={() => setActiveTab("discord")} />
               </ErrorBoundary>
             </Suspense>
           </TabsContent>
