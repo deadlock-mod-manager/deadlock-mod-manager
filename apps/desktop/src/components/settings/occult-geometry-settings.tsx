@@ -17,15 +17,15 @@ const OccultGeometrySettings = () => {
   );
 
   return (
-    <div className='flex flex-col gap-3'>
-      <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
-        <div className='flex min-w-0 flex-col gap-1'>
-          <h3 className='font-bold text-sm'>{t("settings.occultGeometry")}</h3>
+    <>
+      <div className='flex items-center justify-between'>
+        <div className='space-y-1'>
+          <Label className='font-bold text-sm'>{t("settings.occultGeometry")}</Label>
           <p className='text-muted-foreground text-sm'>
             {t("settings.occultGeometryDescription")}
           </p>
         </div>
-        <div className='flex shrink-0 items-center space-x-2'>
+        <div className='flex items-center gap-2'>
           <Switch
             checked={showOccultGeometry}
             id='toggle-show-occult-geometry'
@@ -37,16 +37,16 @@ const OccultGeometrySettings = () => {
         </div>
       </div>
 
-      <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
-        <div className='flex min-w-0 flex-col gap-1'>
-          <h3 className='font-bold text-sm'>
+      <div className='flex items-center justify-between'>
+        <div className='space-y-1'>
+          <Label className='font-bold text-sm'>
             {t("settings.animateOccultGeometry")}
-          </h3>
+          </Label>
           <p className='text-muted-foreground text-sm'>
             {t("settings.animateOccultGeometryDescription")}
           </p>
         </div>
-        <div className='flex shrink-0 items-center space-x-2'>
+        <div className='flex items-center gap-2'>
           <Switch
             checked={animateOccultGeometry}
             disabled={!showOccultGeometry}
@@ -58,7 +58,7 @@ const OccultGeometrySettings = () => {
           </Label>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

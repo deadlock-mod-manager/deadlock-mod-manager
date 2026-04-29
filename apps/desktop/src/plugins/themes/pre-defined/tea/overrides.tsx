@@ -11,7 +11,7 @@ const SidebarContentExtra = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='group-data-[collapsible=icon]:hidden mt-auto flex justify-center px-3 pb-4'>
+    <div className='group-data-[collapsible=icon]:hidden flex justify-center px-3 pb-4'>
       <img
         alt={t("accessibility.snipzteaMascotAlt")}
         className='max-w-[160px] w-full rounded-md object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]'
