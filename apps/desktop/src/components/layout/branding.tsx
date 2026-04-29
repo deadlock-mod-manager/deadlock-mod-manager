@@ -11,10 +11,8 @@ import Logo from "./logo";
 type ThemesPluginSettings =
   | {
       activeTheme?: string;
-      customTheme?: { iconData?: string };
       userThemes?: Array<{
         id: string;
-        iconData?: string;
       }>;
     }
   | undefined;
@@ -64,12 +62,6 @@ export const BrandingHeader = ({
   let themedIconSrc: string | undefined;
   if (isPredefinedTheme(activeTheme)) {
     themedIconSrc = predefinedThemeIcons[activeTheme];
-  } else if (activeTheme === "custom") {
-    themedIconSrc = themesSettings?.customTheme?.iconData || undefined;
-  } else if (!TopbarLogo) {
-    themedIconSrc =
-      themesSettings?.userThemes?.find((t) => t.id === activeTheme)?.iconData ||
-      undefined;
   }
 
   const iconSize = collapsed ? "size-7" : "size-9";

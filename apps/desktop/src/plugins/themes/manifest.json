@@ -2,7 +2,7 @@
   "id": "themes",
   "nameKey": "plugins.themes.title",
   "descriptionKey": "plugins.themes.themeDescription",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Skeptic",
   "authorUrl": "https://github.com/Skeptic-systems",
   "homepageUrl": "https://docs.deadlockmods.app/plugins/themes",
