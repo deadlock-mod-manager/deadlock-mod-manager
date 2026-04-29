@@ -31,7 +31,6 @@ import {
   WifiXIcon,
 } from "@phosphor-icons/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
-import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
@@ -311,9 +310,7 @@ export const BottomBar = () => {
   const fsCfg = fsStatusConfig[fsStatus];
 
   return (
-    <div
-      className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'
-      style={{ "--primary": "42 60% 84%" } as CSSProperties}>
+    <div className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'>
       <div className='flex items-center gap-3'>
         {downloadingCount > 0 && (
           <>
@@ -337,7 +334,9 @@ export const BottomBar = () => {
             <Separator className='mx-1 h-3' orientation='vertical' />
           </>
         )}
-        <div className='flex items-center gap-1.5'>
+        <div
+          className='flex items-center gap-1.5'
+          style={{ "--primary": "42 60% 84%" } as any}>
           <span className='text-xs text-muted-foreground'>
             {t("common.status")}:
           </span>
