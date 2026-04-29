@@ -96,6 +96,7 @@ const storage: StateStorage = {
     try {
       const store = await getStore(STORE_NAME);
       await store?.set(key, value);
+      await store?.save();
     } catch (error) {
       logger
         .withError(error)
@@ -116,6 +117,7 @@ const storage: StateStorage = {
     try {
       const store = await getStore(STORE_NAME);
       await store?.delete(key);
+      await store?.save();
     } catch (error) {
       logger
         .withError(error)

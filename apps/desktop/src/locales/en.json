@@ -1954,6 +1954,8 @@
     "settingsDescription": "Customize how Deadlock appears on your Discord profile.",
     "condebugOption": "Console Debug Log",
     "condebugOptionDescription": "Lets the mod manager read game info so your Discord status stays up to date.",
+    "condebugDisableWarning": "You need to disable Discord Game Presence first before turning off Console Debug Log.",
+    "goToDiscordSettings": "Go to Discord Settings",
     "indicatorDisabled": "Discord Game Presence Disabled",
     "indicatorWaiting": "Discord Game Presence Enabled",
     "indicatorConnecting": "Connecting to Discord Game Presence",

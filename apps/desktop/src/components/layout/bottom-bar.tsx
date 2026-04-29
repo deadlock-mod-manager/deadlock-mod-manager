@@ -74,7 +74,7 @@ const discordPresenceIndicatorConfig = {
     key: "gamePresence.indicatorDisabled",
   },
   waiting: {
-    className: "text-muted-foreground",
+    className: "text-primary",
     key: "gamePresence.indicatorWaiting",
   },
   connecting: {
@@ -334,7 +334,9 @@ export const BottomBar = () => {
             <Separator className='mx-1 h-3' orientation='vertical' />
           </>
         )}
-        <div className='flex items-center gap-1.5'>
+        <div
+          className='flex items-center gap-1.5'
+          style={{ "--primary": "42 60% 84%" } as any}>
           <span className='text-xs text-muted-foreground'>
             {t("common.status")}:
           </span>
