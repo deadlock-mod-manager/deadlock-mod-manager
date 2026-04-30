@@ -69,7 +69,8 @@ export const ExportCustomThemeButton = () => {
       let previewData: string | undefined;
       try {
         previewData = await capturePreview();
-      } catch {
+      } catch (err) {
+        console.error("[ExportCustomTheme] capturePreview failed:", err);
         previewData = undefined;
       } finally {
         setCaptureBusy(false);

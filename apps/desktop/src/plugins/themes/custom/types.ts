@@ -18,6 +18,7 @@ export type CustomThemePalette = {
 export type ThemeSettings = {
   activeSection: "pre-defined" | "custom";
   activeTheme?: string;
+  previousActiveTheme?: string;
   customTheme?: Partial<CustomThemePalette>;
   userThemes?: CustomExportedTheme[];
   editingThemeId?: string;

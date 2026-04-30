@@ -16,49 +16,36 @@ type LegacyGlowPartial = Partial<{
 export function mergeCustomThemePalette(
   partial?: Partial<CustomThemePalette> | CustomExportedTheme,
 ): CustomThemePalette {
-  const merged = { ...DEFAULT_CUSTOM_THEME, ...partial };
   const legacy = partial as LegacyGlowPartial | undefined;
 
   const ambientBackgroundEnabled =
-    merged.ambientBackgroundEnabled ??
+    partial?.ambientBackgroundEnabled ??
     legacy?.glowEnabled ??
     DEFAULT_CUSTOM_THEME.ambientBackgroundEnabled;
 
   const ambientAccentColor =
-    merged.ambientAccentColor ??
+    partial?.ambientAccentColor ??
     legacy?.glowColor ??
     DEFAULT_CUSTOM_THEME.ambientAccentColor;
 
   const ambientIntensity =
-    merged.ambientIntensity ??
+    partial?.ambientIntensity ??
     legacy?.glowIntensity ??
     DEFAULT_CUSTOM_THEME.ambientIntensity;
 
   const ambientSpread =
-    merged.ambientSpread ??
+    partial?.ambientSpread ??
     legacy?.glowSpread ??
     DEFAULT_CUSTOM_THEME.ambientSpread;
 
-  const palette: CustomThemePalette = {
-    lineColor: merged.lineColor,
-    accentColor: merged.accentColor,
-    cardColor: merged.cardColor,
-    popoverColor: merged.popoverColor,
-    secondaryColor: merged.secondaryColor,
-    mutedColor: merged.mutedColor,
-    foregroundColor: merged.foregroundColor,
-    mutedForegroundColor: merged.mutedForegroundColor,
-    sidebarOpacity:
-      merged.sidebarOpacity ?? DEFAULT_CUSTOM_THEME.sidebarOpacity,
+  return {
+    ...DEFAULT_CUSTOM_THEME,
+    ...partial,
     ambientBackgroundEnabled,
     ambientAccentColor,
     ambientIntensity,
     ambientSpread,
-    cornerRadiusPx:
-      merged.cornerRadiusPx ?? DEFAULT_CUSTOM_THEME.cornerRadiusPx,
   };
-
-  return palette;
 }
 
 export const getActiveThemeConfig = (

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   darkenAccentFromPrimary,
   formatHslTriple,
@@ -53,8 +54,6 @@ export function buildFullCustomThemeCssVariables(
     "--input": borderHsl,
   };
 }
-
-import type { CSSProperties } from "react";
 
 export function buildAmbientBackgroundStyle(
   palette: CustomThemePalette,

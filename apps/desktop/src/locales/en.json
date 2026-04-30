@@ -1523,7 +1523,8 @@
       "mutedForegroundColorDialogTitle": "Secondary text",
       "mutedForegroundColorDialogDescription": "Supporting labels and captions.",
       "previewTitle": "Live preview",
-      "previewHint": "Interactive miniature preview using your draft palette only."
+      "previewHint": "Interactive miniature preview using your draft palette only.",
+      "previewNavigation": "Preview navigation: {{id}}"
     },
     "tea": {
       "description": "A cozy beige theme created for the YouTuber and Twitch streamer Snipztea.",

@@ -429,13 +429,12 @@ export function ThemePreviewSkeleton({
   const cssVars = vars as CSSProperties;
   const ambientStyle = buildAmbientBackgroundStyle(palette);
 
-  const sidebarFromRgb = hexToRgb(palette.cardColor);
-  const sidebarToRgb = hexToRgb(palette.popoverColor);
-  const sidebarMix = Math.min(100, Math.max(0, palette.sidebarOpacity)) / 100;
-  const skeletonSidebarBg =
-    sidebarFromRgb && sidebarToRgb
-      ? `rgb(${Math.round(sidebarFromRgb.r + (sidebarToRgb.r - sidebarFromRgb.r) * sidebarMix)}, ${Math.round(sidebarFromRgb.g + (sidebarToRgb.g - sidebarFromRgb.g) * sidebarMix)}, ${Math.round(sidebarFromRgb.b + (sidebarToRgb.b - sidebarFromRgb.b) * sidebarMix)})`
-      : undefined;
+  const sidebarPopoverRgb = hexToRgb(palette.popoverColor);
+  const sidebarAlpha =
+    (100 - Math.min(100, Math.max(0, palette.sidebarOpacity))) / 100;
+  const skeletonSidebarBg = sidebarPopoverRgb
+    ? `rgba(${sidebarPopoverRgb.r}, ${sidebarPopoverRgb.g}, ${sidebarPopoverRgb.b}, ${sidebarAlpha})`
+    : undefined;
 
   return (
     <div
@@ -462,9 +461,7 @@ export function ThemePreviewSkeleton({
         <div
           className={cn(
             "relative flex flex-1 flex-col",
-            captureMode
-              ? "min-h-0"
-              : "min-h-[clamp(196px,30vh,400px)]",
+            captureMode ? "min-h-0" : "min-h-[clamp(196px,30vh,400px)]",
           )}>
           <div className='flex h-9 shrink-0 items-center gap-1.5 border-b border-border bg-background px-1.5'>
             <div
@@ -525,7 +522,9 @@ export function ThemePreviewSkeleton({
                             key={row.id}
                             type='button'
                             aria-current={selected ? "page" : undefined}
-                            aria-label={`Preview navigation ${row.id}`}
+                            aria-label={t("plugins.themes.previewNavigation", {
+                              id: row.id,
+                            })}
                             onClick={() => {
                               setRoute(row.id);
                             }}
