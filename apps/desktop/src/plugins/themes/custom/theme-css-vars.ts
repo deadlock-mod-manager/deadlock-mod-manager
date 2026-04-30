@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   darkenAccentFromPrimary,
   formatHslTriple,
@@ -15,7 +16,7 @@ const SIDEBAR_ACCENT_FG = "15 10% 16%";
 
 export function buildFullCustomThemeCssVariables(
   palette: CustomThemePalette,
-): Record<string, string> {
+): CSSProperties & Record<string, string> {
   const primaryTriplet = hslTripletFromHex(palette.accentColor);
   const accentTriplet = darkenAccentFromPrimary(primaryTriplet);
   const ringTriplet = ringFromPrimary(primaryTriplet);
@@ -53,8 +54,6 @@ export function buildFullCustomThemeCssVariables(
     "--input": borderHsl,
   };
 }
-
-import type { CSSProperties } from "react";
 
 export function buildAmbientBackgroundStyle(
   palette: CustomThemePalette,

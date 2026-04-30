@@ -13,11 +13,22 @@ type LegacyGlowPartial = Partial<{
   glowSpread: number;
 }>;
 
+function hasLegacyGlow(obj: unknown): obj is LegacyGlowPartial {
+  if (typeof obj !== "object" || obj === null) return false;
+  const candidate = obj as Record<string, unknown>;
+  return (
+    "glowEnabled" in candidate ||
+    "glowColor" in candidate ||
+    "glowIntensity" in candidate ||
+    "glowSpread" in candidate
+  );
+}
+
 export function mergeCustomThemePalette(
   partial?: Partial<CustomThemePalette> | CustomExportedTheme,
 ): CustomThemePalette {
   const merged = { ...DEFAULT_CUSTOM_THEME, ...partial };
-  const legacy = partial as LegacyGlowPartial | undefined;
+  const legacy = hasLegacyGlow(partial) ? partial : undefined;
 
   const ambientBackgroundEnabled =
     merged.ambientBackgroundEnabled ??

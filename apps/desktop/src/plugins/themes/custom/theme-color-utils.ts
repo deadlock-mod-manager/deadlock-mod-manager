@@ -16,6 +16,7 @@ export function hexToRgb(
           .join("")
       : m;
   if (full.length !== 6) return null;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
   const bigint = Number.parseInt(full, 16);
   if (Number.isNaN(bigint)) return null;
   return {
