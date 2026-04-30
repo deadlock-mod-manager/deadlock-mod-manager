@@ -4,6 +4,8 @@ export type HslTriplet = {
   l: number;
 };
 
+const HEX6_RE = /^[0-9a-fA-F]{6}$/;
+
 export function hexToRgb(
   hex: string,
 ): { r: number; g: number; b: number } | null {
@@ -15,9 +17,8 @@ export function hexToRgb(
           .map((c) => c + c)
           .join("")
       : m;
-  if (full.length !== 6) return null;
+  if (!HEX6_RE.test(full)) return null;
   const bigint = Number.parseInt(full, 16);
-  if (Number.isNaN(bigint)) return null;
   return {
     r: (bigint >> 16) & 255,
     g: (bigint >> 8) & 255,

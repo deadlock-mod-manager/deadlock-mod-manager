@@ -129,7 +129,8 @@ function revertDraftTheme() {
   if (raw?.activeTheme === "custom") {
     state.setPluginSettings(manifest.id, {
       ...raw,
-      activeTheme: undefined,
+      activeTheme: raw.previousActiveTheme,
+      previousActiveTheme: undefined,
     });
   }
 }
@@ -166,6 +167,16 @@ const Settings = () => {
         label: t("plugins.themes.applyDraftConfirmKeep"),
         onClick: () => {
           clearGraceTimer();
+          const state = usePersistedStore.getState();
+          const raw = state.pluginSettings[manifest.id] as
+            | ThemeSettings
+            | undefined;
+          if (raw?.previousActiveTheme !== undefined) {
+            state.setPluginSettings(manifest.id, {
+              ...raw,
+              previousActiveTheme: undefined,
+            });
+          }
         },
       },
     });
@@ -508,16 +519,20 @@ const Settings = () => {
                     current.activeTheme === "custom" ? "secondary" : "outline"
                   }
                   onClick={() => {
-                    const nextActiveTheme =
-                      current.activeTheme === "custom" ? undefined : "custom";
-                    setSettings(manifest.id, {
-                      ...current,
-                      activeTheme: nextActiveTheme,
-                    });
-                    if (nextActiveTheme === "custom") {
-                      startGraceTimer();
-                    } else {
+                    if (current.activeTheme === "custom") {
+                      setSettings(manifest.id, {
+                        ...current,
+                        activeTheme: current.previousActiveTheme,
+                        previousActiveTheme: undefined,
+                      });
                       clearGraceTimer();
+                    } else {
+                      setSettings(manifest.id, {
+                        ...current,
+                        previousActiveTheme: current.activeTheme,
+                        activeTheme: "custom",
+                      });
+                      startGraceTimer();
                     }
                   }}>
                   {current.activeTheme === "custom"
