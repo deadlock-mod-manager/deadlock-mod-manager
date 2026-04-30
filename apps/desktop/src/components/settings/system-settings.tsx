@@ -69,8 +69,8 @@ const SystemSettings = () => {
                     key: "",
                     value: "",
                     type: "boolean",
-                    description: def.label,
-                    enabled,
+                    description: def.description,
+                    enabled: newValue,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                   }, newValue);

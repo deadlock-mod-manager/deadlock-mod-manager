@@ -9,7 +9,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
@@ -167,6 +167,10 @@ const Settings = () => {
       revertDraftTheme();
     }, APPLY_DRAFT_GRACE_MS);
   }, [t, clearGraceTimer]);
+
+  useEffect(() => {
+    clearGraceTimer();
+  }, [current.activeTheme, clearGraceTimer]);
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4 pb-20'>

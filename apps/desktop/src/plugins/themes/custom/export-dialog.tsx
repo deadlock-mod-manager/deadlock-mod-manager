@@ -47,6 +47,7 @@ export const ExportCustomThemeButton = () => {
   const [description, setDescription] = useState("");
   const [subDescription, setSubDescription] = useState("");
   const [captureBusy, setCaptureBusy] = useState(false);
+  const savingRef = useRef(false);
 
   const canSave = name.trim().length > 0;
 
@@ -63,6 +64,8 @@ export const ExportCustomThemeButton = () => {
   }, []);
 
   const handleSave = () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     void (async () => {
       const palette = mergeCustomThemePalette(current.customTheme);
       setCaptureBusy(true);
@@ -73,6 +76,7 @@ export const ExportCustomThemeButton = () => {
         previewData = undefined;
       } finally {
         setCaptureBusy(false);
+        savingRef.current = false;
       }
 
       const resolvedPreview =

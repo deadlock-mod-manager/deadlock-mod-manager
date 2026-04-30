@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { hexToRgb } from "./theme-color-utils";
@@ -420,8 +420,7 @@ function PreviewMainPanel({ route }: Readonly<{ route: PreviewRouteId }>) {
 export function ThemePreviewSkeleton({ palette }: ThemePreviewSkeletonProps) {
   const { t } = useTranslation();
   const [route, setRoute] = useState<PreviewRouteId>("dashboard");
-  const vars = buildFullCustomThemeCssVariables(palette);
-  const cssVars = vars as CSSProperties;
+  const cssVars = buildFullCustomThemeCssVariables(palette);
   const ambientStyle = buildAmbientBackgroundStyle(palette);
 
   const sidebarFromRgb = hexToRgb(palette.cardColor);
@@ -505,7 +504,7 @@ export function ThemePreviewSkeleton({ palette }: ThemePreviewSkeletonProps) {
                             key={row.id}
                             type='button'
                             aria-current={selected ? "page" : undefined}
-                            aria-label={`Preview navigation ${row.id}`}
+                            aria-label={t('preview.navigationLabel', { name: row.id })}
                             onClick={() => {
                               setRoute(row.id);
                             }}
