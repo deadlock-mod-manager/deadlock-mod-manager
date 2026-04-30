@@ -1497,6 +1497,8 @@
       "cornerRadius": "Corner radius",
       "applyDraft": "Apply draft",
       "draftActive": "Draft applied",
+      "deleteConfirmTitle": "Delete theme",
+      "deleteConfirmBody": "Are you sure you want to delete this theme? This action cannot be undone.",
       "applyDraftGraceHint": "Draft theme applied. Click \"Keep\" or it will revert automatically.",
       "applyDraftConfirmKeep": "Keep draft theme",
       "accentColor": "Accent color",

@@ -11,6 +11,7 @@ import { Switch } from "@deadlock-mods/ui/components/switch";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
 import type { PluginModule } from "@/plugins/types";
@@ -135,6 +136,7 @@ function revertDraftTheme() {
 
 const Settings = () => {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]) as
     | ThemeSettings
     | undefined;
@@ -142,11 +144,17 @@ const Settings = () => {
   const current = settings ?? DEFAULT_SETTINGS;
 
   const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const graceToastIdRef = useRef<string | number | undefined>(undefined);
 
   const clearGraceTimer = useCallback(() => {
     if (graceTimerRef.current !== null) {
       clearTimeout(graceTimerRef.current);
       graceTimerRef.current = null;
+    }
+    const toastId = graceToastIdRef.current;
+    if (toastId !== undefined) {
+      toast.dismiss(toastId);
+      graceToastIdRef.current = undefined;
     }
   }, []);
 
@@ -161,9 +169,14 @@ const Settings = () => {
         },
       },
     });
+    graceToastIdRef.current = toastId;
     graceTimerRef.current = setTimeout(() => {
       graceTimerRef.current = null;
-      toast.dismiss(toastId);
+      const activeToastId = graceToastIdRef.current;
+      if (activeToastId !== undefined) {
+        toast.dismiss(activeToastId);
+        graceToastIdRef.current = undefined;
+      }
       revertDraftTheme();
     }, APPLY_DRAFT_GRACE_MS);
   }, [t, clearGraceTimer]);
@@ -426,9 +439,25 @@ const Settings = () => {
                           </Button>
                           <Button
                             variant='outline'
-                            onClick={() =>
-                              deleteUserTheme((theme as CustomExportedTheme).id)
-                            }>
+                            onClick={() => {
+                              void (async () => {
+                                const id = (theme as CustomExportedTheme).id;
+                                if (
+                                  !(await confirm({
+                                    title: t(
+                                      "plugins.themes.deleteConfirmTitle",
+                                    ),
+                                    body: t("plugins.themes.deleteConfirmBody"),
+                                    tone: "destructive",
+                                    actionButton: t("plugins.themes.delete"),
+                                    cancelButton: t("common.cancel"),
+                                  }))
+                                ) {
+                                  return;
+                                }
+                                deleteUserTheme(id);
+                              })();
+                            }}>
                             {t("plugins.themes.delete")}
                           </Button>
                         </>
@@ -447,7 +476,7 @@ const Settings = () => {
               <CardTitle>{t("plugins.themes.customThemeBuilder")}</CardTitle>
             </CardHeader>
             <CardContent className='flex min-h-0 flex-1 flex-col overflow-hidden p-0'>
-              <div className='grid min-h-0 flex-1 grid-cols-1 overflow-hidden xl:grid-cols-[minmax(260px,min(380px,38vw))_minmax(0,1fr)] xl:min-h-[min(400px,52vh)]'>
+              <div className='grid min-h-0 flex-1 grid-cols-1 overflow-hidden xl:grid-cols-[minmax(260px,min(380px,38vw))_minmax(0,1fr)] xl:min-h-[min(320px,40vh)]'>
                 <div className='flex min-h-0 flex-col overflow-hidden border-b border-border xl:border-b-0 xl:border-r xl:border-border'>
                   <div className='min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5'>
                     <ThemeSettingsPanel
@@ -466,6 +495,7 @@ const Settings = () => {
                 </div>
                 <div className='isolate flex min-h-0 min-w-0 flex-1 flex-col bg-muted/10 p-3 sm:p-4 xl:p-5'>
                   <ThemePreviewSkeleton
+                    captureMode={false}
                     palette={mergeCustomThemePalette(current.customTheme)}
                   />
                 </div>
