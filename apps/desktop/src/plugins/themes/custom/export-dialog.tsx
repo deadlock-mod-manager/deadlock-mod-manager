@@ -119,8 +119,8 @@ export const ExportCustomThemeButton = () => {
 
           <div
             ref={snapshotRef}
-            className='aspect-[16/10] w-full overflow-hidden rounded-lg border border-border/70 bg-muted/25 p-2'>
-            <ThemePreviewSkeleton palette={draftPalette} />
+            className='aspect-[16/9] w-full overflow-hidden rounded-lg border border-border/70'>
+            <ThemePreviewSkeleton captureMode palette={draftPalette} />
           </div>
 
           <div className='flex flex-col gap-4'>

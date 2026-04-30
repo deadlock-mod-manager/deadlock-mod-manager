@@ -163,11 +163,7 @@ export function hslTripletStringToHex(hslTriple: string): string {
   const h = Number.parseFloat(parts[0].replace(",", ""));
   const s = Number.parseFloat(parts[1].replace("%", ""));
   const l = Number.parseFloat(parts[2].replace("%", ""));
-  if (
-    Number.isNaN(h) ||
-    Number.isNaN(s) ||
-    Number.isNaN(l)
-  ) {
+  if (Number.isNaN(h) || Number.isNaN(s) || Number.isNaN(l)) {
     return "#808080";
   }
   return hslToHex(h, s, l);

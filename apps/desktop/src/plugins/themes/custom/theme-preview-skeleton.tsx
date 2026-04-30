@@ -13,6 +13,7 @@ const hoverInteractive =
   "cursor-default transition-transform duration-200 ease-out motion-safe:hover:z-[1] motion-safe:hover:-translate-y-px motion-safe:hover:shadow-md";
 
 export type ThemePreviewSkeletonProps = {
+  captureMode: boolean;
   palette: CustomThemePalette;
 };
 
@@ -76,11 +77,7 @@ const PREVIEW_GROUPS: PreviewGroupDef[] = [
   },
   {
     groupKey: "g-dev",
-    rows: [
-      { id: "developer" },
-      { id: "documentation" },
-      { id: "need-help" },
-    ],
+    rows: [{ id: "developer" }, { id: "documentation" }, { id: "need-help" }],
   },
 ];
 
@@ -128,7 +125,8 @@ function WindowChromeStub() {
       <div className={cn(btn)}>
         <span className='block h-2 w-2 border border-current opacity-70' />
       </div>
-      <div className={cn(btn, "hover:bg-destructive/15 hover:text-destructive")}>
+      <div
+        className={cn(btn, "hover:bg-destructive/15 hover:text-destructive")}>
         <span className='block h-2 w-2 rounded-sm border border-current opacity-70' />
       </div>
     </div>
@@ -288,17 +286,21 @@ function PreviewMainPanel({ route }: Readonly<{ route: PreviewRouteId }>) {
       <div
         aria-hidden='true'
         className='hidden w-[28%] max-w-[72px] shrink-0 flex-col gap-1 md:flex'>
-        {["split-nav-a", "split-nav-b", "split-nav-c"].map((slotId, slotIndex) => (
-          <div
-            key={slotId}
-            className={cn(
-              "rounded-md px-2 py-1.5",
-              slotIndex === 1 ? "border border-primary/35 bg-muted/35" : "bg-muted/18",
-              hoverInteractive,
-            )}>
-            <span className='block h-1.5 w-full rounded bg-muted-foreground/28' />
-          </div>
-        ))}
+        {["split-nav-a", "split-nav-b", "split-nav-c"].map(
+          (slotId, slotIndex) => (
+            <div
+              key={slotId}
+              className={cn(
+                "rounded-md px-2 py-1.5",
+                slotIndex === 1
+                  ? "border border-primary/35 bg-muted/35"
+                  : "bg-muted/18",
+                hoverInteractive,
+              )}>
+              <span className='block h-1.5 w-full rounded bg-muted-foreground/28' />
+            </div>
+          ),
+        )}
       </div>
       <div className='flex min-w-0 flex-1 flex-col gap-2'>
         <SkeletonTitleStub />
@@ -417,7 +419,10 @@ function PreviewMainPanel({ route }: Readonly<{ route: PreviewRouteId }>) {
   );
 }
 
-export function ThemePreviewSkeleton({ palette }: ThemePreviewSkeletonProps) {
+export function ThemePreviewSkeleton({
+  captureMode,
+  palette,
+}: ThemePreviewSkeletonProps) {
   const { t } = useTranslation();
   const [route, setRoute] = useState<PreviewRouteId>("dashboard");
   const vars = buildFullCustomThemeCssVariables(palette);
@@ -433,19 +438,34 @@ export function ThemePreviewSkeleton({ palette }: ThemePreviewSkeletonProps) {
       : undefined;
 
   return (
-    <div className='isolate flex h-full min-h-0 w-full flex-col gap-1.5' style={cssVars}>
-      <div className='flex shrink-0 items-center justify-between gap-2'>
-        <p className='text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'>
-          {t("plugins.themes.previewTitle")}
-        </p>
-      </div>
+    <div
+      className={cn(
+        "isolate flex h-full min-h-0 w-full flex-col",
+        captureMode ? "gap-0" : "gap-1.5",
+      )}
+      style={cssVars}>
+      {captureMode ? null : (
+        <div className='flex shrink-0 items-center justify-between gap-2'>
+          <p className='text-[11px] font-semibold uppercase tracking-wide text-muted-foreground'>
+            {t("plugins.themes.previewTitle")}
+          </p>
+        </div>
+      )}
 
       <div
         className={cn(
-          "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/70 shadow-lg",
-          "bg-muted/25",
+          "relative flex min-h-0 flex-1 flex-col overflow-hidden",
+          captureMode
+            ? "bg-background"
+            : "rounded-xl border border-border/70 bg-muted/25 shadow-lg",
         )}>
-        <div className='relative flex min-h-[clamp(196px,30vh,400px)] flex-1 flex-col'>
+        <div
+          className={cn(
+            "relative flex flex-1 flex-col",
+            captureMode
+              ? "min-h-0"
+              : "min-h-[clamp(196px,30vh,400px)]",
+          )}>
           <div className='flex h-9 shrink-0 items-center gap-1.5 border-b border-border bg-background px-1.5'>
             <div
               className={cn(
@@ -599,9 +619,11 @@ export function ThemePreviewSkeleton({ palette }: ThemePreviewSkeletonProps) {
         ) : null}
       </div>
 
-      <p className='shrink-0 px-0.5 text-center text-[11px] leading-snug text-muted-foreground'>
-        {t("plugins.themes.previewHint")}
-      </p>
+      {captureMode ? null : (
+        <p className='shrink-0 px-0.5 text-center text-[11px] leading-snug text-muted-foreground'>
+          {t("plugins.themes.previewHint")}
+        </p>
+      )}
     </div>
   );
 }
