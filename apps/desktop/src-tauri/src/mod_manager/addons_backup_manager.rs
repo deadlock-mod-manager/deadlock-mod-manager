@@ -399,7 +399,7 @@ impl AddonsBackupManager {
     }
 
     let backup_comp = backup_path.join(".deadlock-compression");
-    if backup_comp.is_dir() {
+    if matches!(strategy, RestoreStrategy::Replace) && backup_comp.is_dir() {
       copy_dir_recursive(&backup_comp, &addons_path.join(".deadlock-compression"))?;
     }
 

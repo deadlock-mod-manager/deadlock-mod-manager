@@ -218,6 +218,12 @@ pub fn stage_mod_vpks(mods_store: &Path, addons_path: &Path, m: &Mod) -> Result<
         let _ = fs::remove_file(&dst);
       }
       fs::copy(&src, &dst).map_err(Error::Io)?;
+    } else {
+      log::warn!(
+        "stage_mod_vpks: source VPK missing for mod {}: {}",
+        m.id,
+        src.display()
+      );
     }
   }
   Ok(())
@@ -244,14 +250,19 @@ fn collect_rebuild_inputs(
     let names = effective_original_names(&m);
     let staged = compression_staged_dir(mods_store, &m.id);
     let dir_vpk_paths: Vec<PathBuf> = names.iter().map(|orig| staged.join(orig)).collect();
-    for p in &dir_vpk_paths {
-      if !p.exists() {
-        return Err(Error::ModInvalid(format!(
-          "missing staged VPK for mod {}: {}",
-          m.id,
-          p.display()
-        )));
-      }
+    let all_present = dir_vpk_paths.iter().all(|p| p.exists());
+    if !all_present {
+      let missing: Vec<String> = dir_vpk_paths
+        .iter()
+        .filter(|p| !p.exists())
+        .map(|p| p.display().to_string())
+        .collect();
+      log::warn!(
+        "skipping mod {} for compression: missing staged VPKs: {:?}",
+        m.id,
+        missing
+      );
+      continue;
     }
     inputs.push(ModRebuildInput {
       mod_id: m.id.clone(),
@@ -278,14 +289,19 @@ fn input_for_mod(
   let names = effective_original_names(m);
   let staged = compression_staged_dir(mods_store, &m.id);
   let dir_vpk_paths: Vec<PathBuf> = names.iter().map(|orig| staged.join(orig)).collect();
-  for p in &dir_vpk_paths {
-    if !p.exists() {
-      return Err(Error::ModInvalid(format!(
-        "missing staged VPK for mod {}: {}",
-        mod_id,
-        p.display()
-      )));
-    }
+  let all_present = dir_vpk_paths.iter().all(|p| p.exists());
+  if !all_present {
+    let missing: Vec<String> = dir_vpk_paths
+      .iter()
+      .filter(|p| !p.exists())
+      .map(|p| p.display().to_string())
+      .collect();
+    log::warn!(
+      "skipping mod {} for compression: missing staged VPKs: {:?}",
+      mod_id,
+      missing
+    );
+    return Ok(None);
   }
   Ok(Some(ModRebuildInput {
     mod_id: m.id.clone(),
@@ -341,6 +357,11 @@ fn apply_manifest_to_repository(manager: &mut ModManager, manifest: &Compression
         if !vpks.is_empty() {
           entry.installed_vpks = vpks.clone();
           entry.uses_compression = true;
+          if let Some(me) = manifest.mods.get(&id) {
+            if !me.original_vpk_names.is_empty() {
+              entry.original_vpk_names = me.original_vpk_names.clone();
+            }
+          }
           manager.get_mod_repository_mut().add_mod(entry);
         }
       }
@@ -430,6 +451,27 @@ pub fn rebuild_compressed_addon_with_level(
   let inputs = collect_rebuild_inputs(manager, &mods_store)?;
   if inputs.is_empty() {
     log::warn!("rebuild_compressed_addon: no mods, disabling compression");
+    let empty_manifest_path = vpkmerger::manifest_path(&addons_path);
+    if empty_manifest_path.is_file() {
+      match read_manifest(&empty_manifest_path) {
+        Ok(prev_manifest) => {
+          for n in prev_manifest.all_shard_file_names() {
+            let shard_path = addons_path.join(&n);
+            if shard_path.exists() {
+              if let Err(e) = fs::remove_file(&shard_path) {
+                log::warn!(
+                  "failed to remove merged shard {}: {e}",
+                  shard_path.display()
+                );
+              }
+            }
+          }
+        }
+        Err(e) => {
+          log::warn!("failed to read compression manifest for shard cleanup: {e}");
+        }
+      }
+    }
     try_remove_stale_manifest(&addons_path);
     state::set_compression_enabled(false, profile_folder.clone());
     return Ok(());
@@ -770,7 +812,6 @@ pub fn change_compression_level(
   cancel: &CancelToken,
   new_level: CompressionLevel,
 ) -> Result<(), Error> {
-  state::set_compression_level(new_level);
   rebuild_compressed_addon_with_level(app, manager, profile_folder, cancel, new_level)
 }
 

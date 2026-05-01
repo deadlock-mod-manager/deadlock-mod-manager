@@ -62,7 +62,8 @@ export const ModCompressionSettings = () => {
 
   const isBusy =
     compressionProgress.status === "merging" ||
-    compressionProgress.status === "extracting";
+    compressionProgress.status === "extracting" ||
+    compressionProgress.status === "backing_up";
   const isPaused = compressionProgress.status === "paused";
   const pct =
     compressionProgress.total > 0
@@ -134,10 +135,12 @@ export const ModCompressionSettings = () => {
           current: compressionProgress.current,
           total: compressionProgress.total,
         })
-      : t("modCompression.extracting", {
-          current: compressionProgress.current,
-          total: compressionProgress.total,
-        })
+      : compressionProgress.status === "extracting"
+        ? t("modCompression.extracting", {
+            current: compressionProgress.current,
+            total: compressionProgress.total,
+          })
+        : t("modCompression.backingUp")
     : isPaused
       ? t("modCompression.paused")
       : t("modCompression.idle");

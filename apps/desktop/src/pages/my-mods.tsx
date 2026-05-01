@@ -101,6 +101,7 @@ const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
 const ENGINE_VPK_LIMIT = 99;
 const VPK_LIMIT_WARNING_THRESHOLD = 85;
+const VPK_COMPRESSION_SUGGESTION_THRESHOLD = 90;
 
 function ModsPagination({
   page,
@@ -728,9 +729,22 @@ const MyMods = () => {
   const disabledModsCount = mods.filter(
     (mod) => !isInstalledModWithVpks(mod),
   ).length;
-  const enabledVpkFileCount = mods
-    .filter(isInstalledModWithVpks)
-    .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
+  const enabledVpkFileCount = useMemo(() => {
+    const installed = mods.filter(isInstalledModWithVpks);
+    if (compressionEnabled) {
+      const unique = new Set<string>();
+      for (const mod of installed) {
+        for (const vpk of mod.installedVpks ?? []) {
+          unique.add(vpk);
+        }
+      }
+      return unique.size;
+    }
+    return installed.reduce(
+      (sum, mod) => sum + (mod.installedVpks?.length ?? 0),
+      0,
+    );
+  }, [mods, compressionEnabled]);
 
   const vpkStatSubordinateClass =
     enabledVpkFileCount >= ENGINE_VPK_LIMIT
@@ -974,6 +988,35 @@ const MyMods = () => {
               </p>
             </div>
           )}
+          {enabledVpkFileCount > VPK_COMPRESSION_SUGGESTION_THRESHOLD &&
+            enabledVpkFileCount < ENGINE_VPK_LIMIT &&
+            !compressionEnabled && (
+              <div className='flex items-center gap-3 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-700 dark:border-orange-500/40 dark:bg-orange-500/15 dark:text-orange-400'>
+                <TriangleAlert className='h-4 w-4 shrink-0' />
+                <p>
+                  <Trans
+                    i18nKey='myMods.vpkCompressionSuggestion'
+                    values={{
+                      count: enabledVpkFileCount,
+                      max: ENGINE_VPK_LIMIT,
+                    }}
+                    components={{
+                      compressionLink: (
+                        <button
+                          type='button'
+                          className='inline font-medium underline underline-offset-2 hover:text-orange-600 dark:hover:text-orange-300'
+                          onClick={() =>
+                            navigate("/settings", {
+                              state: { activeTab: "game" },
+                            })
+                          }
+                        />
+                      ),
+                    }}
+                  />
+                </p>
+              </div>
+            )}
           <VpkScanAlert
             unmatchedVpkCount={unmatchedVpkCount}
             unmatchedVpks={unmatchedVpks}

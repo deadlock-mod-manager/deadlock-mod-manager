@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
 use vpk_parser::VpkEntry;
@@ -136,23 +137,41 @@ fn read_entry_body(
 
     let archive_name = format!("{archive_base}_{:03}.vpk", entry.archive_index);
     let archive_path = parent.join(&archive_name);
-    let chunk = fs::read(&archive_path).map_err(|_| VpkMergerError::MissingChunk {
+    let mut file = fs::File::open(&archive_path).map_err(|_| VpkMergerError::MissingChunk {
         entry_path: entry.full_path.clone(),
         expected_archive: archive_path.clone(),
     })?;
-
-    let start = entry.entry_offset as usize;
-    let end = start.saturating_add(len);
-    if end > chunk.len() {
-        return Err(VpkMergerError::Invalid {
+    let start_u64 = entry.entry_offset as u64;
+    file
+        .seek(SeekFrom::Start(start_u64))
+        .map_err(|e| VpkMergerError::Invalid {
             message: format!(
-                "chunk entry out of bounds for {} in {}",
+                "seek failed for {} in {}: {e}",
                 entry.full_path,
                 archive_path.display()
             ),
-        });
-    }
-    Ok(chunk[start..end].to_vec())
+        })?;
+    let mut buf = vec![0u8; len];
+    file.read_exact(&mut buf).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::UnexpectedEof {
+            VpkMergerError::Invalid {
+                message: format!(
+                    "chunk entry out of bounds for {} in {}",
+                    entry.full_path,
+                    archive_path.display()
+                ),
+            }
+        } else {
+            VpkMergerError::Invalid {
+                message: format!(
+                    "read failed for {} in {}: {e}",
+                    entry.full_path,
+                    archive_path.display()
+                ),
+            }
+        }
+    })?;
+    Ok(buf)
 }
 
 fn read_u32_at(buf: &[u8], offset: usize) -> u32 {

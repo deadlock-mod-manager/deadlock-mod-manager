@@ -2,7 +2,7 @@ import type { StateCreator } from "zustand";
 import type { State } from "..";
 
 export type CompressionProgress = {
-  status: "idle" | "merging" | "extracting" | "paused";
+  status: "idle" | "merging" | "extracting" | "paused" | "backing_up";
   current: number;
   total: number;
   currentModName: string | null;

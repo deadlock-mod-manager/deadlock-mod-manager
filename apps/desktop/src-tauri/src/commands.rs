@@ -305,15 +305,26 @@ pub async fn install_mod(
     let mod_id = m.id.clone();
     let mut mod_manager = MANAGER.lock().unwrap();
     let cancel = CancelToken::new();
-    let _cancel_guard =
-      crate::mod_compression::cancel_holder::register_cancel_guarded(cancel.clone())?;
-    crate::mod_compression::service::add_mod_to_compression(
-      &app,
-      &mut mod_manager,
-      profile_folder.clone(),
-      &cancel,
-      &mod_id,
-    )?;
+    match crate::mod_compression::cancel_holder::register_cancel_guarded(cancel.clone()) {
+      Ok(_cancel_guard) => {
+        if let Err(e) = crate::mod_compression::service::add_mod_to_compression(
+          &app,
+          &mut mod_manager,
+          profile_folder.clone(),
+          &cancel,
+          &mod_id,
+        ) {
+          log::error!(
+            "add_mod_to_compression after install failed for mod {mod_id}: {e}"
+          );
+        }
+      }
+      Err(e) => {
+        log::error!(
+          "register_cancel_guarded failed after install for mod {mod_id}: {e}"
+        );
+      }
+    }
     if let Some(updated) = mod_manager.get_mod_repository().get_mod(&m.id).cloned() {
       m = updated;
     }
@@ -773,11 +784,6 @@ pub async fn uninstall_mod(
   if let Some(ref m) = local_mod
     && m.uses_compression
   {
-    let mods_store = {
-      let mod_manager = MANAGER.lock().unwrap();
-      mod_manager.get_mods_store_path()?
-    };
-    let staged = crate::mod_compression::paths::compression_staged_dir(&mods_store, &mod_id);
     {
       let mut mod_manager = MANAGER.lock().unwrap();
       let cancel = CancelToken::new();
@@ -791,17 +797,6 @@ pub async fn uninstall_mod(
         &mod_id,
       )?;
       mod_manager.get_mod_repository_mut().remove_mod(&mod_id);
-    }
-    let addons_path = {
-      let mod_manager = MANAGER.lock().unwrap();
-      crate::mod_compression::service::addons_path_for(&mod_manager, profile_folder.as_deref())?
-    };
-    for orig in &m.original_vpk_names {
-      let src = staged.join(orig);
-      if src.exists() {
-        let name = format!("{mod_id}_{orig}");
-        fs::copy(&src, addons_path.join(&name)).map_err(Error::Io)?;
-      }
     }
     let mut disabled = m.clone();
     disabled.installed_vpks = Vec::new();
@@ -3105,6 +3100,11 @@ pub async fn batch_update_mods(
     return Err(Error::InvalidInput(
       "No mods provided for update".to_string(),
     ));
+  }
+
+  if !profile_folder.is_empty() {
+    // Prevent path traversal when joining profile name into addons path (SECURITY.md).
+    crate::mod_compression::service::validate_profile_folder_component(&profile_folder)?;
   }
 
   let (root_addons_path, filename) = {

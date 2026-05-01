@@ -124,12 +124,13 @@ function ModCompressionIndicator() {
   const compressionProgress = usePersistedStore(
     (state) => state.compressionProgress,
   );
-  if (!compressionEnabled) {
+  if (!compressionEnabled && compressionProgress.status !== "backing_up") {
     return null;
   }
   const isBusy =
     compressionProgress.status === "merging" ||
-    compressionProgress.status === "extracting";
+    compressionProgress.status === "extracting" ||
+    compressionProgress.status === "backing_up";
   const percentage =
     compressionProgress.total > 0
       ? Math.round(
@@ -143,10 +144,12 @@ function ModCompressionIndicator() {
           current: compressionProgress.current,
           total: compressionProgress.total,
         })
-      : t("modCompression.extracting", {
-          current: compressionProgress.current,
-          total: compressionProgress.total,
-        })
+      : compressionProgress.status === "extracting"
+        ? t("modCompression.extracting", {
+            current: compressionProgress.current,
+            total: compressionProgress.total,
+          })
+        : t("modCompression.backingUp")
     : null;
 
   return (
@@ -164,7 +167,9 @@ function ModCompressionIndicator() {
             </span>
           ) : compressionProgress.shardCount > 0 ? (
             <span className='text-xs tabular-nums text-muted-foreground'>
-              {compressionProgress.shardCount} VPKs
+              {t("modCompression.shardCount", {
+                count: compressionProgress.shardCount,
+              })}
             </span>
           ) : null}
         </div>

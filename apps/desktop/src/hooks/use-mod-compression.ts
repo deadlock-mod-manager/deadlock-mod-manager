@@ -177,6 +177,12 @@ export const useModCompression = () => {
                   ...m,
                   installedVpks: shardFiles,
                   usesCompression: true,
+                  compression: {
+                    mergedShards: shardFiles,
+                    originalVpkNames: m.compression?.originalVpkNames ?? [],
+                    loadOrder: m.compression?.loadOrder ?? m.installOrder ?? 0,
+                    assetKeys: m.compression?.assetKeys ?? [],
+                  },
                 };
               }
               return m;
@@ -264,7 +270,9 @@ export const useModCompression = () => {
       const compressionProgress =
         usePersistedStore.getState().compressionProgress;
       if (
-        compressionProgress.status === "running" ||
+        compressionProgress.status === "merging" ||
+        compressionProgress.status === "extracting" ||
+        compressionProgress.status === "backing_up" ||
         compressionProgress.currentModName != null ||
         compressionProgress.total > 0
       ) {
@@ -326,6 +334,14 @@ export const useModCompression = () => {
       .withMetadata({ mods: mods.length, createBackup: opts.createBackup })
       .info("enableCompression");
     if (opts.createBackup) {
+      setCompressionProgress({
+        status: "backing_up",
+        current: 0,
+        total: 100,
+        currentModName: null,
+        shardCount: 0,
+        shardFiles: [],
+      });
       await invoke("create_addons_backup", {
         maxBackups: maxBackupCount,
         profileFolder: pf,
