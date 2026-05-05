@@ -100,7 +100,7 @@ const TEMPLATE_ROWS: TemplateRow[] = [
     phaseKey: "gamePresence.phases.soloMatch",
     descriptionKey: "gamePresence.phaseDescriptions.soloMatch",
     defaultDetails: "{mode}",
-    defaultState: "Solo Queued as {hero}",
+    defaultState: "Playing Solo as {hero}",
   },
   {
     key: "partyMatch",
