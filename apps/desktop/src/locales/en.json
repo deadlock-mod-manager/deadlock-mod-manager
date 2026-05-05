@@ -1952,10 +1952,10 @@
   },
   "gamePresence": {
     "title": "Discord Game Presence",
-    "description": "Show your live Deadlock status on Discord: hero, match mode, party size, and match timer.",
+    "description": "Show your live Deadlock status via Discord Rich Presence, such as current hero, match mode, party size, and more.",
     "settingsDescription": "Customize how Deadlock appears on your Discord profile.",
     "condebugOption": "Console Debug Log",
-    "condebugOptionDescription": "Lets the mod manager read game info so your Discord status stays up to date.",
+    "condebugOptionDescription": "Enables Deadlock's built-in console debug logger, which the mod manager can watch to update your in-game Discord status.",
     "indicatorDisabled": "Discord Game Presence Disabled",
     "indicatorWaiting": "Discord Game Presence Enabled",
     "indicatorConnecting": "Connecting to Discord Game Presence",
