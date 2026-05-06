@@ -1085,13 +1085,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
+name = "deadlock-discord-presence"
+version = "0.1.0"
+dependencies = [
+ "discord-rich-presence",
+ "log",
+ "regex",
+ "reqwest 0.12.26",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "ts-rs",
+]
+
+[[package]]
 name = "deadlock-mod-manager"
 version = "0.18.0"
 dependencies = [
  "chrono",
  "clap",
+ "deadlock-discord-presence",
  "dirs",
- "discord-rich-presence",
  "dmp-parser",
  "dotenvy",
  "fix-path-env",
@@ -3616,15 +3631,14 @@ dependencies = [
 
 [[package]]
 name = "openssl"
-version = "0.10.78"
+version = "0.10.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f38c4372413cdaaf3cc79dd92d29d7d9f5ab09b51b10dded508fb90bb70b9222"
+checksum = "bf0b434746ee2832f4f0baf10137e1cabb18cbe6912c69e2e33263c45250f542"
 dependencies = [
  "bitflags 2.11.0",
  "cfg-if",
  "foreign-types 0.3.2",
  "libc",
- "once_cell",
  "openssl-macros",
  "openssl-sys",
 ]
@@ -3654,9 +3668,9 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.114"
+version = "0.9.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13ce1245cd07fcc4cfdb438f7507b0c7e4f3849a69fd84d52374c66d83741bb6"
+checksum = "158fe5b292746440aa6e7a7e690e55aeb72d41505e2804c23c6973ad0e9c9781"
 dependencies = [
  "cc",
  "libc",
