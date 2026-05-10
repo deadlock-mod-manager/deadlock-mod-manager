@@ -24,6 +24,7 @@ on:
 
 jobs:
   check-commits:
+    if: github.repository_owner == 'deadlock-mod-manager'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -72,6 +73,7 @@ jobs:
           echo "latest_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   prepare-matrix:
+    if: github.repository_owner == 'deadlock-mod-manager'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
