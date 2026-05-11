@@ -184,7 +184,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 33% | [meneee](https://discordapp.com/users/meneee/) |
 | 🇮🇹 **Italian** | Italiano | 🚧 35% | [Constrat](https://github.com/Constrat) |
 | 🇯🇵 **Japanese** | 日本語 | 🚧 54% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 79% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 78% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
