@@ -11,6 +11,7 @@ on:
 
 jobs:
   create-release:
+    if: github.repository_owner == 'deadlock-mod-manager'
     permissions:
       contents: write
     runs-on: ubuntu-latest

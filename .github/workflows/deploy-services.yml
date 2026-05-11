@@ -19,6 +19,7 @@ on:
 
 jobs:
   changes:
+    if: github.repository_owner == 'deadlock-mod-manager'
     runs-on: ubuntu-latest
     permissions:
       contents: read
