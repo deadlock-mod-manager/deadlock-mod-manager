@@ -9,7 +9,7 @@
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
-    "@opentelemetry/auto-instrumentations-node": "^0.64.6",
+    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
     "@opentelemetry/context-async-hooks": "^2.6.1",
     "@opentelemetry/core": "^2.6.1",
     "@opentelemetry/instrumentation-http": "^0.200.0",
