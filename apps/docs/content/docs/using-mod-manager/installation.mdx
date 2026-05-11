@@ -83,6 +83,22 @@ environment.systemPackages = with pkgs; [
 ];
 ```
 
+#### Gentoo
+
+Available via the third-party [`::deftera`](https://github.com/Deftera186/deftera-overlay) overlay.
+
+```bash
+# Enable the overlay
+sudo eselect repository add deftera git https://github.com/Deftera186/deftera-overlay.git
+sudo emaint sync --repo deftera
+
+# Prebuilt binary (recommended)
+sudo emerge -av games-util/deadlock-modmanager-bin
+
+# Or build from source
+sudo emerge -av games-util/deadlock-modmanager
+```
+
 More package managers will be added in the future. If you would like to maintain a package manager for Deadlock Mod Manager, please contact us on [Discord](https://deadlockmods.app/discord).
 
 ## Platform-Specific Installation
