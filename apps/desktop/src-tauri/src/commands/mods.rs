@@ -15,6 +15,58 @@ use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
 
+const ALLOWED_DOWNLOAD_HOSTS: &[&str] = &["gamebanana.com", "deadlockmods.app"];
+
+fn sanitize_archive_name(name: &str) -> Result<String, Error> {
+  if name.is_empty() {
+    return Err(Error::InvalidInput(
+      "Archive name cannot be empty".to_string(),
+    ));
+  }
+  if name.contains('/') || name.contains('\\') || name.contains("..") {
+    return Err(Error::InvalidInput(format!(
+      "Archive name contains path separators or parent components: {name}"
+    )));
+  }
+  let path = std::path::Path::new(name);
+  match path.file_name().and_then(|f| f.to_str()) {
+    Some(f) if f == name => Ok(f.to_string()),
+    _ => Err(Error::InvalidInput(format!(
+      "Invalid archive name: {name}"
+    ))),
+  }
+}
+
+fn validate_download_url(url: &str) -> Result<(), Error> {
+  let parsed = reqwest::Url::parse(url)
+    .map_err(|e| Error::InvalidInput(format!("Invalid download URL: {e}")))?;
+
+  match parsed.scheme() {
+    "http" | "https" => {}
+    scheme => {
+      return Err(Error::InvalidInput(format!(
+        "Download URL scheme must be http or https, got: {scheme}"
+      )));
+    }
+  }
+
+  let host = parsed
+    .host_str()
+    .ok_or_else(|| Error::InvalidInput(format!("Download URL has no host: {url}")))?;
+
+  let is_allowed = ALLOWED_DOWNLOAD_HOSTS.iter().any(|allowed| {
+    host == *allowed || host.ends_with(&format!(".{allowed}"))
+  });
+
+  if !is_allowed {
+    return Err(Error::InvalidInput(format!(
+      "Download URL host not in allowlist: {host}"
+    )));
+  }
+
+  Ok(())
+}
+
 #[tauri::command]
 pub async fn install_mod(deadlock_mod: Mod, profile_folder: Option<String>) -> Result<Mod, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
@@ -871,9 +923,12 @@ pub async fn fetch_missing_mod_variants(
       continue;
     }
 
+    validate_download_url(&archive.url)?;
+    let safe_archive_name = sanitize_archive_name(&archive.archive_name)?;
+
     log::info!(
       "Downloading archive {} from {} for {} missing originals",
-      archive.archive_name,
+      safe_archive_name,
       archive.url,
       to_fetch.len()
     );
@@ -898,7 +953,7 @@ pub async fn fetch_missing_mod_variants(
       .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url)))?;
 
     let temp_dir = tempfile::tempdir()?;
-    let archive_path = temp_dir.path().join(&archive.archive_name);
+    let archive_path = temp_dir.path().join(&safe_archive_name);
     std::fs::write(&archive_path, &bytes)?;
 
     let extract_dir = temp_dir.path().join("extracted");
@@ -974,6 +1029,9 @@ pub async fn stage_download_archive(
     return Err(Error::GamePathNotSet);
   }
 
+  validate_download_url(&archive_url)?;
+  let safe_archive_name = sanitize_archive_name(&archive_name)?;
+
   let client = reqwest::Client::builder()
     .build()
     .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
@@ -998,7 +1056,7 @@ pub async fn stage_download_archive(
     .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
 
   let temp_dir = tempfile::tempdir()?;
-  let archive_path = temp_dir.path().join(&archive_name);
+  let archive_path = temp_dir.path().join(&safe_archive_name);
   std::fs::write(&archive_path, &bytes)?;
 
   let extract_dir = temp_dir.path().join("extracted");
@@ -1012,7 +1070,7 @@ pub async fn stage_download_archive(
 
   if vpk_files.is_empty() {
     return Err(Error::InvalidInput(format!(
-      "No VPK files found in archive {archive_name}"
+      "No VPK files found in archive {safe_archive_name}"
     )));
   }
 
@@ -1078,7 +1136,10 @@ pub async fn switch_mod_download_variant(
     return Err(Error::GamePathNotSet);
   }
 
-  log::info!("Downloading archive {} from {}", archive_name, archive_url);
+  validate_download_url(&archive_url)?;
+  let safe_archive_name = sanitize_archive_name(&archive_name)?;
+
+  log::info!("Downloading archive {} from {}", safe_archive_name, archive_url);
 
   let client = reqwest::Client::builder()
     .build()
@@ -1104,7 +1165,7 @@ pub async fn switch_mod_download_variant(
     .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
 
   let temp_dir = tempfile::tempdir()?;
-  let archive_path = temp_dir.path().join(&archive_name);
+  let archive_path = temp_dir.path().join(&safe_archive_name);
   std::fs::write(&archive_path, &bytes)?;
 
   let extract_dir = temp_dir.path().join("extracted");
@@ -1123,7 +1184,7 @@ pub async fn switch_mod_download_variant(
 
   if new_originals.is_empty() {
     return Err(Error::InvalidInput(format!(
-      "No VPK files found in archive {archive_name}"
+      "No VPK files found in archive {safe_archive_name}"
     )));
   }
 
@@ -1133,7 +1194,24 @@ pub async fn switch_mod_download_variant(
     new_originals
   );
 
+  let staging_dir = tempfile::tempdir()?;
+  let mut staged_pairs: Vec<(String, PathBuf)> = Vec::new();
+  for original in &new_originals {
+    if let Some(src) = vpk_files.iter().find_map(|(path, _)| {
+      path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .filter(|s| *s == original.as_str())
+        .map(|_| path)
+    }) {
+      let staged_path = staging_dir.path().join(original);
+      filesystem.copy_file(src, &staged_path)?;
+      staged_pairs.push((original.clone(), staged_path));
+    }
+  }
+
   let vpk_manager = VpkManager::new();
+  let prefix = format!("{mod_id}_");
 
   if !current_installed_vpks.is_empty() {
     vpk_manager.disable_vpks(
@@ -1144,25 +1222,31 @@ pub async fn switch_mod_download_variant(
     )?;
   }
 
-  let prefix = format!("{mod_id}_");
   let mut prefixed_names: Vec<String> = Vec::new();
-  for original in &new_originals {
+  for (original, staged_path) in &staged_pairs {
     let prefixed = format!("{prefix}{original}");
     let dest = addons_path.join(&prefixed);
-    if let Some(src) = vpk_files.iter().find_map(|(path, _)| {
-      path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .filter(|s| *s == original.as_str())
-        .map(|_| path)
-    }) {
-      filesystem.copy_file(src, &dest)?;
-      prefixed_names.push(prefixed.clone());
-      log::info!("Staged VPK {original} -> {}", dest.display());
-    }
+    filesystem.copy_file(staged_path, &dest)?;
+    prefixed_names.push(prefixed.clone());
+    log::info!("Staged VPK {original} -> {}", dest.display());
   }
 
-  let new_installed_vpks = vpk_manager.enable_vpks(&addons_path, &mod_id, &prefixed_names)?;
+  let new_installed_vpks = match vpk_manager.enable_vpks(&addons_path, &mod_id, &prefixed_names) {
+    Ok(installed) => installed,
+    Err(e) => {
+      log::error!("Failed to enable new VPKs for variant switch: {e}, restoring previous state");
+      if !current_installed_vpks.is_empty() {
+        let old_prefixed: Vec<String> = current_original_names
+          .iter()
+          .map(|name| format!("{mod_id}_{name}"))
+          .collect();
+        if let Err(restore_err) = vpk_manager.enable_vpks(&addons_path, &mod_id, &old_prefixed) {
+          log::error!("Failed to restore previous VPKs for mod {mod_id}: {restore_err}");
+        }
+      }
+      return Err(e);
+    }
+  };
 
   log::info!(
     "Variant switch complete: {} VPKs enabled as {:?}",

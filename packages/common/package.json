@@ -2,7 +2,8 @@
   "name": "@deadlock-mods/common",
   "version": "1.2.1",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./client-errors": "./src/errors/client-entry.ts"
   },
   "scripts": {
     "check-types": "tsgo --noEmit"

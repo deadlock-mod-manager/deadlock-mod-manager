@@ -19,6 +19,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import type { ModDownloadItem, ModFileTree } from "@/types/mods";
 
 const formatFileSize = (bytes: number): string => {
@@ -169,9 +170,8 @@ export const ModOptionsDialog = ({
           <ScrollArea className='max-h-[55vh] overflow-y-auto pr-4'>
             <div className='space-y-1'>
               {vpkFiles.map((file, index) => (
-                <button
-                  type='button'
-                  className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
+                <div
+                  className='flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                   key={`vpk-${file.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -204,25 +204,27 @@ export const ModOptionsDialog = ({
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
 
               {uninstalledDownloads.map((download) => {
                 const isChecked = selectedArchiveNames.has(download.name);
 
                 return (
-                  <button
-                    type='button'
-                    className='flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left hover:bg-muted/50'
-                    disabled={isSaving}
+                  <div
+                    className={cn(
+                      "flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2.5 text-left hover:bg-muted/50",
+                      isSaving && "pointer-events-none opacity-50",
+                    )}
                     key={`archive-${download.name}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleArchive(download.name);
+                      if (!isSaving) toggleArchive(download.name);
                     }}>
                     <div className='flex items-center gap-3'>
                       <Checkbox
                         checked={isChecked}
+                        disabled={isSaving}
                         onCheckedChange={() => toggleArchive(download.name)}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -249,7 +251,7 @@ export const ModOptionsDialog = ({
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

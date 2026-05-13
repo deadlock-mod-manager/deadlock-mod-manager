@@ -1,3 +1,7 @@
+import {
+  RuntimeError,
+  ValidationError,
+} from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -213,7 +217,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     enabled: !!mod && isOpen,
     queryFn: async () => {
       if (!mod) {
-        throw new Error("No mod selected");
+        throw new ValidationError("No mod selected");
       }
       return await invoke<ModFileTree>("get_mod_available_options", {
         modId: mod.remoteId,
@@ -241,7 +245,7 @@ export const useModOptions = (mod: LocalMod | null) => {
   >({
     mutationFn: async ({ selectedVpkNames, selectedArchives }) => {
       if (!mod) {
-        throw new Error("No mod selected");
+        throw new ValidationError("No mod selected");
       }
 
       let combinedSelection = [...selectedVpkNames];
@@ -268,6 +272,8 @@ export const useModOptions = (mod: LocalMod | null) => {
         }
       }
 
+      combinedSelection = [...new Set(combinedSelection)];
+
       const missingOriginals = combinedSelection.filter((n) =>
         notOnDisk.has(n),
       );
@@ -286,7 +292,7 @@ export const useModOptions = (mod: LocalMod | null) => {
           );
 
           if (fetchResult.missing_originals.length > 0) {
-            throw new Error(
+            throw new RuntimeError(
               t("modOptions.fetchMissingNotFound", {
                 defaultValue:
                   "Some variants were not found in their source archives: {{names}}",
