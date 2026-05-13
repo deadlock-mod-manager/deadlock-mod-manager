@@ -20,6 +20,28 @@ export interface ModProfile {
   mods: LocalMod[];
 }
 
+export interface VpkManifestEntry {
+  enabled: boolean;
+  order?: number | null;
+  currentVpks: string[];
+  disabledVpks: string[];
+  originalVpkNames: string[];
+}
+
+export interface VpkManifest {
+  version: number;
+  mods: Record<string, VpkManifestEntry>;
+}
+
+export interface SeedManifestEntry {
+  modId: string;
+  enabled: boolean;
+  currentVpks: string[];
+  disabledVpks: string[];
+  originalVpkNames: string[];
+  order: number | null;
+}
+
 export interface ProfileSwitchResult {
   disabledMods: string[];
   enabledMods: string[];

@@ -320,7 +320,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => ({
       localMods: state.localMods.map((mod) => ({
         ...mod,
-        status: mod.remoteId === remoteId ? ModStatus.Installed : mod.status,
+        status:
+          mod.remoteId === remoteId && vpks.length > 0
+            ? ModStatus.Installed
+            : mod.status,
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
@@ -373,8 +376,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         .info("Updating mod VPK mappings after reorder");
 
       const vpkMap = new Map(vpkMappings);
-      return {
-        localMods: state.localMods.map((mod) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => {
           const newVpks = vpkMap.get(mod.remoteId);
           if (newVpks) {
             logger
@@ -390,7 +393,20 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             };
           }
           return mod;
-        }),
+        });
+      const activeProfile = state.profiles[state.activeProfileId];
+
+      return {
+        localMods: updateMods(state.localMods),
+        profiles: activeProfile
+          ? {
+              ...state.profiles,
+              [state.activeProfileId]: {
+                ...activeProfile,
+                mods: updateMods(activeProfile.mods),
+              },
+            }
+          : state.profiles,
       };
     }),
 

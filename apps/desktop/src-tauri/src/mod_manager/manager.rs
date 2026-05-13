@@ -9,10 +9,16 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   steam_manager::SteamManager,
   vpk_manager::VpkManager,
+  vpk_manifest::ProfileVpkManifest,
 };
 use log;
-use std::path::PathBuf;
+use std::{
+  collections::HashSet,
+  path::{Component, Path, PathBuf},
+};
 use tauri::Manager;
+
+const UNORDERED_FALLBACK_ORDER: u32 = u32::MAX;
 
 pub struct ModManager {
   steam_manager: SteamManager,
@@ -68,6 +74,45 @@ impl ModManager {
 
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
     self.process_manager.is_game_running()
+  }
+
+  pub(crate) fn get_addons_path(&self, profile_folder: Option<&str>) -> Result<PathBuf, Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    let addons_path = game_path.join("game").join("citadel").join("addons");
+    Ok(match profile_folder {
+      Some(folder) => {
+        if !Self::is_safe_profile_folder(folder) {
+          return Err(Error::InvalidInput(format!(
+            "Invalid profile folder path: {folder}"
+          )));
+        }
+        addons_path.join(folder)
+      }
+      None => addons_path,
+    })
+  }
+
+  fn is_safe_profile_folder(folder: &str) -> bool {
+    !folder.is_empty()
+      && Path::new(folder)
+        .components()
+        .all(|component| matches!(component, Component::Normal(_)))
+  }
+
+  fn vpk_filenames(vpks: &[String]) -> Vec<String> {
+    vpks
+      .iter()
+      .map(|vpk| {
+        std::path::Path::new(vpk)
+          .file_name()
+          .map(|f| f.to_string_lossy().to_string())
+          .unwrap_or_else(|| vpk.clone())
+      })
+      .collect()
   }
 
   pub fn stop_game(&mut self) -> Result<(), Error> {
@@ -147,20 +192,7 @@ impl ModManager {
       self.setup_game_for_mods()?;
     }
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
@@ -236,6 +268,15 @@ impl ModManager {
     log::info!("Adding mod to managed mods list");
     self.mod_repository.add_mod(deadlock_mod.clone());
 
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    manifest.mark_enabled(
+      &deadlock_mod.id,
+      deadlock_mod.installed_vpks.clone(),
+      deadlock_mod.original_vpk_names.clone(),
+      deadlock_mod.install_order,
+    );
+    manifest.save(&addons_path)?;
+
     // If the mod has an install order, trigger a reorder to maintain correct sequence
     if deadlock_mod.install_order.is_some() {
       log::info!("Mod has install order, triggering reorder to maintain sequence");
@@ -254,62 +295,72 @@ impl ModManager {
   ) -> Result<(), Error> {
     log::info!("Uninstalling (disabling) mod: {mod_id} (profile: {profile_folder:?})");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     if !addons_path.exists() {
       return Err(Error::GamePathNotSet);
     }
 
-    if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
-      log::info!("Mod found in memory: {}", local_mod.name);
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let manifest_entry = manifest.mods.get(&mod_id).cloned();
 
-      let prefixed_vpks = self.vpk_manager.disable_vpks(
-        &addons_path,
-        &mod_id,
-        &local_mod.installed_vpks,
-        &local_mod.original_vpk_names,
-      )?;
-
-      // Update mod state to track prefixed VPKs
-      local_mod.installed_vpks = Vec::new();
-      self.mod_repository.add_mod(local_mod);
-
-      log::info!(
-        "Disabled mod {mod_id} with {} prefixed VPKs",
-        prefixed_vpks.len()
-      );
+    let (installed_vpks, original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
+      && !entry.current_vpks.is_empty()
+    {
+      log::info!("Using manifest VPK state for mod {mod_id}");
+      (
+        entry.current_vpks.clone(),
+        if entry.original_vpk_names.is_empty() {
+          entry.current_vpks.clone()
+        } else {
+          entry.original_vpk_names.clone()
+        },
+      )
     } else if !vpks.is_empty() {
-      log::warn!("Mod not found in repository, disabling VPKs directly");
-      // VPKs from local analysis may be full paths; extract just filenames for disable_vpks
-      let vpk_filenames: Vec<String> = vpks
-        .iter()
-        .map(|v| {
-          std::path::Path::new(v)
-            .file_name()
-            .map(|f| f.to_string_lossy().to_string())
-            .unwrap_or_else(|| v.clone())
-        })
-        .collect();
+      log::warn!("Manifest has no enabled VPKs for {mod_id}, using frontend VPK state");
+      let vpk_filenames = Self::vpk_filenames(&vpks);
+      (vpk_filenames.clone(), vpk_filenames)
+    } else if let Some(local_mod) = self.mod_repository.get_mod(&mod_id)
+      && !local_mod.installed_vpks.is_empty()
+    {
+      log::warn!("Manifest has no enabled VPKs for {mod_id}, using in-memory repository state");
+      (
+        local_mod.installed_vpks.clone(),
+        if local_mod.original_vpk_names.is_empty() {
+          local_mod.installed_vpks.clone()
+        } else {
+          local_mod.original_vpk_names.clone()
+        },
+      )
+    } else if manifest_entry
+      .as_ref()
+      .is_some_and(|entry| !entry.enabled && !entry.disabled_vpks.is_empty())
+    {
+      log::info!("Mod {mod_id} is already disabled according to the profile manifest");
+      return Ok(());
+    } else {
+      return Err(Error::ModInvalid(format!(
+        "Cannot disable mod {mod_id}: no enabled VPK files are recorded for this profile"
+      )));
+    };
+
+    let prefixed_vpks =
       self
         .vpk_manager
-        .disable_vpks(&addons_path, &mod_id, &vpk_filenames, &vpk_filenames)?;
-      log::info!("Disabled {} VPKs for mod {mod_id}", vpk_filenames.len());
-    } else {
-      log::warn!("Mod not found in repository and no VPKs provided");
+        .disable_vpks(&addons_path, &mod_id, &installed_vpks, &original_vpk_names)?;
+
+    manifest.mark_disabled(&mod_id, prefixed_vpks.clone(), original_vpk_names);
+    manifest.save(&addons_path)?;
+
+    if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
+      local_mod.installed_vpks = Vec::new();
+      self.mod_repository.add_mod(local_mod);
     }
+
+    log::info!(
+      "Disabled mod {mod_id} with {} prefixed VPKs",
+      prefixed_vpks.len()
+    );
 
     Ok(())
   }
@@ -322,20 +373,13 @@ impl ModManager {
   ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut vpks_to_remove = manifest
+      .mods
+      .get(&mod_id)
+      .map(|entry| entry.current_vpks.clone())
+      .unwrap_or_default();
 
     if !addons_path.exists() {
       return Err(Error::GamePathNotSet);
@@ -343,22 +387,25 @@ impl ModManager {
 
     if let Some(local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       log::info!("Mod found in memory: {}", local_mod.name);
-
-      if !local_mod.installed_vpks.is_empty() {
-        self
-          .vpk_manager
-          .remove_vpks(&local_mod.installed_vpks, addons_path.as_path())?;
-      }
-
-      self
-        .vpk_manager
-        .remove_vpks_by_mod_id(addons_path.as_path(), &mod_id)?;
+      vpks_to_remove.extend(local_mod.installed_vpks);
     } else {
-      self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
+      vpks_to_remove.extend(vpks);
+    }
+
+    let mut seen_vpks = HashSet::new();
+    vpks_to_remove.retain(|vpk| seen_vpks.insert(vpk.clone()));
+
+    if !vpks_to_remove.is_empty() {
       self
         .vpk_manager
-        .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
+        .remove_vpks(&vpks_to_remove, &addons_path)?;
     }
+    self
+      .vpk_manager
+      .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
+
+    manifest.remove_mod(&mod_id);
+    manifest.save(&addons_path)?;
 
     self.mod_repository.remove_mod(&mod_id);
 
@@ -377,42 +424,53 @@ impl ModManager {
 
   /// Reorder all mods based on their current install_order for a specific profile
   fn reorder_all_mods_for_profile(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
-    let mut ordered_mods: Vec<Mod> = self.mod_repository.get_all_mods().cloned().collect();
-    ordered_mods.sort_by_key(|mod_entry| mod_entry.install_order.unwrap_or(999));
-
-    // Create mapping for reordering
-    let mod_vpk_mapping: Vec<(String, Vec<String>)> = ordered_mods
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut ordered_manifest_entries: Vec<(String, u32, Vec<String>)> = manifest
+      .mods
       .iter()
-      .map(|mod_entry| (mod_entry.id.clone(), mod_entry.installed_vpks.clone()))
+      .filter(|(_, entry)| entry.enabled && !entry.current_vpks.is_empty())
+      .map(|(mod_id, entry)| {
+        (
+          mod_id.clone(),
+          entry.order.unwrap_or(UNORDERED_FALLBACK_ORDER),
+          entry.current_vpks.clone(),
+        )
+      })
+      .collect();
+    ordered_manifest_entries.sort_by_key(|(_, order, _)| *order);
+
+    let mod_vpk_mapping: Vec<(String, Vec<String>)> = ordered_manifest_entries
+      .into_iter()
+      .map(|(mod_id, _, vpks)| (mod_id, vpks))
       .collect();
 
-    // Reorder the VPK files
+    if mod_vpk_mapping.is_empty() {
+      log::info!("No enabled manifest VPKs need reordering");
+      return Ok(());
+    }
+
     let updated_vpk_mappings = self
       .vpk_manager
       .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
 
-    // Update mod data with new VPK names
-    for (mut mod_entry, (_, new_vpk_names)) in ordered_mods.into_iter().zip(updated_vpk_mappings) {
-      mod_entry.installed_vpks = new_vpk_names;
-      self.mod_repository.add_mod(mod_entry); // This will replace the existing mod
+    for (mod_id, new_vpk_names) in updated_vpk_mappings {
+      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+        entry.enabled = true;
+        entry.current_vpks = new_vpk_names.clone();
+        entry.disabled_vpks.clear();
+      }
+
+      if let Some(mut mod_entry) = self.mod_repository.remove_mod(&mod_id) {
+        mod_entry.installed_vpks = new_vpk_names;
+        self.mod_repository.add_mod(mod_entry);
+      }
     }
+
+    manifest.save(&addons_path)?;
 
     log::info!("All mods reordered successfully");
     Ok(())
@@ -424,20 +482,7 @@ impl ModManager {
     mod_order_data: Vec<(String, Vec<String>, u32)>, // (remote_id, current_vpks, order)
     profile_folder: Option<String>,
   ) -> Result<Vec<(String, Vec<String>)>, Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     log::info!(
       "Reordering mods by remote ID for {} mods in profile: {:?}",
@@ -454,7 +499,7 @@ impl ModManager {
     let mut sorted_data = mod_order_data;
     sorted_data.sort_by_key(|(_, _, order)| *order);
 
-    sorted_data.retain(|(remote_id, _, _)| self.mod_repository.get_mod(remote_id).is_some());
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
 
     // Log the sorted data
     log::info!("Sorted order:");
@@ -462,11 +507,35 @@ impl ModManager {
       log::info!("Position {i}: mod {remote_id} (order {order}) with VPKs: {vpks:?}");
     }
 
-    // Create mapping for VPK reordering: (identifier, vpk_files)
-    let mod_vpk_mapping: Vec<(String, Vec<String>)> = sorted_data
-      .into_iter()
-      .map(|(remote_id, vpk_files, _)| (remote_id, vpk_files))
-      .collect();
+    let mut mod_vpk_mapping = Vec::new();
+    let mut manifest_changed = false;
+    for (remote_id, vpk_files, order) in sorted_data {
+      let vpk_files = Self::vpk_filenames(&vpk_files);
+      let was_known = manifest.mods.contains_key(&remote_id);
+      let entry = manifest.mods.entry(remote_id.clone()).or_default();
+      if entry.order != Some(order) {
+        entry.order = Some(order);
+        manifest_changed = true;
+      }
+
+      if !was_known && !vpk_files.is_empty() {
+        entry.enabled = true;
+        entry.current_vpks = vpk_files;
+        manifest_changed = true;
+      }
+
+      if entry.enabled && !entry.current_vpks.is_empty() {
+        mod_vpk_mapping.push((remote_id, entry.current_vpks.clone()));
+      }
+    }
+
+    if mod_vpk_mapping.is_empty() {
+      if manifest_changed {
+        manifest.save(&addons_path)?;
+      }
+      log::warn!("No enabled VPK mappings available to reorder");
+      return Ok(Vec::new());
+    }
 
     // Reorder the VPK files and get the updated mappings
     let updated_mappings = self
@@ -474,11 +543,19 @@ impl ModManager {
       .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
 
     for (remote_id, new_vpks) in &updated_mappings {
+      if let Some(entry) = manifest.mods.get_mut(remote_id) {
+        entry.enabled = true;
+        entry.current_vpks = new_vpks.clone();
+        entry.disabled_vpks.clear();
+      }
+
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(remote_id) {
         mod_entry.installed_vpks = new_vpks.clone();
         self.mod_repository.add_mod(mod_entry);
       }
     }
+
+    manifest.save(&addons_path)?;
 
     log::info!("Mod reordering by remote ID completed successfully");
     Ok(updated_mappings)
@@ -490,20 +567,7 @@ impl ModManager {
     mod_order_data: Vec<(String, u32)>,
     profile_folder: Option<String>,
   ) -> Result<Vec<Mod>, Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     log::info!(
       "Reordering {} mods for profile: {profile_folder:?}",
@@ -514,21 +578,39 @@ impl ModManager {
     let mut sorted_order = mod_order_data;
     sorted_order.sort_by_key(|(_, order)| *order);
 
-    // Create mapping of mod_id -> vpk_files for reordering
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     let mut mod_vpk_mapping = Vec::new();
     let mut updated_mods = Vec::new();
+    let mut manifest_changed = false;
 
     for (mod_id, new_order) in sorted_order {
-      if let Some(mut deadlock_mod) = self.mod_repository.remove_mod(&mod_id) {
-        // Update the install order
-        deadlock_mod.install_order = Some(new_order);
+      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+        if entry.order != Some(new_order) {
+          entry.order = Some(new_order);
+          manifest_changed = true;
+        }
+        if entry.enabled && !entry.current_vpks.is_empty() {
+          mod_vpk_mapping.push((mod_id.clone(), entry.current_vpks.clone()));
+        }
+      }
 
-        // Add to mapping for VPK reordering
-        mod_vpk_mapping.push((mod_id.clone(), deadlock_mod.installed_vpks.clone()));
+      if let Some(mut deadlock_mod) = self.mod_repository.remove_mod(&mod_id) {
+        deadlock_mod.install_order = Some(new_order);
         updated_mods.push(deadlock_mod);
       } else {
-        log::warn!("Mod not found in repository: {mod_id}");
+        log::debug!("Mod {mod_id} not found in in-memory repository while reordering");
       }
+    }
+
+    if mod_vpk_mapping.is_empty() {
+      if manifest_changed {
+        manifest.save(&addons_path)?;
+      }
+      for deadlock_mod in updated_mods {
+        self.mod_repository.add_mod(deadlock_mod);
+      }
+      log::warn!("No enabled manifest VPKs available to reorder");
+      return Ok(Vec::new());
     }
 
     // Reorder the VPK files
@@ -538,52 +620,44 @@ impl ModManager {
 
     // Update mod data with new VPK names and re-add to repository
     let mut result_mods = Vec::new();
-    for (mut deadlock_mod, (_, new_vpk_names)) in updated_mods.into_iter().zip(updated_vpk_mappings)
-    {
-      deadlock_mod.installed_vpks = new_vpk_names;
-      self.mod_repository.add_mod(deadlock_mod.clone());
-      result_mods.push(deadlock_mod);
+    for (mod_id, new_vpk_names) in updated_vpk_mappings {
+      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+        entry.enabled = true;
+        entry.current_vpks = new_vpk_names.clone();
+        entry.disabled_vpks.clear();
+      }
+
+      if let Some(index) = updated_mods
+        .iter()
+        .position(|mod_entry| mod_entry.id == mod_id)
+      {
+        let mut deadlock_mod = updated_mods.remove(index);
+        deadlock_mod.installed_vpks = new_vpk_names;
+        self.mod_repository.add_mod(deadlock_mod.clone());
+        result_mods.push(deadlock_mod);
+      }
     }
+
+    for deadlock_mod in updated_mods {
+      self.mod_repository.add_mod(deadlock_mod);
+    }
+
+    manifest.save(&addons_path)?;
 
     log::info!("Successfully reordered {} mods", result_mods.len());
     Ok(result_mods)
   }
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     self.vpk_manager.clear_all_vpks(&addons_path)?;
+    ProfileVpkManifest::default().save(&addons_path)?;
     Ok(())
   }
 
   pub fn open_mods_folder(&self, profile_folder: Option<String>) -> Result<(), Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     self
       .filesystem
@@ -686,6 +760,14 @@ impl ModManager {
     Ok(app_local_data_dir.join("mods"))
   }
 
+  pub fn get_profile_vpk_manifest(
+    &self,
+    profile_folder: Option<String>,
+  ) -> Result<ProfileVpkManifest, Error> {
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    ProfileVpkManifest::load(&addons_path)
+  }
+
   /// Replace VPK files for a mod
   pub fn replace_mod_vpks(
     &mut self,
@@ -697,23 +779,16 @@ impl ModManager {
     log::info!("Replacing VPK files for mod: {mod_id} (profile: {profile_folder:?})");
     log::info!("Installed VPKs from frontend: {installed_vpks_from_frontend:?}");
 
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
-    let (installed_vpks, original_names) = if !installed_vpks_from_frontend.is_empty() {
+    let manifest = ProfileVpkManifest::load(&addons_path)?;
+    let (installed_vpks, original_names) = if let Some(entry) = manifest.mods.get(&mod_id)
+      && !entry.current_vpks.is_empty()
+    {
+      log::info!("Using manifest VPKs for replacement");
+      (entry.current_vpks.clone(), entry.original_vpk_names.clone())
+    } else if !installed_vpks_from_frontend.is_empty() {
       log::info!("Using installed VPKs from frontend");
       (installed_vpks_from_frontend, Vec::new())
     } else if let Some(mod_info) = self.mod_repository.get_mod(&mod_id) {
@@ -739,6 +814,17 @@ impl ModManager {
       &installed_vpks,
       &original_names,
     )?;
+
+    let new_original_names: Vec<String> = source_vpk_paths
+      .iter()
+      .filter_map(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
+      .collect();
+
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    if manifest.mods.contains_key(&mod_id) {
+      manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);
+      manifest.save(&addons_path)?;
+    }
 
     log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())
@@ -868,4 +954,24 @@ fn dir_size(path: &std::path::Path) -> u64 {
         .sum()
     })
     .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::ModManager;
+
+  #[test]
+  fn profile_folder_validation_rejects_path_escape_components() {
+    assert!(ModManager::is_safe_profile_folder("profile_123"));
+    assert!(ModManager::is_safe_profile_folder("server_abc"));
+    assert!(ModManager::is_safe_profile_folder("profiles/imported"));
+
+    assert!(!ModManager::is_safe_profile_folder(""));
+    assert!(!ModManager::is_safe_profile_folder("."));
+    assert!(!ModManager::is_safe_profile_folder("../profile_123"));
+    assert!(!ModManager::is_safe_profile_folder("/tmp/profile_123"));
+
+    #[cfg(windows)]
+    assert!(!ModManager::is_safe_profile_folder("C:\\tmp\\profile_123"));
+  }
 }
