@@ -231,6 +231,16 @@ export async function initializeStaticRoutes(
   return { routes, loaded, skipped };
 }
 
+function formatFileSize(bytes: number) {
+  const kb = bytes / 1024;
+  const sizeStr = kb < 100 ? kb.toFixed(2) : kb.toFixed(1);
+  const gzipKb = kb * 0.35;
+  return {
+    size: sizeStr,
+    gzip: gzipKb < 100 ? gzipKb.toFixed(2) : gzipKb.toFixed(1),
+  };
+}
+
 function logVerboseFileInfo(
   loaded: AssetMetadata[],
   skipped: AssetMetadata[],
@@ -243,16 +253,6 @@ function logVerboseFileInfo(
     Math.max(...allFiles.map((f) => f.route.length)),
     60,
   );
-
-  const formatFileSize = (bytes: number) => {
-    const kb = bytes / 1024;
-    const sizeStr = kb < 100 ? kb.toFixed(2) : kb.toFixed(1);
-    const gzipKb = kb * 0.35;
-    return {
-      size: sizeStr,
-      gzip: gzipKb < 100 ? gzipKb.toFixed(2) : gzipKb.toFixed(1),
-    };
-  };
 
   if (loaded.length > 0) {
     console.log("\n📁 Preloaded into memory:");
