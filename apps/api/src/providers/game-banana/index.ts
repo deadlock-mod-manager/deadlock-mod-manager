@@ -120,9 +120,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       if (!response.ok) {
         throw new ProviderError(`HTTP error! status: ${response.status}`);
       }
-      const data =
-        (await response.json()) as GameBanana.GameBananaTopSubmission[];
-      return data;
+      const data = (await response.json()) as
+        | GameBanana.GameBananaTopSubmission[]
+        | null;
+      return data ?? [];
     } catch (error) {
       this.logger.withError(error).error("Failed to fetch top submissions");
       throw error;
