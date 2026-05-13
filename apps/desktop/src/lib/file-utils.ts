@@ -85,14 +85,14 @@ export const detectSource = (files: File[]): DetectedSource | null => {
     VPK_PATTERN.test(getFileBaseName(file)),
   );
 
-  if (validFiles.length === 1 && vpkFile) {
+  if (vpkFile) {
     return { kind: "vpk", file: vpkFile };
   }
 
   const archiveFile = validFiles.find((file) =>
     ARCHIVE_PATTERN.test(getFileBaseName(file)),
   );
-  if (validFiles.length === 1 && archiveFile) {
+  if (archiveFile) {
     return { kind: "archive", file: archiveFile };
   }
 

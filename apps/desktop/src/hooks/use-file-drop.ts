@@ -187,6 +187,21 @@ export const useFileDrop = (
       const droppedItems = Array.from(event.dataTransfer.items || []);
       const droppedUriList = event.dataTransfer.getData("text/uri-list");
 
+      logger.debug(
+        "Drop event: files=%d items=%d uriList=%s",
+        droppedFiles.length,
+        droppedItems.length,
+        Boolean(droppedUriList),
+      );
+      for (const file of droppedFiles) {
+        logger.debug(
+          "Dropped file: name=%s type=%s size=%d",
+          file.name,
+          file.type,
+          file.size,
+        );
+      }
+
       let detectedSource: DetectedSource | null;
 
       try {

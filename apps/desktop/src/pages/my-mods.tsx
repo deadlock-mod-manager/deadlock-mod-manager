@@ -225,13 +225,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         <div className={cn("relative", isDisabled && "grayscale")}>
           <div
             className='cursor-pointer'
-            onClick={() =>
-              mod.id?.includes("local")
-                ? toast.info(
-                    "Local mod cannot be previewed (this is temporary)",
-                  )
-                : navigate(`/mods/${mod.remoteId}`)
-            }>
+            onClick={() => navigate(`/mods/${mod.remoteId}`)}>
             {mod.isAudio ? (
               <AudioPlayerPreview
                 audioUrl={mod.audioUrl || ""}
@@ -914,7 +908,6 @@ const MyMods = () => {
                 </TooltipContent>
               </Tooltip>
               <Button
-                size='lg'
                 variant='outline'
                 onClick={() => navigate("/add-mods")}
                 icon={<UploadSimple className='h-4 w-4' />}>

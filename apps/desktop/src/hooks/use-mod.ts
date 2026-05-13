@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMod } from "@/lib/api";
+import { usePersistedStore } from "@/lib/store";
 
 interface UseModOptions {
   enabled?: boolean;
@@ -11,6 +12,10 @@ export const useMod = (
   options: UseModOptions = {},
 ) => {
   const { enabled = true, retry = 1 } = options;
+  const isLocal = modId?.includes("local") ?? false;
+  const localMod = usePersistedStore((state) =>
+    isLocal ? state.localMods.find((m) => m.remoteId === modId) : undefined,
+  );
 
   const query = useQuery({
     queryKey: ["mod", modId],
@@ -20,10 +25,20 @@ export const useMod = (
       }
       return getMod(modId);
     },
-    enabled: !!modId && !modId?.includes("local") && enabled,
+    enabled: !!modId && !isLocal && enabled,
     retry,
     throwOnError: false,
   });
+
+  if (isLocal) {
+    return {
+      ...query,
+      data: localMod,
+      mod: localMod,
+      isLoading: false,
+      error: null,
+    };
+  }
 
   return {
     ...query,

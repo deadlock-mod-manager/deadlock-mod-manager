@@ -70,4 +70,35 @@ describe("resolveDroppedModSource", () => {
 
     expect(detectedSource?.kind).toBe("vpk");
   });
+
+  it("detects a vpk when multiple files are dropped alongside unsupported files", () => {
+    const detectedSource = detectSource([
+      createFile("readme.txt"),
+      createFile("hero_skin.vpk"),
+      createFile("notes.pdf"),
+    ]);
+
+    expect(detectedSource?.kind).toBe("vpk");
+    expect(detectedSource?.file.name).toBe("hero_skin.vpk");
+  });
+
+  it("detects an archive when multiple files are dropped alongside unsupported files", () => {
+    const detectedSource = detectSource([
+      createFile("readme.txt"),
+      createFile("skin_pack.zip"),
+    ]);
+
+    expect(detectedSource?.kind).toBe("archive");
+    expect(detectedSource?.file.name).toBe("skin_pack.zip");
+  });
+
+  it("prefers vpk over archive when both are present in a multi-file drop", () => {
+    const detectedSource = detectSource([
+      createFile("backup.zip"),
+      createFile("hero_skin.vpk"),
+    ]);
+
+    expect(detectedSource?.kind).toBe("vpk");
+    expect(detectedSource?.file.name).toBe("hero_skin.vpk");
+  });
 });

@@ -31,10 +31,12 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft } from "@deadlock-mods/ui/icons";
 import { UploadSimple } from "@phosphor-icons/react";
 import { useCallback, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import {
   ProgressIndicator,
   useProgress,
@@ -63,6 +65,7 @@ import { type AddModFormValues, addModSchema } from "@/types/add-mods";
 
 const AddMods = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isProcessing } = useProgress();
   const [open, setOpen] = useState(false);
   const [detected, setDetected] = useState<DetectedSource | null>(null);
@@ -139,12 +142,28 @@ const AddMods = () => {
   return (
     <div className='w-full px-4'>
       <div className='space-y-8'>
+        <div className='flex items-center gap-2 pt-4'>
+          <Button
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/my-mods");
+              }
+            }}
+            variant='ghost'
+            size='sm'
+            icon={<ArrowLeft className='h-4 w-4' />}>
+            {t("common.back")}
+          </Button>
+        </div>
         <PageTitle
+          className='pt-0'
           subtitle={t("addMods.subtitle")}
           title={t("addMods.title")}
         />
 
-        <Card className='w-full space-y-6 border-0 shadow'>
+        <Card className='w-full space-y-6 border-0 p-6 shadow'>
           <CardHeader className='p-0'>
             <CardTitle className='flex items-center gap-2'>
               <UploadSimple weight='duotone' />
