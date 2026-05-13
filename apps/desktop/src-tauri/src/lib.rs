@@ -7,7 +7,6 @@
 pub mod cli;
 mod commands;
 mod deep_link;
-mod discord_rpc;
 mod download_manager;
 mod dropped_mod_file;
 mod errors;
@@ -81,7 +80,7 @@ pub fn run() {
     .plugin(ota_plugin);
 
   builder
-    .manage(discord_rpc::DiscordState::new())
+    .manage(game_presence::DiscordState::new())
     .setup(|app| {
       let _store = app.store("state.json")?;
       deep_link::setup(app)?;
@@ -172,9 +171,6 @@ pub fn run() {
       commands::stop_cache_watcher,
       commands::get_ingest_status,
       commands::initialize_ingest_tool,
-      commands::set_discord_presence,
-      commands::clear_discord_presence,
-      commands::disconnect_discord,
       game_presence::get_game_presence_status,
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,

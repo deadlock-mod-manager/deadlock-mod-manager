@@ -259,11 +259,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     })),
 
   setGamePresenceEnabled: (enabled: boolean) =>
-    set((state) => ({
+    set(() => ({
       gamePresenceEnabled: enabled,
-      ...(enabled
-        ? { enabledPlugins: { ...state.enabledPlugins, discord: false } }
-        : {}),
     })),
 
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>
@@ -354,7 +351,6 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
 
       return {
         enabledPlugins: next,
-        ...(pluginId === "discord" ? { gamePresenceEnabled: false } : {}),
       };
     }),
 

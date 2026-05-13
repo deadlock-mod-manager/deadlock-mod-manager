@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "Flou",
       "includeSidebar": "Inclure la barre latérale",
       "chooseImage": "Choisir une image"
-    },
-    "discord": {
-      "title": "",
-      "description": "Affiche votre activité Deadlock sur Discord.",
-      "detailedDescription": "Affiche votre activité dans Deadlock Mod Manager sur votre profil Discord via Rich Presence. Il suffit d'activer le plugin et de personnaliser éventuellement les textes Détails et État visibles sur votre profil.",
-      "usageInstructions": "Activez le plugin puis, si vous le souhaitez, modifiez les textes Détails et État.",
-      "applicationId": "ID d'application Discord",
-      "optional": "(optionnel)",
-      "applicationIdDescription": "Aucune configuration requise : ce plugin utilise notre application Discord officielle.",
-      "details": "Texte Détails",
-      "detailsPlaceholder": "Gestion des mods Deadlock",
-      "state": "Texte État",
-      "statePlaceholder": "Utilisation de Deadlock Mod Manager",
-      "largeImageKey": "Clé grande image",
-      "largeImageText": "Texte grande image",
-      "smallImageKey": "Clé petite image",
-      "smallImageText": "Texte petite image",
-      "showElapsedTime": "Afficher le temps écoulé",
-      "showElapsedTimeDescription": "Afficher depuis combien de temps vous utilisez le gestionnaire de mods",
-      "setupGuide": "Guide d'installation",
-      "setupStep1": "",
-      "setupStep2": "",
-      "setupStep3": "",
-      "setupStep4": ""
     },
     "usageInstructions": "Instructions d'utilisation",
     "renderActive": "Le plugin est actif et fonctionne en arrière-plan",

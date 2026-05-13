@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "الضبابية",
       "includeSidebar": "تضمين الشريط الجانبي",
       "chooseImage": "اختر صورة"
-    },
-    "discord": {
-      "title": "حالة Discord الغنية",
-      "description": "يعرض نشاطك في Deadlock على Discord.",
-      "detailedDescription": "يعرض نشاطك في مدير التعديلات Deadlock على ملفك الشخصي في Discord باستخدام Rich Presence. ما عليك سوى تفعيل المكون الإضافي وتخصيص نصوص التفاصيل والحالة حسب الرغبة.",
-      "usageInstructions": "فعّل المكون الإضافي، ثم عدّل نصوص التفاصيل والحالة حسب الرغبة.",
-      "applicationId": "معرف تطبيق Discord",
-      "optional": "(اختياري)",
-      "applicationIdDescription": "لا حاجة للإعداد: يستخدم هذا المكون الإضافي تطبيق Discord الرسمي الخاص بنا.",
-      "details": "نص التفاصيل",
-      "detailsPlaceholder": "إدارة تعديلات Deadlock",
-      "state": "نص الحالة",
-      "statePlaceholder": "استخدام Deadlock Mod Manager",
-      "largeImageKey": "مفتاح الصورة الكبيرة",
-      "largeImageText": "نص الصورة الكبيرة",
-      "smallImageKey": "مفتاح الصورة الصغيرة",
-      "smallImageText": "نص الصورة الصغيرة",
-      "showElapsedTime": "إظهار الوقت المنقضي",
-      "showElapsedTimeDescription": "اعرض المدة التي تستخدم فيها مدير التعديلات",
-      "setupGuide": "دليل الإعداد",
-      "setupStep1": "زر بوابة مطوري Discord وأنشئ تطبيقًا جديدًا",
-      "setupStep2": "انسخ معرف التطبيق من صفحة 'المعلومات العامة'",
-      "setupStep3": "ارفع الصور كأصول Rich Presence بأسماء مفاتيح مطابقة",
-      "setupStep4": "الصق معرف التطبيق أعلاه وفعّل المكون الإضافي"
     },
     "usageInstructions": "تعليمات الاستخدام",
     "renderActive": "المكون الإضافي نشط ويعمل في الخلفية",

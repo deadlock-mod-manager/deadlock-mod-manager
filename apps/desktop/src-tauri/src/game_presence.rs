@@ -8,8 +8,9 @@ pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
 use deadlock_discord_presence::{HeroDataStore, PresenceBuildConfig, PresencePhase};
 
 use crate::commands::MANAGER;
-use crate::discord_rpc::DiscordState;
 use crate::errors::Error;
+
+pub(crate) type DiscordState = deadlock_discord_presence::DiscordPresenceState;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq)]

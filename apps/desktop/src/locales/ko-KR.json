@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "흐림",
       "includeSidebar": "사이드바 포함",
       "chooseImage": "이미지 선택"
-    },
-    "discord": {
-      "title": "불일치의 풍부한 존재",
-      "description": "Discord에서 교착 상태 활동을 표시합니다.",
-      "detailedDescription": "Rich Presence를 사용하여 Discord에 교착 상태 활동을 표시합니다. 간단히 플러그인을 활성화하고 선택적으로 프로필에 표시되는 세부 정보 및 상태 텍스트를 사용자 정의하세요.",
-      "usageInstructions": "플러그인을 활성화한 다음 선택적으로 세부 정보 및 상태 텍스트를 편집합니다.",
-      "applicationId": "디스코드 애플리케이션 ID",
-      "optional": "(선택 과목)",
-      "applicationIdDescription": "설정이 필요하지 않습니다. 이 플러그인은 공식 Discord 애플리케이션을 사용합니다.",
-      "details": "세부정보 텍스트",
-      "detailsPlaceholder": "교착 상태 모드 관리",
-      "state": "상태 텍스트",
-      "statePlaceholder": "교착 상태 모드 관리자 사용",
-      "largeImageKey": "대형 이미지 키",
-      "largeImageText": "큰 이미지 텍스트",
-      "smallImageKey": "작은 이미지 키",
-      "smallImageText": "작은 이미지 텍스트",
-      "showElapsedTime": "경과 시간 표시",
-      "showElapsedTimeDescription": "모드 관리자를 사용한 기간 표시",
-      "setupGuide": "설정 가이드",
-      "setupStep1": "Discord 개발자 포털을 방문하여 새 애플리케이션을 만드세요.",
-      "setupStep2": "'일반 정보' 페이지에서 애플리케이션 ID를 복사하세요.",
-      "setupStep3": "키 이름이 일치하는 Rich Presence 자산으로 이미지 업로드",
-      "setupStep4": "위에 애플리케이션 ID를 붙여넣고 플러그인을 활성화하세요."
     },
     "usageInstructions": "사용 지침",
     "renderActive": "플러그인이 활성화되어 백그라운드에서 실행 중입니다.",

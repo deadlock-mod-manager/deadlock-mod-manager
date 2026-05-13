@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "Unschärfe",
       "includeSidebar": "Siteleiste iibeziehe",
       "chooseImage": "Bild uswähle"
-    },
-    "discord": {
-      "title": "",
-      "description": "Zeigt dini Deadlock‑Aktivität uf Discord.",
-      "detailedDescription": "Zeigt dini Aktivität im Deadlock Mod Manager als Rich Presence uf dim Discord‑Profil. Einfach aktiviere und optional Details‑ und Status‑Text apasse.",
-      "usageInstructions": "Plugin aktiviere, denn optional Details‑ und Status‑Text bearbeite.",
-      "applicationId": "",
-      "optional": "",
-      "applicationIdDescription": "Kei Iirichtig nötig: Das Plugin brucht unseri offizielli Discord‑Aawendig.",
-      "details": "Details‑Text",
-      "detailsPlaceholder": "",
-      "state": "Status‑Text",
-      "statePlaceholder": "",
-      "largeImageKey": "Grosses Bild‑Schlüssel",
-      "largeImageText": "Grosses Bild‑Text",
-      "smallImageKey": "Chliines Bild‑Schlüssel",
-      "smallImageText": "Chliines Bild‑Text",
-      "showElapsedTime": "Verstricheni Ziit azeige",
-      "showElapsedTimeDescription": "Zeig a, wie lang du de Mod Manager scho bruchsch",
-      "setupGuide": "Iirichtigs‑Aaleitig",
-      "setupStep1": "Bsuech s Discord Developer Portal und erstelle e nöii Aawendig",
-      "setupStep2": "Kopier dini Application ID vo de Site 'General Information'",
-      "setupStep3": "Lade Bilder als Rich Presence Assets mit passende Schlüsselname ufe",
-      "setupStep4": "Füeg dini Application ID obe i und aktiviere s Plugin"
     },
     "usageInstructions": "Aaleitig zur Verwendig",
     "renderActive": "S'Plugin isch aktiv und lauft im Hintergrund",
