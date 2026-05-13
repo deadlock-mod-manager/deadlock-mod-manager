@@ -223,6 +223,12 @@
       "partialSuccess": "",
       "error": ""
     },
+    "disableAll": "",
+    "disableAllConfirmTitle": "",
+    "disableAllConfirmBody": "",
+    "disableAllConfirmAction": "",
+    "disableAllConfirmCancel": "",
+    "disableAllSuccess": "",
     "tabs": {
       "all": "ทั้งหมด",
       "installed": "ติดตั้งแล้ว",
@@ -263,12 +269,13 @@
     "noModsAvailable": "ไม่มีม็อด",
     "emptyClearFilters": "",
     "deleteConfirmTitle": "ลบม็อดนี้?",
-    "deleteConfirmBody": "การกระทำนี้จะลบม็อดออกจากรายการและลบไฟล์ทั้งหมด การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "deleteConfirmBody": "",
     "deleteConfirmAction": "ลบ",
     "deleteConfirmCancel": "ยกเลิก",
     "deleteSuccess": "ลบม็อดเรียบร้อยแล้ว",
     "disableSuccess": "ปิดใช้งานม็อดเรียบร้อยแล้ว",
     "deleteError": "ไม่สามารถลบม็อดได้",
+    "deleteErrorVpkInUse": "",
     "disableError": "ไม่สามารถปิดใช้งานม็อดได้",
     "vpkScanAlert": {
       "title": "",
@@ -288,7 +295,13 @@
       "deleteConfirmAction": "",
       "deleteSuccess": "",
       "deleteError": "",
-      "openError": ""
+      "openError": "",
+      "deleteAll": "",
+      "deleteAllConfirmTitle": "",
+      "deleteAllConfirmBody": "",
+      "deleteAllConfirmAction": "",
+      "deleteAllSuccess": "",
+      "deleteAllError": ""
     }
   },
   "pagination": {

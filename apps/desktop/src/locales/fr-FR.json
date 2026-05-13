@@ -223,6 +223,12 @@
       "partialSuccess": "",
       "error": ""
     },
+    "disableAll": "",
+    "disableAllConfirmTitle": "",
+    "disableAllConfirmBody": "",
+    "disableAllConfirmAction": "",
+    "disableAllConfirmCancel": "",
+    "disableAllSuccess": "",
     "tabs": {
       "all": "",
       "installed": "",
@@ -263,12 +269,13 @@
     "noModsAvailable": "Aucun mod disponible",
     "emptyClearFilters": "",
     "deleteConfirmTitle": "Supprimer ce mod ?",
-    "deleteConfirmBody": "Cela le retirera de votre liste de mods et supprimera tous les fichiers. Cette action ne peut pas être annulée.",
+    "deleteConfirmBody": "",
     "deleteConfirmAction": "Supprimer",
     "deleteConfirmCancel": "Annuler",
     "deleteSuccess": "Mod supprimé avec succès",
     "disableSuccess": "Mod désactivé avec succès",
     "deleteError": "Échec de la suppression du mod",
+    "deleteErrorVpkInUse": "",
     "disableError": "Échec de la désactivation du mod",
     "vpkScanAlert": {
       "title": "",
@@ -288,7 +295,13 @@
       "deleteConfirmAction": "",
       "deleteSuccess": "",
       "deleteError": "",
-      "openError": ""
+      "openError": "",
+      "deleteAll": "",
+      "deleteAllConfirmTitle": "",
+      "deleteAllConfirmBody": "",
+      "deleteAllConfirmAction": "",
+      "deleteAllSuccess": "",
+      "deleteAllError": ""
     }
   },
   "pagination": {

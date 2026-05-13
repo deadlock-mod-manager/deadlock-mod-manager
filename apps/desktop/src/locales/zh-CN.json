@@ -223,6 +223,12 @@
       "partialSuccess": "",
       "error": ""
     },
+    "disableAll": "",
+    "disableAllConfirmTitle": "",
+    "disableAllConfirmBody": "",
+    "disableAllConfirmAction": "",
+    "disableAllConfirmCancel": "",
+    "disableAllSuccess": "",
     "tabs": {
       "all": "",
       "installed": "",
@@ -263,12 +269,13 @@
     "noModsAvailable": "暂无可用模组",
     "emptyClearFilters": "",
     "deleteConfirmTitle": "删除此模组？",
-    "deleteConfirmBody": "这将从您的模组列表中移除并删除所有文件。此操作无法撤销。",
+    "deleteConfirmBody": "",
     "deleteConfirmAction": "删除",
     "deleteConfirmCancel": "取消",
     "deleteSuccess": "模组删除成功",
     "disableSuccess": "模组禁用成功",
     "deleteError": "删除模组失败",
+    "deleteErrorVpkInUse": "",
     "disableError": "禁用模组失败",
     "vpkScanAlert": {
       "title": "",
@@ -288,7 +295,13 @@
       "deleteConfirmAction": "",
       "deleteSuccess": "",
       "deleteError": "",
-      "openError": ""
+      "openError": "",
+      "deleteAll": "",
+      "deleteAllConfirmTitle": "",
+      "deleteAllConfirmBody": "",
+      "deleteAllConfirmAction": "",
+      "deleteAllSuccess": "",
+      "deleteAllError": ""
     }
   },
   "pagination": {

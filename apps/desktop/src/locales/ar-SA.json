@@ -223,6 +223,12 @@
       "partialSuccess": "",
       "error": ""
     },
+    "disableAll": "",
+    "disableAllConfirmTitle": "",
+    "disableAllConfirmBody": "",
+    "disableAllConfirmAction": "",
+    "disableAllConfirmCancel": "",
+    "disableAllSuccess": "",
     "tabs": {
       "all": "الكل",
       "installed": "مثبت",
@@ -263,12 +269,13 @@
     "noModsAvailable": "لم تتوفر أي تعديلات",
     "emptyClearFilters": "",
     "deleteConfirmTitle": "حذف هذا التعديل؟",
-    "deleteConfirmBody": "سيؤدي ذلك إلى إزالته من قائمة التعديلات وحذف جميع الملفات. لا يمكن التراجع عن هذا الإجراء.",
+    "deleteConfirmBody": "",
     "deleteConfirmAction": "حذف",
     "deleteConfirmCancel": "إلغاء",
     "deleteSuccess": "تم حذف التعديل بنجاح",
     "disableSuccess": "تم تعطيل التعديل بنجاح",
     "deleteError": "فشل في حذف التعديل",
+    "deleteErrorVpkInUse": "",
     "disableError": "فشل في تعطيل التعديل",
     "vpkScanAlert": {
       "title": "تم العثور على ملفات VPK غير معروفة",
@@ -288,7 +295,13 @@
       "deleteConfirmAction": "",
       "deleteSuccess": "",
       "deleteError": "",
-      "openError": ""
+      "openError": "",
+      "deleteAll": "",
+      "deleteAllConfirmTitle": "",
+      "deleteAllConfirmBody": "",
+      "deleteAllConfirmAction": "",
+      "deleteAllSuccess": "",
+      "deleteAllError": ""
     }
   },
   "pagination": {
