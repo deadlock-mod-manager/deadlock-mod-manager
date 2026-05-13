@@ -123,6 +123,18 @@ For help and support:
   Tauri tooling and distribution infrastructure provided by <a href="https://crabnebula.dev/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">CrabNebula</a>. Thanks for sponsoring Deadlock Mod Manager!
 </p>
 
+<br/>
+
+<p align="center">
+  <a href="https://depot.dev/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">
+    <img src="./docs/assets/sponsors/depot.svg" alt="Depot" height="40" />
+  </a>
+</p>
+
+<p align="center">
+  Faster CI builds provided by <a href="https://depot.dev/?utm_source=deadlock-mod-manager&utm_medium=github&utm_campaign=sponsor">Depot</a>. Thanks for sponsoring Deadlock Mod Manager!
+</p>
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Development
