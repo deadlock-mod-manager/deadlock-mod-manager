@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 
-use crate::commands::DeepLinkData;
+use crate::commands::deep_link::DeepLinkData;
 
 pub const SCHEMES: &[&str] = &["deadlock-mod-manager:", "deadlock-modmanager:", "dlmm:"];
 

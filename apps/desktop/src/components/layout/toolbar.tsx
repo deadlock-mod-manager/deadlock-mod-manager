@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useLaunch } from "@/hooks/use-launch";
-import { isGameRunning } from "@/lib/api";
+import { isGameRunning } from "@/lib/tauri-commands";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";

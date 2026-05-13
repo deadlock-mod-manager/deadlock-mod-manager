@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useMemo } from "react";
 import type { ServerFiltersValue } from "@/components/server-browser/server-filters";
-import { getRelaysHealth, getServerFacets, getServers } from "@/lib/api";
+import { getRelaysHealth, getServerFacets, getServers } from "@/lib/api-client";
 
 const SERVERS_REFETCH_INTERVAL_MS = 15_000;
 const RELAYS_REFETCH_INTERVAL_MS = 30_000;

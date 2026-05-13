@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, State};
 pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
 use deadlock_discord_presence::{HeroDataStore, PresenceBuildConfig, PresencePhase};
 
-use crate::commands::MANAGER;
+use crate::commands::state::MANAGER;
 use crate::errors::Error;
 
 pub(crate) type DiscordState = deadlock_discord_presence::DiscordPresenceState;

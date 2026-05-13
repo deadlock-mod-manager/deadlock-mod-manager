@@ -5,7 +5,7 @@ import type {
 } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { resolveServerMods } from "@/lib/api";
+import { resolveServerMods } from "@/lib/api-client";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 

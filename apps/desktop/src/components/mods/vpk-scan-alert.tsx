@@ -11,7 +11,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { deleteProfileVpk, showProfileVpkInFolder } from "@/lib/api";
+import { deleteProfileVpk, showProfileVpkInFolder } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { AnalyzeAddonsButton } from "../my-mods/analyze-addons-button";
 

@@ -388,7 +388,7 @@ impl DownloadManager {
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
   ) -> Result<(), Error> {
-    use crate::commands::MANAGER;
+    use crate::commands::state::MANAGER;
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::vpk_manager::VpkManager;
 

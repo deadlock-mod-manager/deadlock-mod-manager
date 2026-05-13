@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getApiHealth } from "@/lib/api";
+import { getApiHealth } from "@/lib/api-client";
 import {
   REFETCH_INTERVAL_API_HEALTH,
   STALE_TIME_API,

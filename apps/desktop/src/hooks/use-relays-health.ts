@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getRelaysHealth } from "@/lib/api";
+import { getRelaysHealth } from "@/lib/api-client";
 
 const RELAYS_REFETCH_INTERVAL_MS = 30_000;
 

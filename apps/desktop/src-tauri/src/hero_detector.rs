@@ -1,4 +1,4 @@
-use crate::commands::MANAGER;
+use crate::commands::state::MANAGER;
 use crate::errors::Error;
 use hero_parser::HeroDetectionResult;
 use serde::{Deserialize, Serialize};

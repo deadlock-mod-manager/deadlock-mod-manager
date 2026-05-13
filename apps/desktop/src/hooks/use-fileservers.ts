@@ -5,7 +5,7 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useMemo } from "react";
-import { getGameBananaFileservers } from "@/lib/api";
+import { getGameBananaFileservers } from "@/lib/api-client";
 import { buildGameBananaFileserverTestUrl } from "@/lib/download/fileserver";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";

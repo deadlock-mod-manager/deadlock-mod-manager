@@ -1,4 +1,4 @@
-import { getMod, getModDownloads } from "@/lib/api";
+import { getMod, getModDownloads } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { resolveProfileImportDownloadFiles } from "@/lib/profiles/import-downloads";
 import type {

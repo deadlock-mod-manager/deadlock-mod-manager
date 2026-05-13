@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::commands::MANAGER;
+use crate::commands::state::MANAGER;
 use crate::errors::Error;
 use crate::utils;
 

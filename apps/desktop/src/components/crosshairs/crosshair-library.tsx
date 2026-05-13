@@ -21,7 +21,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useCrosshairSearch } from "@/hooks/use-crosshair-search";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
-import { getCrosshairs } from "@/lib/api";
+import { getCrosshairs } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCard } from "./crosshair-card";

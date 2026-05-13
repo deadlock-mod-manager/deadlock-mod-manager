@@ -142,7 +142,7 @@ impl AddonAnalyzer {
     &self,
     vpk_parsed: &VpkParsed,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
-    let api_url = crate::commands::get_api_url();
+    let api_url = crate::commands::state::get_api_url();
     let endpoint = format!("{api_url}/api/v2/vpk-analyse-hashes");
 
     let request = HashAnalysisRequest {

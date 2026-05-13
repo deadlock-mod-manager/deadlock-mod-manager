@@ -11,7 +11,7 @@ import { MegaphoneIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getAnnouncements } from "@/lib/api";
+import { getAnnouncements } from "@/lib/api-client";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { AnnouncementDetailDialog } from "./announcement-detail-dialog";
 import { AnnouncementListItem } from "./announcement-list-item";

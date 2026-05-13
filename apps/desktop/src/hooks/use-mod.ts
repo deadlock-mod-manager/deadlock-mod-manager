@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getMod } from "@/lib/api";
+import { getMod } from "@/lib/api-client";
 import { usePersistedStore } from "@/lib/store";
 
 interface UseModOptions {

@@ -2,7 +2,7 @@ import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
-import { isGameRunning } from "@/lib/api";
+import { isGameRunning } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";

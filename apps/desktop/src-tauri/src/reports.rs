@@ -1,4 +1,4 @@
-use crate::commands::get_api_url;
+use crate::commands::state::get_api_url;
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 

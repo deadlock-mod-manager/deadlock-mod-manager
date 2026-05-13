@@ -14,7 +14,7 @@ import { useMutation, useQueries } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProfileImport } from "@/hooks/use-profile-import";
-import { getMod, getProfile } from "@/lib/api";
+import { getMod, getProfile } from "@/lib/api-client";
 import {
   ProfileImportForm,
   type ProfileImportFormData,

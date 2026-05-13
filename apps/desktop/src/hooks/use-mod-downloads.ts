@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getModDownloads } from "@/lib/api";
+import { getModDownloads } from "@/lib/api-client";
 import type { ModDownloadItem } from "@/types/mods";
 
 const EMPTY_DOWNLOADS: ModDownloadItem[] = [];

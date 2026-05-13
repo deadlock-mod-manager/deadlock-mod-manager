@@ -10,7 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
-import { analyzeLocalAddons } from "@/lib/api";
+import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { AnalyzeAddonsResult } from "@/types/mods";

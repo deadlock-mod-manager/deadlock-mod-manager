@@ -7,7 +7,7 @@ import {
 } from "@tauri-apps/plugin-updater";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { isFlatpak } from "@/lib/api";
+import { isFlatpak } from "@/lib/tauri-commands";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import {

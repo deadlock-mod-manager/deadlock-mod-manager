@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import useAbout from "@/hooks/use-about";
 import { useHardwareId } from "@/hooks/use-hardware-id";
-import { shareProfile } from "@/lib/api";
+import { shareProfile } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";

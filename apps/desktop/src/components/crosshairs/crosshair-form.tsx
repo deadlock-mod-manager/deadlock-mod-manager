@@ -43,7 +43,7 @@ import { type FieldValues, type SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { publishCrosshair } from "@/lib/api";
+import { publishCrosshair } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";

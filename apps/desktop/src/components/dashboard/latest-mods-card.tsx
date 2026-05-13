@@ -3,7 +3,7 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { ClockIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { getMods } from "@/lib/api";
+import { getMods } from "@/lib/api-client";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { DashboardCard } from "./dashboard-card";
 import { LatestModItem } from "./latest-mod-item";

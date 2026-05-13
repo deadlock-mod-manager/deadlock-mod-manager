@@ -77,7 +77,7 @@ import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { getCustomSettings } from "@/lib/api";
+import { getCustomSettings } from "@/lib/api-client";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";

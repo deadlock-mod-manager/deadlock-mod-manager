@@ -26,7 +26,7 @@ import { useLanguageListener } from "./hooks/use-language-listener";
 import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
-import { initializeApiUrl } from "./lib/api";
+import { initializeApiUrl } from "./lib/tauri-commands";
 import { queryClient } from "./lib/client";
 import { STORE_NAME } from "./lib/constants";
 import { downloadManager } from "./lib/download/manager";

@@ -13,7 +13,7 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import PageTitle from "@/components/shared/page-title";
 import { useFeaturedMod } from "@/hooks/use-featured-mod";
 import { useTrendingByCategory } from "@/hooks/use-trending-by-category";
-import { getMods } from "@/lib/api";
+import { getMods } from "@/lib/api-client";
 import { MOD_CATEGORY_ORDER } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 

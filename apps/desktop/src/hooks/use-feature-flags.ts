@@ -4,7 +4,7 @@ import {
   deleteFeatureFlagUserOverride,
   getFeatureFlags,
   setFeatureFlagUserOverride,
-} from "@/lib/api";
+} from "@/lib/api-client";
 import logger from "@/lib/logger";
 
 const DEV_ALWAYS_ON_FLAGS = new Set(["custom-maps", "server-browser"]);

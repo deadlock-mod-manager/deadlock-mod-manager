@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { checkModUpdates } from "@/lib/api";
+import { checkModUpdates } from "@/lib/api-client";
 import {
   REFETCH_INTERVAL_MOD_UPDATES,
   STALE_TIME_API,

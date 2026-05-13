@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { isAutoUpdateDisabled, isFlatpak } from "@/lib/api";
+import { isAutoUpdateDisabled, isFlatpak } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import useUpdateManager from "./use-update-manager";

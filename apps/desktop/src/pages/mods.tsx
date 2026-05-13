@@ -37,7 +37,7 @@ import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
-import { getMods } from "@/lib/api";
+import { getMods } from "@/lib/api-client";
 import { ModCategory, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";

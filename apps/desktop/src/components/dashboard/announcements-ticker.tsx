@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getAnnouncements } from "@/lib/api";
+import { getAnnouncements } from "@/lib/api-client";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { cn } from "@/lib/utils";
 import { AnnouncementDetailDialog } from "./announcement-detail-dialog";

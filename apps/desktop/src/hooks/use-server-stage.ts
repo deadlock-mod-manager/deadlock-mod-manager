@@ -1,7 +1,7 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
-import { getModDownloads } from "@/lib/api";
+import { getModDownloads } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";

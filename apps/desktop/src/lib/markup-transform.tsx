@@ -8,7 +8,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import type { ReactNode } from "react";
 import type { NavigateFunction } from "react-router";
 
-import { getMod } from "@/lib/api";
+import { getMod } from "@/lib/api-client";
 import { queryClient } from "@/lib/client";
 import i18n from "@/lib/i18n";
 

@@ -7,7 +7,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { getApiHealth } from "@/lib/api";
+import { getApiHealth } from "@/lib/api-client";
 import logger from "@/lib/logger";
 
 type ApiStepProps = {

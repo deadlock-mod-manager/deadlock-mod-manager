@@ -1,6 +1,6 @@
 import { relaunch } from "@tauri-apps/plugin-process";
 import { useMutation } from "@tanstack/react-query";
-import { updateFlatpak } from "@/lib/api";
+import { updateFlatpak } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("flatpak-update");

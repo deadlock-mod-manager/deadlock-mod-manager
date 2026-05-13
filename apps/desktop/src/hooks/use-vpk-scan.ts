@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getProfileInstalledVpks } from "@/lib/api";
+import { getProfileInstalledVpks } from "@/lib/tauri-commands";
 import { usePersistedStore } from "@/lib/store";
 
 export const useVpkScan = () => {
