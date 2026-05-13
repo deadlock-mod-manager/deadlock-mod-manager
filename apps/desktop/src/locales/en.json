@@ -1936,6 +1936,21 @@
       "commandCopyFailed": "Failed to copy console command"
     }
   },
+  "modOptions": {
+    "title": "Switch Variants: {{modName}}",
+    "description": "Choose which variant to use for this mod. Changes take effect immediately.",
+    "openTooltip": "Switch variants",
+    "apply": "Apply",
+    "applySuccess": "Mod variants updated",
+    "applyError": "Failed to update mod variants",
+    "noOptions": "This mod has no other variants.",
+    "selectedCount": "{{selected}} of {{total}} selected",
+    "activeVariant": "Active",
+    "needsDownload": "needs download",
+    "fetchMissingNoSource": "Cannot fetch missing variants: archive source URLs are unknown",
+    "fetchMissingUnresolved": "Some selected variants cannot be located: {{names}}",
+    "fetchMissingNotFound": "Some variants were not found in their source archives: {{names}}"
+  },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",
     "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",
