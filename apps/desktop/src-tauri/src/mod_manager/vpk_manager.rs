@@ -165,21 +165,24 @@ impl VpkManager {
     vpk_names: impl IntoIterator<Item = impl AsRef<str>>,
     label_for_log: &str,
   ) -> Result<(), Error> {
+    let mut locked_files: Vec<String> = Vec::new();
+
     for vpk_name in vpk_names {
       let vpk_name = vpk_name.as_ref();
       let vpk_path = addons_path.join(vpk_name);
-      if vpk_path.exists() {
-        fs::OpenOptions::new()
-          .write(true)
-          .open(&vpk_path)
-          .map_err(|e| {
-            log::error!(
-              "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
-            );
-            e
-          })?;
-      }
+      if vpk_path.exists()
+        && let Err(e) = fs::OpenOptions::new().write(true).open(&vpk_path) {
+          log::error!(
+            "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
+          );
+          locked_files.push(vpk_name.to_string());
+        }
     }
+
+    if !locked_files.is_empty() {
+      return Err(Error::VpkInUse(locked_files.join(", ")));
+    }
+
     Ok(())
   }
 

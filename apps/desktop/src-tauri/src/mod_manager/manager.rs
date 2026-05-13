@@ -337,32 +337,31 @@ impl ModManager {
       game_path.join("game").join("citadel").join("addons")
     };
 
-    if let Some(local_mod) = self.mod_repository.remove_mod(&mod_id) {
-      log::info!("Mod found in memory: {}", local_mod.name);
+    if !addons_path.exists() {
+      return Err(Error::GamePathNotSet);
+    }
 
-      if !addons_path.exists() {
-        return Err(Error::GamePathNotSet);
-      }
-      let game_dir: &std::path::Path = addons_path.as_path();
+    if let Some(local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
+      log::info!("Mod found in memory: {}", local_mod.name);
 
       if !local_mod.installed_vpks.is_empty() {
         self
           .vpk_manager
-          .remove_vpks(&local_mod.installed_vpks, game_dir)?;
+          .remove_vpks(&local_mod.installed_vpks, addons_path.as_path())?;
       }
 
-      self.vpk_manager.remove_vpks_by_mod_id(game_dir, &mod_id)?;
+      self
+        .vpk_manager
+        .remove_vpks_by_mod_id(addons_path.as_path(), &mod_id)?;
     } else {
-      if !addons_path.exists() {
-        return Err(Error::GamePathNotSet);
-      }
       self.vpk_manager.remove_vpks(&vpks, &addons_path)?;
       self
         .vpk_manager
         .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
     }
 
-    // Remove the mod's folder from user's local app data
+    self.mod_repository.remove_mod(&mod_id);
+
     let mods_path = self.get_mods_store_path()?;
     let user_mod_dir = mods_path.join(&mod_id);
 

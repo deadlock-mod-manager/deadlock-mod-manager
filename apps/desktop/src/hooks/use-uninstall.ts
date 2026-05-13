@@ -5,6 +5,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import { isTauriError } from "@/types/tauri";
 import { useVpkScan } from "./use-vpk-scan";
 
 const useUninstall = () => {
@@ -80,6 +81,14 @@ const useUninstall = () => {
       );
     } catch (error) {
       logger.errorOnly(error);
+
+      if (remove && isTauriError(error) && error.kind === "vpkInUse") {
+        toast.error(t("mods.deleteError"), {
+          description: t("mods.deleteErrorVpkInUse"),
+        });
+        return;
+      }
+
       toast.error(remove ? t("mods.deleteError") : t("mods.disableError"));
     }
   };

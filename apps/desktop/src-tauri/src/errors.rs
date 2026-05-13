@@ -64,6 +64,8 @@ pub enum Error {
   RollbackFailed(String),
   #[error("Background task failed: {0}")]
   BackgroundTaskFailed(String),
+  #[error("VPK files are in use and cannot be deleted: {0}")]
+  VpkInUse(String),
 }
 
 impl serde::Serialize for Error {
@@ -106,6 +108,7 @@ impl serde::Serialize for Error {
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
       Error::RollbackFailed(_) => "rollbackFailed",
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
+      Error::VpkInUse(_) => "vpkInUse",
     };
 
     state.serialize_field("kind", kind)?;

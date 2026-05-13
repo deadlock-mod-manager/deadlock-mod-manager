@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Add Discord Game Presence showing live Deadlock status on Discord
+Improve mod deletion feedback when VPK files are locked by the game. Users now see an actionable error message suggesting to close Deadlock, and metadata is preserved so deletion can be retried.
