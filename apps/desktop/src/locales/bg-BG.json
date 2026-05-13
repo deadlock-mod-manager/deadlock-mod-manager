@@ -223,6 +223,12 @@
       "partialSuccess": "",
       "error": ""
     },
+    "disableAll": "",
+    "disableAllConfirmTitle": "",
+    "disableAllConfirmBody": "",
+    "disableAllConfirmAction": "",
+    "disableAllConfirmCancel": "",
+    "disableAllSuccess": "",
     "tabs": {
       "all": "",
       "installed": "",
@@ -288,7 +294,13 @@
       "deleteConfirmAction": "",
       "deleteSuccess": "",
       "deleteError": "",
-      "openError": ""
+      "openError": "",
+      "deleteAll": "",
+      "deleteAllConfirmTitle": "",
+      "deleteAllConfirmBody": "",
+      "deleteAllConfirmAction": "",
+      "deleteAllSuccess": "",
+      "deleteAllError": ""
     }
   },
   "pagination": {
