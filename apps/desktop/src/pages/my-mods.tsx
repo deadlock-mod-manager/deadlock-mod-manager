@@ -741,12 +741,13 @@ const MyMods = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className='w-full gap-4 overflow-y-auto px-4 will-change-transform'
+      className='flex w-full flex-1 flex-col gap-4 overflow-y-auto px-4 will-change-transform'
       onScroll={(e) => {
         scrollPositionRef.current = e.currentTarget.scrollTop;
       }}>
       <ErrorBoundary>
         <Tabs
+          className='flex flex-1 flex-col'
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ModFilter)}>
           <div className='mb-8 flex flex-row pt-4'>

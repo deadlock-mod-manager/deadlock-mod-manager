@@ -8,6 +8,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
+import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
@@ -41,6 +42,31 @@ export const VpkScanAlert = ({
   >(() => window.localStorage.getItem(DISMISS_STORAGE_KEY));
   const [isListVisible, setIsListVisible] = useState(true);
   const [pendingFile, setPendingFile] = useState<string | null>(null);
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async (vpks: string[]) => {
+      const results = await Promise.allSettled(
+        vpks.map((vpk) => deleteProfileVpk(vpk, activeProfileFolder)),
+      );
+      const failed = results.filter((r) => r.status === "rejected");
+      return { total: vpks.length, failedCount: failed.length };
+    },
+    onSuccess: async ({ total, failedCount }) => {
+      const deletedCount = total - failedCount;
+      if (failedCount === 0) {
+        toast.success(
+          t("mods.vpkScanAlert.deleteAllSuccess", { count: deletedCount }),
+        );
+      } else {
+        toast.error(t("mods.vpkScanAlert.deleteAllError"));
+      }
+      await refetch();
+    },
+    onError: (error) => {
+      logger.withError(error).error("Failed to delete all rogue VPKs");
+      toast.error(t("mods.vpkScanAlert.deleteAllError"));
+    },
+  });
 
   const currentFingerprint = useMemo(
     () => fingerprint(unmatchedVpks),
@@ -101,6 +127,21 @@ export const VpkScanAlert = ({
     } finally {
       setPendingFile(null);
     }
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmed = await confirm({
+      title: t("mods.vpkScanAlert.deleteAllConfirmTitle"),
+      body: t("mods.vpkScanAlert.deleteAllConfirmBody", {
+        count: unmatchedVpkCount,
+      }),
+      tone: "destructive",
+      actionButton: t("mods.vpkScanAlert.deleteAllConfirmAction"),
+      actionButtonVariant: "destructive",
+    });
+    if (!confirmed) return;
+
+    deleteAllMutation.mutate(unmatchedVpks);
   };
 
   return (
@@ -229,6 +270,15 @@ export const VpkScanAlert = ({
           )}
 
           <div className='flex flex-wrap items-center justify-end gap-2 border-border/60 border-t pt-3'>
+            <Button
+              onClick={handleDeleteAll}
+              size='sm'
+              variant='destructive'
+              disabled={deleteAllMutation.isPending}
+              isLoading={deleteAllMutation.isPending}
+              icon={<PhosphorIcons.Trash className='h-4 w-4' />}>
+              {t("mods.vpkScanAlert.deleteAll")}
+            </Button>
             <Button
               onClick={handleRefetch}
               size='sm'

@@ -294,7 +294,13 @@
       "deleteConfirmAction": "Delete",
       "deleteSuccess": "Deleted {{name}}",
       "deleteError": "Failed to delete {{name}}",
-      "openError": "Failed to open file location"
+      "openError": "Failed to open file location",
+      "deleteAll": "Delete All",
+      "deleteAllConfirmTitle": "Delete all unrecognized VPK files?",
+      "deleteAllConfirmBody": "This will permanently delete {{count}} VPK file(s) from your addons folder. This action cannot be undone.",
+      "deleteAllConfirmAction": "Delete All",
+      "deleteAllSuccess": "Deleted {{count}} unrecognized VPK file(s)",
+      "deleteAllError": "Failed to delete some VPK files"
     }
   },
   "pagination": {
