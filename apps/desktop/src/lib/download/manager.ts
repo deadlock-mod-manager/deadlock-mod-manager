@@ -7,7 +7,7 @@ import type {
   ModFileTree,
   Progress,
 } from "@/types/mods";
-import { getGameBananaFileservers } from "../api";
+import { getGameBananaFileservers } from "../api-client";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
 import { ModStatus } from "@/types/mods";
