@@ -56,6 +56,7 @@ export type ModsState = {
     remoteId: string,
     downloads: ModDownloadItem[],
   ) => void;
+  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
@@ -336,6 +337,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         ...mod,
         selectedDownloads:
           mod.remoteId === remoteId ? downloads : mod.selectedDownloads,
+      })),
+    })),
+
+  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) => ({
+        ...mod,
+        downloads: mod.remoteId === remoteId ? downloads : mod.downloads,
       })),
     })),
 

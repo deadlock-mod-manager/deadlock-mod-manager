@@ -2,10 +2,15 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { ArrowLeft, RefreshCw, Trash } from "@deadlock-mods/ui/icons";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  RefreshCw,
+  Trash,
+} from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
@@ -19,6 +24,7 @@ import { ModInfo } from "@/components/mod-detail/mod-info";
 import { MapHowToPlay } from "@/components/mod-detail/map-how-to-play";
 import { SupportAuthor } from "@/components/mod-detail/support-author";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
+import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
@@ -27,6 +33,7 @@ import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
+import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useReportCounts } from "@/hooks/use-report-counts";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
@@ -77,7 +84,18 @@ const Mod = () => {
 
   const localMods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
+  const setModDownloads = usePersistedStore((state) => state.setModDownloads);
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+
+  useEffect(() => {
+    if (
+      localMod &&
+      availableFiles.length > 0 &&
+      (!localMod.downloads || localMod.downloads.length === 0)
+    ) {
+      setModDownloads(localMod.remoteId, availableFiles);
+    }
+  }, [localMod, availableFiles, setModDownloads]);
 
   const { updatableMods } = useCheckUpdates();
   const hasUpdate = updatableMods.some(
@@ -99,6 +117,8 @@ const Mod = () => {
   const { uninstall } = useUninstall();
 
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+  const modOptions = useModOptions(localMod ?? null);
 
   const forceUpdate = () => {
     if (!mod || !availableFiles?.length) return;
@@ -255,6 +275,15 @@ const Mod = () => {
                   onTriggerUpdate={() => setUpdateDialogOpen(true)}
                 />
                 <ModButton remoteMod={mod} variant='default' />
+                {modOptions.showButton && (
+                  <Button
+                    icon={<ArrowLeftRight className='h-4 w-4' />}
+                    onClick={modOptions.open}
+                    size='default'
+                    variant='outline'>
+                    {t("modOptions.openTooltip")}
+                  </Button>
+                )}
                 {hasUpdate && (
                   <Button
                     icon={<RefreshCw className='h-4 w-4' />}
@@ -331,6 +360,22 @@ const Mod = () => {
           open={updateDialogOpen}
           updates={effectiveUpdateData}
         />
+        {modOptions.showButton && localMod && (
+          <ModOptionsDialog
+            isOpen={modOptions.isOpen}
+            onOpenChange={(open) =>
+              open ? modOptions.open() : modOptions.close()
+            }
+            fileTree={modOptions.fileTree}
+            notOnDisk={modOptions.notOnDisk}
+            isLoading={modOptions.isLoading}
+            isSaving={modOptions.isSaving}
+            onApply={modOptions.apply}
+            onCancel={modOptions.close}
+            modName={mod.name}
+            uninstalledDownloads={modOptions.uninstalledDownloads}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

@@ -31,7 +31,7 @@ export const useDownload = (
     }
 
     addLocalMod(mod as unknown as ModDto, {
-      downloads: selectedFiles,
+      downloads: availableFiles,
       selectedDownloads: selectedFiles,
     });
 

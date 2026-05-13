@@ -592,6 +592,91 @@ impl VpkManager {
       .unwrap_or_else(|| vpk_name.to_string())
   }
 
+  /// Atomically swap which VPK files are enabled for a mod.
+  ///
+  /// Disables all currently-enabled VPKs (rename `pak##_dir.vpk` -> `{mod_id}_{original}.vpk`)
+  /// and then enables only the newly selected ones (rename `{mod_id}_{original}.vpk` -> `pak##_dir.vpk`).
+  ///
+  /// On failure to enable, the previously-enabled VPKs are re-enabled to restore prior state.
+  /// Returns the new list of installed VPK names (`pak##_dir.vpk`).
+  pub fn swap_enabled_vpks(
+    &self,
+    addons_path: &Path,
+    mod_id: &str,
+    current_installed_vpks: &[String],
+    current_original_names: &[String],
+    new_selection_original_names: &[String],
+  ) -> Result<Vec<String>, Error> {
+    if !addons_path.exists() {
+      return Err(Error::Io(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!("Addons path not found: {addons_path:?}"),
+      )));
+    }
+
+    log::info!(
+      "Swapping enabled VPKs for mod {mod_id}: {} currently enabled -> {} newly selected",
+      current_installed_vpks.len(),
+      new_selection_original_names.len()
+    );
+
+    // Step 1: disable currently enabled VPKs (back to prefixed form).
+    let previously_prefixed = if current_installed_vpks.is_empty() {
+      Vec::new()
+    } else {
+      self.disable_vpks(
+        addons_path,
+        mod_id,
+        current_installed_vpks,
+        current_original_names,
+      )?
+    };
+
+    // Step 2: validate that all selected prefixed VPKs exist on disk.
+    let prefixed_to_enable: Vec<String> = new_selection_original_names
+      .iter()
+      .map(|name| format!("{mod_id}_{name}"))
+      .collect();
+
+    for prefixed in &prefixed_to_enable {
+      if !addons_path.join(prefixed).exists() {
+        log::error!(
+          "Selected VPK not found for mod {mod_id}: {prefixed}, restoring previous state"
+        );
+        if !previously_prefixed.is_empty() {
+          if let Err(restore_err) =
+            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+          {
+            log::error!(
+              "Failed to restore previous state for mod {mod_id}: {restore_err}"
+            );
+          }
+        }
+        return Err(Error::ModFileNotFound);
+      }
+    }
+
+    // Step 3: enable newly selected VPKs.
+    match self.enable_vpks(addons_path, mod_id, &prefixed_to_enable) {
+      Ok(installed) => Ok(installed),
+      Err(e) => {
+        log::error!(
+          "Failed to enable selected VPKs for mod {mod_id}: {e}, restoring previous state"
+        );
+        if !previously_prefixed.is_empty() {
+          if let Err(restore_err) =
+            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+          {
+            log::error!(
+              "Failed to restore previous state for mod {mod_id}: {restore_err}"
+            );
+          }
+        }
+        Err(e)
+      }
+    }
+  }
+
   /// Replace VPK files for a mod with new ones
   /// Handles both enabled (pak##_dir.vpk) and disabled (modid_*.vpk) mods
   pub fn replace_vpks(
