@@ -15,8 +15,8 @@
     "fumadocs-openapi": "^10.6.0",
     "fumadocs-ui": "^16.7.7",
     "lucide-react": "^0.544.0",
-    "mermaid": "^11.13.0",
-    "next": "^16.2.3",
+    "mermaid": "^11.15.0",
+    "next": "^16.2.6",
     "next-themes": "^0.4.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -30,7 +30,7 @@
     "@types/node": "24.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.10",
+    "postcss": "^8.5.11",
     "tailwindcss": "^4.2.2",
     "typescript": "catalog:"
   }
