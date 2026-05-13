@@ -29,6 +29,7 @@ import {
   Globe,
   InfoIcon,
   MonitorIcon,
+  PaletteIcon,
   PlugIcon,
   PlusIcon,
   ScrollTextIcon,
@@ -82,6 +83,7 @@ import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
 
 const getAutoexecConfig = async () => {
@@ -510,6 +512,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 value='application'
               />
               <SettingsNavItem
+                icon={PaletteIcon}
+                label={t("settings.themes")}
+                value='themes'
+              />
+              <SettingsNavItem
                 icon={Globe}
                 label={t("settings.network")}
                 value='network'
@@ -587,6 +594,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("settings.plugin")}>
               <PluginList />
             </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='themes'>
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className='text-muted-foreground text-sm'>
+                    {t("common.loading")}
+                  </div>
+                }>
+                {ThemesPlugin.Settings && <ThemesPlugin.Settings />}
+              </Suspense>
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='game'>
