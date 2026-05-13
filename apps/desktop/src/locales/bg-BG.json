@@ -275,6 +275,7 @@
     "deleteSuccess": "",
     "disableSuccess": "",
     "deleteError": "",
+    "deleteErrorVpkInUse": "",
     "disableError": "",
     "vpkScanAlert": {
       "title": "",
