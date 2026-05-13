@@ -36,9 +36,12 @@ export const PluginList = () => {
     return map;
   }, [featureFlags]);
 
+  const HIDDEN_FROM_LIST = new Set(["themes"]);
+
   const visiblePlugins = useMemo(
     () =>
       plugins.filter((plugin) => {
+        if (HIDDEN_FROM_LIST.has(plugin.manifest.id)) return false;
         const flagName = `plugin-${plugin.manifest.id}`;
         return featureFlagMap.get(flagName) ?? true;
       }),
