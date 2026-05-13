@@ -1,7 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Music } from "@deadlock-mods/ui/icons";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
 import {
@@ -16,7 +16,6 @@ interface ModHeroProps {
 }
 
 export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
   const hasImages = mod.images && mod.images.length > 0;
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = useMemo(
@@ -46,9 +45,6 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
             Audio Mod
           </Badge>
         </div>
-        {mod.audioUrl && (
-          <audio preload='metadata' ref={audioRef} src={mod.audioUrl} />
-        )}
       </div>
     );
   }

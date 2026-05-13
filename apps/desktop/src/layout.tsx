@@ -9,6 +9,7 @@ import { BottomBar } from "./components/layout/bottom-bar";
 import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
+import { GlobalAudioPlayer } from "./components/global-audio-player";
 import { ScrollBackButtonProvider } from "./contexts/scroll-back-button-context";
 import { usePageTracking } from "./hooks/use-page-tracking";
 import { useWhatsNew } from "./hooks/use-whats-new";
@@ -37,6 +38,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         </ScrollBackButtonProvider>
       </div>
       <Toaster />
+      <GlobalAudioPlayer />
 
       <Dialog
         onOpenChange={(open) => !open && markVersionAsSeen()}

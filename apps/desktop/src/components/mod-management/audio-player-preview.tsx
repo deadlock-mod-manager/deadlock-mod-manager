@@ -1,6 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Music, Pause, Play } from "@deadlock-mods/ui/icons";
-import { useAudio } from "@/hooks/use-audio";
+import { useGlobalAudio } from "@/hooks/use-global-audio";
 import { cn } from "@/lib/utils";
 
 export type AudioPlayerVariant = "default" | "compact" | "hero";
@@ -10,9 +10,6 @@ interface AudioPlayerPreviewProps {
   variant?: AudioPlayerVariant;
   className?: string;
   onPlayClick?: (e: React.MouseEvent) => void;
-  captionsSrc?: string;
-  captionsLabel?: string;
-  captionsLang?: string;
 }
 
 const variantStyles = {
@@ -28,7 +25,7 @@ const variantStyles = {
     container:
       "relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-l-xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5",
     content: "relative z-10 flex items-center justify-center",
-    icon: "h-6 w-6 text-primary", // Not used in compact mode
+    icon: "h-6 w-6 text-primary",
     button:
       "h-8 w-8 border-primary/40 p-0 text-primary shadow-sm transition-all duration-200",
     buttonSize: "sm" as const,
@@ -48,11 +45,8 @@ const AudioPlayerPreview = ({
   variant = "default",
   className,
   onPlayClick,
-  captionsSrc,
-  captionsLabel,
-  captionsLang,
 }: AudioPlayerPreviewProps) => {
-  const { isPlaying, audioRef, togglePlayback, handleAudioEnded } = useAudio();
+  const { isPlaying, togglePlayback } = useGlobalAudio(audioUrl, audioUrl);
 
   const handleClick = (e: React.MouseEvent) => {
     onPlayClick?.(e);
@@ -61,7 +55,6 @@ const AudioPlayerPreview = ({
 
   const styles = variantStyles[variant];
 
-  // Dynamic button classes for compact variant
   const getCompactButtonClasses = () => {
     if (variant !== "compact") {
       return styles.button;
@@ -95,24 +88,6 @@ const AudioPlayerPreview = ({
           {variant !== "compact" && (isPlaying ? "Pause" : "Preview")}
         </Button>
       </div>
-      {audioUrl && (
-        // eslint-disable-next-line jsx-a11y/media-has-caption
-        <audio
-          onEnded={handleAudioEnded}
-          preload='metadata'
-          ref={audioRef}
-          src={audioUrl}>
-          {captionsSrc && (
-            <track
-              kind='captions'
-              src={captionsSrc}
-              label={captionsLabel}
-              srcLang={captionsLang}
-              default
-            />
-          )}
-        </audio>
-      )}
     </div>
   );
 };
