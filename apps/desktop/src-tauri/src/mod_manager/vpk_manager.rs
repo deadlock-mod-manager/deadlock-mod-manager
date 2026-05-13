@@ -4,6 +4,7 @@ use log;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
+use std::sync::LazyLock;
 
 /// Manages VPK file operations and installation
 pub struct VpkManager {
@@ -22,7 +23,6 @@ impl VpkManager {
       return Ok(1);
     }
 
-    let vpk_pattern = Regex::new(r"pak(\d+)_dir\.vpk").unwrap();
     let mut used_numbers = std::collections::HashSet::new();
 
     for entry in fs::read_dir(addons_path)? {
@@ -32,8 +32,7 @@ impl VpkManager {
       if path.is_file()
         && path.extension().is_some_and(|ext| ext == "vpk")
         && let Some(name) = path.file_name().and_then(|n| n.to_str())
-        && let Some(captures) = vpk_pattern.captures(name)
-        && let Ok(num) = captures[1].parse::<u32>()
+        && let Some(num) = Self::enabled_vpk_number(name)
       {
         used_numbers.insert(num);
       }
@@ -62,6 +61,23 @@ impl VpkManager {
 
     log::info!("Starting VPK reordering for {} mods", mod_vpk_mapping.len());
 
+    let mut missing_vpks = Vec::new();
+    for (mod_id, old_vpk_names) in mod_vpk_mapping {
+      for old_vpk_name in old_vpk_names {
+        let filename = Self::vpk_filename(old_vpk_name);
+        if !addons_path.join(&filename).exists() {
+          missing_vpks.push(format!("{mod_id}:{filename}"));
+        }
+      }
+    }
+
+    if !missing_vpks.is_empty() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot reorder mods because enabled VPK files are missing: {}",
+        missing_vpks.join(", ")
+      )));
+    }
+
     // Create a temporary directory for safe reordering
     let temp_dir = addons_path.join("temp_reorder");
     if temp_dir.exists() {
@@ -73,8 +89,8 @@ impl VpkManager {
 
     let mut updated_mappings = Vec::new();
 
-    // Step 1: Move enabled VPK files to temporary directory, skip disabled (prefixed) VPKs
-    // Disabled VPKs use the format `{mod_id}_{original_name}.vpk` and should not be touched
+    // Step 1: Move enabled pak##_dir.vpk files to the temporary directory.
+    // Disabled prefixed VPKs and unmanaged files should not be touched.
     if addons_path.exists() {
       for entry in std::fs::read_dir(addons_path)? {
         let entry = entry?;
@@ -84,8 +100,8 @@ impl VpkManager {
           && path.extension().is_some_and(|ext| ext == "vpk")
           && let Some(filename) = path.file_name().and_then(|n| n.to_str())
         {
-          if Self::extract_mod_id_from_prefix(filename).is_some() {
-            log::debug!("Skipping disabled (prefixed) VPK during reorder: {filename}");
+          if !Self::is_enabled_vpk_name(filename) {
+            log::debug!("Skipping non-enabled VPK during reorder: {filename}");
             continue;
           }
 
@@ -105,11 +121,7 @@ impl VpkManager {
       // For each VPK this mod should have, find the specific VPK file in temp
       for old_vpk_name in old_vpk_names {
         // Extract just the filename from the full path
-        let filename = if let Some(filename) = std::path::Path::new(&old_vpk_name).file_name() {
-          filename.to_string_lossy().to_string()
-        } else {
-          old_vpk_name.clone()
-        };
+        let filename = Self::vpk_filename(old_vpk_name);
 
         let temp_vpk_path = temp_dir.join(&filename);
 
@@ -466,20 +478,38 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
+    if original_names.len() != installed_vpks.len() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot disable mod because original VPK name count ({}) does not match installed VPK count ({})",
+        original_names.len(),
+        installed_vpks.len()
+      )));
+    }
+
+    let missing_vpks: Vec<String> = installed_vpks
+      .iter()
+      .map(|vpk_name| Self::vpk_filename(vpk_name))
+      .filter(|vpk_name| !addons_path.join(vpk_name).exists())
+      .collect();
+
+    if !missing_vpks.is_empty() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot disable mod because enabled VPK files are missing: {}",
+        missing_vpks.join(", ")
+      )));
+    }
+
     // Track successful renames so we can roll back on partial failure
     let mut renamed: Vec<(String, String)> = Vec::new();
 
     for (index, vpk_name) in installed_vpks.iter().enumerate() {
-      let old_path = addons_path.join(vpk_name);
-      if !old_path.exists() {
-        log::warn!("Installed VPK not found: {vpk_name}");
-        continue;
-      }
+      let vpk_name = Self::vpk_filename(vpk_name);
+      let old_path = addons_path.join(&vpk_name);
 
       let original_name = original_names
         .get(index)
         .map(|s| s.as_str())
-        .unwrap_or("addon.vpk");
+        .expect("original_names length is validated before disabling VPKs");
 
       let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
@@ -523,13 +553,43 @@ impl VpkManager {
 
   /// Extract mod ID from a prefixed VPK filename
   pub fn extract_mod_id_from_prefix(filename: &str) -> Option<String> {
+    if Self::is_enabled_vpk_name(filename) {
+      return None;
+    }
+
     if let Some(underscore_pos) = filename.find('_') {
       let potential_id = &filename[..underscore_pos];
-      if potential_id.chars().all(|c| c.is_ascii_digit()) {
+      if !potential_id.is_empty()
+        && (potential_id.chars().all(|c| c.is_ascii_digit()) || potential_id.starts_with("local-"))
+      {
         return Some(potential_id.to_string());
       }
     }
     None
+  }
+
+  fn is_enabled_vpk_name(filename: &str) -> bool {
+    Self::enabled_vpk_number(filename).is_some()
+  }
+
+  fn enabled_vpk_number(filename: &str) -> Option<u32> {
+    static ENABLED_VPK_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+      Regex::new(r"^pak(\d+)_dir\.vpk$").expect("enabled VPK regex must be valid")
+    });
+
+    ENABLED_VPK_PATTERN
+      .captures(filename)?
+      .get(1)?
+      .as_str()
+      .parse()
+      .ok()
+  }
+
+  fn vpk_filename(vpk_name: &str) -> String {
+    std::path::Path::new(vpk_name)
+      .file_name()
+      .map(|f| f.to_string_lossy().to_string())
+      .unwrap_or_else(|| vpk_name.to_string())
   }
 
   /// Replace VPK files for a mod with new ones
@@ -644,5 +704,94 @@ impl VpkManager {
 impl Default for VpkManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::fs;
+
+  fn write_vpk(addons_path: &std::path::Path, name: &str) {
+    fs::write(addons_path.join(name), b"test vpk").unwrap();
+  }
+
+  #[test]
+  fn detects_disabled_local_mod_prefixes() {
+    assert_eq!(
+      VpkManager::extract_mod_id_from_prefix("local-abc-123_mod.vpk"),
+      Some("local-abc-123".to_string())
+    );
+    assert_eq!(
+      VpkManager::extract_mod_id_from_prefix("123456_mod.vpk"),
+      Some("123456".to_string())
+    );
+    assert_eq!(
+      VpkManager::extract_mod_id_from_prefix("pak01_dir.vpk"),
+      None
+    );
+  }
+
+  #[test]
+  fn reorder_keeps_disabled_local_vpks_disabled() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path();
+    write_vpk(addons_path, "pak01_dir.vpk");
+    write_vpk(addons_path, "local-abc-123_original.vpk");
+
+    let manager = VpkManager::new();
+    let updated = manager
+      .reorder_vpks(
+        &[("123456".to_string(), vec!["pak01_dir.vpk".to_string()])],
+        addons_path,
+      )
+      .unwrap();
+
+    assert_eq!(
+      updated,
+      vec![("123456".to_string(), vec!["pak01_dir.vpk".to_string()])]
+    );
+    assert!(addons_path.join("local-abc-123_original.vpk").exists());
+    assert!(!addons_path.join("pak02_dir.vpk").exists());
+  }
+
+  #[test]
+  fn disable_errors_when_enabled_vpk_is_missing() {
+    let temp = tempfile::tempdir().unwrap();
+    let manager = VpkManager::new();
+
+    let err = manager
+      .disable_vpks(
+        temp.path(),
+        "123456",
+        &["pak01_dir.vpk".to_string()],
+        &["original.vpk".to_string()],
+      )
+      .unwrap_err();
+
+    assert!(err.to_string().contains("enabled VPK files are missing"));
+  }
+
+  #[test]
+  fn disable_errors_when_original_name_count_does_not_match() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak01_dir.vpk");
+    write_vpk(temp.path(), "pak02_dir.vpk");
+    let manager = VpkManager::new();
+
+    let err = manager
+      .disable_vpks(
+        temp.path(),
+        "123456",
+        &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+        &["first.vpk".to_string()],
+      )
+      .unwrap_err();
+
+    assert!(
+      err
+        .to_string()
+        .contains("original VPK name count (1) does not match installed VPK count (2)")
+    );
   }
 }

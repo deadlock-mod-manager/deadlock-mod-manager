@@ -49,6 +49,8 @@ const AudioPlayerPreview = ({
   const { isPlaying, togglePlayback } = useGlobalAudio(audioUrl, audioUrl);
 
   const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onPlayClick?.(e);
     togglePlayback();
   };
@@ -69,7 +71,7 @@ const AudioPlayerPreview = ({
   };
 
   return (
-    <div className={cn(styles.container, className)}>
+    <div className={cn(styles.container, className)} onClick={handleClick}>
       <div className={styles.content}>
         {variant !== "compact" && <Music className={styles.icon} />}
         {variant === "hero" && <div className='mb-6' />}

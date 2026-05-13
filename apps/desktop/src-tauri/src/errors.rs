@@ -24,7 +24,7 @@ pub enum Error {
   Rar(#[from] unrar::error::UnrarError),
   #[error(transparent)]
   Zip(#[from] zip::result::ZipError),
-  #[error("Mod is invalid")]
+  #[error("Mod is invalid: {0}")]
   ModInvalid(String),
   #[error("Game is running")]
   GameRunning,

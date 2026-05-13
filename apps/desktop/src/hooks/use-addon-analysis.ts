@@ -106,11 +106,13 @@ export const useAddonAnalysis = () => {
               addIdentifiedLocalMod(modDetails, addon.filePath);
               processedIdentifiedCount++;
 
-              // Register in Rust-side ModRepository so batch update cleanup can find it
+              // Register in Rust-side ModRepository and persist to manifest
+              const activeProfile = getActiveProfile();
               await invoke("register_analyzed_mod", {
                 modId: addon.remoteId,
                 modName: modDetails.name,
                 installedVpks: [addon.fileName],
+                profileFolder: activeProfile?.folderName ?? null,
               });
             } else {
               // This is a prefixed VPK (no matchInfo) - add as downloaded but not installed

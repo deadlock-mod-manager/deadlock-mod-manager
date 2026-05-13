@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::errors::Error;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::{Mod, ModFileTree};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
@@ -575,21 +576,22 @@ pub async fn register_analyzed_mod(
   mod_id: String,
   mod_name: String,
   installed_vpks: Vec<String>,
+  profile_folder: Option<String>,
 ) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
 
   if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
     log::info!(
-      "Registering analyzed mod in repository: {} ({}) with {} VPKs",
+      "Registering analyzed mod in repository: {} ({}) with {} VPKs (profile: {profile_folder:?})",
       mod_name,
       mod_id,
       installed_vpks.len()
     );
     let deadlock_mod = Mod {
-      id: mod_id,
+      id: mod_id.clone(),
       name: mod_name,
       is_map: false,
-      installed_vpks,
+      installed_vpks: installed_vpks.clone(),
       file_tree: None,
       install_order: None,
       original_vpk_names: Vec::new(),
@@ -597,6 +599,14 @@ pub async fn register_analyzed_mod(
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
   } else {
     log::debug!("Mod {} already registered in repository, skipping", mod_id);
+  }
+
+  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  if !manifest.mods.contains_key(&mod_id) {
+    manifest.mark_enabled(&mod_id, installed_vpks, Vec::new(), None);
+    manifest.save(&addons_path)?;
+    log::info!("Persisted analyzed mod {mod_id} to profile manifest");
   }
 
   Ok(())

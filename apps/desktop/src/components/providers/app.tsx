@@ -57,6 +57,7 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
 
     resolveGamePath()
       .then(cleanupStaleServerGameinfo)
+      .then(() => usePersistedStore.getState().restoreModsFromManifest())
       .catch((error) => {
         logger.withError(error).debug("App bootstrap initialization skipped");
       });

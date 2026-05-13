@@ -45,11 +45,6 @@ impl ModRepository {
   pub fn get_mod(&self, mod_id: &str) -> Option<&Mod> {
     self.mods.get(mod_id)
   }
-
-  /// Get all mods as an iterator
-  pub fn get_all_mods(&self) -> impl Iterator<Item = &Mod> {
-    self.mods.values()
-  }
 }
 
 impl Default for ModRepository {

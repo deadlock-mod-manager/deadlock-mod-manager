@@ -1,6 +1,8 @@
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::Mod;
+use serde::Deserialize;
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::downloads::get_download_manager;
@@ -555,4 +557,77 @@ pub async fn import_profile_batch(
     failed,
     installed_mods,
   })
+}
+
+#[tauri::command]
+pub async fn get_profile_vpk_manifest(
+  profile_folder: Option<String>,
+) -> Result<ProfileVpkManifest, Error> {
+  log::info!("Getting VPK manifest for profile: {profile_folder:?}");
+
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
+  mod_manager.get_profile_vpk_manifest(profile_folder)
+}
+
+#[tauri::command]
+pub async fn hydrate_mods_from_manifest(
+  profile_folder: Option<String>,
+) -> Result<usize, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.hydrate_mods_from_manifest(profile_folder)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SeedManifestEntry {
+  pub mod_id: String,
+  pub enabled: bool,
+  #[serde(default)]
+  pub current_vpks: Vec<String>,
+  #[serde(default)]
+  pub disabled_vpks: Vec<String>,
+  #[serde(default)]
+  pub original_vpk_names: Vec<String>,
+  #[serde(default)]
+  pub order: Option<u32>,
+}
+
+#[tauri::command]
+pub async fn seed_profile_vpk_manifest_entries(
+  profile_folder: Option<String>,
+  entries: Vec<SeedManifestEntry>,
+) -> Result<(), Error> {
+  log::info!(
+    "Seeding VPK manifest for profile {profile_folder:?} with {} entries",
+    entries.len()
+  );
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  let mut changed = false;
+
+  for entry in entries {
+    if manifest.mods.contains_key(&entry.mod_id) {
+      continue;
+    }
+    if entry.enabled {
+      manifest.mark_enabled(
+        &entry.mod_id,
+        entry.current_vpks,
+        entry.original_vpk_names,
+        entry.order,
+      );
+    } else {
+      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
+    }
+    changed = true;
+  }
+
+  if changed {
+    manifest.save(&addons_path)?;
+  }
+
+  Ok(())
 }

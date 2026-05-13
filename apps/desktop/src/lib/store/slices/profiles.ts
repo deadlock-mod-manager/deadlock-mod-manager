@@ -2,6 +2,7 @@ import { type ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import i18n from "i18next";
 import type { StateCreator } from "zustand";
+import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
@@ -14,6 +15,8 @@ import {
   type ModProfileEntry,
   type ProfileId,
   type ProfileSwitchResult,
+  type SeedManifestEntry,
+  type VpkManifest,
 } from "@/types/profiles";
 
 export interface ProfilesState {
@@ -59,6 +62,7 @@ export interface ProfilesState {
   getEnabledModsCount: () => number;
   syncProfilesWithFilesystem: () => Promise<void>;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
+  restoreModsFromManifest: () => Promise<void>;
   saveCurrentModsToProfile: () => void;
   loadModsFromProfile: (profileId: ProfileId) => void;
 }
@@ -750,6 +754,19 @@ export const createProfilesSlice: StateCreator<
       const allVpks = await invoke<string[]>("get_profile_installed_vpks", {
         profileFolder: profile.folderName,
       });
+      let manifest: VpkManifest = { version: 0, mods: {} };
+      try {
+        manifest = await invoke<VpkManifest>("get_profile_vpk_manifest", {
+          profileFolder: profile.folderName,
+        });
+      } catch (error) {
+        logger
+          .withMetadata({ profileId, folderName: profile.folderName })
+          .withError(error)
+          .warn(
+            "Failed to load VPK manifest; falling back to filename-pattern detection",
+          );
+      }
 
       logger
         .withMetadata({
@@ -768,12 +785,67 @@ export const createProfilesSlice: StateCreator<
 
       const updatedEnabledMods: Record<string, ModProfileEntry> = {};
       const updatedLocalMods: LocalMod[] = [];
+      const seedEntries: SeedManifestEntry[] = [];
 
       for (const mod of localMods) {
-        // Check if this mod has any VPKs in the profile folder (enabled or disabled)
-        const hasVpksInProfile = allVpks.some(
-          (vpk) => vpk.startsWith(`${mod.remoteId}_`) || enabledVpkSet.has(vpk),
+        const manifestEntry = manifest.mods[mod.remoteId];
+
+        if (manifestEntry) {
+          const currentVpks = manifestEntry.currentVpks ?? [];
+          const hasEnabledVpks =
+            manifestEntry.enabled &&
+            currentVpks.some((vpk) => enabledVpkSet.has(vpk));
+
+          if (hasEnabledVpks) {
+            updatedEnabledMods[mod.remoteId] = {
+              remoteId: mod.remoteId,
+              enabled: true,
+              lastModified: new Date(),
+            };
+
+            updatedLocalMods.push({
+              ...mod,
+              status: ModStatus.Installed,
+              installedVpks: currentVpks,
+              installOrder: manifestEntry.order ?? mod.installOrder,
+            });
+          } else {
+            if (manifestEntry.enabled) {
+              logger
+                .withMetadata({
+                  profileId,
+                  remoteId: mod.remoteId,
+                  currentVpks,
+                  enabledVpkCount: enabledVpkSet.size,
+                  enabledVpkSample: Array.from(enabledVpkSet).slice(0, 10),
+                })
+                .warn(
+                  "Manifest entry marked enabled but no matching enabled VPKs on disk; treating as downloaded",
+                );
+            }
+
+            updatedLocalMods.push({
+              ...mod,
+              status: ModStatus.Downloaded,
+              installedVpks: [],
+              installOrder: manifestEntry.order ?? mod.installOrder,
+            });
+          }
+
+          continue;
+        }
+
+        const disabledVpksForMod = allVpks.filter((vpk) =>
+          vpk.startsWith(`${mod.remoteId}_`),
         );
+        const enabledVpksForMod =
+          mod.installedVpks?.filter((installedVpk) => {
+            const filename = installedVpk.split(/[\\/]/).pop() || "";
+            return enabledVpkSet.has(filename);
+          }) ?? [];
+
+        const hasVpksInProfile =
+          disabledVpksForMod.length > 0 || enabledVpksForMod.length > 0;
 
         if (!hasVpksInProfile) {
           // Mod doesn't have any VPKs in this profile
@@ -782,11 +854,7 @@ export const createProfilesSlice: StateCreator<
         }
 
         // Check if the mod has enabled VPKs
-        const hasEnabledVpks =
-          mod.installedVpks?.some((installedVpk) => {
-            const filename = installedVpk.split(/[\\/]/).pop() || "";
-            return enabledVpkSet.has(filename);
-          }) ?? false;
+        const hasEnabledVpks = enabledVpksForMod.length > 0;
 
         if (hasEnabledVpks) {
           // Mod is enabled in this profile
@@ -800,10 +868,23 @@ export const createProfilesSlice: StateCreator<
             updatedLocalMods.push({
               ...mod,
               status: ModStatus.Installed,
+              installedVpks: enabledVpksForMod,
             });
           } else {
-            updatedLocalMods.push(mod);
+            updatedLocalMods.push({
+              ...mod,
+              installedVpks: enabledVpksForMod,
+            });
           }
+
+          seedEntries.push({
+            modId: mod.remoteId,
+            enabled: true,
+            currentVpks: enabledVpksForMod,
+            disabledVpks: [],
+            originalVpkNames: [],
+            order: mod.installOrder ?? null,
+          });
         } else {
           // Mod has VPKs but they're disabled (prefixed)
           if (mod.status === ModStatus.Installed) {
@@ -814,6 +895,32 @@ export const createProfilesSlice: StateCreator<
           } else {
             updatedLocalMods.push(mod);
           }
+
+          seedEntries.push({
+            modId: mod.remoteId,
+            enabled: false,
+            currentVpks: [],
+            disabledVpks: disabledVpksForMod,
+            originalVpkNames: [],
+            order: mod.installOrder ?? null,
+          });
+        }
+      }
+
+      if (seedEntries.length > 0) {
+        try {
+          await invoke("seed_profile_vpk_manifest_entries", {
+            profileFolder: profile.folderName,
+            entries: seedEntries,
+          });
+          logger
+            .withMetadata({ profileId, seedCount: seedEntries.length })
+            .info("Seeded VPK manifest with legacy mod entries");
+        } catch (seedError) {
+          logger
+            .withMetadata({ profileId })
+            .withError(seedError)
+            .warn("Failed to seed VPK manifest with legacy entries");
         }
       }
 
@@ -839,6 +946,95 @@ export const createProfilesSlice: StateCreator<
         .withMetadata({ profileId })
         .withError(error)
         .error("Failed to sync profile enabled mods");
+    }
+  },
+
+  restoreModsFromManifest: async () => {
+    const { localMods, activeProfileId, profiles } = get();
+    if (localMods.length > 0) {
+      return;
+    }
+
+    const profile = profiles[activeProfileId];
+    if (!profile) {
+      return;
+    }
+
+    let manifest: VpkManifest = { version: 0, mods: {} };
+    try {
+      manifest = await invoke<VpkManifest>("get_profile_vpk_manifest", {
+        profileFolder: profile.folderName,
+      });
+    } catch (error) {
+      logger.withError(error).warn("Failed to load manifest for restoration");
+      return;
+    }
+
+    const manifestEntries = Object.entries(manifest.mods);
+    if (manifestEntries.length === 0) {
+      return;
+    }
+
+    logger
+      .withMetadata({
+        profileId: activeProfileId,
+        manifestModCount: manifestEntries.length,
+      })
+      .info("Restoring mods from manifest (local state is empty)");
+
+    const restoredMods: LocalMod[] = [];
+    const enabledMods: Record<string, ModProfileEntry> = {};
+
+    for (const [modId, entry] of manifestEntries) {
+      try {
+        const modDetails = await getMod(modId);
+        const currentVpks = entry.currentVpks ?? [];
+        const isEnabled = entry.enabled && currentVpks.length > 0;
+
+        const restoredMod: LocalMod = {
+          ...modDetails,
+          status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
+          installedVpks: isEnabled ? currentVpks : [],
+          installOrder: entry.order ?? restoredMods.length,
+        };
+
+        restoredMods.push(restoredMod);
+
+        if (isEnabled) {
+          enabledMods[modId] = {
+            remoteId: modId,
+            enabled: true,
+            lastModified: new Date(),
+          };
+        }
+
+        logger
+          .withMetadata({ modId, name: modDetails.name, isEnabled })
+          .info("Restored mod from manifest");
+      } catch (error) {
+        logger
+          .withMetadata({ modId })
+          .withError(error)
+          .warn("Failed to fetch mod details during manifest restoration");
+      }
+    }
+
+    if (restoredMods.length > 0) {
+      set((state) => ({
+        localMods: restoredMods,
+        profiles: {
+          ...state.profiles,
+          [activeProfileId]: {
+            ...profile,
+            enabledMods: { ...profile.enabledMods, ...enabledMods },
+            mods: restoredMods,
+          },
+        },
+      }));
+
+      logger
+        .withMetadata({ restoredCount: restoredMods.length })
+        .info("Manifest restoration complete");
     }
   },
 
