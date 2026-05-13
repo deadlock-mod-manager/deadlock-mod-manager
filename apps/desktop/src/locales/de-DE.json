@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "Plugins und Integrationen für die Desktop‑App verwalten.",
+    "themes": "",
     "discord": "",
     "privacy": "Datenschutz",
     "about": "Über",
@@ -1017,11 +1018,11 @@
       ]
     },
     "http": {
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1062,11 @@
           }
         },
         "crosshair": {
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           },
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           }
@@ -1457,7 +1458,7 @@
       "cancel": "Abbrechen",
       "exportAsPreDefined": "Als vordefiniert exportieren",
       "exportCustomTheme": "Eigenes Theme exportieren",
-      "exportCustomThemeDescription": "Erstelle einen vordefinierten Theme-Eintrag mit deinen aktuellen Einstellungen.",
+      "exportCustomThemeDescription": "",
       "name": "",
       "description": "Beschreibung",
       "subDescription": "Unterbeschreibung",
@@ -1481,7 +1482,50 @@
       "r": "",
       "g": "",
       "b": "",
-      "apply": "Anwenden"
+      "apply": "Anwenden",
+      "sectionAccent": "",
+      "sectionBorder": "",
+      "sectionSurfaces": "",
+      "sectionText": "",
+      "sectionAdvanced": "",
+      "sidebarOpacity": "",
+      "sectionAmbientBackground": "",
+      "ambientAccentColor": "",
+      "ambientAccentColorDialogTitle": "",
+      "ambientAccentColorDialogDescription": "",
+      "ambientIntensity": "",
+      "ambientSpread": "",
+      "cornerRadius": "",
+      "applyDraft": "",
+      "draftActive": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "applyDraftGraceHint": "",
+      "applyDraftConfirmKeep": "",
+      "accentColor": "",
+      "accentColorDialogTitle": "",
+      "accentColorDialogDescription": "",
+      "cardColor": "",
+      "cardColorDialogTitle": "",
+      "cardColorDialogDescription": "",
+      "popoverColor": "",
+      "popoverColorDialogTitle": "",
+      "popoverColorDialogDescription": "",
+      "secondaryColor": "",
+      "secondaryColorDialogTitle": "",
+      "secondaryColorDialogDescription": "",
+      "mutedColor": "",
+      "mutedColorDialogTitle": "",
+      "mutedColorDialogDescription": "",
+      "foregroundColor": "",
+      "foregroundColorDialogTitle": "",
+      "foregroundColorDialogDescription": "",
+      "mutedForegroundColor": "",
+      "mutedForegroundColorDialogTitle": "",
+      "mutedForegroundColorDialogDescription": "",
+      "previewTitle": "",
+      "previewHint": "",
+      "previewNavigation": ""
     },
     "tea": {
       "description": "Ein gemütliches beiges Theme, erstellt für den YouTuber und Twitch-Streamer Snipztea.",
@@ -1601,7 +1645,8 @@
     "noUrlAvailable": "Keine URL für diese Mod verfügbar",
     "openedGameFolder": "Spielordner geöffnet",
     "openedModInGame": "Mod-Dateien im Spielordner geöffnet",
-    "failedToOpenGameFolder": "Fehler beim Öffnen des Spielordners"
+    "failedToOpenGameFolder": "Fehler beim Öffnen des Spielordners",
+    "failedToOpenModInGame": ""
   },
   "profiles": {
     "share": "Profil teilen",
@@ -1675,7 +1720,18 @@
     "creatingProfile": "Erstelle neues Profil...",
     "updatingProfile": "Aktualisiere aktuelles Profil...",
     "processingMods": "Verarbeite Mods...",
-    "modsProcessed": "Mods verarbeitet"
+    "modsProcessed": "Mods verarbeitet",
+    "importedProfileDescription": "",
+    "importedProfileName": "",
+    "modsImportedCount": "",
+    "activateProfileLabel": "",
+    "statusActive": "",
+    "statusInactive": "",
+    "hideModList": "",
+    "showModList": "",
+    "modId": "",
+    "unknownProfile": "",
+    "recoveredProfileDescription": ""
   },
   "mapInvite": {
     "title": "",
@@ -1932,6 +1988,8 @@
     "settingsDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
+    "condebugDisableWarning": "",
+    "goToDiscordSettings": "",
     "indicatorDisabled": "",
     "indicatorWaiting": "",
     "indicatorConnecting": "",

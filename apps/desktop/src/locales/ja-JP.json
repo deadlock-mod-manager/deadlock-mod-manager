@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "プラグイン",
     "pluginDescription": "デスクトップアプリのプラグインと統合機能を管理する。",
+    "themes": "",
     "discord": "",
     "privacy": "プライバシー",
     "about": "アプリ情報",
@@ -1017,11 +1018,11 @@
       ]
     },
     "http": {
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1062,11 @@
           }
         },
         "crosshair": {
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           },
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           }
@@ -1457,7 +1458,7 @@
       "cancel": "キャンセル",
       "exportAsPreDefined": "事前定義としてエクスポート",
       "exportCustomTheme": "カスタムテーマをエクスポート",
-      "exportCustomThemeDescription": "現在のカスタム設定を使用して事前定義されたテーマエントリを作成する。",
+      "exportCustomThemeDescription": "",
       "name": "名前",
       "description": "説明",
       "subDescription": "サブ説明",
@@ -1481,7 +1482,50 @@
       "r": "",
       "g": "",
       "b": "",
-      "apply": "適用"
+      "apply": "適用",
+      "sectionAccent": "",
+      "sectionBorder": "",
+      "sectionSurfaces": "",
+      "sectionText": "",
+      "sectionAdvanced": "",
+      "sidebarOpacity": "",
+      "sectionAmbientBackground": "",
+      "ambientAccentColor": "",
+      "ambientAccentColorDialogTitle": "",
+      "ambientAccentColorDialogDescription": "",
+      "ambientIntensity": "",
+      "ambientSpread": "",
+      "cornerRadius": "",
+      "applyDraft": "",
+      "draftActive": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "applyDraftGraceHint": "",
+      "applyDraftConfirmKeep": "",
+      "accentColor": "",
+      "accentColorDialogTitle": "",
+      "accentColorDialogDescription": "",
+      "cardColor": "",
+      "cardColorDialogTitle": "",
+      "cardColorDialogDescription": "",
+      "popoverColor": "",
+      "popoverColorDialogTitle": "",
+      "popoverColorDialogDescription": "",
+      "secondaryColor": "",
+      "secondaryColorDialogTitle": "",
+      "secondaryColorDialogDescription": "",
+      "mutedColor": "",
+      "mutedColorDialogTitle": "",
+      "mutedColorDialogDescription": "",
+      "foregroundColor": "",
+      "foregroundColorDialogTitle": "",
+      "foregroundColorDialogDescription": "",
+      "mutedForegroundColor": "",
+      "mutedForegroundColorDialogTitle": "",
+      "mutedForegroundColorDialogDescription": "",
+      "previewTitle": "",
+      "previewHint": "",
+      "previewNavigation": ""
     },
     "tea": {
       "description": "YouTuberおよびTwitchストリーマーSnipzteaのために作成された居心地の良いベージュテーマ。",
@@ -1601,7 +1645,8 @@
     "noUrlAvailable": "このModのURLは利用できません",
     "openedGameFolder": "ゲームフォルダーを開きました",
     "openedModInGame": "ゲームフォルダーでModファイルを開きました",
-    "failedToOpenGameFolder": "ゲームフォルダーを開けませんでした"
+    "failedToOpenGameFolder": "ゲームフォルダーを開けませんでした",
+    "failedToOpenModInGame": ""
   },
   "profiles": {
     "share": "プロファイルを共有",
@@ -1675,7 +1720,18 @@
     "creatingProfile": "新しいプロファイルを作成中...",
     "updatingProfile": "現在のプロファイルを更新中...",
     "processingMods": "Modを処理中...",
-    "modsProcessed": "Modを処理しました"
+    "modsProcessed": "Modを処理しました",
+    "importedProfileDescription": "",
+    "importedProfileName": "",
+    "modsImportedCount": "",
+    "activateProfileLabel": "",
+    "statusActive": "",
+    "statusInactive": "",
+    "hideModList": "",
+    "showModList": "",
+    "modId": "",
+    "unknownProfile": "",
+    "recoveredProfileDescription": ""
   },
   "mapInvite": {
     "title": "",
@@ -1932,6 +1988,8 @@
     "settingsDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
+    "condebugDisableWarning": "",
+    "goToDiscordSettings": "",
     "indicatorDisabled": "",
     "indicatorWaiting": "",
     "indicatorConnecting": "",

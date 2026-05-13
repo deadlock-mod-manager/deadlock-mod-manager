@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "الإضافات",
     "pluginDescription": "إدارة الإضافات والتكاملات لتطبيق سطح المكتب.",
+    "themes": "",
     "discord": "",
     "privacy": "الخصوصية",
     "about": "عن التطبيق",
@@ -1017,11 +1018,11 @@
       ]
     },
     "http": {
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1062,11 @@
           }
         },
         "crosshair": {
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           },
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           }
@@ -1457,7 +1458,7 @@
       "cancel": "إلغاء",
       "exportAsPreDefined": "تصدير كسمة محددة مسبقًا",
       "exportCustomTheme": "تصدير السمة المخصصة",
-      "exportCustomThemeDescription": "إنشاء إدخال سمة محددة مسبقًا باستخدام إعداداتك المخصصة الحالية.",
+      "exportCustomThemeDescription": "",
       "name": "الاسم",
       "description": "أنشئ سماتك الخاصة أو استخدم إعدادات جاهزة منسقة.",
       "subDescription": "الوصف الفرعي",
@@ -1481,7 +1482,50 @@
       "r": "ر",
       "g": "ج",
       "b": "ب",
-      "apply": "تطبيق"
+      "apply": "تطبيق",
+      "sectionAccent": "",
+      "sectionBorder": "",
+      "sectionSurfaces": "",
+      "sectionText": "",
+      "sectionAdvanced": "",
+      "sidebarOpacity": "",
+      "sectionAmbientBackground": "",
+      "ambientAccentColor": "",
+      "ambientAccentColorDialogTitle": "",
+      "ambientAccentColorDialogDescription": "",
+      "ambientIntensity": "",
+      "ambientSpread": "",
+      "cornerRadius": "",
+      "applyDraft": "",
+      "draftActive": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "applyDraftGraceHint": "",
+      "applyDraftConfirmKeep": "",
+      "accentColor": "",
+      "accentColorDialogTitle": "",
+      "accentColorDialogDescription": "",
+      "cardColor": "",
+      "cardColorDialogTitle": "",
+      "cardColorDialogDescription": "",
+      "popoverColor": "",
+      "popoverColorDialogTitle": "",
+      "popoverColorDialogDescription": "",
+      "secondaryColor": "",
+      "secondaryColorDialogTitle": "",
+      "secondaryColorDialogDescription": "",
+      "mutedColor": "",
+      "mutedColorDialogTitle": "",
+      "mutedColorDialogDescription": "",
+      "foregroundColor": "",
+      "foregroundColorDialogTitle": "",
+      "foregroundColorDialogDescription": "",
+      "mutedForegroundColor": "",
+      "mutedForegroundColorDialogTitle": "",
+      "mutedForegroundColorDialogDescription": "",
+      "previewTitle": "",
+      "previewHint": "",
+      "previewNavigation": ""
     },
     "tea": {
       "description": "سمة بلون بيج دافئ صُممت لمنشئ المحتوى على يوتيوب وتويتش Snipztea.",
@@ -1601,7 +1645,8 @@
     "noUrlAvailable": "لا يوجد رابط متاح لهذا التعديل",
     "openedGameFolder": "تم فتح مجلد اللعبة",
     "openedModInGame": "تم فتح ملفات التعديل في مجلد اللعبة",
-    "failedToOpenGameFolder": "فشل في فتح مجلد اللعبة"
+    "failedToOpenGameFolder": "فشل في فتح مجلد اللعبة",
+    "failedToOpenModInGame": ""
   },
   "profiles": {
     "share": "مشاركة الملف الشخصي",
@@ -1675,7 +1720,18 @@
     "creatingProfile": "جاري إنشاء ملف شخصي جديد...",
     "updatingProfile": "جاري تحديث الملف الشخصي الحالي...",
     "processingMods": "جاري معالجة التعديلات...",
-    "modsProcessed": "تمت معالجة التعديلات"
+    "modsProcessed": "تمت معالجة التعديلات",
+    "importedProfileDescription": "",
+    "importedProfileName": "",
+    "modsImportedCount": "",
+    "activateProfileLabel": "",
+    "statusActive": "",
+    "statusInactive": "",
+    "hideModList": "",
+    "showModList": "",
+    "modId": "",
+    "unknownProfile": "",
+    "recoveredProfileDescription": ""
   },
   "mapInvite": {
     "title": "",
@@ -1932,6 +1988,8 @@
     "settingsDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
+    "condebugDisableWarning": "",
+    "goToDiscordSettings": "",
     "indicatorDisabled": "",
     "indicatorWaiting": "",
     "indicatorConnecting": "",
