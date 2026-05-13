@@ -223,6 +223,12 @@
       "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
       "error": "Failed to update mods"
     },
+    "disableAll": "Disable all mods",
+    "disableAllConfirmTitle": "Disable all mods?",
+    "disableAllConfirmBody": "This will disable all {{count}} currently enabled mods. The mods will remain in your library and can be re-enabled at any time.",
+    "disableAllConfirmAction": "Disable all",
+    "disableAllConfirmCancel": "Cancel",
+    "disableAllSuccess": "All mods disabled",
     "tabs": {
       "all": "All",
       "installed": "Installed",

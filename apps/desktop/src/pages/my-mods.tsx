@@ -50,6 +50,7 @@ import {
   LayoutGrid,
   LayoutList,
   Loader2,
+  PowerOff,
   RefreshCw,
   ScanSearch,
 } from "@deadlock-mods/ui/icons";
@@ -74,6 +75,7 @@ import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
+import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
@@ -528,6 +530,8 @@ const MyMods = () => {
     startAnalysis,
     dismissProgressToast,
   } = useAddonAnalysis();
+  const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
+
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
@@ -933,6 +937,12 @@ const MyMods = () => {
                     disabled={installedMods.length === 0}>
                     <ArrowUpDown className='h-4 w-4' />
                     {t("mods.manageOrder")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => disableAll()}
+                    disabled={enabledModsCount === 0 || isDisablingAll}>
+                    <PowerOff className='h-4 w-4' />
+                    {t("myMods.disableAll")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
