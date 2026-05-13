@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "",
       "includeSidebar": "",
       "chooseImage": ""
-    },
-    "discord": {
-      "title": "",
-      "description": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
-      "applicationId": "",
-      "optional": "",
-      "applicationIdDescription": "",
-      "details": "",
-      "detailsPlaceholder": "",
-      "state": "",
-      "statePlaceholder": "",
-      "largeImageKey": "",
-      "largeImageText": "",
-      "smallImageKey": "",
-      "smallImageText": "",
-      "showElapsedTime": "",
-      "showElapsedTimeDescription": "",
-      "setupGuide": "",
-      "setupStep1": "",
-      "setupStep2": "",
-      "setupStep3": "",
-      "setupStep4": ""
     },
     "usageInstructions": "",
     "renderActive": "",

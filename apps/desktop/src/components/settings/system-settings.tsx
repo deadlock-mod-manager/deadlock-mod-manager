@@ -12,8 +12,6 @@ type SystemSettingDef = {
   defaultEnabled: boolean;
 };
 
-const NOOP = () => {};
-
 const getSystemSettings = (
   t: (key: string) => string,
   isLinux: boolean,

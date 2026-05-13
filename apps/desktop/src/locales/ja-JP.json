@@ -1017,11 +1017,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1061,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1532,30 +1532,6 @@
       "blur": "ぼかし",
       "includeSidebar": "サイドバーを含める",
       "chooseImage": "画像を選択"
-    },
-    "discord": {
-      "title": "",
-      "description": "DiscordでDeadlockのアクティビティを表示する。",
-      "detailedDescription": "Rich Presenceを使用してDiscordでDeadlockのアクティビティを表示します。プラグインを有効にして、オプションでプロファイルに表示される詳細とステータステキストをカスタマイズできます。",
-      "usageInstructions": "プラグインを有効にして、オプションで詳細とステータステキストを編集する。",
-      "applicationId": "DiscordアプリケーションID",
-      "optional": "（オプション）",
-      "applicationIdDescription": "セットアップ不要：このプラグインは公式のDiscordアプリケーションを使用します。",
-      "details": "詳細テキスト",
-      "detailsPlaceholder": "",
-      "state": "ステータステキスト",
-      "statePlaceholder": "",
-      "largeImageKey": "大画像キー",
-      "largeImageText": "大画像テキスト",
-      "smallImageKey": "小画像キー",
-      "smallImageText": "小画像テキスト",
-      "showElapsedTime": "経過時間を表示",
-      "showElapsedTimeDescription": "Modマネージャーを使用している時間を表示する",
-      "setupGuide": "セットアップガイド",
-      "setupStep1": "Discord Developer Portalにアクセスして新しいアプリケーションを作成する",
-      "setupStep2": "「一般情報」ページからアプリケーションIDをコピーする",
-      "setupStep3": "一致するキー名でRich Presenceアセットとして画像をアップロードする",
-      "setupStep4": "上記にアプリケーションIDを貼り付けてプラグインを有効にする"
     },
     "usageInstructions": "使用手順",
     "renderActive": "プラグインがアクティブでバックグラウンドで実行中です",

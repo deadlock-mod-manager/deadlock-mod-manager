@@ -19,12 +19,6 @@ pub struct DiscordActivity {
     pub party_size: Option<[i32; 2]>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PresenceOwner {
-    Plugin,
-    GamePresence,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct SetActivityOptions {
     pub connect_attempts: u8,
@@ -49,7 +43,6 @@ pub struct DiscordPresenceState {
 struct DiscordPresenceInner {
     client: Option<DiscordIpcClient>,
     application_id: Option<String>,
-    owner: Option<PresenceOwner>,
 }
 
 impl DiscordPresenceState {
@@ -59,34 +52,26 @@ impl DiscordPresenceState {
 
     pub async fn set_activity(
         &self,
-        owner: PresenceOwner,
         application_id: &str,
         activity: DiscordActivity,
     ) -> Result<(), String> {
-        self.set_activity_with_options(
-            owner,
-            application_id,
-            activity,
-            SetActivityOptions::default(),
-        )
-        .await
+        self.set_activity_with_options(application_id, activity, SetActivityOptions::default())
+            .await
     }
 
     pub async fn set_activity_with_options(
         &self,
-        owner: PresenceOwner,
         application_id: &str,
         activity: DiscordActivity,
         options: SetActivityOptions,
     ) -> Result<(), String> {
-        self.ensure_connection(owner, application_id, options.connect_attempts)
+        self.ensure_connection(application_id, options.connect_attempts)
             .await?;
 
         let mut attempts = 0;
         while attempts < options.set_attempts {
             let result = {
                 let mut inner = self.lock_inner()?;
-                inner.ensure_owner(owner)?;
 
                 if let Some(client) = inner.client.as_mut() {
                     set_presence(client, activity.clone())
@@ -104,9 +89,9 @@ impl DiscordPresenceState {
                     log::warn!("Attempt {attempts} failed to set Discord presence: {error}");
 
                     if is_closed_pipe_error(&error) {
-                        self.drop_connection(owner)?;
+                        self.drop_connection()?;
                         if let Err(connect_error) = self
-                            .ensure_connection(owner, application_id, options.connect_attempts)
+                            .ensure_connection(application_id, options.connect_attempts)
                             .await
                         {
                             log::warn!("Discord reconnection attempt failed: {connect_error}");
@@ -124,9 +109,8 @@ impl DiscordPresenceState {
         Err("Failed to set Discord presence after multiple attempts".to_string())
     }
 
-    pub async fn clear_activity(&self, owner: PresenceOwner) -> Result<(), String> {
+    pub async fn clear_activity(&self) -> Result<(), String> {
         let mut inner = self.lock_inner()?;
-        inner.ensure_owner(owner)?;
 
         if let Some(client) = inner.client.as_mut() {
             clear_presence(client)?;
@@ -135,9 +119,8 @@ impl DiscordPresenceState {
         Ok(())
     }
 
-    pub async fn disconnect(&self, owner: PresenceOwner) -> Result<(), String> {
+    pub async fn disconnect(&self) -> Result<(), String> {
         let mut inner = self.lock_inner()?;
-        inner.ensure_owner(owner)?;
 
         if let Some(client) = inner.client.as_mut() {
             clear_presence(client)?;
@@ -146,22 +129,18 @@ impl DiscordPresenceState {
 
         inner.client = None;
         inner.application_id = None;
-        inner.owner = None;
         Ok(())
     }
 
     async fn ensure_connection(
         &self,
-        owner: PresenceOwner,
         application_id: &str,
         max_attempts: u8,
     ) -> Result<(), String> {
         {
             let mut inner = self.lock_inner()?;
-            inner.ensure_owner(owner)?;
 
             if inner.client.is_some() && inner.application_id.as_deref() == Some(application_id) {
-                inner.owner = Some(owner);
                 return Ok(());
             }
 
@@ -172,7 +151,6 @@ impl DiscordPresenceState {
 
             inner.client = None;
             inner.application_id = None;
-            inner.owner = Some(owner);
         }
 
         let mut connect_attempts = 0;
@@ -181,10 +159,8 @@ impl DiscordPresenceState {
                 Ok(client) => {
                     {
                         let mut inner = self.lock_inner()?;
-                        inner.ensure_owner(owner)?;
                         inner.client = Some(client);
                         inner.application_id = Some(application_id.to_string());
-                        inner.owner = Some(owner);
                     }
 
                     tokio::time::sleep(tokio::time::Duration::from_millis(
@@ -205,16 +181,15 @@ impl DiscordPresenceState {
             }
         }
 
-        self.drop_connection(owner)?;
+        self.drop_connection()?;
         Err(
             "Failed to connect to Discord. Make sure Discord is running and you're logged in."
                 .to_string(),
         )
     }
 
-    fn drop_connection(&self, owner: PresenceOwner) -> Result<(), String> {
+    fn drop_connection(&self) -> Result<(), String> {
         let mut inner = self.lock_inner()?;
-        inner.ensure_owner(owner)?;
 
         if let Some(client) = inner.client.as_mut() {
             let _ = client.close();
@@ -229,20 +204,6 @@ impl DiscordPresenceState {
         self.inner
             .lock()
             .map_err(|e| format!("Failed to acquire Discord client lock: {e}"))
-    }
-}
-
-impl DiscordPresenceInner {
-    fn ensure_owner(&self, owner: PresenceOwner) -> Result<(), String> {
-        if let Some(current_owner) = self.owner
-            && current_owner != owner
-        {
-            return Err(format!(
-                "Discord presence is currently owned by {current_owner:?}"
-            ));
-        }
-
-        Ok(())
     }
 }
 

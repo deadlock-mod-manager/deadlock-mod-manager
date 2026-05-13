@@ -778,30 +778,6 @@
       "visit": "Visit Deadlock API:",
       "website": "Website"
     },
-    "discord": {
-      "applicationId": "Discord 應用程式 ID",
-      "applicationIdDescription": "無需設定：此外掛程式使用我們的官方 Discord 應用程式。",
-      "description": "在 Discord 上顯示你的 Deadlock 活動。",
-      "detailedDescription": "使用 Discord Rich Presence 在你的個人檔案上顯示 Deadlock Mod Manager 的活動。只需啟用外掛程式，並可選擇編輯「詳細資訊」和「狀態」文字。",
-      "details": "詳細資訊文字",
-      "detailsPlaceholder": "Managing Deadlock Mods",
-      "largeImageKey": "大圖按鍵",
-      "largeImageText": "大圖文字",
-      "optional": "（可選）",
-      "setupGuide": "設定指南",
-      "setupStep1": "造訪 Discord 開發者入口網站並建立新的應用程式",
-      "setupStep2": "從「一般資訊」頁面複製你的應用程式 ID",
-      "setupStep3": "將圖片上傳為 Rich Presence 資產，並使用相符的按鍵名稱",
-      "setupStep4": "將你的應用程式 ID 貼上並啟用外掛程式",
-      "showElapsedTime": "顯示經過時間",
-      "showElapsedTimeDescription": "顯示你使用模組管理器的時間",
-      "smallImageKey": "小圖按鍵",
-      "smallImageText": "小圖文字",
-      "state": "狀態文字",
-      "statePlaceholder": "Using Deadlock Mod Manager",
-      "title": "Discord 豐富狀態",
-      "usageInstructions": "啟用外掛程式，然後可選擇編輯「詳細資訊」和「狀態」文字。"
-    },
     "flashbang": {
       "description": "Force Light Mode during a scheduled time window.",
       "detailedDescription": "Flashbang mode switches the app to Light Mode during the configured hours, regardless of your theme setting.",
@@ -1568,7 +1544,9 @@
         "title": "音訊模組支援與啟動選項"
       },
       "0.6.1": {
-        "features": ["🔗 新增了對 GameBanana 上一鍵安裝連結的支援"],
+        "features": [
+          "🔗 新增了對 GameBanana 上一鍵安裝連結的支援"
+        ],
         "title": "深度連結與改進"
       },
       "0.7.0": {
@@ -1596,11 +1574,16 @@
         "title": "主要功能與 UI 更新 + 新語言支援"
       },
       "0.8.1": {
-        "features": ["🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"],
+        "features": [
+          "🔧 更新為對所有 API 呼叫使用 HTTP 外掛，以提高可靠性"
+        ],
         "title": "技術改進"
       },
       "0.8.2": {
-        "features": ["🐛 修正了各種錯誤並提高了穩定性", "⚡ 效能改進和最佳化"],
+        "features": [
+          "🐛 修正了各種錯誤並提高了穩定性",
+          "⚡ 效能改進和最佳化"
+        ],
         "title": "錯誤修正與改進"
       },
       "0.9.0": {
@@ -1615,7 +1598,9 @@
         "title": "模組管理與系統改進"
       },
       "0.9.2": {
-        "features": ["⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"],
+        "features": [
+          "⚙️ 遊戲路徑設定 - 手動設定您的遊戲安裝路徑以提升相容性"
+        ],
         "title": "設定與組態"
       }
     },

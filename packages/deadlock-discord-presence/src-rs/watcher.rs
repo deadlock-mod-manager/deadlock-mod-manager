@@ -3,7 +3,7 @@ use crate::hero_data::HeroDataStore;
 use crate::log_parser::LogParser;
 use crate::presence_builder::build_presence;
 use crate::state::{GameState, now_epoch};
-use crate::{DiscordPresenceState, PresenceOwner, SetActivityOptions};
+use crate::{DiscordPresenceState, SetActivityOptions};
 use std::ffi::OsStr;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -108,10 +108,7 @@ impl GamePresenceWatcher {
                     game_was_running = false;
                     parser.reset_tracking();
                     state.reset();
-                    if let Err(error) = self
-                        .discord_presence
-                        .disconnect(PresenceOwner::GamePresence)
-                        .await
+                    if let Err(error) = self.discord_presence.disconnect().await
                     {
                         log::debug!("[GamePresence] Discord disconnect skipped: {error}");
                     }
@@ -163,10 +160,7 @@ impl GamePresenceWatcher {
             tokio::time::sleep(tokio::time::Duration::from_millis(POLL_INTERVAL_MS)).await;
         }
 
-        if let Err(error) = self
-            .discord_presence
-            .disconnect(PresenceOwner::GamePresence)
-            .await
+        if let Err(error) = self.discord_presence.disconnect().await
         {
             log::debug!("[GamePresence] Discord disconnect skipped: {error}");
         }
@@ -189,9 +183,7 @@ async fn update_presence(
     last_hash: &mut Option<String>,
 ) {
     let Some(activity_data) = build_presence(state, hero_store, presence_config) else {
-        if let Err(error) = discord_presence
-            .clear_activity(PresenceOwner::GamePresence)
-            .await
+        if let Err(error) = discord_presence.clear_activity().await
         {
             log::debug!("[GamePresence] Discord clear skipped: {error}");
         }
@@ -207,7 +199,6 @@ async fn update_presence(
     emit_phase(status_callback, PresencePhase::Connecting);
     let result = discord_presence
         .set_activity_with_options(
-            PresenceOwner::GamePresence,
             DISCORD_APP_ID,
             activity_data,
             SetActivityOptions {
@@ -220,9 +211,7 @@ async fn update_presence(
     if let Err(error) = result {
         log::warn!("[GamePresence] Failed to set activity: {error}");
         emit_phase(status_callback, PresencePhase::Error);
-        if let Err(disconnect_error) = discord_presence
-            .disconnect(PresenceOwner::GamePresence)
-            .await
+        if let Err(disconnect_error) = discord_presence.disconnect().await
         {
             log::debug!("[GamePresence] Discord disconnect skipped: {disconnect_error}");
         }
