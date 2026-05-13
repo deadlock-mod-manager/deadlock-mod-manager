@@ -20,7 +20,9 @@ const OccultGeometrySettings = () => {
     <>
       <div className='flex items-center justify-between'>
         <div className='space-y-1'>
-          <Label className='font-bold text-sm'>{t("settings.occultGeometry")}</Label>
+          <Label className='font-bold text-sm'>
+            {t("settings.occultGeometry")}
+          </Label>
           <p className='text-muted-foreground text-sm'>
             {t("settings.occultGeometryDescription")}
           </p>

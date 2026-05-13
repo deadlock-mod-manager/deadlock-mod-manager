@@ -190,7 +190,12 @@ const CustomSettingsData = ({
     retry: false,
     refetchOnWindowFocus: false,
   });
-  const { settings, toggleSetting, gamePresenceEnabled, setGamePresenceEnabled } = usePersistedStore();
+  const {
+    settings,
+    toggleSetting,
+    gamePresenceEnabled,
+    setGamePresenceEnabled,
+  } = usePersistedStore();
   const [showCondebugWarning, setShowCondebugWarning] = useState(false);
 
   useEffect(() => {
@@ -316,7 +321,9 @@ const CustomSettingsData = ({
               {isLaunchOption && showCondebugWarning && (
                 <div className='flex items-center gap-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-4 py-3'>
                   <WarningCircle className='size-5 shrink-0 text-yellow-400' />
-                  <p className='text-sm'>{t("gamePresence.condebugDisableWarning")}</p>
+                  <p className='text-sm'>
+                    {t("gamePresence.condebugDisableWarning")}
+                  </p>
                   <Button
                     className='ml-auto shrink-0'
                     onClick={() => {
@@ -361,6 +368,11 @@ const CustomSettingsData = ({
                           (setting as LocalSetting).enabled ??
                           false),
                     }}
+                    subtitle={
+                      isCondebugOption
+                        ? t("gamePresence.condebugOptionDescription")
+                        : undefined
+                    }
                   />
                 );
               })}
@@ -562,7 +574,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
               }>
               <ErrorBoundary>
-                <CustomSettingsData onNavigateToDiscord={() => setActiveTab("discord")} />
+                <CustomSettingsData
+                  onNavigateToDiscord={() => setActiveTab("discord")}
+                />
               </ErrorBoundary>
             </Suspense>
           </TabsContent>

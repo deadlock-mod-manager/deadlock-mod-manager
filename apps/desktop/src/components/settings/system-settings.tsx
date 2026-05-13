@@ -3,7 +3,6 @@ import { Switch } from "@deadlock-mods/ui/components/switch";
 import { platform } from "@tauri-apps/plugin-os";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { NOOP } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 
 type SystemSettingDef = {
@@ -65,16 +64,20 @@ const SystemSettings = () => {
                 checked={enabled}
                 id={`toggle-setting-${def.id}`}
                 onCheckedChange={(newValue) => {
-                  toggleSetting(def.id, {
-                    id: def.id,
-                    key: "",
-                    value: "",
-                    type: "boolean",
-                    description: def.description ?? def.label,
-                    enabled,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  }, newValue);
+                  toggleSetting(
+                    def.id,
+                    {
+                      id: def.id,
+                      key: "",
+                      value: "",
+                      type: "boolean",
+                      description: def.description,
+                      enabled,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                    newValue,
+                  );
                 }}
               />
               <Label htmlFor={`toggle-setting-${def.id}`}>
