@@ -2,7 +2,7 @@ use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, io::ErrorKind, path::Path};
 
-const MANIFEST_FILENAME: &str = ".dmm-vpk-manifest.json";
+const MANIFEST_FILENAME: &str = ".dmm.json";
 const CURRENT_MANIFEST_VERSION: u32 = 1;
 
 const fn current_manifest_version() -> u32 {

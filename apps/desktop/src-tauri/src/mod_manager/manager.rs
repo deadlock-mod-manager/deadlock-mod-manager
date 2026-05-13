@@ -768,6 +768,47 @@ impl ModManager {
     ProfileVpkManifest::load(&addons_path)
   }
 
+  pub fn hydrate_mods_from_manifest(
+    &mut self,
+    profile_folder: Option<String>,
+  ) -> Result<usize, Error> {
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let manifest = ProfileVpkManifest::load(&addons_path)?;
+
+    let mut hydrated = 0usize;
+    for (mod_id, entry) in &manifest.mods {
+      if self.mod_repository.get_mod(mod_id).is_some() {
+        continue;
+      }
+
+      let installed_vpks = if entry.enabled {
+        entry.current_vpks.clone()
+      } else {
+        Vec::new()
+      };
+
+      let deadlock_mod = Mod {
+        id: mod_id.clone(),
+        name: mod_id.clone(),
+        is_map: false,
+        installed_vpks,
+        file_tree: None,
+        install_order: entry.order,
+        original_vpk_names: entry.original_vpk_names.clone(),
+      };
+      self.mod_repository.add_mod(deadlock_mod);
+      hydrated += 1;
+    }
+
+    if hydrated > 0 {
+      log::info!(
+        "Hydrated {hydrated} mods from manifest for profile {profile_folder:?}"
+      );
+    }
+
+    Ok(hydrated)
+  }
+
   /// Replace VPK files for a mod
   pub fn replace_mod_vpks(
     &mut self,
@@ -821,10 +862,15 @@ impl ModManager {
       .collect();
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    if manifest.mods.contains_key(&mod_id) {
+    if installed_vpks.is_empty() {
+      let prefixed_vpks = self
+        .vpk_manager
+        .find_prefixed_vpks(&addons_path, &mod_id)?;
+      manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
+    } else {
       manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);
-      manifest.save(&addons_path)?;
     }
+    manifest.save(&addons_path)?;
 
     log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())

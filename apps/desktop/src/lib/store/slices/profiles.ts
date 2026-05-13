@@ -2,6 +2,7 @@ import { type ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import i18n from "i18next";
 import type { StateCreator } from "zustand";
+import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
@@ -61,6 +62,7 @@ export interface ProfilesState {
   getEnabledModsCount: () => number;
   syncProfilesWithFilesystem: () => Promise<void>;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
+  restoreModsFromManifest: () => Promise<void>;
   saveCurrentModsToProfile: () => void;
   loadModsFromProfile: (profileId: ProfileId) => void;
 }
@@ -944,6 +946,95 @@ export const createProfilesSlice: StateCreator<
         .withMetadata({ profileId })
         .withError(error)
         .error("Failed to sync profile enabled mods");
+    }
+  },
+
+  restoreModsFromManifest: async () => {
+    const { localMods, activeProfileId, profiles } = get();
+    if (localMods.length > 0) {
+      return;
+    }
+
+    const profile = profiles[activeProfileId];
+    if (!profile) {
+      return;
+    }
+
+    let manifest: VpkManifest = { version: 0, mods: {} };
+    try {
+      manifest = await invoke<VpkManifest>("get_profile_vpk_manifest", {
+        profileFolder: profile.folderName,
+      });
+    } catch (error) {
+      logger.withError(error).warn("Failed to load manifest for restoration");
+      return;
+    }
+
+    const manifestEntries = Object.entries(manifest.mods);
+    if (manifestEntries.length === 0) {
+      return;
+    }
+
+    logger
+      .withMetadata({
+        profileId: activeProfileId,
+        manifestModCount: manifestEntries.length,
+      })
+      .info("Restoring mods from manifest (local state is empty)");
+
+    const restoredMods: LocalMod[] = [];
+    const enabledMods: Record<string, ModProfileEntry> = {};
+
+    for (const [modId, entry] of manifestEntries) {
+      try {
+        const modDetails = await getMod(modId);
+        const currentVpks = entry.currentVpks ?? [];
+        const isEnabled = entry.enabled && currentVpks.length > 0;
+
+        const restoredMod: LocalMod = {
+          ...modDetails,
+          status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
+          installedVpks: isEnabled ? currentVpks : [],
+          installOrder: entry.order ?? restoredMods.length,
+        };
+
+        restoredMods.push(restoredMod);
+
+        if (isEnabled) {
+          enabledMods[modId] = {
+            remoteId: modId,
+            enabled: true,
+            lastModified: new Date(),
+          };
+        }
+
+        logger
+          .withMetadata({ modId, name: modDetails.name, isEnabled })
+          .info("Restored mod from manifest");
+      } catch (error) {
+        logger
+          .withMetadata({ modId })
+          .withError(error)
+          .warn("Failed to fetch mod details during manifest restoration");
+      }
+    }
+
+    if (restoredMods.length > 0) {
+      set((state) => ({
+        localMods: restoredMods,
+        profiles: {
+          ...state.profiles,
+          [activeProfileId]: {
+            ...profile,
+            enabledMods: { ...profile.enabledMods, ...enabledMods },
+            mods: restoredMods,
+          },
+        },
+      }));
+
+      logger
+        .withMetadata({ restoredCount: restoredMods.length })
+        .info("Manifest restoration complete");
     }
   },
 

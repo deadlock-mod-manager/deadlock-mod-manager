@@ -565,8 +565,17 @@ pub async fn get_profile_vpk_manifest(
 ) -> Result<ProfileVpkManifest, Error> {
   log::info!("Getting VPK manifest for profile: {profile_folder:?}");
 
-  let mod_manager = MANAGER.lock().unwrap();
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
   mod_manager.get_profile_vpk_manifest(profile_folder)
+}
+
+#[tauri::command]
+pub async fn hydrate_mods_from_manifest(
+  profile_folder: Option<String>,
+) -> Result<usize, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.hydrate_mods_from_manifest(profile_folder)
 }
 
 #[derive(Debug, Deserialize)]
