@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "themes": "",
     "discord": "",
     "privacy": "",
     "about": "Informazioni",
@@ -1017,11 +1018,11 @@
       ]
     },
     "http": {
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1062,11 @@
           }
         },
         "crosshair": {
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           },
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           }
@@ -1481,7 +1482,50 @@
       "r": "",
       "g": "",
       "b": "",
-      "apply": ""
+      "apply": "",
+      "sectionAccent": "",
+      "sectionBorder": "",
+      "sectionSurfaces": "",
+      "sectionText": "",
+      "sectionAdvanced": "",
+      "sidebarOpacity": "",
+      "sectionAmbientBackground": "",
+      "ambientAccentColor": "",
+      "ambientAccentColorDialogTitle": "",
+      "ambientAccentColorDialogDescription": "",
+      "ambientIntensity": "",
+      "ambientSpread": "",
+      "cornerRadius": "",
+      "applyDraft": "",
+      "draftActive": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "applyDraftGraceHint": "",
+      "applyDraftConfirmKeep": "",
+      "accentColor": "",
+      "accentColorDialogTitle": "",
+      "accentColorDialogDescription": "",
+      "cardColor": "",
+      "cardColorDialogTitle": "",
+      "cardColorDialogDescription": "",
+      "popoverColor": "",
+      "popoverColorDialogTitle": "",
+      "popoverColorDialogDescription": "",
+      "secondaryColor": "",
+      "secondaryColorDialogTitle": "",
+      "secondaryColorDialogDescription": "",
+      "mutedColor": "",
+      "mutedColorDialogTitle": "",
+      "mutedColorDialogDescription": "",
+      "foregroundColor": "",
+      "foregroundColorDialogTitle": "",
+      "foregroundColorDialogDescription": "",
+      "mutedForegroundColor": "",
+      "mutedForegroundColorDialogTitle": "",
+      "mutedForegroundColorDialogDescription": "",
+      "previewTitle": "",
+      "previewHint": "",
+      "previewNavigation": ""
     },
     "tea": {
       "description": "Un tema beige accogliente creato per lo youtuber e streamer Twitch Snipztea.",
@@ -1601,7 +1645,8 @@
     "noUrlAvailable": "Nessun URL disponibile per questa mod",
     "openedGameFolder": "Cartella gioco aperta",
     "openedModInGame": "File mod aperti nella cartella gioco",
-    "failedToOpenGameFolder": "Impossibile aprire la cartella gioco"
+    "failedToOpenGameFolder": "Impossibile aprire la cartella gioco",
+    "failedToOpenModInGame": ""
   },
   "profiles": {
     "share": "Condividi Profilo",
@@ -1675,7 +1720,18 @@
     "creatingProfile": "Creazione nuovo profilo...",
     "updatingProfile": "Aggiornamento profilo corrente...",
     "processingMods": "Elaborazione mod...",
-    "modsProcessed": "Mod elaborate"
+    "modsProcessed": "Mod elaborate",
+    "importedProfileDescription": "",
+    "importedProfileName": "",
+    "modsImportedCount": "",
+    "activateProfileLabel": "",
+    "statusActive": "",
+    "statusInactive": "",
+    "hideModList": "",
+    "showModList": "",
+    "modId": "",
+    "unknownProfile": "",
+    "recoveredProfileDescription": ""
   },
   "mapInvite": {
     "title": "",
@@ -1932,6 +1988,8 @@
     "settingsDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
+    "condebugDisableWarning": "",
+    "goToDiscordSettings": "",
     "indicatorDisabled": "",
     "indicatorWaiting": "",
     "indicatorConnecting": "",

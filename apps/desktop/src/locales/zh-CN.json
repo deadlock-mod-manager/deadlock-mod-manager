@@ -485,6 +485,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "themes": "",
     "discord": "",
     "privacy": "隐私",
     "about": "关于",
@@ -1017,11 +1018,11 @@
       ]
     },
     "http": {
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
@@ -1061,11 +1062,11 @@
           }
         },
         "crosshair": {
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           },
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           }
@@ -1457,7 +1458,7 @@
       "cancel": "取消",
       "exportAsPreDefined": "导出为预设",
       "exportCustomTheme": "导出自定义主题",
-      "exportCustomThemeDescription": "使用您当前的自定义设置创建预设主题条目。",
+      "exportCustomThemeDescription": "",
       "name": "名称",
       "description": "描述",
       "subDescription": "子描述",
@@ -1481,7 +1482,50 @@
       "r": "",
       "g": "",
       "b": "",
-      "apply": "应用"
+      "apply": "应用",
+      "sectionAccent": "",
+      "sectionBorder": "",
+      "sectionSurfaces": "",
+      "sectionText": "",
+      "sectionAdvanced": "",
+      "sidebarOpacity": "",
+      "sectionAmbientBackground": "",
+      "ambientAccentColor": "",
+      "ambientAccentColorDialogTitle": "",
+      "ambientAccentColorDialogDescription": "",
+      "ambientIntensity": "",
+      "ambientSpread": "",
+      "cornerRadius": "",
+      "applyDraft": "",
+      "draftActive": "",
+      "deleteConfirmTitle": "",
+      "deleteConfirmBody": "",
+      "applyDraftGraceHint": "",
+      "applyDraftConfirmKeep": "",
+      "accentColor": "",
+      "accentColorDialogTitle": "",
+      "accentColorDialogDescription": "",
+      "cardColor": "",
+      "cardColorDialogTitle": "",
+      "cardColorDialogDescription": "",
+      "popoverColor": "",
+      "popoverColorDialogTitle": "",
+      "popoverColorDialogDescription": "",
+      "secondaryColor": "",
+      "secondaryColorDialogTitle": "",
+      "secondaryColorDialogDescription": "",
+      "mutedColor": "",
+      "mutedColorDialogTitle": "",
+      "mutedColorDialogDescription": "",
+      "foregroundColor": "",
+      "foregroundColorDialogTitle": "",
+      "foregroundColorDialogDescription": "",
+      "mutedForegroundColor": "",
+      "mutedForegroundColorDialogTitle": "",
+      "mutedForegroundColorDialogDescription": "",
+      "previewTitle": "",
+      "previewHint": "",
+      "previewNavigation": ""
     },
     "tea": {
       "description": "为 YouTuber 与 Twitch 主播 Snipztea 打造的温暖米色主题。",
@@ -1601,7 +1645,8 @@
     "noUrlAvailable": "此模组无可用 URL",
     "openedGameFolder": "已打开游戏文件夹",
     "openedModInGame": "已在游戏文件夹中打开模组文件",
-    "failedToOpenGameFolder": "打开游戏文件夹失败"
+    "failedToOpenGameFolder": "打开游戏文件夹失败",
+    "failedToOpenModInGame": ""
   },
   "profiles": {
     "share": "分享配置",
@@ -1675,7 +1720,18 @@
     "creatingProfile": "正在创建新配置...",
     "updatingProfile": "正在更新当前配置...",
     "processingMods": "正在处理模组...",
-    "modsProcessed": "模组处理完成"
+    "modsProcessed": "模组处理完成",
+    "importedProfileDescription": "",
+    "importedProfileName": "",
+    "modsImportedCount": "",
+    "activateProfileLabel": "",
+    "statusActive": "",
+    "statusInactive": "",
+    "hideModList": "",
+    "showModList": "",
+    "modId": "",
+    "unknownProfile": "",
+    "recoveredProfileDescription": ""
   },
   "mapInvite": {
     "title": "",
@@ -1932,6 +1988,8 @@
     "settingsDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
+    "condebugDisableWarning": "",
+    "goToDiscordSettings": "",
     "indicatorDisabled": "",
     "indicatorWaiting": "",
     "indicatorConnecting": "",
