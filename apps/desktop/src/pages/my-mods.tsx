@@ -278,12 +278,14 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             )}
           </div>
           <div className='absolute top-2 right-2 flex flex-col gap-1'>
-            {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
+            {mod.isAudio && (
+              <Badge variant='secondary'>{t("mods.audio")}</Badge>
+            )}
             {mod.remoteUrl?.startsWith("local://") && (
               <Badge
                 variant='outline'
                 className='bg-background/80 backdrop-blur-sm'>
-                Custom
+                {t("mods.customBadge")}
               </Badge>
             )}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
@@ -318,6 +320,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    aria-label={t("modOptions.openTooltip")}
                     onClick={(e) => {
                       e.stopPropagation();
                       modOptions.open();
@@ -334,6 +337,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label={t("mods.removeMod")}
                 isLoading={deleting}
                 onClick={deleteMod}
                 size='icon'
@@ -424,14 +428,14 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
               <div className='absolute top-1 right-1 flex flex-col gap-1'>
                 {mod.isAudio && (
                   <Badge className='text-xs' variant='secondary'>
-                    Audio
+                    {t("mods.audio")}
                   </Badge>
                 )}
                 {mod.remoteUrl?.startsWith("local://") && (
                   <Badge
                     variant='outline'
                     className='text-xs bg-background/80 backdrop-blur-sm'>
-                    Custom
+                    {t("mods.customBadge")}
                   </Badge>
                 )}
                 {isModOutdated(mod) && (
@@ -465,6 +469,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        aria-label={t("modOptions.openTooltip")}
                         onClick={(e) => {
                           e.stopPropagation();
                           modOptions.open();
@@ -483,6 +488,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    aria-label={t("mods.removeMod")}
                     disabled={isInstalling || deleting}
                     isLoading={deleting}
                     onClick={deleteMod}

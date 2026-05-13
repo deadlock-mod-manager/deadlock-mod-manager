@@ -474,6 +474,9 @@ importers:
       '@crabnebula/plugin-ota-updater':
         specifier: ^2.0.1
         version: 2.0.1
+      '@deadlock-mods/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@deadlock-mods/crosshair':
         specifier: workspace:*
         version: link:../../packages/crosshair
