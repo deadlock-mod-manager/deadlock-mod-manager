@@ -16,6 +16,7 @@ import {
   CloudDownload,
   File,
   Package,
+  X,
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -290,6 +291,7 @@ export const ModOptionsDialog = ({
           </div>
           <div className='space-x-2'>
             <Button
+              icon={<X className='h-4 w-4' />}
               onClick={(e) => {
                 e.stopPropagation();
                 onCancel();
@@ -300,6 +302,7 @@ export const ModOptionsDialog = ({
             </Button>
             <Button
               disabled={!canApply}
+              icon={<Check className='h-4 w-4' />}
               isLoading={isSaving}
               onClick={(e) => {
                 e.stopPropagation();
