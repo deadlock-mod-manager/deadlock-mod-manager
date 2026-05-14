@@ -59,13 +59,10 @@ export const BrandingHeader = ({
   const { version } = useAbout();
   const { state } = useSidebar();
   const collapsed = collapsedProp ?? state === "collapsed";
-  const themesEnabled = usePersistedStore(
-    (s) => s.enabledPlugins.themes ?? false,
-  );
   const themesSettings = usePersistedStore(
     (s) => s.pluginSettings.themes,
   ) as ThemesPluginSettings;
-  const activeTheme = themesEnabled ? themesSettings?.activeTheme : undefined;
+  const activeTheme = themesSettings?.activeTheme;
   const TopbarLogo = useThemeOverride("topbarLogo");
 
   let themedIconSrc: string | undefined;

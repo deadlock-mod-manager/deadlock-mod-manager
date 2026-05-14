@@ -379,7 +379,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         <Tooltip>
           <TooltipTrigger asChild>
             {variant === "iconOnly" ? (
-              <div className='flex items-center justify-center'>
+              <div
+                className='flex items-center justify-center'
+                onClick={(e) => e.stopPropagation()}>
                 <Switch
                   checked={localMod?.status === ModStatus.Installed}
                   disabled={isActionInProgress || isAnalyzing}
@@ -389,7 +391,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
                 />
               </div>
             ) : (
-              <div className='flex items-center gap-3 rounded-lg border border-input bg-background px-4 py-2.5 shadow-sm'>
+              <div
+                className='flex items-center gap-3 rounded-lg border border-input bg-background px-4 py-2.5 shadow-sm'
+                onClick={(e) => e.stopPropagation()}>
                 <Switch
                   checked={localMod?.status === ModStatus.Installed}
                   disabled={isActionInProgress || isAnalyzing}

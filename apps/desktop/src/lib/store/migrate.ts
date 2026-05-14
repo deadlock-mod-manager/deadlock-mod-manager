@@ -317,6 +317,15 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       state.favorites = [];
     },
   },
+  {
+    to: 21,
+    label: "enable-themes-plugin",
+    apply: (state) => {
+      if (!isPlainObject(state.enabledPlugins)) return;
+      const enabledPlugins = state.enabledPlugins as Record<string, boolean>;
+      enabledPlugins.themes = true;
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(

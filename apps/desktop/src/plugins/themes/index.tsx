@@ -583,12 +583,9 @@ const Render = () => {
   const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]) as
     | ThemeSettings
     | undefined;
-  const isEnabled = usePersistedStore(
-    (s) => s.enabledPlugins[manifest.id] ?? false,
-  );
   const current = settings ?? DEFAULT_SETTINGS;
 
-  if (!isEnabled || !current.activeTheme) return null;
+  if (!current.activeTheme) return null;
 
   // Render exported user-defined themes via CustomTheme override
   const userTheme = getUserThemes(current).find(

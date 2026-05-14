@@ -2,7 +2,6 @@ import type { ThemeSettings } from "@/plugins/themes";
 
 type PluginState = {
   pluginSettings: Record<string, unknown>;
-  enabledPlugins: Record<string, boolean>;
 };
 
 function isThemeSettings(value: unknown): value is ThemeSettings {
@@ -21,8 +20,6 @@ export function selectThemeSettings(
 }
 
 export function selectActiveTheme(state: PluginState): string | undefined {
-  const themesEnabled = state.enabledPlugins.themes ?? false;
-  if (!themesEnabled) return undefined;
   const settings = selectThemeSettings(state);
   return settings?.activeTheme;
 }

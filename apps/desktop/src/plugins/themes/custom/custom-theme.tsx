@@ -12,7 +12,6 @@ const CustomTheme = ({ theme }: CustomThemeProps) => {
   const themeSlice = usePersistedStore((s) => s.pluginSettings.themes) as
     | ThemeSettings
     | undefined;
-  const isEnabled = usePersistedStore((s) => s.enabledPlugins.themes ?? false);
 
   const palette = useMemo(
     () => getActiveThemeConfig(themeSlice, theme),
@@ -31,7 +30,7 @@ const CustomTheme = ({ theme }: CustomThemeProps) => {
   }, []);
 
   useEffect(() => {
-    if (!mounted || !isEnabled) return;
+    if (!mounted) return;
     const root = document.documentElement;
     const vars = buildFullCustomThemeCssVariables(palette);
 
@@ -46,7 +45,7 @@ const CustomTheme = ({ theme }: CustomThemeProps) => {
         root.style.removeProperty(key);
       }
     };
-  }, [mounted, isEnabled, palette]);
+  }, [mounted, palette]);
 
   if (!mounted) return null;
 
