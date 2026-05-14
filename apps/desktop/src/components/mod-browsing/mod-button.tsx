@@ -76,6 +76,8 @@ export const ModStatusIcon = ({
       case ModStatus.Removed:
       case ModStatus.Error:
         return RiErrorWarningLine;
+      case ModStatus.Extracting:
+        return Loader2;
       default:
         return PlusIcon;
     }
@@ -447,6 +449,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           localMod?.status === ModStatus.Downloading ||
           localMod?.status === ModStatus.Paused
         }
+        isExtracting={localMod?.status === ModStatus.Extracting}
         isOpen={isDialogOpen}
         modName={localMod?.name || t("modForm.unknownMod")}
         onClose={closeDialog}
