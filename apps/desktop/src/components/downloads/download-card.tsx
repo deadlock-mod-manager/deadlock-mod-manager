@@ -59,6 +59,12 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary",
       };
+    case ModStatus.NeedsRepair:
+      return {
+        label: "Needs repair",
+        pillClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+        dotClass: "bg-amber-500",
+      };
     case ModStatus.FailedToDownload:
       return {
         label: "Failed",
