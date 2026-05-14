@@ -32,10 +32,10 @@ export const OnboardingStepNetwork = ({
   return (
     <div className='space-y-4'>
       <div>
-        <h3 className='text-lg font-semibold'>
+        <h3 className='font-["Forevs_Demo"] text-lg tracking-wide'>
           {t("onboarding.network.title")}
         </h3>
-        <p className='text-muted-foreground mt-2 text-sm'>
+        <p className='mt-2 text-sm text-muted-foreground'>
           {t("onboarding.network.description")}
         </p>
       </div>
@@ -65,8 +65,9 @@ export const OnboardingStepNetwork = ({
           disabled={isPending || sortedServers.length === 0}
           onClick={() => refetch()}
           type='button'
+          size='sm'
           variant='outline'>
-          <RefreshCw className='h-4 w-4' />
+          <RefreshCw className='size-3.5' />
           {t("settings.fileserverRefresh")}
         </Button>
         <Button
@@ -75,8 +76,9 @@ export const OnboardingStepNetwork = ({
           }
           onClick={() => latencyMutation.mutate(sortedServers)}
           type='button'
+          size='sm'
           variant='secondary'>
-          <Activity className='h-4 w-4' />
+          <Activity className='size-3.5' />
           {latencyMutation.isPending
             ? t("settings.fileserverTesting")
             : t("settings.fileserverTestServers")}
@@ -84,33 +86,35 @@ export const OnboardingStepNetwork = ({
       </div>
 
       {latencyMutation.error ? (
-        <p className='text-destructive text-sm'>
+        <p className='text-sm text-destructive'>
           {latencyMutation.error.message}
         </p>
       ) : null}
 
       {isError ? (
-        <p className='text-destructive text-sm'>
+        <p className='text-sm text-destructive'>
           {t("settings.fileserverLoadError")}
         </p>
       ) : null}
 
       {isPending ? (
-        <p className='text-muted-foreground text-sm'>{t("common.loading")}</p>
+        <p className='text-sm text-muted-foreground'>{t("common.loading")}</p>
       ) : (
         <div
           aria-label={t("settings.network")}
-          className='grid grid-cols-2 gap-3 sm:grid-cols-3'
+          className='max-h-48 overflow-y-auto rounded-lg'
           role='radiogroup'>
-          {sortedServers.map((s) => (
-            <FileServerCard
-              key={s.id}
-              latencyMs={fileserverLatencyMs[s.id]}
-              onClick={() => select(s.id)}
-              selected={effectivePreference === s.id}
-              server={s}
-            />
-          ))}
+          <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
+            {sortedServers.map((s) => (
+              <FileServerCard
+                key={s.id}
+                latencyMs={fileserverLatencyMs[s.id]}
+                onClick={() => select(s.id)}
+                selected={effectivePreference === s.id}
+                server={s}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,14 +1,11 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { Progress } from "@deadlock-mods/ui/components/progress";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -20,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { APP_NAME } from "@/lib/constants";
+import { OnboardingStepper } from "./onboarding-stepper";
 import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
 import { OnboardingStepDisclaimer } from "./step-disclaimer";
@@ -75,6 +73,7 @@ export const OnboardingWizard = () => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [stepKey, setStepKey] = useState(0);
 
   const { showOnboarding, completeOnboarding, skipOnboarding } =
     useOnboarding();
@@ -82,11 +81,6 @@ export const OnboardingWizard = () => {
   const isHandlingCloseRef = useRef(false);
   const currentStepConfig = useMemo(
     () => STEP_CONFIGS.find((config) => config.step === currentStep),
-    [currentStep],
-  );
-
-  const progress = useMemo(
-    () => (currentStep / TOTAL_STEPS) * 100,
     [currentStep],
   );
 
@@ -107,11 +101,13 @@ export const OnboardingWizard = () => {
       completeOnboarding();
     } else {
       setCurrentStep((prev) => prev + 1);
+      setStepKey((prev) => prev + 1);
     }
   }, [isLastStep, completeOnboarding]);
 
   const handleBack = useCallback(() => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
+    setStepKey((prev) => prev + 1);
   }, []);
 
   const handleStepComplete = useCallback((step: number) => {
@@ -167,63 +163,85 @@ export const OnboardingWizard = () => {
 
   return (
     <Dialog open={showOnboarding} onOpenChange={handleOpenChange}>
-      <DialogContent className='max-w-2xl'>
-        <DialogHeader>
-          <div className='flex items-center gap-2'>
-            <RocketIcon className='h-5 w-5 text-primary' />
-            <DialogTitle>{t("onboarding.title")}</DialogTitle>
-            <Badge variant='secondary'>
-              {t("onboarding.stepIndicator", {
-                current: currentStep,
-                total: TOTAL_STEPS,
-              })}
-            </Badge>
-          </div>
-          <DialogDescription>
-            {t("onboarding.welcome", { appName: APP_NAME })}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className='max-w-2xl overflow-hidden border-0 bg-transparent p-0 shadow-2xl'>
+        <div className='rounded-lg bg-gradient-to-br from-primary/25 via-primary/8 to-transparent p-px'>
+          <div className='rounded-[7px] bg-background'>
+            <div className='p-6 pb-0'>
+              <DialogHeader>
+                <div className='flex items-center gap-3'>
+                  <div className='flex size-8 items-center justify-center rounded-lg bg-primary/10'>
+                    <RocketIcon
+                      weight='duotone'
+                      className='size-4 text-primary'
+                    />
+                  </div>
+                  <DialogTitle className='font-["Forevs_Demo"] text-xl tracking-wide'>
+                    {t("onboarding.title")}
+                  </DialogTitle>
+                </div>
+                <DialogDescription className='mt-1 pl-11'>
+                  {t("onboarding.welcome", { appName: APP_NAME })}
+                </DialogDescription>
+              </DialogHeader>
 
-        <div className='py-4'>
-          <Progress value={progress} className='h-2 mb-6' />
+              <div className='mt-5'>
+                <OnboardingStepper
+                  currentStep={currentStep}
+                  totalSteps={TOTAL_STEPS}
+                  completedSteps={completedSteps}
+                />
+              </div>
+            </div>
 
-          <div className='max-h-[60vh] overflow-y-auto pr-1'>
-            {CurrentStepComponent && <CurrentStepComponent {...stepHandlers} />}
+            <div className='px-6 pt-5 pb-2'>
+              <div
+                key={stepKey}
+                className='onboarding-step-enter max-h-[55vh] overflow-y-auto pr-1'>
+                {CurrentStepComponent && (
+                  <CurrentStepComponent {...stepHandlers} />
+                )}
+              </div>
+            </div>
+
+            <div className='flex items-center justify-between gap-2 border-t border-border/50 px-6 py-4'>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={onSkip}
+                className='text-muted-foreground hover:text-foreground'>
+                <XIcon className='size-3.5' />
+                {t("onboarding.skip")}
+              </Button>
+
+              <div className='flex items-center gap-2'>
+                {currentStep > 1 && (
+                  <Button variant='outline' size='sm' onClick={handleBack}>
+                    <ArrowLeftIcon className='size-3.5' />
+                    {t("onboarding.back")}
+                  </Button>
+                )}
+
+                <Button
+                  variant='default'
+                  size='sm'
+                  onClick={handleNext}
+                  disabled={!canProceed}>
+                  {isLastStep ? (
+                    <>
+                      <CheckCircleIcon weight='bold' className='size-3.5' />
+                      {t("onboarding.finish")}
+                    </>
+                  ) : (
+                    <>
+                      {t("onboarding.next")}
+                      <ArrowRightIcon className='size-3.5' />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-
-        <DialogFooter className='flex-row justify-between gap-2 sm:justify-between'>
-          <Button variant='ghost' onClick={onSkip}>
-            <XIcon className='h-4 w-4' />
-            {t("onboarding.skip")}
-          </Button>
-
-          <div className='flex gap-2'>
-            {currentStep > 1 && (
-              <Button variant='outline' onClick={handleBack}>
-                <ArrowLeftIcon className='h-4 w-4' />
-                {t("onboarding.back")}
-              </Button>
-            )}
-
-            <Button
-              variant='default'
-              onClick={handleNext}
-              disabled={!canProceed}>
-              {isLastStep ? (
-                <>
-                  <CheckCircleIcon className='h-4 w-4' />
-                  {t("onboarding.finish")}
-                </>
-              ) : (
-                <>
-                  {t("onboarding.next")}
-                  <ArrowRightIcon className='h-4 w-4' />
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

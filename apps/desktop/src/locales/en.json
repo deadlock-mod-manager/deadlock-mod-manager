@@ -1654,7 +1654,8 @@
     "clearModsState": "Clear Mods State",
     "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
-    "modsStateCleared": "Mods state cleared successfully"
+    "modsStateCleared": "Mods state cleared successfully",
+    "triggerOnboarding": "Trigger Onboarding"
   },
   "developer": {
     "title": "Developer Tools",
