@@ -8,6 +8,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
+import FavoriteButton from "@/components/mod-browsing/favorite-button";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
@@ -286,6 +287,7 @@ const Mod = () => {
                     {t("modOptions.openTooltip")}
                   </Button>
                 )}
+                <FavoriteButton remoteId={mod.remoteId} variant='inline' />
                 {hasUpdate && (
                   <Button
                     icon={<RefreshCw className='h-4 w-4' />}

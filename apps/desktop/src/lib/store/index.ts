@@ -9,6 +9,11 @@ import {
   crosshairDeepMergeKeys,
 } from "./slices/crosshair";
 import {
+  createFavoritesSlice,
+  favoritesDeepMergeKeys,
+  type FavoritesState,
+} from "./slices/favorites";
+import {
   createGameSlice,
   gameDeepMergeKeys,
   type GameState,
@@ -54,7 +59,8 @@ export type State = ModsState &
   NetworkState &
   UIState &
   ScrollState &
-  CrosshairState;
+  CrosshairState &
+  FavoritesState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -66,6 +72,7 @@ const allDeepMergeKeys = new Set<string>([
   ...uiDeepMergeKeys,
   ...scrollDeepMergeKeys,
   ...crosshairDeepMergeKeys,
+  ...favoritesDeepMergeKeys,
 ]);
 
 export const usePersistedStore = create<State>()(
@@ -80,6 +87,7 @@ export const usePersistedStore = create<State>()(
       ...createUISlice(...a),
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
+      ...createFavoritesSlice(...a),
     }),
     {
       name: "local-config",

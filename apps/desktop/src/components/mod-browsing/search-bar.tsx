@@ -1,5 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import {
   Select,
@@ -9,9 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { ArrowUpDown, Clock, X } from "@deadlock-mods/ui/icons";
+import { ArrowUpDown, Clock, Star, X } from "@deadlock-mods/ui/icons";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
+import { usePersistedStore } from "@/lib/store";
 import {
   getModCategoryDisplayName,
   SortType,
@@ -48,6 +51,7 @@ type SearchBarProps = {
   onFilterModeChange: (filterMode: FilterMode) => void;
   showSortControl?: boolean;
   showTimePeriodControl?: boolean;
+  showFavoritesButton?: boolean;
   hideMapFilter?: boolean;
 };
 
@@ -75,10 +79,14 @@ const SearchBar = ({
   onFilterModeChange,
   showSortControl = true,
   showTimePeriodControl = true,
+  showFavoritesButton = false,
   hideMapFilter,
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
+  const favoritesCount = usePersistedStore(
+    (state) => state.favorites.length,
+  );
 
   const getHeroDisplayName = (hero: string) => {
     if (hero === "None") {
@@ -147,8 +155,25 @@ const SearchBar = ({
             hideMapFilter={hideMapFilter}
           />
         </div>
-        {(showTimePeriodControl || showSortControl) && (
+        {(showTimePeriodControl ||
+          showSortControl ||
+          showFavoritesButton) && (
           <div className='flex items-center gap-4'>
+            {showFavoritesButton && (
+              <Button asChild variant='outline' size='default'>
+                <Link to='/mods/favorites' draggable='false'>
+                  <Star className='mr-2 h-4 w-4' />
+                  <span>{t("favorites.title")}</span>
+                  {favoritesCount > 0 && (
+                    <Badge
+                      className='ml-2 px-1 py-0 text-xs'
+                      variant='secondary'>
+                      {favoritesCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            )}
             {showTimePeriodControl && onTimePeriodChange && (
               <Select
                 onValueChange={onTimePeriodChange}

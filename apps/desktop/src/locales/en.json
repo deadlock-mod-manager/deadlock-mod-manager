@@ -1,4 +1,15 @@
 {
+  "favorites": {
+    "title": "Favorites",
+    "subtitle": "Mods you've saved to revisit later.",
+    "add": "Add to favorites",
+    "remove": "Remove from favorites",
+    "favorite": "Favorite",
+    "favorited": "Favorited",
+    "back": "Back to Mods Store",
+    "emptyTitle": "No favorites yet",
+    "emptyDescription": "Tap the star on any mod card to save it here for later."
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "myMods": "Mods Library",
