@@ -35,6 +35,7 @@ export const useAddonAnalysis = () => {
   const addIdentifiedLocalMod = usePersistedStore(
     (state) => state.addIdentifiedLocalMod,
   );
+  const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -86,46 +87,44 @@ export const useAddonAnalysis = () => {
 
       setDialogOpen(shouldShowDialog);
 
-      // Process identified addons and add them to the store
+      // Group addons by remoteId so multi-VPK mods are processed together
       let processedIdentifiedCount = 0;
-      let _processedPrefixedCount = 0;
-      console.log("Processing analysis results:", {
-        totalAddons: data.addons.length,
-        addonsWithRemoteId: data.addons.filter((a) => a.remoteId).length,
-        addonsWithMatchInfo: data.addons.filter((a) => a.matchInfo).length,
-      });
 
+      const modGroups = new Map<string, typeof data.addons>();
       for (const addon of data.addons) {
         if (addon.remoteId) {
-          try {
-            // Fetch full mod details from API using the mod's remote ID
-            const modDetails = await getMod(addon.remoteId);
+          const existing = modGroups.get(addon.remoteId) ?? [];
+          existing.push(addon);
+          modGroups.set(addon.remoteId, existing);
+        }
+      }
 
-            if (addon.matchInfo) {
-              // This is a fully identified mod (has matchInfo) - add as installed
-              addIdentifiedLocalMod(modDetails, addon.filePath);
-              processedIdentifiedCount++;
+      for (const [remoteId, groupAddons] of modGroups) {
+        try {
+          const modDetails = await getMod(remoteId);
+          const hasMatchInfo = groupAddons.some((a) => a.matchInfo);
+          const vpkFileNames = groupAddons.map((a) => a.fileName);
 
-              // Register in Rust-side ModRepository and persist to manifest
-              const activeProfile = getActiveProfile();
-              await invoke("register_analyzed_mod", {
-                modId: addon.remoteId,
-                modName: modDetails.name,
-                installedVpks: [addon.fileName],
-                profileFolder: activeProfile?.folderName ?? null,
-              });
-            } else {
-              // This is a prefixed VPK (no matchInfo) - add as downloaded but not installed
-              // Path can be empty since install_mod will find and rename the prefixed VPKs in addons
-              addIdentifiedLocalMod(modDetails, "", false);
-              _processedPrefixedCount++;
-            }
-          } catch (error) {
-            logger
-              .withMetadata({ remoteId: addon.remoteId })
-              .withError(error)
-              .error("Failed to fetch mod details");
+          if (hasMatchInfo) {
+            addIdentifiedLocalMod(modDetails, groupAddons[0].filePath);
+            setInstalledVpks(remoteId, vpkFileNames);
+            processedIdentifiedCount++;
+
+            const activeProfile = getActiveProfile();
+            await invoke("register_analyzed_mod", {
+              modId: remoteId,
+              modName: modDetails.name,
+              installedVpks: vpkFileNames,
+              profileFolder: activeProfile?.folderName ?? null,
+            });
+          } else {
+            addIdentifiedLocalMod(modDetails, "", false);
           }
+        } catch (error) {
+          logger
+            .withMetadata({ remoteId })
+            .withError(error)
+            .error("Failed to fetch mod details");
         }
       }
 

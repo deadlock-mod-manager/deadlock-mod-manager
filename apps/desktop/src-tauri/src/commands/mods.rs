@@ -636,6 +636,11 @@ pub async fn register_analyzed_mod(
 ) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
 
+  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+
+  let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
+
   if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
     log::info!(
       "Registering analyzed mod in repository: {} ({}) with {} VPKs (profile: {profile_folder:?})",
@@ -649,21 +654,23 @@ pub async fn register_analyzed_mod(
       is_map: false,
       installed_vpks: installed_vpks.clone(),
       file_tree: None,
-      install_order: None,
+      install_order,
       original_vpk_names: Vec::new(),
     };
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
-  } else {
-    log::debug!("Mod {} already registered in repository, skipping", mod_id);
   }
 
-  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  if !manifest.mods.contains_key(&mod_id) {
-    manifest.mark_enabled(&mod_id, installed_vpks, Vec::new(), None);
-    manifest.save(&addons_path)?;
-    log::info!("Persisted analyzed mod {mod_id} to profile manifest");
+  // Analysis discovers files as-is on disk, so current_vpks = installed_vpks
+  // and original_vpk_names should be cleared (no rename history applies).
+  // Preserve order from any existing manifest entry.
+  manifest.mark_enabled(&mod_id, installed_vpks, Vec::new(), install_order);
+  // mark_enabled skips overwriting original_vpk_names when passed empty,
+  // so explicitly clear stale originals from a previous install.
+  if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+    entry.original_vpk_names.clear();
   }
+  manifest.save(&addons_path)?;
+  log::info!("Persisted analyzed mod {mod_id} to profile manifest");
 
   Ok(())
 }
