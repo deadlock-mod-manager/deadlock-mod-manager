@@ -457,17 +457,22 @@ impl ModManager {
       .vpk_manager
       .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
 
+    let mut updated_mod_ids = Vec::new();
     for (mod_id, new_vpk_names) in updated_vpk_mappings {
       if let Some(entry) = manifest.mods.get_mut(&mod_id) {
         entry.enabled = true;
         entry.current_vpks = new_vpk_names.clone();
         entry.disabled_vpks.clear();
       }
+      updated_mod_ids.push(mod_id.clone());
 
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(&mod_id) {
         mod_entry.installed_vpks = new_vpk_names;
         self.mod_repository.add_mod(mod_entry);
       }
+    }
+    for mod_id in updated_mod_ids {
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
     }
 
     manifest.save(&addons_path)?;
@@ -554,6 +559,9 @@ impl ModManager {
         self.mod_repository.add_mod(mod_entry);
       }
     }
+    for (remote_id, _) in &updated_mappings {
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, remote_id);
+    }
 
     manifest.save(&addons_path)?;
 
@@ -620,12 +628,14 @@ impl ModManager {
 
     // Update mod data with new VPK names and re-add to repository
     let mut result_mods = Vec::new();
+    let mut updated_mod_ids = Vec::new();
     for (mod_id, new_vpk_names) in updated_vpk_mappings {
       if let Some(entry) = manifest.mods.get_mut(&mod_id) {
         entry.enabled = true;
         entry.current_vpks = new_vpk_names.clone();
         entry.disabled_vpks.clear();
       }
+      updated_mod_ids.push(mod_id.clone());
 
       if let Some(index) = updated_mods
         .iter()
@@ -637,6 +647,9 @@ impl ModManager {
         result_mods.push(deadlock_mod);
       }
     }
+    for mod_id in updated_mod_ids {
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
+    }
 
     for deadlock_mod in updated_mods {
       self.mod_repository.add_mod(deadlock_mod);
@@ -646,6 +659,22 @@ impl ModManager {
 
     log::info!("Successfully reordered {} mods", result_mods.len());
     Ok(result_mods)
+  }
+
+  fn refresh_repair_metadata_after_reorder(
+    manifest: &mut ProfileVpkManifest,
+    addons_path: &Path,
+    mod_id: &str,
+  ) {
+    let source_downloads = manifest
+      .mods
+      .get(mod_id)
+      .map(|entry| entry.source_downloads.clone())
+      .unwrap_or_default();
+
+    if let Err(e) = manifest.update_repair_metadata(addons_path, mod_id, source_downloads) {
+      log::warn!("Failed to refresh repair metadata for {mod_id} after reorder: {e}");
+    }
   }
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {

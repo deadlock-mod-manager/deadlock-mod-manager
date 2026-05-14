@@ -1,4 +1,5 @@
 import type { LocalMod } from "@/types/mods";
+import type { RepairDownloadItem } from "@/types/mods";
 
 export type ProfileId = string & { readonly __brand: unique symbol };
 
@@ -26,6 +27,15 @@ export interface VpkManifestEntry {
   currentVpks: string[];
   disabledVpks: string[];
   originalVpkNames: string[];
+  sourceDownloads?: RepairDownloadItem[];
+  vpkFingerprints?: Array<{
+    currentName: string;
+    originalName: string;
+    fileSize: number;
+    fastHash: string;
+    sha256: string;
+    manifestSha256: string;
+  }>;
 }
 
 export interface VpkManifest {

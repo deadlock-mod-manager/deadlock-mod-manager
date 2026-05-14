@@ -20,24 +20,32 @@ const VALID_TRANSITIONS: Record<ModStatus, ModStatus[]> = {
     ModStatus.Downloaded,
     ModStatus.FailedToDownload,
     ModStatus.Paused,
+    ModStatus.NeedsRepair,
   ],
-  [ModStatus.Extracting]: [ModStatus.Downloaded, ModStatus.FailedToDownload],
+  [ModStatus.Extracting]: [
+    ModStatus.Downloaded,
+    ModStatus.FailedToDownload,
+    ModStatus.NeedsRepair,
+  ],
   [ModStatus.Paused]: [ModStatus.Downloading, ModStatus.FailedToDownload],
   [ModStatus.Downloaded]: [
     ModStatus.Installing,
     ModStatus.Removing,
     ModStatus.Installed,
+    ModStatus.NeedsRepair,
   ],
   [ModStatus.Installing]: [
     ModStatus.Installed,
     ModStatus.FailedToInstall,
     ModStatus.Downloaded,
+    ModStatus.NeedsRepair,
   ],
   [ModStatus.Installed]: [
     ModStatus.Downloading,
     ModStatus.Extracting,
     ModStatus.Removing,
     ModStatus.Downloaded,
+    ModStatus.NeedsRepair,
   ],
   [ModStatus.Removing]: [ModStatus.Removed, ModStatus.FailedToRemove],
   [ModStatus.Removed]: [ModStatus.Error],
@@ -49,6 +57,12 @@ const VALID_TRANSITIONS: Record<ModStatus, ModStatus[]> = {
     ModStatus.Error,
   ],
   [ModStatus.Error]: [],
+  [ModStatus.NeedsRepair]: [
+    ModStatus.Downloading,
+    ModStatus.Installing,
+    ModStatus.Downloaded,
+    ModStatus.Error,
+  ],
 };
 
 /**
