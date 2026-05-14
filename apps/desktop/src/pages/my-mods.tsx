@@ -89,6 +89,7 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
+import { filterStableLibraryModsByStatus } from "@/lib/mods/library-display";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -631,53 +632,8 @@ const MyMods = () => {
     },
   });
 
-  const filterModsByStatus = (modsToFilter: LocalMod[]) => {
-    switch (activeTab) {
-      case ModFilter.ENABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status === ModStatus.Installed &&
-            mod.installedVpks &&
-            mod.installedVpks.length > 0,
-        );
-      case ModFilter.DISABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status !== ModStatus.Installed ||
-            !mod.installedVpks ||
-            mod.installedVpks.length === 0,
-        );
-      default:
-        return modsToFilter;
-    }
-  };
-
-  const sortedMods = [...mods].sort((a, b) => {
-    const aIsInstalled =
-      a.status === ModStatus.Installed &&
-      a.installedVpks &&
-      a.installedVpks.length > 0;
-    const bIsInstalled =
-      b.status === ModStatus.Installed &&
-      b.installedVpks &&
-      b.installedVpks.length > 0;
-
-    if (aIsInstalled && !bIsInstalled) return -1;
-    if (!aIsInstalled && bIsInstalled) return 1;
-
-    if (aIsInstalled && bIsInstalled) {
-      const aOrder = a.installOrder ?? 999;
-      const bOrder = b.installOrder ?? 999;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-    }
-
-    const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
-    const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
-    return dateB - dateA;
-  });
-
   const displayMods = useMemo(() => {
-    const baseMods = query.trim() ? results : sortedMods;
+    const baseMods = query.trim() ? results : mods;
     const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
     let filteredMods = baseMods;
 
@@ -733,7 +689,7 @@ const MyMods = () => {
       );
     }
 
-    return filterModsByStatus(filteredMods);
+    return filterStableLibraryModsByStatus(filteredMods, activeTab);
   }, [
     activeTab,
     filterMode,
@@ -745,7 +701,7 @@ const MyMods = () => {
     results,
     selectedCategories,
     selectedHeroes,
-    sortedMods,
+    mods,
   ]);
 
   const totalPages = paginationEnabled
