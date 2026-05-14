@@ -94,12 +94,29 @@ describe("filterStableLibraryModsByStatus", () => {
         installedVpks: ["installed.vpk"],
       }),
       mod("downloaded", ModStatus.Downloaded),
+      mod("needs-repair", ModStatus.NeedsRepair),
       mod("failed-install", ModStatus.FailedToInstall),
     ];
 
     expect(ids(filterStableLibraryModsByStatus(mods, "disabled"))).toEqual([
       "downloaded",
       "failed-install",
+    ]);
+  });
+
+  it("preserves library-relative order in the needs repair view", () => {
+    const mods = [
+      mod("downloaded", ModStatus.Downloaded),
+      mod("repair-later", ModStatus.NeedsRepair),
+      mod("installed", ModStatus.Installed, {
+        installedVpks: ["installed.vpk"],
+      }),
+      mod("repair-earlier", ModStatus.NeedsRepair),
+    ];
+
+    expect(ids(filterStableLibraryModsByStatus(mods, "needsRepair"))).toEqual([
+      "repair-later",
+      "repair-earlier",
     ]);
   });
 
