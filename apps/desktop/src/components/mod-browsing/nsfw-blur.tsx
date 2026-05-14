@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export const NSFWBadge = ({ className }: { className?: string }) => (
   <Badge
     className={cn(
-      "border-red-500/30 bg-red-950/80 font-bold uppercase tracking-widest text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.25)]",
+      "border-red-500/30 bg-red-950/80 font-bold uppercase tracking-widest text-red-300",
       className,
     )}
     variant='outline'>

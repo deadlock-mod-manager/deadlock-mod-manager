@@ -75,7 +75,7 @@ const FavoriteButton = ({
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "active:scale-90",
             isFavorite
-              ? "shadow-[0_0_10px_rgba(234,179,8,0.3)] border-yellow-500/30"
+              ? "border-yellow-500/20"
               : "opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-black/60",
             className,
           )}
@@ -85,7 +85,7 @@ const FavoriteButton = ({
             className={cn(
               "h-4 w-4 transition-all duration-300",
               isFavorite
-                ? "fill-yellow-400 text-yellow-400 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)]"
+                ? "fill-yellow-400 text-yellow-400"
                 : "text-white/70 hover:text-white",
             )}
           />

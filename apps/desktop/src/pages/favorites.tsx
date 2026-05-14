@@ -50,9 +50,7 @@ const FavoritesData = () => {
             <Star className='h-16 w-16' weight='duotone' />
           </EmptyMedia>
           <EmptyTitle>{t("favorites.emptyTitle")}</EmptyTitle>
-          <EmptyDescription>
-            {t("favorites.emptyDescription")}
-          </EmptyDescription>
+          <EmptyDescription>{t("favorites.emptyDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
