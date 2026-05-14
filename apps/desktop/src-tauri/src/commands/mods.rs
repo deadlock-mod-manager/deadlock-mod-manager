@@ -836,6 +836,10 @@ pub async fn swap_mod_options(
     }
   }
 
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), selected_original_names.clone(), None);
+  manifest.save(&addons_path)?;
+
   Ok(SwapModOptionsResult {
     installed_vpks: new_installed_vpks,
     original_vpk_names: selected_original_names,
@@ -1281,6 +1285,10 @@ pub async fn switch_mod_download_variant(
       manager.get_mod_repository_mut().add_mod(updated);
     }
   }
+
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), new_originals.clone(), None);
+  manifest.save(&addons_path)?;
 
   Ok(SwitchDownloadVariantResult {
     installed_vpks: new_installed_vpks,
