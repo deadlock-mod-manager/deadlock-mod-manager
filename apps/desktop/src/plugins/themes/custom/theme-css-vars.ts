@@ -49,7 +49,7 @@ export function buildFullCustomThemeCssVariables(
     "--background": hexToHslTripleString(palette.popoverColor),
     "--sidebar-background": hslCssTripleWithOpacity(
       sidebarBgTriple,
-      100 - Math.min(100, Math.max(0, palette.sidebarOpacity)),
+      Math.min(100, Math.max(0, palette.sidebarOpacity)),
     ),
     "--input": borderHsl,
   };

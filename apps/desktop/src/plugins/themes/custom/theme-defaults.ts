@@ -10,7 +10,7 @@ export const DEFAULT_CUSTOM_THEME: CustomThemePalette = {
   mutedColor: hslToHex(0, 0, 14.9),
   foregroundColor: hslToHex(38, 65, 97),
   mutedForegroundColor: hslToHex(0, 0, 63.9),
-  sidebarOpacity: 0,
+  sidebarOpacity: 100,
   ambientBackgroundEnabled: false,
   ambientAccentColor: hslToHex(42, 60, 84),
   ambientIntensity: 14,

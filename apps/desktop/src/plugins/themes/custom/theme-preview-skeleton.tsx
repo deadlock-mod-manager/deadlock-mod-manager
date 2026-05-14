@@ -430,8 +430,7 @@ export function ThemePreviewSkeleton({
   const ambientStyle = buildAmbientBackgroundStyle(palette);
 
   const sidebarPopoverRgb = hexToRgb(palette.popoverColor);
-  const sidebarAlpha =
-    (100 - Math.min(100, Math.max(0, palette.sidebarOpacity))) / 100;
+  const sidebarAlpha = Math.min(100, Math.max(0, palette.sidebarOpacity)) / 100;
   const skeletonSidebarBg = sidebarPopoverRgb
     ? `rgba(${sidebarPopoverRgb.r}, ${sidebarPopoverRgb.g}, ${sidebarPopoverRgb.b}, ${sidebarAlpha})`
     : undefined;

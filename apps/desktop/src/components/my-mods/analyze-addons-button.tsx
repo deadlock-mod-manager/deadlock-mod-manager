@@ -13,7 +13,7 @@ import { AnalysisResultsDialog } from "./analysis-results-dialog";
 
 interface AnalyzeAddonsButtonProps {
   className?: string;
-  size?: "default" | "iconExpand" | "lg";
+  size?: "default" | "sm" | "iconExpand" | "lg";
 }
 
 export const AnalyzeAddonsButton = ({
@@ -42,7 +42,7 @@ export const AnalyzeAddonsButton = ({
               onClick={startAnalysis}
               disabled={isPending}
               isLoading={isPending}
-              icon={<ScanSearch className='w-4 h-4' />}
+              icon={<ScanSearch className='h-4 w-4' />}
               size={size}
               className={className}>
               {isPending ? t("addons.analyzing") : t("addons.analyzeLocal")}

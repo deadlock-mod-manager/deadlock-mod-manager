@@ -327,7 +327,9 @@ export const AppSidebar = () => {
           if (groupItems.length === 0) return null;
           return (
             <SidebarGroup
-              className={group === "developer" ? "mt-auto" : undefined}
+              className={
+                group === "developer" ? "mt-auto shrink-0" : "shrink-0"
+              }
               key={group}>
               {group === "developer" ? (
                 <>

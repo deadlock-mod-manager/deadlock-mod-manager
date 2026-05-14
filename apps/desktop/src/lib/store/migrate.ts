@@ -326,6 +326,35 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       enabledPlugins.themes = true;
     },
   },
+  {
+    to: 22,
+    label: "invert-sidebar-opacity",
+    apply: (state) => {
+      if (!isPlainObject(state.pluginSettings)) return;
+      const themeSettings = state.pluginSettings.themes;
+      if (!isPlainObject(themeSettings)) return;
+
+      const customTheme = themeSettings.customTheme;
+      if (
+        isPlainObject(customTheme) &&
+        typeof customTheme.sidebarOpacity === "number"
+      ) {
+        customTheme.sidebarOpacity = 100 - customTheme.sidebarOpacity;
+      }
+
+      const userThemes = themeSettings.userThemes;
+      if (Array.isArray(userThemes)) {
+        for (const theme of userThemes) {
+          if (
+            isPlainObject(theme) &&
+            typeof theme.sidebarOpacity === "number"
+          ) {
+            theme.sidebarOpacity = 100 - theme.sidebarOpacity;
+          }
+        }
+      }
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(

@@ -159,9 +159,10 @@ function ModsPagination({
             acc.push(i);
             return acc;
           }, [])
-          .map((item, idx) =>
+          .map((item, idx, items) =>
             item === "ellipsis" ? (
-              <PaginationItem key={`ellipsis-${idx}`}>
+              <PaginationItem
+                key={`ellipsis-${items[idx - 1]}-${items[idx + 1]}`}>
                 <PaginationEllipsis />
               </PaginationItem>
             ) : (
@@ -811,430 +812,450 @@ const MyMods = () => {
   });
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className='flex w-full flex-1 flex-col gap-4 overflow-y-auto px-4 will-change-transform'
-      onScroll={(e) => {
-        scrollPositionRef.current = e.currentTarget.scrollTop;
-      }}>
-      <ErrorBoundary>
-        <Tabs
-          className='flex flex-1 flex-col overflow-y-auto'
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as ModFilter)}>
-          <div className='mb-8 flex flex-col gap-4 pt-4 lg:flex-row lg:items-start lg:justify-between'>
-            <div className='flex min-w-0 flex-grow flex-col'>
-              <div className='flex flex-wrap items-center gap-2'>
-                <h1 className='text-2xl font-semibold tracking-tight text-balance'>
-                  {t("navigation.myMods")}
-                </h1>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      onClick={async () => {
-                        const activeProfile = getActiveProfile();
-                        const profileFolder = activeProfile?.folderName ?? null;
-                        await invoke("open_mods_folder", { profileFolder });
-                      }}
-                      icon={<FolderOpen className='h-4 w-4' />}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t("settings.openModsFolder")}
-                  </TooltipContent>
-                </Tooltip>
-                {mods.length > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "inline-flex max-w-full cursor-help flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm shadow-sm",
-                          "border-border/80 bg-muted/40 transition-colors hover:bg-muted/55",
-                        )}>
-                        <div className='flex items-baseline gap-1.5 tabular-nums'>
-                          <span className='inline-flex items-baseline gap-px font-semibold text-foreground'>
-                            <span>{enabledModsCount}</span>
-                            <span className='font-normal text-muted-foreground'>
-                              /{mods.length}
-                            </span>
-                          </span>
-                          <span className='font-normal text-muted-foreground'>
-                            {t("myMods.libraryModsNoun", {
-                              count: mods.length,
-                            })}
-                          </span>
-                        </div>
-                        <span
-                          aria-hidden
-                          className='h-3.5 w-px shrink-0 bg-border'
-                        />
-                        <div className='flex flex-wrap items-center gap-2'>
-                          <div
-                            className={cn(
-                              "flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 tabular-nums",
-                              enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                                ? "text-destructive"
-                                : enabledVpkFileCount >=
-                                    VPK_LIMIT_WARNING_THRESHOLD
-                                  ? "text-orange-600 dark:text-orange-500"
-                                  : "text-foreground",
-                            )}>
-                            <span className='inline-flex items-baseline gap-px font-semibold'>
-                              <span>{enabledVpkFileCount}</span>
-                              <span
-                                className={cn(
-                                  "font-normal",
-                                  vpkStatSubordinateClass,
-                                )}>
-                                /{ENGINE_VPK_LIMIT}
-                              </span>
-                            </span>
-                            <span
-                              className={cn(
-                                "font-normal",
-                                vpkStatSubordinateClass,
-                              )}>
-                              {t("myMods.vpkFilesNoun")}
-                            </span>
-                          </div>
-                          {enabledVpkFileCount >=
-                            VPK_LIMIT_WARNING_THRESHOLD && (
-                            <Badge
-                              className='shrink-0 py-0 text-xs font-medium'
-                              variant={
-                                enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                                  ? "destructive"
-                                  : "secondary"
-                              }>
-                              {enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                                ? t("myMods.vpkLimitBadgeAtLimit")
-                                : t("myMods.vpkLimitBadgeNear")}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className='max-w-sm'>
-                      <div className='flex flex-col gap-3 text-sm'>
-                        <p className='text-pretty'>
-                          {t("myMods.modLimitTooltipP1", {
-                            max: ENGINE_VPK_LIMIT,
-                          })}
-                        </p>
-                        <p className='text-pretty'>
-                          {t("myMods.modLimitTooltipP2")}
-                        </p>
-                        <p className='text-pretty'>
-                          {t("myMods.modLimitTooltipP3")}
-                        </p>
-                        <p className='text-muted-foreground text-pretty'>
-                          {t("myMods.modLimitTooltipStatHeading")}
-                        </p>
-                        <ul className='list-disc space-y-1.5 pl-4 text-pretty'>
-                          <li>
-                            {t("myMods.modLimitTooltipStatEnabled", {
-                              count: enabledModsCount,
-                            })}
-                          </li>
-                          <li>
-                            {t("myMods.modLimitTooltipStatLibrary", {
-                              count: mods.length,
-                            })}
-                          </li>
-                          <li>
-                            {t("myMods.modLimitTooltipStatVpks", {
-                              count: enabledVpkFileCount,
-                            })}
-                          </li>
-                        </ul>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
-            </div>
-
-            <div className='flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0 lg:justify-end'>
-              {updatableCount > 0 && (
+    <div className='flex w-full flex-1 flex-col gap-4 px-4 will-change-transform'>
+      <div className='flex flex-row items-start justify-between gap-4 pt-4'>
+        <div className='flex flex-col'>
+          <div className='flex flex-wrap items-center gap-2'>
+            <h1 className='text-2xl font-semibold tracking-tight text-balance'>
+              {t("navigation.myMods")}
+            </h1>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
-                  variant='default'
-                  onClick={() => setShowBatchUpdateDialog(true)}
-                  icon={<RefreshCw className='h-4 w-4' />}>
-                  {t("myMods.updateAvailableCount", { count: updatableCount })}
-                </Button>
-              )}
+                  variant='ghost'
+                  size='icon'
+                  onClick={async () => {
+                    const activeProfile = getActiveProfile();
+                    const profileFolder = activeProfile?.folderName ?? null;
+                    await invoke("open_mods_folder", { profileFolder });
+                  }}
+                  icon={<FolderOpen className='h-4 w-4' />}
+                />
+              </TooltipTrigger>
+              <TooltipContent>{t("settings.openModsFolder")}</TooltipContent>
+            </Tooltip>
+            {mods.length > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant='outline'
-                    disabled={isCheckingUpdates}
-                    onClick={() => refetchUpdates()}
-                    icon={
-                      <RefreshCw
-                        className={`h-4 w-4 ${isCheckingUpdates ? "animate-spin" : ""}`}
-                      />
-                    }>
-                    {t("myMods.checkForUpdates")}
-                  </Button>
+                  <div
+                    className={cn(
+                      "inline-flex max-w-full cursor-help flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm shadow-sm",
+                      "border-border/80 bg-muted/40 transition-colors hover:bg-muted/55",
+                    )}>
+                    <div className='flex items-baseline gap-1.5 tabular-nums'>
+                      <span className='inline-flex items-baseline gap-px font-semibold text-foreground'>
+                        <span>{enabledModsCount}</span>
+                        <span className='font-normal text-muted-foreground'>
+                          /{mods.length}
+                        </span>
+                      </span>
+                      <span className='font-normal text-muted-foreground'>
+                        {t("myMods.libraryModsNoun", {
+                          count: mods.length,
+                        })}
+                      </span>
+                    </div>
+                    <span
+                      aria-hidden
+                      className='h-3.5 w-px shrink-0 bg-border'
+                    />
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <div
+                        className={cn(
+                          "flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 tabular-nums",
+                          enabledVpkFileCount >= ENGINE_VPK_LIMIT
+                            ? "text-destructive"
+                            : enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD
+                              ? "text-orange-600 dark:text-orange-500"
+                              : "text-foreground",
+                        )}>
+                        <span className='inline-flex items-baseline gap-px font-semibold'>
+                          <span>{enabledVpkFileCount}</span>
+                          <span
+                            className={cn(
+                              "font-normal",
+                              vpkStatSubordinateClass,
+                            )}>
+                            /{ENGINE_VPK_LIMIT}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "font-normal",
+                            vpkStatSubordinateClass,
+                          )}>
+                          {t("myMods.vpkFilesNoun")}
+                        </span>
+                      </div>
+                      {enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD && (
+                        <Badge
+                          className='shrink-0 py-0 text-xs font-medium'
+                          variant={
+                            enabledVpkFileCount >= ENGINE_VPK_LIMIT
+                              ? "destructive"
+                              : "secondary"
+                          }>
+                          {enabledVpkFileCount >= ENGINE_VPK_LIMIT
+                            ? t("myMods.vpkLimitBadgeAtLimit")
+                            : t("myMods.vpkLimitBadgeNear")}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {t("myMods.checkForUpdatesTooltip")}
+                <TooltipContent className='max-w-sm'>
+                  <div className='flex flex-col gap-3 text-sm'>
+                    <p className='text-pretty'>
+                      {t("myMods.modLimitTooltipP1", {
+                        max: ENGINE_VPK_LIMIT,
+                      })}
+                    </p>
+                    <p className='text-pretty'>
+                      {t("myMods.modLimitTooltipP2")}
+                    </p>
+                    <p className='text-pretty'>
+                      {t("myMods.modLimitTooltipP3")}
+                    </p>
+                    <p className='text-muted-foreground text-pretty'>
+                      {t("myMods.modLimitTooltipStatHeading")}
+                    </p>
+                    <ul className='list-disc space-y-1.5 pl-4 text-pretty'>
+                      <li>
+                        {t("myMods.modLimitTooltipStatEnabled", {
+                          count: enabledModsCount,
+                        })}
+                      </li>
+                      <li>
+                        {t("myMods.modLimitTooltipStatLibrary", {
+                          count: mods.length,
+                        })}
+                      </li>
+                      <li>
+                        {t("myMods.modLimitTooltipStatVpks", {
+                          count: enabledVpkFileCount,
+                        })}
+                      </li>
+                    </ul>
+                  </div>
                 </TooltipContent>
               </Tooltip>
+            )}
+          </div>
+          <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
+        </div>
+
+        <div className='flex flex-nowrap items-center justify-end gap-2'>
+          {updatableCount > 0 && (
+            <Button
+              variant='default'
+              onClick={() => setShowBatchUpdateDialog(true)}
+              icon={<RefreshCw className='h-4 w-4' />}>
+              {t("myMods.updateAvailableCount", { count: updatableCount })}
+            </Button>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 variant='outline'
-                onClick={() => navigate("/add-mods")}
-                icon={<UploadSimple className='h-4 w-4' />}>
-                {t("navigation.addMods")}
+                disabled={isCheckingUpdates}
+                onClick={() => refetchUpdates()}
+                icon={
+                  <RefreshCw
+                    className={`h-4 w-4 ${isCheckingUpdates ? "animate-spin" : ""}`}
+                  />
+                }>
+                {t("myMods.checkForUpdates")}
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size='icon' variant='outline'>
-                    <EllipsisVertical className='h-4 w-4' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
-                  <DropdownMenuItem
-                    onClick={startAnalysis}
-                    disabled={isAnalysisPending}>
-                    <ScanSearch className='h-4 w-4' />
-                    {isAnalysisPending
-                      ? t("addons.analyzing")
-                      : t("addons.analyzeLocal")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowModOrdering(true)}
-                    disabled={installedMods.length === 0}>
-                    <ArrowUpDown className='h-4 w-4' />
-                    {t("mods.manageOrder")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => disableAll()}
-                    disabled={enabledModsCount === 0 || isDisablingAll}>
-                    <PowerOff className='h-4 w-4' />
-                    {t("myMods.disableAll")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-          <VpkScanAlert
-            unmatchedVpkCount={unmatchedVpkCount}
-            unmatchedVpks={unmatchedVpks}
-            isRefetching={isVpkScanRefetching}
-            refetch={refetchVpkScan}
-            activeProfileFolder={activeProfileFolder}
-          />
-          {mods.length === 0 && <MyModsEmptyState />}
-          {mods.length > 0 && (
-            <div className='flex flex-col gap-4'>
-              <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-                <SearchBar
-                  filterMode={filterMode}
-                  audioQuickFilter={audioQuickFilter}
-                  mapQuickFilter={effectiveMapQuickFilter}
-                  hideNSFW={hideNSFW}
-                  hideOutdated={hideOutdated}
-                  mods={mods}
-                  onCategoriesChange={setSelectedCategories}
-                  onFilterModeChange={setFilterMode}
-                  onHeroesChange={setSelectedHeroes}
-                  onAudioQuickFilterChange={setAudioQuickFilter}
-                  onMapQuickFilterChange={setMapQuickFilter}
-                  onHideNSFWChange={setHideNSFW}
-                  onHideOutdatedChange={setHideOutdated}
-                  query={query}
-                  selectedCategories={selectedCategories}
-                  selectedHeroes={selectedHeroes}
-                  setQuery={setQuery}
-                  showSortControl={false}
-                  showTimePeriodControl={false}
-                  hideMapFilter={!isCustomMapsEnabled}
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("myMods.checkForUpdatesTooltip")}
+            </TooltipContent>
+          </Tooltip>
+          <Button
+            variant='outline'
+            onClick={() => navigate("/add-mods")}
+            icon={<UploadSimple className='h-4 w-4' />}>
+            {t("navigation.addMods")}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size='icon' variant='outline'>
+                <EllipsisVertical className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem
+                onClick={startAnalysis}
+                disabled={isAnalysisPending}>
+                <ScanSearch className='h-4 w-4' />
+                {isAnalysisPending
+                  ? t("addons.analyzing")
+                  : t("addons.analyzeLocal")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowModOrdering(true)}
+                disabled={installedMods.length === 0}>
+                <ArrowUpDown className='h-4 w-4' />
+                {t("mods.manageOrder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => disableAll()}
+                disabled={enabledModsCount === 0 || isDisablingAll}>
+                <PowerOff className='h-4 w-4' />
+                {t("myMods.disableAll")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div
+        className='flex flex-col items-start justify-between gap-4 overflow-y-auto pt-4'
+        ref={scrollContainerRef}
+        onScroll={(e) => {
+          scrollPositionRef.current = e.currentTarget.scrollTop;
+        }}>
+        <ErrorBoundary>
+          <Tabs
+            className='flex w-full flex-col'
+            value={activeTab}
+            onValueChange={(value) => {
+              switch (value) {
+                case ModFilter.ALL:
+                case ModFilter.ENABLED:
+                case ModFilter.NEEDS_REPAIR:
+                case ModFilter.DISABLED:
+                  setActiveTab(value);
+                  break;
+              }
+            }}>
+            {mods.length === 0 && (
+              <>
+                <VpkScanAlert
+                  unmatchedVpkCount={unmatchedVpkCount}
+                  unmatchedVpks={unmatchedVpks}
+                  isRefetching={isVpkScanRefetching}
+                  refetch={refetchVpkScan}
+                  activeProfileFolder={activeProfileFolder}
                 />
-                <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
-                  {autoRepairCount > 0 && (
-                    <Button
-                      onClick={() => repairMods(autoRepairMods)}
-                      size='sm'
-                      variant='outline'
-                      disabled={isRepairing}
-                      isLoading={isRepairing}
-                      icon={<WrenchIcon className='h-4 w-4' />}
-                      className='border-amber-500/50 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200'>
-                      {t("myMods.repairBroken", {
-                        count: autoRepairCount,
-                      })}
-                    </Button>
-                  )}
-                  {manualRepairCount > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant='outline'
-                          tabIndex={0}
-                          aria-label={t("myMods.manualRepairTooltip", {
-                            count: manualRepairCount,
-                          })}
-                          className='cursor-help border-amber-500/50 bg-amber-500/15 px-2.5 py-1.5 text-sm text-amber-800 hover:bg-amber-500/20 focus-visible:outline-none dark:text-amber-300'>
-                          <CircleHelp className='h-4 w-4' />
-                          {t("myMods.manualRepair", {
-                            count: manualRepairCount,
-                          })}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent className='max-w-xs text-pretty'>
-                        {t("myMods.manualRepairTooltip", {
-                          count: manualRepairCount,
+                <MyModsEmptyState />
+              </>
+            )}
+            {mods.length > 0 && (
+              <div className='flex flex-col gap-4'>
+                <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+                  <SearchBar
+                    filterMode={filterMode}
+                    audioQuickFilter={audioQuickFilter}
+                    mapQuickFilter={effectiveMapQuickFilter}
+                    hideNSFW={hideNSFW}
+                    hideOutdated={hideOutdated}
+                    mods={mods}
+                    onCategoriesChange={setSelectedCategories}
+                    onFilterModeChange={setFilterMode}
+                    onHeroesChange={setSelectedHeroes}
+                    onAudioQuickFilterChange={setAudioQuickFilter}
+                    onMapQuickFilterChange={setMapQuickFilter}
+                    onHideNSFWChange={setHideNSFW}
+                    onHideOutdatedChange={setHideOutdated}
+                    query={query}
+                    selectedCategories={selectedCategories}
+                    selectedHeroes={selectedHeroes}
+                    setQuery={setQuery}
+                    showSortControl={false}
+                    showTimePeriodControl={false}
+                    hideMapFilter={!isCustomMapsEnabled}
+                  />
+                  <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
+                    {autoRepairCount > 0 && (
+                      <Button
+                        onClick={() => repairMods(autoRepairMods)}
+                        size='sm'
+                        variant='outline'
+                        disabled={isRepairing}
+                        isLoading={isRepairing}
+                        icon={<WrenchIcon className='h-4 w-4' />}
+                        className='border-amber-500/50 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200'>
+                        {t("myMods.repairBroken", {
+                          count: autoRepairCount,
                         })}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                  <TabsList>
-                    <TabsTrigger value={ModFilter.ALL}>
-                      {t("myMods.tabs.all")}
-                      <span className='ml-2 text-muted-foreground text-xs'>
-                        ({mods.length})
-                      </span>
-                    </TabsTrigger>
-                    <TabsTrigger value={ModFilter.ENABLED}>
-                      <Check className='mr-2 h-4 w-4' />
-                      {t("myMods.tabs.installed")}
-                      <span className='ml-2 text-muted-foreground text-xs'>
-                        ({enabledModsCount})
-                      </span>
-                    </TabsTrigger>
-                    {needsRepairCount > 0 && (
-                      <TabsTrigger value={ModFilter.NEEDS_REPAIR}>
-                        <WrenchIcon className='mr-2 h-4 w-4' />
-                        {t("myMods.tabs.needsRepair")}
+                      </Button>
+                    )}
+                    {manualRepairCount > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant='outline'
+                            tabIndex={0}
+                            aria-label={t("myMods.manualRepairTooltip", {
+                              count: manualRepairCount,
+                            })}
+                            className='cursor-help border-amber-500/50 bg-amber-500/15 px-2.5 py-1.5 text-sm text-amber-800 hover:bg-amber-500/20 focus-visible:outline-none dark:text-amber-300'>
+                            <CircleHelp className='h-4 w-4' />
+                            {t("myMods.manualRepair", {
+                              count: manualRepairCount,
+                            })}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className='max-w-xs text-pretty'>
+                          {t("myMods.manualRepairTooltip", {
+                            count: manualRepairCount,
+                          })}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    <TabsList>
+                      <TabsTrigger value={ModFilter.ALL}>
+                        {t("myMods.tabs.all")}
                         <span className='ml-2 text-muted-foreground text-xs'>
-                          ({needsRepairCount})
+                          ({mods.length})
                         </span>
                       </TabsTrigger>
-                    )}
-                    <TabsTrigger value={ModFilter.DISABLED}>
-                      <Download className='mr-2 h-4 w-4' />
-                      {t("myMods.tabs.downloaded")}
-                      <span className='ml-2 text-muted-foreground text-xs'>
-                        ({disabledModsCount})
-                      </span>
-                    </TabsTrigger>
-                  </TabsList>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setViewMode(ViewMode.GRID)}
-                        size='icon'
-                        variant={
-                          viewMode === ViewMode.GRID ? "default" : "outline"
-                        }
-                        icon={<LayoutGrid className='h-4 w-4' />}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{t("mods.gridView")}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setViewMode(ViewMode.LIST)}
-                        size='icon'
-                        variant={
-                          viewMode === ViewMode.LIST ? "default" : "outline"
-                        }
-                        icon={<LayoutList className='h-4 w-4' />}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{t("mods.listView")}</TooltipContent>
-                  </Tooltip>
+                      <TabsTrigger value={ModFilter.ENABLED}>
+                        <Check className='mr-2 h-4 w-4' />
+                        {t("myMods.tabs.installed")}
+                        <span className='ml-2 text-muted-foreground text-xs'>
+                          ({enabledModsCount})
+                        </span>
+                      </TabsTrigger>
+                      {needsRepairCount > 0 && (
+                        <TabsTrigger value={ModFilter.NEEDS_REPAIR}>
+                          <WrenchIcon className='mr-2 h-4 w-4' />
+                          {t("myMods.tabs.needsRepair")}
+                          <span className='ml-2 text-muted-foreground text-xs'>
+                            ({needsRepairCount})
+                          </span>
+                        </TabsTrigger>
+                      )}
+                      <TabsTrigger value={ModFilter.DISABLED}>
+                        <Download className='mr-2 h-4 w-4' />
+                        {t("myMods.tabs.downloaded")}
+                        <span className='ml-2 text-muted-foreground text-xs'>
+                          ({disabledModsCount})
+                        </span>
+                      </TabsTrigger>
+                    </TabsList>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setViewMode(ViewMode.GRID)}
+                          size='icon'
+                          variant={
+                            viewMode === ViewMode.GRID ? "default" : "outline"
+                          }
+                          icon={<LayoutGrid className='h-4 w-4' />}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>{t("mods.gridView")}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setViewMode(ViewMode.LIST)}
+                          size='icon'
+                          variant={
+                            viewMode === ViewMode.LIST ? "default" : "outline"
+                          }
+                          icon={<LayoutList className='h-4 w-4' />}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>{t("mods.listView")}</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
+
+                <VpkScanAlert
+                  unmatchedVpkCount={unmatchedVpkCount}
+                  unmatchedVpks={unmatchedVpks}
+                  isRefetching={isVpkScanRefetching}
+                  refetch={refetchVpkScan}
+                  activeProfileFolder={activeProfileFolder}
+                />
+
+                {totalPages > 1 && (
+                  <ModsPagination
+                    className='mb-4'
+                    onPageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                  />
+                )}
+
+                {displayMods.length === 0 && (
+                  <Empty className='py-12'>
+                    <EmptyHeader>
+                      <EmptyMedia variant='default'>
+                        <MagnifyingGlass className='h-16 w-16' />
+                      </EmptyMedia>
+                      <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
+                      <EmptyDescription>
+                        {t("mods.noModsMatchFilters")}
+                      </EmptyDescription>
+                      <EmptyDescription className='text-xs'>
+                        {t("mods.emptyClearFilters")}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
+
+                {displayMods.length > 0 && (
+                  <TabsContent value={ModFilter.ALL}>
+                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                  </TabsContent>
+                )}
+
+                {displayMods.length > 0 && (
+                  <TabsContent value={ModFilter.ENABLED}>
+                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                  </TabsContent>
+                )}
+
+                {displayMods.length > 0 && (
+                  <TabsContent value={ModFilter.NEEDS_REPAIR}>
+                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                  </TabsContent>
+                )}
+
+                {displayMods.length > 0 && (
+                  <TabsContent value={ModFilter.DISABLED}>
+                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                  </TabsContent>
+                )}
+
+                {displayMods.length > 0 && totalPages > 1 && (
+                  <ModsPagination
+                    className='mt-6 pb-4'
+                    onPageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                  />
+                )}
               </div>
-
-              {totalPages > 1 && (
-                <ModsPagination
-                  className='mb-4'
-                  onPageChange={handlePageChange}
-                  page={page}
-                  totalPages={totalPages}
-                />
-              )}
-
-              {displayMods.length === 0 && (
-                <Empty className='py-12'>
-                  <EmptyHeader>
-                    <EmptyMedia variant='default'>
-                      <MagnifyingGlass className='h-16 w-16' />
-                    </EmptyMedia>
-                    <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
-                    <EmptyDescription>
-                      {t("mods.noModsMatchFilters")}
-                    </EmptyDescription>
-                    <EmptyDescription className='text-xs'>
-                      {t("mods.emptyClearFilters")}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-
-              {displayMods.length > 0 && (
-                <TabsContent value={ModFilter.ALL}>
-                  <ModsList mods={visibleMods} viewMode={viewMode} />
-                </TabsContent>
-              )}
-
-              {displayMods.length > 0 && (
-                <TabsContent value={ModFilter.ENABLED}>
-                  <ModsList mods={visibleMods} viewMode={viewMode} />
-                </TabsContent>
-              )}
-
-              {displayMods.length > 0 && (
-                <TabsContent value={ModFilter.NEEDS_REPAIR}>
-                  <ModsList mods={visibleMods} viewMode={viewMode} />
-                </TabsContent>
-              )}
-
-              {displayMods.length > 0 && (
-                <TabsContent value={ModFilter.DISABLED}>
-                  <ModsList mods={visibleMods} viewMode={viewMode} />
-                </TabsContent>
-              )}
-
-              {displayMods.length > 0 && totalPages > 1 && (
-                <ModsPagination
-                  className='mt-6 pb-4'
-                  onPageChange={handlePageChange}
-                  page={page}
-                  totalPages={totalPages}
-                />
-              )}
-            </div>
-          )}
-        </Tabs>
-        <BatchUpdateDialog
-          open={showBatchUpdateDialog}
-          onOpenChange={setShowBatchUpdateDialog}
-          updates={updatableMods}
-        />
-        <ModOrderingDialog
-          open={showModOrdering}
-          onOpenChange={setShowModOrdering}
-        />
-        {analysisProgress && (
-          <AnalysisProgressToast
-            progress={analysisProgress}
-            isVisible={showProgressToast}
-            onDismiss={dismissProgressToast}
+            )}
+          </Tabs>
+          <BatchUpdateDialog
+            open={showBatchUpdateDialog}
+            onOpenChange={setShowBatchUpdateDialog}
+            updates={updatableMods}
           />
-        )}
-        <AnalysisResultsDialog
-          open={analysisDialogOpen}
-          onOpenChange={setAnalysisDialogOpen}
-          result={analysisResult}
-        />
-      </ErrorBoundary>
+          <ModOrderingDialog
+            open={showModOrdering}
+            onOpenChange={setShowModOrdering}
+          />
+          {analysisProgress && (
+            <AnalysisProgressToast
+              progress={analysisProgress}
+              isVisible={showProgressToast}
+              onDismiss={dismissProgressToast}
+            />
+          )}
+          <AnalysisResultsDialog
+            open={analysisDialogOpen}
+            onOpenChange={setAnalysisDialogOpen}
+            result={analysisResult}
+          />
+        </ErrorBoundary>
+      </div>
     </div>
   );
 };
