@@ -13,33 +13,37 @@ export type FavoritesState = {
 export const favoritesDeepMergeKeys =
   [] as const satisfies readonly (keyof FavoritesState)[];
 
-export const createFavoritesSlice: StateCreator<State, [], [], FavoritesState> =
-  (set, get) => ({
-    favorites: [],
+export const createFavoritesSlice: StateCreator<
+  State,
+  [],
+  [],
+  FavoritesState
+> = (set, get) => ({
+  favorites: [],
 
-    toggleFavorite: (remoteId) =>
-      set((state) => {
-        const isFav = state.favorites.includes(remoteId);
-        return {
-          favorites: isFav
-            ? state.favorites.filter((id) => id !== remoteId)
-            : [...state.favorites, remoteId],
-        };
-      }),
+  toggleFavorite: (remoteId) =>
+    set((state) => {
+      const isFav = state.favorites.includes(remoteId);
+      return {
+        favorites: isFav
+          ? state.favorites.filter((id) => id !== remoteId)
+          : [...state.favorites, remoteId],
+      };
+    }),
 
-    addFavorite: (remoteId) =>
-      set((state) =>
-        state.favorites.includes(remoteId)
-          ? state
-          : { favorites: [...state.favorites, remoteId] },
-      ),
+  addFavorite: (remoteId) =>
+    set((state) =>
+      state.favorites.includes(remoteId)
+        ? state
+        : { favorites: [...state.favorites, remoteId] },
+    ),
 
-    removeFavorite: (remoteId) =>
-      set((state) => ({
-        favorites: state.favorites.filter((id) => id !== remoteId),
-      })),
+  removeFavorite: (remoteId) =>
+    set((state) => ({
+      favorites: state.favorites.filter((id) => id !== remoteId),
+    })),
 
-    isFavorite: (remoteId) => get().favorites.includes(remoteId),
+  isFavorite: (remoteId) => get().favorites.includes(remoteId),
 
-    clearFavorites: () => set({ favorites: [] }),
-  });
+  clearFavorites: () => set({ favorites: [] }),
+});
