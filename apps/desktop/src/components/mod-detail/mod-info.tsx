@@ -1,16 +1,31 @@
-import type { ModDto } from "@deadlock-mods/shared";
+import { DeadlockHeroes, type ModDto } from "@deadlock-mods/shared";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
 import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@deadlock-mods/ui/components/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@deadlock-mods/ui/components/popover";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
   Tooltip,
@@ -20,16 +35,25 @@ import {
 import {
   Calendar,
   CalendarPlus,
+  Check,
   Download,
   Heart,
   Package,
+  RotateCcw,
+  Settings,
   Tag,
   User,
 } from "@deadlock-mods/ui/icons";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHero } from "@/hooks/use-hero";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import {
+  type ResolvedModHero,
+  resolveModHero,
+} from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import { DateDisplay } from "../date-display";
 
 interface ModInfoProps {
@@ -52,10 +76,11 @@ export const ModInfo = ({
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
 
-  const heroLabel = localMod?.detectedHero ?? null;
+  const resolvedHero = resolveModHero(mod, localMod);
+  const showHeroStat = resolvedHero.hero !== null || localMod !== undefined;
   const hasTags = mod.tags && mod.tags.length > 0;
   const hasFileInfo = activeArchiveNames.size > 0 && totalDownloads > 1;
-  const statCount = (heroLabel ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
+  const statCount = (showHeroStat ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
   const gridCols =
     statCount <= 3
       ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -77,7 +102,13 @@ export const ModInfo = ({
       <CardContent className={hasHero || mod.isAudio ? "" : "pt-6"}>
         <div className='space-y-5'>
           <div className={gridCols}>
-            {heroLabel && <HeroDisplay name={heroLabel} />}
+            {showHeroStat && (
+              <HeroDisplay
+                mod={mod}
+                resolvedHero={resolvedHero}
+                canOverride={localMod !== undefined}
+              />
+            )}
             <PrimaryStat
               icon={<User className='h-4 w-4' />}
               label={t("modDetail.authorLabel")}
@@ -173,18 +204,44 @@ export const ModInfo = ({
 };
 
 interface HeroDisplayProps {
-  name: string;
+  mod: ModDto;
+  resolvedHero: ResolvedModHero;
+  canOverride: boolean;
 }
 
-const HeroDisplay = ({ name }: HeroDisplayProps) => {
+const HERO_OVERRIDE_OPTIONS = Object.values(DeadlockHeroes).sort((a, b) =>
+  a.localeCompare(b),
+);
+const GENERAL_OTHER_HERO_LABEL = "General/Other";
+
+const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
   const { t } = useTranslation();
-  const { data: hero } = useHero(name);
+  const [open, setOpen] = useState(false);
+  const setHeroOverride = usePersistedStore((state) => state.setHeroOverride);
+  const name = resolvedHero.hero ?? GENERAL_OTHER_HERO_LABEL;
+  const { data: hero } = useHero(resolvedHero.hero ?? "");
   const imageSrc =
     hero?.images.icon_hero_card_webp ??
     hero?.images.icon_hero_card ??
     hero?.images.icon_image_small_webp ??
     hero?.images.icon_image_small;
   const initial = name.charAt(0).toUpperCase();
+  const sourceLabel = {
+    api: t("modDetail.heroSource.api", { defaultValue: "API" }),
+    manual: t("modDetail.heroSource.manual", { defaultValue: "Manual" }),
+    name: t("modDetail.heroSource.name", { defaultValue: "Name" }),
+    none: t("modDetail.heroSource.none", { defaultValue: "Unset" }),
+    vpk: t("modDetail.heroSource.vpk", { defaultValue: "VPK" }),
+  }[resolvedHero.source];
+  const selectedValue =
+    resolvedHero.hasOverride && resolvedHero.hero === null
+      ? null
+      : resolvedHero.hero;
+
+  const handleOverride = (heroOverride: string | null | undefined) => {
+    setHeroOverride(mod.remoteId, heroOverride);
+    setOpen(false);
+  };
 
   return (
     <div className='group flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60'>
@@ -196,10 +253,84 @@ const HeroDisplay = ({ name }: HeroDisplayProps) => {
         <span className='text-muted-foreground text-xs uppercase tracking-wide'>
           {t("modDetail.detectedHero")}
         </span>
-        <span className='truncate font-medium text-foreground text-sm'>
-          {name}
+        <span className='flex min-w-0 items-center gap-1.5'>
+          <span className='truncate font-medium text-foreground text-sm'>
+            {name}
+          </span>
+          <span className='shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground leading-none'>
+            {sourceLabel}
+          </span>
         </span>
       </div>
+      {canOverride && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  aria-label={t("modDetail.changeHero", {
+                    defaultValue: "Change hero",
+                  })}
+                  className='ml-auto h-7 w-7 shrink-0 opacity-80 group-hover:opacity-100'
+                  size='icon'
+                  variant='ghost'>
+                  <Settings className='h-3.5 w-3.5' />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("modDetail.changeHero", { defaultValue: "Change hero" })}
+            </TooltipContent>
+          </Tooltip>
+          <PopoverContent align='start' className='w-[260px] p-0'>
+            <Command>
+              <CommandInput placeholder={t("filters.searchHeroes")} />
+              <CommandList>
+                <CommandEmpty>{t("filters.noHeroesFound")}</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem onSelect={() => handleOverride(undefined)}>
+                    <RotateCcw className='mr-2 h-4 w-4 flex-shrink-0' />
+                    <span>
+                      {t("modDetail.heroOverrideAutomatic", {
+                        defaultValue: "Use automatic",
+                      })}
+                    </span>
+                  </CommandItem>
+                  <CommandItem onSelect={() => handleOverride(null)}>
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 flex-shrink-0",
+                        resolvedHero.hasOverride && selectedValue === null
+                          ? "opacity-100"
+                          : "opacity-0",
+                      )}
+                    />
+                    <span>{GENERAL_OTHER_HERO_LABEL}</span>
+                  </CommandItem>
+                </CommandGroup>
+                <CommandSeparator />
+                <CommandGroup>
+                  {HERO_OVERRIDE_OPTIONS.map((heroName) => (
+                    <CommandItem
+                      key={heroName}
+                      onSelect={() => handleOverride(heroName)}>
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4 flex-shrink-0",
+                          resolvedHero.hasOverride && selectedValue === heroName
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      <span className='truncate'>{heroName}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 };

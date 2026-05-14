@@ -144,7 +144,7 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
       for (const resp of responses) {
         setDetectedHero(
           resp.modId,
-          resp.result.hero ?? null,
+          resp.result.heroDisplay ?? resp.result.hero ?? null,
           resp.result.usesCriticalPaths,
         );
       }
@@ -166,7 +166,7 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
           });
           setDetectedHero(
             mod.remoteId,
-            result.hero ?? null,
+            result.heroDisplay ?? result.hero ?? null,
             result.usesCriticalPaths,
           );
         } catch {

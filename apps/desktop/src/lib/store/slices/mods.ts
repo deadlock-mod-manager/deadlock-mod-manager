@@ -73,6 +73,10 @@ export type ModsState = {
     hero: string | null,
     usesCriticalPaths?: boolean,
   ) => void;
+  setHeroOverride: (
+    remoteId: string,
+    heroOverride: string | null | undefined,
+  ) => void;
   clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
 };
@@ -528,25 +532,90 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     hero: string | null,
     usesCriticalPaths?: boolean,
   ) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) =>
-        mod.remoteId === remoteId
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? {
+                ...mod,
+                detectedHero: hero,
+                usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+              }
+            : mod,
+        );
+
+      const activeProfile = state.profiles[state.activeProfileId];
+
+      return {
+        localMods: updateMods(state.localMods),
+        profiles: activeProfile
           ? {
-              ...mod,
-              detectedHero: hero,
-              usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+              ...state.profiles,
+              [state.activeProfileId]: {
+                ...activeProfile,
+                mods: updateMods(activeProfile.mods),
+              },
             }
-          : mod,
-      ),
-    })),
+          : state.profiles,
+      };
+    }),
+
+  setHeroOverride: (remoteId, heroOverride) =>
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => {
+          if (mod.remoteId !== remoteId) return mod;
+
+          if (heroOverride === undefined) {
+            const { heroOverride: _heroOverride, ...nextMod } = mod;
+            return nextMod;
+          }
+
+          return {
+            ...mod,
+            heroOverride,
+          };
+        });
+
+      const updatedProfiles = Object.fromEntries(
+        Object.entries(state.profiles).map(([profileId, profile]) => [
+          profileId,
+          {
+            ...profile,
+            mods: updateMods(profile.mods),
+          },
+        ]),
+      );
+
+      return {
+        localMods: updateMods(state.localMods),
+        profiles: updatedProfiles,
+      };
+    }),
 
   clearAllDetectedHeroes: () =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        detectedHero: undefined,
-      })),
-    })),
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => ({
+          ...mod,
+          detectedHero: undefined,
+        }));
+
+      const updatedProfiles = Object.fromEntries(
+        Object.entries(state.profiles).map(([profileId, profile]) => [
+          profileId,
+          {
+            ...profile,
+            mods: updateMods(profile.mods),
+          },
+        ]),
+      );
+
+      return {
+        localMods: updateMods(state.localMods),
+        profiles: updatedProfiles,
+      };
+    }),
 
   setHeroDetection: (progress) =>
     set((state) => ({

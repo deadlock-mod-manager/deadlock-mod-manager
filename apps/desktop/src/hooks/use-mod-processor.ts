@@ -311,7 +311,11 @@ export const useModProcessor = () => {
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>
-        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+        setDetectedHero(
+          modId,
+          result.heroDisplay ?? result.hero ?? null,
+          result.usesCriticalPaths,
+        ),
       )
       .catch(() => setDetectedHero(modId, null));
 
@@ -416,7 +420,11 @@ export const useModProcessor = () => {
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>
-        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+        setDetectedHero(
+          modId,
+          result.heroDisplay ?? result.hero ?? null,
+          result.usesCriticalPaths,
+        ),
       )
       .catch(() => setDetectedHero(modId, null));
 

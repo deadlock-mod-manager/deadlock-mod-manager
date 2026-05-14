@@ -61,7 +61,7 @@ export const useDownload = (
           .then((result) => {
             setDetectedHero(
               mod.remoteId,
-              result.hero ?? null,
+              result.heroDisplay ?? result.hero ?? null,
               result.usesCriticalPaths,
             );
           })
