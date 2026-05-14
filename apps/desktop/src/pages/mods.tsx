@@ -449,6 +449,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
+        showFavoritesButton={!mapsOnly}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
       {filteredResults.length === 0 ? (

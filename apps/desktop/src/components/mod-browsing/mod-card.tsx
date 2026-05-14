@@ -24,6 +24,7 @@ import {
   isUpdatedRecently,
 } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import FavoriteButton from "./favorite-button";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
 
@@ -95,6 +96,7 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
           </div>
         )}
         <div className='absolute top-2 right-2 flex flex-col gap-1 items-end'>
+          {!readOnly && <FavoriteButton remoteId={mod.remoteId} />}
           {status === ModStatus.Installed && (
             <Badge>{t("modStatus.installed")}</Badge>
           )}

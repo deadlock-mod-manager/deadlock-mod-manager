@@ -309,6 +309,14 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       state.heroParserIntervalSeconds ??= 30;
     },
   },
+  {
+    to: 20,
+    label: "add-mod-favorites",
+    apply: (state) => {
+      if (Array.isArray(state.favorites)) return;
+      state.favorites = [];
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(
