@@ -21,6 +21,7 @@ interface BrokenModButtonProps {
   localMod: LocalMod | undefined;
   hasUpdate: boolean;
   onTriggerUpdate: () => void;
+  variant?: "default" | "hero";
 }
 
 export const BrokenModButton = ({
@@ -28,6 +29,7 @@ export const BrokenModButton = ({
   localMod,
   hasUpdate,
   onTriggerUpdate,
+  variant = "default",
 }: BrokenModButtonProps) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -48,7 +50,14 @@ export const BrokenModButton = ({
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant='outline' onClick={handleClick}>
+          <Button
+            variant={variant === "hero" ? "ghost" : "outline"}
+            onClick={handleClick}
+            className={
+              variant === "hero"
+                ? "rounded-full border border-white/15 bg-black/40 text-white shadow-lg backdrop-blur-md hover:bg-black/60 hover:text-white"
+                : undefined
+            }>
             <HeartBreakIcon className='size-5' />
             <span>{total}</span>
           </Button>

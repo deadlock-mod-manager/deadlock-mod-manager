@@ -13,11 +13,16 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import {
   Calendar,
   CalendarPlus,
   Download,
-  Hash,
   Heart,
+  Package,
   Tag,
   User,
 } from "@deadlock-mods/ui/icons";
@@ -30,11 +35,16 @@ import { DateDisplay } from "../date-display";
 interface ModInfoProps {
   mod: ModDto;
   hasHero?: boolean;
+  activeVariant?: string | null;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
 
-export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
+export const ModInfo = ({
+  mod,
+  hasHero = false,
+  activeVariant,
+}: ModInfoProps) => {
   const { t } = useTranslation();
   const showHeader = hasHero ? false : !mod.isAudio;
   const localMods = usePersistedStore((state) => state.localMods);
@@ -42,6 +52,13 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
 
   const heroLabel = localMod?.detectedHero ?? null;
   const hasTags = mod.tags && mod.tags.length > 0;
+  const statCount = (heroLabel ? 1 : 0) + 3 + (activeVariant ? 1 : 0);
+  const gridCols =
+    statCount <= 3
+      ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
+      : statCount === 4
+        ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5";
 
   return (
     <>
@@ -56,12 +73,7 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
 
       <CardContent className={hasHero || mod.isAudio ? "" : "pt-6"}>
         <div className='space-y-5'>
-          <div
-            className={
-              heroLabel
-                ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                : "grid grid-cols-1 gap-3 sm:grid-cols-3"
-            }>
+          <div className={gridCols}>
             {heroLabel && <HeroDisplay name={heroLabel} />}
             <PrimaryStat
               icon={<User className='h-4 w-4' />}
@@ -86,57 +98,60 @@ export const ModInfo = ({ mod, hasHero = false }: ModInfoProps) => {
                 </span>
               }
             />
+            {activeVariant && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <PrimaryStat
+                      icon={<Package className='h-4 w-4' />}
+                      label={t("modOptions.installedVariant")}
+                      value={
+                        <span className='truncate font-mono text-xs'>
+                          {activeVariant}
+                        </span>
+                      }
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{activeVariant}</TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           <Separator />
 
-          <div className='flex flex-wrap items-center gap-x-5 gap-y-2 text-sm'>
+          <div className='grid auto-cols-fr grid-flow-col gap-3'>
             <TimelineItem
               icon={<CalendarPlus className='h-3.5 w-3.5' />}
               label={t("modDetail.publishedAt")}
               date={mod.remoteAddedAt}
             />
-            <Separator className='hidden h-4 sm:block' orientation='vertical' />
             <TimelineItem
               icon={<Calendar className='h-3.5 w-3.5' />}
               label={t("modDetail.lastModifiedAt")}
               date={mod.remoteUpdatedAt}
             />
             {localMod?.downloadedAt != null && (
-              <>
-                <Separator
-                  className='hidden h-4 sm:block'
-                  orientation='vertical'
-                />
-                <TimelineItem
-                  icon={<Download className='h-3.5 w-3.5' />}
-                  label={t("modDetail.installedAt")}
-                  date={localMod.downloadedAt}
-                />
-              </>
+              <TimelineItem
+                icon={<Download className='h-3.5 w-3.5' />}
+                label={t("modDetail.installedAt")}
+                date={localMod.downloadedAt}
+              />
             )}
           </div>
 
           {hasTags && <Separator />}
 
-          <div className='flex flex-wrap items-center justify-between gap-3'>
-            {hasTags && (
-              <div className='flex flex-wrap items-center gap-2'>
-                <Tag className='h-4 w-4 text-muted-foreground' />
-                {mod.tags?.map((tag) => (
-                  <Badge key={tag} variant='secondary'>
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-              <Hash className='h-3 w-3' />
-              <span className='font-mono tabular-nums'>
-                {t("modDetail.idLabel")}: {mod.remoteId}
-              </span>
+          {hasTags && (
+            <div className='flex flex-wrap items-center gap-2'>
+              <Tag className='h-4 w-4 text-muted-foreground' />
+              {mod.tags?.map((tag) => (
+                <Badge key={tag} variant='secondary'>
+                  {tag}
+                </Badge>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </>
@@ -208,12 +223,14 @@ const TimelineItem = ({ icon, label, date }: TimelineItemProps) => {
     return null;
   }
   return (
-    <div className='flex items-center gap-2 text-muted-foreground'>
-      <span className='text-muted-foreground/70'>{icon}</span>
-      <span className='font-medium text-foreground/80 text-xs uppercase tracking-wide'>
-        {label}
-      </span>
-      <DateDisplay className='text-foreground text-sm' date={date} />
+    <div className='flex items-center gap-2.5 rounded-lg border border-border/30 bg-muted/20 px-3 py-2 text-sm'>
+      <span className='text-muted-foreground/60'>{icon}</span>
+      <div className='flex min-w-0 flex-col gap-0.5'>
+        <span className='text-muted-foreground/70 text-[11px] uppercase tracking-wider'>
+          {label}
+        </span>
+        <DateDisplay className='text-foreground/80 text-xs' date={date} />
+      </div>
     </div>
   );
 };

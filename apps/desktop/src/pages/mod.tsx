@@ -240,8 +240,24 @@ const Mod = () => {
           )}
 
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
-            <ModHero mod={mod} shouldBlur={shouldBlur} />
-            <ModInfo hasHero={hasHero} mod={mod} />
+            <ModHero
+              mod={mod}
+              shouldBlur={shouldBlur}
+              actions={
+                <BrokenModButton
+                  mod={mod}
+                  localMod={localMod}
+                  hasUpdate={hasUpdate}
+                  onTriggerUpdate={() => setUpdateDialogOpen(true)}
+                  variant='hero'
+                />
+              }
+            />
+            <ModInfo
+              hasHero={hasHero}
+              mod={mod}
+              activeVariant={modOptions.activeArchiveName}
+            />
             {mod.metadata?.donationLinks &&
               mod.metadata.donationLinks.length > 0 && (
                 <SupportAuthor
@@ -249,32 +265,22 @@ const Mod = () => {
                   isInstalled={isInstalled}
                 />
               )}
-            <CardFooter className='z-20 flex flex-row items-start justify-between bg-card'>
-              <div className='flex flex-col gap-2'>
-                {mod.remoteUrl && (
-                  <Button
-                    className='px-0'
-                    onClick={async () => {
-                      try {
-                        await openUrl(mod.remoteUrl);
-                      } catch (_error) {
-                        toast.error(t("notifications.failedToOpenForumPost"));
-                      }
-                    }}
-                    variant='link'>
-                    {t("modDetail.viewOriginalPost")}
-                  </Button>
-                )}
-              </div>
-
+            <CardFooter className='z-20 flex items-center justify-between gap-2 border-t border-border/40 bg-card px-6 py-3'>
+              {mod.remoteUrl && (
+                <Button
+                  className='px-0'
+                  onClick={async () => {
+                    try {
+                      await openUrl(mod.remoteUrl);
+                    } catch (_error) {
+                      toast.error(t("notifications.failedToOpenForumPost"));
+                    }
+                  }}
+                  variant='link'>
+                  {t("modDetail.viewOriginalPost")}
+                </Button>
+              )}
               <div className='flex items-center gap-2'>
-                <BrokenModButton
-                  mod={mod}
-                  localMod={localMod}
-                  hasUpdate={hasUpdate}
-                  onTriggerUpdate={() => setUpdateDialogOpen(true)}
-                />
-                <ModButton remoteMod={mod} variant='default' />
                 {modOptions.showButton && (
                   <Button
                     icon={<ArrowLeftRight className='h-4 w-4' />}
@@ -288,7 +294,7 @@ const Mod = () => {
                   <Button
                     icon={<RefreshCw className='h-4 w-4' />}
                     onClick={() => setUpdateDialogOpen(true)}
-                    size='lg'
+                    size='default'
                     variant='default'>
                     {t("modDetail.updateMod")}
                   </Button>
@@ -297,17 +303,18 @@ const Mod = () => {
                   <Button
                     icon={<RefreshCw className='h-4 w-4' />}
                     onClick={forceUpdate}
-                    size='lg'
+                    size='default'
                     variant='outline'>
                     {t("modDetail.forceUpdate")}
                   </Button>
                 )}
+                <ModButton remoteMod={mod} variant='default' />
                 {!!localMod?.status && (
                   <Button
                     icon={<Trash className='h-4 w-4' />}
                     isLoading={deleting}
                     onClick={deleteMod}
-                    size='lg'
+                    size='default'
                     variant='destructive'>
                     Delete Mod
                   </Button>
@@ -373,7 +380,9 @@ const Mod = () => {
             onApply={modOptions.apply}
             onCancel={modOptions.close}
             modName={mod.name}
-            uninstalledDownloads={modOptions.uninstalledDownloads}
+            switchableDownloads={modOptions.switchableDownloads}
+            onDiskArchiveNames={modOptions.onDiskArchiveNames}
+            activeArchiveName={modOptions.activeArchiveName}
           />
         )}
       </div>

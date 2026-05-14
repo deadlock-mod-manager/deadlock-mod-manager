@@ -413,7 +413,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               }
               onClick={onClick}
               ref={ref}
-              size={variant === "iconOnly" ? "icon" : "lg"}
+              size={variant === "iconOnly" ? "icon" : "default"}
               title={text}
               variant={buttonVariant}>
               {variant === "iconOnly" ? null : text}

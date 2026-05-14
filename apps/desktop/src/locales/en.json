@@ -1792,9 +1792,9 @@
     "goBackHome": "Go back home",
     "idLabel": "ID",
     "authorLabel": "Author",
-    "publishedAt": "Published At",
-    "lastModifiedAt": "Last Modified At",
-    "installedAt": "Installed At",
+    "publishedAt": "Published",
+    "lastModifiedAt": "Last Modified",
+    "installedAt": "Installed",
     "downloadsLabel": "Downloads",
     "likesLabel": "Likes",
     "modStatusLabel": "Status",
@@ -1950,7 +1950,8 @@
     "needsDownload": "needs download",
     "fetchMissingNoSource": "Cannot fetch missing variants: archive source URLs are unknown",
     "fetchMissingUnresolved": "Some selected variants cannot be located: {{names}}",
-    "fetchMissingNotFound": "Some variants were not found in their source archives: {{names}}"
+    "fetchMissingNotFound": "Some variants were not found in their source archives: {{names}}",
+    "installedVariant": "Installed variant:"
   },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",

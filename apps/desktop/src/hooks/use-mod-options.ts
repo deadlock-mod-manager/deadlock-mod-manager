@@ -192,6 +192,9 @@ export const useModOptions = (mod: LocalMod | null) => {
   const setSelectedDownloads = usePersistedStore(
     (state) => state.setSelectedDownloads,
   );
+  const setActiveVariantArchive = usePersistedStore(
+    (state) => state.setActiveVariantArchive,
+  );
 
   const profileFolder = getActiveProfile()?.folderName ?? null;
   const installedVpks = mod?.installedVpks ?? [];
@@ -201,11 +204,19 @@ export const useModOptions = (mod: LocalMod | null) => {
   const selectedDownloadNames = new Set(
     (mod?.selectedDownloads ?? []).map((d) => d.name),
   );
-  const uninstalledDownloads = downloads.filter(
-    (d) => !selectedDownloadNames.has(d.name),
-  );
+
+  const activeArchiveName = useMemo(() => {
+    if (mod?.activeVariantArchive) return mod.activeVariantArchive;
+    if (mod?.selectedDownloads?.length === 1)
+      return mod.selectedDownloads[0].name;
+    return null;
+  }, [mod?.activeVariantArchive, mod?.selectedDownloads]);
+
+  const switchableDownloads = activeArchiveName
+    ? downloads.filter((d) => d.name !== activeArchiveName)
+    : downloads;
   const hasDownloadVariants =
-    mod?.status === ModStatus.Installed && uninstalledDownloads.length > 0;
+    mod?.status === ModStatus.Installed && switchableDownloads.length > 0;
 
   const optionsQuery = useQuery<ModFileTree>({
     queryKey: [
@@ -236,6 +247,7 @@ export const useModOptions = (mod: LocalMod | null) => {
   const hasVpkVariants = unionFileTree.files.length > 1;
   const showButton =
     mod?.status === ModStatus.Installed &&
+    downloads.length > 1 &&
     (hasVpkVariants || hasDownloadVariants);
 
   const applyMutation = useMutation<
@@ -328,11 +340,22 @@ export const useModOptions = (mod: LocalMod | null) => {
       );
       setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
       if (selectedArchives.length > 0) {
-        const updatedSelected = [
-          ...(mod.selectedDownloads ?? []),
-          ...selectedArchives,
-        ];
-        setSelectedDownloads(mod.remoteId, updatedSelected);
+        const lastArchive = selectedArchives[selectedArchives.length - 1];
+        setActiveVariantArchive(mod.remoteId, lastArchive.name);
+
+        const existingNames = new Set(
+          (mod.selectedDownloads ?? []).map((d) => d.name),
+        );
+        const newArchives = selectedArchives.filter(
+          (a) => !existingNames.has(a.name),
+        );
+        if (newArchives.length > 0) {
+          const updatedSelected = [
+            ...(mod.selectedDownloads ?? []),
+            ...newArchives,
+          ];
+          setSelectedDownloads(mod.remoteId, updatedSelected);
+        }
       }
       toast.success(t("modOptions.applySuccess"));
       setIsOpen(false);
@@ -367,6 +390,8 @@ export const useModOptions = (mod: LocalMod | null) => {
     isLoading: optionsQuery.isLoading,
     isSaving: applyMutation.isPending,
     showButton,
-    uninstalledDownloads,
+    switchableDownloads,
+    onDiskArchiveNames: selectedDownloadNames,
+    activeArchiveName,
   };
 };
