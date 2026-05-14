@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedStore } from "@/lib/store";
 
 type DeepLinkDebugInfo = {
@@ -100,7 +101,8 @@ const DeepLinkDebug = () => {
 
 const Debug = () => {
   const { t } = useTranslation();
-  const { clearMods } = usePersistedStore();
+  const { clearMods, setHasCompletedOnboarding } = usePersistedStore();
+  const { showOnboarding } = useOnboarding();
   const confirm = useConfirm();
 
   const clearModsState = async () => {
@@ -122,6 +124,12 @@ const Debug = () => {
           <Button onClick={clearModsState} variant='destructive'>
             <TrashIcon className='h-4 w-4 mr-2' />
             {t("debug.clearModsState")}
+          </Button>
+          <Button
+            onClick={() => setHasCompletedOnboarding(false)}
+            variant='outline'
+            disabled={showOnboarding}>
+            {t("debug.triggerOnboarding")}
           </Button>
         </div>
       </div>

@@ -57,53 +57,65 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
   const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-5'>
       <div>
-        <h3 className='text-lg font-semibold'>{t("onboarding.api.title")}</h3>
-        <p className='text-sm text-muted-foreground mt-2'>
+        <h3 className='font-["Forevs_Demo"] text-lg tracking-wide'>
+          {t("onboarding.api.title")}
+        </h3>
+        <p className='mt-2 text-sm text-muted-foreground'>
           {t("onboarding.api.description")}
         </p>
       </div>
 
-      <div className='space-y-4'>
+      <div className='space-y-3'>
         {checkState === "checking" && (
-          <div className='flex items-center gap-3 p-4 border rounded-lg bg-muted/50'>
-            <PlugsConnectedIcon className='h-5 w-5 animate-pulse' />
+          <div className='flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 p-4'>
+            <div className='relative flex size-8 items-center justify-center'>
+              <div className='onboarding-pulse-ring absolute inset-0 rounded-full border border-primary/50' />
+              <div className='onboarding-pulse-ring-delayed absolute inset-0 rounded-full border border-primary/30' />
+              <PlugsConnectedIcon className='relative size-4 text-primary' />
+            </div>
             <span className='text-sm'>{t("onboarding.api.checking")}</span>
           </div>
         )}
 
         {checkState === "success" && health && (
-          <div className='flex items-start gap-3 p-4 border rounded-lg bg-green-500/10 border-green-500/20'>
-            <CheckCircleIcon className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
-            <div className='flex-1'>
+          <div className='rounded-lg border border-green-500/20 bg-green-500/8 p-4'>
+            <div className='flex items-center gap-2'>
+              <CheckCircleIcon
+                weight='duotone'
+                className='size-5 shrink-0 text-green-500'
+              />
               <p className='text-sm font-medium text-green-500'>
                 {t("onboarding.api.success")}
               </p>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {t("onboarding.api.version")}: {health.version}
-              </p>
             </div>
+            <p className='mt-1 pl-7 text-xs text-muted-foreground'>
+              {t("onboarding.api.version")}: {health.version}
+            </p>
           </div>
         )}
 
         {checkState === "error" && (
           <div className='space-y-3'>
-            <div className='flex items-start gap-3 p-4 border rounded-lg bg-destructive/10 border-destructive/20'>
-              <WarningCircleIcon className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
-              <div className='flex-1'>
+            <div className='rounded-lg border border-destructive/20 bg-destructive/8 p-4'>
+              <div className='flex items-center gap-2'>
+                <WarningCircleIcon
+                  weight='duotone'
+                  className='size-5 shrink-0 text-destructive'
+                />
                 <p className='text-sm font-medium text-destructive'>
                   {t("onboarding.api.error")}
                 </p>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  {t("onboarding.api.errorDescription")}
-                </p>
-                {errorMessage && (
-                  <p className='text-xs text-muted-foreground mt-2 font-mono'>
-                    {errorMessage}
-                  </p>
-                )}
               </div>
+              <p className='mt-1 pl-7 text-xs text-muted-foreground'>
+                {t("onboarding.api.errorDescription")}
+              </p>
+              {errorMessage && (
+                <p className='mt-2 pl-7 font-mono text-xs text-muted-foreground/70'>
+                  {errorMessage}
+                </p>
+              )}
             </div>
             <Button
               variant='default'

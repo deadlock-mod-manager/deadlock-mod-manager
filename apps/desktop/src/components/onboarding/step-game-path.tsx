@@ -76,20 +76,20 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
   }, [gamePath, onComplete, detectGamePath]);
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-5'>
       <div>
-        <h3 className='text-lg font-semibold'>
+        <h3 className='font-["Forevs_Demo"] text-lg tracking-wide'>
           {t("onboarding.gamePath.title")}
         </h3>
-        <p className='text-sm text-muted-foreground mt-2'>
+        <p className='mt-2 text-sm text-muted-foreground'>
           {t("onboarding.gamePath.description")}
         </p>
       </div>
 
-      <div className='space-y-4'>
+      <div className='space-y-3'>
         {detectionState === "detecting" && (
-          <div className='flex items-center gap-3 p-4 border rounded-lg bg-muted/50'>
-            <MagnifyingGlassIcon className='h-5 w-5 animate-pulse' />
+          <div className='flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 p-4'>
+            <MagnifyingGlassIcon className='size-5 animate-pulse text-primary' />
             <span className='text-sm'>
               {t("onboarding.gamePath.detecting")}
             </span>
@@ -98,23 +98,26 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
 
         {detectionState === "success" && (
           <div className='space-y-3'>
-            <div className='flex items-start gap-3 p-4 border rounded-lg bg-green-500/10 border-green-500/20'>
-              <CheckCircleIcon className='h-5 w-5 text-green-500 flex-shrink-0 mt-0.5' />
-              <div className='flex-1 min-w-0'>
+            <div className='rounded-lg border border-green-500/20 bg-green-500/8 p-4'>
+              <div className='flex items-center gap-2'>
+                <CheckCircleIcon
+                  weight='duotone'
+                  className='size-5 shrink-0 text-green-500'
+                />
                 <p className='text-sm font-medium text-green-500'>
                   {t("onboarding.gamePath.success")}
                 </p>
-                <p className='text-xs text-muted-foreground mt-1 break-all'>
-                  {detectedPath}
-                </p>
               </div>
+              <code className='mt-2 block rounded bg-black/20 px-3 py-2 pl-7 font-mono text-xs text-muted-foreground'>
+                {detectedPath}
+              </code>
             </div>
             <Button
               variant='outline'
               size='sm'
               onClick={browseForGamePath}
               className='w-full'>
-              <FolderOpenIcon className='h-4 w-4 mr-2' />
+              <FolderOpenIcon className='size-3.5' />
               {t("onboarding.gamePath.changePath")}
             </Button>
           </div>
@@ -122,16 +125,19 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
 
         {detectionState === "error" && (
           <div className='space-y-3'>
-            <div className='flex items-start gap-3 p-4 border rounded-lg bg-destructive/10 border-destructive/20'>
-              <WarningCircleIcon className='h-5 w-5 text-destructive flex-shrink-0 mt-0.5' />
-              <div className='flex-1'>
+            <div className='rounded-lg border border-destructive/20 bg-destructive/8 p-4'>
+              <div className='flex items-center gap-2'>
+                <WarningCircleIcon
+                  weight='duotone'
+                  className='size-5 shrink-0 text-destructive'
+                />
                 <p className='text-sm font-medium text-destructive'>
                   {t("onboarding.gamePath.error")}
                 </p>
-                <p className='text-xs text-muted-foreground mt-1'>
-                  {t("onboarding.gamePath.errorDescription")}
-                </p>
               </div>
+              <p className='mt-1 pl-7 text-xs text-muted-foreground'>
+                {t("onboarding.gamePath.errorDescription")}
+              </p>
             </div>
             <div className='flex gap-2'>
               <Button
@@ -146,7 +152,7 @@ export const OnboardingStepGamePath = ({ onComplete }: GamePathStepProps) => {
                 size='sm'
                 onClick={browseForGamePath}
                 className='flex-1'>
-                <FolderOpenIcon className='h-4 w-4 mr-2' />
+                <FolderOpenIcon className='size-3.5' />
                 {t("onboarding.gamePath.browse")}
               </Button>
             </div>
