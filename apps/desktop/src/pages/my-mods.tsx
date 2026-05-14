@@ -236,7 +236,9 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
       onApply={modOptions.apply}
       onCancel={modOptions.close}
       modName={mod.name}
-      uninstalledDownloads={modOptions.uninstalledDownloads}
+      switchableDownloads={modOptions.switchableDownloads}
+      onDiskArchiveNames={modOptions.onDiskArchiveNames}
+      activeArchiveName={modOptions.activeArchiveName}
     />
   ) : null;
 
@@ -319,16 +321,16 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             {modOptions.showButton && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
+                  <button
+                    type='button'
                     aria-label={t("modOptions.openTooltip")}
                     onClick={(e) => {
                       e.stopPropagation();
                       modOptions.open();
                     }}
-                    size='icon'
-                    variant='outline'>
-                    <ArrowLeftRight className='h-4 w-4' />
-                  </Button>
+                    className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
+                    <ArrowLeftRight className='h-3.5 w-3.5' />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>{t("modOptions.openTooltip")}</TooltipContent>
               </Tooltip>
@@ -468,16 +470,16 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 {modOptions.showButton && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
+                      <button
+                        type='button'
                         aria-label={t("modOptions.openTooltip")}
                         onClick={(e) => {
                           e.stopPropagation();
                           modOptions.open();
                         }}
-                        size='icon'
-                        variant='outline'>
-                        <ArrowLeftRight className='h-4 w-4' />
-                      </Button>
+                        className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
+                        <ArrowLeftRight className='h-3.5 w-3.5' />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent>
                       {t("modOptions.openTooltip")}
@@ -516,7 +518,9 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
           onApply={modOptions.apply}
           onCancel={modOptions.close}
           modName={mod.name}
-          uninstalledDownloads={modOptions.uninstalledDownloads}
+          switchableDownloads={modOptions.switchableDownloads}
+          onDiskArchiveNames={modOptions.onDiskArchiveNames}
+          activeArchiveName={modOptions.activeArchiveName}
         />
       )}
     </>

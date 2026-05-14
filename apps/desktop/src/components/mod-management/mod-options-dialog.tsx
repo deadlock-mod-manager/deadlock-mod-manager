@@ -43,7 +43,9 @@ interface ModOptionsDialogProps {
   ) => void;
   onCancel: () => void;
   modName?: string;
-  uninstalledDownloads?: ModDownloadItem[];
+  switchableDownloads?: ModDownloadItem[];
+  onDiskArchiveNames?: Set<string>;
+  activeArchiveName?: string | null;
 }
 
 export const ModOptionsDialog = ({
@@ -56,7 +58,9 @@ export const ModOptionsDialog = ({
   onApply,
   onCancel,
   modName = "Mod",
-  uninstalledDownloads = [],
+  switchableDownloads = [],
+  onDiskArchiveNames = new Set<string>(),
+  activeArchiveName = null,
 }: ModOptionsDialogProps) => {
   const { t } = useTranslation();
   const [localFileTree, setLocalFileTree] = useState<ModFileTree | null>(null);
@@ -88,13 +92,10 @@ export const ModOptionsDialog = ({
 
   const toggleArchive = (name: string) => {
     setSelectedArchiveNames((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
+      if (prev.has(name)) {
+        return new Set<string>();
       }
-      return next;
+      return new Set([name]);
     });
   };
 
@@ -126,23 +127,22 @@ export const ModOptionsDialog = ({
   const vpkChanged = initialSelectedKey !== currentSelectedKey;
   const archivesSelected = selectedArchiveNames.size > 0;
   const hasChanges = vpkChanged || archivesSelected;
-  const canApply =
-    !isSaving &&
-    !isLoading &&
-    hasChanges &&
-    (selectedVpkFiles.length > 0 || archivesSelected);
+  const canApply = !isSaving && !isLoading && hasChanges;
 
   const handleApply = () => {
-    const vpkNames = selectedVpkFiles.map((f) => f.name);
-    const archives = uninstalledDownloads.filter((d) =>
+    const archives = switchableDownloads.filter((d) =>
       selectedArchiveNames.has(d.name),
     );
+    const vpkNames = showVpkSection
+      ? selectedVpkFiles.map((f) => f.name)
+      : (fileTree?.files.filter((f) => f.is_selected).map((f) => f.name) ?? []);
     onApply(vpkNames, archives);
   };
 
   const vpkFiles = localFileTree?.files ?? [];
   const hasVpkItems = vpkFiles.length > 0;
-  const hasArchiveItems = uninstalledDownloads.length > 0;
+  const hasArchiveItems = switchableDownloads.length > 0;
+  const showVpkSection = hasVpkItems && !hasArchiveItems;
   const isEmpty = !hasVpkItems && !hasArchiveItems;
 
   return (
@@ -169,46 +169,65 @@ export const ModOptionsDialog = ({
         ) : (
           <ScrollArea className='max-h-[55vh] overflow-y-auto pr-4'>
             <div className='space-y-1'>
-              {vpkFiles.map((file, index) => (
-                <div
-                  className='flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
-                  key={`vpk-${file.name}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleVpk(index, !file.is_selected);
-                  }}>
-                  <div className='flex items-center gap-3'>
-                    <Checkbox
-                      checked={file.is_selected}
-                      onCheckedChange={(checked) =>
-                        toggleVpk(index, checked === true)
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className='flex items-center gap-2'>
-                      <File className='h-4 w-4 text-muted-foreground' />
-                      <span className='font-mono text-sm'>{file.name}</span>
-                      {file.is_selected && (
-                        <Badge variant='default' className='gap-1 text-xs py-0'>
-                          <Check className='h-3 w-3' />
-                          {t("modOptions.activeVariant")}
-                        </Badge>
-                      )}
-                      {notOnDisk?.has(file.name) && (
-                        <Badge
-                          variant='outline'
-                          className='gap-1 text-xs font-normal'>
-                          <CloudDownload className='h-3 w-3' />
-                          {t("modOptions.needsDownload")}
-                        </Badge>
-                      )}
+              {showVpkSection &&
+                vpkFiles.map((file, index) => (
+                  <div
+                    className='flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
+                    key={`vpk-${file.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleVpk(index, !file.is_selected);
+                    }}>
+                    <div className='flex items-center gap-3'>
+                      <Checkbox
+                        checked={file.is_selected}
+                        onCheckedChange={(checked) =>
+                          toggleVpk(index, checked === true)
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className='flex items-center gap-2'>
+                        <File className='h-4 w-4 text-muted-foreground' />
+                        <span className='font-mono text-sm'>{file.name}</span>
+                        {file.is_selected && (
+                          <Badge
+                            variant='default'
+                            className='gap-1 text-xs py-0'>
+                            <Check className='h-3 w-3' />
+                            {t("modOptions.activeVariant")}
+                          </Badge>
+                        )}
+                        {notOnDisk?.has(file.name) && (
+                          <Badge
+                            variant='outline'
+                            className='gap-1 text-xs font-normal'>
+                            <CloudDownload className='h-3 w-3' />
+                            {t("modOptions.needsDownload")}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {uninstalledDownloads.map((download) => {
+              {activeArchiveName && hasArchiveItems && (
+                <div className='flex w-full items-center rounded-md px-3 py-2.5 text-left bg-muted/30'>
+                  <div className='flex items-center gap-3'>
+                    <Package className='h-4 w-4 text-muted-foreground' />
+                    <span className='font-mono text-sm'>
+                      {activeArchiveName}
+                    </span>
+                    <Badge variant='default' className='gap-1 text-xs py-0'>
+                      <Check className='h-3 w-3' />
+                      {t("modOptions.activeVariant")}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
+              {switchableDownloads.map((download) => {
                 const isChecked = selectedArchiveNames.has(download.name);
+                const isOnDisk = onDiskArchiveNames.has(download.name);
 
                 return (
                   <div
@@ -234,12 +253,14 @@ export const ModOptionsDialog = ({
                           <span className='font-mono text-sm'>
                             {download.name}
                           </span>
-                          <Badge
-                            variant='outline'
-                            className='gap-1 text-xs font-normal'>
-                            <CloudDownload className='h-3 w-3' />
-                            {t("modOptions.needsDownload")}
-                          </Badge>
+                          {!isOnDisk && (
+                            <Badge
+                              variant='outline'
+                              className='gap-1 text-xs font-normal'>
+                              <CloudDownload className='h-3 w-3' />
+                              {t("modOptions.needsDownload")}
+                            </Badge>
+                          )}
                         </div>
                         <div className='flex items-center gap-3 pl-6 text-xs text-muted-foreground'>
                           <span>{formatFileSize(download.size)}</span>
@@ -260,7 +281,8 @@ export const ModOptionsDialog = ({
 
         <DialogFooter className='flex items-center justify-between'>
           <div className='text-muted-foreground text-sm'>
-            {selectedVpkFiles.length > 0 &&
+            {showVpkSection &&
+              selectedVpkFiles.length > 0 &&
               t("modOptions.selectedCount", {
                 selected: selectedVpkFiles.length,
                 total: vpkFiles.length,

@@ -1,6 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import type { ReactNode } from "react";
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Music } from "@deadlock-mods/ui/icons";
+import { Hash, Music } from "@deadlock-mods/ui/icons";
 import { useMemo } from "react";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
@@ -13,9 +14,10 @@ import { usePersistedStore } from "@/lib/store";
 interface ModHeroProps {
   mod: ModDto;
   shouldBlur?: boolean;
+  actions?: ReactNode;
 }
 
-export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
+export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
   const hasImages = mod.images && mod.images.length > 0;
   const localMods = usePersistedStore((state) => state.localMods);
   const localMod = useMemo(
@@ -27,6 +29,13 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
   if (mod.isAudio && mod.audioUrl) {
     return (
       <div className='relative h-64 w-full bg-gradient-to-br from-muted via-secondary to-accent'>
+        <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg backdrop-blur-md'>
+          <Hash className='h-3 w-3' />
+          <span className='tabular-nums'>{mod.remoteId}</span>
+        </div>
+        {actions && (
+          <div className='absolute top-4 right-4 z-20'>{actions}</div>
+        )}
         <div className='absolute inset-0 flex flex-col items-center justify-center'>
           <div className='mb-6 flex flex-col items-center gap-4'>
             <Music className='h-16 w-16 text-primary' />
@@ -66,6 +75,13 @@ export const ModHero = ({ mod, shouldBlur = false }: ModHeroProps) => {
         />
         {!shouldBlur && (
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
+        )}
+        <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg backdrop-blur-md'>
+          <Hash className='h-3 w-3' />
+          <span className='tabular-nums'>{mod.remoteId}</span>
+        </div>
+        {actions && (
+          <div className='absolute top-4 right-4 z-20'>{actions}</div>
         )}
         <div className='absolute bottom-0 left-0 space-y-2 p-6'>
           <h1 className='font-bold text-3xl text-white'>
