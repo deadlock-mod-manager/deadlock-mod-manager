@@ -14,14 +14,10 @@ type AppProviderState = {
 const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
-  const gamePath = usePersistedStore((s) => s.gamePath);
-  const setGamePath = usePersistedStore((s) => s.setGamePath);
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
 
   useEffect(() => {
-    const cleanupStaleServerGameinfo = async () => {
-      // Wait for hydration: getActiveProfile would otherwise return null
-      // and silently downgrade gameinfo.gi to the root addons folder.
+    const waitForHydration = async () => {
       const persist = usePersistedStore.persist;
       if (!persist.hasHydrated()) {
         await new Promise<void>((resolve) => {
@@ -31,6 +27,10 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
           });
         });
       }
+    };
+
+    const cleanupStaleServerGameinfo = async () => {
+      await waitForHydration();
 
       const activeProfile = usePersistedStore.getState().getActiveProfile();
       const reverted = await invoke<boolean>("cleanup_stale_server_gameinfo", {
@@ -43,16 +43,19 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
     };
 
     const resolveGamePath = async () => {
-      if (gamePath) {
+      await waitForHydration();
+
+      const currentGamePath = usePersistedStore.getState().gamePath;
+      if (currentGamePath) {
         try {
-          await invoke<string>("set_game_path", { path: gamePath });
+          await invoke<string>("set_game_path", { path: currentGamePath });
           return;
         } catch {
-          setGamePath("");
+          usePersistedStore.getState().setGamePath("");
         }
       }
       const found = await invoke<string>("find_game_path");
-      setGamePath(found);
+      usePersistedStore.getState().setGamePath(found);
     };
 
     resolveGamePath()
