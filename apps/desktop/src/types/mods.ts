@@ -58,6 +58,7 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
+  heroOverride?: string | null;
   usesCriticalPaths?: boolean;
 }
 

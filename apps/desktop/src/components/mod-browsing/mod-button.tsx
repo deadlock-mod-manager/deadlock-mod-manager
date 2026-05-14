@@ -41,6 +41,7 @@ import {
 } from "@/hooks/use-repair-mods";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
+import { resolveModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -300,17 +301,17 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
-          const detectedHero = localMod.detectedHero;
-          if (detectedHero) {
+          const resolvedHero = resolveModHero(localMod, localMod).hero;
+          if (resolvedHero) {
             const conflictingMod = localMods.find(
               (m) =>
                 m.remoteId !== localMod.remoteId &&
                 m.status === ModStatus.Installed &&
-                m.detectedHero === detectedHero,
+                resolveModHero(m, m).hero === resolvedHero,
             );
             if (conflictingMod) {
               const resolution = await askHeroConflict(
-                detectedHero,
+                resolvedHero,
                 conflictingMod,
                 localMod,
               );

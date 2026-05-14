@@ -6,7 +6,30 @@ import {
   donationLinksFromMethods,
   extractDonationLinksFromDescription,
   extractMapName,
+  heroFromGameBananaProfile,
 } from "./utils";
+
+describe("heroFromGameBananaProfile", () => {
+  it("prefers the GameBanana sub-category when the public category is Skins", () => {
+    const profile = {
+      _sName: "Toon Seven",
+      _aCategory: { _sName: "Seven" },
+      _aSuperCategory: { _sName: "Skins" },
+    } as GameBanana.GameBananaModProfile;
+
+    expect(heroFromGameBananaProfile(profile)).toBe("Seven");
+  });
+
+  it("falls back to mod name aliases when GameBanana does not provide a hero category", () => {
+    const profile = {
+      _sName: "Toon Viktor",
+      _aCategory: { _sName: "Skins" },
+      _aSuperCategory: { _sName: "Skins" },
+    } as GameBanana.GameBananaModProfile;
+
+    expect(heroFromGameBananaProfile(profile)).toBe("Victor");
+  });
+});
 
 describe("extractMapName", () => {
   it("returns undefined for empty description", () => {

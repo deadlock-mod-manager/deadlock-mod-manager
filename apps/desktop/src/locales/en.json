@@ -1839,6 +1839,15 @@
     "likesLabel": "Likes",
     "modStatusLabel": "Status",
     "detectedHero": "Hero",
+    "changeHero": "Change hero",
+    "heroOverrideAutomatic": "Use automatic",
+    "heroSource": {
+      "manual": "Manual",
+      "api": "API",
+      "name": "Name",
+      "vpk": "VPK",
+      "none": "Unset"
+    },
     "viewOriginalPost": "View Post on GameBanana",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",

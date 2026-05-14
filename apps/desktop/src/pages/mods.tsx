@@ -39,6 +39,7 @@ import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api-client";
 import { ModCategory, TimePeriod } from "@/lib/constants";
+import { resolveModHero } from "@/lib/mods/hero-resolution";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getTimePeriodCutoff } from "@/lib/utils";
@@ -178,6 +179,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     showFavoritesOnly = false,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
+  const localMods = usePersistedStore((state) => state.localMods);
   const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
     ? "only"
     : isCustomMapsEnabled
@@ -209,6 +211,10 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     data: deferredData,
     keys: SEARCH_KEYS,
   });
+  const localModsByRemoteId = useMemo(
+    () => new Map(localMods.map((mod) => [mod.remoteId, mod])),
+    [localMods],
+  );
   const filteredResults = useMemo(() => {
     let filtered = results;
 
@@ -232,14 +238,19 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
 
     if (selectedHeroes.length > 0) {
       filtered = filtered.filter((mod) => {
+        const resolvedHero = resolveModHero(
+          mod,
+          localModsByRemoteId.get(mod.remoteId),
+        ).hero;
         let matchesHero = false;
 
         if (selectedHeroes.includes("None")) {
           matchesHero =
-            !mod.hero ||
-            (mod.hero !== null && selectedHeroes.includes(mod.hero));
+            !resolvedHero ||
+            (resolvedHero !== null && selectedHeroes.includes(resolvedHero));
         } else {
-          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
+          matchesHero =
+            resolvedHero !== null && selectedHeroes.includes(resolvedHero);
         }
 
         return filterMode === "include" ? matchesHero : !matchesHero;
@@ -284,6 +295,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     return filtered;
   }, [
     results,
+    localModsByRemoteId,
     selectedCategories,
     selectedHeroes,
     filterMode,

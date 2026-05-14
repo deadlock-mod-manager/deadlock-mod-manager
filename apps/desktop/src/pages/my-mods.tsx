@@ -94,6 +94,7 @@ import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
 import { filterStableLibraryModsByStatus } from "@/lib/mods/library-display";
+import { resolveModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -688,12 +689,14 @@ const MyMods = () => {
 
     if (selectedHeroes.length > 0) {
       filteredMods = filteredMods.filter((mod) => {
+        const resolvedHero = resolveModHero(mod, mod).hero;
         let matchesHero = false;
 
         if (selectedHeroes.includes("None")) {
-          matchesHero = !mod.hero || selectedHeroes.includes(mod.hero);
+          matchesHero = !resolvedHero || selectedHeroes.includes(resolvedHero);
         } else {
-          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
+          matchesHero =
+            resolvedHero !== null && selectedHeroes.includes(resolvedHero);
         }
 
         return filterMode === "include" ? matchesHero : !matchesHero;

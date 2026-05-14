@@ -17,10 +17,13 @@ import {
 import { Check } from "@deadlock-mods/ui/icons";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { resolveModHero } from "@/lib/mods/hero-resolution";
 import { cn } from "@/lib/utils";
 
 type HeroFilterProps = {
-  mods: ModDto[];
+  mods: Array<
+    ModDto & { detectedHero?: string | null; heroOverride?: string | null }
+  >;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
 };
@@ -37,12 +40,15 @@ const HeroFilter = ({
     const heroes = Array.from(
       new Set(
         mods
-          .map((mod) => mod.hero)
+          .map((mod) => resolveModHero(mod, mod).hero)
           .filter((hero): hero is string => Boolean(hero)),
       ),
     ).sort((a, b) => a.localeCompare(b));
     // Add "None" option for mods without specific heroes
-    if (mods.some((mod) => !mod.hero) && !heroes.includes("None")) {
+    if (
+      mods.some((mod) => !resolveModHero(mod, mod).hero) &&
+      !heroes.includes("None")
+    ) {
       heroes.unshift("None");
     }
     return heroes;
