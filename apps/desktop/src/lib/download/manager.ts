@@ -266,7 +266,7 @@ class DownloadManager {
     // Extracting) that the backend doesn't know about is stale from a previous
     // session and should be flagged as failed so the UI doesn't show a phantom
     // queue.
-    const staleStatuses: ModStatus[] = new Set([
+    const staleStatuses = new Set<ModStatus>([
       ModStatus.Downloading,
       ModStatus.Paused,
       ModStatus.Extracting,
