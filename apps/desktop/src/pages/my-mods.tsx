@@ -40,7 +40,6 @@ import {
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import {
-  ArrowLeftRight,
   ArrowUpDown,
   Check,
   ChevronLeft,
@@ -49,6 +48,7 @@ import {
   EllipsisVertical,
   FolderOpen,
   LayoutGrid,
+  Settings,
   LayoutList,
   Loader2,
   PowerOff,
@@ -229,16 +229,13 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
     <ModOptionsDialog
       isOpen={modOptions.isOpen}
       onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
-      fileTree={modOptions.fileTree}
-      notOnDisk={modOptions.notOnDisk}
-      isLoading={modOptions.isLoading}
       isSaving={modOptions.isSaving}
       onApply={modOptions.apply}
       onCancel={modOptions.close}
       modName={mod.name}
-      switchableDownloads={modOptions.switchableDownloads}
+      downloads={modOptions.downloads}
       onDiskArchiveNames={modOptions.onDiskArchiveNames}
-      activeArchiveName={modOptions.activeArchiveName}
+      activeArchiveNames={modOptions.activeArchiveNames}
     />
   ) : null;
 
@@ -329,7 +326,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
                       modOptions.open();
                     }}
                     className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
-                    <ArrowLeftRight className='h-3.5 w-3.5' />
+                    <Settings className='h-3.5 w-3.5' />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>{t("modOptions.openTooltip")}</TooltipContent>
@@ -478,7 +475,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                           modOptions.open();
                         }}
                         className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
-                        <ArrowLeftRight className='h-3.5 w-3.5' />
+                        <Settings className='h-3.5 w-3.5' />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -511,16 +508,13 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
           onOpenChange={(open) =>
             open ? modOptions.open() : modOptions.close()
           }
-          fileTree={modOptions.fileTree}
-          notOnDisk={modOptions.notOnDisk}
-          isLoading={modOptions.isLoading}
           isSaving={modOptions.isSaving}
           onApply={modOptions.apply}
           onCancel={modOptions.close}
           modName={mod.name}
-          switchableDownloads={modOptions.switchableDownloads}
+          downloads={modOptions.downloads}
           onDiskArchiveNames={modOptions.onDiskArchiveNames}
-          activeArchiveName={modOptions.activeArchiveName}
+          activeArchiveNames={modOptions.activeArchiveNames}
         />
       )}
     </>

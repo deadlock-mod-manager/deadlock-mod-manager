@@ -35,7 +35,8 @@ import { DateDisplay } from "../date-display";
 interface ModInfoProps {
   mod: ModDto;
   hasHero?: boolean;
-  activeVariant?: string | null;
+  activeArchiveNames?: Set<string>;
+  totalDownloads?: number;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -43,7 +44,8 @@ const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
 export const ModInfo = ({
   mod,
   hasHero = false,
-  activeVariant,
+  activeArchiveNames = new Set<string>(),
+  totalDownloads = 0,
 }: ModInfoProps) => {
   const { t } = useTranslation();
   const showHeader = hasHero ? false : !mod.isAudio;
@@ -52,7 +54,8 @@ export const ModInfo = ({
 
   const heroLabel = localMod?.detectedHero ?? null;
   const hasTags = mod.tags && mod.tags.length > 0;
-  const statCount = (heroLabel ? 1 : 0) + 3 + (activeVariant ? 1 : 0);
+  const hasFileInfo = activeArchiveNames.size > 0 && totalDownloads > 1;
+  const statCount = (heroLabel ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
   const gridCols =
     statCount <= 3
       ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -98,22 +101,33 @@ export const ModInfo = ({
                 </span>
               }
             />
-            {activeVariant && (
+            {hasFileInfo && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
                     <PrimaryStat
                       icon={<Package className='h-4 w-4' />}
-                      label={t("modOptions.installedVariant")}
+                      label={t("modOptions.installedFiles")}
                       value={
                         <span className='truncate font-mono text-xs'>
-                          {activeVariant}
+                          {t("modOptions.installedFilesCount", {
+                            count: activeArchiveNames.size,
+                            total: totalDownloads,
+                          })}
                         </span>
                       }
                     />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>{activeVariant}</TooltipContent>
+                <TooltipContent className='max-w-sm'>
+                  <ul className='list-none space-y-0.5'>
+                    {[...activeArchiveNames].map((name) => (
+                      <li key={name} className='font-mono text-xs'>
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </TooltipContent>
               </Tooltip>
             )}
           </div>

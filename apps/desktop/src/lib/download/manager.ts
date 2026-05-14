@@ -166,12 +166,22 @@ class DownloadManager {
             (m) => m.remoteId === event.payload.modId,
           );
           if (localMod) {
-            // Store file tree in mod - we'll use it during installation
             store.setInstalledVpks(
               event.payload.modId,
               localMod.installedVpks || [],
               event.payload.fileTree,
             );
+
+            const archiveNames = new Set<string>();
+            for (const f of event.payload.fileTree.files) {
+              if (f.archive_name) archiveNames.add(f.archive_name);
+            }
+            if (archiveNames.size > 0) {
+              store.setActiveVariantArchive(
+                event.payload.modId,
+                [...archiveNames].join(","),
+              );
+            }
           }
         }
       },

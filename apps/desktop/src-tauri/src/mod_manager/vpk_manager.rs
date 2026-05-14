@@ -514,7 +514,22 @@ impl VpkManager {
       let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
 
-      if let Err(e) = fs::rename(&old_path, &new_path) {
+      if new_path.exists() {
+        log::info!(
+          "Prefixed destination already exists (newly staged variant), removing old active VPK: {vpk_name}"
+        );
+        if let Err(e) = fs::remove_file(&old_path) {
+          log::error!(
+            "Failed to remove old active VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
+            count = renamed.len()
+          );
+          return Err(Self::rollback_vpk_renames_on_failure(
+            addons_path,
+            renamed,
+            e,
+          ));
+        }
+      } else if let Err(e) = fs::rename(&old_path, &new_path) {
         log::error!(
           "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()

@@ -1940,20 +1940,21 @@
     }
   },
   "modOptions": {
-    "title": "Switch Variants: {{modName}}",
-    "description": "Choose which variant to use for this mod. Changes take effect immediately.",
-    "openTooltip": "Switch variants",
+    "title": "Manage Files: {{modName}}",
+    "description": "Select which files to use for this mod. Changes take effect immediately.",
+    "openTooltip": "Manage files",
     "apply": "Apply",
-    "applySuccess": "Mod variants updated",
-    "applyError": "Failed to update mod variants",
-    "noOptions": "This mod has no other variants.",
+    "applySuccess": "Mod files updated",
+    "applyError": "Failed to update mod files",
+    "noOptions": "This mod has no other files.",
     "selectedCount": "{{selected}} of {{total}} selected",
-    "activeVariant": "Active",
+    "enabled": "Enabled",
     "needsDownload": "needs download",
-    "fetchMissingNoSource": "Cannot fetch missing variants: archive source URLs are unknown",
-    "fetchMissingUnresolved": "Some selected variants cannot be located: {{names}}",
-    "fetchMissingNotFound": "Some variants were not found in their source archives: {{names}}",
-    "installedVariant": "Installed variant:"
+    "fetchMissingNoSource": "Cannot fetch missing files: archive source URLs are unknown",
+    "fetchMissingUnresolved": "Some selected files cannot be located: {{names}}",
+    "fetchMissingNotFound": "Some files were not found in their source archives: {{names}}",
+    "installedFiles": "Installed files:",
+    "installedFilesCount": "{{count}} of {{total}} files enabled"
   },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",

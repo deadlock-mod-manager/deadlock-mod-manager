@@ -431,6 +431,7 @@ impl DownloadManager {
     let stash_dir = task.target_dir.join("fonts");
     let mut found_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
     let mut seen_font_files = HashSet::new();
+    let mut vpk_archive_map: HashMap<String, String> = HashMap::new();
 
     let emit_fonts_found = |font_infos: &[crate::mod_manager::FontInfo]| {
       if font_infos.is_empty() {
@@ -629,7 +630,12 @@ impl DownloadManager {
             "Mod has single VPK file, copying directly for mod: {}",
             task.mod_id
           );
-          vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let prefix = format!("{}_", task.mod_id);
+          for vpk_name in &copied {
+            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            vpk_archive_map.insert(original, archive_name.clone());
+          }
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
         Err(e) => {
@@ -638,7 +644,12 @@ impl DownloadManager {
             task.mod_id,
             e
           );
-          vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let prefix = format!("{}_", task.mod_id);
+          for vpk_name in &copied {
+            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            vpk_archive_map.insert(original, archive_name.clone());
+          }
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
       }
@@ -659,12 +670,16 @@ impl DownloadManager {
             let size = std::fs::metadata(destination_path.join(vpk_name))
               .map(|m| m.len())
               .unwrap_or(0);
+            let archive = vpk_archive_map
+              .get(&original_name)
+              .cloned()
+              .unwrap_or_default();
             crate::mod_manager::file_tree::ModFile {
               name: original_name.clone(),
               path: original_name,
               size,
               is_selected: true,
-              archive_name: String::new(),
+              archive_name: archive,
             }
           })
           .collect();
