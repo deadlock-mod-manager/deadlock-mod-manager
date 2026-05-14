@@ -3,9 +3,9 @@ import {
   ValidationError,
 } from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -42,8 +42,9 @@ interface FetchMissingModVariantsResult {
 }
 
 interface ApplyUnifiedPayload {
-  selectedVpkNames: string[];
   selectedArchives: ModDownloadItem[];
+  deselectedArchives: ModDownloadItem[];
+  allCheckedArchiveNames: string[];
 }
 
 const deriveCurrentOriginalNames = (mod: LocalMod): string[] => {
@@ -52,53 +53,6 @@ const deriveCurrentOriginalNames = (mod: LocalMod): string[] => {
   }
   const selected = mod.installedFileTree.files.filter((f) => f.is_selected);
   return selected.map((f) => f.name);
-};
-
-const buildUnionFileTree = (
-  onDiskOptions: ModFileTree | null,
-  archiveTree: ModFileTree | undefined,
-): { fileTree: ModFileTree; notOnDisk: Set<string> } => {
-  const onDiskByName = new Map<string, ModFile>();
-  for (const f of onDiskOptions?.files ?? []) {
-    onDiskByName.set(f.name, f);
-  }
-
-  const archiveByName = new Map<string, ModFile>();
-  for (const f of archiveTree?.files ?? []) {
-    if (!archiveByName.has(f.name)) {
-      archiveByName.set(f.name, f);
-    }
-  }
-
-  const merged: ModFile[] = [];
-  const seen = new Set<string>();
-
-  for (const f of onDiskOptions?.files ?? []) {
-    merged.push(f);
-    seen.add(f.name);
-  }
-
-  for (const f of archiveByName.values()) {
-    if (seen.has(f.name)) continue;
-    merged.push({ ...f, is_selected: false });
-    seen.add(f.name);
-  }
-
-  merged.sort((a, b) => a.name.localeCompare(b.name));
-
-  const notOnDisk = new Set<string>();
-  for (const f of merged) {
-    if (!onDiskByName.has(f.name)) notOnDisk.add(f.name);
-  }
-
-  return {
-    fileTree: {
-      files: merged,
-      total_files: merged.length,
-      has_multiple_files: merged.length > 1,
-    },
-    notOnDisk,
-  };
 };
 
 const mergeFileTreeAfterSwap = (
@@ -112,11 +66,18 @@ const mergeFileTreeAfterSwap = (
   const selectedNames = new Set(
     swapResult.files.filter((f) => f.is_selected).map((f) => f.name),
   );
+  const swapArchiveByName = new Map<string, string>();
+  for (const f of swapResult.files) {
+    if (f.archive_name) {
+      swapArchiveByName.set(f.name, f.archive_name);
+    }
+  }
   const knownNames = new Set(previous.files.map((f) => f.name));
 
   const merged: ModFile[] = previous.files.map((f) => ({
     ...f,
     is_selected: selectedNames.has(f.name),
+    archive_name: swapArchiveByName.get(f.name) ?? f.archive_name,
   }));
 
   for (const f of swapResult.files) {
@@ -184,6 +145,15 @@ const groupMissingByArchive = (
   return Array.from(grouped.values());
 };
 
+const deriveOriginalsForArchive = (
+  mod: LocalMod,
+  archiveName: string,
+): string[] => {
+  return (mod.installedFileTree?.files ?? [])
+    .filter((f) => f.archive_name === archiveName)
+    .map((f) => f.name);
+};
+
 export const useModOptions = (mod: LocalMod | null) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -201,66 +171,54 @@ export const useModOptions = (mod: LocalMod | null) => {
   const currentOriginalNames = mod ? deriveCurrentOriginalNames(mod) : [];
 
   const downloads = mod?.downloads ?? [];
-  const selectedDownloadNames = new Set(
-    (mod?.selectedDownloads ?? []).map((d) => d.name),
+  const onDiskArchiveNames = useMemo(
+    () => new Set((mod?.selectedDownloads ?? []).map((d) => d.name)),
+    [mod?.selectedDownloads],
   );
 
-  const activeArchiveName = useMemo(() => {
-    if (mod?.activeVariantArchive) return mod.activeVariantArchive;
-    if (mod?.selectedDownloads?.length === 1)
-      return mod.selectedDownloads[0].name;
-    return null;
-  }, [mod?.activeVariantArchive, mod?.selectedDownloads]);
-
-  const switchableDownloads = activeArchiveName
-    ? downloads.filter((d) => d.name !== activeArchiveName)
-    : downloads;
-  const hasDownloadVariants =
-    mod?.status === ModStatus.Installed && switchableDownloads.length > 0;
-
-  const optionsQuery = useQuery<ModFileTree>({
-    queryKey: [
-      "mod-options",
-      mod?.remoteId,
-      profileFolder,
-      installedVpks.join("|"),
-    ],
-    enabled: !!mod && isOpen,
-    queryFn: async () => {
-      if (!mod) {
-        throw new ValidationError("No mod selected");
+  const activeArchiveNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const f of mod?.installedFileTree?.files ?? []) {
+      if (f.is_selected && f.archive_name) names.add(f.archive_name);
+    }
+    if (names.size === 0 && mod?.activeVariantArchive) {
+      for (const part of mod.activeVariantArchive.split(",")) {
+        if (part) names.add(part);
       }
-      return await invoke<ModFileTree>("get_mod_available_options", {
-        modId: mod.remoteId,
-        profileFolder,
-        currentInstalledVpks: installedVpks,
-        currentOriginalNames,
-      });
-    },
-  });
+    }
+    if (
+      names.size === 0 &&
+      mod?.selectedDownloads &&
+      mod.selectedDownloads.length > 0
+    ) {
+      for (const d of mod.selectedDownloads) {
+        names.add(d.name);
+      }
+    }
+    return names;
+  }, [
+    mod?.installedFileTree,
+    mod?.activeVariantArchive,
+    mod?.selectedDownloads,
+  ]);
 
-  const { fileTree: unionFileTree, notOnDisk } = useMemo(
-    () => buildUnionFileTree(optionsQuery.data ?? null, mod?.installedFileTree),
-    [optionsQuery.data, mod?.installedFileTree],
-  );
-
-  const hasVpkVariants = unionFileTree.files.length > 1;
   const showButton =
-    mod?.status === ModStatus.Installed &&
-    downloads.length > 1 &&
-    (hasVpkVariants || hasDownloadVariants);
+    mod?.status === ModStatus.Installed && downloads.length > 1;
+
+  const stagedOriginalsMapRef = useRef(new Map<string, string>());
 
   const applyMutation = useMutation<
     SwapModOptionsResult,
     Error,
     ApplyUnifiedPayload
   >({
-    mutationFn: async ({ selectedVpkNames, selectedArchives }) => {
+    mutationFn: async ({ selectedArchives, deselectedArchives }) => {
       if (!mod) {
         throw new ValidationError("No mod selected");
       }
 
-      let combinedSelection = [...selectedVpkNames];
+      stagedOriginalsMapRef.current.clear();
+      let combinedSelection = [...currentOriginalNames];
 
       if (selectedArchives.length > 0) {
         logger
@@ -280,18 +238,41 @@ export const useModOptions = (mod: LocalMod | null) => {
               archiveName: archive.name,
             },
           );
+          for (const original of result.staged_originals) {
+            stagedOriginalsMapRef.current.set(original, archive.name);
+          }
           combinedSelection.push(...result.staged_originals);
         }
       }
 
+      if (deselectedArchives.length > 0) {
+        const originalsToRemove = new Set<string>();
+        const stagedNames = new Set(stagedOriginalsMapRef.current.keys());
+        for (const archive of deselectedArchives) {
+          for (const name of deriveOriginalsForArchive(mod, archive.name)) {
+            if (!stagedNames.has(name)) {
+              originalsToRemove.add(name);
+            }
+          }
+        }
+        combinedSelection = combinedSelection.filter(
+          (n) => !originalsToRemove.has(n),
+        );
+      }
+
       combinedSelection = [...new Set(combinedSelection)];
 
-      const missingOriginals = combinedSelection.filter((n) =>
-        notOnDisk.has(n),
-      );
+      const notOnDiskNames = new Set<string>();
+      const onDiskByName = new Map<string, boolean>();
+      for (const f of mod.installedFileTree?.files ?? []) {
+        onDiskByName.set(f.name, true);
+      }
+      for (const n of combinedSelection) {
+        if (!onDiskByName.has(n)) notOnDiskNames.add(n);
+      }
 
-      if (missingOriginals.length > 0) {
-        const archives = groupMissingByArchive(missingOriginals, mod);
+      if (notOnDiskNames.size > 0) {
+        const archives = groupMissingByArchive([...notOnDiskNames], mod);
 
         if (archives.length > 0) {
           const fetchResult = await invoke<FetchMissingModVariantsResult>(
@@ -322,7 +303,7 @@ export const useModOptions = (mod: LocalMod | null) => {
           newCount: combinedSelection.length,
           stagedArchives: selectedArchives.length,
         })
-        .info("Applying unified variant selection");
+        .info("Applying unified file selection");
 
       return await invoke<SwapModOptionsResult>("swap_mod_options", {
         modId: mod.remoteId,
@@ -332,17 +313,26 @@ export const useModOptions = (mod: LocalMod | null) => {
         selectedOriginalNames: combinedSelection,
       });
     },
-    onSuccess: (result, { selectedArchives }) => {
+    onSuccess: (result, { selectedArchives, allCheckedArchiveNames }) => {
       if (!mod) return;
+
       const mergedTree = mergeFileTreeAfterSwap(
         mod.installedFileTree,
         result.file_tree,
       );
-      setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
-      if (selectedArchives.length > 0) {
-        const lastArchive = selectedArchives[selectedArchives.length - 1];
-        setActiveVariantArchive(mod.remoteId, lastArchive.name);
 
+      for (const f of mergedTree.files) {
+        const archiveName = stagedOriginalsMapRef.current.get(f.name);
+        if (archiveName) f.archive_name = archiveName;
+      }
+
+      setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
+
+      if (allCheckedArchiveNames.length > 0) {
+        setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
+      }
+
+      if (selectedArchives.length > 0) {
         const existingNames = new Set(
           (mod.selectedDownloads ?? []).map((d) => d.name),
         );
@@ -363,7 +353,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     onError: (error) => {
       logger
         .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to apply variant change");
+        .error("Failed to apply file selection change");
       const message =
         error instanceof Error ? error.message : t("modOptions.applyError");
       toast.error(message);
@@ -374,10 +364,15 @@ export const useModOptions = (mod: LocalMod | null) => {
   const close = () => setIsOpen(false);
 
   const apply = (
-    selectedVpkNames: string[],
     selectedArchives: ModDownloadItem[],
+    deselectedArchives: ModDownloadItem[],
+    allCheckedArchiveNames: string[],
   ) => {
-    applyMutation.mutate({ selectedVpkNames, selectedArchives });
+    applyMutation.mutate({
+      selectedArchives,
+      deselectedArchives,
+      allCheckedArchiveNames,
+    });
   };
 
   return {
@@ -385,13 +380,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     open,
     close,
     apply,
-    fileTree: unionFileTree.files.length > 0 ? unionFileTree : null,
-    notOnDisk,
-    isLoading: optionsQuery.isLoading,
     isSaving: applyMutation.isPending,
     showButton,
-    switchableDownloads,
-    onDiskArchiveNames: selectedDownloadNames,
-    activeArchiveName,
+    downloads,
+    onDiskArchiveNames,
+    activeArchiveNames,
   };
 };

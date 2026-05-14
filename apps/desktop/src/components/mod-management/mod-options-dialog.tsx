@@ -11,17 +11,16 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
-  ArrowLeftRight,
   Check,
   CloudDownload,
-  File,
   Package,
+  Settings,
   X,
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import type { ModDownloadItem, ModFileTree } from "@/types/mods";
+import type { ModDownloadItem } from "@/types/mods";
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
@@ -34,117 +33,77 @@ const formatFileSize = (bytes: number): string => {
 interface ModOptionsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  fileTree: ModFileTree | null;
-  notOnDisk?: Set<string>;
-  isLoading?: boolean;
   isSaving?: boolean;
   onApply: (
-    selectedVpkNames: string[],
     selectedArchives: ModDownloadItem[],
+    deselectedArchives: ModDownloadItem[],
+    allCheckedArchiveNames: string[],
   ) => void;
   onCancel: () => void;
   modName?: string;
-  switchableDownloads?: ModDownloadItem[];
+  downloads?: ModDownloadItem[];
   onDiskArchiveNames?: Set<string>;
-  activeArchiveName?: string | null;
+  activeArchiveNames?: Set<string>;
 }
 
 export const ModOptionsDialog = ({
   isOpen,
   onOpenChange,
-  fileTree,
-  notOnDisk,
-  isLoading = false,
   isSaving = false,
   onApply,
   onCancel,
   modName = "Mod",
-  switchableDownloads = [],
+  downloads = [],
   onDiskArchiveNames = new Set<string>(),
-  activeArchiveName = null,
+  activeArchiveNames = new Set<string>(),
 }: ModOptionsDialogProps) => {
   const { t } = useTranslation();
-  const [localFileTree, setLocalFileTree] = useState<ModFileTree | null>(null);
-  const [selectedArchiveNames, setSelectedArchiveNames] = useState<Set<string>>(
-    new Set(),
-  );
+  const [checkedNames, setCheckedNames] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (fileTree && isOpen) {
-      setLocalFileTree(fileTree);
+    if (isOpen) {
+      setCheckedNames(new Set(activeArchiveNames));
     }
-  }, [fileTree, isOpen]);
+  }, [isOpen, activeArchiveNames]);
 
   useEffect(() => {
     if (!isOpen) {
-      setLocalFileTree(null);
-      setSelectedArchiveNames(new Set());
+      setCheckedNames(new Set());
     }
   }, [isOpen]);
 
-  const toggleVpk = (index: number, checked: boolean) => {
-    setLocalFileTree((prev) => {
-      if (!prev) return null;
-      const newFiles = [...prev.files];
-      newFiles[index] = { ...newFiles[index], is_selected: checked };
-      return { ...prev, files: newFiles };
-    });
-  };
-
   const toggleArchive = (name: string) => {
-    setSelectedArchiveNames((prev) => {
-      if (prev.has(name)) {
-        return new Set<string>();
-      }
-      return new Set([name]);
+    setCheckedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
     });
   };
 
-  const selectedVpkFiles = useMemo(
-    () => localFileTree?.files.filter((f) => f.is_selected) ?? [],
-    [localFileTree],
+  const initialKey = useMemo(
+    () => [...activeArchiveNames].sort().join("|"),
+    [activeArchiveNames],
+  );
+  const currentKey = useMemo(
+    () => [...checkedNames].sort().join("|"),
+    [checkedNames],
   );
 
-  const initialSelectedKey = useMemo(
-    () =>
-      fileTree
-        ? fileTree.files
-            .filter((f) => f.is_selected)
-            .map((f) => f.name)
-            .sort()
-            .join("|")
-        : "",
-    [fileTree],
-  );
-  const currentSelectedKey = useMemo(
-    () =>
-      selectedVpkFiles
-        .map((f) => f.name)
-        .sort()
-        .join("|"),
-    [selectedVpkFiles],
-  );
-
-  const vpkChanged = initialSelectedKey !== currentSelectedKey;
-  const archivesSelected = selectedArchiveNames.size > 0;
-  const hasChanges = vpkChanged || archivesSelected;
-  const canApply = !isSaving && !isLoading && hasChanges;
+  const hasChanges = initialKey !== currentKey;
+  const canApply = !isSaving && hasChanges && checkedNames.size > 0;
 
   const handleApply = () => {
-    const archives = switchableDownloads.filter((d) =>
-      selectedArchiveNames.has(d.name),
+    const newlySelected = downloads.filter(
+      (d) => checkedNames.has(d.name) && !activeArchiveNames.has(d.name),
     );
-    const vpkNames = showVpkSection
-      ? selectedVpkFiles.map((f) => f.name)
-      : (fileTree?.files.filter((f) => f.is_selected).map((f) => f.name) ?? []);
-    onApply(vpkNames, archives);
+    const newlyDeselected = downloads.filter(
+      (d) => !checkedNames.has(d.name) && activeArchiveNames.has(d.name),
+    );
+    onApply(newlySelected, newlyDeselected, [...checkedNames]);
   };
 
-  const vpkFiles = localFileTree?.files ?? [];
-  const hasVpkItems = vpkFiles.length > 0;
-  const hasArchiveItems = switchableDownloads.length > 0;
-  const showVpkSection = hasVpkItems && !hasArchiveItems;
-  const isEmpty = !hasVpkItems && !hasArchiveItems;
+  const checkedCount = checkedNames.size;
 
   return (
     <Dialog onOpenChange={onOpenChange} open={isOpen}>
@@ -153,82 +112,23 @@ export const ModOptionsDialog = ({
         onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
-            <ArrowLeftRight className='h-5 w-5' />
+            <Settings className='h-5 w-5' />
             {t("modOptions.title", { modName })}
           </DialogTitle>
           <DialogDescription>{t("modOptions.description")}</DialogDescription>
         </DialogHeader>
 
-        {isLoading && !hasArchiveItems ? (
-          <div className='py-8 text-center text-muted-foreground text-sm'>
-            {t("common.loading")}
-          </div>
-        ) : isEmpty && !isLoading ? (
+        {downloads.length === 0 ? (
           <div className='py-8 text-center text-muted-foreground text-sm'>
             {t("modOptions.noOptions")}
           </div>
         ) : (
           <ScrollArea className='max-h-[55vh] overflow-y-auto pr-4'>
             <div className='space-y-1'>
-              {showVpkSection &&
-                vpkFiles.map((file, index) => (
-                  <div
-                    className='flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
-                    key={`vpk-${file.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleVpk(index, !file.is_selected);
-                    }}>
-                    <div className='flex items-center gap-3'>
-                      <Checkbox
-                        checked={file.is_selected}
-                        onCheckedChange={(checked) =>
-                          toggleVpk(index, checked === true)
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className='flex items-center gap-2'>
-                        <File className='h-4 w-4 text-muted-foreground' />
-                        <span className='font-mono text-sm'>{file.name}</span>
-                        {file.is_selected && (
-                          <Badge
-                            variant='default'
-                            className='gap-1 text-xs py-0'>
-                            <Check className='h-3 w-3' />
-                            {t("modOptions.activeVariant")}
-                          </Badge>
-                        )}
-                        {notOnDisk?.has(file.name) && (
-                          <Badge
-                            variant='outline'
-                            className='gap-1 text-xs font-normal'>
-                            <CloudDownload className='h-3 w-3' />
-                            {t("modOptions.needsDownload")}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-              {activeArchiveName && hasArchiveItems && (
-                <div className='flex w-full items-center rounded-md px-3 py-2.5 text-left bg-muted/30'>
-                  <div className='flex items-center gap-3'>
-                    <Package className='h-4 w-4 text-muted-foreground' />
-                    <span className='font-mono text-sm'>
-                      {activeArchiveName}
-                    </span>
-                    <Badge variant='default' className='gap-1 text-xs py-0'>
-                      <Check className='h-3 w-3' />
-                      {t("modOptions.activeVariant")}
-                    </Badge>
-                  </div>
-                </div>
-              )}
-
-              {switchableDownloads.map((download) => {
-                const isChecked = selectedArchiveNames.has(download.name);
+              {downloads.map((download) => {
+                const isChecked = checkedNames.has(download.name);
                 const isOnDisk = onDiskArchiveNames.has(download.name);
+                const isEnabled = activeArchiveNames.has(download.name);
 
                 return (
                   <div
@@ -254,6 +154,14 @@ export const ModOptionsDialog = ({
                           <span className='font-mono text-sm'>
                             {download.name}
                           </span>
+                          {isEnabled && (
+                            <Badge
+                              variant='default'
+                              className='gap-1 text-xs py-0'>
+                              <Check className='h-3 w-3' />
+                              {t("modOptions.enabled")}
+                            </Badge>
+                          )}
                           {!isOnDisk && (
                             <Badge
                               variant='outline'
@@ -282,12 +190,10 @@ export const ModOptionsDialog = ({
 
         <DialogFooter className='flex items-center justify-between'>
           <div className='text-muted-foreground text-sm'>
-            {showVpkSection &&
-              selectedVpkFiles.length > 0 &&
-              t("modOptions.selectedCount", {
-                selected: selectedVpkFiles.length,
-                total: vpkFiles.length,
-              })}
+            {t("modOptions.selectedCount", {
+              selected: checkedCount,
+              total: downloads.length,
+            })}
           </div>
           <div className='space-x-2'>
             <Button

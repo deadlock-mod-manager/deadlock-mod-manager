@@ -2,12 +2,7 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import {
-  ArrowLeft,
-  ArrowLeftRight,
-  RefreshCw,
-  Trash,
-} from "@deadlock-mods/ui/icons";
+import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -256,7 +251,8 @@ const Mod = () => {
             <ModInfo
               hasHero={hasHero}
               mod={mod}
-              activeVariant={modOptions.activeArchiveName}
+              activeArchiveNames={modOptions.activeArchiveNames}
+              totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&
               mod.metadata.donationLinks.length > 0 && (
@@ -283,7 +279,7 @@ const Mod = () => {
               <div className='flex items-center gap-2'>
                 {modOptions.showButton && (
                   <Button
-                    icon={<ArrowLeftRight className='h-4 w-4' />}
+                    icon={<Settings className='h-4 w-4' />}
                     onClick={modOptions.open}
                     size='default'
                     variant='outline'>
@@ -373,16 +369,13 @@ const Mod = () => {
             onOpenChange={(open) =>
               open ? modOptions.open() : modOptions.close()
             }
-            fileTree={modOptions.fileTree}
-            notOnDisk={modOptions.notOnDisk}
-            isLoading={modOptions.isLoading}
             isSaving={modOptions.isSaving}
             onApply={modOptions.apply}
             onCancel={modOptions.close}
             modName={mod.name}
-            switchableDownloads={modOptions.switchableDownloads}
+            downloads={modOptions.downloads}
             onDiskArchiveNames={modOptions.onDiskArchiveNames}
-            activeArchiveName={modOptions.activeArchiveName}
+            activeArchiveNames={modOptions.activeArchiveNames}
           />
         )}
       </div>
