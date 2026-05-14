@@ -2,19 +2,47 @@ import { describe, expect, it } from "bun:test";
 import { filterStableLibraryModsByStatus } from "./library-display";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
+type LocalModOverrides = Partial<
+  Omit<LocalMod, "id" | "remoteId" | "name" | "author" | "status">
+>;
+
 const mod = (
   remoteId: string,
   status: ModStatus,
-  extra: Partial<LocalMod> = {},
-): LocalMod =>
-  ({
-    id: remoteId,
-    remoteId,
-    name: remoteId,
-    author: "Test Author",
-    status,
-    ...extra,
-  }) as LocalMod;
+  extra: LocalModOverrides = {},
+): LocalMod => ({
+  id: remoteId,
+  remoteId,
+  name: remoteId,
+  description: null,
+  remoteUrl: `https://example.test/mods/${remoteId}`,
+  category: "Characters",
+  likes: 0,
+  author: "Test Author",
+  downloadable: true,
+  remoteAddedAt: new Date("2026-01-01"),
+  remoteUpdatedAt: new Date("2026-01-01"),
+  tags: [],
+  images: [],
+  hero: null,
+  isAudio: false,
+  isMap: false,
+  audioUrl: null,
+  downloadCount: 0,
+  isNSFW: false,
+  isObsolete: false,
+  isBlacklisted: false,
+  blacklistReason: null,
+  blacklistedAt: null,
+  blacklistedBy: null,
+  filesUpdatedAt: null,
+  metadata: null,
+  overrides: null,
+  createdAt: new Date("2026-01-01"),
+  updatedAt: new Date("2026-01-01"),
+  status,
+  ...extra,
+});
 
 const ids = (mods: LocalMod[]) => mods.map((item) => item.remoteId);
 
