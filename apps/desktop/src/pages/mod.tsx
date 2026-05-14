@@ -20,6 +20,7 @@ import { ModInfo } from "@/components/mod-detail/mod-info";
 import { MapHowToPlay } from "@/components/mod-detail/map-how-to-play";
 import { SupportAuthor } from "@/components/mod-detail/support-author";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
+import { ModPageSkeleton } from "@/components/mod-detail/mod-page-skeleton";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
@@ -196,7 +197,11 @@ const Mod = () => {
   }
 
   if (isLoading || !mod) {
-    return null;
+    return (
+      <ErrorBoundary>
+        <ModPageSkeleton />
+      </ErrorBoundary>
+    );
   }
 
   return (
