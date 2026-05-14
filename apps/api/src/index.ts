@@ -66,6 +66,19 @@ app.use("*", async (c, next) => {
 
 app.use("*", requestLogger);
 
+if (env.NODE_ENV === "development") {
+  app.use("*", async (c, next) => {
+    const simulatedStatus = c.req.query("__status");
+    if (simulatedStatus) {
+      const status = Number.parseInt(simulatedStatus, 10);
+      if (status >= 400 && status <= 599) {
+        return c.json({ error: `Simulated ${status} error` }, status);
+      }
+    }
+    await next();
+  });
+}
+
 app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
 
