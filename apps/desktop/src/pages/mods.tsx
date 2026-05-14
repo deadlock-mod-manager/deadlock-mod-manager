@@ -426,7 +426,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   );
 
   return (
-    <div className='flex h-full min-h-0 flex-col gap-4'>
+    <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
         mods={deferredData}
@@ -561,7 +561,7 @@ const GetMods = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='w-full px-4'>
+    <div className='flex h-full min-h-0 w-full flex-col px-4'>
       <PageTitle
         className='mb-8'
         subtitle={t("mods.subtitle")}
@@ -580,7 +580,7 @@ export const GetMaps = () => {
   const { t } = useTranslation();
 
   return (
-    <div className='w-full px-4'>
+    <div className='flex h-full min-h-0 w-full flex-col px-4'>
       <PageTitle
         className='mb-4'
         subtitle={t("mods.mapsSubtitle")}

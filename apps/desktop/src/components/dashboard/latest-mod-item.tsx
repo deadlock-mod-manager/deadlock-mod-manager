@@ -4,9 +4,10 @@ import { CalendarIcon } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
+import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 
 interface LatestModItemProps {
   mod: ModDto;
@@ -80,9 +81,11 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
             {mod.isAudio && (
               <Badge className='text-[10px] py-0 px-1'>{t("mods.audio")}</Badge>
             )}
-            {mod.isNSFW && (
-              <Badge className='text-[10px] py-0 px-1'>NSFW</Badge>
-            )}
+            {shouldShowNsfwBadgeAlongsideBlurPreview({
+              disableBlur: nsfwSettings.disableBlur,
+              isNSFW: mod.isNSFW,
+              shouldBlur,
+            }) && <NSFWBadge className='px-1 py-0 text-[10px]' />}
             <div className='flex items-center gap-1 text-muted-foreground text-xs'>
               <CalendarIcon className='h-3 w-3' />
               <span>

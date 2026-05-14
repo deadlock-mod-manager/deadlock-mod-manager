@@ -38,12 +38,12 @@ export enum ModCategory {
 }
 
 export const MOD_CATEGORY_ORDER = [
-  ModCategory.MAPS,
   ModCategory.SKINS,
   ModCategory.GAMEPLAY_MODIFICATIONS,
   ModCategory.HUD,
   ModCategory.MODEL_REPLACEMENT,
   ModCategory.MUSIC,
+  ModCategory.MAPS,
   ModCategory.ABILITY_SOUNDS,
   ModCategory.WEAPON_SOUNDS,
   ModCategory.VOICE_LINES,

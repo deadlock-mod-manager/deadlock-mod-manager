@@ -525,10 +525,13 @@
     "openModsFolder": "Mod klasörünü aç",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Tüm modları sil",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Tüm modları silmek istendiginzine emin misiniz? Bu işlem geri alınamaz.",
     "allModsCleared": "Tüm modlar silinemedi",
     "failedToClearMods": "Fehler beim Löschen der Mods",
@@ -724,6 +727,10 @@
     "needHelp": "Yardım?",
     "documentation": "",
     "viewDocs": ""
+  },
+  "branding": {
+    "nightlyBuild": "Nightly",
+    "fullBuildVersion": "Tam sürüm: {{version}}"
   },
   "about": {
     "title": "Bilgi",
@@ -1642,6 +1649,7 @@
     "title": "",
     "description": "Geliştirme ve sorun giderme için debug araçları ve yardımcı programları.",
     "clearModsState": "Modlar Durumunu Temizle",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Modlar durumunu temizlemek istediğinizden emin misiniz? Bu, tüm modları uygulamadan kaldıracak ancak oyun klasörünüzden SİLMEYECEKTİR. Modları geri yüklemek için mod klasörünüzü yeniden tarayabilirsiniz.",
     "modsStateCleared": "Modlar durumu başarıyla temizlendi"
   },

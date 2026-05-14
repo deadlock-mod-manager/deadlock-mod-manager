@@ -1,9 +1,9 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   ArrowRightIcon,
+  ArrowsClockwiseIcon,
   DownloadIcon,
   PackageIcon,
-  StackIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -31,10 +31,7 @@ export const QuickStatsStrip = () => {
     (m) => m.status === ModStatus.Installed,
   ).length;
   const downloadingCount = localMods.filter(
-    (m) =>
-      m.status === ModStatus.Downloading ||
-      m.status === ModStatus.Paused ||
-      m.status === ModStatus.Downloaded,
+    (m) => m.status === ModStatus.Downloading || m.status === ModStatus.Paused,
   ).length;
 
   return (
@@ -48,12 +45,12 @@ export const QuickStatsStrip = () => {
         />
         <StatChip
           accent={updatableCount > 0}
-          icon={<DownloadIcon className='size-5' weight='duotone' />}
+          icon={<ArrowsClockwiseIcon className='size-5' weight='duotone' />}
           label={t("dashboard.pendingUpdates")}
           value={updatableCount}
         />
         <StatChip
-          icon={<StackIcon className='size-5' weight='duotone' />}
+          icon={<DownloadIcon className='size-5' weight='duotone' />}
           label={t("dashboard.queued")}
           value={downloadingCount}
         />

@@ -525,10 +525,13 @@
     "openModsFolder": "Abrir Carpeta de Mods",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Limpiar Todos los Mods",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "¿Estás seguro de que quieres limpiar todos los mods? Esta acción no se puede deshacer.",
     "allModsCleared": "Todos los mods han sido limpiados",
     "failedToClearMods": "Error al limpiar mods",
@@ -724,6 +727,10 @@
     "needHelp": "¿Necesitas ayuda?",
     "documentation": "Documentación",
     "viewDocs": "Ver documentación"
+  },
+  "branding": {
+    "nightlyBuild": "Nocturna",
+    "fullBuildVersion": "Compilación completa: {{version}}"
   },
   "about": {
     "title": "Información",
@@ -1642,6 +1649,7 @@
     "title": "Depuración",
     "description": "Herramientas de depuración y utilidades para desarrollo y resolución de problemas.",
     "clearModsState": "Limpiar Estado de Mods",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "¿Estás seguro de que quieres limpiar el estado de los mods? Esto eliminará todos los mods de la aplicación pero NO los eliminará de tu carpeta del juego. Puedes volver a escanear tu carpeta de mods para restaurarlos.",
     "modsStateCleared": "Estado de mods limpiado exitosamente"
   },

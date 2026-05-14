@@ -525,10 +525,13 @@
     "openModsFolder": "Отвори папката с модове",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Изчисти всички модове",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Сигурни ли сте, че искате да изчистите всички модове? Това действие не може да бъде отменено.",
     "allModsCleared": "Всички модове са изчистени",
     "failedToClearMods": "Неуспешно изчистване на модове",
@@ -724,6 +727,10 @@
     "needHelp": "Нуждаете се от помощ?",
     "documentation": "",
     "viewDocs": ""
+  },
+  "branding": {
+    "nightlyBuild": "Nightly",
+    "fullBuildVersion": "Пълна версия: {{version}}"
   },
   "about": {
     "title": "Благодарности",
@@ -1642,6 +1649,7 @@
     "title": "",
     "description": "",
     "clearModsState": "",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "",
     "modsStateCleared": ""
   },

@@ -747,11 +747,11 @@ const MyMods = () => {
       }}>
       <ErrorBoundary>
         <Tabs
-          className='flex flex-1 flex-col'
+          className='flex flex-1 flex-col overflow-y-auto'
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ModFilter)}>
-          <div className='mb-8 flex flex-row pt-4'>
-            <div className='flex flex-col flex-grow'>
+          <div className='mb-8 flex flex-col gap-4 pt-4 lg:flex-row lg:items-start lg:justify-between'>
+            <div className='flex min-w-0 flex-grow flex-col'>
               <div className='flex flex-wrap items-center gap-2'>
                 <h1 className='text-2xl font-semibold tracking-tight text-balance'>
                   {t("navigation.myMods")}
@@ -885,7 +885,7 @@ const MyMods = () => {
               <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
             </div>
 
-            <div className='flex gap-2 items-center'>
+            <div className='flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0 lg:justify-end'>
               {updatableCount > 0 && (
                 <Button
                   variant='default'
@@ -959,7 +959,7 @@ const MyMods = () => {
           {mods.length === 0 && <MyModsEmptyState />}
           {mods.length > 0 && (
             <div className='flex flex-col gap-4'>
-              <div className='flex items-center justify-between'>
+              <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
                 <SearchBar
                   filterMode={filterMode}
                   audioQuickFilter={audioQuickFilter}
@@ -982,7 +982,7 @@ const MyMods = () => {
                   showTimePeriodControl={false}
                   hideMapFilter={!isCustomMapsEnabled}
                 />
-                <div className='flex items-center gap-2'>
+                <div className='flex shrink-0 items-center gap-2'>
                   <TabsList>
                     <TabsTrigger value={ModFilter.ALL}>
                       {t("myMods.tabs.all")}

@@ -1,8 +1,17 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { useSidebar } from "@deadlock-mods/ui/components/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { useTranslation } from "react-i18next";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import useAbout from "@/hooks/use-about";
+import {
+  getDisplaySemver,
+  isNightlyBuildVersion,
+} from "@/lib/app-version-display";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -88,7 +97,7 @@ export const BrandingHeader = ({
     <div
       className={cn(
         "flex items-center transition-[padding,gap] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 pl-1.5 py-3",
+        collapsed ? "justify-center gap-0 px-0 py-0" : "gap-2.5 pl-1.5 py-3",
         className,
       )}
       data-sidebar-header='true'>
@@ -105,12 +114,33 @@ export const BrandingHeader = ({
         <span className='font-primary text-xl leading-none tracking-tight'>
           Deadlock Mod Manager
         </span>
-        <div className='flex items-center gap-1.5'>
-          {version && (
-            <span className='text-muted-foreground text-xs leading-none tabular-nums'>
-              v{version}
-            </span>
-          )}
+        <div className='flex flex-wrap items-center gap-1.5'>
+          {version &&
+            (isNightlyBuildVersion(version) ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className='inline-flex cursor-default items-center gap-1.5'>
+                    <span className='text-muted-foreground text-xs leading-none tabular-nums'>
+                      v{getDisplaySemver(version)}
+                    </span>
+                    <Badge
+                      className='h-4 px-1.5 py-0 font-medium text-[10px]'
+                      variant='outline'>
+                      {t("branding.nightlyBuild")}
+                    </Badge>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span className='font-mono text-xs'>
+                    {t("branding.fullBuildVersion", { version })}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className='text-muted-foreground text-xs leading-none tabular-nums'>
+                v{version}
+              </span>
+            ))}
           <Badge
             className='h-4 px-1.5 py-0 font-medium text-[10px]'
             variant='outline'>

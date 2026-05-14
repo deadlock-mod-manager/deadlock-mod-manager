@@ -234,12 +234,12 @@ class DownloadManager {
       unlistenError,
     );
 
-    await this.reconcilePausedDownloads();
+    await this.reconcileStaleDownloads();
 
     logger.info("Download manager initialized");
   }
 
-  private async reconcilePausedDownloads() {
+  private async reconcileStaleDownloads() {
     let activeDownloads: { modId: string }[] = [];
     try {
       activeDownloads = (await this.getAllDownloads()) as { modId: string }[];
@@ -252,15 +252,24 @@ class DownloadManager {
 
     const activeIds = new Set(activeDownloads.map((d) => d.modId));
     const store = usePersistedStore.getState();
-    const stalePaused = store.localMods.filter(
-      (mod) => mod.status === ModStatus.Paused && !activeIds.has(mod.remoteId),
+    // Any mod left in a transient in-flight state (Downloading, Paused,
+    // Extracting) that the backend doesn't know about is stale from a previous
+    // session and should be flagged as failed so the UI doesn't show a phantom
+    // queue.
+    const staleStatuses: ModStatus[] = new Set([
+      ModStatus.Downloading,
+      ModStatus.Paused,
+      ModStatus.Extracting,
+    ]);
+    const staleMods = store.localMods.filter(
+      (mod) => staleStatuses.has(mod.status) && !activeIds.has(mod.remoteId),
     );
 
-    for (const mod of stalePaused) {
+    for (const mod of staleMods) {
       logger
-        .withMetadata({ mod: mod.remoteId })
+        .withMetadata({ mod: mod.remoteId, previousStatus: mod.status })
         .warn(
-          "Stale Paused status on startup (no backend entry); marking as FailedToDownload",
+          "Stale in-flight download status on startup (no backend entry); marking as FailedToDownload",
         );
       store.setModStatus(mod.remoteId, ModStatus.FailedToDownload);
     }

@@ -525,10 +525,13 @@
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "ล้างม็อดทั้งหมด",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
     "allModsCleared": "ล้างม็อดทั้งหมดแล้ว",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
@@ -724,6 +727,10 @@
     "needHelp": "ต้องการความช่วยเหลือ?",
     "documentation": "เอกสารประกอบ",
     "viewDocs": "ดูเอกสารประกอบ"
+  },
+  "branding": {
+    "nightlyBuild": "ไนท์ลี",
+    "fullBuildVersion": "บิลด์เต็ม: {{version}}"
   },
   "about": {
     "title": "เกี่ยวกับ",
@@ -1642,6 +1649,7 @@
     "title": "ดีบัก",
     "description": "เครื่องมือดีบักและยูทิลิตี้สำหรับการพัฒนาและการแก้ไขปัญหา",
     "clearModsState": "ล้างสถานะม็อด",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "คุณแน่ใจหรือไม่ว่าต้องการล้างสถานะม็อด? การกระทำนี้จะลบม็อดทั้งหมดออกจากแอปพลิเคชัน แต่จะไม่ลบออกจากโฟลเดอร์เกมของคุณ คุณสามารถสแกนโฟลเดอร์ม็อดของคุณอีกครั้งเพื่อกู้คืนได้",
     "modsStateCleared": "ล้างสถานะม็อดเรียบร้อยแล้ว"
   },

@@ -525,10 +525,13 @@
     "openModsFolder": "Mods-Ordner öffnen",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Alle Mods löschen",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alle Mods löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "allModsCleared": "Alle Mods wurden gelöscht",
     "failedToClearMods": "Fehler beim Löschen der Mods",
@@ -724,6 +727,10 @@
     "needHelp": "Hilfe?",
     "documentation": "Dokumentation",
     "viewDocs": "Dokumentation anzeigen"
+  },
+  "branding": {
+    "nightlyBuild": "Nightly",
+    "fullBuildVersion": "Vollständiger Build: {{version}}"
   },
   "about": {
     "title": "Informationen",
@@ -1642,6 +1649,7 @@
     "title": "",
     "description": "Debug-Tools und Hilfsprogramme für Entwicklung und Fehlerbehebung.",
     "clearModsState": "Mods-Status löschen",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Sind Sie sicher, dass Sie den Mods-Status löschen möchten? Dies entfernt alle Mods aus der Anwendung, löscht sie aber NICHT aus Ihrem Spielordner. Sie können Ihren Mods-Ordner erneut scannen, um sie wiederherzustellen.",
     "modsStateCleared": "Mods-Status erfolgreich gelöscht"
   },

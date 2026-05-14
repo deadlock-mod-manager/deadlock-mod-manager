@@ -996,6 +996,7 @@ export const createProfilesSlice: StateCreator<
           status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
           installedVpks: isEnabled ? currentVpks : [],
           installOrder: entry.order ?? restoredMods.length,
+          downloadedAt: new Date(),
         };
 
         restoredMods.push(restoredMod);

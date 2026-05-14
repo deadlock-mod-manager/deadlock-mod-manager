@@ -525,10 +525,13 @@
     "openModsFolder": "打开模组文件夹",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "清除所有模组",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
     "allModsCleared": "所有模组已清除",
     "failedToClearMods": "清除模组失败",
@@ -724,6 +727,10 @@
     "needHelp": "需要帮助？",
     "documentation": "",
     "viewDocs": ""
+  },
+  "branding": {
+    "nightlyBuild": "每夜版",
+    "fullBuildVersion": "完整版本：{{version}}"
   },
   "about": {
     "title": "关于",
@@ -1642,6 +1649,7 @@
     "title": "调试",
     "description": "用于开发和故障排除的调试工具和实用程序。",
     "clearModsState": "清除模组状态",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "确定要清除模组状态吗？这将从应用程序中移除所有模组，但不会从您的游戏文件夹中删除它们。您可以重新扫描模组文件夹来恢复它们。",
     "modsStateCleared": "模组状态清除成功"
   },

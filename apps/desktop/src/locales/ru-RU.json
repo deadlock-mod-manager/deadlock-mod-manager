@@ -195,9 +195,9 @@
     "enabled": "Enabled",
     "error": "Ошибка",
     "failedToFetchMods": "Не удалось получить моды. Попробуйте еще раз позже.",
-    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
-    "fsUnknown": "Filesystem: Unknown",
-    "fsWritable": "Filesystem: Writable",
+    "fsReadonly": "Папка дополнений или gameinfo.gi только для чтения (проверьте права доступа)",
+    "fsUnknown": "Не удалось проверить папку дополнений или gameinfo.gi",
+    "fsWritable": "Папка дополнений и gameinfo.gi доступны для записи (не только для чтения)",
     "gameDetected": "Игра обнаружена",
     "gameInstalledAt": "Игра установлена по пути: {{path}}",
     "gameNotDetected": "Файлы игры не найдены",
@@ -346,6 +346,7 @@
   },
   "debug": {
     "clearModsState": "Очистить состояние модов",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Вы уверены, что хотите очистить состояние модов? Это удалит все моды из приложения, но НЕ удалит их из вашей игровой папки. Вы можете повторно сканировать папку модов, чтобы восстановить их.",
     "description": "Инструменты отладки и утилиты для разработки и устранения неполадок.",
     "modsStateCleared": "Состояние модов успешно очищено",
@@ -472,6 +473,10 @@
     "documentation": "Documentation",
     "needHelp": "Нужна помощь?",
     "viewDocs": "View Documentation"
+  },
+  "branding": {
+    "nightlyBuild": "Ночная сборка",
+    "fullBuildVersion": "Полная версия: {{version}}"
   },
   "mapInvite": {
     "cancel": "Cancel",
@@ -1084,8 +1089,11 @@
     "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "Browse",
     "clearAllMods": "Очистить все моды",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "clearAllModsData": "Clear All Mod Data",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "clearDownloadCache": "Clear Download Cache",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",

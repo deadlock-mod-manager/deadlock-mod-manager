@@ -525,10 +525,13 @@
     "openModsFolder": "Modフォルダを開く",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "すべてのModを削除",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "すべてのModを削除してよろしいですか？この操作は取り消せません。",
     "allModsCleared": "すべてのModは削除されました",
     "failedToClearMods": "Modの削除に失敗しました",
@@ -724,6 +727,10 @@
     "needHelp": "お困りですか？",
     "documentation": "ドキュメント",
     "viewDocs": "ドキュメントを表示"
+  },
+  "branding": {
+    "nightlyBuild": "ナイトリー",
+    "fullBuildVersion": "フルビルド: {{version}}"
   },
   "about": {
     "title": "このアプリについて",
@@ -1642,6 +1649,7 @@
     "title": "デバッグ",
     "description": "開発とトラブルシューティングのためのデバッグツールとユーティリティ。",
     "clearModsState": "Modの状態をクリア",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Modの状態をクリアしてもよろしいですか？これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
     "modsStateCleared": "Modの状態を正常にクリアしました"
   },

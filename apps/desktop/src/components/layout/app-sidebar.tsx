@@ -38,7 +38,7 @@ import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
-import BrandingHeader from "./branding";
+import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
 
 type SidebarItem = {
@@ -318,7 +318,7 @@ export const AppSidebar = () => {
       className='absolute inset-y-0 left-0'
       collapsible='icon'
       variant='sidebar'>
-      <SidebarHeader className='pl-2 py-2'>
+      <SidebarHeader className='py-2 pl-2 group-data-[collapsible=icon]:p-0'>
         <BrandingHeader />
       </SidebarHeader>
       <SidebarContent className='flex-grow'>

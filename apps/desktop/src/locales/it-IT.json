@@ -525,10 +525,13 @@
     "openModsFolder": "Apri Cartella delle Mod",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Cancella Tutte le Mod",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Sei sicuro di voler cancellare tutte le mod? Questa azione non può essere annullata.",
     "allModsCleared": "Tutte le mod sono state cancellate",
     "failedToClearMods": "Impossibile cancellare le mod",
@@ -724,6 +727,10 @@
     "needHelp": "Serve Aiuto?",
     "documentation": "Documentazione",
     "viewDocs": "Visualizza Documentazione"
+  },
+  "branding": {
+    "nightlyBuild": "Notturna",
+    "fullBuildVersion": "Build completa: {{version}}"
   },
   "about": {
     "title": "Informazioni",
@@ -1642,6 +1649,7 @@
     "title": "",
     "description": "Strumenti e utilità di debug per sviluppo e risoluzione problemi.",
     "clearModsState": "Cancella Stato delle Mod",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Sei sicuro di voler cancellare lo stato delle mod? Questo rimuoverà tutte le mod dall'applicazione ma NON le eliminerà dalla cartella del gioco. Puoi riscansionare la cartella delle mod per ripristinarle.",
     "modsStateCleared": "Stato delle mod cancellato con successo"
   },

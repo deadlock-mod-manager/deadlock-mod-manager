@@ -525,10 +525,13 @@
     "openModsFolder": "Mods-Ordner öffne",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "Alli Mods lösche",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alli Mods lösche möchted? Die Aktion chann nöd rückgängig gmacht werde.",
     "allModsCleared": "Alli Mods si glöscht worde",
     "failedToClearMods": "Fehler bim Lösche vo de Mods",
@@ -724,6 +727,10 @@
     "needHelp": "Hilfe?",
     "documentation": "",
     "viewDocs": ""
+  },
+  "branding": {
+    "nightlyBuild": "Nightly",
+    "fullBuildVersion": "Vollständiger Build: {{version}}"
   },
   "about": {
     "title": "Informatione",
@@ -1642,6 +1649,7 @@
     "title": "",
     "description": "",
     "clearModsState": "",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "",
     "modsStateCleared": ""
   },

@@ -11,8 +11,9 @@ import {
 import { Markup } from "interweave";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
+import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -112,11 +113,11 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
               {t("mods.audio")}
             </Badge>
           )}
-          {mod.isNSFW && (
-            <Badge className='bg-card/80' variant='outline'>
-              NSFW
-            </Badge>
-          )}
+          {shouldShowNsfwBadgeAlongsideBlurPreview({
+            disableBlur: nsfwSettings.disableBlur,
+            isNSFW: mod.isNSFW,
+            shouldBlur,
+          }) && <NSFWBadge />}
           <Stat
             icon={<DownloadIcon className='size-4' weight='duotone' />}
             value={mod.downloadCount.toLocaleString()}

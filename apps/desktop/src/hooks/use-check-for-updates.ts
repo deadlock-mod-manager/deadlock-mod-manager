@@ -72,10 +72,11 @@ export const useCheckForUpdates = () => {
   } = useQuery({
     queryKey: NATIVE_UPDATES_QUERY_KEY,
     queryFn: fetchNativeUpdate,
-    enabled: !isRunningAsFlatpak,
+    enabled: !isRunningAsFlatpak && !import.meta.env.DEV,
     staleTime: STALE_TIME_UPDATER,
     gcTime: GC_TIME_UPDATER,
-    refetchInterval: isRunningAsFlatpak ? false : STALE_TIME_UPDATER,
+    refetchInterval:
+      isRunningAsFlatpak || import.meta.env.DEV ? false : STALE_TIME_UPDATER,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 2,

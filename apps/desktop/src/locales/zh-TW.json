@@ -193,9 +193,9 @@
     "enabled": "已啟用",
     "error": "錯誤",
     "failedToFetchMods": "取得模組失敗，請稍後重試。",
-    "fsReadonly": "Filesystem: Read-only (addons dir or gameinfo.gi not writable)",
-    "fsUnknown": "Filesystem: Unknown",
-    "fsWritable": "Filesystem: Writable",
+    "fsReadonly": "附加元件資料夾或 gameinfo.gi 為唯讀（請檢查檔案權限）",
+    "fsUnknown": "無法確認附加元件資料夾或 gameinfo.gi",
+    "fsWritable": "附加元件資料夾與 gameinfo.gi 皆可寫入（非唯讀）",
     "gameDetected": "遊戲已偵測到",
     "gameInstalledAt": "遊戲安裝於 {{path}}",
     "gameNotDetected": "未偵測到遊戲",
@@ -343,6 +343,7 @@
   },
   "debug": {
     "clearModsState": "清除模組狀態",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "確定要清除模組狀態嗎？這將從應用程式中移除所有模組，但不會從您的遊戲資料夾中刪除它們。您可以重新掃描模組資料夾來還原它們。",
     "description": "用於開發和故障排除的偵錯工具和實用程式。",
     "modsStateCleared": "模組狀態清除成功",
@@ -469,6 +470,10 @@
     "documentation": "文檔",
     "needHelp": "需要協助？",
     "viewDocs": "查看文檔"
+  },
+  "branding": {
+    "nightlyBuild": "每夜版",
+    "fullBuildVersion": "完整版本：{{version}}"
   },
   "mapInvite": {
     "cancel": "Cancel",
@@ -1074,8 +1079,11 @@
     "backupsPruned": "Removed {{count}} old backup(s)",
     "browseGamePath": "瀏覽",
     "clearAllMods": "清除所有模組",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "clearAllModsData": "Clear All Mod Data",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "clearDownloadCache": "Clear Download Cache",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "commandKeyRequired": "Command key is required",
     "commandLabel": "Command",
     "commandValueRequired": "Command value is required",

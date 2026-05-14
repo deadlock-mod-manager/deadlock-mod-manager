@@ -1,8 +1,15 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Button } from "@deadlock-mods/ui/components/button";
 import { Eye, EyeOff } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+export const NSFWBadge = ({ className }: { className?: string }) => (
+  <Badge
+    className={cn("font-semibold uppercase tracking-wide shadow-md", className)}
+    variant='destructive'>
+    NSFW
+  </Badge>
+);
 
 type NSFWBlurProps = {
   children: React.ReactNode;
@@ -44,45 +51,42 @@ export const NSFWBlur = ({
     <div className={`relative ${className}`}>
       {/* Blurred content — will-change:filter promotes to GPU layer so
           the blur is rasterised once and cached, not recalculated every frame.
-          contain:strict prevents the blur from invalidating parent layout. */}
+          contain:paint clips/isolates paint without size containment (strict would collapse layout). */}
       <div
-        className={cn(!isVisible && "will-change-[filter] [contain:strict]")}
+        className={cn(
+          "h-full w-full",
+          !isVisible && "will-change-[filter] [contain:paint]",
+        )}
         style={!isVisible ? { filter: `blur(${blurStrength}px)` } : undefined}>
         {children}
       </div>
 
-      {/* NSFW badge and controls overlay */}
       {!isVisible && (
-        <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
-          <div className='flex flex-col items-center gap-2'>
-            <Badge className='px-2 py-1' variant='destructive'>
-              NSFW
-            </Badge>
+        <div className='absolute inset-0 flex items-center justify-center bg-black/30'>
+          <div className='flex flex-col items-center gap-3'>
+            <NSFWBadge className='px-2.5 py-1 text-xs' />
             {showControls && (
-              <Button
-                className='text-xs'
-                onClick={handleToggle}
-                size='sm'
-                variant='secondary'>
-                <Eye className='mr-1 h-3 w-3' />
+              <button
+                type='button'
+                className='group flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 backdrop-blur-md transition-all duration-200 hover:border-white/35 hover:bg-white/20 hover:text-white hover:shadow-[0_0_12px_rgba(255,255,255,0.1)]'
+                onClick={handleToggle}>
+                <Eye className='h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110' />
                 Show
-              </Button>
+              </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Hide button when visible */}
       {isVisible && showControls && (
         <div className='absolute top-2 right-2'>
-          <Button
-            className='text-xs'
-            onClick={handleToggle}
-            size='sm'
-            variant='secondary'>
-            <EyeOff className='mr-1 h-3 w-3' />
+          <button
+            type='button'
+            className='group flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md transition-all duration-200 hover:border-white/30 hover:bg-black/60 hover:text-white'
+            onClick={handleToggle}>
+            <EyeOff className='h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110' />
             Hide
-          </Button>
+          </button>
         </div>
       )}
     </div>

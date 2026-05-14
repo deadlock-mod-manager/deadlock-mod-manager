@@ -1,11 +1,11 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { DownloadIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
+import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 
 type Props = {
   mod: ModDto;
@@ -56,9 +56,13 @@ export const TrendingModCard = ({ mod }: Props) => {
         ) : (
           <div className='h-full w-full bg-gradient-to-br from-secondary via-muted to-secondary' />
         )}
-        {mod.isNSFW && (
+        {shouldShowNsfwBadgeAlongsideBlurPreview({
+          disableBlur: nsfwSettings.disableBlur,
+          isNSFW: mod.isNSFW,
+          shouldBlur,
+        }) && (
           <div className='absolute right-1.5 top-1.5 flex flex-col gap-1'>
-            <Badge className='bg-card/85 text-[10px]'>NSFW</Badge>
+            <NSFWBadge className='text-[10px]' />
           </div>
         )}
       </div>

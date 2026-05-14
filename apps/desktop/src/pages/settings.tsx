@@ -86,6 +86,31 @@ import { cn } from "@/lib/utils";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
 
+type DangerActionProps = {
+  label: string;
+  description: string;
+  onClick: () => void;
+};
+
+const DangerAction = ({ label, description, onClick }: DangerActionProps) => (
+  <div className='group flex items-center gap-4 py-3'>
+    <div className='min-w-0 flex-1'>
+      <p className='text-sm font-medium text-foreground/90'>{label}</p>
+      <p className='text-xs text-muted-foreground leading-relaxed'>
+        {description}
+      </p>
+    </div>
+    <Button
+      className='shrink-0 gap-1.5 shadow-sm transition-all hover:shadow-destructive/20'
+      onClick={onClick}
+      size='sm'
+      variant='destructive'>
+      <TrashIcon className='h-3.5 w-3.5' />
+      {label}
+    </Button>
+  </div>
+);
+
 const getAutoexecConfig = async () => {
   try {
     return await invoke<{
@@ -767,45 +792,45 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </div>
                 </div>
 
-                <div className='flex flex-col gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-4'>
-                  <div className='flex items-center gap-2'>
-                    <WarningCircle className='h-4 w-4 text-destructive' />
-                    <p className='text-[11px] font-semibold uppercase tracking-wider text-destructive'>
-                      Danger Zone
+                <div className='relative overflow-hidden rounded-lg border border-destructive/30 bg-gradient-to-b from-destructive/8 to-destructive/3'>
+                  <div className='absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent,transparent_10px,hsl(var(--destructive)/0.03)_10px,hsl(var(--destructive)/0.03)_11px)]' />
+                  <div className='relative'>
+                    <div className='flex items-center gap-2.5 border-b border-destructive/15 px-5 py-3'>
+                      <div className='flex h-6 w-6 items-center justify-center rounded-full bg-destructive/15'>
+                        <WarningCircle className='h-3.5 w-3.5 text-destructive' />
+                      </div>
+                      <p className='text-xs font-bold uppercase tracking-widest text-destructive'>
+                        {t("settings.dangerZone")}
+                      </p>
+                    </div>
+                    <p className='px-5 pt-3 text-muted-foreground text-xs'>
+                      {t("settings.dangerZoneDescription")}
                     </p>
-                  </div>
-                  <p className='text-muted-foreground text-xs'>
-                    These actions are permanent and cannot be undone.
-                  </p>
-                  <div className='mt-2 flex flex-wrap gap-2'>
-                    <Button
-                      className='w-fit'
-                      onClick={clearDownloadCache}
-                      variant='destructive'>
-                      <TrashIcon className='h-4 w-4' />
-                      {t("settings.clearDownloadCache")}
-                    </Button>
-                    <Button
-                      className='w-fit'
-                      onClick={clearAllModsData}
-                      variant='destructive'>
-                      <TrashIcon className='h-4 w-4' />
-                      {t("settings.clearAllModsData")}
-                    </Button>
-                    <Button
-                      className='w-fit'
-                      onClick={clearModsState}
-                      variant='destructive'>
-                      <TrashIcon className='h-4 w-4' />
-                      {t("debug.clearModsState")}
-                    </Button>
-                    <Button
-                      className='w-fit'
-                      onClick={clearAllMods}
-                      variant='destructive'>
-                      <TrashIcon className='h-4 w-4' />
-                      {t("settings.clearAllMods")}
-                    </Button>
+
+                    <div className='flex flex-col divide-y divide-destructive/10 px-5 pt-2 pb-2'>
+                      <DangerAction
+                        description={t(
+                          "settings.clearDownloadCacheDescription",
+                        )}
+                        label={t("settings.clearDownloadCache")}
+                        onClick={clearDownloadCache}
+                      />
+                      <DangerAction
+                        description={t("settings.clearAllModsDataDescription")}
+                        label={t("settings.clearAllModsData")}
+                        onClick={clearAllModsData}
+                      />
+                      <DangerAction
+                        description={t("debug.clearModsStateDescription")}
+                        label={t("debug.clearModsState")}
+                        onClick={clearModsState}
+                      />
+                      <DangerAction
+                        description={t("settings.clearAllModsDescription")}
+                        label={t("settings.clearAllMods")}
+                        onClick={clearAllMods}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

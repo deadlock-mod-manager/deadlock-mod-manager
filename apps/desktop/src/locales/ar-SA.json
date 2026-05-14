@@ -525,10 +525,13 @@
     "openModsFolder": "افتح مجلد التعديلات",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
+    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
+    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "",
     "clearAllMods": "امسح جميع التعديلات",
+    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
     "allModsCleared": "تم مسح جميع التعديلات",
     "failedToClearMods": "فشل في مسح التعديلات",
@@ -724,6 +727,10 @@
     "needHelp": "تحتاج المساعدة؟",
     "documentation": "التوثيق",
     "viewDocs": "عرض التوثيق"
+  },
+  "branding": {
+    "nightlyBuild": "ليلي",
+    "fullBuildVersion": "البناء الكامل: {{version}}"
   },
   "about": {
     "title": "عن التطبيق",
@@ -1642,6 +1649,7 @@
     "title": "التصحيح",
     "description": "أدوات التصحيح والمرافق للتطوير واستكشاف الأخطاء.",
     "clearModsState": "مسح حالة التعديلات",
+    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "هل أنت متأكد من أنك تريد مسح حالة التعديلات؟ هذا سيزيل جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
     "modsStateCleared": "تم مسح حالة التعديلات بنجاح"
   },
