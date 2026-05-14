@@ -822,8 +822,8 @@ const MyMods = () => {
 
   return (
     <div className='flex w-full flex-1 flex-col gap-4 px-4 will-change-transform'>
-      <div className='flex flex-row items-start justify-between gap-4 pt-4'>
-        <div className='flex flex-col'>
+      <div className='flex shrink-0 flex-col items-start justify-between gap-3 pt-4 xl:flex-row xl:gap-4'>
+        <div className='flex min-w-0 flex-col'>
           <div className='flex flex-wrap items-center gap-2'>
             <h1 className='text-2xl font-semibold tracking-tight text-balance'>
               {t("navigation.myMods")}
@@ -950,10 +950,12 @@ const MyMods = () => {
               </Tooltip>
             )}
           </div>
-          <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
+          <p className='text-muted-foreground text-sm leading-5'>
+            {t("myMods.subtitle")}
+          </p>
         </div>
 
-        <div className='flex flex-nowrap items-center justify-end gap-2'>
+        <div className='flex flex-wrap items-center justify-start gap-2 xl:justify-end'>
           {updatableCount > 0 && (
             <Button
               variant='default'
@@ -1019,7 +1021,7 @@ const MyMods = () => {
       </div>
 
       <div
-        className='flex flex-col items-start justify-between gap-4 overflow-y-auto pt-4'
+        className='flex min-h-0 flex-col items-start justify-between gap-4 overflow-y-auto pt-2'
         ref={scrollContainerRef}
         onScroll={(e) => {
           scrollPositionRef.current = e.currentTarget.scrollTop;
