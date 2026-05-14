@@ -1,4 +1,15 @@
 {
+  "favorites": {
+    "title": "",
+    "subtitle": "",
+    "add": "",
+    "remove": "",
+    "favorite": "",
+    "favorited": "",
+    "back": "",
+    "emptyTitle": "",
+    "emptyDescription": ""
+  },
   "navigation": {
     "dashboard": "Panel de Control",
     "myMods": "Mis Mods",
