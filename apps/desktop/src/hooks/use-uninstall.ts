@@ -82,9 +82,11 @@ const useUninstall = () => {
     } catch (error) {
       logger.errorOnly(error);
 
-      if (remove && isTauriError(error) && error.kind === "vpkInUse") {
-        toast.error(t("mods.deleteError"), {
-          description: t("mods.deleteErrorVpkInUse"),
+      if (isTauriError(error) && error.kind === "vpkInUse") {
+        toast.error(remove ? t("mods.deleteError") : t("mods.disableError"), {
+          description: remove
+            ? t("mods.deleteErrorVpkInUse")
+            : t("mods.disableErrorVpkInUse"),
         });
         return;
       }

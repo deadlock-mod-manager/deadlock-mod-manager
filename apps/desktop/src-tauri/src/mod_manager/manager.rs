@@ -304,7 +304,7 @@ impl ModManager {
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     let manifest_entry = manifest.mods.get(&mod_id).cloned();
 
-    let (installed_vpks, original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
+    let (mut installed_vpks, mut original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
       && !entry.current_vpks.is_empty()
     {
       log::info!("Using manifest VPK state for mod {mod_id}");
@@ -343,6 +343,53 @@ impl ModManager {
         "Cannot disable mod {mod_id}: no enabled VPK files are recorded for this profile"
       )));
     };
+
+    let existing_vpk_pairs = installed_vpks
+      .iter()
+      .enumerate()
+      .filter_map(|(index, vpk_name)| {
+        if addons_path.join(vpk_name).exists() {
+          Some((
+            vpk_name.clone(),
+            original_vpk_names
+              .get(index)
+              .cloned()
+              .unwrap_or_else(|| vpk_name.clone()),
+          ))
+        } else {
+          None
+        }
+      })
+      .collect::<Vec<_>>();
+
+    if existing_vpk_pairs.len() != installed_vpks.len() {
+      if existing_vpk_pairs.is_empty() {
+        log::warn!(
+          "Mod {mod_id} is marked enabled but none of its enabled VPK files exist; marking it disabled without renaming files"
+        );
+        manifest.mark_disabled(&mod_id, Vec::new(), original_vpk_names);
+        manifest.save(&addons_path)?;
+
+        if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
+          local_mod.installed_vpks = Vec::new();
+          self.mod_repository.add_mod(local_mod);
+        }
+
+        return Ok(());
+      }
+
+      log::warn!(
+        "Mod {mod_id} is missing some enabled VPK files; disabling only the files that still exist"
+      );
+      installed_vpks = existing_vpk_pairs
+        .iter()
+        .map(|(vpk_name, _)| vpk_name.clone())
+        .collect();
+      original_vpk_names = existing_vpk_pairs
+        .into_iter()
+        .map(|(_, original_name)| original_name)
+        .collect();
+    }
 
     let prefixed_vpks =
       self
