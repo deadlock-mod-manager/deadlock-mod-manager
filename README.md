@@ -181,12 +181,12 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | Language | Native Name | Status | Contributors |
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇧🇬 **Bulgarian** | Български | 🚧 16% | [macchiako](https://discordapp.com/users/macchiako./) |
-| 🇩🇪 **German** | Deutsch | 🚧 42% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 33% | [stormix](https://github.com/stormix) |
+| 🇧🇬 **Bulgarian** | Български | 🚧 15% | [macchiako](https://discordapp.com/users/macchiako./) |
+| 🇩🇪 **German** | Deutsch | 🚧 41% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 32% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 52% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 29% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇵🇱 **Polish** | Polski | 🚧 28% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 25% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 37% | [altqx](https://discordapp.com/users/altq/) |
 | 🇹🇷 **Turkish** | Türkçe | 🚧 29% | [kenanala](https://discordapp.com/users/kenanala/) |
@@ -194,9 +194,9 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 32% | [meneee](https://discordapp.com/users/meneee/) |
-| 🇮🇹 **Italian** | Italiano | 🚧 34% | [Constrat](https://github.com/Constrat) |
-| 🇯🇵 **Japanese** | 日本語 | 🚧 51% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 75% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇮🇹 **Italian** | Italiano | 🚧 33% | [Constrat](https://github.com/Constrat) |
+| 🇯🇵 **Japanese** | 日本語 | 🚧 50% | [hiropiki](https://discordapp.com/users/hiropiki/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 74% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
