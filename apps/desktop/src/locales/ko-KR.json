@@ -1,4 +1,15 @@
 {
+  "favorites": {
+    "title": "",
+    "subtitle": "",
+    "add": "",
+    "remove": "",
+    "favorite": "",
+    "favorited": "",
+    "back": "",
+    "emptyTitle": "",
+    "emptyDescription": ""
+  },
   "navigation": {
     "dashboard": "계기반",
     "myMods": "모드 라이브러리",
