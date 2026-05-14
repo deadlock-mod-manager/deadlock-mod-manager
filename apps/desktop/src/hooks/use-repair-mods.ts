@@ -103,18 +103,18 @@ const selectedFileTreeForBatch = (
     return "needs-file-selection";
   }
 
-  const selectedNames = new Set(
+  const selectedPaths = new Set(
     previousTree.files
       .filter((file) => file.is_selected)
-      .flatMap((file) => [file.name, file.path]),
+      .map((file) => file.path),
   );
-  if (selectedNames.size === 0) {
+  if (selectedPaths.size === 0) {
     return "needs-file-selection";
   }
 
   const files = analyzedFileTree.files.map((file) => ({
     ...file,
-    is_selected: selectedNames.has(file.name) || selectedNames.has(file.path),
+    is_selected: selectedPaths.has(file.path),
   }));
   if (!files.some((file) => file.is_selected)) {
     return "needs-file-selection";

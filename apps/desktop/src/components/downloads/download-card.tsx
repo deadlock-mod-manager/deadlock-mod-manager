@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Pause, Play } from "@phosphor-icons/react";
+import type { TFunction } from "i18next";
 import { type MouseEvent, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -21,7 +22,10 @@ type StatusChipVariant = {
   dotClass: string;
 };
 
-const getStatusVariant = (status: ModStatus): StatusChipVariant => {
+const getStatusVariant = (
+  status: ModStatus,
+  t: TFunction,
+): StatusChipVariant => {
   switch (status) {
     case ModStatus.Downloading:
       return {
@@ -37,7 +41,7 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
       };
     case ModStatus.Paused:
       return {
-        label: "Paused",
+        label: t("downloads.paused"),
         pillClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
         dotClass: "bg-amber-500",
       };
@@ -61,7 +65,7 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
       };
     case ModStatus.NeedsRepair:
       return {
-        label: "Needs repair",
+        label: t("downloads.needsRepair"),
         pillClass: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
         dotClass: "bg-amber-500",
       };
@@ -82,9 +86,7 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
 
 const StatusChip = ({ status }: { status: ModStatus }) => {
   const { t } = useTranslation();
-  const variant = getStatusVariant(status);
-  const label =
-    status === ModStatus.Paused ? t("downloads.paused") : variant.label;
+  const variant = getStatusVariant(status, t);
   return (
     <span
       className={cn(
@@ -95,7 +97,7 @@ const StatusChip = ({ status }: { status: ModStatus }) => {
         aria-hidden
         className={cn("size-1.5 rounded-full", variant.dotClass)}
       />
-      {label}
+      {variant.label}
     </span>
   );
 };

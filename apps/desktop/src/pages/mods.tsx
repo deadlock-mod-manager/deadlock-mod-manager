@@ -245,12 +245,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         let matchesHero = false;
 
         if (selectedHeroes.includes("None")) {
-          matchesHero =
-            !resolvedHero ||
-            (resolvedHero !== null && selectedHeroes.includes(resolvedHero));
+          matchesHero = !resolvedHero || selectedHeroes.includes(resolvedHero);
         } else {
-          matchesHero =
-            resolvedHero !== null && selectedHeroes.includes(resolvedHero);
+          matchesHero = !!resolvedHero && selectedHeroes.includes(resolvedHero);
         }
 
         return filterMode === "include" ? matchesHero : !matchesHero;

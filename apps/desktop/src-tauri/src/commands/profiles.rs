@@ -639,8 +639,10 @@ pub async fn update_profile_vpk_manifest_repair_metadata(
 ) -> Result<(), Error> {
   log::info!("Updating VPK repair metadata for mod {mod_id} in profile {profile_folder:?}");
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let addons_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.get_addons_path(profile_folder.as_deref())?
+  };
   let mut manifest = ProfileVpkManifest::load(&addons_path)?;
   manifest.update_repair_metadata(&addons_path, &mod_id, source_downloads)?;
   manifest.save(&addons_path)?;

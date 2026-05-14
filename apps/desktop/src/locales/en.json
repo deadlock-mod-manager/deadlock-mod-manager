@@ -352,6 +352,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "paused": "Paused",
+    "needsRepair": "Needs repair",
     "pauseError": "Could not pause download: {{message}}",
     "resumeError": "Could not resume download: {{message}}"
   },

@@ -33,6 +33,19 @@ import {
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
 
+const arraysEqualIgnoringOrder = (
+  left: readonly string[] | null | undefined,
+  right: readonly string[] | null | undefined,
+): boolean => {
+  const sortedLeft = [...(left ?? [])].sort();
+  const sortedRight = [...(right ?? [])].sort();
+
+  return (
+    sortedLeft.length === sortedRight.length &&
+    sortedLeft.every((value, index) => value === sortedRight[index])
+  );
+};
+
 const hasCachedModFieldChanges = (
   existing: Mod | null,
   payload: NewMod,
@@ -54,9 +67,8 @@ const hasCachedModFieldChanges = (
   existing.audioUrl !== payload.audioUrl ||
   existing.remoteAddedAt.getTime() !== payload.remoteAddedAt.getTime() ||
   existing.remoteUpdatedAt.getTime() !== payload.remoteUpdatedAt.getTime() ||
-  JSON.stringify(existing.tags ?? []) !== JSON.stringify(payload.tags ?? []) ||
-  JSON.stringify(existing.images ?? []) !==
-    JSON.stringify(payload.images ?? []);
+  !arraysEqualIgnoringOrder(existing.tags, payload.tags) ||
+  !arraysEqualIgnoringOrder(existing.images, payload.images);
 
 export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getAllSubmissions(

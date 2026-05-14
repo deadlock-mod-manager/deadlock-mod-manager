@@ -519,12 +519,7 @@ impl ModManager {
       }
     }
     for mod_id in updated_mod_ids {
-      let source_downloads = manifest
-        .mods
-        .get(&mod_id)
-        .map(|entry| entry.source_downloads.clone())
-        .unwrap_or_default();
-      manifest.update_repair_metadata(&addons_path, &mod_id, source_downloads)?;
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
     }
 
     manifest.save(&addons_path)?;
@@ -612,12 +607,7 @@ impl ModManager {
       }
     }
     for (remote_id, _) in &updated_mappings {
-      let source_downloads = manifest
-        .mods
-        .get(remote_id)
-        .map(|entry| entry.source_downloads.clone())
-        .unwrap_or_default();
-      manifest.update_repair_metadata(&addons_path, remote_id, source_downloads)?;
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, remote_id);
     }
 
     manifest.save(&addons_path)?;
@@ -705,12 +695,7 @@ impl ModManager {
       }
     }
     for mod_id in updated_mod_ids {
-      let source_downloads = manifest
-        .mods
-        .get(&mod_id)
-        .map(|entry| entry.source_downloads.clone())
-        .unwrap_or_default();
-      manifest.update_repair_metadata(&addons_path, &mod_id, source_downloads)?;
+      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
     }
 
     for deadlock_mod in updated_mods {
@@ -721,6 +706,22 @@ impl ModManager {
 
     log::info!("Successfully reordered {} mods", result_mods.len());
     Ok(result_mods)
+  }
+
+  fn refresh_repair_metadata_after_reorder(
+    manifest: &mut ProfileVpkManifest,
+    addons_path: &Path,
+    mod_id: &str,
+  ) {
+    let source_downloads = manifest
+      .mods
+      .get(mod_id)
+      .map(|entry| entry.source_downloads.clone())
+      .unwrap_or_default();
+
+    if let Err(e) = manifest.update_repair_metadata(addons_path, mod_id, source_downloads) {
+      log::warn!("Failed to refresh repair metadata for {mod_id} after reorder: {e}");
+    }
   }
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
