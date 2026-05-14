@@ -6,7 +6,7 @@ import {
   CaretRightIcon,
   TrendUpIcon,
 } from "@phosphor-icons/react";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getModCategoryDisplayName } from "@/lib/constants";
@@ -20,11 +20,13 @@ type Props = {
 };
 
 const SCROLL_AMOUNT = 600;
+const SCROLL_PROGRESS_THUMB_WIDTH_PERCENT = 30;
 
 export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState<number | null>(null);
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
   );
@@ -38,9 +40,47 @@ export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
     scrollerRef.current?.scrollBy({ left: dx, behavior: "smooth" });
   }, []);
 
+  const updateScrollProgress = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+    if (maxScroll <= 0) {
+      setScrollProgress(null);
+      return;
+    }
+
+    setScrollProgress(scroller.scrollLeft / maxScroll);
+  }, []);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    updateScrollProgress();
+    scroller.addEventListener("scroll", updateScrollProgress, {
+      passive: true,
+    });
+
+    const observer = new ResizeObserver(updateScrollProgress);
+    observer.observe(scroller);
+
+    return () => {
+      scroller.removeEventListener("scroll", updateScrollProgress);
+      observer.disconnect();
+    };
+  }, [updateScrollProgress, mods.length, isLoading]);
+
   if (!isLoading && mods.length === 0) return null;
 
   const displayName = getModCategoryDisplayName(category);
+  const scrollProgressTranslatePercent =
+    scrollProgress === null
+      ? 0
+      : scrollProgress *
+        ((100 - SCROLL_PROGRESS_THUMB_WIDTH_PERCENT) /
+          SCROLL_PROGRESS_THUMB_WIDTH_PERCENT) *
+        100;
 
   return (
     <section className='space-y-3'>
@@ -80,7 +120,7 @@ export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
         </div>
       </header>
       <div
-        className='-mx-1 flex gap-6 overflow-x-auto px-1 pb-2 scrollbar-thin'
+        className='-mx-1 flex gap-6 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
         ref={scrollerRef}
         style={{ scrollSnapType: "x proximity" }}>
         {isLoading
@@ -101,6 +141,17 @@ export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
               </div>
             ))}
       </div>
+      {scrollProgress !== null && (
+        <div className='mx-auto h-[3px] w-3/5 overflow-hidden rounded-full bg-white/[0.06]'>
+          <div
+            className='h-full rounded-full bg-primary/50 transition-transform duration-150 ease-out'
+            style={{
+              width: `${SCROLL_PROGRESS_THUMB_WIDTH_PERCENT}%`,
+              transform: `translateX(${scrollProgressTranslatePercent}%)`,
+            }}
+          />
+        </div>
+      )}
     </section>
   );
 };

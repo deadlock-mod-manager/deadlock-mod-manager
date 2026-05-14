@@ -146,7 +146,7 @@ export const VpkScanAlert = ({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className='relative my-4 overflow-hidden rounded-xl border border-border bg-muted/30 shadow-sm'>
+      <div className='relative shrink-0 overflow-hidden rounded-xl border border-border bg-muted/30 shadow-sm'>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -268,17 +268,19 @@ export const VpkScanAlert = ({
               )}
             </div>
           )}
+        </div>
 
-          <div className='flex flex-wrap items-center justify-end gap-2 border-border/60 border-t pt-3'>
-            <Button
-              onClick={handleDeleteAll}
-              size='sm'
-              variant='destructive'
-              disabled={deleteAllMutation.isPending}
-              isLoading={deleteAllMutation.isPending}
-              icon={<PhosphorIcons.Trash className='h-4 w-4' />}>
-              {t("mods.vpkScanAlert.deleteAll")}
-            </Button>
+        <div className='flex flex-wrap items-center justify-between gap-2 border-border/60 border-t bg-muted/40 px-4 py-3 sm:px-5'>
+          <Button
+            onClick={handleDeleteAll}
+            size='sm'
+            variant='destructive'
+            disabled={deleteAllMutation.isPending}
+            isLoading={deleteAllMutation.isPending}
+            icon={<PhosphorIcons.Trash className='h-4 w-4' />}>
+            {t("mods.vpkScanAlert.deleteAll")}
+          </Button>
+          <div className='flex flex-wrap items-center justify-end gap-2'>
             <Button
               onClick={handleRefetch}
               size='sm'
@@ -287,7 +289,7 @@ export const VpkScanAlert = ({
               icon={<PhosphorIcons.ArrowClockwiseIcon className='h-4 w-4' />}>
               {t("mods.vpkScanAlert.refresh")}
             </Button>
-            <AnalyzeAddonsButton />
+            <AnalyzeAddonsButton size='default' />
           </div>
         </div>
       </div>
