@@ -1,7 +1,8 @@
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::Mod;
+use crate::mod_manager::ProfileVpkManifestSourceDownload;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Deserialize;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -571,9 +572,7 @@ pub async fn get_profile_vpk_manifest(
 }
 
 #[tauri::command]
-pub async fn hydrate_mods_from_manifest(
-  profile_folder: Option<String>,
-) -> Result<usize, Error> {
+pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Result<usize, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.hydrate_mods_from_manifest(profile_folder)
 }
@@ -628,6 +627,23 @@ pub async fn seed_profile_vpk_manifest_entries(
   if changed {
     manifest.save(&addons_path)?;
   }
+
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn update_profile_vpk_manifest_repair_metadata(
+  profile_folder: Option<String>,
+  mod_id: String,
+  source_downloads: Vec<ProfileVpkManifestSourceDownload>,
+) -> Result<(), Error> {
+  log::info!("Updating VPK repair metadata for mod {mod_id} in profile {profile_folder:?}");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  manifest.update_repair_metadata(&addons_path, &mod_id, source_downloads)?;
+  manifest.save(&addons_path)?;
 
   Ok(())
 }

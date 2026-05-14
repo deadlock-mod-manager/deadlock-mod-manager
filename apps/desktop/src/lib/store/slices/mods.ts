@@ -10,6 +10,7 @@ import {
   type ModFileTree,
   ModStatus,
   type Progress,
+  type RepairReason,
 } from "@/types/mods";
 import type { State } from "..";
 
@@ -28,6 +29,7 @@ export type HeroDetectionProgress = {
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
+  isRepairingMods: boolean;
   defaultSort: SortType;
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
@@ -46,6 +48,11 @@ export type ModsState = {
   setMods: (mods: LocalMod[]) => void;
   setModStatus: (remoteId: string, status: ModStatus) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
+  setIsRepairingMods: (isRepairing: boolean) => void;
+  setModRepairReason: (
+    remoteId: string,
+    repairReason: RepairReason | undefined,
+  ) => void;
   clearMods: () => void;
   setInstalledVpks: (
     remoteId: string,
@@ -86,6 +93,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 ) => ({
   localMods: [],
   modProgress: {},
+  isRepairingMods: false,
   analysisResult: null,
   analysisDialogOpen: false,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
@@ -255,6 +263,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         return {
           ...mod,
           status,
+          repairReason:
+            status === ModStatus.NeedsRepair ? mod.repairReason : undefined,
           downloadedAt:
             (status === ModStatus.Downloaded &&
               mod.status !== ModStatus.Installed) ||
@@ -312,6 +322,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       },
     })),
 
+  setIsRepairingMods: (isRepairing) =>
+    set(() => ({
+      isRepairingMods: isRepairing,
+    })),
+
+  setModRepairReason: (remoteId, repairReason) =>
+    set((state) => ({
+      localMods: state.localMods.map((mod) =>
+        mod.remoteId === remoteId ? { ...mod, repairReason } : mod,
+      ),
+    })),
+
   getModProgress: (remoteId) => get().modProgress[remoteId],
 
   setInstalledVpks: (
@@ -329,6 +351,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+        repairReason:
+          mod.remoteId === remoteId && vpks.length > 0
+            ? undefined
+            : mod.repairReason,
       })),
     })),
 

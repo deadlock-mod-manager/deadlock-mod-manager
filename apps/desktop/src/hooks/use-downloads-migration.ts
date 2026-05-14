@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { getModDownloads } from "@/lib/api-client";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import type { ModDownloadItem } from "@/types/mods";
 
 const logger = createLogger("downloads-migration");
 
@@ -9,15 +10,7 @@ const CONCURRENCY = 3;
 
 const fetchInBatches = async (
   remoteIds: string[],
-  onResult: (
-    remoteId: string,
-    downloads: {
-      name: string;
-      url: string;
-      size: number;
-      description?: string;
-    }[],
-  ) => void,
+  onResult: (remoteId: string, downloads: ModDownloadItem[]) => void,
 ) => {
   let cursor = 0;
   const run = async () => {

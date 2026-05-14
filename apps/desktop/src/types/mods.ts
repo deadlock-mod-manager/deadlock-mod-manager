@@ -5,6 +5,16 @@ import type { VpkParsed } from "@deadlock-mods/vpk-parser";
 
 // Individual download item type extracted from ModDownloadDto schema
 export type ModDownloadItem = z.infer<typeof ModDownloadDtoSchema>;
+export type RepairDownloadItem = Pick<
+  ModDownloadItem,
+  "name" | "size" | "url"
+> &
+  Partial<
+    Pick<
+      ModDownloadItem,
+      "createdAt" | "description" | "md5Checksum" | "updatedAt"
+    >
+  >;
 
 export type Progress = {
   progress: number;
@@ -26,13 +36,23 @@ export enum ModStatus {
   Removed = "removed",
   FailedToRemove = "failedToRemove",
   Error = "error",
+  NeedsRepair = "needsRepair",
 }
+
+export type RepairReason =
+  | "missingEnabledVpks"
+  | "missingPayload"
+  | "needsDownloadChoice"
+  | "needsFileSelection"
+  | "repairFailed";
 
 export interface LocalMod extends ModDto {
   status: ModStatus;
   downloadedAt?: Date;
   downloads?: ModDownloadItem[];
   selectedDownloads?: ModDownloadItem[];
+  repairDownloads?: RepairDownloadItem[];
+  repairReason?: RepairReason;
   activeVariantArchive?: string;
   installedVpks?: string[];
   installedFileTree?: ModFileTree;

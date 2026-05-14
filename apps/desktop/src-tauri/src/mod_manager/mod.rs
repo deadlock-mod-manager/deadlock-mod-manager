@@ -21,3 +21,4 @@ pub use file_tree::ModFileTree;
 pub use font_manager::{FontInfo, FontManager};
 pub use manager::ModManager;
 pub use mod_repository::Mod;
+pub use vpk_manifest::ProfileVpkManifestSourceDownload;

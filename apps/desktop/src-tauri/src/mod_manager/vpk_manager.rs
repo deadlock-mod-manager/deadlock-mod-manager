@@ -3,8 +3,14 @@ use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use log;
 use regex::Regex;
 use std::fs;
+use std::io;
 use std::path::Path;
 use std::sync::LazyLock;
+use std::thread;
+use std::time::Duration;
+
+const VPK_FILE_OPERATION_RETRIES: usize = 5;
+const VPK_FILE_OPERATION_RETRY_DELAY: Duration = Duration::from_millis(150);
 
 /// Manages VPK file operations and installation
 pub struct VpkManager {
@@ -183,12 +189,13 @@ impl VpkManager {
       let vpk_name = vpk_name.as_ref();
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists()
-        && let Err(e) = fs::OpenOptions::new().write(true).open(&vpk_path) {
-          log::error!(
-            "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
-          );
-          locked_files.push(vpk_name.to_string());
-        }
+        && let Err(e) = fs::OpenOptions::new().write(true).open(&vpk_path)
+      {
+        log::error!(
+          "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
+        );
+        locked_files.push(vpk_name.to_string());
+      }
     }
 
     if !locked_files.is_empty() {
@@ -202,6 +209,8 @@ impl VpkManager {
     addons_path: &Path,
     renamed: Vec<(String, String)>,
     original_error: std::io::Error,
+    operation: &str,
+    vpk_name: &str,
   ) -> Error {
     let mut rollback_failures = Vec::new();
     for (from_name, to_name) in renamed.into_iter().rev() {
@@ -220,7 +229,66 @@ impl VpkManager {
         rollback_failures.join(", ")
       ))
     } else {
-      original_error.into()
+      Self::vpk_file_operation_error(operation, vpk_name, original_error)
+    }
+  }
+
+  fn is_transient_vpk_file_lock_error(error: &io::Error) -> bool {
+    matches!(
+      error.raw_os_error(),
+      // Windows sharing violation, lock violation, and access denied.
+      Some(32 | 33 | 5)
+    ) || matches!(
+      error.kind(),
+      io::ErrorKind::PermissionDenied | io::ErrorKind::WouldBlock
+    )
+  }
+
+  fn retry_vpk_file_operation(
+    operation: &str,
+    vpk_name: &str,
+    mut run: impl FnMut() -> io::Result<()>,
+  ) -> io::Result<()> {
+    let mut last_error = None;
+
+    for attempt in 0..=VPK_FILE_OPERATION_RETRIES {
+      match run() {
+        Ok(()) => return Ok(()),
+        Err(error) => {
+          let should_retry =
+            attempt < VPK_FILE_OPERATION_RETRIES && Self::is_transient_vpk_file_lock_error(&error);
+          if should_retry {
+            log::warn!(
+              "VPK {operation} for {vpk_name} failed because the file may be temporarily locked; retrying ({}/{}) after {}ms: {error}",
+              attempt + 1,
+              VPK_FILE_OPERATION_RETRIES,
+              VPK_FILE_OPERATION_RETRY_DELAY.as_millis()
+            );
+            last_error = Some(error);
+            thread::sleep(VPK_FILE_OPERATION_RETRY_DELAY);
+          } else {
+            return Err(error);
+          }
+        }
+      }
+    }
+
+    Err(last_error.unwrap_or_else(|| io::Error::other("VPK file operation failed")))
+  }
+
+  fn retry_vpk_rename(from: &Path, to: &Path, vpk_name: &str) -> io::Result<()> {
+    Self::retry_vpk_file_operation("rename", vpk_name, || fs::rename(from, to))
+  }
+
+  fn retry_vpk_remove(path: &Path, vpk_name: &str) -> io::Result<()> {
+    Self::retry_vpk_file_operation("remove", vpk_name, || fs::remove_file(path))
+  }
+
+  fn vpk_file_operation_error(operation: &str, vpk_name: &str, error: io::Error) -> Error {
+    if Self::is_transient_vpk_file_lock_error(&error) {
+      Error::VpkInUse(format!("{vpk_name} ({operation} failed: {error})"))
+    } else {
+      Error::Io(error)
     }
   }
 
@@ -447,7 +515,7 @@ impl VpkManager {
       let new_name = format!("pak{next_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
-      if let Err(e) = fs::rename(&old_path, &new_path) {
+      if let Err(e) = Self::retry_vpk_rename(&old_path, &new_path, prefixed_name) {
         log::error!(
           "Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()
@@ -456,6 +524,8 @@ impl VpkManager {
           addons_path,
           renamed,
           e,
+          "enable",
+          prefixed_name,
         ));
       }
 
@@ -518,7 +588,7 @@ impl VpkManager {
         log::info!(
           "Prefixed destination already exists (newly staged variant), removing old active VPK: {vpk_name}"
         );
-        if let Err(e) = fs::remove_file(&old_path) {
+        if let Err(e) = Self::retry_vpk_remove(&old_path, &vpk_name) {
           log::error!(
             "Failed to remove old active VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
             count = renamed.len()
@@ -527,9 +597,11 @@ impl VpkManager {
             addons_path,
             renamed,
             e,
+            "disable",
+            &vpk_name,
           ));
         }
-      } else if let Err(e) = fs::rename(&old_path, &new_path) {
+      } else if let Err(e) = Self::retry_vpk_rename(&old_path, &new_path, &vpk_name) {
         log::error!(
           "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()
@@ -538,6 +610,8 @@ impl VpkManager {
           addons_path,
           renamed,
           e,
+          "disable",
+          &vpk_name,
         ));
       }
 
@@ -657,13 +731,10 @@ impl VpkManager {
           "Selected VPK not found for mod {mod_id}: {prefixed}, restoring previous state"
         );
         if !previously_prefixed.is_empty()
-          && let Err(restore_err) =
-            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
-          {
-            log::error!(
-              "Failed to restore previous state for mod {mod_id}: {restore_err}"
-            );
-          }
+          && let Err(restore_err) = self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+        {
+          log::error!("Failed to restore previous state for mod {mod_id}: {restore_err}");
+        }
         return Err(Error::ModFileNotFound);
       }
     }
@@ -675,13 +746,10 @@ impl VpkManager {
           "Failed to enable selected VPKs for mod {mod_id}: {e}, restoring previous state"
         );
         if !previously_prefixed.is_empty()
-          && let Err(restore_err) =
-            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
-          {
-            log::error!(
-              "Failed to restore previous state for mod {mod_id}: {restore_err}"
-            );
-          }
+          && let Err(restore_err) = self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+        {
+          log::error!("Failed to restore previous state for mod {mod_id}: {restore_err}");
+        }
         Err(e)
       }
     }
