@@ -2,32 +2,7 @@ use crate::errors::Error;
 
 use super::state::{MANAGER, get_api_url};
 
-#[tauri::command]
-pub async fn backup_gameinfo() -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = match mod_manager.get_steam_manager().get_game_path() {
-    Some(path) => path.clone(),
-    None => return Err(Error::GamePathNotSet),
-  };
-  mod_manager
-    .get_config_manager_mut()
-    .backup_gameinfo(&game_path)
-}
-
-#[tauri::command]
-pub async fn restore_gameinfo_backup() -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = match mod_manager.get_steam_manager().get_game_path() {
-    Some(path) => path.clone(),
-    None => return Err(Error::GamePathNotSet),
-  };
-  mod_manager
-    .get_config_manager_mut()
-    .restore_gameinfo_backup(&game_path)
-}
-
-#[tauri::command]
-pub async fn reset_to_vanilla() -> Result<(), Error> {
+pub async fn reset_to_vanilla_internal() -> Result<(), Error> {
   let api_url = get_api_url();
 
   let game_path = {
@@ -70,6 +45,35 @@ pub async fn reset_to_vanilla() -> Result<(), Error> {
 
   log::info!("Successfully reset to vanilla state using API");
   Ok(())
+}
+
+#[tauri::command]
+pub async fn backup_gameinfo() -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => return Err(Error::GamePathNotSet),
+  };
+  mod_manager
+    .get_config_manager_mut()
+    .backup_gameinfo(&game_path)
+}
+
+#[tauri::command]
+pub async fn restore_gameinfo_backup() -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let game_path = match mod_manager.get_steam_manager().get_game_path() {
+    Some(path) => path.clone(),
+    None => return Err(Error::GamePathNotSet),
+  };
+  mod_manager
+    .get_config_manager_mut()
+    .restore_gameinfo_backup(&game_path)
+}
+
+#[tauri::command]
+pub async fn reset_to_vanilla() -> Result<(), Error> {
+  reset_to_vanilla_internal().await
 }
 
 #[tauri::command]

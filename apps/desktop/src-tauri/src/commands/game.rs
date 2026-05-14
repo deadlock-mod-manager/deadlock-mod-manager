@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use crate::errors::Error;
+use tauri::{AppHandle, Emitter};
 
+use super::gameinfo::reset_to_vanilla_internal;
 use super::state::MANAGER;
 
 #[tauri::command]
@@ -34,18 +36,38 @@ pub async fn set_game_path(path: String) -> Result<String, Error> {
 
 #[tauri::command]
 pub async fn start_game(
+  app_handle: AppHandle,
   vanilla: bool,
   additional_args: String,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
   log::info!(
     "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
     additional_args,
     vanilla,
     profile_folder
   );
-  mod_manager.run_game(vanilla, additional_args, profile_folder)
+
+  let first_result = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.run_game(vanilla, additional_args.clone(), profile_folder.clone())
+  };
+
+  if let Err(Error::GameConfigParse(ref msg)) = first_result {
+    log::warn!("Game config parse failed: {msg}, attempting auto-reset to vanilla");
+
+    reset_to_vanilla_internal().await?;
+
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.run_game(vanilla, additional_args, profile_folder)?;
+
+    app_handle.emit("gameinfo-auto-reset", ()).ok();
+    log::info!("Auto-recovery succeeded, game launched after gameinfo reset");
+
+    return Ok(());
+  }
+
+  first_result
 }
 
 #[tauri::command]
