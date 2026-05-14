@@ -44,8 +44,7 @@ export const TrendingModCard = ({ mod }: Props) => {
             className='h-full w-full'
             disableBlur={nsfwSettings.disableBlur}
             isNSFW={shouldBlur}
-            onToggleVisibility={handleNSFWToggle}
-            showControls={false}>
+            onToggleVisibility={handleNSFWToggle}>
             <img
               alt={mod.name}
               className='h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105'

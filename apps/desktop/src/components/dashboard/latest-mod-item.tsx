@@ -49,8 +49,7 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
               className='h-full w-full'
               disableBlur={nsfwSettings.disableBlur}
               isNSFW={shouldBlur}
-              onToggleVisibility={handleNSFWToggle}
-              showControls={false}>
+              onToggleVisibility={handleNSFWToggle}>
               <img
                 alt={mod.name}
                 className='h-full w-full object-cover'

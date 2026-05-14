@@ -59,8 +59,7 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
             className='h-full w-full'
             disableBlur={nsfwSettings.disableBlur}
             isNSFW={shouldBlur}
-            onToggleVisibility={handleNSFWToggle}
-            showControls={false}>
+            onToggleVisibility={handleNSFWToggle}>
             <img
               alt={mod.name}
               className={cn(
