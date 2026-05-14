@@ -1,6 +1,7 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
@@ -112,17 +113,25 @@ export const useLaunch = () => {
 
       stopHeroDetection();
 
-      await invoke("start_game", {
-        vanilla,
-        additionalArgs:
-          vanilla && launchVanillaNoArgs
-            ? ""
-            : await getAdditionalArgs(
-                Object.values(settings),
-                gamePresenceEnabled,
-              ),
-        profileFolder,
+      const unlisten = await listen("gameinfo-auto-reset", () => {
+        toast.info(t("common.gameinfoAutoReset"));
       });
+
+      try {
+        await invoke("start_game", {
+          vanilla,
+          additionalArgs:
+            vanilla && launchVanillaNoArgs
+              ? ""
+              : await getAdditionalArgs(
+                  Object.values(settings),
+                  gamePresenceEnabled,
+                ),
+          profileFolder,
+        });
+      } finally {
+        unlisten();
+      }
 
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
