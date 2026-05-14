@@ -147,25 +147,25 @@ export const VpkScanAlert = ({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className='shrink-0 overflow-hidden rounded-lg border border-border bg-muted/25 shadow-sm'>
-        <div className='flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between'>
-          <div className='flex min-w-0 items-start gap-3'>
-            <div className='mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border'>
+      <div className='shrink-0 overflow-hidden rounded-lg border border-border/70 bg-card/45 shadow-sm'>
+        <div className='flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='flex min-w-0 items-start gap-2.5'>
+            <div className='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/80'>
               <PhosphorIcons.WarningCircle
                 weight='duotone'
-                className='h-5 w-5'
+                className='h-4 w-4'
               />
             </div>
-            <div className='flex min-w-0 flex-1 flex-col gap-1'>
-              <div className='flex min-w-0 flex-wrap items-center gap-2'>
-                <h3 className='font-semibold text-foreground text-sm leading-tight tracking-tight'>
+            <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+              <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+                <h3 className='font-semibold text-[13px] text-foreground leading-5'>
                   {t("mods.vpkScanAlert.title")}
                 </h3>
-                <span className='inline-flex h-5 shrink-0 items-center rounded-full bg-background px-2 font-mono font-semibold text-[10px] text-muted-foreground ring-1 ring-border'>
+                <span className='inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted/50 px-1.5 font-mono font-medium text-[10px] text-muted-foreground ring-1 ring-border/70'>
                   {unmatchedVpkCount}
                 </span>
               </div>
-              <p className='text-muted-foreground text-xs leading-snug sm:text-sm'>
+              <p className='text-muted-foreground text-xs leading-5'>
                 {t("mods.vpkScanAlert.description", {
                   count: unmatchedVpkCount,
                 })}
@@ -173,7 +173,7 @@ export const VpkScanAlert = ({
             </div>
           </div>
 
-          <div className='flex shrink-0 flex-wrap items-center gap-2 sm:justify-end'>
+          <div className='flex shrink-0 flex-wrap items-center gap-2 pl-9 sm:pl-0 sm:justify-end'>
             <AnalyzeAddonsButton
               label={t("mods.vpkScanAlert.analyzeButton")}
               size='sm'
