@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const memory = new Map<string, string>();
+const noop = () => undefined;
 
 mock.module("@tauri-apps/plugin-store", () => ({
   getStore: async () => ({
@@ -15,7 +16,6 @@ mock.module("@tauri-apps/plugin-store", () => ({
 }));
 
 mock.module("@/lib/logger", () => {
-  const noop = () => undefined;
   const make = (): Record<string, unknown> => {
     const obj: Record<string, unknown> = {};
     obj.withMetadata = () => make();
@@ -27,7 +27,7 @@ mock.module("@/lib/logger", () => {
     obj.trace = noop;
     return obj;
   };
-  return { default: make() };
+  return { createLogger: () => make(), default: make() };
 });
 
 // Stub Tauri IPC. The store imports through to slices that import @tauri-apps/api/core.
@@ -150,7 +150,7 @@ const importStoreFreshly = async () => {
   // tests because zustand's `persist.rehydrate()` rebuilds in-memory state on
   // each call from the seeded backing store, so we don't need to re-evaluate.
   const storageModule = await import("./storage");
-  storageModule.__resetForTests();
+  storageModule["__resetForTests"]();
   const storeModule = await import("./index");
   return storeModule;
 };
@@ -173,7 +173,10 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.fileserverLatencyMs).toEqual(seededState.fileserverLatencyMs);
     expect(s.fileserverPreference).toBe(seededState.fileserverPreference);
     expect(s.nsfwSettings).toEqual(seededState.nsfwSettings);
-    expect(s.modsFilters).toEqual(seededState.modsFilters);
+    expect(s.modsFilters).toEqual({
+      ...seededState.modsFilters,
+      showFavoritesOnly: false,
+    });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);
     expect(s.linuxGpuOptimization).toBe(seededState.linuxGpuOptimization);
     expect(s.backupEnabled).toBe(seededState.backupEnabled);

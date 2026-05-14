@@ -1,32 +1,27 @@
 import { describe, expect, it, mock } from "bun:test";
 
+interface LoggerMock {
+  withMetadata: () => LoggerMock;
+  withError: () => LoggerMock;
+  warn: () => void;
+  error: () => void;
+  info: () => void;
+  debug: () => void;
+}
+
+const noop = () => {};
+const loggerMock: LoggerMock = {
+  withMetadata: () => loggerMock,
+  withError: () => loggerMock,
+  warn: noop,
+  error: noop,
+  info: noop,
+  debug: noop,
+};
+
 mock.module("@/lib/logger", () => ({
-  default: {
-    withMetadata: () => ({
-      withError: () => ({
-        warn: () => {},
-        error: () => {},
-        info: () => {},
-        debug: () => {},
-      }),
-      warn: () => {},
-      error: () => {},
-      info: () => {},
-      debug: () => {},
-    }),
-    withError: () => ({
-      withMetadata: () => ({
-        warn: () => {},
-        error: () => {},
-        info: () => {},
-        debug: () => {},
-      }),
-      warn: () => {},
-      error: () => {},
-      info: () => {},
-      debug: () => {},
-    }),
-  },
+  createLogger: () => loggerMock,
+  default: loggerMock,
 }));
 
 const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
@@ -154,7 +149,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(19);
+    expect(LATEST_VERSION).toBe(22);
   });
 
   describe("specific step idempotency", () => {
