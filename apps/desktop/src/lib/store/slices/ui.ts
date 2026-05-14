@@ -19,6 +19,7 @@ export type ModsFilters = {
   timePeriod: TimePeriod;
   filterMode: FilterMode;
   searchQuery: string;
+  showFavoritesOnly: boolean;
 };
 
 export type CrosshairFilters = {
@@ -69,6 +70,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   timePeriod: TimePeriod.ALL_TIME,
   filterMode: "include",
   searchQuery: "",
+  showFavoritesOnly: false,
 };
 
 const DEFAULT_CROSSHAIR_FILTERS: CrosshairFilters = {

@@ -13,8 +13,8 @@ import {
 import { ArrowUpDown, Clock, Star, X } from "@deadlock-mods/ui/icons";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import {
   getModCategoryDisplayName,
   SortType,
@@ -51,7 +51,9 @@ type SearchBarProps = {
   onFilterModeChange: (filterMode: FilterMode) => void;
   showSortControl?: boolean;
   showTimePeriodControl?: boolean;
-  showFavoritesButton?: boolean;
+  showFavoritesFilter?: boolean;
+  showFavoritesOnly?: boolean;
+  onShowFavoritesOnlyChange?: (value: boolean) => void;
   hideMapFilter?: boolean;
 };
 
@@ -79,14 +81,14 @@ const SearchBar = ({
   onFilterModeChange,
   showSortControl = true,
   showTimePeriodControl = true,
-  showFavoritesButton = false,
+  showFavoritesFilter = false,
+  showFavoritesOnly = false,
+  onShowFavoritesOnlyChange,
   hideMapFilter,
 }: SearchBarProps) => {
   const { t } = useTranslation();
   const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
-  const favoritesCount = usePersistedStore(
-    (state) => state.favorites.length,
-  );
+  const favoritesCount = usePersistedStore((state) => state.favorites.length);
 
   const getHeroDisplayName = (hero: string) => {
     if (hero === "None") {
@@ -114,6 +116,7 @@ const SearchBar = ({
     onHideOutdatedChange(false);
     onTimePeriodChange?.(TimePeriod.ALL_TIME);
     onFilterModeChange("include");
+    onShowFavoritesOnlyChange?.(false);
   };
 
   const hasActiveFilters =
@@ -123,6 +126,7 @@ const SearchBar = ({
     audioQuickFilter !== "off" ||
     (!hideMapFilter && mapQuickFilter !== "off") ||
     hideOutdated ||
+    showFavoritesOnly ||
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
   return (
@@ -155,23 +159,29 @@ const SearchBar = ({
             hideMapFilter={hideMapFilter}
           />
         </div>
-        {(showTimePeriodControl ||
-          showSortControl ||
-          showFavoritesButton) && (
+        {(showTimePeriodControl || showSortControl || showFavoritesFilter) && (
           <div className='flex items-center gap-4'>
-            {showFavoritesButton && (
-              <Button asChild variant='outline' size='default'>
-                <Link to='/mods/favorites' draggable='false'>
-                  <Star className='mr-2 h-4 w-4' />
-                  <span>{t("favorites.title")}</span>
-                  {favoritesCount > 0 && (
-                    <Badge
-                      className='ml-2 px-1 py-0 text-xs'
-                      variant='secondary'>
-                      {favoritesCount}
-                    </Badge>
+            {showFavoritesFilter && (
+              <Button
+                className={cn(
+                  showFavoritesOnly &&
+                    "border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300",
+                )}
+                onClick={() => onShowFavoritesOnlyChange?.(!showFavoritesOnly)}
+                size='default'
+                variant='outline'>
+                <Star
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    showFavoritesOnly && "fill-yellow-400 text-yellow-400",
                   )}
-                </Link>
+                />
+                <span>{t("favorites.title")}</span>
+                {favoritesCount > 0 && (
+                  <Badge className='ml-2 px-1 py-0 text-xs' variant='secondary'>
+                    {favoritesCount}
+                  </Badge>
+                )}
               </Button>
             )}
             {showTimePeriodControl && onTimePeriodChange && (
@@ -335,6 +345,19 @@ const SearchBar = ({
                 </button>
               </Badge>
             )}
+
+          {showFavoritesOnly && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
+              {t("favorites.title")}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onShowFavoritesOnlyChange?.(false)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
 
           {/* Clear all button */}
           <button
