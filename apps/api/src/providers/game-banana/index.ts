@@ -6,11 +6,7 @@ import {
   ModRepository,
   type NewMod,
 } from "@deadlock-mods/database";
-import {
-  GameBanana,
-  type FileserverDto,
-  guessHero,
-} from "@deadlock-mods/shared";
+import { GameBanana, type FileserverDto } from "@deadlock-mods/shared";
 import { cache } from "../../lib/redis";
 import { wideEventContext } from "../../lib/logger";
 import { resolveFileserverGeo } from "../../services/geo";
@@ -28,6 +24,7 @@ import {
   buildMetadata,
   categoryFromGameBananaProfile,
   classifyNSFW,
+  heroFromGameBananaProfile,
   mapGameBananaFileserverState,
   parseTags,
   submitterDisplayName,
@@ -35,6 +32,43 @@ import {
 
 const modRepository = new ModRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
+
+const arraysEqualIgnoringOrder = (
+  left: readonly string[] | null | undefined,
+  right: readonly string[] | null | undefined,
+): boolean => {
+  const sortedLeft = [...(left ?? [])].sort();
+  const sortedRight = [...(right ?? [])].sort();
+
+  return (
+    sortedLeft.length === sortedRight.length &&
+    sortedLeft.every((value, index) => value === sortedRight[index])
+  );
+};
+
+const hasCachedModFieldChanges = (
+  existing: Mod | null,
+  payload: NewMod,
+): boolean =>
+  !existing ||
+  existing.name !== payload.name ||
+  existing.description !== payload.description ||
+  existing.author !== payload.author ||
+  existing.likes !== payload.likes ||
+  existing.hero !== payload.hero ||
+  existing.downloadCount !== payload.downloadCount ||
+  existing.remoteUrl !== payload.remoteUrl ||
+  existing.category !== payload.category ||
+  existing.downloadable !== payload.downloadable ||
+  existing.isNSFW !== payload.isNSFW ||
+  existing.isObsolete !== payload.isObsolete ||
+  existing.isMap !== payload.isMap ||
+  existing.isAudio !== payload.isAudio ||
+  existing.audioUrl !== payload.audioUrl ||
+  existing.remoteAddedAt.getTime() !== payload.remoteAddedAt.getTime() ||
+  existing.remoteUpdatedAt.getTime() !== payload.remoteUpdatedAt.getTime() ||
+  !arraysEqualIgnoringOrder(existing.tags, payload.tags) ||
+  !arraysEqualIgnoringOrder(existing.images, payload.images);
 
 export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getAllSubmissions(
@@ -355,7 +389,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: guessHero(profile._sName),
+      hero: heroFromGameBananaProfile(profile),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category: categoryFromGameBananaProfile(profile),
@@ -399,7 +433,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: guessHero(profile._sName),
+      hero: heroFromGameBananaProfile(profile),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category,
@@ -500,6 +534,14 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         };
       }
 
+      const existingMod =
+        await modRepository.findByRemoteIdIncludingBlacklisted(
+          payload.remoteId,
+        );
+      const cachedFieldsChanged = hasCachedModFieldChanges(
+        existingMod,
+        payload,
+      );
       const dbMod = await modRepository.upsertByRemoteId(payload);
 
       this.logger
@@ -517,6 +559,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           dbMod,
           filesUpdatedAt,
         );
+      }
+      if (cachedFieldsChanged) {
+        await cache.del(`mod:${dbMod.remoteId}`);
+        await cache.del("mods:listing");
       }
 
       return { mod: dbMod, filesChanged };

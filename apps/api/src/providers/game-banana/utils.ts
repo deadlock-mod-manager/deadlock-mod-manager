@@ -5,6 +5,7 @@ import type {
   GameBanana,
   ModMetadata,
 } from "@deadlock-mods/shared";
+import { guessHero, normalizeHero } from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_KEYWORDS } from "./constants";
 import type { GameBananaSubmission } from "./types";
 
@@ -24,6 +25,12 @@ export function categoryFromGameBananaProfile(
     return rootName;
   }
   return profile._aCategory?._sName ?? "Other";
+}
+
+export function heroFromGameBananaProfile(
+  profile: GameBananaProfileForCategory,
+): string | null {
+  return normalizeHero(profile._aCategory?._sName) ?? guessHero(profile._sName);
 }
 
 export function submitterDisplayName(
