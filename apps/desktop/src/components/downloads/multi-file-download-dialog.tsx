@@ -29,6 +29,7 @@ interface MultiFileDownloadDialogProps {
   readonly files: ModDownloadItem[];
   readonly modName: string;
   readonly isDownloading?: boolean;
+  readonly isExtracting?: boolean;
   readonly downloadPercentage?: number;
 }
 
@@ -39,6 +40,7 @@ export function MultiFileDownloadDialog({
   files,
   modName,
   isDownloading = false,
+  isExtracting = false,
   downloadPercentage = 0,
 }: MultiFileDownloadDialogProps) {
   const { t } = useTranslation();
@@ -61,6 +63,7 @@ export function MultiFileDownloadDialog({
 
   const allSelected = files.length > 0 && selectedFiles.size === files.length;
   const noneSelected = selectedFiles.size === 0;
+  const isBusy = isDownloading || isExtracting;
 
   const handleFileToggle = (fileName: string) => {
     setSelectedFiles((prev) => {
@@ -127,7 +130,7 @@ export function MultiFileDownloadDialog({
                 checked={
                   allSelected ? true : noneSelected ? false : "indeterminate"
                 }
-                disabled={isDownloading}
+                disabled={isBusy}
                 id='select-all-files'
                 onCheckedChange={handleToggleAll}
               />
@@ -176,13 +179,13 @@ export function MultiFileDownloadDialog({
                         "flex w-full cursor-pointer items-start gap-3 px-3 py-3 text-left transition-colors items-center",
                         "hover:bg-muted/60 has-[:focus-visible]:bg-muted/60",
                         isSelected && "bg-primary/5 hover:bg-primary/10",
-                        isDownloading && "pointer-events-none opacity-60",
+                        isBusy && "pointer-events-none opacity-60",
                       )}
                       htmlFor={fileCheckboxId}>
                       <span className='flex h-lh items-center'>
                         <Checkbox
                           checked={isSelected}
-                          disabled={isDownloading}
+                          disabled={isBusy}
                           id={fileCheckboxId}
                           onCheckedChange={() => handleFileToggle(file.name)}
                         />
@@ -239,23 +242,22 @@ export function MultiFileDownloadDialog({
             </span>
           </div>
           <div className='flex gap-2 sm:gap-2'>
-            <Button
-              disabled={isDownloading}
-              onClick={onClose}
-              variant='outline'>
+            <Button disabled={isBusy} onClick={onClose} variant='outline'>
               {t("common.cancel")}
             </Button>
             <Button
               className='min-w-32'
-              disabled={selectedFiles.size === 0 || isDownloading}
+              disabled={selectedFiles.size === 0 || isBusy}
               icon={<Download className='h-4 w-4' />}
-              isLoading={isDownloading}
+              isLoading={isBusy}
               onClick={handleDownload}>
-              {isDownloading
-                ? t("downloads.downloadingPercent", {
-                    percent: Math.round(downloadPercentage),
-                  })
-                : t("downloads.downloadSelected")}
+              {isExtracting
+                ? t("modStatus.extracting")
+                : isDownloading
+                  ? t("downloads.downloadingPercent", {
+                      percent: Math.round(downloadPercentage),
+                    })
+                  : t("downloads.downloadSelected")}
             </Button>
           </div>
         </DialogFooter>
