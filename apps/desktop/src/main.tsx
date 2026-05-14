@@ -12,7 +12,7 @@ import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
-import Favorites from "./pages/favorites";
+
 import Mod from "./pages/mod";
 import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
@@ -50,7 +50,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Dashboard />} path='/' />
               <Route element={<MyMods />} path='/my-mods' />
               <Route element={<GetMods />} path='/mods' />
-              <Route element={<Favorites />} path='/mods/favorites' />
+
               <Route element={<MapsRouteGate />} path='/maps' />
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<AddMods />} path='/add-mods' />

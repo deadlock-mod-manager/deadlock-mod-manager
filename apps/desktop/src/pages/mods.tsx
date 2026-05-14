@@ -175,7 +175,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
+    showFavoritesOnly = false,
   } = modsFilters;
+  const favorites = usePersistedStore((state) => state.favorites);
   const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
     ? "only"
     : isCustomMapsEnabled
@@ -274,6 +276,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       );
     }
 
+    if (showFavoritesOnly && favorites.length > 0) {
+      const favSet = new Set(favorites);
+      filtered = filtered.filter((mod) => favSet.has(mod.remoteId));
+    }
+
     return filtered;
   }, [
     results,
@@ -286,6 +293,8 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     effectiveMapQuickFilter,
     hideOutdated,
     timePeriod,
+    showFavoritesOnly,
+    favorites,
   ]);
 
   const totalPages = paginationEnabled
@@ -328,6 +337,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         selectedCategories,
         selectedHeroes,
         timePeriod,
+        showFavoritesOnly,
       }),
     [
       filterMode,
@@ -339,6 +349,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       selectedCategories,
       selectedHeroes,
       timePeriod,
+      showFavoritesOnly,
     ],
   );
 
@@ -425,6 +436,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     [updateModsFilters],
   );
 
+  const handleShowFavoritesOnlyChange = useCallback(
+    (showFavoritesOnly: boolean) => updateModsFilters({ showFavoritesOnly }),
+    [updateModsFilters],
+  );
+
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
@@ -449,7 +465,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
-        showFavoritesButton={!mapsOnly}
+        showFavoritesFilter={!mapsOnly}
+        showFavoritesOnly={showFavoritesOnly}
+        onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
       {filteredResults.length === 0 ? (
@@ -467,6 +485,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
               effectiveMapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
+              showFavoritesOnly ||
               timePeriod !== TimePeriod.ALL_TIME
                 ? t("mods.noModsMatchFilters")
                 : t("mods.noModsAvailable")}
@@ -477,6 +496,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
               effectiveMapQuickFilter !== "off" ||
               hideNSFW ||
               hideOutdated ||
+              showFavoritesOnly ||
               timePeriod !== TimePeriod.ALL_TIME) && (
               <EmptyDescription className='text-xs'>
                 {t("mods.emptyClearFilters")}

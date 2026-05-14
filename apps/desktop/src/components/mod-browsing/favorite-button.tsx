@@ -33,9 +33,7 @@ const FavoriteButton = ({
     toggleFavorite(remoteId);
   };
 
-  const tooltipText = isFavorite
-    ? t("favorites.remove")
-    : t("favorites.add");
+  const tooltipText = isFavorite ? t("favorites.remove") : t("favorites.add");
 
   if (variant === "inline") {
     return (
@@ -72,18 +70,23 @@ const FavoriteButton = ({
           aria-pressed={isFavorite}
           className={cn(
             "inline-flex h-8 w-8 items-center justify-center rounded-full",
-            "bg-background/70 backdrop-blur-sm shadow-sm",
-            "text-foreground/80 hover:text-yellow-400",
-            "transition-colors hover:bg-background/90",
+            "border border-white/10 bg-black/50 backdrop-blur-md",
+            "transition-all duration-300 ease-out",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "active:scale-90",
+            isFavorite
+              ? "shadow-[0_0_10px_rgba(234,179,8,0.3)] border-yellow-500/30"
+              : "opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-black/60",
             className,
           )}
           onClick={handleClick}
           type='button'>
           <Star
             className={cn(
-              "h-4 w-4 transition-all",
-              isFavorite && "fill-yellow-400 text-yellow-400",
+              "h-4 w-4 transition-all duration-300",
+              isFavorite
+                ? "fill-yellow-400 text-yellow-400 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)]"
+                : "text-white/70 hover:text-white",
             )}
           />
         </button>

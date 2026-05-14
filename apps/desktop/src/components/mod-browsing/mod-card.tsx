@@ -51,7 +51,7 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
   const cardContent = (
     <Card
       className={cn(
-        "shadow-none border [contain:layout_style_paint] h-full",
+        "group shadow-none border [contain:layout_style_paint] h-full",
         !readOnly && "cursor-pointer",
       )}
       onClick={
@@ -95,18 +95,29 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
             </div>
           </div>
         )}
-        <div className='absolute top-2 right-2 flex flex-col gap-1 items-end'>
-          {!readOnly && <FavoriteButton remoteId={mod.remoteId} />}
-          {status === ModStatus.Installed && (
-            <Badge>{t("modStatus.installed")}</Badge>
-          )}
-          {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
-          {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
-          {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
-            <UpdatedRecentlyBadge />
-          )}
-          {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
-        </div>
+        {!readOnly && (
+          <FavoriteButton
+            className='absolute top-2 right-2 z-10'
+            remoteId={mod.remoteId}
+          />
+        )}
+        {(status === ModStatus.Installed ||
+          mod.isObsolete ||
+          isModOutdated(mod) ||
+          isUpdatedRecently(mod) ||
+          isUpdateAvailable(mod, localMod)) && (
+          <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6'>
+            {status === ModStatus.Installed && (
+              <Badge>{t("modStatus.installed")}</Badge>
+            )}
+            {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
+            {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
+              <UpdatedRecentlyBadge />
+            )}
+            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+          </div>
+        )}
       </div>
       <CardHeader className='px-3 py-4'>
         <div className='flex items-start justify-between'>
