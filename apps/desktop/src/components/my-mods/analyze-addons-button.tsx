@@ -13,12 +13,18 @@ import { AnalysisResultsDialog } from "./analysis-results-dialog";
 
 interface AnalyzeAddonsButtonProps {
   className?: string;
+  label?: string;
+  pendingLabel?: string;
   size?: "default" | "sm" | "iconExpand" | "lg";
+  variant?: "default" | "outline";
 }
 
 export const AnalyzeAddonsButton = ({
   className,
+  label,
+  pendingLabel,
   size,
+  variant = "outline",
 }: AnalyzeAddonsButtonProps) => {
   const { t } = useTranslation();
   const {
@@ -38,14 +44,16 @@ export const AnalyzeAddonsButton = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant='outline'
+              variant={variant}
               onClick={startAnalysis}
               disabled={isPending}
               isLoading={isPending}
               icon={<ScanSearch className='h-4 w-4' />}
               size={size}
               className={className}>
-              {isPending ? t("addons.analyzing") : t("addons.analyzeLocal")}
+              {isPending
+                ? (pendingLabel ?? t("addons.analyzing"))
+                : (label ?? t("addons.analyzeLocal"))}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
