@@ -253,6 +253,7 @@
     "by": "作成者：",
     "audioMod": "オーディオMod",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "インストール中...",
     "enable": "有効",
     "disable": "無効",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "ゲームを停止",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "Modの取得に失敗しました。後でもう一度お試しください。",
     "mods": "Mod",
     "installed": "インストール完了",
@@ -521,17 +523,19 @@
     "tools": "ツール",
     "backups": "バックアップ",
     "toolsDescription": "Modを管理するための補助機能",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "ゲームフォルダを開く",
     "openModsFolder": "Modフォルダを開く",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "すべてのModを削除",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "すべてのModを削除してよろしいですか？この操作は取り消せません。",
     "allModsCleared": "すべてのModは削除されました",
     "failedToClearMods": "Modの削除に失敗しました",
@@ -729,8 +733,8 @@
     "viewDocs": "ドキュメントを表示"
   },
   "branding": {
-    "nightlyBuild": "ナイトリー",
-    "fullBuildVersion": "フルビルド: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "このアプリについて",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "申し訳ございませんが、リクエストの処理中にエラーが発生しました。",
+    "genericMessage": "",
     "errorCode": "エラーコード:",
     "tryAgain": "もう一度試す",
     "goBack": "戻る",
@@ -1649,9 +1653,10 @@
     "title": "デバッグ",
     "description": "開発とトラブルシューティングのためのデバッグツールとユーティリティ。",
     "clearModsState": "Modの状態をクリア",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "Modの状態をクリアしてもよろしいですか？これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
-    "modsStateCleared": "Modの状態を正常にクリアしました"
+    "modsStateCleared": "Modの状態を正常にクリアしました",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "開発者ツール",
@@ -1789,9 +1794,9 @@
     "goBackHome": "ホームに戻る",
     "idLabel": "",
     "authorLabel": "作者",
-    "publishedAt": "公開日時",
-    "lastModifiedAt": "最終更新日時",
-    "installedAt": "インストール日時",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "ダウンロード数",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "コンソールコマンドをクリップボードにコピーしました！",
       "commandCopyFailed": "コンソールコマンドのコピーに失敗しました"
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

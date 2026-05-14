@@ -253,6 +253,7 @@
     "by": "Vo",
     "audioMod": "",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "Instaliere...",
     "enable": "Aktiviere",
     "disable": "Deaktiviere",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "Spiel stoppe",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "Fehler bim Lade vo de Mods. Versuche Si es später nomal.",
     "mods": "",
     "installed": "installiert",
@@ -521,17 +523,19 @@
     "tools": "Werchzüg",
     "backups": "Backup",
     "toolsDescription": "Hilfsfunktione zur Verwaltig Ihre Mods",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "Spielordner öffne",
     "openModsFolder": "Mods-Ordner öffne",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "Alli Mods lösche",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alli Mods lösche möchted? Die Aktion chann nöd rückgängig gmacht werde.",
     "allModsCleared": "Alli Mods si glöscht worde",
     "failedToClearMods": "Fehler bim Lösche vo de Mods",
@@ -729,8 +733,8 @@
     "viewDocs": ""
   },
   "branding": {
-    "nightlyBuild": "Nightly",
-    "fullBuildVersion": "Vollständiger Build: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "Informatione",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "Es tuet ois leid, aber es isch en Fehler ufträte bi de Verarbeitig vo dinere Aafrogg.",
+    "genericMessage": "",
     "errorCode": "Fehlercode:",
     "tryAgain": "No einisch probiere",
     "goBack": "Zrugg gah",
@@ -1649,9 +1653,10 @@
     "title": "",
     "description": "",
     "clearModsState": "",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "",
-    "modsStateCleared": ""
+    "modsStateCleared": "",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "",
@@ -1789,9 +1794,9 @@
     "goBackHome": "Zrugg zur Startseite",
     "idLabel": "",
     "authorLabel": "Autor",
-    "publishedAt": "Veröffentlicht am",
-    "lastModifiedAt": "Zletscht gänderet am",
-    "installedAt": "Installiert am",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "Abeladige",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "",
       "commandCopyFailed": ""
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

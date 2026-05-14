@@ -253,6 +253,7 @@
     "by": "من",
     "audioMod": "تعديل صوتي",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "التثبيت...",
     "enable": "تمكين",
     "disable": "تعطيل",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "إيقاف اللعبة",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "فشل في الحصول على تعديلات. حاول مرة أخرى لاحقاً",
     "mods": "تعديلات",
     "installed": "مثبت",
@@ -521,17 +523,19 @@
     "tools": "أدوات",
     "backups": "النسخ الاحتياطية",
     "toolsDescription": "الوظائف المساعدة لإدارة التعديلات الخاصة بك",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "افتح مجلد اللعبة",
     "openModsFolder": "افتح مجلد التعديلات",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "امسح جميع التعديلات",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
     "allModsCleared": "تم مسح جميع التعديلات",
     "failedToClearMods": "فشل في مسح التعديلات",
@@ -729,8 +733,8 @@
     "viewDocs": "عرض التوثيق"
   },
   "branding": {
-    "nightlyBuild": "ليلي",
-    "fullBuildVersion": "البناء الكامل: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "عن التطبيق",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "نأسف، لكن حدث خطأ أثناء معالجة طلبك.",
+    "genericMessage": "",
     "errorCode": "رمز الخطأ:",
     "tryAgain": "حاول مرة أخرى",
     "goBack": "العودة",
@@ -1649,9 +1653,10 @@
     "title": "التصحيح",
     "description": "أدوات التصحيح والمرافق للتطوير واستكشاف الأخطاء.",
     "clearModsState": "مسح حالة التعديلات",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "هل أنت متأكد من أنك تريد مسح حالة التعديلات؟ هذا سيزيل جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
-    "modsStateCleared": "تم مسح حالة التعديلات بنجاح"
+    "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "أدوات المطور",
@@ -1789,9 +1794,9 @@
     "goBackHome": "العودة للرئيسية",
     "idLabel": "المعرف",
     "authorLabel": "المؤلف",
-    "publishedAt": "تاريخ النشر",
-    "lastModifiedAt": "آخر تعديل",
-    "installedAt": "تاريخ التثبيت",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "التنزيلات",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "تم نسخ أمر وحدة التحكم إلى الحافظة!",
       "commandCopyFailed": "فشل في نسخ أمر وحدة التحكم"
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",
