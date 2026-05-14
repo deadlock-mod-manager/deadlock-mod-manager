@@ -253,6 +253,7 @@
     "by": "โดย",
     "audioMod": "ม็อดเสียง",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "กำลังติดตั้ง...",
     "enable": "เปิดใช้งาน",
     "disable": "ปิดใช้งาน",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "หยุดเกม",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "ไม่สามารถดึงข้อมูลม็อดได้ โปรดลองอีกครั้งในภายหลัง",
     "mods": "ม็อด",
     "installed": "ติดตั้งแล้ว",
@@ -521,17 +523,19 @@
     "tools": "เครื่องมือ",
     "backups": "สำรองข้อมูล",
     "toolsDescription": "ฟังก์ชันยูทิลิตี้สำหรับจัดการม็อดของคุณ",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "เปิดโฟลเดอร์เกม",
     "openModsFolder": "เปิดโฟลเดอร์ม็อด",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "ล้างม็อดทั้งหมด",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
     "allModsCleared": "ล้างม็อดทั้งหมดแล้ว",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
@@ -729,8 +733,8 @@
     "viewDocs": "ดูเอกสารประกอบ"
   },
   "branding": {
-    "nightlyBuild": "ไนท์ลี",
-    "fullBuildVersion": "บิลด์เต็ม: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "เกี่ยวกับ",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "ขออภัย เกิดข้อผิดพลาดขณะประมวลผลคำขอของคุณ",
+    "genericMessage": "",
     "errorCode": "รหัสข้อผิดพลาด:",
     "tryAgain": "ลองอีกครั้ง",
     "goBack": "ย้อนกลับ",
@@ -1649,9 +1653,10 @@
     "title": "ดีบัก",
     "description": "เครื่องมือดีบักและยูทิลิตี้สำหรับการพัฒนาและการแก้ไขปัญหา",
     "clearModsState": "ล้างสถานะม็อด",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "คุณแน่ใจหรือไม่ว่าต้องการล้างสถานะม็อด? การกระทำนี้จะลบม็อดทั้งหมดออกจากแอปพลิเคชัน แต่จะไม่ลบออกจากโฟลเดอร์เกมของคุณ คุณสามารถสแกนโฟลเดอร์ม็อดของคุณอีกครั้งเพื่อกู้คืนได้",
-    "modsStateCleared": "ล้างสถานะม็อดเรียบร้อยแล้ว"
+    "modsStateCleared": "ล้างสถานะม็อดเรียบร้อยแล้ว",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "เครื่องมือสำหรับนักพัฒนา",
@@ -1789,9 +1794,9 @@
     "goBackHome": "กลับหน้าแรก",
     "idLabel": "",
     "authorLabel": "ผู้สร้าง",
-    "publishedAt": "เผยแพร่เมื่อ",
-    "lastModifiedAt": "แก้ไขล่าสุดเมื่อ",
-    "installedAt": "ติดตั้งเมื่อ",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "การดาวน์โหลด",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "",
       "commandCopyFailed": ""
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

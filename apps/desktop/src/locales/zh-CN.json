@@ -253,6 +253,7 @@
     "by": "作者",
     "audioMod": "音频模组",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "安装中...",
     "enable": "启用",
     "disable": "禁用",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "停止游戏",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "获取模组失败，请稍后重试。",
     "mods": "模组",
     "installed": "已安装",
@@ -521,17 +523,19 @@
     "tools": "工具",
     "backups": "备份",
     "toolsDescription": "用于管理模组的实用功能",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "打开游戏文件夹",
     "openModsFolder": "打开模组文件夹",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "清除所有模组",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "确定要清除所有模组吗？此操作无法撤销。",
     "allModsCleared": "所有模组已清除",
     "failedToClearMods": "清除模组失败",
@@ -729,8 +733,8 @@
     "viewDocs": ""
   },
   "branding": {
-    "nightlyBuild": "每夜版",
-    "fullBuildVersion": "完整版本：{{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "关于",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "很抱歉，处理您的请求时发生错误。",
+    "genericMessage": "",
     "errorCode": "错误代码：",
     "tryAgain": "重试",
     "goBack": "返回",
@@ -1649,9 +1653,10 @@
     "title": "调试",
     "description": "用于开发和故障排除的调试工具和实用程序。",
     "clearModsState": "清除模组状态",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "确定要清除模组状态吗？这将从应用程序中移除所有模组，但不会从您的游戏文件夹中删除它们。您可以重新扫描模组文件夹来恢复它们。",
-    "modsStateCleared": "模组状态清除成功"
+    "modsStateCleared": "模组状态清除成功",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "",
@@ -1789,9 +1794,9 @@
     "goBackHome": "返回首页",
     "idLabel": "",
     "authorLabel": "作者",
-    "publishedAt": "发布于",
-    "lastModifiedAt": "最后修改于",
-    "installedAt": "安装于",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "下载量",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "",
       "commandCopyFailed": ""
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

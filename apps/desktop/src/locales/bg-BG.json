@@ -253,6 +253,7 @@
     "by": "От",
     "audioMod": "Аудио мод",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "Изтегля се...",
     "enable": "Включи",
     "disable": "Изключи",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "Спри Играта",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "Не успяхме да намерим модовете. Опитайте отново по-късно.",
     "mods": "",
     "installed": "",
@@ -521,17 +523,19 @@
     "tools": "Инструменти",
     "backups": "Резервни копия",
     "toolsDescription": "Полезни функции за управление на вашите модове",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "Отвори папката на играта",
     "openModsFolder": "Отвори папката с модове",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "Изчисти всички модове",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "Сигурни ли сте, че искате да изчистите всички модове? Това действие не може да бъде отменено.",
     "allModsCleared": "Всички модове са изчистени",
     "failedToClearMods": "Неуспешно изчистване на модове",
@@ -729,8 +733,8 @@
     "viewDocs": ""
   },
   "branding": {
-    "nightlyBuild": "Nightly",
-    "fullBuildVersion": "Пълна версия: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "Благодарности",
@@ -1649,9 +1653,10 @@
     "title": "",
     "description": "",
     "clearModsState": "",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "",
-    "modsStateCleared": ""
+    "modsStateCleared": "",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "",
@@ -1789,9 +1794,9 @@
     "goBackHome": "Обратно към началото",
     "idLabel": "",
     "authorLabel": "Автор",
-    "publishedAt": "Публикуван на",
-    "lastModifiedAt": "Последна промяна на",
-    "installedAt": "Инсталиран на",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "Изтегляния",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "",
       "commandCopyFailed": ""
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

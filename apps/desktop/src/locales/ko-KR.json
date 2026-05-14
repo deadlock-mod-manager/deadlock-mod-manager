@@ -253,6 +253,7 @@
     "by": "에 의해",
     "audioMod": "오디오 모드",
     "mapBadge": "지도",
+    "customBadge": "",
     "installing": "설치 중...",
     "enable": "할 수 있게 하다",
     "disable": "장애를 입히다",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "게임 중지",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "모드를 가져오지 못했습니다. 나중에 다시 시도하세요.",
     "mods": "모드",
     "installed": "설치됨",
@@ -411,9 +413,9 @@
     "authOnline": "인증 서버 온라인",
     "authOffline": "인증 서버 오프라인",
     "authUnknown": "인증 알 수 없음",
-    "fsWritable": "애드온 폴더와 gameinfo.gi에 쓸 수 있습니다(읽기 전용 아님)",
-    "fsReadonly": "애드온 폴더 또는 gameinfo.gi가 읽기 전용입니다(권한을 확인하세요)",
-    "fsUnknown": "애드온 폴더 또는 gameinfo.gi 상태를 확인할 수 없습니다",
+    "fsWritable": "",
+    "fsReadonly": "",
+    "fsUnknown": "",
     "optional": "선택 과목",
     "required": "필수의",
     "type": "유형",
@@ -521,17 +523,19 @@
     "tools": "도구",
     "backups": "백업",
     "toolsDescription": "모드 관리를 위한 유틸리티 기능",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "게임 폴더 열기",
     "openModsFolder": "Mods 폴더 열기",
     "openModsDataFolder": "앱 데이터 폴더 열기",
     "clearDownloadCache": "다운로드 캐시 지우기",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "이렇게 하면 원격 모드용으로 다운로드한 아카이브와 추출된 파일이 제거됩니다. 로컬 모드는 보존됩니다.",
     "clearAllModsData": "모든 모드 데이터 지우기",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "이렇게 하면 로컬 모드, 메타데이터, 미리보기 이미지를 포함한 모든 모드 데이터가 영구적으로 삭제됩니다. 로컬 모드는 복구할 수 없습니다. 확실합니까?",
     "clearAllMods": "모든 모드 지우기",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "모든 모드를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "allModsCleared": "모든 모드가 삭제되었습니다.",
     "failedToClearMods": "모드를 삭제하지 못했습니다.",
@@ -729,8 +733,8 @@
     "viewDocs": "문서 보기"
   },
   "branding": {
-    "nightlyBuild": "나이틀리",
-    "fullBuildVersion": "전체 빌드: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "에 대한",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "죄송합니다. 요청을 처리하는 동안 오류가 발생했습니다.",
+    "genericMessage": "",
     "errorCode": "오류 코드:",
     "tryAgain": "다시 시도하세요",
     "goBack": "돌아가기",
@@ -1649,9 +1653,10 @@
     "title": "디버그",
     "description": "개발 및 문제 해결을 위한 디버그 도구 및 유틸리티입니다.",
     "clearModsState": "모드 상태 지우기",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "모드 상태를 지우시겠습니까? 이렇게 하면 애플리케이션에서 모든 모드가 제거되지만 게임 폴더에서는 삭제되지 않습니다. mods 폴더를 다시 스캔하여 복원할 수 있습니다.",
-    "modsStateCleared": "Mods 상태가 성공적으로 지워졌습니다."
+    "modsStateCleared": "Mods 상태가 성공적으로 지워졌습니다.",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "개발자 도구",
@@ -1789,9 +1794,9 @@
     "goBackHome": "집으로 돌아가세요",
     "idLabel": "",
     "authorLabel": "작가",
-    "publishedAt": "게시 날짜",
-    "lastModifiedAt": "마지막 수정 시간",
-    "installedAt": "설치 위치",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "다운로드",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "콘솔 명령이 클립보드에 복사되었습니다!",
       "commandCopyFailed": "콘솔 명령을 복사하지 못했습니다."
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "설치할 파일 선택: {{modName}}",

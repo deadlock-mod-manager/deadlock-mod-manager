@@ -253,6 +253,7 @@
     "by": "Por:",
     "audioMod": "AudioMod",
     "mapBadge": "",
+    "customBadge": "",
     "installing": "Instalando...",
     "enable": "Activar",
     "disable": "Desactivar",
@@ -392,6 +393,7 @@
     "launchModdedCount_one": "",
     "launchModdedCount_other": "",
     "stopGame": "Detener juego",
+    "gameinfoAutoReset": "",
     "failedToFetchMods": "Error al obtener Mods. Prueba otra vez mas adelante",
     "mods": "",
     "installed": "Instalados",
@@ -521,17 +523,19 @@
     "tools": "Herramientas",
     "backups": "Copias de seguridad",
     "toolsDescription": "Funciones de utilidad para gestionar tus mods",
+    "dangerZone": "",
+    "dangerZoneDescription": "",
     "openGameFolder": "Abrir Carpeta del Juego",
     "openModsFolder": "Abrir Carpeta de Mods",
     "openModsDataFolder": "",
     "clearDownloadCache": "",
-    "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
+    "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
     "clearAllModsData": "",
-    "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
+    "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
     "clearAllMods": "Limpiar Todos los Mods",
-    "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
+    "clearAllModsDescription": "",
     "confirmClearAllMods": "¿Estás seguro de que quieres limpiar todos los mods? Esta acción no se puede deshacer.",
     "allModsCleared": "Todos los mods han sido limpiados",
     "failedToClearMods": "Error al limpiar mods",
@@ -729,8 +733,8 @@
     "viewDocs": "Ver documentación"
   },
   "branding": {
-    "nightlyBuild": "Nocturna",
-    "fullBuildVersion": "Compilación completa: {{version}}"
+    "nightlyBuild": "",
+    "fullBuildVersion": ""
   },
   "about": {
     "title": "Información",
@@ -1024,7 +1028,7 @@
     }
   },
   "errors": {
-    "genericMessage": "Lo sentimos, pero ocurrió un error al procesar tu solicitud.",
+    "genericMessage": "",
     "errorCode": "Código de error:",
     "tryAgain": "Intentar de nuevo",
     "goBack": "Volver",
@@ -1649,9 +1653,10 @@
     "title": "Depuración",
     "description": "Herramientas de depuración y utilidades para desarrollo y resolución de problemas.",
     "clearModsState": "Limpiar Estado de Mods",
-    "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
+    "clearModsStateDescription": "",
     "confirmClearModsState": "¿Estás seguro de que quieres limpiar el estado de los mods? Esto eliminará todos los mods de la aplicación pero NO los eliminará de tu carpeta del juego. Puedes volver a escanear tu carpeta de mods para restaurarlos.",
-    "modsStateCleared": "Estado de mods limpiado exitosamente"
+    "modsStateCleared": "Estado de mods limpiado exitosamente",
+    "triggerOnboarding": ""
   },
   "developer": {
     "title": "Herramientas de Desarrollador",
@@ -1789,9 +1794,9 @@
     "goBackHome": "Volver al inicio",
     "idLabel": "",
     "authorLabel": "Autor",
-    "publishedAt": "Publicado el",
-    "lastModifiedAt": "Última modificación el",
-    "installedAt": "Instalado el",
+    "publishedAt": "",
+    "lastModifiedAt": "",
+    "installedAt": "",
     "downloadsLabel": "Descargas",
     "likesLabel": "",
     "modStatusLabel": "",
@@ -1933,6 +1938,23 @@
       "commandCopied": "",
       "commandCopyFailed": ""
     }
+  },
+  "modOptions": {
+    "title": "",
+    "description": "",
+    "openTooltip": "",
+    "apply": "",
+    "applySuccess": "",
+    "applyError": "",
+    "noOptions": "",
+    "selectedCount": "",
+    "enabled": "",
+    "needsDownload": "",
+    "fetchMissingNoSource": "",
+    "fetchMissingUnresolved": "",
+    "fetchMissingNotFound": "",
+    "installedFiles": "",
+    "installedFilesCount": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",
