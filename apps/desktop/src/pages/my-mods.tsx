@@ -1021,7 +1021,7 @@ const MyMods = () => {
       </div>
 
       <div
-        className='flex min-h-0 flex-col items-start justify-between gap-4 overflow-y-auto pt-2'
+        className='flex min-h-0 flex-col items-start justify-between gap-4 overflow-y-auto pt-3'
         ref={scrollContainerRef}
         onScroll={(e) => {
           scrollPositionRef.current = e.currentTarget.scrollTop;
@@ -1053,30 +1053,32 @@ const MyMods = () => {
             )}
             {mods.length > 0 && (
               <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-                  <SearchBar
-                    filterMode={filterMode}
-                    audioQuickFilter={audioQuickFilter}
-                    mapQuickFilter={effectiveMapQuickFilter}
-                    hideNSFW={hideNSFW}
-                    hideOutdated={hideOutdated}
-                    mods={mods}
-                    onCategoriesChange={setSelectedCategories}
-                    onFilterModeChange={setFilterMode}
-                    onHeroesChange={setSelectedHeroes}
-                    onAudioQuickFilterChange={setAudioQuickFilter}
-                    onMapQuickFilterChange={setMapQuickFilter}
-                    onHideNSFWChange={setHideNSFW}
-                    onHideOutdatedChange={setHideOutdated}
-                    query={query}
-                    selectedCategories={selectedCategories}
-                    selectedHeroes={selectedHeroes}
-                    setQuery={setQuery}
-                    showSortControl={false}
-                    showTimePeriodControl={false}
-                    hideMapFilter={!isCustomMapsEnabled}
-                  />
-                  <div className='flex items-center gap-2'>
+                <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+                  <div className='[&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
+                    <SearchBar
+                      filterMode={filterMode}
+                      audioQuickFilter={audioQuickFilter}
+                      mapQuickFilter={effectiveMapQuickFilter}
+                      hideNSFW={hideNSFW}
+                      hideOutdated={hideOutdated}
+                      mods={mods}
+                      onCategoriesChange={setSelectedCategories}
+                      onFilterModeChange={setFilterMode}
+                      onHeroesChange={setSelectedHeroes}
+                      onAudioQuickFilterChange={setAudioQuickFilter}
+                      onMapQuickFilterChange={setMapQuickFilter}
+                      onHideNSFWChange={setHideNSFW}
+                      onHideOutdatedChange={setHideOutdated}
+                      query={query}
+                      selectedCategories={selectedCategories}
+                      selectedHeroes={selectedHeroes}
+                      setQuery={setQuery}
+                      showSortControl={false}
+                      showTimePeriodControl={false}
+                      hideMapFilter={!isCustomMapsEnabled}
+                    />
+                  </div>
+                  <div className='flex items-center gap-2 pt-0.5'>
                     <TabsList>
                       <TabsTrigger value={ModFilter.ALL}>
                         {t("myMods.tabs.all")}
