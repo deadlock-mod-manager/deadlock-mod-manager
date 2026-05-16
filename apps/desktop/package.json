@@ -10,7 +10,8 @@
     "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "dev": "pnpm tauri dev",
+    "dev": "cross-env DMM_MCP_BRIDGE=1 pnpm tauri dev --config src-tauri/tauri.mcp.conf.json",
+    "dev:no-bridge": "pnpm tauri dev",
     "build": "pnpm tauri build",
     "build:dev": "pnpm tauri build --no-bundle",
     "format:rust": "cd src-tauri && rustfmt"
