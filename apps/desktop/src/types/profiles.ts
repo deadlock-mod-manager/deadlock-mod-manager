@@ -26,6 +26,9 @@ export interface VpkManifestEntry {
   currentVpks: string[];
   disabledVpks: string[];
   originalVpkNames: string[];
+  currentConfigFiles: string[];
+  disabledConfigFiles: string[];
+  originalConfigFilePaths: string[];
 }
 
 export interface VpkManifest {
@@ -39,6 +42,9 @@ export interface SeedManifestEntry {
   currentVpks: string[];
   disabledVpks: string[];
   originalVpkNames: string[];
+  currentConfigFiles: string[];
+  disabledConfigFiles: string[];
+  originalConfigFilePaths: string[];
   order: number | null;
 }
 

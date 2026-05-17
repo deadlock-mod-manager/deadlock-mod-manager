@@ -82,7 +82,11 @@ const AddMods = () => {
   });
 
   const handleFilesDetected = (detectedSource: DetectedSource) => {
-    const baseName = getFileBaseName(detectedSource.file).replace(
+    const firstFile =
+      detectedSource.kind === "config"
+        ? detectedSource.files[0]
+        : detectedSource.file;
+    const baseName = getFileBaseName(firstFile).replace(
       ALL_SUPPORTED_PATTERN,
       "",
     );
@@ -258,6 +262,14 @@ const AddMods = () => {
                 <div>
                   <span className='font-medium'>{t("addMods.source")}:</span>{" "}
                   VPK → {getFileName(detected.file)}
+                </div>
+              ) : detected?.kind === "config" ? (
+                <div>
+                  <span className='font-medium'>{t("addMods.source")}:</span>{" "}
+                  Config -{" "}
+                  {detected.files.length === 1
+                    ? getFileName(detected.files[0])
+                    : `${detected.files.length} files`}
                 </div>
               ) : null}
             </div>

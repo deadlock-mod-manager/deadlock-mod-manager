@@ -6,6 +6,7 @@ export const profileModFileSchema = z.object({
   size: z.number(),
   is_selected: z.boolean(),
   archive_name: z.string(),
+  kind: z.enum(["vpk", "config"]).optional(),
 });
 
 export const profileModFileTreeSchema = z.object({

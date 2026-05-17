@@ -192,6 +192,7 @@ export const useBatchUpdate = () => {
             installedModInfo.modId,
             installedModInfo.installedVpks,
             installedModInfo.fileTree,
+            installedModInfo.installedConfigFiles ?? [],
           );
           setStoreSelectedDownloads(
             installedModInfo.modId,

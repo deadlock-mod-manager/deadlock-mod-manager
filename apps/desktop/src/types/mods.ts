@@ -35,10 +35,12 @@ export interface LocalMod extends ModDto {
   selectedDownloads?: ModDownloadItem[];
   activeVariantArchive?: string;
   installedVpks?: string[];
+  installedConfigFiles?: string[];
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
   usesCriticalPaths?: boolean;
+  isConfig?: boolean;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {
@@ -58,6 +60,7 @@ export type InstallableMod = {
   id: string;
   name: string;
   installed_vpks: string[];
+  installed_config_files?: string[];
   file_tree?: ModFileTree;
 };
 
@@ -67,6 +70,7 @@ export interface ModFile {
   size: number;
   is_selected: boolean;
   archive_name: string;
+  kind?: "vpk" | "config";
 }
 
 export interface ModFileTree {
@@ -139,6 +143,7 @@ export interface InstalledModInfo {
   modId: string;
   modName: string;
   installedVpks: string[];
+  installedConfigFiles?: string[];
   fileTree?: ModFileTree;
 }
 

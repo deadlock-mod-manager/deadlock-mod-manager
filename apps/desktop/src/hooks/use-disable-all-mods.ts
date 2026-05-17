@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
-import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import { isInstalledModWithFiles } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 
@@ -20,7 +20,7 @@ export const useDisableAllMods = () => {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const enabledMods = mods.filter(isInstalledModWithVpks);
+      const enabledMods = mods.filter(isInstalledModWithFiles);
       const shouldDisable = await confirm({
         title: t("myMods.disableAllConfirmTitle"),
         body: t("myMods.disableAllConfirmBody", {

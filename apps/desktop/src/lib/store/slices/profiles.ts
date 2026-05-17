@@ -5,7 +5,7 @@ import type { StateCreator } from "zustand";
 import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
-import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import { isInstalledModWithFiles } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
@@ -681,7 +681,7 @@ export const createProfilesSlice: StateCreator<
 
   getEnabledModsCount: () => {
     const { localMods } = get();
-    return localMods.filter(isInstalledModWithVpks).length;
+    return localMods.filter(isInstalledModWithFiles).length;
   },
 
   saveCurrentModsToProfile: () => {
@@ -792,11 +792,14 @@ export const createProfilesSlice: StateCreator<
 
         if (manifestEntry) {
           const currentVpks = manifestEntry.currentVpks ?? [];
+          const currentConfigFiles = manifestEntry.currentConfigFiles ?? [];
           const hasEnabledVpks =
             manifestEntry.enabled &&
             currentVpks.some((vpk) => enabledVpkSet.has(vpk));
+          const hasEnabledConfigFiles =
+            manifestEntry.enabled && currentConfigFiles.length > 0;
 
-          if (hasEnabledVpks) {
+          if (hasEnabledVpks || hasEnabledConfigFiles) {
             updatedEnabledMods[mod.remoteId] = {
               remoteId: mod.remoteId,
               enabled: true,
@@ -807,6 +810,8 @@ export const createProfilesSlice: StateCreator<
               ...mod,
               status: ModStatus.Installed,
               installedVpks: currentVpks,
+              installedConfigFiles: currentConfigFiles,
+              isConfig: mod.isConfig || currentConfigFiles.length > 0,
               installOrder: manifestEntry.order ?? mod.installOrder,
             });
           } else {
@@ -828,6 +833,7 @@ export const createProfilesSlice: StateCreator<
               ...mod,
               status: ModStatus.Downloaded,
               installedVpks: [],
+              installedConfigFiles: [],
               installOrder: manifestEntry.order ?? mod.installOrder,
             });
           }
@@ -883,6 +889,9 @@ export const createProfilesSlice: StateCreator<
             currentVpks: enabledVpksForMod,
             disabledVpks: [],
             originalVpkNames: [],
+            currentConfigFiles: [],
+            disabledConfigFiles: [],
+            originalConfigFilePaths: [],
             order: mod.installOrder ?? null,
           });
         } else {
@@ -902,6 +911,9 @@ export const createProfilesSlice: StateCreator<
             currentVpks: [],
             disabledVpks: disabledVpksForMod,
             originalVpkNames: [],
+            currentConfigFiles: [],
+            disabledConfigFiles: [],
+            originalConfigFilePaths: [],
             order: mod.installOrder ?? null,
           });
         }
@@ -989,12 +1001,17 @@ export const createProfilesSlice: StateCreator<
       try {
         const modDetails = await getMod(modId);
         const currentVpks = entry.currentVpks ?? [];
-        const isEnabled = entry.enabled && currentVpks.length > 0;
+        const currentConfigFiles = entry.currentConfigFiles ?? [];
+        const isEnabled =
+          entry.enabled &&
+          (currentVpks.length > 0 || currentConfigFiles.length > 0);
 
         const restoredMod: LocalMod = {
           ...modDetails,
           status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
           installedVpks: isEnabled ? currentVpks : [],
+          installedConfigFiles: isEnabled ? currentConfigFiles : [],
+          isConfig: currentConfigFiles.length > 0,
           installOrder: entry.order ?? restoredMods.length,
           downloadedAt: new Date(),
         };

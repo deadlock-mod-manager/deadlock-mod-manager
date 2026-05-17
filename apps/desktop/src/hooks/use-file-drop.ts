@@ -270,7 +270,7 @@ export const useFileDrop = (
       filters: [
         {
           name: t("common.mods"),
-          extensions: ["vpk", "zip", "rar", "7z"],
+          extensions: ["vpk", "cfg", "ini", "zip", "rar", "7z"],
         },
       ],
     });

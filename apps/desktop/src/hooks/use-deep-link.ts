@@ -229,6 +229,7 @@ export const useDeepLink = () => {
                           mod.remoteId,
                           result.installed_vpks,
                           result.file_tree,
+                          result.installed_config_files ?? [],
                         );
                         toast.success(
                           `${mod.name} installed successfully via 1-click!`,

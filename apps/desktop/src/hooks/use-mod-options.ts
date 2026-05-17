@@ -21,6 +21,7 @@ const logger = createLogger("use-mod-options");
 
 interface SwapModOptionsResult {
   installed_vpks: string[];
+  installed_config_files?: string[];
   original_vpk_names: string[];
   file_tree: ModFileTree;
 }
@@ -51,7 +52,9 @@ const deriveCurrentOriginalNames = (mod: LocalMod): string[] => {
   if (!mod.installedFileTree) {
     return mod.installedVpks ?? [];
   }
-  const selected = mod.installedFileTree.files.filter((f) => f.is_selected);
+  const selected = mod.installedFileTree.files.filter(
+    (f) => f.is_selected && f.kind !== "config",
+  );
   return selected.map((f) => f.name);
 };
 
@@ -203,7 +206,9 @@ export const useModOptions = (mod: LocalMod | null) => {
   ]);
 
   const showButton =
-    mod?.status === ModStatus.Installed && downloads.length > 1;
+    mod?.status === ModStatus.Installed &&
+    downloads.length > 1 &&
+    currentOriginalNames.length > 0;
 
   const stagedOriginalsMapRef = useRef(new Map<string, string>());
 
@@ -326,7 +331,12 @@ export const useModOptions = (mod: LocalMod | null) => {
         if (archiveName) f.archive_name = archiveName;
       }
 
-      setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
+      setInstalledVpks(
+        mod.remoteId,
+        result.installed_vpks,
+        mergedTree,
+        result.installed_config_files ?? [],
+      );
 
       if (allCheckedArchiveNames.length > 0) {
         setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));

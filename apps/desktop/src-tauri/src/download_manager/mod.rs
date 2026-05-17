@@ -1,6 +1,7 @@
 pub mod downloader;
 
 use crate::errors::Error;
+use crate::mod_manager::config_mod_manager::ConfigModManager;
 use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -412,6 +413,7 @@ impl DownloadManager {
     } else {
       game_path.join("game").join("citadel").join("addons")
     };
+    let config_path = game_path.join("game").join("citadel").join("cfg");
 
     log::info!(
       "Using game destination path: {destination_path:?} (profile_folder: {:?})",
@@ -426,6 +428,7 @@ impl DownloadManager {
     use crate::mod_manager::file_tree::FileTreeAnalyzer;
 
     let vpk_manager = VpkManager::new();
+    let config_manager = ConfigModManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
     let font_manager = crate::mod_manager::FontManager::new();
     let stash_dir = task.target_dir.join("fonts");
@@ -579,18 +582,25 @@ impl DownloadManager {
                   &task.mod_id,
                   provided_file_tree,
                 )?;
+                let copied_config_files = config_manager.copy_config_files_to_staging(
+                  &extracted_dir,
+                  &config_path,
+                  &task.mod_id,
+                  Some(provided_file_tree),
+                )?;
 
                 log::info!(
-                  "Copied {} VPKs for mod {}: {:?}",
+                  "Copied {} VPKs and {} config files for mod {}: {:?}",
                   copied_vpks.len(),
+                  copied_config_files.len(),
                   task.mod_id,
                   copied_vpks
                 );
 
-                if copied_vpks.is_empty() {
-                  log::error!("No VPKs were copied for mod: {}", task.mod_id);
+                if copied_vpks.is_empty() && copied_config_files.is_empty() {
+                  log::error!("No managed files were copied for mod: {}", task.mod_id);
                   return Err(Error::InvalidInput(
-                    "No VPKs matched the file tree selection".to_string(),
+                    "No VPK or config files matched the file tree selection".to_string(),
                   ));
                 }
 
@@ -627,14 +637,27 @@ impl DownloadManager {
           }
 
           log::info!(
-            "Mod has single VPK file, copying directly for mod: {}",
+            "Mod has a single managed file, copying directly for mod: {}",
             task.mod_id
           );
-          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied =
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied_config_files = config_manager.copy_config_files_to_staging(
+            &extracted_dir,
+            &config_path,
+            &task.mod_id,
+            Some(&file_tree),
+          )?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
-            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            let original = vpk_name
+              .strip_prefix(&prefix)
+              .unwrap_or(vpk_name)
+              .to_string();
             vpk_archive_map.insert(original, archive_name.clone());
+          }
+          for config_file in copied_config_files {
+            vpk_archive_map.insert(config_file, archive_name.clone());
           }
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
@@ -644,11 +667,24 @@ impl DownloadManager {
             task.mod_id,
             e
           );
-          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied =
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied_config_files = config_manager.copy_config_files_to_staging(
+            &extracted_dir,
+            &config_path,
+            &task.mod_id,
+            None,
+          )?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
-            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            let original = vpk_name
+              .strip_prefix(&prefix)
+              .unwrap_or(vpk_name)
+              .to_string();
             vpk_archive_map.insert(original, archive_name.clone());
+          }
+          for config_file in copied_config_files {
+            vpk_archive_map.insert(config_file, archive_name.clone());
           }
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
@@ -657,10 +693,12 @@ impl DownloadManager {
 
     if !task.is_profile_import {
       let prefixed_vpks = vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?;
+      let staged_config_files =
+        config_manager.find_staged_config_files(&config_path, &task.mod_id)?;
 
-      if !prefixed_vpks.is_empty() {
+      if !prefixed_vpks.is_empty() || !staged_config_files.is_empty() {
         let prefix = format!("{}_", task.mod_id);
-        let files: Vec<crate::mod_manager::file_tree::ModFile> = prefixed_vpks
+        let mut files: Vec<crate::mod_manager::file_tree::ModFile> = prefixed_vpks
           .iter()
           .map(|vpk_name| {
             let original_name = vpk_name
@@ -680,9 +718,36 @@ impl DownloadManager {
               size,
               is_selected: true,
               archive_name: archive,
+              kind: crate::mod_manager::file_tree::ModFileKind::Vpk,
             }
           })
           .collect();
+        files.extend(staged_config_files.iter().map(|config_file| {
+          let size = std::fs::metadata(
+            config_path
+              .join(".dmm-config-mods")
+              .join(&task.mod_id)
+              .join("disabled")
+              .join(config_file),
+          )
+          .map(|m| m.len())
+          .unwrap_or(0);
+          let archive = vpk_archive_map
+            .get(config_file)
+            .cloned()
+            .unwrap_or_default();
+          crate::mod_manager::file_tree::ModFile {
+            name: std::path::Path::new(config_file)
+              .file_name()
+              .map(|name| name.to_string_lossy().to_string())
+              .unwrap_or_else(|| config_file.clone()),
+            path: config_file.clone(),
+            size,
+            is_selected: true,
+            archive_name: archive,
+            kind: crate::mod_manager::file_tree::ModFileKind::Config,
+          }
+        }));
 
         let total_files = files.len();
         let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {

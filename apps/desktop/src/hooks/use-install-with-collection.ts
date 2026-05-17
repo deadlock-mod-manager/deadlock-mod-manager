@@ -176,31 +176,41 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
         // If mod has multiple files, check if we already have a previous selection
         if (mod.installedFileTree.has_multiple_files) {
-          // If mod already has installedVpks, it means user previously selected files
-          // Use that selection instead of prompting again
-          if (mod.installedVpks && mod.installedVpks.length > 0) {
+          // Use the previous selection instead of prompting again.
+          if (
+            (mod.installedVpks?.length ?? 0) > 0 ||
+            (mod.installedConfigFiles?.length ?? 0) > 0
+          ) {
             logger
               .withMetadata({
                 modId: mod.remoteId,
-                previouslyInstalledVpks: mod.installedVpks.length,
+                previouslyInstalledVpks: mod.installedVpks?.length ?? 0,
+                previouslyInstalledConfigFiles:
+                  mod.installedConfigFiles?.length ?? 0,
               })
-              .info("Mod has previous VPK selection, using it for re-enable");
+              .info("Mod has previous file selection, using it for re-enable");
 
-            // Create a new file tree with only previously selected files marked as selected
-            const previouslySelectedFiles = new Set(
-              mod.installedVpks.map((vpkPath) => {
-                // Extract the original filename from the path
-                const filename = vpkPath.split(/[\\/]/).pop() || "";
-                // Remove the mod prefix if present (e.g., "modId_file.vpk" -> "file.vpk")
-                return filename.replace(new RegExp(`^${mod.remoteId}_`), "");
-              }),
-            );
+            const previouslySelectedFiles = new Set<string>();
+            for (const vpkPath of mod.installedVpks ?? []) {
+              const filename = vpkPath.split(/[\\/]/).pop() || "";
+              previouslySelectedFiles.add(vpkPath);
+              previouslySelectedFiles.add(
+                filename.replace(new RegExp(`^${mod.remoteId}_`), ""),
+              );
+            }
+            for (const configPath of mod.installedConfigFiles ?? []) {
+              const filename = configPath.split(/[\\/]/).pop() || "";
+              previouslySelectedFiles.add(configPath);
+              previouslySelectedFiles.add(filename);
+            }
 
             const updatedFileTree: ModFileTree = {
               ...mod.installedFileTree,
               files: mod.installedFileTree.files.map((file) => ({
                 ...file,
-                is_selected: previouslySelectedFiles.has(file.name),
+                is_selected:
+                  previouslySelectedFiles.has(file.path) ||
+                  previouslySelectedFiles.has(file.name),
               })),
             };
 
@@ -212,7 +222,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
                 ).length,
                 totalFiles: updatedFileTree.total_files,
               })
-              .info("Using previous VPK selection for re-enable");
+              .info("Using previous file selection for re-enable");
 
             return await performInstallation(mod, options, updatedFileTree);
           }

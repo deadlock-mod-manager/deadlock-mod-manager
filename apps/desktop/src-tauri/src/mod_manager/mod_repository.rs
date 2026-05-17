@@ -11,12 +11,16 @@ pub struct Mod {
   pub is_map: bool,
   #[serde(default)]
   pub installed_vpks: Vec<String>,
+  #[serde(default)]
+  pub installed_config_files: Vec<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub install_order: Option<u32>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  #[serde(default)]
+  pub original_config_file_paths: Vec<String>,
 }
 
 /// Manages the repository of installed and tracked mods

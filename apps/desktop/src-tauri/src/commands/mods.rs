@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
 use crate::errors::Error;
+use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::file_tree::{ModFile, ModFileTree};
+use crate::mod_manager::file_tree::{ModFile, ModFileKind, ModFileTree};
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
-use crate::mod_manager::Mod;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -31,9 +31,7 @@ fn sanitize_archive_name(name: &str) -> Result<String, Error> {
   let path = std::path::Path::new(name);
   match path.file_name().and_then(|f| f.to_str()) {
     Some(f) if f == name => Ok(f.to_string()),
-    _ => Err(Error::InvalidInput(format!(
-      "Invalid archive name: {name}"
-    ))),
+    _ => Err(Error::InvalidInput(format!("Invalid archive name: {name}"))),
   }
 }
 
@@ -54,9 +52,9 @@ fn validate_download_url(url: &str) -> Result<(), Error> {
     .host_str()
     .ok_or_else(|| Error::InvalidInput(format!("Download URL has no host: {url}")))?;
 
-  let is_allowed = ALLOWED_DOWNLOAD_HOSTS.iter().any(|allowed| {
-    host == *allowed || host.ends_with(&format!(".{allowed}"))
-  });
+  let is_allowed = ALLOWED_DOWNLOAD_HOSTS
+    .iter()
+    .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")));
 
   if !is_allowed {
     return Err(Error::InvalidInput(format!(
@@ -196,6 +194,8 @@ pub struct InstalledModInfo {
   pub mod_id: String,
   pub mod_name: String,
   pub installed_vpks: Vec<String>,
+  #[serde(default)]
+  pub installed_config_files: Vec<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_tree: Option<ModFileTree>,
 }
@@ -311,6 +311,11 @@ pub async fn batch_update_mods(
     };
 
     let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
+    let config_manager = crate::mod_manager::config_mod_manager::ConfigModManager::new();
+    let config_path = {
+      let mod_manager = MANAGER.lock().unwrap();
+      mod_manager.get_cfg_path()?
+    };
     let cleanup_result = vpk_manager
       .find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id)
       .and_then(|old_vpks| {
@@ -395,9 +400,7 @@ pub async fn batch_update_mods(
     };
 
     let prefixed_cleanup_count = cleanup_result.unwrap_or(0);
-    if prefixed_cleanup_count == 0
-      && repo_cleanup_count == 0
-      && !mod_data.installed_vpks.is_empty()
+    if prefixed_cleanup_count == 0 && repo_cleanup_count == 0 && !mod_data.installed_vpks.is_empty()
     {
       log::info!(
         "Using frontend-provided VPK list for cleanup of mod {} ({} VPKs)",
@@ -491,26 +494,32 @@ pub async fn batch_update_mods(
       continue;
     }
 
-    let mut vpks_found = false;
+    let mut managed_files_found = false;
     let max_retries = 10;
     let mut retry_delay_ms = 100;
 
     for attempt in 0..max_retries {
-      match vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
-        Ok(vpks) if !vpks.is_empty() => {
+      let prefixed_vpks =
+        vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id);
+      let staged_config_files =
+        config_manager.find_staged_config_files(&config_path, &mod_data.mod_id);
+
+      match (prefixed_vpks, staged_config_files) {
+        (Ok(vpks), Ok(config_files)) if !vpks.is_empty() || !config_files.is_empty() => {
           log::info!(
-            "Download completed for mod: {} (found {} VPKs after {} attempts)",
+            "Download completed for mod: {} (found {} VPKs and {} config files after {} attempts)",
             mod_data.mod_id,
             vpks.len(),
+            config_files.len(),
             attempt + 1
           );
-          vpks_found = true;
+          managed_files_found = true;
           break;
         }
-        Ok(_) => {
+        (Ok(_), Ok(_)) => {
           if attempt < max_retries - 1 {
             log::debug!(
-              "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
+              "Managed files not found yet for mod {} (attempt {}/{}), waiting {}ms",
               mod_data.mod_id,
               attempt + 1,
               max_retries,
@@ -520,8 +529,12 @@ pub async fn batch_update_mods(
             retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
           }
         }
-        Err(e) => {
-          log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
+        (Err(e), _) | (_, Err(e)) => {
+          log::error!(
+            "Failed to check managed files for mod {}: {:?}",
+            mod_data.mod_id,
+            e
+          );
           failed.push((
             mod_data.mod_id.clone(),
             format!("Failed to verify download: {:?}", e),
@@ -531,16 +544,16 @@ pub async fn batch_update_mods(
       }
     }
 
-    if !vpks_found {
+    if !managed_files_found {
       if !failed.iter().any(|(id, _)| id == &mod_data.mod_id) {
         log::error!(
-          "Download completed but no VPKs found for mod: {} after {} retries",
+          "Download completed but no VPK or config files found for mod: {} after {} retries",
           mod_data.mod_id,
           max_retries
         );
         failed.push((
           mod_data.mod_id.clone(),
-          "Download completed but no VPKs found".to_string(),
+          "Download completed but no VPK or config files found".to_string(),
         ));
       }
       continue;
@@ -566,9 +579,11 @@ pub async fn batch_update_mods(
         name: mod_data.mod_name.clone(),
         is_map: mod_data.is_map,
         installed_vpks: Vec::new(),
+        installed_config_files: Vec::new(),
         file_tree: mod_data.file_tree.clone(),
         install_order: None,
         original_vpk_names: Vec::new(),
+        original_config_file_paths: Vec::new(),
       };
 
       mod_manager.install_mod(
@@ -590,6 +605,7 @@ pub async fn batch_update_mods(
           mod_id: installed_mod.id.clone(),
           mod_name: installed_mod.name.clone(),
           installed_vpks: installed_mod.installed_vpks.clone(),
+          installed_config_files: installed_mod.installed_config_files.clone(),
           file_tree: installed_mod.file_tree.clone(),
         });
       }
@@ -653,9 +669,11 @@ pub async fn register_analyzed_mod(
       name: mod_name,
       is_map: false,
       installed_vpks: installed_vpks.clone(),
+      installed_config_files: Vec::new(),
       file_tree: None,
       install_order,
       original_vpk_names: Vec::new(),
+      original_config_file_paths: Vec::new(),
     };
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
   }
@@ -663,7 +681,14 @@ pub async fn register_analyzed_mod(
   // Analysis discovers files as-is on disk, so current_vpks = installed_vpks
   // and original_vpk_names should be cleared (no rename history applies).
   // Preserve order from any existing manifest entry.
-  manifest.mark_enabled(&mod_id, installed_vpks, Vec::new(), install_order);
+  manifest.mark_enabled(
+    &mod_id,
+    installed_vpks,
+    Vec::new(),
+    Vec::new(),
+    Vec::new(),
+    install_order,
+  );
   // mark_enabled skips overwriting original_vpk_names when passed empty,
   // so explicitly clear stale originals from a previous install.
   if let Some(entry) = manifest.mods.get_mut(&mod_id) {
@@ -675,10 +700,7 @@ pub async fn register_analyzed_mod(
   Ok(())
 }
 
-fn resolve_addons_path(
-  game_path: &std::path::Path,
-  profile_folder: Option<&str>,
-) -> PathBuf {
+fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>) -> PathBuf {
   let base = game_path.join("game").join("citadel").join("addons");
   match profile_folder {
     Some(folder) => base.join(folder),
@@ -698,6 +720,7 @@ fn build_options_file_tree(
       size: 0,
       is_selected: selected_originals.contains(name),
       archive_name: String::new(),
+      kind: ModFileKind::Vpk,
     })
     .collect();
   let total_files = files.len();
@@ -762,8 +785,7 @@ pub async fn get_mod_available_options(
   }
   available.sort();
 
-  let selected_set: std::collections::HashSet<String> =
-    enabled_originals.into_iter().collect();
+  let selected_set: std::collections::HashSet<String> = enabled_originals.into_iter().collect();
   Ok(build_options_file_tree(&available, &selected_set))
 }
 
@@ -844,7 +866,14 @@ pub async fn swap_mod_options(
   }
 
   let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), selected_original_names.clone(), None);
+  manifest.mark_enabled(
+    &mod_id,
+    new_installed_vpks.clone(),
+    selected_original_names.clone(),
+    Vec::new(),
+    Vec::new(),
+    None,
+  );
   manifest.save(&addons_path)?;
 
   Ok(SwapModOptionsResult {
@@ -958,10 +987,9 @@ pub async fn fetch_missing_mod_variants(
       )));
     }
 
-    let bytes = response
-      .bytes()
-      .await
-      .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url)))?;
+    let bytes = response.bytes().await.map_err(|e| {
+      Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url))
+    })?;
 
     let temp_dir = tempfile::tempdir()?;
     let archive_path = temp_dir.path().join(&safe_archive_name);
@@ -1022,9 +1050,7 @@ pub async fn stage_download_archive(
   archive_url: String,
   archive_name: String,
 ) -> Result<StageDownloadArchiveResult, Error> {
-  log::info!(
-    "Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}"
-  );
+  log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
 
   let game_path = {
     let manager = MANAGER.lock().unwrap();
@@ -1150,7 +1176,11 @@ pub async fn switch_mod_download_variant(
   validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
 
-  log::info!("Downloading archive {} from {}", safe_archive_name, archive_url);
+  log::info!(
+    "Downloading archive {} from {}",
+    safe_archive_name,
+    archive_url
+  );
 
   let client = reqwest::Client::builder()
     .build()
@@ -1190,7 +1220,12 @@ pub async fn switch_mod_download_variant(
 
   let new_originals: Vec<String> = vpk_files
     .iter()
-    .filter_map(|(path, _)| path.file_name().and_then(|s| s.to_str()).map(|s| s.to_string()))
+    .filter_map(|(path, _)| {
+      path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string())
+    })
     .collect();
 
   if new_originals.is_empty() {
@@ -1294,7 +1329,14 @@ pub async fn switch_mod_download_variant(
   }
 
   let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), new_originals.clone(), None);
+  manifest.mark_enabled(
+    &mod_id,
+    new_installed_vpks.clone(),
+    new_originals.clone(),
+    Vec::new(),
+    Vec::new(),
+    None,
+  );
   manifest.save(&addons_path)?;
 
   Ok(SwitchDownloadVariantResult {

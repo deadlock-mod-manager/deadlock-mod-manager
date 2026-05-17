@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { ModCategory } from "@/lib/constants";
 import {
+  CONFIG_PATTERN,
   generateFallbackModSVG,
   IMAGE_PATTERN,
   VPK_PATTERN,
@@ -17,6 +18,7 @@ import {
   type DetectedSource,
   ensureDirectory,
   getFileBaseName,
+  getFileName,
   fileToBytes,
   fileToDataUrl,
   writeFileBytes,
@@ -53,6 +55,46 @@ const readSourceFileBytes = async (file: File): Promise<Uint8Array> => {
   return new Uint8Array(bytes);
 };
 
+const normalizeConfigRelativeName = (name: string): string | null => {
+  const parts = name.replace(/\\/g, "/").split("/").filter(Boolean);
+  if (
+    parts.length === 0 ||
+    parts.some((part) => part === "." || part === "..")
+  ) {
+    return null;
+  }
+
+  const cfgIndex = parts.findIndex((part) => part.toLowerCase() === "cfg");
+  const relativeParts = cfgIndex >= 0 ? parts.slice(cfgIndex + 1) : parts;
+  const fileName = relativeParts.at(-1);
+
+  if (!fileName || !CONFIG_PATTERN.test(fileName)) {
+    return null;
+  }
+
+  return relativeParts.join("/");
+};
+
+const writeConfigFile = async (
+  filesDir: string,
+  relativeName: string,
+  bytes: Uint8Array,
+) => {
+  const parts = relativeName.split("/").filter(Boolean);
+  const fileName = parts.pop();
+  if (!fileName) {
+    return;
+  }
+
+  let targetDir = filesDir;
+  for (const part of parts) {
+    targetDir = await join(targetDir, part);
+    await ensureDirectory(targetDir);
+  }
+
+  await writeFileBytes(await join(targetDir, fileName), bytes);
+};
+
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
@@ -74,17 +116,28 @@ export const useModProcessor = () => {
 
     if (fileName.endsWith(".zip")) {
       const zip = await JSZip.loadAsync(fileBytes);
-      const vpkEntry = Object.values(zip.files).find(
-        (f) => !f.dir && VPK_PATTERN.test(f.name),
+      const entries = Object.values(zip.files).filter((f) => !f.dir);
+      const supportedEntries = entries.filter(
+        (f) => VPK_PATTERN.test(f.name) || CONFIG_PATTERN.test(f.name),
       );
 
-      if (vpkEntry) {
-        const buffer = await vpkEntry.async("uint8array");
-        const baseName = vpkEntry.name.split("/").pop() || "mod.vpk";
-        await writeFileBytes(await join(filesDir, baseName), buffer);
+      if (supportedEntries.length > 0) {
+        for (const entry of supportedEntries) {
+          const buffer = await entry.async("uint8array");
+          if (VPK_PATTERN.test(entry.name)) {
+            const baseName = entry.name.split("/").pop() || "mod.vpk";
+            await writeFileBytes(await join(filesDir, baseName), buffer);
+            continue;
+          }
+
+          const relativeName = normalizeConfigRelativeName(entry.name);
+          if (relativeName) {
+            await writeConfigFile(filesDir, relativeName, buffer);
+          }
+        }
       } else {
         await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
-        toast.error(t("addMods.noVpkFound"));
+        toast.error(t("addMods.noSupportedFilesFound"));
       }
     } else if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
       const format = fileName.split(".").pop()?.toUpperCase();
@@ -145,8 +198,11 @@ export const useModProcessor = () => {
     const hasVpk = filesList.some((entry) =>
       VPK_PATTERN.test(entry.name || ""),
     );
+    const hasConfig = filesList.some((entry) =>
+      CONFIG_PATTERN.test(entry.name || ""),
+    );
 
-    if (hasVpk) {
+    if (hasVpk || hasConfig || detectedSource.kind === "config") {
       return true;
     }
 
@@ -157,11 +213,11 @@ export const useModProcessor = () => {
         return true;
       }
 
-      toast.warning(t("addMods.noVpkFoundStored"));
+      toast.warning(t("addMods.noSupportedFilesStored"));
       return true;
     }
 
-    toast.error(t("addMods.noVpkFoundInContent"));
+    toast.error(t("addMods.noSupportedFilesInContent"));
     return false;
   };
 
@@ -197,10 +253,27 @@ export const useModProcessor = () => {
           await join(filesDir, fileName),
           await readSourceFileBytes(detectedSource.file),
         );
+      } else if (detectedSource.kind === "config") {
+        for (const file of detectedSource.files) {
+          const relativeName =
+            normalizeConfigRelativeName(getFileName(file)) ??
+            getFileBaseName(file);
+          await writeConfigFile(
+            filesDir,
+            relativeName,
+            await readSourceFileBytes(file),
+          );
+        }
       } else {
         await processArchive(detectedSource.file, filesDir, modDir);
       }
     } catch {
+      if (detectedSource.kind === "config") {
+        setProcessing(false);
+        toast.error(t("addMods.failedToProcessArchive"));
+        return;
+      }
+
       const fileName = getFileBaseName(detectedSource.file);
       toast.error(t("addMods.failedToProcessArchive"));
       await writeFileBytes(
@@ -306,6 +379,9 @@ export const useModProcessor = () => {
     addMod(modDto, {
       status: ModStatus.Downloaded,
       installedFileTree: fileTree ?? undefined,
+      isConfig:
+        fileTree?.files.some((file) => file.kind === "config") ??
+        detectedSource.kind === "config",
     });
     setModStatus(modId, ModStatus.Downloaded);
 

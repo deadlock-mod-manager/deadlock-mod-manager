@@ -1,5 +1,5 @@
 import { BaseDirectory, exists, mkdir, writeFile } from "@tauri-apps/plugin-fs";
-import { ARCHIVE_PATTERN, VPK_PATTERN } from "./file-patterns";
+import { ARCHIVE_PATTERN, CONFIG_PATTERN, VPK_PATTERN } from "./file-patterns";
 
 export interface FileSystemEntry {
   name: string;
@@ -23,7 +23,8 @@ export type FileWithPath = File & {
 
 export type DetectedSource =
   | { kind: "archive"; file: File }
-  | { kind: "vpk"; file: File };
+  | { kind: "vpk"; file: File }
+  | { kind: "config"; files: File[] };
 
 /**
  * File utility functions
@@ -94,6 +95,13 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   );
   if (archiveFile) {
     return { kind: "archive", file: archiveFile };
+  }
+
+  const configFiles = validFiles.filter((file) =>
+    CONFIG_PATTERN.test(getFileBaseName(file)),
+  );
+  if (configFiles.length > 0) {
+    return { kind: "config", files: configFiles };
   }
 
   return null;

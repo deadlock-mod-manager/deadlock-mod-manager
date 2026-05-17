@@ -1,7 +1,7 @@
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::Mod;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Deserialize;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -410,29 +410,36 @@ pub async fn import_profile_batch(
         .join("citadel")
         .join("addons")
         .join(&final_profile_folder);
+      let config_path = game_path.join("game").join("citadel").join("cfg");
 
       let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
-      let mut vpks_found = false;
+      let config_manager = crate::mod_manager::config_mod_manager::ConfigModManager::new();
+      let mut managed_files_found = false;
       let max_retries = 10;
       let mut retry_delay_ms = 100;
 
       for attempt in 0..max_retries {
-        match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
-          Ok(vpks) if !vpks.is_empty() => {
+        let prefixed_vpks = vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id);
+        let staged_config_files =
+          config_manager.find_staged_config_files(&config_path, &mod_data.mod_id);
+
+        match (prefixed_vpks, staged_config_files) {
+          (Ok(vpks), Ok(config_files)) if !vpks.is_empty() || !config_files.is_empty() => {
             log::info!(
-              "Download completed for mod: {} (found {} VPKs after {} attempts)",
+              "Download completed for mod: {} (found {} VPKs and {} config files after {} attempts)",
               mod_data.mod_id,
               vpks.len(),
+              config_files.len(),
               attempt + 1
             );
-            vpks_found = true;
+            managed_files_found = true;
             download_results.push(Ok(()));
             break;
           }
-          Ok(_) => {
+          (Ok(_), Ok(_)) => {
             if attempt < max_retries - 1 {
               log::debug!(
-                "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
+                "Managed files not found yet for mod {} (attempt {}/{}), waiting {}ms",
                 mod_data.mod_id,
                 attempt + 1,
                 max_retries,
@@ -442,22 +449,28 @@ pub async fn import_profile_batch(
               retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
             }
           }
-          Err(e) => {
-            log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
+          (Err(e), _) | (_, Err(e)) => {
+            log::error!(
+              "Failed to check managed files for mod {}: {:?}",
+              mod_data.mod_id,
+              e
+            );
             download_results.push(Err(format!("Failed to verify download: {:?}", e)));
-            vpks_found = true;
+            managed_files_found = true;
             break;
           }
         }
       }
 
-      if !vpks_found {
+      if !managed_files_found {
         log::error!(
-          "Download completed but no VPKs found for mod: {} after {} retries",
+          "Download completed but no VPK or config files found for mod: {} after {} retries",
           mod_data.mod_id,
           max_retries
         );
-        download_results.push(Err("Download completed but no VPKs found".to_string()));
+        download_results.push(Err(
+          "Download completed but no VPK or config files found".to_string(),
+        ));
       }
     } else if download_error.is_some() {
       log::error!(
@@ -505,9 +518,11 @@ pub async fn import_profile_batch(
         name: mod_data.mod_name.clone(),
         is_map: mod_data.is_map,
         installed_vpks: Vec::new(),
+        installed_config_files: Vec::new(),
         file_tree: mod_data.file_tree.clone(),
         install_order: None,
         original_vpk_names: Vec::new(),
+        original_config_file_paths: Vec::new(),
       };
 
       mod_manager.install_mod(deadlock_mod, Some(final_profile_folder.clone()))
@@ -522,6 +537,7 @@ pub async fn import_profile_batch(
           mod_id: installed_mod.id.clone(),
           mod_name: installed_mod.name.clone(),
           installed_vpks: installed_mod.installed_vpks.clone(),
+          installed_config_files: installed_mod.installed_config_files.clone(),
           file_tree: installed_mod.file_tree.clone(),
         });
       }
@@ -571,9 +587,7 @@ pub async fn get_profile_vpk_manifest(
 }
 
 #[tauri::command]
-pub async fn hydrate_mods_from_manifest(
-  profile_folder: Option<String>,
-) -> Result<usize, Error> {
+pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Result<usize, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.hydrate_mods_from_manifest(profile_folder)
 }
@@ -589,6 +603,12 @@ pub struct SeedManifestEntry {
   pub disabled_vpks: Vec<String>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  #[serde(default)]
+  pub current_config_files: Vec<String>,
+  #[serde(default)]
+  pub disabled_config_files: Vec<String>,
+  #[serde(default)]
+  pub original_config_file_paths: Vec<String>,
   #[serde(default)]
   pub order: Option<u32>,
 }
@@ -617,10 +637,18 @@ pub async fn seed_profile_vpk_manifest_entries(
         &entry.mod_id,
         entry.current_vpks,
         entry.original_vpk_names,
+        entry.current_config_files,
+        entry.original_config_file_paths,
         entry.order,
       );
     } else {
-      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
+      manifest.mark_disabled(
+        &entry.mod_id,
+        entry.disabled_vpks,
+        entry.original_vpk_names,
+        entry.disabled_config_files,
+        entry.original_config_file_paths,
+      );
     }
     changed = true;
   }

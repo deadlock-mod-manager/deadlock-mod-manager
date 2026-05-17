@@ -95,7 +95,10 @@ import type {
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import {
+  isInstalledModWithFiles,
+  isInstalledModWithVpks,
+} from "@/lib/mods/installed-helpers";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -281,6 +284,9 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             {mod.isAudio && (
               <Badge variant='secondary'>{t("mods.audio")}</Badge>
             )}
+            {mod.isConfig && (
+              <Badge variant='secondary'>{t("mods.configBadge")}</Badge>
+            )}
             {mod.remoteUrl?.startsWith("local://") && (
               <Badge
                 variant='outline'
@@ -431,6 +437,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                     {t("mods.audio")}
                   </Badge>
                 )}
+                {mod.isConfig && (
+                  <Badge className='text-xs' variant='secondary'>
+                    {t("mods.configBadge")}
+                  </Badge>
+                )}
                 {mod.remoteUrl?.startsWith("local://") && (
                   <Badge
                     variant='outline'
@@ -457,6 +468,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 </h3>
                 <p className='text-muted-foreground text-sm'>
                   {t("mods.by")} {mod.author}{" "}
+                  {mod.isConfig && ` - ${t("mods.configMod")} `}
                   {mod.isAudio && `• ${t("mods.audioMod")}`}
                 </p>
               </div>
@@ -648,33 +660,17 @@ const MyMods = () => {
   const filterModsByStatus = (modsToFilter: LocalMod[]) => {
     switch (activeTab) {
       case ModFilter.ENABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status === ModStatus.Installed &&
-            mod.installedVpks &&
-            mod.installedVpks.length > 0,
-        );
+        return modsToFilter.filter(isInstalledModWithFiles);
       case ModFilter.DISABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status !== ModStatus.Installed ||
-            !mod.installedVpks ||
-            mod.installedVpks.length === 0,
-        );
+        return modsToFilter.filter((mod) => !isInstalledModWithFiles(mod));
       default:
         return modsToFilter;
     }
   };
 
   const sortedMods = [...mods].sort((a, b) => {
-    const aIsInstalled =
-      a.status === ModStatus.Installed &&
-      a.installedVpks &&
-      a.installedVpks.length > 0;
-    const bIsInstalled =
-      b.status === ModStatus.Installed &&
-      b.installedVpks &&
-      b.installedVpks.length > 0;
+    const aIsInstalled = isInstalledModWithFiles(a);
+    const bIsInstalled = isInstalledModWithFiles(b);
 
     if (aIsInstalled && !bIsInstalled) return -1;
     if (!aIsInstalled && bIsInstalled) return 1;
@@ -799,9 +795,9 @@ const MyMods = () => {
 
   const installedMods = getOrderedMods();
 
-  const enabledModsCount = mods.filter(isInstalledModWithVpks).length;
+  const enabledModsCount = mods.filter(isInstalledModWithFiles).length;
   const disabledModsCount = mods.filter(
-    (mod) => !isInstalledModWithVpks(mod),
+    (mod) => !isInstalledModWithFiles(mod),
   ).length;
   const enabledVpkFileCount = mods
     .filter(isInstalledModWithVpks)

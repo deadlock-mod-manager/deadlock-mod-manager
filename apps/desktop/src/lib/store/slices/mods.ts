@@ -51,6 +51,7 @@ export type ModsState = {
     remoteId: string,
     vpks: string[],
     fileTree?: ModFileTree,
+    configFiles?: string[],
   ) => void;
   setSelectedDownloads: (
     remoteId: string,
@@ -318,17 +319,28 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     remoteId: string,
     vpks: string[],
     fileTree?: ModFileTree,
+    configFiles?: string[],
   ) =>
     set((state) => ({
       localMods: state.localMods.map((mod) => ({
         ...mod,
         status:
-          mod.remoteId === remoteId && vpks.length > 0
+          mod.remoteId === remoteId &&
+          (vpks.length > 0 || (configFiles?.length ?? 0) > 0)
             ? ModStatus.Installed
             : mod.status,
         installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
+        installedConfigFiles:
+          mod.remoteId === remoteId && configFiles !== undefined
+            ? configFiles
+            : mod.installedConfigFiles,
         installedFileTree:
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+        isConfig:
+          mod.remoteId === remoteId
+            ? (fileTree?.files.some((file) => file.kind === "config") ??
+              ((mod.isConfig ?? false) || (configFiles?.length ?? 0) > 0))
+            : mod.isConfig,
       })),
     })),
 

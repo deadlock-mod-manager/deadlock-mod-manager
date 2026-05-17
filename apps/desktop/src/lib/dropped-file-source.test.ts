@@ -92,6 +92,22 @@ describe("resolveDroppedModSource", () => {
     expect(detectedSource?.file.name).toBe("skin_pack.zip");
   });
 
+  it("detects config files when cfg or ini files are dropped", () => {
+    const detectedSource = detectSource([
+      createFile("autoexec.cfg"),
+      createFile("preset.ini"),
+    ]);
+
+    expect(detectedSource?.kind).toBe("config");
+    if (detectedSource?.kind !== "config") {
+      throw new Error("Expected config source");
+    }
+    expect(detectedSource.files.map((file) => file.name)).toEqual([
+      "autoexec.cfg",
+      "preset.ini",
+    ]);
+  });
+
   it("prefers vpk over archive when both are present in a multi-file drop", () => {
     const detectedSource = detectSource([
       createFile("backup.zip"),

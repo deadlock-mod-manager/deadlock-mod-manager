@@ -6,7 +6,7 @@ import { ModCategory } from "@/lib/constants";
  */
 export const addModSchema = z.object({
   category: z.nativeEnum(ModCategory),
-  sourceType: z.enum(["archive", "vpk"]),
+  sourceType: z.enum(["archive", "vpk", "config"]),
 });
 
 export type AddModFormValues = z.infer<typeof addModSchema>;

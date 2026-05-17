@@ -31,6 +31,12 @@ pub struct ProfileVpkManifestEntry {
   pub disabled_vpks: Vec<String>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  #[serde(default)]
+  pub current_config_files: Vec<String>,
+  #[serde(default)]
+  pub disabled_config_files: Vec<String>,
+  #[serde(default)]
+  pub original_config_file_paths: Vec<String>,
 }
 
 impl Default for ProfileVpkManifest {
@@ -113,14 +119,21 @@ impl ProfileVpkManifest {
     mod_id: &str,
     current_vpks: Vec<String>,
     original_vpk_names: Vec<String>,
+    current_config_files: Vec<String>,
+    original_config_file_paths: Vec<String>,
     order: Option<u32>,
   ) {
     let entry = self.mods.entry(mod_id.to_string()).or_default();
     entry.enabled = true;
     entry.current_vpks = current_vpks;
     entry.disabled_vpks.clear();
+    entry.current_config_files = current_config_files;
+    entry.disabled_config_files.clear();
     if !original_vpk_names.is_empty() {
       entry.original_vpk_names = original_vpk_names;
+    }
+    if !original_config_file_paths.is_empty() {
+      entry.original_config_file_paths = original_config_file_paths;
     }
     if order.is_some() {
       entry.order = order;
@@ -132,13 +145,20 @@ impl ProfileVpkManifest {
     mod_id: &str,
     disabled_vpks: Vec<String>,
     original_vpk_names: Vec<String>,
+    disabled_config_files: Vec<String>,
+    original_config_file_paths: Vec<String>,
   ) {
     let entry = self.mods.entry(mod_id.to_string()).or_default();
     entry.enabled = false;
     entry.current_vpks.clear();
     entry.disabled_vpks = disabled_vpks;
+    entry.current_config_files.clear();
+    entry.disabled_config_files = disabled_config_files;
     if !original_vpk_names.is_empty() {
       entry.original_vpk_names = original_vpk_names;
+    }
+    if !original_config_file_paths.is_empty() {
+      entry.original_config_file_paths = original_config_file_paths;
     }
   }
 
@@ -159,6 +179,8 @@ mod tests {
       "123",
       vec!["pak01_dir.vpk".to_string()],
       vec!["cool_mod.vpk".to_string()],
+      Vec::new(),
+      Vec::new(),
       Some(0),
     );
 
@@ -176,6 +198,8 @@ mod tests {
       "123",
       vec!["pak01_dir.vpk".to_string()],
       vec!["cool_mod.vpk".to_string()],
+      Vec::new(),
+      Vec::new(),
       Some(0),
     );
     let temp_path = temp.path().join(format!("{MANIFEST_FILENAME}.tmp"));
@@ -196,6 +220,8 @@ mod tests {
       "123",
       vec!["pak01_dir.vpk".to_string()],
       vec!["cool_mod.vpk".to_string()],
+      Vec::new(),
+      Vec::new(),
       Some(0),
     );
     manifest.save(temp.path()).unwrap();
@@ -215,12 +241,16 @@ mod tests {
       "123",
       vec!["pak01_dir.vpk".to_string()],
       vec!["cool_mod.vpk".to_string()],
+      Vec::new(),
+      Vec::new(),
       Some(0),
     );
 
     manifest.mark_enabled(
       "123",
       vec!["pak02_dir.vpk".to_string()],
+      Vec::new(),
+      Vec::new(),
       Vec::new(),
       Some(1),
     );

@@ -1,6 +1,7 @@
 use crate::errors::Error;
 use crate::mod_manager::{
-  archive_extractor::ArchiveExtractor, filesystem_helper::FileSystemHelper,
+  archive_extractor::ArchiveExtractor, config_mod_manager::ConfigModManager,
+  filesystem_helper::FileSystemHelper,
 };
 use log;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,27 @@ pub struct ModFile {
   pub size: u64,
   pub is_selected: bool,
   pub archive_name: String,
+  #[serde(default)]
+  pub kind: ModFileKind,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ModFileKind {
+  Vpk,
+  Config,
+}
+
+impl ModFileKind {
+  pub fn is_config(&self) -> bool {
+    matches!(self, Self::Config)
+  }
+}
+
+impl Default for ModFileKind {
+  fn default() -> Self {
+    Self::Vpk
+  }
 }
 
 /// Simple file tree structure for mod archives
@@ -29,6 +51,7 @@ pub struct ModFileTree {
 pub struct FileTreeAnalyzer {
   archive_extractor: ArchiveExtractor,
   filesystem: FileSystemHelper,
+  config_manager: ConfigModManager,
 }
 
 impl FileTreeAnalyzer {
@@ -36,6 +59,7 @@ impl FileTreeAnalyzer {
     Self {
       archive_extractor: ArchiveExtractor::new(),
       filesystem: FileSystemHelper::new(),
+      config_manager: ConfigModManager::new(),
     }
   }
 
@@ -49,14 +73,18 @@ impl FileTreeAnalyzer {
       "Getting file tree from extracted path: {extracted_path:?} (archive: {archive_name})"
     );
 
-    // Find all VPK files recursively
+    // Find all supported mod payload files recursively
     let vpk_files = self
       .filesystem
       .find_files_recursive(extracted_path, "vpk")?;
+    let config_files = self
+      .config_manager
+      .collect_config_files_from_dir(extracted_path)?;
 
     log::info!(
-      "Found {} VPK files in extracted archive: {archive_name:?}",
-      vpk_files.len()
+      "Found {} VPK files and {} config files in extracted archive: {archive_name:?}",
+      vpk_files.len(),
+      config_files.len()
     );
 
     let mut all_files = Vec::new();
@@ -81,9 +109,28 @@ impl FileTreeAnalyzer {
         size,
         is_selected: true, // Default to selected
         archive_name: archive_name.to_string(),
+        kind: ModFileKind::Vpk,
       });
     }
 
+    for (path, relative_path, size) in config_files {
+      let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown.cfg")
+        .to_string();
+
+      all_files.push(ModFile {
+        name: file_name,
+        path: relative_path,
+        size,
+        is_selected: true,
+        archive_name: archive_name.to_string(),
+        kind: ModFileKind::Config,
+      });
+    }
+
+    all_files.sort_by(|a, b| a.path.cmp(&b.path));
     let total_files = all_files.len();
     let has_multiple_files = total_files > 1;
 
@@ -127,14 +174,18 @@ impl FileTreeAnalyzer {
         .archive_extractor
         .extract_archive(&archive_path, temp_dir.path())?;
 
-      // Find all VPK files recursively
+      // Find all supported mod payload files recursively
       let vpk_files = self
         .filesystem
         .find_files_recursive(temp_dir.path(), "vpk")?;
+      let config_files = self
+        .config_manager
+        .collect_config_files_from_dir(temp_dir.path())?;
 
       log::info!(
-        "Found {} VPK files in archive: {archive_name:?}",
-        vpk_files.len()
+        "Found {} VPK files and {} config files in archive: {archive_name:?}",
+        vpk_files.len(),
+        config_files.len()
       );
 
       // Convert to ModFile objects
@@ -157,10 +208,29 @@ impl FileTreeAnalyzer {
           size,
           is_selected: true, // Default to selected
           archive_name: archive_name.clone(),
+          kind: ModFileKind::Vpk,
+        });
+      }
+
+      for (path, relative_path, size) in config_files {
+        let file_name = path
+          .file_name()
+          .and_then(|n| n.to_str())
+          .unwrap_or("unknown.cfg")
+          .to_string();
+
+        all_files.push(ModFile {
+          name: file_name,
+          path: relative_path,
+          size,
+          is_selected: true,
+          archive_name: archive_name.clone(),
+          kind: ModFileKind::Config,
         });
       }
     }
 
+    all_files.sort_by(|a, b| a.path.cmp(&b.path));
     let total_files = all_files.len();
     let has_multiple_files = total_files > 1;
 

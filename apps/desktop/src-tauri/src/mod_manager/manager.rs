@@ -2,7 +2,8 @@ use crate::errors::Error;
 use crate::mod_manager::{
   addons_backup_manager::AddonsBackupManager,
   autoexec_manager::AutoexecManager,
-  file_tree::{FileTreeAnalyzer, ModFile, ModFileTree},
+  config_mod_manager::ConfigModManager,
+  file_tree::{FileTreeAnalyzer, ModFile, ModFileKind, ModFileTree},
   filesystem_helper::FileSystemHelper,
   game_config_manager::GameConfigManager,
   game_process_manager::GameProcessManager,
@@ -25,6 +26,7 @@ pub struct ModManager {
   process_manager: GameProcessManager,
   config_manager: GameConfigManager,
   vpk_manager: VpkManager,
+  config_mod_manager: ConfigModManager,
   file_tree_analyzer: FileTreeAnalyzer,
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
@@ -40,6 +42,7 @@ impl ModManager {
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
       vpk_manager: VpkManager::new(),
+      config_mod_manager: ConfigModManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -94,6 +97,15 @@ impl ModManager {
       }
       None => addons_path,
     })
+  }
+
+  pub(crate) fn get_cfg_path(&self) -> Result<PathBuf, Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?;
+
+    Ok(game_path.join("game").join("citadel").join("cfg"))
   }
 
   fn is_safe_profile_folder(folder: &str) -> bool {
@@ -193,48 +205,83 @@ impl ModManager {
     }
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let cfg_path = self.get_cfg_path()?;
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
       .vpk_manager
       .find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
+    let mut staged_config_files = self
+      .config_mod_manager
+      .find_staged_config_files(&cfg_path, &deadlock_mod.id)?;
 
-    // Recover older local imports that were added before prefixed VPKs were copied.
-    if prefixed_vpks.is_empty() && deadlock_mod.id.starts_with("local-") {
+    // Recover older local imports that were added before managed files were copied.
+    if (prefixed_vpks.is_empty() || staged_config_files.is_empty())
+      && deadlock_mod.id.starts_with("local-")
+    {
       let local_files_dir = self
         .get_mods_store_path()?
         .join(&deadlock_mod.id)
         .join("files");
 
       if local_files_dir.exists() {
-        log::info!(
-          "No prefixed VPKs found for local mod {}, restoring from {:?}",
-          deadlock_mod.id,
-          local_files_dir
-        );
-        prefixed_vpks = self.vpk_manager.copy_vpks_with_prefix(
-          &local_files_dir,
-          &addons_path,
-          &deadlock_mod.id,
-        )?;
+        if prefixed_vpks.is_empty() {
+          log::info!(
+            "No prefixed VPKs found for local mod {}, restoring from {:?}",
+            deadlock_mod.id,
+            local_files_dir
+          );
+          prefixed_vpks = self.vpk_manager.copy_vpks_with_prefix(
+            &local_files_dir,
+            &addons_path,
+            &deadlock_mod.id,
+          )?;
+        }
+
+        if staged_config_files.is_empty() {
+          staged_config_files = self.config_mod_manager.copy_config_files_to_staging(
+            &local_files_dir,
+            &cfg_path,
+            &deadlock_mod.id,
+            deadlock_mod.file_tree.as_ref(),
+          )?;
+        }
       }
     }
 
-    if prefixed_vpks.is_empty() {
-      log::error!("No prefixed VPKs found for mod {}", deadlock_mod.id);
+    if prefixed_vpks.is_empty() && staged_config_files.is_empty() {
+      log::error!("No managed files found for mod {}", deadlock_mod.id);
       return Err(Error::ModInvalid(
-        "Mod needs to be downloaded first. No VPK files found in addons folder.".into(),
+        "Mod needs to be downloaded first. No VPK or config files found.".into(),
       ));
     }
 
-    log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
+    log::info!(
+      "Found {} prefixed VPKs and {} staged config files, enabling them",
+      prefixed_vpks.len(),
+      staged_config_files.len()
+    );
 
-    let installed_vpks =
+    let installed_vpks = if prefixed_vpks.is_empty() {
+      Vec::new()
+    } else {
       self
         .vpk_manager
-        .enable_vpks(&addons_path, &deadlock_mod.id, &prefixed_vpks)?;
+        .enable_vpks(&addons_path, &deadlock_mod.id, &prefixed_vpks)?
+    };
+
+    let installed_config_files = if staged_config_files.is_empty() {
+      Vec::new()
+    } else {
+      self.config_mod_manager.enable_config_files(
+        &cfg_path,
+        &deadlock_mod.id,
+        &staged_config_files,
+      )?
+    };
 
     deadlock_mod.installed_vpks = installed_vpks;
+    deadlock_mod.installed_config_files = installed_config_files;
     deadlock_mod.original_vpk_names = prefixed_vpks
       .iter()
       .map(|name| {
@@ -244,9 +291,13 @@ impl ModManager {
           .to_string()
       })
       .collect();
+    deadlock_mod.original_config_file_paths = staged_config_files.clone();
 
-    if deadlock_mod.file_tree.is_none() && !deadlock_mod.original_vpk_names.is_empty() {
-      let files: Vec<ModFile> = deadlock_mod
+    if deadlock_mod.file_tree.is_none()
+      && (!deadlock_mod.original_vpk_names.is_empty()
+        || !deadlock_mod.original_config_file_paths.is_empty())
+    {
+      let mut files: Vec<ModFile> = deadlock_mod
         .original_vpk_names
         .iter()
         .map(|name| ModFile {
@@ -255,8 +306,22 @@ impl ModManager {
           size: 0,
           is_selected: true,
           archive_name: String::new(),
+          kind: ModFileKind::Vpk,
         })
         .collect();
+      files.extend(deadlock_mod.original_config_file_paths.iter().map(|path| {
+        ModFile {
+          name: std::path::Path::new(path)
+            .file_name()
+            .map(|name| name.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.clone()),
+          path: path.clone(),
+          size: 0,
+          is_selected: true,
+          archive_name: String::new(),
+          kind: ModFileKind::Config,
+        }
+      }));
       let total_files = files.len();
       deadlock_mod.file_tree = Some(ModFileTree {
         files,
@@ -273,6 +338,8 @@ impl ModManager {
       &deadlock_mod.id,
       deadlock_mod.installed_vpks.clone(),
       deadlock_mod.original_vpk_names.clone(),
+      deadlock_mod.installed_config_files.clone(),
+      deadlock_mod.original_config_file_paths.clone(),
       deadlock_mod.install_order,
     );
     manifest.save(&addons_path)?;
@@ -296,6 +363,7 @@ impl ModManager {
     log::info!("Uninstalling (disabling) mod: {mod_id} (profile: {profile_folder:?})");
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let cfg_path = self.get_cfg_path()?;
 
     if !addons_path.exists() {
       return Err(Error::GamePathNotSet);
@@ -304,62 +372,145 @@ impl ModManager {
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     let manifest_entry = manifest.mods.get(&mod_id).cloned();
 
-    let (installed_vpks, original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
-      && !entry.current_vpks.is_empty()
-    {
-      log::info!("Using manifest VPK state for mod {mod_id}");
-      (
-        entry.current_vpks.clone(),
-        if entry.original_vpk_names.is_empty() {
-          entry.current_vpks.clone()
+    let (installed_vpks, original_vpk_names) = match manifest_entry.as_ref() {
+      Some(entry) if !entry.current_vpks.is_empty() => {
+        log::info!("Using manifest VPK state for mod {mod_id}");
+        (
+          entry.current_vpks.clone(),
+          if entry.original_vpk_names.is_empty() {
+            entry.current_vpks.clone()
+          } else {
+            entry.original_vpk_names.clone()
+          },
+        )
+      }
+      _ if !vpks.is_empty() => {
+        log::warn!("Manifest has no enabled VPKs for {mod_id}, using frontend VPK state");
+        let vpk_filenames = Self::vpk_filenames(&vpks);
+        (vpk_filenames.clone(), vpk_filenames)
+      }
+      _ => {
+        if let Some(local_mod) = self.mod_repository.get_mod(&mod_id) {
+          if !local_mod.installed_vpks.is_empty() {
+            log::warn!(
+              "Manifest has no enabled VPKs for {mod_id}, using in-memory repository state"
+            );
+            (
+              local_mod.installed_vpks.clone(),
+              if local_mod.original_vpk_names.is_empty() {
+                local_mod.installed_vpks.clone()
+              } else {
+                local_mod.original_vpk_names.clone()
+              },
+            )
+          } else if manifest_entry
+            .as_ref()
+            .is_some_and(|entry| !entry.enabled && !entry.disabled_vpks.is_empty())
+          {
+            log::info!("Mod {mod_id} is already disabled according to the profile manifest");
+            return Ok(());
+          } else {
+            (Vec::new(), Vec::new())
+          }
+        } else if manifest_entry
+          .as_ref()
+          .is_some_and(|entry| !entry.enabled && !entry.disabled_vpks.is_empty())
+        {
+          log::info!("Mod {mod_id} is already disabled according to the profile manifest");
+          return Ok(());
         } else {
-          entry.original_vpk_names.clone()
-        },
-      )
-    } else if !vpks.is_empty() {
-      log::warn!("Manifest has no enabled VPKs for {mod_id}, using frontend VPK state");
-      let vpk_filenames = Self::vpk_filenames(&vpks);
-      (vpk_filenames.clone(), vpk_filenames)
-    } else if let Some(local_mod) = self.mod_repository.get_mod(&mod_id)
-      && !local_mod.installed_vpks.is_empty()
-    {
-      log::warn!("Manifest has no enabled VPKs for {mod_id}, using in-memory repository state");
-      (
-        local_mod.installed_vpks.clone(),
-        if local_mod.original_vpk_names.is_empty() {
-          local_mod.installed_vpks.clone()
-        } else {
-          local_mod.original_vpk_names.clone()
-        },
-      )
-    } else if manifest_entry
-      .as_ref()
-      .is_some_and(|entry| !entry.enabled && !entry.disabled_vpks.is_empty())
-    {
-      log::info!("Mod {mod_id} is already disabled according to the profile manifest");
-      return Ok(());
-    } else {
-      return Err(Error::ModInvalid(format!(
-        "Cannot disable mod {mod_id}: no enabled VPK files are recorded for this profile"
-      )));
+          (Vec::new(), Vec::new())
+        }
+      }
     };
 
-    let prefixed_vpks =
+    let (installed_config_files, original_config_file_paths) = match manifest_entry.as_ref() {
+      Some(entry) if !entry.current_config_files.is_empty() => {
+        log::info!("Using manifest config file state for mod {mod_id}");
+        (
+          entry.current_config_files.clone(),
+          if entry.original_config_file_paths.is_empty() {
+            entry.current_config_files.clone()
+          } else {
+            entry.original_config_file_paths.clone()
+          },
+        )
+      }
+      _ => {
+        if let Some(local_mod) = self.mod_repository.get_mod(&mod_id) {
+          if !local_mod.installed_config_files.is_empty() {
+            log::warn!(
+              "Manifest has no enabled config files for {mod_id}, using in-memory repository state"
+            );
+            (
+              local_mod.installed_config_files.clone(),
+              if local_mod.original_config_file_paths.is_empty() {
+                local_mod.installed_config_files.clone()
+              } else {
+                local_mod.original_config_file_paths.clone()
+              },
+            )
+          } else if manifest_entry.as_ref().is_some_and(|entry| {
+            !entry.enabled
+              && (!entry.disabled_vpks.is_empty() || !entry.disabled_config_files.is_empty())
+          }) {
+            log::info!("Mod {mod_id} is already disabled according to the profile manifest");
+            return Ok(());
+          } else {
+            (Vec::new(), Vec::new())
+          }
+        } else if manifest_entry.as_ref().is_some_and(|entry| {
+          !entry.enabled
+            && (!entry.disabled_vpks.is_empty() || !entry.disabled_config_files.is_empty())
+        }) {
+          log::info!("Mod {mod_id} is already disabled according to the profile manifest");
+          return Ok(());
+        } else {
+          (Vec::new(), Vec::new())
+        }
+      }
+    };
+
+    if installed_vpks.is_empty() && installed_config_files.is_empty() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot disable mod {mod_id}: no enabled VPK or config files are recorded for this profile"
+      )));
+    }
+
+    let prefixed_vpks = if installed_vpks.is_empty() {
+      Vec::new()
+    } else {
       self
         .vpk_manager
-        .disable_vpks(&addons_path, &mod_id, &installed_vpks, &original_vpk_names)?;
+        .disable_vpks(&addons_path, &mod_id, &installed_vpks, &original_vpk_names)?
+    };
+    let disabled_config_files = if installed_config_files.is_empty() {
+      Vec::new()
+    } else {
+      self
+        .config_mod_manager
+        .disable_config_files(&cfg_path, &mod_id, &installed_config_files)?
+    };
 
-    manifest.mark_disabled(&mod_id, prefixed_vpks.clone(), original_vpk_names);
+    manifest.mark_disabled(
+      &mod_id,
+      prefixed_vpks.clone(),
+      original_vpk_names,
+      disabled_config_files.clone(),
+      original_config_file_paths,
+    );
     manifest.save(&addons_path)?;
 
     if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       local_mod.installed_vpks = Vec::new();
+      local_mod.installed_config_files = Vec::new();
       self.mod_repository.add_mod(local_mod);
     }
 
     log::info!(
-      "Disabled mod {mod_id} with {} prefixed VPKs",
-      prefixed_vpks.len()
+      "Disabled mod {mod_id} with {} prefixed VPKs and {} staged config files",
+      prefixed_vpks.len(),
+      disabled_config_files.len()
     );
 
     Ok(())
@@ -374,11 +525,24 @@ impl ModManager {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let cfg_path = self.get_cfg_path()?;
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    let mut vpks_to_remove = manifest
-      .mods
-      .get(&mod_id)
-      .map(|entry| entry.current_vpks.clone())
+    let manifest_entry = manifest.mods.get(&mod_id).cloned();
+    let mut vpks_to_remove = manifest_entry
+      .as_ref()
+      .map(|entry| {
+        let mut vpks = entry.current_vpks.clone();
+        vpks.extend(entry.disabled_vpks.clone());
+        vpks
+      })
+      .unwrap_or_default();
+    let mut config_files_to_remove = manifest_entry
+      .as_ref()
+      .map(|entry| {
+        let mut files = entry.current_config_files.clone();
+        files.extend(entry.disabled_config_files.clone());
+        files
+      })
       .unwrap_or_default();
 
     if !addons_path.exists() {
@@ -388,12 +552,15 @@ impl ModManager {
     if let Some(local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       log::info!("Mod found in memory: {}", local_mod.name);
       vpks_to_remove.extend(local_mod.installed_vpks);
+      config_files_to_remove.extend(local_mod.installed_config_files);
     } else {
       vpks_to_remove.extend(vpks);
     }
 
     let mut seen_vpks = HashSet::new();
     vpks_to_remove.retain(|vpk| seen_vpks.insert(vpk.clone()));
+    let mut seen_config_files = HashSet::new();
+    config_files_to_remove.retain(|file| seen_config_files.insert(file.clone()));
 
     if !vpks_to_remove.is_empty() {
       self
@@ -403,6 +570,9 @@ impl ModManager {
     self
       .vpk_manager
       .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
+    self
+      .config_mod_manager
+      .remove_config_files(&cfg_path, &mod_id, &config_files_to_remove)?;
 
     manifest.remove_mod(&mod_id);
     manifest.save(&addons_path)?;
@@ -650,6 +820,16 @@ impl ModManager {
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let cfg_path = self.get_cfg_path()?;
+    let manifest = ProfileVpkManifest::load(&addons_path)?;
+
+    for (mod_id, entry) in &manifest.mods {
+      let mut config_files = entry.current_config_files.clone();
+      config_files.extend(entry.disabled_config_files.clone());
+      self
+        .config_mod_manager
+        .remove_config_files(&cfg_path, mod_id, &config_files)?;
+    }
 
     self.vpk_manager.clear_all_vpks(&addons_path)?;
     ProfileVpkManifest::default().save(&addons_path)?;
@@ -786,24 +966,29 @@ impl ModManager {
       } else {
         Vec::new()
       };
+      let installed_config_files = if entry.enabled {
+        entry.current_config_files.clone()
+      } else {
+        Vec::new()
+      };
 
       let deadlock_mod = Mod {
         id: mod_id.clone(),
         name: mod_id.clone(),
         is_map: false,
         installed_vpks,
+        installed_config_files,
         file_tree: None,
         install_order: entry.order,
         original_vpk_names: entry.original_vpk_names.clone(),
+        original_config_file_paths: entry.original_config_file_paths.clone(),
       };
       self.mod_repository.add_mod(deadlock_mod);
       hydrated += 1;
     }
 
     if hydrated > 0 {
-      log::info!(
-        "Hydrated {hydrated} mods from manifest for profile {profile_folder:?}"
-      );
+      log::info!("Hydrated {hydrated} mods from manifest for profile {profile_folder:?}");
     }
 
     Ok(hydrated)
@@ -863,12 +1048,23 @@ impl ModManager {
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     if installed_vpks.is_empty() {
-      let prefixed_vpks = self
-        .vpk_manager
-        .find_prefixed_vpks(&addons_path, &mod_id)?;
-      manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
+      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
+      manifest.mark_disabled(
+        &mod_id,
+        prefixed_vpks,
+        new_original_names,
+        Vec::new(),
+        Vec::new(),
+      );
     } else {
-      manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);
+      manifest.mark_enabled(
+        &mod_id,
+        installed_vpks,
+        new_original_names,
+        Vec::new(),
+        Vec::new(),
+        None,
+      );
     }
     manifest.save(&addons_path)?;
 

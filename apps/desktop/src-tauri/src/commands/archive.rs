@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
+use crate::mod_manager::config_mod_manager::ConfigModManager;
 
 use super::state::MANAGER;
 
@@ -28,23 +29,25 @@ pub async fn extract_archive(
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &validated_target_path)?;
 
-  let mut vpk_files = Vec::new();
-  find_vpk_files(&validated_target_path, &mut vpk_files)?;
+  let mut mod_files = Vec::new();
+  find_supported_mod_files(&validated_target_path, &mut mod_files)?;
 
-  log::info!("Extracted {} VPK files", vpk_files.len());
-  Ok(vpk_files)
+  log::info!("Extracted {} supported mod files", mod_files.len());
+  Ok(mod_files)
 }
 
-fn find_vpk_files(dir: &PathBuf, vpk_files: &mut Vec<String>) -> Result<(), Error> {
+fn find_supported_mod_files(dir: &PathBuf, mod_files: &mut Vec<String>) -> Result<(), Error> {
   if dir.is_dir() {
     for entry in std::fs::read_dir(dir)? {
       let entry = entry?;
       let path = entry.path();
 
       if path.is_dir() {
-        find_vpk_files(&path, vpk_files)?;
-      } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-        vpk_files.push(path.file_name().unwrap().to_string_lossy().to_string());
+        find_supported_mod_files(&path, mod_files)?;
+      } else if path.extension().and_then(|e| e.to_str()) == Some("vpk")
+        || ConfigModManager::is_supported_config_file(&path)
+      {
+        mod_files.push(path.file_name().unwrap().to_string_lossy().to_string());
       }
     }
   }
@@ -101,6 +104,7 @@ pub async fn copy_selected_vpks_from_archive(
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?
     .clone();
+  let config_path = mod_manager.get_cfg_path()?;
 
   let destination_path = if let Some(ref folder) = profile_folder {
     game_path
@@ -119,12 +123,25 @@ pub async fn copy_selected_vpks_from_archive(
   drop(mod_manager);
 
   let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(
+  let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
     &extracted_dir,
     &destination_path,
     &mod_id,
     &file_tree,
   )?;
+  let config_manager = ConfigModManager::new();
+  let copied_config_files = config_manager.copy_config_files_to_staging(
+    &extracted_dir,
+    &config_path,
+    &mod_id,
+    Some(&file_tree),
+  )?;
+
+  if copied_vpks.is_empty() && copied_config_files.is_empty() {
+    return Err(Error::InvalidInput(
+      "No selected VPK or config files matched the file tree".to_string(),
+    ));
+  }
 
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
@@ -171,6 +188,7 @@ pub async fn copy_local_mod_vpks(
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?
     .clone();
+  let config_path = mod_manager.get_cfg_path()?;
 
   let destination_path = if let Some(ref folder) = profile_folder {
     game_path
@@ -190,17 +208,21 @@ pub async fn copy_local_mod_vpks(
 
   let vpk_manager = VpkManager::new();
   let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id)?;
+  let config_manager = ConfigModManager::new();
+  let staged_config_files =
+    config_manager.copy_config_files_to_staging(&files_dir, &config_path, &mod_id, None)?;
 
-  if prefixed_vpks.is_empty() {
-    log::warn!("No VPK files found in mod files directory: {files_dir:?}");
+  if prefixed_vpks.is_empty() && staged_config_files.is_empty() {
+    log::warn!("No VPK or config files found in mod files directory: {files_dir:?}");
     return Err(Error::InvalidInput(
-      "No VPK files found in mod directory".to_string(),
+      "No VPK or config files found in mod directory".to_string(),
     ));
   }
 
   log::info!(
-    "Successfully copied {} VPKs for local mod: {}",
+    "Successfully copied {} VPKs and {} config files for local mod: {}",
     prefixed_vpks.len(),
+    staged_config_files.len(),
     mod_id
   );
   Ok(prefixed_vpks)

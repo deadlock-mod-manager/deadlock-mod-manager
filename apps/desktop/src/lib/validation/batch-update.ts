@@ -5,6 +5,7 @@ const InstalledModInfoSchema = z.object({
   modId: z.string(),
   modName: z.string(),
   installedVpks: z.array(z.string()),
+  installedConfigFiles: z.array(z.string()).optional(),
   fileTree: profileModFileTreeSchema.optional(),
 });
 

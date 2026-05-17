@@ -1,7 +1,7 @@
 use crate::errors::Error;
 use std::path::{Path, PathBuf};
 
-const SUPPORTED_MOD_EXTENSIONS: [&str; 4] = ["vpk", "zip", "rar", "7z"];
+const SUPPORTED_MOD_EXTENSIONS: [&str; 6] = ["vpk", "zip", "rar", "7z", "cfg", "ini"];
 
 pub fn validate_dropped_mod_file_path(file_path: &str) -> Result<PathBuf, Error> {
   if file_path.trim().is_empty() {
@@ -88,6 +88,34 @@ mod tests {
     assert_eq!(
       validated,
       file_path.canonicalize().expect("path should resolve")
+    );
+
+    fs::remove_dir_all(&dir).expect("temp dir should be removed");
+  }
+
+  #[test]
+  fn accepts_config_mod_file_paths() {
+    let dir = create_temp_dir();
+    let cfg_path = dir.join("autoexec.cfg");
+    let ini_path = dir.join("preset.ini");
+    fs::write(&cfg_path, b"echo cfg").expect("test cfg should be written");
+    fs::write(&ini_path, b"[settings]").expect("test ini should be written");
+
+    assert!(
+      validate_dropped_mod_file_path(
+        cfg_path
+          .to_str()
+          .expect("temp cfg path should be valid utf-8"),
+      )
+      .is_ok()
+    );
+    assert!(
+      validate_dropped_mod_file_path(
+        ini_path
+          .to_str()
+          .expect("temp ini path should be valid utf-8"),
+      )
+      .is_ok()
     );
 
     fs::remove_dir_all(&dir).expect("temp dir should be removed");
