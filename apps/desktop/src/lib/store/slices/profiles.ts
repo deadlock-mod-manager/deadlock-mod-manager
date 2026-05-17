@@ -5,6 +5,7 @@ import type { StateCreator } from "zustand";
 import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import { hasConfigHistory } from "@/lib/mods/config-state";
 import { isInstalledModWithFiles } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
@@ -793,6 +794,7 @@ export const createProfilesSlice: StateCreator<
         if (manifestEntry) {
           const currentVpks = manifestEntry.currentVpks ?? [];
           const currentConfigFiles = manifestEntry.currentConfigFiles ?? [];
+          const isConfigMod = mod.isConfig || hasConfigHistory(manifestEntry);
           const hasEnabledVpks =
             manifestEntry.enabled &&
             currentVpks.some((vpk) => enabledVpkSet.has(vpk));
@@ -811,7 +813,7 @@ export const createProfilesSlice: StateCreator<
               status: ModStatus.Installed,
               installedVpks: currentVpks,
               installedConfigFiles: currentConfigFiles,
-              isConfig: mod.isConfig || currentConfigFiles.length > 0,
+              isConfig: isConfigMod,
               installOrder: manifestEntry.order ?? mod.installOrder,
             });
           } else {
@@ -834,6 +836,7 @@ export const createProfilesSlice: StateCreator<
               status: ModStatus.Downloaded,
               installedVpks: [],
               installedConfigFiles: [],
+              isConfig: isConfigMod,
               installOrder: manifestEntry.order ?? mod.installOrder,
             });
           }
@@ -1002,6 +1005,7 @@ export const createProfilesSlice: StateCreator<
         const modDetails = await getMod(modId);
         const currentVpks = entry.currentVpks ?? [];
         const currentConfigFiles = entry.currentConfigFiles ?? [];
+        const isConfigMod = hasConfigHistory(entry);
         const isEnabled =
           entry.enabled &&
           (currentVpks.length > 0 || currentConfigFiles.length > 0);
@@ -1011,7 +1015,7 @@ export const createProfilesSlice: StateCreator<
           status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
           installedVpks: isEnabled ? currentVpks : [],
           installedConfigFiles: isEnabled ? currentConfigFiles : [],
-          isConfig: currentConfigFiles.length > 0,
+          isConfig: isConfigMod,
           installOrder: entry.order ?? restoredMods.length,
           downloadedAt: new Date(),
         };

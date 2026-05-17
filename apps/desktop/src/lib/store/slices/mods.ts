@@ -3,6 +3,7 @@ import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
+import { shouldTreatInstallAsConfig } from "@/lib/mods/config-state";
 import {
   type AnalyzeAddonsResult,
   type LocalMod,
@@ -338,8 +339,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
         isConfig:
           mod.remoteId === remoteId
-            ? (fileTree?.files.some((file) => file.kind === "config") ??
-              ((mod.isConfig ?? false) || (configFiles?.length ?? 0) > 0))
+            ? shouldTreatInstallAsConfig(mod, fileTree, configFiles)
             : mod.isConfig,
       })),
     })),

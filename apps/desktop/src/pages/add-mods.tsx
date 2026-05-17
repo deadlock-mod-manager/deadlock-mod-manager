@@ -266,10 +266,13 @@ const AddMods = () => {
               ) : detected?.kind === "config" ? (
                 <div>
                   <span className='font-medium'>{t("addMods.source")}:</span>{" "}
-                  Config -{" "}
                   {detected.files.length === 1
-                    ? getFileName(detected.files[0])
-                    : `${detected.files.length} files`}
+                    ? t("addMods.sourceConfigSingle", {
+                        name: getFileName(detected.files[0]),
+                      })
+                    : t("addMods.sourceConfigMultiple", {
+                        count: detected.files.length,
+                      })}
                 </div>
               ) : null}
             </div>

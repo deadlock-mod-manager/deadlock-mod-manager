@@ -226,15 +226,19 @@ impl ConfigModManager {
     for entry in fs::read_dir(dir)? {
       let entry = entry?;
       let path = entry.path();
+      let metadata = fs::symlink_metadata(&path)?;
+      let file_type = metadata.file_type();
 
-      if path.is_dir() {
+      if file_type.is_symlink() {
+        continue;
+      }
+
+      if file_type.is_dir() {
         self.collect_config_files_internal(root, &path, files)?;
-      } else if Self::is_supported_config_file(&path) {
-        if let Some(relative_path) = Self::config_relative_path(root, &path)? {
-          let metadata = fs::metadata(&path)?;
+      } else if file_type.is_file() && Self::is_supported_config_file(&path)
+        && let Some(relative_path) = Self::config_relative_path(root, &path)? {
           files.push((path, relative_path, metadata.len()));
         }
-      }
     }
 
     Ok(())

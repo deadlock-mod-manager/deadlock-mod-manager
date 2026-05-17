@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { stripStoredModPrefix } from "@/lib/mods/config-state";
 import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
@@ -195,7 +196,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
               const filename = vpkPath.split(/[\\/]/).pop() || "";
               previouslySelectedFiles.add(vpkPath);
               previouslySelectedFiles.add(
-                filename.replace(new RegExp(`^${mod.remoteId}_`), ""),
+                stripStoredModPrefix(filename, mod.remoteId),
               );
             }
             for (const configPath of mod.installedConfigFiles ?? []) {

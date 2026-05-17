@@ -395,13 +395,15 @@ impl DownloadManager {
 
     log::info!("Processing downloaded files for mod: {}", task.mod_id);
 
-    let game_path = {
+    let (game_path, config_path) = {
       let manager = MANAGER.lock().unwrap();
-      manager
+      let game_path = manager
         .get_steam_manager()
         .get_game_path()
         .ok_or(Error::GamePathNotSet)?
-        .clone()
+        .clone();
+      let config_path = manager.get_cfg_path()?;
+      (game_path, config_path)
     };
 
     let destination_path = if let Some(ref profile_folder) = task.profile_folder {
@@ -413,7 +415,6 @@ impl DownloadManager {
     } else {
       game_path.join("game").join("citadel").join("addons")
     };
-    let config_path = game_path.join("game").join("citadel").join("cfg");
 
     log::info!(
       "Using game destination path: {destination_path:?} (profile_folder: {:?})",
@@ -648,6 +649,7 @@ impl DownloadManager {
             &task.mod_id,
             Some(&file_tree),
           )?;
+          Self::ensure_managed_files_copied(&task.mod_id, &copied, &copied_config_files)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
             let original = vpk_name
@@ -675,6 +677,7 @@ impl DownloadManager {
             &task.mod_id,
             None,
           )?;
+          Self::ensure_managed_files_copied(&task.mod_id, &copied, &copied_config_files)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
             let original = vpk_name
@@ -796,6 +799,21 @@ impl DownloadManager {
         log::warn!("Failed to remove archive file: {e}");
       }
     }
+  }
+
+  fn ensure_managed_files_copied(
+    mod_id: &str,
+    copied_vpks: &[String],
+    copied_config_files: &[String],
+  ) -> Result<(), Error> {
+    if copied_vpks.is_empty() && copied_config_files.is_empty() {
+      log::error!("No VPK or config files were copied for mod: {mod_id}");
+      return Err(Error::InvalidInput(format!(
+        "No VPK or config files were copied for mod {mod_id}"
+      )));
+    }
+
+    Ok(())
   }
 
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {

@@ -25,6 +25,11 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
+import {
+  type ConfigDirectoryEntry,
+  entriesContainConfigFile,
+  entriesContainFileMatching,
+} from "@/lib/mods/config-state";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
 
@@ -93,6 +98,29 @@ const writeConfigFile = async (
   }
 
   await writeFileBytes(await join(targetDir, fileName), bytes);
+};
+
+const readDirectoryEntriesRecursive = async (
+  dir: string,
+): Promise<ConfigDirectoryEntry[]> => {
+  const entries = await readDir(dir, {
+    baseDir: BaseDirectory.AppLocalData,
+  });
+
+  return await Promise.all(
+    entries.map(async (entry): Promise<ConfigDirectoryEntry> => {
+      if (!entry.isDirectory) {
+        return { name: entry.name, isDirectory: entry.isDirectory };
+      }
+
+      const childDir = await join(dir, entry.name);
+      return {
+        name: entry.name,
+        isDirectory: entry.isDirectory,
+        children: await readDirectoryEntriesRecursive(childDir),
+      };
+    }),
+  );
 };
 
 export const useModProcessor = () => {
@@ -192,15 +220,9 @@ export const useModProcessor = () => {
     filesDir: string,
     detectedSource: DetectedSource,
   ): Promise<boolean> => {
-    const filesList = await readDir(filesDir, {
-      baseDir: BaseDirectory.AppLocalData,
-    });
-    const hasVpk = filesList.some((entry) =>
-      VPK_PATTERN.test(entry.name || ""),
-    );
-    const hasConfig = filesList.some((entry) =>
-      CONFIG_PATTERN.test(entry.name || ""),
-    );
+    const filesList = await readDirectoryEntriesRecursive(filesDir);
+    const hasVpk = entriesContainFileMatching(filesList, VPK_PATTERN);
+    const hasConfig = entriesContainConfigFile(filesList);
 
     if (hasVpk || hasConfig || detectedSource.kind === "config") {
       return true;

@@ -287,6 +287,11 @@ pub async fn batch_update_mods(
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
+  let config_manager = crate::mod_manager::config_mod_manager::ConfigModManager::new();
+  let config_path = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.get_cfg_path()?
+  };
 
   for (index, mod_data) in mods.iter().enumerate() {
     let progress_pct = (index as f64 / total_mods as f64) * 100.0;
@@ -311,11 +316,6 @@ pub async fn batch_update_mods(
     };
 
     let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
-    let config_manager = crate::mod_manager::config_mod_manager::ConfigModManager::new();
-    let config_path = {
-      let mod_manager = MANAGER.lock().unwrap();
-      mod_manager.get_cfg_path()?
-    };
     let cleanup_result = vpk_manager
       .find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id)
       .and_then(|old_vpks| {
