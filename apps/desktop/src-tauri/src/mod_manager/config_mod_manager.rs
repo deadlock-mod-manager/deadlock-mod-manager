@@ -235,10 +235,12 @@ impl ConfigModManager {
 
       if file_type.is_dir() {
         self.collect_config_files_internal(root, &path, files)?;
-      } else if file_type.is_file() && Self::is_supported_config_file(&path)
-        && let Some(relative_path) = Self::config_relative_path(root, &path)? {
-          files.push((path, relative_path, metadata.len()));
-        }
+      } else if file_type.is_file()
+        && Self::is_supported_config_file(&path)
+        && let Some(relative_path) = Self::config_relative_path(root, &path)?
+      {
+        files.push((path, relative_path, metadata.len()));
+      }
     }
 
     Ok(())
@@ -467,7 +469,11 @@ mod tests {
     let disabled_dir = ConfigModManager::disabled_dir(&config_root, "local-test");
     fs::create_dir_all(&disabled_dir).unwrap();
     fs::write(temp.path().join("outside.cfg"), b"outside").unwrap();
-    symlink(temp.path().join("outside.cfg"), disabled_dir.join("link.cfg")).unwrap();
+    symlink(
+      temp.path().join("outside.cfg"),
+      disabled_dir.join("link.cfg"),
+    )
+    .unwrap();
 
     let files = ConfigModManager::new()
       .find_staged_config_files(&config_root, "local-test")
