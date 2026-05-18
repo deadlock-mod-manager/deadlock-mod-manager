@@ -253,10 +253,16 @@ impl ConfigModManager {
     for entry in fs::read_dir(dir)? {
       let entry = entry?;
       let path = entry.path();
+      let metadata = fs::symlink_metadata(&path)?;
+      let file_type = metadata.file_type();
 
-      if path.is_dir() {
+      if file_type.is_symlink() {
+        continue;
+      }
+
+      if file_type.is_dir() {
         self.collect_staged_files_internal(root, &path, files)?;
-      } else if Self::is_supported_config_file(&path) {
+      } else if file_type.is_file() && Self::is_supported_config_file(&path) {
         let relative = path
           .strip_prefix(root)
           .map_err(|_| Error::InvalidInput("Invalid staged config path".to_string()))?
@@ -449,5 +455,24 @@ mod tests {
       .unwrap();
     assert_eq!(disabled, vec!["autoexec.cfg".to_string()]);
     assert_eq!(fs::read(config_root.join("autoexec.cfg")).unwrap(), b"user");
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn staged_config_scan_ignores_symlinks() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempfile::tempdir().unwrap();
+    let config_root = temp.path().join("cfg");
+    let disabled_dir = ConfigModManager::disabled_dir(&config_root, "local-test");
+    fs::create_dir_all(&disabled_dir).unwrap();
+    fs::write(temp.path().join("outside.cfg"), b"outside").unwrap();
+    symlink(temp.path().join("outside.cfg"), disabled_dir.join("link.cfg")).unwrap();
+
+    let files = ConfigModManager::new()
+      .find_staged_config_files(&config_root, "local-test")
+      .unwrap();
+
+    assert!(files.is_empty());
   }
 }
