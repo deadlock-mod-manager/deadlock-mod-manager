@@ -7,11 +7,10 @@ import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import {
-  type LocalMod,
-  ModStatus,
-  type InstalledModInfo,
-  type RepairReason,
-} from "@/types/mods";
+  projectManifestEntryToModState,
+  vpkFilename,
+} from "@/lib/profiles/manifest-state";
+import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
   DEFAULT_PROFILE_ID,
@@ -89,27 +88,6 @@ export const profilesDeepMergeKeys =
 
 const RECOVERED_PROFILE_DESCRIPTION = "Profile detected from filesystem";
 const PROFILE_FOLDER_NAME_PATTERN = /^(profile_\d+_[^_]+)(?:_(.+))?$/;
-
-const vpkFilename = (vpk: string) => vpk.split(/[\\/]/).pop() || vpk;
-
-const hasEveryEnabledVpk = (
-  vpks: string[] | undefined,
-  enabledVpkSet: Set<string>,
-) => {
-  const currentVpks = vpks ?? [];
-  return (
-    currentVpks.length > 0 &&
-    currentVpks.every((vpk) => enabledVpkSet.has(vpkFilename(vpk)))
-  );
-};
-
-const manifestWantsEnabled = (entry: VpkManifest["mods"][string]) =>
-  entry.desiredState ? entry.desiredState === "enabled" : entry.enabled;
-
-const manifestRepairReason = (
-  entry: VpkManifest["mods"][string],
-  fallback: RepairReason,
-) => (entry.repairReason ?? fallback) as RepairReason;
 
 const toRecoveredProfileName = (value: string) => {
   const displayName = value
@@ -819,20 +797,16 @@ export const createProfilesSlice: StateCreator<
 
         if (manifestEntry) {
           const currentVpks = manifestEntry.currentVpks ?? [];
-          const disabledVpks = manifestEntry.disabledVpks ?? [];
-          const wantsEnabled = manifestWantsEnabled(manifestEntry);
-          const hasEnabledVpks = manifestEntry.diskState
-            ? wantsEnabled && manifestEntry.diskState === "active"
-            : wantsEnabled && hasEveryEnabledVpk(currentVpks, enabledVpkSet);
-          const hasDisabledVpks =
-            !wantsEnabled &&
-            (manifestEntry.diskState
-              ? manifestEntry.diskState === "disabled"
-              : disabledVpks.some((vpk) => allVpkSet.has(vpk)));
           const existingRepairReason =
             mod.status === ModStatus.NeedsRepair ? mod.repairReason : undefined;
+          const projected = projectManifestEntryToModState(manifestEntry, {
+            enabledVpkSet,
+            allVpkSet,
+            fallbackRepairReason: existingRepairReason,
+            fallbackInstallOrder: mod.installOrder,
+          });
 
-          if (hasEnabledVpks) {
+          if (projected.status === ModStatus.Installed) {
             updatedEnabledMods[mod.remoteId] = {
               remoteId: mod.remoteId,
               enabled: true,
@@ -841,15 +815,15 @@ export const createProfilesSlice: StateCreator<
 
             updatedLocalMods.push({
               ...mod,
-              status: ModStatus.Installed,
-              repairReason: undefined,
-              installedVpks: currentVpks,
-              installOrder: manifestEntry.order ?? mod.installOrder,
+              status: projected.status,
+              repairReason: projected.repairReason,
+              installedVpks: projected.installedVpks,
+              installOrder: projected.installOrder,
               repairDownloads:
                 manifestEntry.sourceDownloads ?? mod.repairDownloads,
             });
           } else {
-            if (wantsEnabled) {
+            if (projected.wantsEnabled) {
               logger
                 .withMetadata({
                   profileId,
@@ -865,24 +839,10 @@ export const createProfilesSlice: StateCreator<
 
             updatedLocalMods.push({
               ...mod,
-              status: wantsEnabled
-                ? ModStatus.NeedsRepair
-                : hasDisabledVpks
-                  ? ModStatus.Downloaded
-                  : ModStatus.NeedsRepair,
-              repairReason: wantsEnabled
-                ? manifestRepairReason(
-                    manifestEntry,
-                    existingRepairReason ?? "missingEnabledVpks",
-                  )
-                : hasDisabledVpks
-                  ? undefined
-                  : manifestRepairReason(
-                      manifestEntry,
-                      existingRepairReason ?? "missingPayload",
-                    ),
-              installedVpks: [],
-              installOrder: manifestEntry.order ?? mod.installOrder,
+              status: projected.status,
+              repairReason: projected.repairReason,
+              installedVpks: projected.installedVpks,
+              installOrder: projected.installOrder,
               repairDownloads:
                 manifestEntry.sourceDownloads ?? mod.repairDownloads,
             });
@@ -1118,41 +1078,30 @@ export const createProfilesSlice: StateCreator<
     const enabledVpkSet = new Set(
       allVpks.filter((vpk) => /^pak\d+_dir\.vpk$/i.test(vpk)),
     );
+    const allVpkSet = new Set(allVpks);
 
     for (const [modId, entry] of manifestEntries) {
       try {
         const modDetails = await getMod(modId);
-        const currentVpks = entry.currentVpks ?? [];
-        const wantsEnabled = manifestWantsEnabled(entry);
-        const hasEnabledVpks = entry.diskState
-          ? wantsEnabled && entry.diskState === "active"
-          : wantsEnabled && hasEveryEnabledVpk(currentVpks, enabledVpkSet);
-        const needsRepair =
-          (wantsEnabled && !hasEnabledVpks) ||
-          (!wantsEnabled && entry.diskState === "missing");
+        const projected = projectManifestEntryToModState(entry, {
+          enabledVpkSet,
+          allVpkSet,
+          fallbackInstallOrder: restoredMods.length,
+        });
 
         const restoredMod: LocalMod = {
           ...modDetails,
-          status: hasEnabledVpks
-            ? ModStatus.Installed
-            : needsRepair
-              ? ModStatus.NeedsRepair
-              : ModStatus.Downloaded,
-          repairReason: needsRepair
-            ? manifestRepairReason(
-                entry,
-                wantsEnabled ? "missingEnabledVpks" : "missingPayload",
-              )
-            : undefined,
-          installedVpks: hasEnabledVpks ? currentVpks : [],
-          installOrder: entry.order ?? restoredMods.length,
+          status: projected.status,
+          repairReason: projected.repairReason,
+          installedVpks: projected.installedVpks,
+          installOrder: projected.installOrder,
           downloadedAt: new Date(),
           repairDownloads: entry.sourceDownloads,
         };
 
         restoredMods.push(restoredMod);
 
-        if (hasEnabledVpks) {
+        if (projected.status === ModStatus.Installed) {
           enabledMods[modId] = {
             remoteId: modId,
             enabled: true,
@@ -1164,8 +1113,8 @@ export const createProfilesSlice: StateCreator<
           .withMetadata({
             modId,
             name: modDetails.name,
-            hasEnabledVpks,
-            needsRepair,
+            hasEnabledVpks: projected.hasEnabledVpks,
+            needsRepair: projected.status === ModStatus.NeedsRepair,
           })
           .info("Restored mod from manifest");
       } catch (error) {
