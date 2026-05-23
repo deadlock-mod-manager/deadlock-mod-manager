@@ -1,4 +1,3 @@
-import { check as checkOta } from "@crabnebula/plugin-ota-updater";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
@@ -23,10 +22,7 @@ const buildFlatpakReleaseUrl = (version: string) =>
   `${GITHUB_REPO}/releases/download/v${version}/deadlock-mod-manager.flatpak`;
 
 const NATIVE_UPDATES_QUERY_KEY = ["app-updates", "native"] as const;
-const OTA_UPDATES_QUERY_KEY = ["app-updates", "ota"] as const;
 const IS_FLATPAK_QUERY_KEY = ["app-env", "is-flatpak"] as const;
-
-type OtaUpdate = Awaited<ReturnType<typeof checkOta>>;
 
 async function fetchNativeUpdate(): Promise<NativeUpdate | null> {
   return checkNative().catch((err) => {
@@ -35,19 +31,6 @@ async function fetchNativeUpdate(): Promise<NativeUpdate | null> {
     return null;
   });
 }
-
-async function fetchOtaUpdate(): Promise<OtaUpdate | null> {
-  return checkOta().catch((err) => {
-    const error = err instanceof Error ? err : new Error(String(err));
-    logger.withError(error).warn("OTA update check failed");
-    return null;
-  });
-}
-
-type AppUpdatesData = {
-  nativeUpdate: NativeUpdate | null;
-  otaUpdate: OtaUpdate | null;
-};
 
 export const useCheckForUpdates = () => {
   const { t } = useTranslation();
@@ -83,29 +66,18 @@ export const useCheckForUpdates = () => {
     retryDelay: 5000,
   });
 
-  const { data: otaUpdate } = useQuery({
-    queryKey: OTA_UPDATES_QUERY_KEY,
-    queryFn: fetchOtaUpdate,
-    enabled: false,
-    staleTime: STALE_TIME_MANUAL_CHECK,
-    gcTime: GC_TIME_UPDATER,
-  });
-
-  const updateAvailable = !!nativeUpdate || !!otaUpdate;
+  const updateAvailable = !!nativeUpdate;
 
   const { mutate: installUpdate, isPending: isInstallingUpdate } = useMutation({
     mutationFn: async () => {
       const native = queryClient.getQueryData<NativeUpdate | null>(
         NATIVE_UPDATES_QUERY_KEY,
       );
-      const ota = queryClient.getQueryData<OtaUpdate | null>(
-        OTA_UPDATES_QUERY_KEY,
-      );
-      if (!native && !ota) {
+      if (!native) {
         throw new Error("No update available");
       }
 
-      if (native && isRunningAsFlatpak) {
+      if (isRunningAsFlatpak) {
         const flatpakUrl = buildFlatpakReleaseUrl(native.version);
         logger
           .withMetadata({ version: native.version })
@@ -114,24 +86,13 @@ export const useCheckForUpdates = () => {
         return;
       }
 
-      if (native && !isRunningAsFlatpak) {
-        logger
-          .withMetadata({ version: native.version })
-          .info("Installing native update");
-        toast.loading(t("about.downloadingUpdate"));
-        await native.downloadAndInstall(() => {});
-        logger.info("Native update installed, relaunching");
-        await relaunch();
-        return;
-      }
-
-      if (ota) {
-        logger.info("Applying OTA update");
-        toast.loading(t("about.downloadingUpdate"));
-        await ota.apply();
-        logger.info("OTA update applied, reloading window");
-        window.location.reload();
-      }
+      logger
+        .withMetadata({ version: native.version })
+        .info("Installing native update");
+      toast.loading(t("about.downloadingUpdate"));
+      await native.downloadAndInstall(() => {});
+      logger.info("Native update installed, relaunching");
+      await relaunch();
     },
     onError: (err) => {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -142,23 +103,15 @@ export const useCheckForUpdates = () => {
 
   const { mutate: checkForUpdates, isPending: isCheckForUpdatesPending } =
     useMutation({
-      mutationFn: async (): Promise<AppUpdatesData> => {
-        const [nativeResult, otaResult] = await Promise.all([
-          queryClient.fetchQuery({
-            queryKey: NATIVE_UPDATES_QUERY_KEY,
-            queryFn: fetchNativeUpdate,
-            staleTime: STALE_TIME_MANUAL_CHECK,
-          }),
-          queryClient.fetchQuery({
-            queryKey: OTA_UPDATES_QUERY_KEY,
-            queryFn: fetchOtaUpdate,
-            staleTime: STALE_TIME_MANUAL_CHECK,
-          }),
-        ]);
-        return { nativeUpdate: nativeResult, otaUpdate: otaResult };
+      mutationFn: async (): Promise<NativeUpdate | null> => {
+        return queryClient.fetchQuery({
+          queryKey: NATIVE_UPDATES_QUERY_KEY,
+          queryFn: fetchNativeUpdate,
+          staleTime: STALE_TIME_MANUAL_CHECK,
+        });
       },
       onSuccess: (result) => {
-        if (!result.nativeUpdate && !result.otaUpdate) {
+        if (!result) {
           toast.info(t("about.latestVersion"));
         }
       },

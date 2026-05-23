@@ -13,11 +13,9 @@
     "dev": "pnpm tauri dev",
     "build": "pnpm tauri build",
     "build:dev": "pnpm tauri build --no-bundle",
-    "format:rust": "cd src-tauri && rustfmt",
-    "ota:upload": "bun run scripts/ota-upload.ts"
+    "format:rust": "cd src-tauri && rustfmt"
   },
   "dependencies": {
-    "@crabnebula/plugin-ota-updater": "^2.0.1",
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/crosshair": "workspace:*",
     "@deadlock-mods/deadlock-discord-presence": "workspace:*",
@@ -82,7 +80,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@crabnebula/ota-updater": "^0.1.9",
     "@tauri-apps/cli": "^2.10.1",
     "@types/node": "^20.19.37",
     "@types/react": "^19.2.14",
