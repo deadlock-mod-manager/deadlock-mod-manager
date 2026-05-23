@@ -41,6 +41,15 @@ pub fn run() {
 
   let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
 
+  #[cfg(all(debug_assertions, desktop))]
+  {
+    builder = builder.plugin(
+      tauri_plugin_mcp_bridge::Builder::new()
+        .bind_address("127.0.0.1")
+        .build(),
+    );
+  }
+
   #[cfg(desktop)]
   {
     builder = builder.plugin(tauri_plugin_single_instance::init(

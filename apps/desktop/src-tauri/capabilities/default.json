@@ -31,6 +31,7 @@
     "clipboard-manager:allow-write-text",
     "deep-link:default",
     "machine-uid:default",
+    "mcp-bridge:default",
     {
       "identifier": "http:default",
       "allow": [

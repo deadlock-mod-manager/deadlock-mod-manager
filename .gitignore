@@ -49,7 +49,6 @@ target/
 
 .direnv/
 
-.cursor/mcp.json
 .cursor/plans
 .pnpm-store
 
@@ -77,3 +76,5 @@ routeTree.gen.ts
 .fallow
 
 .suggestions/
+
+.codex-run/
