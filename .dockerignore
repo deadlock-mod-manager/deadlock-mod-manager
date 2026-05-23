@@ -19,7 +19,7 @@ docs/
 dist
 build
 .turbo
-target
+**/target
 
 # OS files
 .DS_Store
@@ -39,6 +39,5 @@ pnpm-debug.log*
 coverage
 .nyc_output
 
-# Desktop app specific
-apps/desktop/src-tauri/target
-apps/desktop/dist
+# Desktop app
+apps/desktop
