@@ -49,7 +49,6 @@ pub fn run() {
   }
   let mut context = tauri::generate_context!();
   updater_channel::apply_to_context(&mut context);
-  let (ota_plugin, context) = tauri_plugin_ota_updater::init(context);
 
   builder = builder
     .plugin(tauri_plugin_deep_link::init())
@@ -76,8 +75,7 @@ pub fn run() {
         .filter(|metadata| metadata.target() != "tracing")
         .build(),
     )
-    .plugin(tauri_plugin_machine_uid::init())
-    .plugin(ota_plugin);
+    .plugin(tauri_plugin_machine_uid::init());
 
   builder
     .manage(game_presence::DiscordState::new())
