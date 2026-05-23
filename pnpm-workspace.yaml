@@ -32,6 +32,7 @@ overrides:
   undici@<6.23.0: ">=6.23.0"
   undici@>=7.0.0 <7.18.2: ">=7.18.2"
   vite@>=7.1.0 <=7.1.10: ">=7.1.11"
+  rolldown: 1.0.1
 
 allowBuilds:
   "@parcel/watcher": true
@@ -50,10 +51,20 @@ allowBuilds:
 
 autoInstallPeers: false
 dedupePeerDependents: true
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
 pmOnFail: ignore
 
+peerDependencyRules:
+  ignoreMissing:
+    - "@browserbasehq/stagehand"
+    - "@ibm-cloud/watsonx-ai"
+    - "ibm-cloud-sdk-core"
+  allowedVersions:
+    "tailwindcss-animate>tailwindcss": "3"
+
 catalog:
-  vite: ^6.4.2
+  vite: ^7.1.11
   "@isaacs/ttlcache": ^1.4.1
   "@keyv/redis": ^5.1.6
   "@sentry/node": ^10.46.0
@@ -62,5 +73,5 @@ catalog:
   keyv: ^5.6.0
   typescript: ^6.0.0
   "@typescript/native-preview": "npm:@typescript/native-preview@beta"
-  zod: 4.1.9
+  zod: ^4.2.0
   better-auth: ^1.5.6
