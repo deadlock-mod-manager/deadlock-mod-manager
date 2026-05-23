@@ -35,7 +35,7 @@ Before you begin, ensure you have the following installed:
 **Option 1: Traditional Setup**
 
 - **Node.js** (>= 24.8.0) - [Download here](https://nodejs.org/) or use nvm
-- **pnpm** (>= 10.18.2) - Install with `npm install -g pnpm`
+- **pnpm** (>= 11.2) - Use [Corepack](https://nodejs.org/api/corepack.html): `corepack enable` (version is pinned in `package.json`)
 - **Docker** - For local database development
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
 - **Git** - For version control
@@ -184,6 +184,17 @@ pnpm db:push
 # Seed with initial data (optional)
 pnpm db:seed
 ```
+
+### Dependency release age
+
+This repo enforces a **7-day minimum release age** for npm packages via [`pnpm-workspace.yaml`](pnpm-workspace.yaml) (`minimumReleaseAge: 10080`, strict mode). pnpm will not install versions published within the last 7 days unless they are listed under `minimumReleaseAgeExclude`.
+
+Implications for contributors:
+
+- `pnpm add foo@latest` may fail until a mature version exists in the registry.
+- `pnpm upgrade-dependencies` (taze) may propose versions that cannot be installed yet; wait for the cooldown or pin an older version.
+- If a dependency must always track the latest release (e.g. `oxfmt` / `oxlint`), add it to `minimumReleaseAgeExclude` sparingly and only with justification.
+- When the lockfile references packages that violate the policy, regenerate it with `pnpm install --config.minimumReleaseAge=0`, then confirm with `pnpm install --frozen-lockfile`.
 
 ### Development with Nix
 

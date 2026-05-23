@@ -4,7 +4,7 @@
   rustToolchain,
   src,
   nodejs_22,
-  pnpm_9,
+  pnpm_11,
   fetchPnpmDeps,
   pnpmConfigHook,
   pkg-config,
@@ -40,7 +40,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     rustToolchain
     nodejs_22
     pnpmConfigHook
-    pnpm_9
+    pnpm_11
     pkg-config
     wrapGAppsHook3
   ];
@@ -75,7 +75,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       version
       src
       ;
-    pnpm = pnpm_9;
+    pnpm = pnpm_11;
     fetcherVersion = 2;
     sourceRoot = "source";
     hash = "sha256-flQgVhowEtUjE94He2dxCqvGwWwOzJltDWxBJFCs17s=";
