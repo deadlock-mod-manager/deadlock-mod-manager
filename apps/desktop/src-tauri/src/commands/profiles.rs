@@ -620,7 +620,12 @@ pub async fn seed_profile_vpk_manifest_entries(
         entry.order,
       );
     } else {
-      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
+      manifest.mark_disabled(
+        &entry.mod_id,
+        entry.disabled_vpks,
+        entry.original_vpk_names,
+        entry.order,
+      );
     }
     changed = true;
   }

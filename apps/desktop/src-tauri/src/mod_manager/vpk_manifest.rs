@@ -231,6 +231,58 @@ impl ProfileVpkManifest {
     }
   }
 
+  fn next_available_order(&self) -> u32 {
+    let mut orders: Vec<u32> = self.mods.values().filter_map(|entry| entry.order).collect();
+    orders.sort_unstable();
+    orders.dedup();
+
+    if let Some(max_order) = orders.last()
+      && let Some(next_order) = max_order.checked_add(1)
+    {
+      return next_order;
+    }
+
+    let mut next_order = 0u32;
+    for order in orders {
+      if order == next_order {
+        if let Some(incremented) = next_order.checked_add(1) {
+          next_order = incremented;
+        }
+      } else if order > next_order {
+        break;
+      }
+    }
+    next_order
+  }
+
+  fn resolved_order(&self, mod_id: &str, order: Option<u32>) -> u32 {
+    order
+      .or_else(|| self.mods.get(mod_id).and_then(|entry| entry.order))
+      .unwrap_or_else(|| self.next_available_order())
+  }
+
+  pub fn assign_missing_orders(&mut self) -> bool {
+    let mod_ids_without_order: Vec<String> = self
+      .mods
+      .iter()
+      .filter(|(_, entry)| entry.order.is_none())
+      .map(|(mod_id, _)| mod_id.clone())
+      .collect();
+
+    if mod_ids_without_order.is_empty() {
+      return false;
+    }
+
+    for mod_id in mod_ids_without_order {
+      let order = self.resolved_order(&mod_id, None);
+      if let Some(entry) = self.mods.get_mut(&mod_id) {
+        entry.order = Some(order);
+      }
+    }
+
+    true
+  }
+
   pub fn save(&self, addons_path: &Path) -> Result<(), Error> {
     fs::create_dir_all(addons_path)?;
 
@@ -263,6 +315,7 @@ impl ProfileVpkManifest {
     original_vpk_names: Vec<String>,
     order: Option<u32>,
   ) {
+    let order = self.resolved_order(mod_id, order);
     let entry = self.mods.entry(mod_id.to_string()).or_default();
     let payload_names_changed = entry.current_vpks != current_vpks
       || (!original_vpk_names.is_empty() && entry.original_vpk_names != original_vpk_names);
@@ -286,9 +339,7 @@ impl ProfileVpkManifest {
       ProfileVpkManifestDiskState::Active
     });
     entry.repair_reason = Self::repair_reason_for_disk_state(entry.disk_state.unwrap());
-    if order.is_some() {
-      entry.order = order;
-    }
+    entry.order = Some(order);
   }
 
   pub fn mark_disabled(
@@ -296,7 +347,9 @@ impl ProfileVpkManifest {
     mod_id: &str,
     disabled_vpks: Vec<String>,
     original_vpk_names: Vec<String>,
+    order: Option<u32>,
   ) {
+    let order = self.resolved_order(mod_id, order);
     let entry = self.mods.entry(mod_id.to_string()).or_default();
     entry.enabled = false;
     entry.desired_state = Some(ProfileVpkManifestDesiredState::Disabled);
@@ -316,6 +369,7 @@ impl ProfileVpkManifest {
     } else {
       None
     };
+    entry.order = Some(order);
   }
 
   pub fn remove_mod(&mut self, mod_id: &str) {
@@ -328,10 +382,14 @@ impl ProfileVpkManifest {
     mod_id: &str,
     source_downloads: Vec<ProfileVpkManifestSourceDownload>,
   ) -> Result<(), Error> {
+    let order = self.resolved_order(mod_id, None);
     let Some(entry) = self.mods.get_mut(mod_id) else {
       return Ok(());
     };
 
+    if entry.order.is_none() {
+      entry.order = Some(order);
+    }
     entry.source_downloads = source_downloads;
     entry.vpk_fingerprints =
       Self::fingerprints_for_entry(addons_path, &entry.current_vpks, &entry.original_vpk_names)?;
@@ -417,6 +475,7 @@ impl ProfileVpkManifest {
   }
 
   pub fn mark_enabled_needs_repair(&mut self, mod_id: &str, quarantined_vpks: Vec<String>) {
+    let order = self.resolved_order(mod_id, None);
     if let Some(entry) = self.mods.get_mut(mod_id) {
       entry.enabled = true;
       entry.desired_state = Some(ProfileVpkManifestDesiredState::Enabled);
@@ -428,6 +487,9 @@ impl ProfileVpkManifest {
         ProfileVpkManifestDiskState::Mismatch
       });
       entry.repair_reason = Self::repair_reason_for_disk_state(entry.disk_state.unwrap());
+      if entry.order.is_none() {
+        entry.order = Some(order);
+      }
     }
   }
 
@@ -516,14 +578,19 @@ impl ProfileVpkManifest {
     mod_id: &str,
     verification: ProfileVpkManifestVerification,
   ) -> bool {
+    let order = self.resolved_order(mod_id, None);
     let Some(entry) = self.mods.get_mut(mod_id) else {
       return false;
     };
 
     let changed = entry.disk_state != Some(verification.disk_state)
-      || entry.repair_reason != verification.repair_reason;
+      || entry.repair_reason != verification.repair_reason
+      || entry.order.is_none();
     entry.disk_state = Some(verification.disk_state);
     entry.repair_reason = verification.repair_reason;
+    if entry.order.is_none() {
+      entry.order = Some(order);
+    }
     changed
   }
 
@@ -666,6 +733,104 @@ mod tests {
     assert_eq!(entry.original_vpk_names, vec!["cool_mod.vpk".to_string()]);
     assert_eq!(entry.current_vpks, vec!["pak02_dir.vpk".to_string()]);
     assert_eq!(entry.order, Some(1));
+  }
+
+  #[test]
+  fn mark_enabled_assigns_next_order_when_missing() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "existing",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["existing.vpk".to_string()],
+      Some(3),
+    );
+
+    manifest.mark_enabled(
+      "new",
+      vec!["pak02_dir.vpk".to_string()],
+      vec!["new.vpk".to_string()],
+      None,
+    );
+
+    assert_eq!(manifest.mods.get("new").unwrap().order, Some(4));
+  }
+
+  #[test]
+  fn mark_enabled_preserves_existing_order_when_order_is_missing() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "123",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["original.vpk".to_string()],
+      Some(7),
+    );
+
+    manifest.mark_enabled(
+      "123",
+      vec!["pak02_dir.vpk".to_string()],
+      vec!["replacement.vpk".to_string()],
+      None,
+    );
+
+    assert_eq!(manifest.mods.get("123").unwrap().order, Some(7));
+  }
+
+  #[test]
+  fn mark_disabled_assigns_order_when_missing() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "existing",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["existing.vpk".to_string()],
+      Some(2),
+    );
+
+    manifest.mark_disabled(
+      "disabled",
+      vec!["disabled_pak01_dir.vpk".to_string()],
+      vec!["pak01_dir.vpk".to_string()],
+      None,
+    );
+
+    assert_eq!(manifest.mods.get("disabled").unwrap().order, Some(3));
+  }
+
+  #[test]
+  fn assign_missing_orders_backfills_null_entries() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "ordered".to_string(),
+      ProfileVpkManifestEntry {
+        order: Some(5),
+        ..Default::default()
+      },
+    );
+    manifest.mods.insert(
+      "missing".to_string(),
+      ProfileVpkManifestEntry {
+        order: None,
+        ..Default::default()
+      },
+    );
+
+    assert!(manifest.assign_missing_orders());
+    assert_eq!(manifest.mods.get("missing").unwrap().order, Some(6));
+  }
+
+  #[test]
+  fn saved_enabled_entries_do_not_serialize_null_order() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "123",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["original.vpk".to_string()],
+      None,
+    );
+
+    let json = serde_json::to_string(&manifest).unwrap();
+
+    assert!(!json.contains("\"order\":null"));
+    assert!(json.contains("\"order\":0"));
   }
 
   #[test]

@@ -662,8 +662,14 @@ pub async fn register_analyzed_mod(
   manifest.mark_enabled(&mod_id, installed_vpks, Vec::new(), install_order);
   // mark_enabled skips overwriting original_vpk_names when passed empty,
   // so explicitly clear stale originals from a previous install.
+  let assigned_order = manifest.mods.get(&mod_id).and_then(|entry| entry.order);
   if let Some(entry) = manifest.mods.get_mut(&mod_id) {
     entry.original_vpk_names.clear();
+  }
+  if let Some(existing) = mod_manager.get_mod_repository().get_mod(&mod_id).cloned() {
+    let mut updated = existing;
+    updated.install_order = assigned_order;
+    mod_manager.get_mod_repository_mut().add_mod(updated);
   }
   if let Err(error) = manifest.refresh_repair_metadata(&addons_path, &mod_id) {
     log::warn!("Failed to fingerprint analyzed VPKs for mod {mod_id}: {error}");
