@@ -133,7 +133,7 @@
 
               # Node.js ecosystem
               nodejs_22
-              nodePackages.pnpm
+              pnpm_11
               bun
 
               # Development tools
