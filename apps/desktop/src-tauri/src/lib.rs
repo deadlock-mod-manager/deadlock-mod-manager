@@ -24,18 +24,6 @@ mod utils;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
-#[cfg(all(debug_assertions, desktop))]
-fn is_mcp_bridge_enabled() -> bool {
-  std::env::var("DMM_MCP_BRIDGE")
-    .map(|value| {
-      let value = value.trim();
-      value == "1"
-        || value.eq_ignore_ascii_case("true")
-        || value.eq_ignore_ascii_case("yes")
-    })
-    .unwrap_or(false)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   #[cfg(debug_assertions)]
@@ -55,13 +43,11 @@ pub fn run() {
 
   #[cfg(all(debug_assertions, desktop))]
   {
-    if is_mcp_bridge_enabled() {
-      builder = builder.plugin(
-        tauri_plugin_mcp_bridge::Builder::new()
-          .bind_address("127.0.0.1")
-          .build(),
-      );
-    }
+    builder = builder.plugin(
+      tauri_plugin_mcp_bridge::Builder::new()
+        .bind_address("127.0.0.1")
+        .build(),
+    );
   }
 
   #[cfg(desktop)]

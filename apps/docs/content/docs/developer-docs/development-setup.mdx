@@ -255,14 +255,13 @@ pnpm build
 
 ### Core Commands
 
-| Command                      | Description                                           |
-| ---------------------------- | ----------------------------------------------------- |
-| `pnpm dev`                   | Run the repository-wide turbo dev workflow            |
-| `pnpm desktop:dev`           | Start desktop app with the local UI tooling bridge    |
-| `pnpm desktop:dev:no-bridge` | Start desktop app without the local UI tooling bridge |
-| `pnpm api:dev`               | Start API server development                          |
-| `pnpm www:dev`               | Start web app development                             |
-| `pnpm docs:dev`              | Start documentation development                       |
+| Command            | Description                                |
+| ------------------ | ------------------------------------------ |
+| `pnpm dev`         | Run the repository-wide turbo dev workflow |
+| `pnpm desktop:dev` | Start desktop app development              |
+| `pnpm api:dev`     | Start API server development               |
+| `pnpm www:dev`     | Start web app development                  |
+| `pnpm docs:dev`    | Start documentation development            |
 
 ### Quality Assurance
 
@@ -304,13 +303,6 @@ pnpm api:dev
 # Start the desktop app (in another terminal)
 pnpm desktop:dev
 ```
-
-Desktop development starts with the local UI tooling bridge enabled. The bridge
-listens on `127.0.0.1` and uses a development-only Tauri config so the global
-Tauri API is not enabled in production builds.
-
-Use `pnpm desktop:dev:no-bridge` when you need to run the desktop app without the
-bridge.
 
 For **web development**:
 

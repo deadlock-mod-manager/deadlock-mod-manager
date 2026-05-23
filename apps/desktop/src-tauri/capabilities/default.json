@@ -31,7 +31,6 @@
     "clipboard-manager:allow-write-text",
     "deep-link:default",
     "machine-uid:default",
-    "ota-updater:default",
     "mcp-bridge:default",
     {
       "identifier": "http:default",
