@@ -471,6 +471,7 @@ impl VpkManager {
     }
 
     let prefix = format!("{mod_id}_");
+    let mismatch_prefix = format!("{prefix}mismatch_");
 
     for entry in fs::read_dir(addons_path)? {
       let entry = entry?;
@@ -480,6 +481,7 @@ impl VpkManager {
         && path.extension().is_some_and(|ext| ext == "vpk")
         && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
         && file_name.starts_with(&prefix)
+        && !file_name.starts_with(&mismatch_prefix)
       {
         prefixed_vpks.push(file_name.to_string());
       }
@@ -956,5 +958,17 @@ mod tests {
         .to_string()
         .contains("original VPK name count (1) does not match installed VPK count (2)")
     );
+  }
+
+  #[test]
+  fn find_prefixed_vpks_excludes_mismatch_quarantine() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "123456_original.vpk");
+    write_vpk(temp.path(), "123456_mismatch_pak27_dir.vpk");
+    let manager = VpkManager::new();
+
+    let prefixed = manager.find_prefixed_vpks(temp.path(), "123456").unwrap();
+
+    assert_eq!(prefixed, vec!["123456_original.vpk".to_string()]);
   }
 }

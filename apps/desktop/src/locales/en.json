@@ -923,7 +923,9 @@
       "missingPayload": "This mod is in your library, but its downloaded VPK files are missing. Redownload it to repair.",
       "needsDownloadChoice": "Repair needs you to choose which download file to use.",
       "needsFileSelection": "Repair needs you to choose which VPK file to install.",
-      "repairFailed": "Repair failed. Try again, or redownload this mod manually."
+      "repairFailed": "Repair failed. Try again, or redownload this mod manually.",
+      "fingerprintMismatch": "The active VPK does not match this mod's saved fingerprint. It was disabled until repaired.",
+      "unverifiedManifest": "This manifest entry has no saved VPK fingerprint, so the active file cannot be verified."
     },
     "unknown": "Unknown"
   },

@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
 use crate::errors::Error;
+use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::vpk_manager::VpkManager;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
-use crate::mod_manager::Mod;
+use crate::mod_manager::vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestSourceDownload};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -31,9 +31,7 @@ fn sanitize_archive_name(name: &str) -> Result<String, Error> {
   let path = std::path::Path::new(name);
   match path.file_name().and_then(|f| f.to_str()) {
     Some(f) if f == name => Ok(f.to_string()),
-    _ => Err(Error::InvalidInput(format!(
-      "Invalid archive name: {name}"
-    ))),
+    _ => Err(Error::InvalidInput(format!("Invalid archive name: {name}"))),
   }
 }
 
@@ -54,9 +52,9 @@ fn validate_download_url(url: &str) -> Result<(), Error> {
     .host_str()
     .ok_or_else(|| Error::InvalidInput(format!("Download URL has no host: {url}")))?;
 
-  let is_allowed = ALLOWED_DOWNLOAD_HOSTS.iter().any(|allowed| {
-    host == *allowed || host.ends_with(&format!(".{allowed}"))
-  });
+  let is_allowed = ALLOWED_DOWNLOAD_HOSTS
+    .iter()
+    .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")));
 
   if !is_allowed {
     return Err(Error::InvalidInput(format!(
@@ -395,9 +393,7 @@ pub async fn batch_update_mods(
     };
 
     let prefixed_cleanup_count = cleanup_result.unwrap_or(0);
-    if prefixed_cleanup_count == 0
-      && repo_cleanup_count == 0
-      && !mod_data.installed_vpks.is_empty()
+    if prefixed_cleanup_count == 0 && repo_cleanup_count == 0 && !mod_data.installed_vpks.is_empty()
     {
       log::info!(
         "Using frontend-provided VPK list for cleanup of mod {} ({} VPKs)",
@@ -669,16 +665,16 @@ pub async fn register_analyzed_mod(
   if let Some(entry) = manifest.mods.get_mut(&mod_id) {
     entry.original_vpk_names.clear();
   }
+  if let Err(error) = manifest.refresh_repair_metadata(&addons_path, &mod_id) {
+    log::warn!("Failed to fingerprint analyzed VPKs for mod {mod_id}: {error}");
+  }
   manifest.save(&addons_path)?;
   log::info!("Persisted analyzed mod {mod_id} to profile manifest");
 
   Ok(())
 }
 
-fn resolve_addons_path(
-  game_path: &std::path::Path,
-  profile_folder: Option<&str>,
-) -> PathBuf {
+fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>) -> PathBuf {
   let base = game_path.join("game").join("citadel").join("addons");
   match profile_folder {
     Some(folder) => base.join(folder),
@@ -762,8 +758,7 @@ pub async fn get_mod_available_options(
   }
   available.sort();
 
-  let selected_set: std::collections::HashSet<String> =
-    enabled_originals.into_iter().collect();
+  let selected_set: std::collections::HashSet<String> = enabled_originals.into_iter().collect();
   Ok(build_options_file_tree(&available, &selected_set))
 }
 
@@ -844,7 +839,15 @@ pub async fn swap_mod_options(
   }
 
   let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), selected_original_names.clone(), None);
+  manifest.mark_enabled(
+    &mod_id,
+    new_installed_vpks.clone(),
+    selected_original_names.clone(),
+    None,
+  );
+  if let Err(error) = manifest.refresh_repair_metadata(&addons_path, &mod_id) {
+    log::warn!("Failed to refresh VPK fingerprints after swapping options for {mod_id}: {error}");
+  }
   manifest.save(&addons_path)?;
 
   Ok(SwapModOptionsResult {
@@ -958,10 +961,9 @@ pub async fn fetch_missing_mod_variants(
       )));
     }
 
-    let bytes = response
-      .bytes()
-      .await
-      .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url)))?;
+    let bytes = response.bytes().await.map_err(|e| {
+      Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url))
+    })?;
 
     let temp_dir = tempfile::tempdir()?;
     let archive_path = temp_dir.path().join(&safe_archive_name);
@@ -1022,9 +1024,7 @@ pub async fn stage_download_archive(
   archive_url: String,
   archive_name: String,
 ) -> Result<StageDownloadArchiveResult, Error> {
-  log::info!(
-    "Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}"
-  );
+  log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
 
   let game_path = {
     let manager = MANAGER.lock().unwrap();
@@ -1150,7 +1150,11 @@ pub async fn switch_mod_download_variant(
   validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
 
-  log::info!("Downloading archive {} from {}", safe_archive_name, archive_url);
+  log::info!(
+    "Downloading archive {} from {}",
+    safe_archive_name,
+    archive_url
+  );
 
   let client = reqwest::Client::builder()
     .build()
@@ -1190,7 +1194,12 @@ pub async fn switch_mod_download_variant(
 
   let new_originals: Vec<String> = vpk_files
     .iter()
-    .filter_map(|(path, _)| path.file_name().and_then(|s| s.to_str()).map(|s| s.to_string()))
+    .filter_map(|(path, _)| {
+      path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string())
+    })
     .collect();
 
   if new_originals.is_empty() {
@@ -1294,7 +1303,26 @@ pub async fn switch_mod_download_variant(
   }
 
   let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  manifest.mark_enabled(&mod_id, new_installed_vpks.clone(), new_originals.clone(), None);
+  manifest.mark_enabled(
+    &mod_id,
+    new_installed_vpks.clone(),
+    new_originals.clone(),
+    None,
+  );
+  if let Err(error) = manifest.update_repair_metadata(
+    &addons_path,
+    &mod_id,
+    vec![ProfileVpkManifestSourceDownload {
+      name: archive_name,
+      size: 0,
+      url: Some(archive_url),
+      md5_checksum: None,
+    }],
+  ) {
+    log::warn!(
+      "Failed to refresh VPK fingerprints after switching download variant for {mod_id}: {error}"
+    );
+  }
   manifest.save(&addons_path)?;
 
   Ok(SwitchDownloadVariantResult {

@@ -567,8 +567,9 @@ pub async fn get_profile_vpk_manifest(
   log::info!("Getting VPK manifest for profile: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
+  let manifest = mod_manager.get_profile_vpk_manifest(profile_folder.clone())?;
   mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
-  mod_manager.get_profile_vpk_manifest(profile_folder)
+  Ok(manifest)
 }
 
 #[tauri::command]

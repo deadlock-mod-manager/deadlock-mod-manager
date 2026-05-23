@@ -9,16 +9,18 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   steam_manager::SteamManager,
   vpk_manager::VpkManager,
-  vpk_manifest::ProfileVpkManifest,
+  vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestDiskState},
 };
 use log;
 use std::{
   collections::HashSet,
+  fs,
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
 
 const UNORDERED_FALLBACK_ORDER: u32 = u32::MAX;
+type ModVpkMapping = Vec<(String, Vec<String>)>;
 
 pub struct ModManager {
   steam_manager: SteamManager,
@@ -275,6 +277,7 @@ impl ModManager {
       deadlock_mod.original_vpk_names.clone(),
       deadlock_mod.install_order,
     );
+    Self::refresh_repair_metadata(&mut manifest, &addons_path, &deadlock_mod.id);
     manifest.save(&addons_path)?;
 
     // If the mod has an install order, trigger a reorder to maintain correct sequence
@@ -422,10 +425,18 @@ impl ModManager {
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    let mut vpks_to_remove = manifest
+    let mut vpks_to_remove: Vec<String> = manifest
       .mods
       .get(&mod_id)
-      .map(|entry| entry.current_vpks.clone())
+      .map(|entry| {
+        entry
+          .current_vpks
+          .iter()
+          .chain(entry.disabled_vpks.iter())
+          .chain(entry.quarantined_vpks.iter())
+          .cloned()
+          .collect()
+      })
       .unwrap_or_default();
 
     if !addons_path.exists() {
@@ -494,8 +505,11 @@ impl ModManager {
       .into_iter()
       .map(|(mod_id, _, vpks)| (mod_id, vpks))
       .collect();
+    let (mod_vpk_mapping, _fingerprint_mismatch_found) =
+      self.filter_reorder_mappings_by_fingerprint(&mut manifest, &addons_path, mod_vpk_mapping)?;
 
     if mod_vpk_mapping.is_empty() {
+      manifest.save(&addons_path)?;
       log::info!("No enabled manifest VPKs need reordering");
       return Ok(());
     }
@@ -519,7 +533,7 @@ impl ModManager {
       }
     }
     for mod_id in updated_mod_ids {
-      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
+      Self::refresh_repair_metadata(&mut manifest, &addons_path, &mod_id);
     }
 
     manifest.save(&addons_path)?;
@@ -581,8 +595,11 @@ impl ModManager {
       }
     }
 
+    let (mod_vpk_mapping, fingerprint_mismatch_found) =
+      self.filter_reorder_mappings_by_fingerprint(&mut manifest, &addons_path, mod_vpk_mapping)?;
+
     if mod_vpk_mapping.is_empty() {
-      if manifest_changed {
+      if manifest_changed || fingerprint_mismatch_found {
         manifest.save(&addons_path)?;
       }
       log::warn!("No enabled VPK mappings available to reorder");
@@ -607,7 +624,7 @@ impl ModManager {
       }
     }
     for (remote_id, _) in &updated_mappings {
-      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, remote_id);
+      Self::refresh_repair_metadata(&mut manifest, &addons_path, remote_id);
     }
 
     manifest.save(&addons_path)?;
@@ -657,8 +674,11 @@ impl ModManager {
       }
     }
 
+    let (mod_vpk_mapping, fingerprint_mismatch_found) =
+      self.filter_reorder_mappings_by_fingerprint(&mut manifest, &addons_path, mod_vpk_mapping)?;
+
     if mod_vpk_mapping.is_empty() {
-      if manifest_changed {
+      if manifest_changed || fingerprint_mismatch_found {
         manifest.save(&addons_path)?;
       }
       for deadlock_mod in updated_mods {
@@ -695,7 +715,7 @@ impl ModManager {
       }
     }
     for mod_id in updated_mod_ids {
-      Self::refresh_repair_metadata_after_reorder(&mut manifest, &addons_path, &mod_id);
+      Self::refresh_repair_metadata(&mut manifest, &addons_path, &mod_id);
     }
 
     for deadlock_mod in updated_mods {
@@ -708,20 +728,72 @@ impl ModManager {
     Ok(result_mods)
   }
 
-  fn refresh_repair_metadata_after_reorder(
+  fn refresh_repair_metadata(manifest: &mut ProfileVpkManifest, addons_path: &Path, mod_id: &str) {
+    if let Err(e) = manifest.refresh_repair_metadata(addons_path, mod_id) {
+      log::warn!("Failed to refresh repair metadata for {mod_id}: {e}");
+    }
+  }
+
+  fn filter_reorder_mappings_by_fingerprint(
+    &self,
     manifest: &mut ProfileVpkManifest,
     addons_path: &Path,
-    mod_id: &str,
-  ) {
-    let source_downloads = manifest
-      .mods
-      .get(mod_id)
-      .map(|entry| entry.source_downloads.clone())
-      .unwrap_or_default();
+    mod_vpk_mapping: ModVpkMapping,
+  ) -> Result<(ModVpkMapping, bool), Error> {
+    let mut validated_mappings = Vec::new();
+    let mut fingerprint_mismatch_found = false;
 
-    if let Err(e) = manifest.update_repair_metadata(addons_path, mod_id, source_downloads) {
-      log::warn!("Failed to refresh repair metadata for {mod_id} after reorder: {e}");
+    for (mod_id, vpks) in mod_vpk_mapping {
+      let mismatches = manifest.enabled_fingerprint_mismatches(addons_path, &mod_id)?;
+      if mismatches.is_empty() {
+        validated_mappings.push((mod_id, vpks));
+        continue;
+      }
+
+      log::warn!(
+        "Skipping reorder for mod {mod_id} because enabled VPK fingerprint validation failed: {}",
+        mismatches.join("; ")
+      );
+      let quarantined_vpks =
+        self.quarantine_mismatched_enabled_vpks(addons_path, &mod_id, &vpks)?;
+      manifest.mark_enabled_needs_repair(&mod_id, quarantined_vpks);
+      fingerprint_mismatch_found = true;
     }
+
+    Ok((validated_mappings, fingerprint_mismatch_found))
+  }
+
+  fn quarantine_mismatched_enabled_vpks(
+    &self,
+    addons_path: &Path,
+    mod_id: &str,
+    vpks: &[String],
+  ) -> Result<Vec<String>, Error> {
+    let mut quarantined = Vec::new();
+
+    for vpk in vpks {
+      let filename = Self::vpk_filenames(std::slice::from_ref(vpk))
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| vpk.clone());
+      let source = addons_path.join(&filename);
+      if !source.exists() {
+        continue;
+      }
+
+      let mut candidate = format!("{mod_id}_mismatch_{filename}");
+      let mut suffix = 1u32;
+      while addons_path.join(&candidate).exists() {
+        candidate = format!("{mod_id}_mismatch_{suffix}_{filename}");
+        suffix += 1;
+      }
+
+      fs::rename(&source, addons_path.join(&candidate))?;
+      log::warn!("Quarantined mismatched enabled VPK for mod {mod_id}: {filename} -> {candidate}");
+      quarantined.push(candidate);
+    }
+
+    Ok(quarantined)
   }
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
@@ -837,19 +909,59 @@ impl ModManager {
   }
 
   pub fn get_profile_vpk_manifest(
-    &self,
+    &mut self,
+    profile_folder: Option<String>,
+  ) -> Result<ProfileVpkManifest, Error> {
+    self.verify_profile_vpk_manifest(profile_folder)
+  }
+
+  pub fn verify_profile_vpk_manifest(
+    &mut self,
     profile_folder: Option<String>,
   ) -> Result<ProfileVpkManifest, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    ProfileVpkManifest::load(&addons_path)
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut changed = false;
+    let mod_ids: Vec<String> = manifest.mods.keys().cloned().collect();
+
+    for mod_id in mod_ids {
+      let Some(verification) = manifest.verify_mod_disk_state(&addons_path, &mod_id)? else {
+        continue;
+      };
+
+      if verification.disk_state == ProfileVpkManifestDiskState::Mismatch {
+        let current_vpks = manifest
+          .mods
+          .get(&mod_id)
+          .map(|entry| entry.current_vpks.clone())
+          .unwrap_or_default();
+        if current_vpks.is_empty() {
+          changed |= manifest.apply_mod_verification(&mod_id, verification);
+          continue;
+        }
+
+        let quarantined_vpks =
+          self.quarantine_mismatched_enabled_vpks(&addons_path, &mod_id, &current_vpks)?;
+        manifest.mark_enabled_needs_repair(&mod_id, quarantined_vpks);
+        changed = true;
+        continue;
+      }
+
+      changed |= manifest.apply_mod_verification(&mod_id, verification);
+    }
+
+    if changed {
+      manifest.save(&addons_path)?;
+    }
+
+    Ok(manifest)
   }
 
   pub fn hydrate_mods_from_manifest(
     &mut self,
     profile_folder: Option<String>,
   ) -> Result<usize, Error> {
-    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let manifest = ProfileVpkManifest::load(&addons_path)?;
+    let manifest = self.verify_profile_vpk_manifest(profile_folder.clone())?;
 
     let mut hydrated = 0usize;
     for (mod_id, entry) in &manifest.mods {
@@ -857,11 +969,12 @@ impl ModManager {
         continue;
       }
 
-      let installed_vpks = if entry.enabled {
-        entry.current_vpks.clone()
-      } else {
-        Vec::new()
-      };
+      let installed_vpks =
+        if entry.wants_enabled() && entry.disk_state == Some(ProfileVpkManifestDiskState::Active) {
+          entry.current_vpks.clone()
+        } else {
+          Vec::new()
+        };
 
       let deadlock_mod = Mod {
         id: mod_id.clone(),
@@ -877,9 +990,7 @@ impl ModManager {
     }
 
     if hydrated > 0 {
-      log::info!(
-        "Hydrated {hydrated} mods from manifest for profile {profile_folder:?}"
-      );
+      log::info!("Hydrated {hydrated} mods from manifest for profile {profile_folder:?}");
     }
 
     Ok(hydrated)
@@ -939,12 +1050,11 @@ impl ModManager {
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     if installed_vpks.is_empty() {
-      let prefixed_vpks = self
-        .vpk_manager
-        .find_prefixed_vpks(&addons_path, &mod_id)?;
+      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
       manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     } else {
       manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);
+      Self::refresh_repair_metadata(&mut manifest, &addons_path, &mod_id);
     }
     manifest.save(&addons_path)?;
 
