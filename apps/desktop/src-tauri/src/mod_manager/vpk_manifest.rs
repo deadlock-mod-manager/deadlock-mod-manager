@@ -1,9 +1,10 @@
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, io::ErrorKind, path::Path};
+use vpk_parser::{VpkParseOptions, VpkParser};
 
 const MANIFEST_FILENAME: &str = ".dmm.json";
-const CURRENT_MANIFEST_VERSION: u32 = 1;
+const CURRENT_MANIFEST_VERSION: u32 = 2;
 
 const fn current_manifest_version() -> u32 {
   CURRENT_MANIFEST_VERSION
@@ -31,6 +32,32 @@ pub struct ProfileVpkManifestEntry {
   pub disabled_vpks: Vec<String>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub source_downloads: Vec<ProfileVpkManifestSourceDownload>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub vpk_fingerprints: Vec<ProfileVpkManifestVpkFingerprint>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileVpkManifestSourceDownload {
+  pub name: String,
+  pub size: u64,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub url: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub md5_checksum: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileVpkManifestVpkFingerprint {
+  pub current_name: String,
+  pub original_name: String,
+  pub file_size: u64,
+  pub fast_hash: String,
+  pub sha256: String,
+  pub manifest_sha256: String,
 }
 
 impl Default for ProfileVpkManifest {
@@ -76,7 +103,7 @@ impl ProfileVpkManifest {
       ))
     })?;
 
-    if manifest.version == 0 {
+    if manifest.version < CURRENT_MANIFEST_VERSION {
       manifest.version = CURRENT_MANIFEST_VERSION;
     }
 
@@ -144,6 +171,78 @@ impl ProfileVpkManifest {
 
   pub fn remove_mod(&mut self, mod_id: &str) {
     self.mods.remove(mod_id);
+  }
+
+  pub fn update_repair_metadata(
+    &mut self,
+    addons_path: &Path,
+    mod_id: &str,
+    source_downloads: Vec<ProfileVpkManifestSourceDownload>,
+  ) -> Result<(), Error> {
+    let Some(entry) = self.mods.get_mut(mod_id) else {
+      return Ok(());
+    };
+
+    entry.source_downloads = source_downloads;
+    entry.vpk_fingerprints =
+      Self::fingerprints_for_entry(addons_path, &entry.current_vpks, &entry.original_vpk_names)?;
+    Ok(())
+  }
+
+  fn fingerprints_for_entry(
+    addons_path: &Path,
+    current_vpks: &[String],
+    original_vpk_names: &[String],
+  ) -> Result<Vec<ProfileVpkManifestVpkFingerprint>, Error> {
+    let mut fingerprints = Vec::new();
+    for (index, current_name) in current_vpks.iter().enumerate() {
+      let path = addons_path.join(current_name);
+      if !path.exists() {
+        log::warn!(
+          "Skipping VPK fingerprint for missing manifest file: {}",
+          path.display()
+        );
+        continue;
+      }
+
+      let vpk_data = fs::read(&path)?;
+      let metadata = fs::metadata(&path)?;
+      let last_modified = metadata
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .and_then(|duration| chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0));
+      let parsed = VpkParser::parse(
+        vpk_data,
+        VpkParseOptions {
+          include_full_file_hash: true,
+          file_path: path.to_string_lossy().to_string(),
+          last_modified,
+          include_merkle: false,
+          include_entries: false,
+        },
+      )
+      .map_err(|e| {
+        Error::InvalidInput(format!(
+          "Failed to fingerprint VPK file {}: {e}",
+          path.display()
+        ))
+      })?;
+
+      fingerprints.push(ProfileVpkManifestVpkFingerprint {
+        current_name: current_name.clone(),
+        original_name: original_vpk_names
+          .get(index)
+          .cloned()
+          .unwrap_or_else(|| current_name.clone()),
+        file_size: parsed.fingerprint.file_size as u64,
+        fast_hash: parsed.fingerprint.fast_hash,
+        sha256: parsed.fingerprint.sha256,
+        manifest_sha256: parsed.manifest_sha256,
+      });
+    }
+
+    Ok(fingerprints)
   }
 }
 
@@ -229,5 +328,14 @@ mod tests {
     assert_eq!(entry.original_vpk_names, vec!["cool_mod.vpk".to_string()]);
     assert_eq!(entry.current_vpks, vec!["pak02_dir.vpk".to_string()]);
     assert_eq!(entry.order, Some(1));
+  }
+
+  #[test]
+  fn source_downloads_are_omitted_when_empty() {
+    let manifest = ProfileVpkManifest::default();
+    let json = serde_json::to_string(&manifest).unwrap();
+
+    assert!(!json.contains("sourceDownloads"));
+    assert!(!json.contains("vpkFingerprints"));
   }
 }

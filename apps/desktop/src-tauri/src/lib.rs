@@ -202,6 +202,7 @@ pub fn run() {
       commands::profiles::get_profile_vpk_manifest,
       commands::profiles::hydrate_mods_from_manifest,
       commands::profiles::seed_profile_vpk_manifest_entries,
+      commands::profiles::update_profile_vpk_manifest_repair_metadata,
       commands::profiles::delete_profile_vpk,
       commands::profiles::show_profile_vpk_in_folder,
       commands::profiles::import_profile_batch,
