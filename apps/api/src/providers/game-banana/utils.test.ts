@@ -9,23 +9,132 @@ import {
   heroFromGameBananaProfile,
 } from "./utils";
 
+const gameBananaCategory = (
+  name: string,
+): GameBanana.GameBananaModProfile["_aCategory"] => ({
+  _idRow: 1,
+  _sModelName: "Category",
+  _sName: name,
+  _sProfileUrl: `https://gamebanana.com/categories/${name}`,
+  _sIconUrl: "",
+});
+
+const gameBananaProfile = (
+  overrides: Partial<GameBanana.GameBananaModProfile>,
+): GameBanana.GameBananaModProfile => ({
+  _idRow: 1,
+  _sModelName: "Mod",
+  _sName: "Test Mod",
+  _sProfileUrl: "https://gamebanana.com/mods/1",
+  _nStatus: "approved",
+  _bIsPrivate: false,
+  _tsDateModified: 0,
+  _tsDateAdded: 0,
+  _aPreviewMedia: {
+    _aImages: [],
+  },
+  _sCommentsMode: "show",
+  _bAccessorIsSubmitter: false,
+  _bIsTrashed: false,
+  _bIsWithheld: false,
+  _nUpdatesCount: 0,
+  _bHasUpdates: false,
+  _nAllTodosCount: 0,
+  _bHasTodos: false,
+  _nPostCount: 0,
+  _aAttributes: [],
+  _aTags: [],
+  _bCreatedBySubmitter: true,
+  _bIsPorted: false,
+  _nThanksCount: 0,
+  _sDownloadUrl: "",
+  _nDownloadCount: 0,
+  _aFiles: [],
+  _nSubscriberCount: 0,
+  _aContributingStudios: [],
+  _sLicense: "",
+  _aLicenseChecklist: {
+    yes: [],
+    ask: [],
+    no: [],
+  },
+  _bGenerateTableOfContents: false,
+  _sText: "",
+  _bAcceptsDonations: false,
+  _bShowRipePromo: false,
+  _aEmbeddables: {
+    _sEmbeddableImageBaseUrl: "",
+    _aVariants: [],
+  },
+  _aSubmitter: {
+    _idRow: 1,
+    _sName: "Author",
+    _bIsOnline: false,
+    _bHasRipe: false,
+    _sProfileUrl: "https://gamebanana.com/members/1",
+    _sAvatarUrl: "",
+    _sUserTitle: "",
+    _sHonoraryTitle: "",
+    _tsJoinDate: 0,
+    _sSigUrl: "",
+    _sPointsUrl: "",
+    _sMedalsUrl: "",
+    _sLocation: "",
+    _sOnlineTitle: "",
+    _sOfflineTitle: "",
+    _nPoints: 0,
+    _nPointsRank: 0,
+    _aNormalMedals: [],
+    _aRareMedals: [],
+    _aLegendaryMedals: [],
+    _nBuddyCount: 0,
+    _nSubscriberCount: 0,
+    _aDonationMethods: [],
+    _bAccessorIsBuddy: false,
+    _bBuddyRequestExistsWithAccessor: false,
+    _bAccessorIsSubscribed: false,
+  },
+  _aGame: {
+    _idRow: 1,
+    _sName: "Deadlock",
+    _sProfileUrl: "https://gamebanana.com/games/20979",
+    _sIconUrl: "",
+    _sAbbreviation: "dl",
+    _sBannerUrl: "",
+    _nSubscriberCount: 0,
+    _bHasSubmissionQueue: false,
+    _bAccessorIsSubscribed: false,
+  },
+  _aRootCategory: gameBananaCategory("Mods"),
+  _aCategory: gameBananaCategory("Skins"),
+  _aFeaturings: {
+    today: {
+      _sFeatureGroup: "",
+      _sTitle: "",
+      _sIconClasses: "",
+      _tsDate: 0,
+    },
+  },
+  ...overrides,
+});
+
 describe("heroFromGameBananaProfile", () => {
   it("prefers the GameBanana sub-category when the public category is Skins", () => {
-    const profile = {
+    const profile = gameBananaProfile({
       _sName: "Toon Seven",
-      _aCategory: { _sName: "Seven" },
-      _aSuperCategory: { _sName: "Skins" },
-    } as GameBanana.GameBananaModProfile;
+      _aCategory: gameBananaCategory("Seven"),
+      _aSuperCategory: gameBananaCategory("Skins"),
+    });
 
     expect(heroFromGameBananaProfile(profile)).toBe("Seven");
   });
 
   it("falls back to mod name aliases when GameBanana does not provide a hero category", () => {
-    const profile = {
+    const profile = gameBananaProfile({
       _sName: "Toon Viktor",
-      _aCategory: { _sName: "Skins" },
-      _aSuperCategory: { _sName: "Skins" },
-    } as GameBanana.GameBananaModProfile;
+      _aCategory: gameBananaCategory("Skins"),
+      _aSuperCategory: gameBananaCategory("Skins"),
+    });
 
     expect(heroFromGameBananaProfile(profile)).toBe("Victor");
   });

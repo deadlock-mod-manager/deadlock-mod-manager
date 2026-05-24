@@ -20,3 +20,5 @@ export function filterLibraryModsByStatus(
       return mods;
   }
 }
+
+export const filterStableLibraryModsByStatus = filterLibraryModsByStatus;
