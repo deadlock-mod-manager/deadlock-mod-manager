@@ -31,6 +31,11 @@ on:
         required: false
         type: string
         default: "windows-latest"
+      sign_windows:
+        description: "Sign Windows CEF executable via SignPath in this workflow run"
+        required: false
+        type: boolean
+        default: true
     secrets:
       TAURI_PRIVATE_KEY:
         required: true
@@ -245,7 +250,7 @@ jobs:
           Write-Host "Found CEF NSIS artifact: $($matches[0].FullName)"
 
       - name: Sign Windows CEF executable
-        if: matrix.os == 'windows'
+        if: matrix.os == 'windows' && inputs.sign_windows != false
         id: signpath-sign
         uses: ./.github/actions/signpath-sign
         with:
@@ -257,8 +262,16 @@ jobs:
           signpath-signing-policy: ${{ inputs.signpath_policy || 'test-signing' }}
           tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
+      - name: Upload unsigned Windows CEF artifact
+        if: matrix.os == 'windows' && inputs.sign_windows == false
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unsigned-cef-nightly
+          path: C:/t/release/bundle/nsis/*-cef-setup.exe
+          if-no-files-found: error
+
       - name: Upload CEF artifacts to release
-        if: inputs.release_id != ''
+        if: inputs.release_id != '' && (matrix.os == 'linux' || inputs.sign_windows != false)
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ inputs.release_id }}

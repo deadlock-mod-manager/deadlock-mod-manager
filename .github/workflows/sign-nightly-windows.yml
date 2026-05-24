@@ -1,0 +1,313 @@
+name: Sign Nightly Windows
+
+env:
+  NODE_VERSION: "24.8.0"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: "GitHub release ID for signed artifact uploads"
+        required: true
+        type: string
+      source_run_id:
+        description: "Nightly build workflow run ID with unsigned artifacts"
+        required: true
+        type: string
+      nightly_version:
+        description: "Nightly version label for latest.json"
+        required: true
+        type: string
+      builds_linux:
+        description: "Whether the nightly build included Linux"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  sign-regular:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download unsigned nightly Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-unsigned-nightly
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./unsigned-regular
+
+      - name: Sign Windows executables
+        uses: ./.github/actions/signpath-sign
+        with:
+          unsigned-artifact-path: ./unsigned-regular/*.exe
+          output-directory: ./artifact-output
+          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          signpath-project-slug: deadlock-mod-manager
+          signpath-signing-policy: test-signing
+          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+      - name: Upload signed artifacts to release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const artifactDir = './artifact-output';
+            const files = fs.readdirSync(artifactDir);
+
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+
+              if (stats.isFile()) {
+                const sanitizedName = file.trim();
+                const content = fs.readFileSync(filePath);
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: releaseId,
+                  name: sanitizedName,
+                  data: content
+                });
+                console.log(`Uploaded ${sanitizedName}`);
+              }
+            }
+
+      - name: Upload signed Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nightly-signed
+          path: ./artifact-output/*
+          if-no-files-found: error
+
+  sign-cef:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download unsigned CEF Windows artifact
+        id: download-cef
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-unsigned-cef-nightly
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./unsigned-cef
+
+      - name: Sign Windows CEF executable
+        if: steps.download-cef.outcome == 'success'
+        uses: ./.github/actions/signpath-sign
+        with:
+          unsigned-artifact-path: ./unsigned-cef/*.exe
+          output-directory: ./cef-artifacts
+          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          signpath-project-slug: deadlock-mod-manager
+          signpath-signing-policy: test-signing
+          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+      - name: Upload signed CEF artifacts to release
+        if: steps.download-cef.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const artifactDir = './cef-artifacts';
+            const files = fs.readdirSync(artifactDir);
+
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+
+              if (stats.isFile()) {
+                const content = fs.readFileSync(filePath);
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: releaseId,
+                  name: file,
+                  data: content
+                });
+                console.log(`Uploaded CEF artifact ${file}`);
+              }
+            }
+
+  update-latest-json-linux:
+    needs: sign-regular
+    if: inputs.builds_linux == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download signed Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-nightly-signed
+          path: ./release-artifacts/windows
+
+      - name: Update latest.json
+        uses: ./.github/actions/update-latest-json
+        with:
+          release-id: ${{ inputs.release_id }}
+          signed-artifact-path: ./release-artifacts/windows
+          version: nightly
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  update-latest-json-windows-only:
+    needs: sign-regular
+    if: inputs.builds_linux != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload latest.json to release (Windows-only nightly)
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          NIGHTLY_VERSION: ${{ inputs.nightly_version }}
+        with:
+          script: |
+            function toGitHubAssetName(name) {
+              return name
+                .trim()
+                .replace(/[^a-zA-Z0-9_-]/g, '.')
+                .replace(/\.+/g, '.');
+            }
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const nightlyVersion = process.env.NIGHTLY_VERSION;
+
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId
+            });
+
+            const exeAsset = release.assets.find(a => a.name.endsWith('-setup.exe') && !a.name.includes('-cef-'));
+            const sigAsset = release.assets.find(a => a.name.endsWith('-setup.exe.sig') && !a.name.includes('-cef-'));
+
+            if (!exeAsset || !sigAsset) {
+              throw new Error('Signed Windows NSIS artifacts not found on release');
+            }
+
+            const sigResponse = await github.rest.repos.getReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              asset_id: sigAsset.id,
+              headers: { Accept: 'application/octet-stream' }
+            });
+            const signature = Buffer.from(sigResponse.data).toString('utf8').trim();
+            const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/nightly`;
+            const githubAssetName = toGitHubAssetName(exeAsset.name);
+            const exeUrl = `${baseDownloadUrl}/${githubAssetName}`;
+
+            const latestJson = {
+              version: nightlyVersion,
+              notes: 'Nightly build',
+              pub_date: new Date().toISOString(),
+              platforms: {
+                'windows-x86_64': { signature, url: exeUrl },
+                'windows-x86_64-nsis': { signature, url: exeUrl }
+              }
+            };
+
+            const existingLatest = release.assets.find(a => a.name === 'latest.json');
+            if (existingLatest) {
+              await github.rest.repos.deleteReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: existingLatest.id
+              });
+            }
+
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              name: 'latest.json',
+              data: Buffer.from(JSON.stringify(latestJson, null, 2))
+            });
+
+            console.log('Successfully uploaded latest.json (Windows-only nightly)');
+
+  update-latest-cef-json:
+    needs: sign-cef
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update latest-cef.json
+        uses: ./.github/actions/update-latest-cef-json
+        with:
+          release-id: ${{ inputs.release_id }}
+          version: nightly
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-nightly:
+    needs:
+      - sign-regular
+      - update-latest-json-linux
+      - update-latest-json-windows-only
+    if: >-
+      always() &&
+      needs.sign-regular.result == 'success' &&
+      (needs.update-latest-json-linux.result == 'success' || needs.update-latest-json-windows-only.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish nightly release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        with:
+          script: |
+            const { data: updatedRelease } = await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: process.env.RELEASE_ID,
+              draft: false,
+              prerelease: true
+            });
+
+            console.log(`Successfully published nightly release: ${updatedRelease.html_url}`);

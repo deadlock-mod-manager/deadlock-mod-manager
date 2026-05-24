@@ -92,14 +92,16 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       builds_linux: ${{ steps.set-matrix.outputs.builds_linux }}
+      builds_windows: ${{ steps.set-matrix.outputs.builds_windows }}
     steps:
       - name: Prepare build matrix
         id: set-matrix
         run: |
           LINUX='{"platform":"depot-ubuntu-24.04","os":"linux"}'
-          WINDOWS='{"platform":"windows-latest","os":"windows"}'
+          WINDOWS='{"platform":"depot-windows-2025","os":"windows"}'
           include="[]"
           builds_linux="false"
+          builds_windows="false"
 
           build_windows="true"
           build_linux="true"
@@ -111,6 +113,7 @@ jobs:
 
           if [ "$build_windows" = "true" ]; then
             include=$(echo "$include" | jq -c ". + [$WINDOWS]")
+            builds_windows="true"
           fi
 
           if [ "$build_linux" = "true" ]; then
@@ -121,12 +124,14 @@ jobs:
           if [ "$include" = "[]" ]; then
             include=$(echo "[]" | jq -c ". + [$WINDOWS, $LINUX]")
             builds_linux="true"
+            builds_windows="true"
           fi
 
           matrix=$(echo "$include" | jq -c '{include: .}')
 
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "builds_linux=$builds_linux" >> $GITHUB_OUTPUT
+          echo "builds_windows=$builds_windows" >> $GITHUB_OUTPUT
           echo "Selected platforms: $matrix"
 
   create-nightly-release:
@@ -316,8 +321,9 @@ jobs:
       version: nightly
       nightly: true
       signpath_policy: test-signing
+      sign_windows: false
       runner_linux: depot-ubuntu-24.04-8
-      runner_windows: windows-latest
+      runner_windows: depot-windows-2025
     secrets:
       TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
       VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
@@ -437,7 +443,7 @@ jobs:
             });
             console.log('Successfully uploaded Flatpak bundle');
 
-      # Windows build - don't upload to release yet, need to code-sign first
+      # Windows build - upload unsigned artifact for separate SignPath workflow
       - name: Build the app (Windows)
         if: matrix.os == 'windows'
         uses: tauri-apps/tauri-action@v0
@@ -452,253 +458,45 @@ jobs:
           projectPath: ./apps/desktop
           args: "--bundles nsis,updater"
 
-      # Windows: SignPath code signing flow
-      - name: Sign Windows executables
-        if: matrix.os == 'windows'
-        id: signpath-sign
-        uses: ./.github/actions/signpath-sign
-        with:
-          unsigned-artifact-path: apps/desktop/target/release/bundle/nsis/*.exe
-          output-directory: ./artifact-output
-          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          signpath-project-slug: deadlock-mod-manager
-          signpath-signing-policy: test-signing
-          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
-
-      - name: Upload signed Windows artifact
+      - name: Upload unsigned Windows artifact
         if: matrix.os == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-nightly-signed
-          path: ./artifact-output/*
+          name: windows-unsigned-nightly
+          path: apps/desktop/target/release/bundle/nsis/*.exe
           if-no-files-found: error
 
-      - name: Upload signed artifacts to release
-        if: matrix.os == 'windows'
-        uses: actions/github-script@v7
-        env:
-          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const releaseId = parseInt(process.env.RELEASE_ID);
-            console.log(`Release ID from env: ${process.env.RELEASE_ID}`);
-            console.log(`Parsed release ID: ${releaseId}`);
-
-            try {
-              const { data: release } = await github.rest.repos.getRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: releaseId
-              });
-              console.log(`Found release: ${release.name} (draft: ${release.draft})`);
-            } catch (error) {
-              console.error(`Failed to find release ${releaseId}: ${error.message}`);
-              throw error;
-            }
-
-            const artifactDir = './artifact-output';
-            const files = fs.readdirSync(artifactDir);
-            console.log(`Files in artifact directory: ${JSON.stringify(files)}`);
-
-            for (const file of files) {
-              const filePath = path.join(artifactDir, file);
-              const stats = fs.statSync(filePath);
-              
-              if (stats.isFile()) {
-                const sanitizedName = file.trim();
-                console.log(`Uploading "${sanitizedName}" (original: "${file}") to release...`);
-                console.log(`File size: ${stats.size} bytes`);
-                const content = fs.readFileSync(filePath);
-                
-                try {
-                  await github.rest.repos.uploadReleaseAsset({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    release_id: releaseId,
-                    name: sanitizedName,
-                    data: content
-                  });
-                  console.log(`Successfully uploaded ${sanitizedName}`);
-                } catch (uploadError) {
-                  console.error(`Upload failed for ${sanitizedName}`);
-                  console.error(`Owner: ${context.repo.owner}, Repo: ${context.repo.repo}`);
-                  console.error(`Release ID: ${releaseId}`);
-                  console.error(`Error: ${uploadError.message}`);
-                  if (uploadError.response) {
-                    console.error(`Status: ${uploadError.response.status}`);
-                    console.error(`Response data: ${JSON.stringify(uploadError.response.data)}`);
-                  }
-                  throw uploadError;
-                }
-              }
-            }
-
-      - name: Upload latest.json to release (Windows-only nightly)
-        if: matrix.os == 'windows' && needs.prepare-matrix.outputs.builds_linux != 'true'
-        uses: actions/github-script@v7
-        env:
-          RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
-          NIGHTLY_VERSION: ${{ needs.create-nightly-release.outputs.nightly_version }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            function toGitHubAssetName(name) {
-              return name
-                .trim()
-                .replace(/[^a-zA-Z0-9_-]/g, '.')
-                .replace(/\.+/g, '.');
-            }
-
-            const releaseId = parseInt(process.env.RELEASE_ID);
-            const nightlyVersion = process.env.NIGHTLY_VERSION;
-            const artifactDir = './artifact-output';
-            const files = fs.readdirSync(artifactDir);
-            const sigFile = files.find(f => f.endsWith('.exe.sig'));
-            const exeFile = files.find(f => f.endsWith('.exe') && !f.endsWith('.exe.sig'));
-
-            if (!sigFile) {
-              throw new Error('No .exe.sig file found in artifact-output');
-            }
-            if (!exeFile) {
-              throw new Error('No .exe file found in artifact-output');
-            }
-
-            const signature = fs.readFileSync(path.join(artifactDir, sigFile), 'utf8').trim();
-            const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/nightly`;
-            const githubAssetName = toGitHubAssetName(exeFile);
-            const exeUrl = `${baseDownloadUrl}/${githubAssetName}`;
-
-            const latestJson = {
-              version: nightlyVersion,
-              notes: 'Nightly build',
-              pub_date: new Date().toISOString(),
-              platforms: {
-                'windows-x86_64': {
-                  signature: signature,
-                  url: exeUrl
-                },
-                'windows-x86_64-nsis': {
-                  signature: signature,
-                  url: exeUrl
-                }
-              }
-            };
-
-            const { data: release } = await github.rest.repos.getRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: releaseId
-            });
-
-            const existingLatest = release.assets.find(a => a.name === 'latest.json');
-            if (existingLatest) {
-              await github.rest.repos.deleteReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                asset_id: existingLatest.id
-              });
-              console.log('Deleted existing latest.json before upload');
-            }
-
-            const newContent = JSON.stringify(latestJson, null, 2);
-            await github.rest.repos.uploadReleaseAsset({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: releaseId,
-              name: 'latest.json',
-              data: Buffer.from(newContent)
-            });
-
-            console.log('Successfully uploaded latest.json (Windows-only nightly)');
-
-  update-latest-json:
-    needs: [check-commits, create-nightly-release, build-nightly]
-    if: needs.check-commits.outputs.should_build == 'true'
-    permissions:
-      contents: write
-    runs-on: depot-ubuntu-24.04
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Windows signed artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-nightly-signed
-          path: release-artifacts/windows
-
-      - name: Update latest.json
-        uses: ./.github/actions/update-latest-json
-        with:
-          release-id: ${{ needs.create-nightly-release.outputs.release_id }}
-          signed-artifact-path: ./release-artifacts/windows
-          version: nightly
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  update-latest-cef-json:
-    needs: [check-commits, create-nightly-release, build-cef]
-    if: needs.check-commits.outputs.should_build == 'true' && needs.build-cef.result == 'success'
-    permissions:
-      contents: write
-    runs-on: depot-ubuntu-24.04
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Update latest-cef.json
-        uses: ./.github/actions/update-latest-cef-json
-        with:
-          release-id: ${{ needs.create-nightly-release.outputs.release_id }}
-          version: nightly
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-nightly:
-    permissions:
-      contents: write
-    runs-on: depot-ubuntu-24.04
+  trigger-windows-signing:
     needs:
-      [
-        check-commits,
-        prepare-matrix,
-        create-nightly-release,
-        build-nightly,
-        update-latest-json,
-      ]
-    if: needs.check-commits.outputs.should_build == 'true'
-
+      [check-commits, prepare-matrix, create-nightly-release, build-nightly, build-cef]
+    if: >-
+      always() &&
+      needs.check-commits.outputs.should_build == 'true' &&
+      needs.build-nightly.result == 'success' &&
+      needs.prepare-matrix.outputs.builds_windows == 'true'
+    runs-on: depot-ubuntu-24.04
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - name: Publish nightly release
+      - name: Trigger Windows signing workflow
         uses: actions/github-script@v7
-        env:
-          release_id: ${{ needs.create-nightly-release.outputs.release_id }}
         with:
           script: |
-            try {
-              console.log(`Publishing nightly release ID: ${process.env.release_id}`);
-              
-              const { data: updatedRelease } = await github.rest.repos.updateRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: process.env.release_id,
-                draft: false,
-                prerelease: true
-              });
-              
-              console.log(`Successfully published nightly release: ${updatedRelease.html_url}`);
-              return updatedRelease.id;
-            } catch (error) {
-              console.error(`Failed to publish nightly release: ${error.message}`);
-              throw error;
-            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'sign-nightly-windows.yml',
+              ref: context.ref,
+              inputs: {
+                release_id: '${{ needs.create-nightly-release.outputs.release_id }}',
+                source_run_id: String(context.runId),
+                nightly_version: '${{ needs.create-nightly-release.outputs.nightly_version }}',
+                builds_linux: '${{ needs.prepare-matrix.outputs.builds_linux }}',
+              }
+            });
 
+            console.log('Dispatched sign-nightly-windows workflow');
   cleanup-nightly:
     permissions:
       contents: write
