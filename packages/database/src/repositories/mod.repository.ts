@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, sql } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import type { Mod, NewMod } from "../schema/mods";
 import { mods } from "../schema/mods";
+import { modContentDiffers } from "../mod/content-diff";
 
 export class ModRepository {
   constructor(private readonly db: Database) {}
@@ -96,7 +97,13 @@ export class ModRepository {
     return result[0];
   }
 
-  async upsertByRemoteId(mod: NewMod): Promise<Mod> {
+  async upsertByRemoteId(
+    mod: NewMod,
+  ): Promise<{ mod: Mod; contentChanged: boolean }> {
+    const existing = await this.findByRemoteIdIncludingBlacklisted(
+      mod.remoteId,
+    );
+
     const {
       id: _id,
       createdAt: _createdAt,
@@ -127,7 +134,10 @@ export class ModRepository {
       })
       .returning();
 
-    return result;
+    const contentChanged =
+      existing === null || modContentDiffers(existing, result);
+
+    return { mod: result, contentChanged };
   }
 
   async delete(id: string): Promise<void> {
