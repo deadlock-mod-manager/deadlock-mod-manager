@@ -961,11 +961,7 @@ Sanitizer reference:
 [13]: https://github.com/cure53/DOMPurify "GitHub - cure53/DOMPurify: DOMPurify - a DOM-only, super-fast, uber-tolerant XSS sanitizer for HTML, MathML and SVG. DOMPurify works with a secure default, but offers a lot of configurability and hooks. Demo:"
 [14]: https://legacy.reactjs.org/docs/introducing-jsx.html "Introducing JSX – React"
 [15]: https://www.w3.org/TR/trusted-types/ "Trusted Types"
-[16]: https://datatracker.ietf.org/doc/html/draft-ietf-oauth-browser-based-apps "
-
-                draft-ietf-oauth-browser-based-apps-26
-
-        "
+[16]: https://datatracker.ietf.org/doc/html/draft-ietf-oauth-browser-based-apps "OAuth 2.0 for Browser-Based Apps (draft-ietf-oauth-browser-based-apps-26)"
 [17]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel "HTML attribute: rel - HTML | MDN"
 [18]: https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts "Secure contexts - Security | MDN"
 [19]: https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html "File Upload - OWASP Cheat Sheet Series"
