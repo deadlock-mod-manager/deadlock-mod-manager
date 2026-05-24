@@ -1,5 +1,8 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
+import {
+  type HeroDetectionResult,
+  resolveDetectedHeroLabel,
+} from "@deadlock-mods/hero-parser";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
@@ -311,7 +314,11 @@ export const useModProcessor = () => {
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>
-        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+        setDetectedHero(
+          modId,
+          resolveDetectedHeroLabel(result),
+          result.usesCriticalPaths,
+        ),
       )
       .catch(() => setDetectedHero(modId, null));
 
@@ -416,7 +423,11 @@ export const useModProcessor = () => {
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>
-        setDetectedHero(modId, result.hero ?? null, result.usesCriticalPaths),
+        setDetectedHero(
+          modId,
+          resolveDetectedHeroLabel(result),
+          result.usesCriticalPaths,
+        ),
       )
       .catch(() => setDetectedHero(modId, null));
 

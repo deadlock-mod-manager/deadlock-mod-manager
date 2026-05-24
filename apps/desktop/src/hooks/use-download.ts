@@ -1,4 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -61,7 +62,7 @@ export const useDownload = (
           .then((result) => {
             setDetectedHero(
               mod.remoteId,
-              result.hero ?? null,
+              resolveDetectedHeroLabel(result),
               result.usesCriticalPaths,
             );
           })

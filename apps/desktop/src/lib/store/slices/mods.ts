@@ -13,6 +13,46 @@ import {
 } from "@/types/mods";
 import type { State } from "..";
 
+type ModSliceState = Pick<State, "localMods" | "profiles" | "activeProfileId">;
+
+function applyToModsAndActiveProfile(
+  state: ModSliceState,
+  updateMods: (mods: LocalMod[]) => LocalMod[],
+) {
+  const activeProfile = state.profiles[state.activeProfileId];
+
+  return {
+    localMods: updateMods(state.localMods),
+    profiles: activeProfile
+      ? {
+          ...state.profiles,
+          [state.activeProfileId]: {
+            ...activeProfile,
+            mods: updateMods(activeProfile.mods),
+          },
+        }
+      : state.profiles,
+  };
+}
+
+function applyToModsAndAllProfiles(
+  state: ModSliceState,
+  updateMods: (mods: LocalMod[]) => LocalMod[],
+) {
+  return {
+    localMods: updateMods(state.localMods),
+    profiles: Object.fromEntries(
+      Object.entries(state.profiles).map(([profileId, profile]) => [
+        profileId,
+        {
+          ...profile,
+          mods: updateMods(profile.mods),
+        },
+      ]),
+    ),
+  };
+}
+
 export type ModProgress = {
   percentage: number;
   speed?: number;
@@ -72,6 +112,10 @@ export type ModsState = {
     remoteId: string,
     hero: string | null,
     usesCriticalPaths?: boolean,
+  ) => void;
+  setHeroOverride: (
+    remoteId: string,
+    heroOverride: string | null | undefined,
   ) => void;
   clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
@@ -413,20 +457,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           }
           return mod;
         });
-      const activeProfile = state.profiles[state.activeProfileId];
 
-      return {
-        localMods: updateMods(state.localMods),
-        profiles: activeProfile
-          ? {
-              ...state.profiles,
-              [state.activeProfileId]: {
-                ...activeProfile,
-                mods: updateMods(activeProfile.mods),
-              },
-            }
-          : state.profiles,
-      };
+      return applyToModsAndActiveProfile(state, updateMods);
     }),
 
   getOrderedMods: () => {
@@ -528,25 +560,51 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     hero: string | null,
     usesCriticalPaths?: boolean,
   ) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) =>
-        mod.remoteId === remoteId
-          ? {
-              ...mod,
-              detectedHero: hero,
-              usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
-            }
-          : mod,
-      ),
-    })),
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? {
+                ...mod,
+                detectedHero: hero,
+                usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+              }
+            : mod,
+        );
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
+
+  setHeroOverride: (remoteId, heroOverride) =>
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => {
+          if (mod.remoteId !== remoteId) return mod;
+
+          if (heroOverride === undefined) {
+            const { heroOverride: _heroOverride, ...nextMod } = mod;
+            return nextMod;
+          }
+
+          return {
+            ...mod,
+            heroOverride,
+          };
+        });
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
 
   clearAllDetectedHeroes: () =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        detectedHero: undefined,
-      })),
-    })),
+    set((state) => {
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => ({
+          ...mod,
+          detectedHero: undefined,
+        }));
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
 
   setHeroDetection: (progress) =>
     set((state) => ({
