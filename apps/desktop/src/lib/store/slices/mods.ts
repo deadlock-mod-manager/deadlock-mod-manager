@@ -471,10 +471,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         mod.installedVpks.length > 0,
     );
 
-    const modsWithOrder = installedMods.map((mod, index) => ({
-      ...mod,
-      installOrder: mod.installOrder ?? index,
-    }));
+    const modsWithOrder = installedMods.map((mod, index) =>
+      Object.assign({}, mod, { installOrder: mod.installOrder ?? index }),
+    );
 
     return modsWithOrder.sort((a, b) => {
       if (a.installOrder !== b.installOrder) {
@@ -561,7 +560,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     usesCriticalPaths?: boolean,
   ) =>
     set((state) => {
-      const updateMods = (mods: typeof state.localMods) =>
+      const updateMods = (mods: LocalMod[]) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
             ? {
@@ -577,7 +576,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setHeroOverride: (remoteId, heroOverride) =>
     set((state) => {
-      const updateMods = (mods: typeof state.localMods) =>
+      const updateMods = (mods: LocalMod[]) =>
         mods.map((mod) => {
           if (mod.remoteId !== remoteId) return mod;
 
@@ -597,7 +596,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   clearAllDetectedHeroes: () =>
     set((state) => {
-      const updateMods = (mods: typeof state.localMods) =>
+      // oxlint-disable-next-line unicorn/consistent-function-scoping
+      const updateMods = (mods: LocalMod[]) =>
         mods.map((mod) => ({
           ...mod,
           detectedHero: undefined,
