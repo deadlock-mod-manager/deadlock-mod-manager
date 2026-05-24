@@ -19,6 +19,7 @@ const languages = [
   { code: "th-TH", name: "ไทย", flag: "🇹🇭" },
   { code: "tr-TR", name: "Türkçe", flag: "🇹🇷" },
   { code: "ru-RU", name: "Русский", flag: "🇷🇺" },
+  { code: "be-BY", name: "Беларуская", flag: "🇧🇾" },
   { code: "zh-CN", name: "简体中文", flag: "🇨🇳" },
   { code: "zh-TW", name: "繁體中文", flag: "🇹🇼" },
   { code: "es-ES", name: "Español", flag: "🇪🇸" },

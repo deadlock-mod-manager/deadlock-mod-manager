@@ -24,6 +24,20 @@
       ]
     },
     {
+      "code": "be-BY",
+      "name": "Belarusian",
+      "nativeName": "Беларуская",
+      "flag": "🇧🇾",
+      "status": "in-progress",
+      "isDefault": false,
+      "contributors": [
+        {
+          "name": "drodn",
+          "discord": "drodn"
+        }
+      ]
+    },
+    {
       "code": "de-DE",
       "name": "German",
       "nativeName": "Deutsch",
