@@ -9,7 +9,6 @@ import { env } from "../lib/env";
 import { logger as mainLogger, wideEventContext } from "../lib/logger";
 import { providerRegistry } from "../providers";
 import type { GameBananaSubmission } from "../providers/game-banana/types";
-import { cache } from "../lib/redis";
 
 const logger = mainLogger.child().withContext({
   service: "mod-sync",
@@ -73,6 +72,7 @@ export class ModSyncService {
       wide?.merge({
         modCreated: !!result.mod,
         filesChanged: result.filesChanged,
+        contentChanged: result.contentChanged,
         handledAsTrashed: result.handledAsTrashed === true,
       });
 
@@ -83,10 +83,6 @@ export class ModSyncService {
         };
       }
 
-      if (result.filesChanged) {
-        await cache.del("mods:listing");
-      }
-
       return {
         success: true,
         message:
@@ -95,7 +91,7 @@ export class ModSyncService {
             : `Mod ${remoteId} synchronized successfully`,
       };
     } catch (error) {
-      logger.withError(error).error("Error during single mod synchronization");
+      wide?.set("outcomeReason", "error");
 
       return {
         success: false,
@@ -106,9 +102,7 @@ export class ModSyncService {
         try {
           await lock.release();
         } catch (releaseError) {
-          logger
-            .withError(releaseError)
-            .error("Error releasing single mod sync lock");
+          wide?.set("lockReleaseError", true);
         }
       }
     }
@@ -178,7 +172,7 @@ export class ModSyncService {
         message: "Mod synchronization completed successfully",
       };
     } catch (error) {
-      logger.withError(error).error("Error during mod synchronization");
+      wide?.set("outcomeReason", "error");
 
       if (checkInId) {
         Sentry.captureCheckIn({
@@ -197,7 +191,7 @@ export class ModSyncService {
         try {
           await lock.release();
         } catch (releaseError) {
-          logger.withError(releaseError).error("Error releasing lock");
+          wide?.set("lockReleaseError", true);
         }
       }
     }
