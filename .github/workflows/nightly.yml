@@ -14,7 +14,7 @@ on:
   workflow_dispatch: # Allow manual triggering
     inputs:
       force_build:
-        description: "Build even if no new desktop commits (TEMP: Depot runner testing)"
+        description: "Build even if no new desktop commits"
         type: boolean
         default: false
       build_windows:
@@ -97,7 +97,7 @@ jobs:
         id: set-matrix
         run: |
           LINUX='{"platform":"depot-ubuntu-24.04","os":"linux"}'
-          WINDOWS='{"platform":"depot-windows-2025","os":"windows"}'
+          WINDOWS='{"platform":"windows-latest","os":"windows"}'
           include="[]"
           builds_linux="false"
 
@@ -317,7 +317,7 @@ jobs:
       nightly: true
       signpath_policy: test-signing
       runner_linux: depot-ubuntu-24.04-8
-      runner_windows: depot-windows-2025-8
+      runner_windows: windows-latest
     secrets:
       TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
       VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
