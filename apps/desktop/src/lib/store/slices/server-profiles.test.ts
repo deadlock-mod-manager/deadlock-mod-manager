@@ -9,15 +9,19 @@ mock.module("@tauri-apps/api/core", () => ({
   },
 }));
 
-mock.module("@/lib/logger", () => ({
-  default: {
+mock.module("@/lib/logger", () => {
+  const logger = {
     withMetadata: () => ({
       withError: () => ({
         warn: () => {},
       }),
     }),
-  },
-}));
+  };
+  return {
+    createLogger: () => logger,
+    default: logger,
+  };
+});
 
 import {
   createServerProfilesSlice,

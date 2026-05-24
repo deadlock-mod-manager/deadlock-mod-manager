@@ -15,7 +15,7 @@ mock.module("@tauri-apps/plugin-store", () => ({
   }),
 }));
 
-mock.module("@/lib/logger", () => {
+const createLoggerMockExports = () => {
   const make = (): Record<string, unknown> => {
     const obj: Record<string, unknown> = {};
     obj.withMetadata = () => make();
@@ -28,7 +28,18 @@ mock.module("@/lib/logger", () => {
     return obj;
   };
   return { createLogger: () => make(), default: make() };
-});
+};
+
+mock.module("@/lib/logger", createLoggerMockExports);
+mock.module(
+  new URL("../logger.ts", import.meta.url).href,
+  createLoggerMockExports,
+);
+
+mock.module("@/lib/api-client", () => ({
+  BASE_URL: "http://test.local",
+  getMod: async () => null,
+}));
 
 // Stub Tauri IPC. The store imports through to slices that import @tauri-apps/api/core.
 mock.module("@tauri-apps/api/core", () => ({

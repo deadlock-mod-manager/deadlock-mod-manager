@@ -10,32 +10,55 @@ mock.module("@tauri-apps/plugin-clipboard-manager", () => ({
 mock.module("@tauri-apps/plugin-opener", () => ({
   openUrl: async () => {},
 }));
-mock.module("@/lib/logger", () => ({
-  default: {
+mock.module("@/lib/logger", () => {
+  const logger = {
     withError: () => ({ error: () => {}, warn: () => {} }),
-  },
-}));
+  };
+  return {
+    createLogger: () => logger,
+    default: logger,
+  };
+});
 
 const { buildSteamConnectUrl } = await import("./join-action");
 
-const baseServer = (
-  overrides: Partial<ServerBrowserEntry> = {},
-): ServerBrowserEntry => ({
+const defaultServer: ServerBrowserEntry = {
   id: "srv1",
   name: "Test Server",
+  ip: "203.0.113.10",
+  port: 27015,
+  visibility: "public",
+  password_protected: false,
+  connect_code: "203.0.113.10:27015",
+  gateway_url: "",
   player_count: 0,
   max_players: 12,
   map: "default_map",
   game_mode: "ad_hoc",
-  password_protected: false,
-  connect_code: "203.0.113.10:27015",
+  version: "",
+  players: [],
+  mods: [],
   required_mods: [],
-  ...(overrides as ServerBrowserEntry),
+  last_seen: "2026-01-01T00:00:00.000Z",
+  auth_required: false,
+  auth_providers: [],
+  source_relay: "test-relay",
+};
+
+type BaseServerOverrides = Partial<
+  Pick<ServerBrowserEntry, "connect_code" | "password_protected">
+>;
+
+const baseServer = (
+  overrides: BaseServerOverrides = {},
+): ServerBrowserEntry => ({
+  ...defaultServer,
+  ...overrides,
 });
 
 describe("buildSteamConnectUrl", () => {
   it("returns null when there is no connect_code", () => {
-    const server = baseServer({ connect_code: undefined });
+    const server = baseServer({ connect_code: "" });
     expect(buildSteamConnectUrl(server, "")).toBeNull();
   });
 

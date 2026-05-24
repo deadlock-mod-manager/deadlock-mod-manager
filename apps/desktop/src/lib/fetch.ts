@@ -1,6 +1,6 @@
 import type { ClientOptions } from "@tauri-apps/plugin-http";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-import { createLogger } from "./logger";
+import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "./store";
 
 const logger = createLogger("http");
