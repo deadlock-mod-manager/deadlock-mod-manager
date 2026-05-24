@@ -10,6 +10,7 @@ if (!connectionString) {
 export const db = drizzle(connectionString, { schema });
 export type Database = typeof db;
 
+export * from "./mod";
 export * from "drizzle-orm";
 export * from "./repositories";
 export * from "./schema";
