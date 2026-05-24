@@ -34,7 +34,7 @@ mock.module("@/lib/logger", () => {
     obj.trace = noop;
     return obj;
   };
-  return { default: make() };
+  return { createLogger: () => make(), default: make() };
 });
 
 const storageModule = await import("./storage");
