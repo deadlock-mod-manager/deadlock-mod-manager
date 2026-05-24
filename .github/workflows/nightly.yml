@@ -290,6 +290,23 @@ jobs:
 
             return data.id;
 
+  build-cef:
+    needs: [check-commits, create-nightly-release]
+    if: needs.check-commits.outputs.should_build == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_build-cef.yml
+    with:
+      release_id: ${{ needs.create-nightly-release.outputs.release_id }}
+      version: nightly
+      nightly: true
+      signpath_policy: test-signing
+    secrets:
+      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+
   build-nightly:
     needs: [check-commits, prepare-matrix, create-nightly-release]
     if: needs.check-commits.outputs.should_build == 'true'
@@ -605,6 +622,24 @@ jobs:
         with:
           release-id: ${{ needs.create-nightly-release.outputs.release_id }}
           signed-artifact-path: ./release-artifacts/windows
+          version: nightly
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  update-latest-cef-json:
+    needs: [check-commits, create-nightly-release, build-cef]
+    if: needs.check-commits.outputs.should_build == 'true' && needs.build-cef.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update latest-cef.json
+        uses: ./.github/actions/update-latest-cef-json
+        with:
+          release-id: ${{ needs.create-nightly-release.outputs.release_id }}
           version: nightly
           github-token: ${{ secrets.GITHUB_TOKEN }}
 

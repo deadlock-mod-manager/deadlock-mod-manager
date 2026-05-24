@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
@@ -8,7 +9,7 @@ use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{Emitter, Manager};
 
 use super::downloads::get_download_manager;
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};

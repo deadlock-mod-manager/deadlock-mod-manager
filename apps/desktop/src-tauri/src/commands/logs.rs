@@ -1,9 +1,10 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::logs::{CrashDumpInfo, LogInfo, crash_dumps, log_manager};
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 
 use super::state::{CONSOLE_LOG_WATCHER_RUNNING, MANAGER};
 

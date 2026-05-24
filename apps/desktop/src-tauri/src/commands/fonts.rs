@@ -1,3 +1,4 @@
+use crate::app_runtime::AppHandle;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -162,7 +163,7 @@ pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn scan_and_stash_local_mod_fonts(
-  app_handle: tauri::AppHandle,
+  app_handle: AppHandle,
   mod_id: String,
   files_dir: String,
 ) -> Result<(), Error> {
@@ -234,7 +235,7 @@ pub async fn scan_and_stash_local_mod_fonts(
 #[tauri::command]
 pub async fn debug_trigger_font_install(
   mod_id: String,
-  app_handle: tauri::AppHandle,
+  app_handle: AppHandle,
 ) -> Result<(), Error> {
   use crate::download_manager::DownloadFontsFoundEvent;
   use crate::mod_manager::FontManager;

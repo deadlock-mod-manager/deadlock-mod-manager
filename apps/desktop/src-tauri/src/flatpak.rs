@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use std::process::Stdio;
 
-use tauri::{AppHandle, Emitter};
+use crate::app_runtime::AppHandle;
+use tauri::Emitter;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;

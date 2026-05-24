@@ -1,10 +1,11 @@
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::ModFileTree;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use tauri::{AppHandle, Manager};
+use tauri::Manager;
 
 use super::mods::InstalledModInfo;
 use super::server_profiles::validate_addons_subfolder;
@@ -237,7 +238,7 @@ pub async fn download_custom_provider_mod(
 #[cfg(debug_assertions)]
 #[tauri::command]
 pub async fn debug_queue_local_zip(
-  app_handle: tauri::AppHandle,
+  app_handle: AppHandle,
   mod_id: String,
   zip_path: String,
 ) -> Result<(), Error> {

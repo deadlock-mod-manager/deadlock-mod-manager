@@ -3,6 +3,7 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import arSATranslation from "@/locales/ar-SA.json" with { type: "json" };
+import beBYTranslation from "@/locales/be-BY.json" with { type: "json" };
 import bgBGTranslation from "@/locales/bg-BG.json" with { type: "json" };
 import deDETranslation from "@/locales/de-DE.json" with { type: "json" };
 import enTranslation from "@/locales/en.json" with { type: "json" };
@@ -38,6 +39,7 @@ const LEGACY_LANGUAGE_MIGRATION: Record<string, string> = {
   tr: "tr-TR",
   th: "th-TH",
   bg: "bg-BG",
+  be: "be-BY",
   gsw: "de-CH",
   "gsw-CH": "de-CH",
 };
@@ -104,6 +106,9 @@ const resources = {
   "bg-BG": {
     translation: bgBGTranslation,
   },
+  "be-BY": {
+    translation: beBYTranslation,
+  },
 };
 
 // eslint-disable-next-line import/no-named-as-default-member
@@ -132,6 +137,7 @@ i18n
       "ja-JP",
       "ko-KR",
       "bg-BG",
+      "be-BY",
     ],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default

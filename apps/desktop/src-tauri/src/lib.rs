@@ -4,6 +4,7 @@
   windows_subsystem = "windows"
 )]
 
+pub mod app_runtime;
 pub mod cli;
 mod commands;
 mod deep_link;
@@ -39,7 +40,8 @@ pub fn run() {
     }
   }
 
-  let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+  let mut builder =
+    tauri::Builder::<app_runtime::AppRuntime>::default().plugin(tauri_plugin_dialog::init());
 
   #[cfg(all(debug_assertions, desktop))]
   {
@@ -56,7 +58,7 @@ pub fn run() {
       deep_link::on_second_instance,
     ));
   }
-  let mut context = tauri::generate_context!();
+  let mut context: tauri::Context<app_runtime::AppRuntime> = tauri::generate_context!();
   updater_channel::apply_to_context(&mut context);
 
   builder = builder
@@ -141,6 +143,7 @@ pub fn run() {
       commands::app::set_language,
       commands::app::set_api_url,
       commands::app::is_auto_update_disabled,
+      commands::app::get_runtime_kind,
       flatpak::is_flatpak,
       flatpak::update_flatpak,
       commands::app::is_linux_gpu_optimization_active,

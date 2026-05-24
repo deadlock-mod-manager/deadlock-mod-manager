@@ -43,6 +43,10 @@ export const isAutoUpdateDisabled = async (): Promise<boolean> => {
   return await invoke("is_auto_update_disabled");
 };
 
+export const getRuntimeKind = async (): Promise<"wry" | "cef"> => {
+  return await invoke("get_runtime_kind");
+};
+
 export const isFlatpak = async (): Promise<boolean> => {
   return await invoke("is_flatpak");
 };

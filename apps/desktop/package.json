@@ -10,9 +10,14 @@
     "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "predev": "pnpm cef:cleanup",
     "dev": "pnpm tauri dev --config src-tauri/tauri.dev.conf.json",
+    "dev:cef": "bun scripts/cef-patch.ts cargo tauri dev -- --no-default-features --features cef",
     "build": "pnpm tauri build",
     "build:dev": "pnpm tauri build --no-bundle",
+    "build:cef": "bun scripts/cef-patch.ts cargo tauri build --no-bundle -- --no-default-features --features cef",
+    "build:cef:release": "bun scripts/cef-patch.ts cross-env NO_STRIP=true cargo tauri build -- --no-default-features --features cef",
+    "cef:cleanup": "bun scripts/cef-patch.ts cleanup",
     "format:rust": "cd src-tauri && rustfmt"
   },
   "dependencies": {

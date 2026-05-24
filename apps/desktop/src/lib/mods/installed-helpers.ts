@@ -1,6 +1,13 @@
 import { type LocalMod, ModStatus } from "@/types/mods";
 
-export function isInstalledModWithFiles(mod: LocalMod): boolean {
+type InstalledFileState = Pick<
+  LocalMod,
+  "status" | "installedVpks" | "installedConfigFiles"
+>;
+
+type InstalledVpkState = Pick<LocalMod, "status" | "installedVpks">;
+
+export function isInstalledModWithFiles(mod: InstalledFileState): boolean {
   return (
     mod.status === ModStatus.Installed &&
     ((mod.installedVpks?.length ?? 0) > 0 ||
@@ -8,7 +15,7 @@ export function isInstalledModWithFiles(mod: LocalMod): boolean {
   );
 }
 
-export function isInstalledModWithVpks(mod: LocalMod): boolean {
+export function isInstalledModWithVpks(mod: InstalledVpkState): boolean {
   return (
     mod.status === ModStatus.Installed &&
     !!mod.installedVpks &&

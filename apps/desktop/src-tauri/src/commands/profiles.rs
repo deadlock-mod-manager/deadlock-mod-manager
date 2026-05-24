@@ -1,9 +1,10 @@
+use crate::app_runtime::AppHandle;
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Deserialize;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{Emitter, Manager};
 
 use super::downloads::get_download_manager;
 use super::mods::InstalledModInfo;

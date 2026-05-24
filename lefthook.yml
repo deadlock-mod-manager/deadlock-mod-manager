@@ -20,7 +20,7 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: cargo clippy --all-targets --all-features --fix --allow-dirty
+    - run: cargo clippy --all-targets --fix --allow-dirty
       glob:
         - "**/*.rs"
         - "**/Cargo.toml"
