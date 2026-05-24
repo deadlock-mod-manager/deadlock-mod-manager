@@ -141,7 +141,11 @@ const SearchBar = ({
     <div className={cn("flex flex-col gap-3", className)}>
       <div className='flex items-center justify-between gap-4'>
         <div className={cn("flex items-center gap-3", inputGroupClassName)}>
-          <div className={searchContainerClassName}>
+          <div
+            className={cn(
+              "min-w-0 overflow-visible",
+              searchContainerClassName,
+            )}>
             <SearchInput
               className={cn("w-80", searchInputClassName)}
               id='search'

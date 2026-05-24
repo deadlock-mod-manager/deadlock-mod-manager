@@ -53,6 +53,8 @@ export const ModStatusIcon = ({
 }) => {
   const loadingStatuses = [
     ModStatus.Downloading,
+    ModStatus.Extracting,
+    ModStatus.Paused,
     ModStatus.Removing,
     ModStatus.Installing,
   ];

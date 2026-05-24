@@ -936,9 +936,7 @@ const MyMods = () => {
               </Tooltip>
             )}
           </div>
-          <p className='text-muted-foreground text-sm leading-5'>
-            {t("myMods.subtitle")}
-          </p>
+          <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
         </div>
 
         <div className='flex w-full flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end xl:justify-self-end'>
@@ -1007,7 +1005,7 @@ const MyMods = () => {
       </div>
 
       <div
-        className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-4'
+        className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'
         ref={scrollContainerRef}
         onScroll={(e) => {
           scrollPositionRef.current = e.currentTarget.scrollTop;
@@ -1039,8 +1037,8 @@ const MyMods = () => {
             )}
             {mods.length > 0 && (
               <div className='flex w-full flex-col gap-4'>
-                <div className='grid w-full grid-cols-1 gap-3 xl:grid-cols-[minmax(20rem,1fr)_auto] xl:items-start'>
-                  <div className='min-w-0 [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
+                <div className='grid w-full grid-cols-1 gap-3 px-px xl:grid-cols-[minmax(20rem,1fr)_auto] xl:items-start'>
+                  <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
                       className='w-full'
                       filterMode={filterMode}
@@ -1064,7 +1062,7 @@ const MyMods = () => {
                       showTimePeriodControl={false}
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
-                      searchContainerClassName='min-w-0 w-full max-w-80'
+                      searchContainerClassName='w-full max-w-80 shrink-0'
                       searchInputClassName='w-full'
                     />
                   </div>

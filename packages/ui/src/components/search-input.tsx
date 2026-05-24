@@ -38,7 +38,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
     };
 
     return (
-      <div className='relative'>
+      <div className='relative w-full'>
         <Search className='absolute top-2.5 left-2 h-4 w-4 text-muted-foreground' />
         <Input
           className={cn("pr-8 pl-8", className)}
