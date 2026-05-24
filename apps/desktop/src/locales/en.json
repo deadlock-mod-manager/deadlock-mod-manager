@@ -1818,6 +1818,7 @@
     "detectedHero": "Hero",
     "changeHero": "Change hero",
     "heroOverrideAutomatic": "Use automatic",
+    "generalOther": "General/Other",
     "heroSource": {
       "manual": "Manual",
       "api": "API",

@@ -35,10 +35,7 @@ import {
 } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
-import {
-  GENERAL_OTHER_HERO_LABEL,
-  HeroOverridePicker,
-} from "./hero-override-picker";
+import { HeroOverridePicker } from "./hero-override-picker";
 import { HeroSourceBadge } from "./hero-source-badge";
 
 interface ModInfoProps {
@@ -198,7 +195,9 @@ interface HeroDisplayProps {
 
 const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
   const { t } = useTranslation();
-  const name = resolvedHero.hero ?? GENERAL_OTHER_HERO_LABEL;
+  const name =
+    resolvedHero.hero ??
+    t("modDetail.generalOther", { defaultValue: "General/Other" });
   const { data: hero } = useHero(resolvedHero.hero ?? "");
   const imageSrc =
     hero?.images.icon_hero_card_webp ??

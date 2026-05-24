@@ -1,3 +1,4 @@
+import type { ModDto } from "@deadlock-mods/shared";
 import { describe, expect, it } from "vitest";
 import type { LocalMod } from "@/types/mods";
 import {
@@ -6,18 +7,20 @@ import {
   resolveModHero,
 } from "./hero-resolution";
 
+type HeroTestMod = Pick<ModDto, "hero" | "name"> &
+  Pick<LocalMod, "detectedHero" | "heroOverride">;
+
 const mod = (values: {
   name: string;
   hero?: string | null;
   detectedHero?: string | null;
   heroOverride?: string | null;
-}) =>
-  ({
-    name: values.name,
-    hero: values.hero ?? null,
-    detectedHero: values.detectedHero,
-    heroOverride: values.heroOverride,
-  }) as LocalMod;
+}): HeroTestMod => ({
+  name: values.name,
+  hero: values.hero ?? null,
+  detectedHero: values.detectedHero,
+  heroOverride: values.heroOverride,
+});
 
 describe("resolveModHero", () => {
   it("prefers manual overrides over all automatic sources", () => {
@@ -58,6 +61,20 @@ describe("resolveModHero", () => {
     expect(resolveModHero(localMod, localMod)).toMatchObject({
       hero: "Victor",
       source: "name",
+    });
+  });
+
+  it("falls back to VPK detection when override, API hero, and name alias are unavailable", () => {
+    const localMod = mod({
+      name: "Unmapped Cosmetic",
+      hero: null,
+      detectedHero: "Infernus",
+    });
+
+    expect(resolveModHero(localMod, localMod)).toMatchObject({
+      hero: "Infernus",
+      source: "vpk",
+      hasOverride: false,
     });
   });
 

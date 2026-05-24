@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 const HERO_OVERRIDE_OPTIONS = Object.values(DeadlockHeroes).sort((a, b) =>
   a.localeCompare(b),
 );
-const GENERAL_OTHER_HERO_LABEL = "General/Other";
 
 interface HeroOverridePickerProps {
   remoteId: string;
@@ -96,7 +95,11 @@ export const HeroOverridePicker = ({
                       : "opacity-0",
                   )}
                 />
-                <span>{GENERAL_OTHER_HERO_LABEL}</span>
+                <span>
+                  {t("modDetail.generalOther", {
+                    defaultValue: "General/Other",
+                  })}
+                </span>
               </CommandItem>
             </CommandGroup>
             <CommandSeparator />
@@ -123,5 +126,3 @@ export const HeroOverridePicker = ({
     </Popover>
   );
 };
-
-export { GENERAL_OTHER_HERO_LABEL };
