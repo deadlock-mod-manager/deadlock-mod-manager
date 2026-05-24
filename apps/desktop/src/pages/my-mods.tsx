@@ -89,7 +89,10 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
-import { filterStableLibraryModsByStatus } from "@/lib/mods/library-display";
+import {
+  filterLibraryModsByStatus,
+  ModFilter,
+} from "@/lib/mods/library-display";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -193,12 +196,6 @@ function ModsPagination({
 enum ViewMode {
   GRID = "grid",
   LIST = "list",
-}
-
-enum ModFilter {
-  ALL = "all",
-  ENABLED = "enabled",
-  DISABLED = "disabled",
 }
 
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
@@ -602,7 +599,7 @@ const MyMods = () => {
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
-  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
+  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.All);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [page, setPage] = useState(0);
@@ -689,7 +686,7 @@ const MyMods = () => {
       );
     }
 
-    return filterStableLibraryModsByStatus(filteredMods, activeTab);
+    return filterLibraryModsByStatus(filteredMods, activeTab);
   }, [
     activeTab,
     filterMode,
@@ -972,9 +969,9 @@ const MyMods = () => {
             value={activeTab}
             onValueChange={(value) => {
               switch (value) {
-                case ModFilter.ALL:
-                case ModFilter.ENABLED:
-                case ModFilter.DISABLED:
+                case ModFilter.All:
+                case ModFilter.Enabled:
+                case ModFilter.Disabled:
                   setActiveTab(value);
                   break;
               }
@@ -1024,20 +1021,20 @@ const MyMods = () => {
                   </div>
                   <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 xl:justify-end'>
                     <TabsList className='h-auto min-h-9 max-w-full flex-wrap justify-start'>
-                      <TabsTrigger value={ModFilter.ALL}>
+                      <TabsTrigger value={ModFilter.All}>
                         {t("myMods.tabs.all")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({mods.length})
                         </span>
                       </TabsTrigger>
-                      <TabsTrigger value={ModFilter.ENABLED}>
+                      <TabsTrigger value={ModFilter.Enabled}>
                         <Check className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.installed")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({enabledModsCount})
                         </span>
                       </TabsTrigger>
-                      <TabsTrigger value={ModFilter.DISABLED}>
+                      <TabsTrigger value={ModFilter.Disabled}>
                         <Download className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.downloaded")}
                         <span className='ml-2 text-muted-foreground text-xs'>
@@ -1111,19 +1108,19 @@ const MyMods = () => {
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.ALL}>
+                  <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.ENABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.DISABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
