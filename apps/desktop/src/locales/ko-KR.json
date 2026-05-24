@@ -1816,6 +1816,16 @@
     "likesLabel": "",
     "modStatusLabel": "",
     "detectedHero": "",
+    "changeHero": "",
+    "heroOverrideAutomatic": "",
+    "generalOther": "",
+    "heroSource": {
+      "manual": "",
+      "api": "",
+      "name": "",
+      "vpk": "",
+      "none": ""
+    },
     "viewOriginalPost": "GameBanana에서 게시물 보기",
     "updateMod": "모드 업데이트",
     "forceUpdate": "강제 업데이트",

@@ -1816,6 +1816,16 @@
     "likesLabel": "",
     "modStatusLabel": "",
     "detectedHero": "",
+    "changeHero": "",
+    "heroOverrideAutomatic": "",
+    "generalOther": "",
+    "heroSource": {
+      "manual": "",
+      "api": "",
+      "name": "",
+      "vpk": "",
+      "none": ""
+    },
     "viewOriginalPost": "View original forum post",
     "updateMod": "",
     "forceUpdate": "",
