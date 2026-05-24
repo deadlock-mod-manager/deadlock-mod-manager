@@ -20,7 +20,11 @@ tauri-build = { git = "https://github.com/tauri-apps/tauri", branch = "${TAURI_C
 `;
 
 function readUtf8(path: string): string {
-  return readFileSync(path, "utf8");
+  return readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+}
+
+function writeUtf8(path: string, content: string): void {
+  writeFileSync(path, content.replace(/\r\n/g, "\n"), "utf8");
 }
 
 function syncTauriLockfile(context: "inject" | "restore"): void {
@@ -46,7 +50,7 @@ function injectPatch(): boolean {
     return false;
   }
 
-  writeFileSync(workspaceCargoToml, `${workspace.trimEnd()}${patchBlock}`);
+  writeUtf8(workspaceCargoToml, `${workspace.trimEnd()}${patchBlock}`);
   console.log(`Injected Tauri CEF patch (branch ${TAURI_CEF_BRANCH})`);
   return true;
 }
@@ -58,7 +62,7 @@ function stripPatch(): boolean {
     return false;
   }
 
-  writeFileSync(
+  writeUtf8(
     workspaceCargoToml,
     `${workspace.slice(0, patchIndex).trimEnd()}\n`,
   );
@@ -76,13 +80,17 @@ function injectCefFeature(): boolean {
     process.exit(1);
   }
 
-  writeFileSync(
-    packageCargoToml,
-    manifest.replace(
-      `${TAURI_WRY_LINE}\n`,
-      `${TAURI_WRY_LINE}\n${CEF_FEATURE}\n`,
-    ),
+  const updated = manifest.replace(
+    `${TAURI_WRY_LINE}\n`,
+    `${TAURI_WRY_LINE}\n${CEF_FEATURE}\n`,
   );
+
+  if (updated === manifest) {
+    console.error("Failed to inject cef feature in src-tauri/Cargo.toml");
+    process.exit(1);
+  }
+
+  writeUtf8(packageCargoToml, updated);
   console.log("Injected cef feature in src-tauri/Cargo.toml");
   return true;
 }
@@ -93,7 +101,7 @@ function stripCefFeature(): boolean {
     return false;
   }
 
-  writeFileSync(packageCargoToml, manifest.replace(`${CEF_FEATURE}\n`, ""));
+  writeUtf8(packageCargoToml, manifest.replace(`${CEF_FEATURE}\n`, ""));
   return true;
 }
 
