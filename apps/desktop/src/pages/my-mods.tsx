@@ -89,6 +89,10 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
+import {
+  filterLibraryModsByStatus,
+  ModFilter,
+} from "@/lib/mods/library-display";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -192,12 +196,6 @@ function ModsPagination({
 enum ViewMode {
   GRID = "grid",
   LIST = "list",
-}
-
-enum ModFilter {
-  ALL = "all",
-  ENABLED = "enabled",
-  DISABLED = "disabled",
 }
 
 const GridModCard = ({ mod }: { mod: LocalMod }) => {
@@ -601,7 +599,7 @@ const MyMods = () => {
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
-  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.ALL);
+  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.All);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [page, setPage] = useState(0);
@@ -631,53 +629,8 @@ const MyMods = () => {
     },
   });
 
-  const filterModsByStatus = (modsToFilter: LocalMod[]) => {
-    switch (activeTab) {
-      case ModFilter.ENABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status === ModStatus.Installed &&
-            mod.installedVpks &&
-            mod.installedVpks.length > 0,
-        );
-      case ModFilter.DISABLED:
-        return modsToFilter.filter(
-          (mod) =>
-            mod.status !== ModStatus.Installed ||
-            !mod.installedVpks ||
-            mod.installedVpks.length === 0,
-        );
-      default:
-        return modsToFilter;
-    }
-  };
-
-  const sortedMods = [...mods].sort((a, b) => {
-    const aIsInstalled =
-      a.status === ModStatus.Installed &&
-      a.installedVpks &&
-      a.installedVpks.length > 0;
-    const bIsInstalled =
-      b.status === ModStatus.Installed &&
-      b.installedVpks &&
-      b.installedVpks.length > 0;
-
-    if (aIsInstalled && !bIsInstalled) return -1;
-    if (!aIsInstalled && bIsInstalled) return 1;
-
-    if (aIsInstalled && bIsInstalled) {
-      const aOrder = a.installOrder ?? 999;
-      const bOrder = b.installOrder ?? 999;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-    }
-
-    const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
-    const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
-    return dateB - dateA;
-  });
-
   const displayMods = useMemo(() => {
-    const baseMods = query.trim() ? results : sortedMods;
+    const baseMods = query.trim() ? results : mods;
     const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
     let filteredMods = baseMods;
 
@@ -733,7 +686,7 @@ const MyMods = () => {
       );
     }
 
-    return filterModsByStatus(filteredMods);
+    return filterLibraryModsByStatus(filteredMods, activeTab);
   }, [
     activeTab,
     filterMode,
@@ -745,7 +698,7 @@ const MyMods = () => {
     results,
     selectedCategories,
     selectedHeroes,
-    sortedMods,
+    mods,
   ]);
 
   const totalPages = paginationEnabled
@@ -1016,9 +969,9 @@ const MyMods = () => {
             value={activeTab}
             onValueChange={(value) => {
               switch (value) {
-                case ModFilter.ALL:
-                case ModFilter.ENABLED:
-                case ModFilter.DISABLED:
+                case ModFilter.All:
+                case ModFilter.Enabled:
+                case ModFilter.Disabled:
                   setActiveTab(value);
                   break;
               }
@@ -1068,20 +1021,20 @@ const MyMods = () => {
                   </div>
                   <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 xl:justify-end'>
                     <TabsList className='h-auto min-h-9 max-w-full flex-wrap justify-start'>
-                      <TabsTrigger value={ModFilter.ALL}>
+                      <TabsTrigger value={ModFilter.All}>
                         {t("myMods.tabs.all")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({mods.length})
                         </span>
                       </TabsTrigger>
-                      <TabsTrigger value={ModFilter.ENABLED}>
+                      <TabsTrigger value={ModFilter.Enabled}>
                         <Check className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.installed")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({enabledModsCount})
                         </span>
                       </TabsTrigger>
-                      <TabsTrigger value={ModFilter.DISABLED}>
+                      <TabsTrigger value={ModFilter.Disabled}>
                         <Download className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.downloaded")}
                         <span className='ml-2 text-muted-foreground text-xs'>
@@ -1155,19 +1108,19 @@ const MyMods = () => {
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.ALL}>
+                  <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.ENABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent className='mt-0' value={ModFilter.DISABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
