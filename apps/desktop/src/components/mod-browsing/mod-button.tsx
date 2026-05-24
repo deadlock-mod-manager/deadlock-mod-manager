@@ -11,7 +11,6 @@ import {
   Check,
   DownloadIcon,
   Loader2,
-  PlusIcon,
   X,
   XIcon,
 } from "@deadlock-mods/ui/icons";
@@ -79,7 +78,7 @@ export const ModStatusIcon = ({
       case ModStatus.Extracting:
         return Loader2;
       default:
-        return PlusIcon;
+        return DownloadIcon;
     }
   }, [status, hovering]);
 
