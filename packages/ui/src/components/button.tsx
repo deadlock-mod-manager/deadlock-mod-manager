@@ -15,7 +15,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background shadow-sm hover:border-foreground/25 hover:bg-foreground/5",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
@@ -73,7 +73,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       return (
         <Comp
-          className={cn(buttonVariants({ variant, size, className }))}
+          className={cn(buttonVariants({ variant, size }), className)}
           ref={ref}
           {...props}>
           {children}
@@ -85,8 +85,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         onClick={href ? () => window.open(href, "_blank") : props.onClick}
         className={cn(
-          buttonVariants({ variant, size, className }),
+          buttonVariants({ variant, size }),
           isIconExpandVariant && (isHovered ? "px-4 gap-2" : "px-2 gap-0"),
+          className,
         )}
         disabled={isLoading || props.disabled}
         onMouseEnter={() => isIconExpandVariant && setIsHovered(true)}

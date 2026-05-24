@@ -533,14 +533,7 @@ const ModsList = ({
     return (
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
         {mods.map((mod) => (
-          <div
-            key={mod.remoteId ?? mod.id}
-            style={{
-              contentVisibility: "auto",
-              containIntrinsicSize: "auto 220px",
-            }}>
-            <GridModCard mod={mod} />
-          </div>
+          <GridModCard key={mod.remoteId ?? mod.id} mod={mod} />
         ))}
       </div>
     );
@@ -549,14 +542,7 @@ const ModsList = ({
   return (
     <div className='flex flex-col gap-3'>
       {mods.map((mod) => (
-        <div
-          key={mod.remoteId ?? mod.id}
-          style={{
-            contentVisibility: "auto",
-            containIntrinsicSize: "auto 80px",
-          }}>
-          <ListModCard mod={mod} />
-        </div>
+        <ListModCard key={mod.remoteId ?? mod.id} mod={mod} />
       ))}
     </div>
   );
@@ -821,9 +807,9 @@ const MyMods = () => {
   });
 
   return (
-    <div className='flex w-full flex-1 flex-col gap-4 px-4 will-change-transform'>
-      <div className='flex flex-row items-start justify-between gap-4 pt-4'>
-        <div className='flex flex-col'>
+    <div className='flex min-h-0 w-full flex-1 flex-col px-4'>
+      <div className='grid shrink-0 grid-cols-1 gap-3 pt-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-4'>
+        <div className='flex min-w-0 flex-col'>
           <div className='flex flex-wrap items-center gap-2'>
             <h1 className='text-2xl font-semibold tracking-tight text-balance'>
               {t("navigation.myMods")}
@@ -953,7 +939,7 @@ const MyMods = () => {
           <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
         </div>
 
-        <div className='flex flex-nowrap items-center justify-end gap-2'>
+        <div className='flex w-full flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end xl:justify-self-end'>
           {updatableCount > 0 && (
             <Button
               variant='default'
@@ -1019,14 +1005,14 @@ const MyMods = () => {
       </div>
 
       <div
-        className='flex flex-col items-start justify-between gap-4 overflow-y-auto pt-4'
+        className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'
         ref={scrollContainerRef}
         onScroll={(e) => {
           scrollPositionRef.current = e.currentTarget.scrollTop;
         }}>
         <ErrorBoundary>
           <Tabs
-            className='flex w-full flex-col'
+            className='flex w-full flex-col gap-4'
             value={activeTab}
             onValueChange={(value) => {
               switch (value) {
@@ -1050,32 +1036,38 @@ const MyMods = () => {
               </>
             )}
             {mods.length > 0 && (
-              <div className='flex flex-col gap-4'>
-                <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-                  <SearchBar
-                    filterMode={filterMode}
-                    audioQuickFilter={audioQuickFilter}
-                    mapQuickFilter={effectiveMapQuickFilter}
-                    hideNSFW={hideNSFW}
-                    hideOutdated={hideOutdated}
-                    mods={mods}
-                    onCategoriesChange={setSelectedCategories}
-                    onFilterModeChange={setFilterMode}
-                    onHeroesChange={setSelectedHeroes}
-                    onAudioQuickFilterChange={setAudioQuickFilter}
-                    onMapQuickFilterChange={setMapQuickFilter}
-                    onHideNSFWChange={setHideNSFW}
-                    onHideOutdatedChange={setHideOutdated}
-                    query={query}
-                    selectedCategories={selectedCategories}
-                    selectedHeroes={selectedHeroes}
-                    setQuery={setQuery}
-                    showSortControl={false}
-                    showTimePeriodControl={false}
-                    hideMapFilter={!isCustomMapsEnabled}
-                  />
-                  <div className='flex items-center gap-2'>
-                    <TabsList>
+              <div className='flex w-full flex-col gap-4'>
+                <div className='grid w-full grid-cols-1 gap-3 px-px xl:grid-cols-[minmax(20rem,1fr)_auto] xl:items-start'>
+                  <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
+                    <SearchBar
+                      className='w-full'
+                      filterMode={filterMode}
+                      audioQuickFilter={audioQuickFilter}
+                      mapQuickFilter={effectiveMapQuickFilter}
+                      hideNSFW={hideNSFW}
+                      hideOutdated={hideOutdated}
+                      mods={mods}
+                      onCategoriesChange={setSelectedCategories}
+                      onFilterModeChange={setFilterMode}
+                      onHeroesChange={setSelectedHeroes}
+                      onAudioQuickFilterChange={setAudioQuickFilter}
+                      onMapQuickFilterChange={setMapQuickFilter}
+                      onHideNSFWChange={setHideNSFW}
+                      onHideOutdatedChange={setHideOutdated}
+                      query={query}
+                      selectedCategories={selectedCategories}
+                      selectedHeroes={selectedHeroes}
+                      setQuery={setQuery}
+                      showSortControl={false}
+                      showTimePeriodControl={false}
+                      hideMapFilter={!isCustomMapsEnabled}
+                      inputGroupClassName='min-w-0 w-full'
+                      searchContainerClassName='w-full max-w-80 shrink-0'
+                      searchInputClassName='w-full'
+                    />
+                  </div>
+                  <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 xl:justify-end'>
+                    <TabsList className='h-auto min-h-9 max-w-full flex-wrap justify-start'>
                       <TabsTrigger value={ModFilter.ALL}>
                         {t("myMods.tabs.all")}
                         <span className='ml-2 text-muted-foreground text-xs'>
@@ -1126,13 +1118,15 @@ const MyMods = () => {
                   </div>
                 </div>
 
-                <VpkScanAlert
-                  unmatchedVpkCount={unmatchedVpkCount}
-                  unmatchedVpks={unmatchedVpks}
-                  isRefetching={isVpkScanRefetching}
-                  refetch={refetchVpkScan}
-                  activeProfileFolder={activeProfileFolder}
-                />
+                <div className='w-full'>
+                  <VpkScanAlert
+                    unmatchedVpkCount={unmatchedVpkCount}
+                    unmatchedVpks={unmatchedVpks}
+                    isRefetching={isVpkScanRefetching}
+                    refetch={refetchVpkScan}
+                    activeProfileFolder={activeProfileFolder}
+                  />
+                </div>
 
                 {totalPages > 1 && (
                   <ModsPagination
@@ -1161,19 +1155,19 @@ const MyMods = () => {
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent value={ModFilter.ALL}>
+                  <TabsContent className='mt-0' value={ModFilter.ALL}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent value={ModFilter.ENABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.ENABLED}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
-                  <TabsContent value={ModFilter.DISABLED}>
+                  <TabsContent className='mt-0' value={ModFilter.DISABLED}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}
