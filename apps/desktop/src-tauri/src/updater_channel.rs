@@ -1,8 +1,32 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use crate::app_runtime::{AppHandle, AppRuntime};
+
 const STABLE_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest.json";
 const NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest.json";
+
+const CEF_STABLE_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest-cef.json";
+const CEF_NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest-cef.json";
+
+fn endpoint_for(channel: &UpdateChannel) -> &'static str {
+  match channel {
+    UpdateChannel::Stable => {
+      if cfg!(feature = "cef") {
+        CEF_STABLE_ENDPOINT
+      } else {
+        STABLE_ENDPOINT
+      }
+    }
+    UpdateChannel::Nightly => {
+      if cfg!(feature = "cef") {
+        CEF_NIGHTLY_ENDPOINT
+      } else {
+        NIGHTLY_ENDPOINT
+      }
+    }
+  }
+}
 
 const CHANNEL_FILE: &str = "update-channel.json";
 
@@ -30,14 +54,11 @@ pub fn resolve_channel(identifier: &str) -> UpdateChannel {
     .unwrap_or(UpdateChannel::Stable)
 }
 
-pub fn apply_to_context(context: &mut tauri::Context) {
+pub fn apply_to_context(context: &mut tauri::Context<AppRuntime>) {
   let identifier = context.config().identifier.clone();
   let channel = resolve_channel(&identifier);
 
-  let endpoint = match channel {
-    UpdateChannel::Stable => STABLE_ENDPOINT,
-    UpdateChannel::Nightly => NIGHTLY_ENDPOINT,
-  };
+  let endpoint = endpoint_for(&channel);
 
   log::info!("Updater channel resolved: {channel:?}, endpoint: {endpoint}");
 
@@ -47,7 +68,7 @@ pub fn apply_to_context(context: &mut tauri::Context) {
 }
 
 #[tauri::command]
-pub fn get_update_channel(app: tauri::AppHandle) -> String {
+pub fn get_update_channel(app: AppHandle) -> String {
   let channel = resolve_channel(&app.config().identifier);
   match channel {
     UpdateChannel::Stable => "stable".to_string(),
@@ -56,7 +77,7 @@ pub fn get_update_channel(app: tauri::AppHandle) -> String {
 }
 
 #[tauri::command]
-pub fn set_update_channel(app: tauri::AppHandle, channel: String) -> Result<(), String> {
+pub fn set_update_channel(app: AppHandle, channel: String) -> Result<(), String> {
   let identifier = &app.config().identifier;
 
   let parsed = match channel.as_str() {

@@ -1,6 +1,7 @@
+use crate::app_runtime::{AppHandle, AppRuntime};
 use serde::Serialize;
 use std::collections::HashMap;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 use crate::commands::deep_link::DeepLinkData;
@@ -43,8 +44,8 @@ pub fn scheme_names() -> Vec<String> {
     .collect()
 }
 
-pub fn emit_to_main_window<R: tauri::Runtime, T: Serialize + Clone>(
-  app_handle: &AppHandle<R>,
+pub fn emit_to_main_window<T: Serialize + Clone>(
+  app_handle: &AppHandle,
   event: &str,
   payload: T,
 ) -> Result<(), tauri::Error> {
@@ -59,8 +60,8 @@ pub fn is_deep_link(url: &str) -> bool {
 }
 
 #[cfg(desktop)]
-pub fn on_second_instance<R: tauri::Runtime>(
-  app_handle: &tauri::AppHandle<R>,
+pub fn on_second_instance(
+  app_handle: &AppHandle,
   argv: Vec<String>,
   _cwd: String,
 ) {
@@ -107,8 +108,8 @@ pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String
   Some((download_url, mod_type, mod_id))
 }
 
-pub fn handle_deep_link_url<R: tauri::Runtime>(
-  app_handle: &AppHandle<R>,
+pub fn handle_deep_link_url(
+  app_handle: &AppHandle,
   url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
   log::info!("[DeepLink] Processing deep link URL: {url}");
@@ -190,7 +191,7 @@ pub fn handle_deep_link_url<R: tauri::Runtime>(
   Ok(())
 }
 
-pub fn setup<R: tauri::Runtime>(app: &tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Error>> {
   #[cfg(any(target_os = "linux", target_os = "windows"))]
   {
     log::info!("[DeepLink] Registering deep link protocols...");

@@ -1,3 +1,4 @@
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use chrono::{DateTime, Local};
 use log;
@@ -5,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddonsBackup {

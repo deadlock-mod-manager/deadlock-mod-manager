@@ -2,15 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { app } from "@tauri-apps/api";
 import logger from "@/lib/logger";
 import { STALE_TIME_API } from "@/lib/query-constants";
+import { getRuntimeKind } from "@/lib/tauri-commands";
 
 export const fetchAboutData = async () => {
   try {
-    const [version, name, tauriVersion] = await Promise.all([
+    const [version, name, tauriVersion, runtimeKind] = await Promise.all([
       app.getVersion(),
       app.getName(),
       app.getTauriVersion(),
+      getRuntimeKind(),
     ]);
-    return { version, name, tauriVersion };
+    return { version, name, tauriVersion, runtimeKind };
   } catch (error) {
     logger.withError(error).error("Failed to fetch app information");
     throw error;

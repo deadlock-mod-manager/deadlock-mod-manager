@@ -1,0 +1,133 @@
+name: "Update latest-cef.json"
+description: "Build latest-cef.json from CEF release assets (Windows NSIS + Linux .deb) and upload it to the release."
+
+inputs:
+  release-id:
+    description: "GitHub release ID"
+    required: true
+  version:
+    description: "Version string for the release URL (e.g., 'v1.0.0' or 'nightly')"
+    required: true
+  github-token:
+    description: "GitHub token for API access"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate and upload latest-cef.json
+      uses: actions/github-script@v7
+      env:
+        RELEASE_ID: ${{ inputs.release-id }}
+        VERSION: ${{ inputs.version }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      with:
+        script: |
+          function toGitHubAssetName(name) {
+            return name
+              .trim()
+              .replace(/[^a-zA-Z0-9_-]/g, '.')
+              .replace(/\.+/g, '.');
+          }
+
+          const releaseId = parseInt(process.env.RELEASE_ID);
+          const version = process.env.VERSION;
+          const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}`;
+
+          const { data: release } = await github.rest.repos.getRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: releaseId
+          });
+
+          const assets = release.assets;
+          console.log(`Release has ${assets.length} assets`);
+
+          const platforms = {};
+
+          // Windows: find *-cef-setup.exe and its .sig
+          const windowsExe = assets.find(a => a.name.endsWith('-cef-setup.exe') || a.name.endsWith('-cef-setup.exe'.replace(/-/g, '.')));
+          const windowsSig = assets.find(a => a.name.endsWith('-cef-setup.exe.sig') || a.name.endsWith('-cef-setup.exe.sig'.replace(/-/g, '.')));
+
+          if (windowsExe && windowsSig) {
+            const sigResponse = await github.rest.repos.getReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              asset_id: windowsSig.id,
+              headers: { Accept: 'application/octet-stream' }
+            });
+            const signature = Buffer.from(sigResponse.data).toString('utf8').trim();
+            const url = `${baseDownloadUrl}/${toGitHubAssetName(windowsExe.name)}`;
+
+            platforms['windows-x86_64'] = { signature, url };
+            platforms['windows-x86_64-nsis'] = { signature, url };
+            console.log(`Added Windows CEF platform: ${url}`);
+          } else {
+            console.log('No Windows CEF artifacts found in release assets');
+          }
+
+          // Linux: find *-cef.deb and its .sig
+          const linuxDeb = assets.find(a => a.name.endsWith('-cef.deb'));
+          const linuxSig = assets.find(a => a.name.endsWith('-cef.deb.sig'));
+
+          if (linuxDeb) {
+            const signature = linuxSig
+              ? await (async () => {
+                  const sigResponse = await github.rest.repos.getReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    asset_id: linuxSig.id,
+                    headers: { Accept: 'application/octet-stream' }
+                  });
+                  return Buffer.from(sigResponse.data).toString('utf8').trim();
+                })()
+              : '';
+            const url = `${baseDownloadUrl}/${toGitHubAssetName(linuxDeb.name)}`;
+
+            platforms['linux-x86_64'] = { signature, url };
+            console.log(`Added Linux CEF platform: ${url}`);
+          } else {
+            console.log('No Linux CEF artifacts found in release assets');
+          }
+
+          if (Object.keys(platforms).length === 0) {
+            console.log('No CEF artifacts found at all, skipping latest-cef.json');
+            return;
+          }
+
+          // Sanity check URLs
+          for (const [platform, entry] of Object.entries(platforms)) {
+            if (entry.url.includes('/releases/latest/download/') || entry.url.includes('/releases/download/untagged-')) {
+              throw new Error(`Platform ${platform} has a bad URL that will 404: ${entry.url}`);
+            }
+          }
+
+          const latestCefJson = {
+            version,
+            notes: `CEF build ${version}`,
+            pub_date: new Date().toISOString(),
+            platforms
+          };
+
+          // Delete existing latest-cef.json if present
+          const existing = assets.find(a => a.name === 'latest-cef.json');
+          if (existing) {
+            await github.rest.repos.deleteReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              asset_id: existing.id
+            });
+            console.log('Deleted existing latest-cef.json');
+          }
+
+          const content = JSON.stringify(latestCefJson, null, 2);
+          await github.rest.repos.uploadReleaseAsset({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: releaseId,
+            name: 'latest-cef.json',
+            data: Buffer.from(content)
+          });
+
+          console.log('Successfully uploaded latest-cef.json');
+          console.log('Platforms:', Object.keys(platforms));

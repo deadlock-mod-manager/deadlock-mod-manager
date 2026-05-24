@@ -1,7 +1,8 @@
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 use tokio::task;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 

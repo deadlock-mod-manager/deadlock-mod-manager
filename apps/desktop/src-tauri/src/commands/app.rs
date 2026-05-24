@@ -1,6 +1,7 @@
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{Emitter, Manager};
 
 use super::state::{API_URL, MANAGER};
 
@@ -73,6 +74,15 @@ pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
   #[cfg(not(target_os = "linux"))]
   {
     Ok(false)
+  }
+}
+
+#[tauri::command]
+pub fn get_runtime_kind() -> &'static str {
+  if cfg!(feature = "cef") {
+    "cef"
+  } else {
+    "wry"
   }
 }
 

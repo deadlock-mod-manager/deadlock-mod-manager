@@ -1,12 +1,13 @@
 pub mod downloader;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 

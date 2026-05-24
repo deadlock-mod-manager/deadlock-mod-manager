@@ -1,8 +1,9 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, LazyLock};
 
+use crate::app_runtime::AppHandle;
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{Emitter, State};
 
 pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
 use deadlock_discord_presence::{HeroDataStore, PresenceBuildConfig, PresencePhase};

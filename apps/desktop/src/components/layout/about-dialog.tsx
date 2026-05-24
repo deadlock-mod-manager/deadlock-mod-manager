@@ -33,7 +33,7 @@ export const AboutDialog = () => {
   if (!data) {
     return null;
   }
-  const { version, tauriVersion } = data;
+  const { version, tauriVersion, runtimeKind } = data;
 
   return (
     <DialogContent className='overflow-clip pb-2'>
@@ -61,6 +61,11 @@ export const AboutDialog = () => {
           </span>
           <span className='font-medium font-mono text-gray-400 text-xs'>
             {t("about.tauriVersion")} {tauriVersion}
+            {runtimeKind === "cef" && (
+              <span className='ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-amber-500 text-[10px]'>
+                CEF
+              </span>
+            )}
           </span>
         </DialogTitle>
       </DialogHeader>
