@@ -12,46 +12,10 @@ import {
   type Progress,
 } from "@/types/mods";
 import type { State } from "..";
-
-type ModSliceState = Pick<State, "localMods" | "profiles" | "activeProfileId">;
-
-function applyToModsAndActiveProfile(
-  state: ModSliceState,
-  updateMods: (mods: LocalMod[]) => LocalMod[],
-) {
-  const activeProfile = state.profiles[state.activeProfileId];
-
-  return {
-    localMods: updateMods(state.localMods),
-    profiles: activeProfile
-      ? {
-          ...state.profiles,
-          [state.activeProfileId]: {
-            ...activeProfile,
-            mods: updateMods(activeProfile.mods),
-          },
-        }
-      : state.profiles,
-  };
-}
-
-function applyToModsAndAllProfiles(
-  state: ModSliceState,
-  updateMods: (mods: LocalMod[]) => LocalMod[],
-) {
-  return {
-    localMods: updateMods(state.localMods),
-    profiles: Object.fromEntries(
-      Object.entries(state.profiles).map(([profileId, profile]) => [
-        profileId,
-        {
-          ...profile,
-          mods: updateMods(profile.mods),
-        },
-      ]),
-    ),
-  };
-}
+import {
+  applyToModsAndActiveProfile,
+  applyToModsAndAllProfiles,
+} from "../utils/mod-slice";
 
 export type ModProgress = {
   percentage: number;

@@ -39,6 +39,7 @@ import {
   GENERAL_OTHER_HERO_LABEL,
   HeroOverridePicker,
 } from "./hero-override-picker";
+import { HeroSourceBadge } from "./hero-source-badge";
 
 interface ModInfoProps {
   mod: ModDto;
@@ -205,13 +206,6 @@ const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
     hero?.images.icon_image_small_webp ??
     hero?.images.icon_image_small;
   const initial = name.charAt(0).toUpperCase();
-  const sourceLabel = {
-    api: t("modDetail.heroSource.api", { defaultValue: "API" }),
-    manual: t("modDetail.heroSource.manual", { defaultValue: "Manual" }),
-    name: t("modDetail.heroSource.name", { defaultValue: "Name" }),
-    none: t("modDetail.heroSource.none", { defaultValue: "Unset" }),
-    vpk: t("modDetail.heroSource.vpk", { defaultValue: "VPK" }),
-  }[resolvedHero.source];
 
   return (
     <div className='group flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60'>
@@ -222,9 +216,7 @@ const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
       <div className='flex min-w-0 flex-col'>
         <span className='flex items-center gap-1.5 text-muted-foreground text-xs uppercase tracking-wide'>
           {t("modDetail.detectedHero")}
-          <span className='shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] leading-none normal-case'>
-            {sourceLabel}
-          </span>
+          <HeroSourceBadge source={resolvedHero.source} />
         </span>
         <span className='truncate font-medium text-foreground text-sm'>
           {name}
