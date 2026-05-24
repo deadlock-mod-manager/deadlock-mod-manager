@@ -4,6 +4,7 @@ pub mod archive_extractor;
 pub mod autoexec_manager;
 pub mod console_log_watcher;
 pub mod file_tree;
+pub mod fs_retry;
 pub mod filesystem_helper;
 pub mod font_manager;
 pub mod game_config_manager;

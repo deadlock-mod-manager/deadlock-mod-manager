@@ -9,7 +9,7 @@ use crate::mod_manager::{
   game_process_manager::GameProcessManager,
   mod_repository::{Mod, ModRepository},
   steam_manager::SteamManager,
-  vpk_manager::VpkManager,
+  vpk_manager::{MissingVpkPolicy, VpkManager},
   vpk_manifest::ProfileVpkManifest,
 };
 use log;
@@ -345,10 +345,13 @@ impl ModManager {
       )));
     };
 
-    let prefixed_vpks =
-      self
-        .vpk_manager
-        .disable_vpks(&addons_path, &mod_id, &installed_vpks, &original_vpk_names)?;
+    let prefixed_vpks = self.vpk_manager.disable_vpks(
+      &addons_path,
+      &mod_id,
+      &installed_vpks,
+      &original_vpk_names,
+      MissingVpkPolicy::Reconcile,
+    )?;
 
     manifest.mark_disabled(&mod_id, prefixed_vpks.clone(), original_vpk_names);
     manifest.save(&addons_path)?;

@@ -1,10 +1,19 @@
 use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
+use crate::mod_manager::fs_retry;
 use log;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
 use std::sync::LazyLock;
+
+/// How to handle enabled VPK files that are recorded but missing on disk.
+pub enum MissingVpkPolicy {
+  /// Fail if any recorded enabled VPK file is missing (variant switch, swap).
+  Strict,
+  /// Filter missing files, warn, and proceed with those that exist (uninstall/disable).
+  Reconcile,
+}
 
 /// Manages VPK file operations and installation
 pub struct VpkManager {
@@ -183,12 +192,15 @@ impl VpkManager {
       let vpk_name = vpk_name.as_ref();
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists()
-        && let Err(e) = fs::OpenOptions::new().write(true).open(&vpk_path) {
-          log::error!(
-            "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
-          );
-          locked_files.push(vpk_name.to_string());
-        }
+        && let Err(e) = fs_retry::retry_file_operation("open for write", vpk_name, || {
+          fs::OpenOptions::new().write(true).open(&vpk_path).map(|_| ())
+        })
+      {
+        log::error!(
+          "Cannot access {label_for_log} for removal (file may be in use): {vpk_name}: {e}"
+        );
+        locked_files.push(vpk_name.to_string());
+      }
     }
 
     if !locked_files.is_empty() {
@@ -201,13 +213,15 @@ impl VpkManager {
   fn rollback_vpk_renames_on_failure(
     addons_path: &Path,
     renamed: Vec<(String, String)>,
-    original_error: std::io::Error,
+    original_error: Error,
   ) -> Error {
     let mut rollback_failures = Vec::new();
     for (from_name, to_name) in renamed.into_iter().rev() {
       let from = addons_path.join(&from_name);
       let to = addons_path.join(&to_name);
-      if let Err(rb_err) = fs::rename(&from, &to) {
+      if let Err(rb_err) =
+        fs_retry::retry_file_operation("rollback rename", &from_name, || fs::rename(&from, &to))
+      {
         log::error!("Rollback failed for {from_name} -> {to_name}: {rb_err}");
         rollback_failures.push(format!("{from_name} -> {to_name}: {rb_err}"));
       } else {
@@ -220,7 +234,7 @@ impl VpkManager {
         rollback_failures.join(", ")
       ))
     } else {
-      original_error.into()
+      original_error
     }
   }
 
@@ -236,7 +250,10 @@ impl VpkManager {
     for vpk_name in vpk_names {
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists() {
-        self.filesystem.remove_file(&vpk_path)?;
+        if let Err(e) = fs_retry::retry_file_operation("remove", vpk_name, || fs::remove_file(&vpk_path))
+        {
+          return Err(fs_retry::map_file_lock_error("remove", vpk_name, e));
+        }
         log::info!("Removed VPK: {vpk_name}");
       } else {
         log::warn!("VPK not found for removal: {vpk_name}");
@@ -447,7 +464,9 @@ impl VpkManager {
       let new_name = format!("pak{next_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
-      if let Err(e) = fs::rename(&old_path, &new_path) {
+      if let Err(e) = fs_retry::retry_file_operation("rename", prefixed_name, || {
+        fs::rename(&old_path, &new_path)
+      }) {
         log::error!(
           "Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()
@@ -455,7 +474,7 @@ impl VpkManager {
         return Err(Self::rollback_vpk_renames_on_failure(
           addons_path,
           renamed,
-          e,
+          fs_retry::map_file_lock_error("enable", prefixed_name, e),
         ));
       }
 
@@ -466,6 +485,26 @@ impl VpkManager {
     Ok(renamed.into_iter().map(|(new_name, _)| new_name).collect())
   }
 
+  fn filter_existing_vpk_pairs(
+    addons_path: &Path,
+    installed_vpks: &[String],
+    original_names: &[String],
+  ) -> Vec<(String, String)> {
+    installed_vpks
+      .iter()
+      .zip(original_names.iter())
+      .filter_map(|(installed_vpk, original_name)| {
+        let vpk_name = Self::vpk_filename(installed_vpk);
+        if addons_path.join(&vpk_name).exists() {
+          Some((vpk_name, original_name.clone()))
+        } else {
+          log::warn!("Enabled VPK file missing during disable: {vpk_name}");
+          None
+        }
+      })
+      .collect()
+  }
+
   /// Disable VPKs by renaming them from sequential numbering to prefixed
   pub fn disable_vpks(
     &self,
@@ -473,6 +512,7 @@ impl VpkManager {
     mod_id: &str,
     installed_vpks: &[String],
     original_names: &[String],
+    missing_policy: MissingVpkPolicy,
   ) -> Result<Vec<String>, Error> {
     if installed_vpks.is_empty() {
       return Ok(Vec::new());
@@ -493,23 +533,50 @@ impl VpkManager {
       .collect();
 
     if !missing_vpks.is_empty() {
-      return Err(Error::ModInvalid(format!(
-        "Cannot disable mod because enabled VPK files are missing: {}",
-        missing_vpks.join(", ")
-      )));
+      match missing_policy {
+        MissingVpkPolicy::Strict => {
+          return Err(Error::ModInvalid(format!(
+            "Cannot disable mod because enabled VPK files are missing: {}",
+            missing_vpks.join(", ")
+          )));
+        }
+        MissingVpkPolicy::Reconcile => {
+          if missing_vpks.len() == installed_vpks.len() {
+            log::warn!(
+              "Mod {mod_id} is marked enabled but none of its enabled VPK files exist; marking it disabled without renaming files"
+            );
+            return Ok(Vec::new());
+          }
+
+          log::warn!(
+            "Mod {mod_id} is missing some enabled VPK files; disabling only the files that still exist"
+          );
+        }
+      }
+    }
+
+    let vpk_pairs = match missing_policy {
+      MissingVpkPolicy::Strict => installed_vpks
+        .iter()
+        .zip(original_names.iter())
+        .map(|(installed_vpk, original_name)| {
+          (Self::vpk_filename(installed_vpk), original_name.clone())
+        })
+        .collect::<Vec<_>>(),
+      MissingVpkPolicy::Reconcile => {
+        Self::filter_existing_vpk_pairs(addons_path, installed_vpks, original_names)
+      }
+    };
+
+    if vpk_pairs.is_empty() {
+      return Ok(Vec::new());
     }
 
     // Track successful renames so we can roll back on partial failure
     let mut renamed: Vec<(String, String)> = Vec::new();
 
-    for (index, vpk_name) in installed_vpks.iter().enumerate() {
-      let vpk_name = Self::vpk_filename(vpk_name);
+    for (vpk_name, original_name) in vpk_pairs {
       let old_path = addons_path.join(&vpk_name);
-
-      let original_name = original_names
-        .get(index)
-        .map(|s| s.as_str())
-        .expect("original_names length is validated before disabling VPKs");
 
       let prefixed_name = format!("{mod_id}_{original_name}");
       let new_path = addons_path.join(&prefixed_name);
@@ -518,7 +585,8 @@ impl VpkManager {
         log::info!(
           "Prefixed destination already exists (newly staged variant), removing old active VPK: {vpk_name}"
         );
-        if let Err(e) = fs::remove_file(&old_path) {
+        if let Err(e) = fs_retry::retry_file_operation("remove", &vpk_name, || fs::remove_file(&old_path))
+        {
           log::error!(
             "Failed to remove old active VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
             count = renamed.len()
@@ -526,10 +594,12 @@ impl VpkManager {
           return Err(Self::rollback_vpk_renames_on_failure(
             addons_path,
             renamed,
-            e,
+            fs_retry::map_file_lock_error("disable", &vpk_name, e),
           ));
         }
-      } else if let Err(e) = fs::rename(&old_path, &new_path) {
+      } else if let Err(e) = fs_retry::retry_file_operation("rename", &vpk_name, || {
+        fs::rename(&old_path, &new_path)
+      }) {
         log::error!(
           "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()
@@ -537,7 +607,7 @@ impl VpkManager {
         return Err(Self::rollback_vpk_renames_on_failure(
           addons_path,
           renamed,
-          e,
+          fs_retry::map_file_lock_error("disable", &vpk_name, e),
         ));
       }
 
@@ -643,6 +713,7 @@ impl VpkManager {
         mod_id,
         current_installed_vpks,
         current_original_names,
+        MissingVpkPolicy::Strict,
       )?
     };
 
@@ -657,13 +728,10 @@ impl VpkManager {
           "Selected VPK not found for mod {mod_id}: {prefixed}, restoring previous state"
         );
         if !previously_prefixed.is_empty()
-          && let Err(restore_err) =
-            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
-          {
-            log::error!(
-              "Failed to restore previous state for mod {mod_id}: {restore_err}"
-            );
-          }
+          && let Err(restore_err) = self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+        {
+          log::error!("Failed to restore previous state for mod {mod_id}: {restore_err}");
+        }
         return Err(Error::ModFileNotFound);
       }
     }
@@ -675,13 +743,10 @@ impl VpkManager {
           "Failed to enable selected VPKs for mod {mod_id}: {e}, restoring previous state"
         );
         if !previously_prefixed.is_empty()
-          && let Err(restore_err) =
-            self.enable_vpks(addons_path, mod_id, &previously_prefixed)
-          {
-            log::error!(
-              "Failed to restore previous state for mod {mod_id}: {restore_err}"
-            );
-          }
+          && let Err(restore_err) = self.enable_vpks(addons_path, mod_id, &previously_prefixed)
+        {
+          log::error!("Failed to restore previous state for mod {mod_id}: {restore_err}");
+        }
         Err(e)
       }
     }
@@ -805,6 +870,7 @@ impl Default for VpkManager {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::mod_manager::vpk_manager::MissingVpkPolicy;
   use std::fs;
 
   fn write_vpk(addons_path: &std::path::Path, name: &str) {
@@ -861,6 +927,7 @@ mod tests {
         "123456",
         &["pak01_dir.vpk".to_string()],
         &["original.vpk".to_string()],
+        MissingVpkPolicy::Strict,
       )
       .unwrap_err();
 
@@ -880,6 +947,7 @@ mod tests {
         "123456",
         &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
         &["first.vpk".to_string()],
+        MissingVpkPolicy::Strict,
       )
       .unwrap_err();
 
@@ -888,5 +956,44 @@ mod tests {
         .to_string()
         .contains("original VPK name count (1) does not match installed VPK count (2)")
     );
+  }
+
+  #[test]
+  fn disable_reconciles_when_enabled_vpk_is_missing() {
+    let temp = tempfile::tempdir().unwrap();
+    let manager = VpkManager::new();
+
+    let result = manager
+      .disable_vpks(
+        temp.path(),
+        "123456",
+        &["pak01_dir.vpk".to_string()],
+        &["original.vpk".to_string()],
+        MissingVpkPolicy::Reconcile,
+      )
+      .unwrap();
+
+    assert!(result.is_empty());
+  }
+
+  #[test]
+  fn disable_reconciles_partial_missing() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak01_dir.vpk");
+    let manager = VpkManager::new();
+
+    let result = manager
+      .disable_vpks(
+        temp.path(),
+        "123456",
+        &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+        &["first.vpk".to_string(), "second.vpk".to_string()],
+        MissingVpkPolicy::Reconcile,
+      )
+      .unwrap();
+
+    assert_eq!(result, vec!["123456_first.vpk".to_string()]);
+    assert!(temp.path().join("123456_first.vpk").exists());
+    assert!(!temp.path().join("pak01_dir.vpk").exists());
   }
 }
