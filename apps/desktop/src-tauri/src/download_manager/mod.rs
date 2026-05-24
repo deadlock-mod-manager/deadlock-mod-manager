@@ -757,7 +757,7 @@ impl DownloadManager {
         let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
           files,
           total_files,
-          has_multiple_files: false,
+          has_multiple_files: total_files > 1,
         };
 
         log::info!(

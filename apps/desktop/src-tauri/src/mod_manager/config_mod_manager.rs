@@ -459,6 +459,21 @@ mod tests {
     assert_eq!(fs::read(config_root.join("autoexec.cfg")).unwrap(), b"user");
   }
 
+  #[test]
+  fn remove_config_files_clears_staged_files_without_active_files() {
+    let temp = tempfile::tempdir().unwrap();
+    let config_root = temp.path().join("cfg");
+    let disabled_dir = ConfigModManager::disabled_dir(&config_root, "local-test");
+    fs::create_dir_all(&disabled_dir).unwrap();
+    fs::write(disabled_dir.join("autoexec.cfg"), b"staged").unwrap();
+
+    ConfigModManager::new()
+      .remove_config_files(&config_root, "local-test", &[])
+      .unwrap();
+
+    assert!(!ConfigModManager::mod_storage_dir(&config_root, "local-test").exists());
+  }
+
   #[cfg(unix)]
   #[test]
   fn staged_config_scan_ignores_symlinks() {

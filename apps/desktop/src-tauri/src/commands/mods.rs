@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashSet, path::PathBuf};
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
@@ -341,6 +341,57 @@ pub async fn batch_update_mods(
         failed.push((
           mod_data.mod_id.clone(),
           format!("Failed to remove old VPKs: {:?}", e),
+        ));
+        continue;
+      }
+    }
+
+    let config_cleanup_result = (|| -> Result<usize, Error> {
+      let mut config_files_to_remove = Vec::new();
+
+      let manifest = ProfileVpkManifest::load(&addons_path_for_profile)?;
+      if let Some(entry) = manifest.mods.get(&mod_data.mod_id) {
+        config_files_to_remove.extend(entry.current_config_files.clone());
+        config_files_to_remove.extend(entry.disabled_config_files.clone());
+        config_files_to_remove.extend(entry.original_config_file_paths.clone());
+      }
+
+      if let Some(existing_mod) = {
+        let mod_manager = MANAGER.lock().unwrap();
+        mod_manager
+          .get_mod_repository()
+          .get_mod(&mod_data.mod_id)
+          .cloned()
+      } {
+        config_files_to_remove.extend(existing_mod.installed_config_files);
+        config_files_to_remove.extend(existing_mod.original_config_file_paths);
+      }
+
+      let mut seen_config_files = HashSet::new();
+      config_files_to_remove.retain(|file| seen_config_files.insert(file.clone()));
+      config_manager.remove_config_files(
+        &config_path,
+        &mod_data.mod_id,
+        &config_files_to_remove,
+      )?;
+      Ok(config_files_to_remove.len())
+    })();
+
+    match config_cleanup_result {
+      Ok(count) => log::info!(
+        "Removed {} old config file records for mod {}",
+        count,
+        mod_data.mod_id
+      ),
+      Err(e) => {
+        log::error!(
+          "Failed to remove old config files for mod {}: {:?}",
+          mod_data.mod_id,
+          e
+        );
+        failed.push((
+          mod_data.mod_id.clone(),
+          format!("Failed to remove old config files: {:?}", e),
         ));
         continue;
       }
