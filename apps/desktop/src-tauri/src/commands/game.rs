@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 
 use super::gameinfo::reset_to_vanilla_internal;
 use super::state::MANAGER;

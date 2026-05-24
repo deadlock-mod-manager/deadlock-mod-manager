@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
-
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::logs::crash_dumps;
 use crate::utils;
+use serde::{Deserialize, Serialize};
+use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogFileInfo {

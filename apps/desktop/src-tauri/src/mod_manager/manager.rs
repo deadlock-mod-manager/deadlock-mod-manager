@@ -1,3 +1,4 @@
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::{
   addons_backup_manager::AddonsBackupManager,
@@ -30,7 +31,7 @@ pub struct ModManager {
   mod_repository: ModRepository,
   addons_backup_manager: AddonsBackupManager,
   autoexec_manager: AutoexecManager,
-  app_handle: Option<tauri::AppHandle>,
+  app_handle: Option<AppHandle>,
 }
 
 impl ModManager {
@@ -744,7 +745,7 @@ impl ModManager {
     &mut self.mod_repository
   }
 
-  pub fn set_app_handle(&mut self, app_handle: tauri::AppHandle) {
+  pub fn set_app_handle(&mut self, app_handle: AppHandle) {
     self.app_handle = Some(app_handle);
   }
 
@@ -958,7 +959,7 @@ impl ModManager {
     &mut self.addons_backup_manager
   }
 
-  pub fn set_backup_manager_app_handle(&mut self, app_handle: tauri::AppHandle) {
+  pub fn set_backup_manager_app_handle(&mut self, app_handle: AppHandle) {
     self.addons_backup_manager.set_app_handle(app_handle);
   }
 

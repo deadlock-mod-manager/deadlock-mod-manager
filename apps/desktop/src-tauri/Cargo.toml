@@ -13,11 +13,19 @@ edition = "2024"
 name = "desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+default = ["tauri-wry"]
+tauri-wry = ["tauri/wry"]
+
 [build-dependencies]
 tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
-tauri = { version = "2.11.1", features = ["devtools"] }
+tauri = { version = "2.11.1", default-features = false, features = [
+  "devtools",
+  "compression",
+  "dynamic-acl",
+] }
 tauri-plugin-mcp-bridge = "0.11.1"
 tauri-plugin-opener = "2.5.4"
 tauri-plugin-http = "2.5.9"
@@ -64,15 +72,6 @@ ttf-parser = "0.24"
 
 [dev-dependencies]
 tempfile = "3.27.0"
-
-# Optimized for bundle size. If you want faster builds comment out/delete this section.
-[profile.release]
-lto = true # Enable Link Time Optimization
-opt-level = "s" # Optimize for size.
-codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = "abort" # Abort on panic
-strip = true # Automatically strip symbols from the binary.
-debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
