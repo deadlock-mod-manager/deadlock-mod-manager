@@ -93,6 +93,10 @@ import {
   filterLibraryModsByStatus,
   ModFilter,
 } from "@/lib/mods/library-display";
+import {
+  matchesHeroFilter,
+  resolveLocalModHero,
+} from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -631,60 +635,43 @@ const MyMods = () => {
 
   const displayMods = useMemo(() => {
     const baseMods = query.trim() ? results : mods;
-    const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
-    let filteredMods = baseMods;
+    const predefinedCategorySet =
+      selectedCategories.length > 0
+        ? new Set<string>(Object.values(ModCategory))
+        : null;
 
-    if (selectedCategories.length > 0) {
-      filteredMods = filteredMods.filter((mod) => {
+    const filteredMods = baseMods.filter((mod) => {
+      if (selectedCategories.length > 0 && predefinedCategorySet) {
         const category = mod.category ?? "";
         let matchesCategory = selectedCategories.includes(category);
-
         if (
           !matchesCategory &&
           selectedCategories.includes(ModCategory.OTHER_MISC)
         ) {
           matchesCategory = !predefinedCategorySet.has(category);
         }
+        if (filterMode === "include" ? !matchesCategory : matchesCategory)
+          return false;
+      }
 
-        return filterMode === "include" ? matchesCategory : !matchesCategory;
-      });
-    }
+      if (selectedHeroes.length > 0) {
+        const resolvedHero = resolveLocalModHero(mod).hero;
+        const matchesHero = matchesHeroFilter(resolvedHero, selectedHeroes);
+        if (filterMode === "include" ? !matchesHero : matchesHero) return false;
+      }
 
-    if (selectedHeroes.length > 0) {
-      filteredMods = filteredMods.filter((mod) => {
-        let matchesHero = false;
+      if (hideNSFW && mod.isNSFW) return false;
 
-        if (selectedHeroes.includes("None")) {
-          matchesHero = !mod.hero || selectedHeroes.includes(mod.hero);
-        } else {
-          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
-        }
+      if (audioQuickFilter === "only" && !mod.isAudio) return false;
+      if (audioQuickFilter === "exclude" && mod.isAudio) return false;
 
-        return filterMode === "include" ? matchesHero : !matchesHero;
-      });
-    }
+      if (effectiveMapQuickFilter === "only" && !mod.isMap) return false;
+      if (effectiveMapQuickFilter === "exclude" && mod.isMap) return false;
 
-    if (hideNSFW) {
-      filteredMods = filteredMods.filter((mod) => !mod.isNSFW);
-    }
+      if (hideOutdated && (mod.isObsolete || isModOutdated(mod))) return false;
 
-    if (audioQuickFilter === "only") {
-      filteredMods = filteredMods.filter((mod) => mod.isAudio);
-    } else if (audioQuickFilter === "exclude") {
-      filteredMods = filteredMods.filter((mod) => !mod.isAudio);
-    }
-
-    if (effectiveMapQuickFilter === "only") {
-      filteredMods = filteredMods.filter((mod) => mod.isMap);
-    } else if (effectiveMapQuickFilter === "exclude") {
-      filteredMods = filteredMods.filter((mod) => !mod.isMap);
-    }
-
-    if (hideOutdated) {
-      filteredMods = filteredMods.filter(
-        (mod) => !mod.isObsolete && !isModOutdated(mod),
-      );
-    }
+      return true;
+    });
 
     return filterLibraryModsByStatus(filteredMods, activeTab);
   }, [

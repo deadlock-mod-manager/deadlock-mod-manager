@@ -39,6 +39,7 @@ import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api-client";
 import { ModCategory, TimePeriod } from "@/lib/constants";
+import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getTimePeriodCutoff } from "@/lib/utils";
@@ -178,6 +179,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     showFavoritesOnly = false,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
+  const localMods = usePersistedStore((state) => state.localMods);
   const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
     ? "only"
     : isCustomMapsEnabled
@@ -209,81 +211,63 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     data: deferredData,
     keys: SEARCH_KEYS,
   });
+  const localModsByRemoteId = useMemo(
+    () => new Map(localMods.map((mod) => [mod.remoteId, mod])),
+    [localMods],
+  );
   const filteredResults = useMemo(() => {
-    let filtered = results;
+    const predefinedCategorySet =
+      selectedCategories.length > 0
+        ? new Set<string>(Object.values(ModCategory))
+        : null;
+    const cutoff = getTimePeriodCutoff(timePeriod);
+    const cutoffTime = cutoff?.getTime();
+    const favSet =
+      showFavoritesOnly && favorites.length > 0 ? new Set(favorites) : null;
+    const shouldHideNSFW = nsfwSettings.hideNSFW || hideNSFW;
 
-    // Filter by categories
-    const predefinedCategorySet = new Set<string>(Object.values(ModCategory));
-
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((mod) => {
+    return results.filter((mod) => {
+      if (selectedCategories.length > 0 && predefinedCategorySet) {
         let matchesCategory = selectedCategories.includes(mod.category);
-
         if (
           !matchesCategory &&
           selectedCategories.includes(ModCategory.OTHER_MISC)
         ) {
           matchesCategory = !predefinedCategorySet.has(mod.category);
         }
+        if (filterMode === "include" ? !matchesCategory : matchesCategory)
+          return false;
+      }
 
-        return filterMode === "include" ? matchesCategory : !matchesCategory;
-      });
-    }
+      if (selectedHeroes.length > 0) {
+        const resolvedHero = resolveModHero(
+          mod,
+          localModsByRemoteId.get(mod.remoteId),
+        ).hero;
+        const matchesHero = matchesHeroFilter(resolvedHero, selectedHeroes);
+        if (filterMode === "include" ? !matchesHero : matchesHero) return false;
+      }
 
-    if (selectedHeroes.length > 0) {
-      filtered = filtered.filter((mod) => {
-        let matchesHero = false;
+      if (shouldHideNSFW && mod.isNSFW) return false;
 
-        if (selectedHeroes.includes("None")) {
-          matchesHero =
-            !mod.hero ||
-            (mod.hero !== null && selectedHeroes.includes(mod.hero));
-        } else {
-          matchesHero = mod.hero !== null && selectedHeroes.includes(mod.hero);
-        }
+      if (audioQuickFilter === "only" && !mod.isAudio) return false;
+      if (audioQuickFilter === "exclude" && mod.isAudio) return false;
 
-        return filterMode === "include" ? matchesHero : !matchesHero;
-      });
-    }
+      if (effectiveMapQuickFilter === "only" && !mod.isMap) return false;
+      if (effectiveMapQuickFilter === "exclude" && mod.isMap) return false;
 
-    if (nsfwSettings.hideNSFW || hideNSFW) {
-      filtered = filtered.filter((mod) => !mod.isNSFW);
-    }
+      if (hideOutdated && (mod.isObsolete || isModOutdated(mod))) return false;
 
-    if (audioQuickFilter === "only") {
-      filtered = filtered.filter((mod) => mod.isAudio);
-    } else if (audioQuickFilter === "exclude") {
-      filtered = filtered.filter((mod) => !mod.isAudio);
-    }
+      if (cutoffTime && new Date(mod.remoteUpdatedAt).getTime() < cutoffTime)
+        return false;
 
-    if (effectiveMapQuickFilter === "only") {
-      filtered = filtered.filter((mod) => mod.isMap);
-    } else if (effectiveMapQuickFilter === "exclude") {
-      filtered = filtered.filter((mod) => !mod.isMap);
-    }
+      if (favSet && !favSet.has(mod.remoteId)) return false;
 
-    if (hideOutdated) {
-      filtered = filtered.filter(
-        (mod) => !mod.isObsolete && !isModOutdated(mod),
-      );
-    }
-
-    const cutoff = getTimePeriodCutoff(timePeriod);
-    if (cutoff) {
-      const cutoffTime = cutoff.getTime();
-      filtered = filtered.filter(
-        (mod) => new Date(mod.remoteUpdatedAt).getTime() >= cutoffTime,
-      );
-    }
-
-    if (showFavoritesOnly && favorites.length > 0) {
-      const favSet = new Set(favorites);
-      filtered = filtered.filter((mod) => favSet.has(mod.remoteId));
-    }
-
-    return filtered;
+      return true;
+    });
   }, [
     results,
+    localModsByRemoteId,
     selectedCategories,
     selectedHeroes,
     filterMode,
