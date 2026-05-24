@@ -2,6 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Tooltip,
   TooltipContent,
@@ -9,8 +10,11 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   Check,
+  CircleHelp,
   DownloadIcon,
   Loader2,
+  PlusIcon,
+  WrenchIcon,
   X,
   XIcon,
 } from "@deadlock-mods/ui/icons";
@@ -31,12 +35,22 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
+import {
+  normalizeRepairDownloads,
+  useRepairMods,
+} from "@/hooks/use-repair-mods";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { type LocalMod, ModStatus } from "@/types/mods";
+import {
+  type LocalMod,
+  type ModDownloadItem,
+  ModStatus,
+  type RepairReason,
+} from "@/types/mods";
+import { isTauriError } from "@/types/tauri";
 
 interface ModButtonProps {
   remoteMod: Pick<ModDto, "remoteId" | "name" | "downloadable"> | undefined;
@@ -47,10 +61,12 @@ export const ModStatusIcon = ({
   status,
   hovering,
   className,
+  repairReason,
 }: {
   status: ModStatus | undefined;
   hovering?: boolean;
   className?: string;
+  repairReason?: RepairReason;
 }) => {
   const loadingStatuses = [
     ModStatus.Downloading,
@@ -75,15 +91,23 @@ export const ModStatusIcon = ({
       case ModStatus.FailedToInstall:
       case ModStatus.FailedToRemove:
         return XIcon;
+      case ModStatus.NeedsRepair:
+        if (
+          repairReason === "needsDownloadChoice" ||
+          repairReason === "needsFileSelection"
+        ) {
+          return CircleHelp;
+        }
+        return WrenchIcon;
       case ModStatus.Removed:
       case ModStatus.Error:
         return RiErrorWarningLine;
       case ModStatus.Extracting:
         return Loader2;
       default:
-        return DownloadIcon;
+        return PlusIcon;
     }
-  }, [status, hovering]);
+  }, [status, hovering, repairReason]);
 
   return (
     <Icon
@@ -103,6 +127,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { analytics } = useAnalyticsContext();
   const confirm = useConfirm();
   const localMods = usePersistedStore((state) => state.localMods);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
@@ -124,6 +149,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     cancelInstallation,
     currentMod,
   } = useInstallWithCollection();
+  const { repairMod } = useRepairMods();
   const { uninstall } = useUninstall();
   const getModProgress = usePersistedStore((state) => state.getModProgress);
   const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
@@ -143,6 +169,23 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     ((resolution: HeroConflictResolution) => void) | null
   >(null);
 
+  const persistRepairMetadata = useCallback(
+    async (mod: LocalMod, sourceDownloads: ModDownloadItem[]) => {
+      const activeProfile = getActiveProfile();
+      await invoke("update_profile_vpk_manifest_repair_metadata", {
+        profileFolder: activeProfile?.folderName ?? null,
+        modId: mod.remoteId,
+        sourceDownloads: sourceDownloads.map((download) => ({
+          name: download.name,
+          size: download.size ?? 0,
+          url: download.url,
+          md5Checksum: download.md5Checksum ?? null,
+        })),
+      });
+    },
+    [getActiveProfile],
+  );
+
   const performInstall = useCallback(
     async (mod: typeof localMod) => {
       if (!mod) {
@@ -156,7 +199,24 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           setModStatus(m.remoteId, ModStatus.Installed);
           setInstalledVpks(m.remoteId, result.installed_vpks, result.file_tree);
           setModEnabledInCurrentProfile(m.remoteId, true);
-          toast.success(t("notifications.modInstalledSuccessfully"));
+          persistRepairMetadata(
+            m,
+            m.selectedDownloads?.length
+              ? m.selectedDownloads
+              : m.repairDownloads?.length
+                ? normalizeRepairDownloads(m.repairDownloads)
+                : (m.downloads ?? []),
+          ).catch((error) => {
+            logger
+              .withMetadata({ modId: m.remoteId })
+              .withError(error)
+              .warn("Failed to persist VPK repair metadata");
+          });
+          const successMessage =
+            m.status === ModStatus.NeedsRepair
+              ? t("notifications.modRepairedSuccessfully")
+              : t("notifications.modEnabledSuccessfully");
+          toast.success(successMessage);
           analytics.trackModInstalled(m.remoteId, {
             vpk_count: result.installed_vpks.length,
             file_tree_complexity: result.file_tree?.has_multiple_files
@@ -166,7 +226,13 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         },
         onError: (m, error) => {
           setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.error(error.message || t("notifications.failedToInstallMod"));
+          if (isTauriError(error) && error.kind === "vpkInUse") {
+            toast.error(t("notifications.failedToEnableMod"), {
+              description: t("notifications.enableErrorVpkInUse"),
+            });
+          } else {
+            toast.error(error.message || t("notifications.failedToInstallMod"));
+          }
           analytics.trackError(
             "mod_installation",
             error.message || "Unknown installation error",
@@ -194,6 +260,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
       setModStatus,
       setInstalledVpks,
       setModEnabledInCurrentProfile,
+      persistRepairMetadata,
       t,
       analytics,
     ],
@@ -279,6 +346,17 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           await uninstall(localMod, false);
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
+        case ModStatus.NeedsRepair:
+          await repairMod(localMod, {
+            interactive: true,
+            availableFiles,
+            installInteractively: performInstall,
+            requestDownloadSelection: async () => {
+              await download();
+              toast.info(t("modButton.needsRepairSelectDownload"));
+            },
+          });
+          break;
         case ModStatus.FailedToDownload:
           break;
         case ModStatus.Error:
@@ -302,6 +380,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     removeMod,
     askHeroConflict,
     performInstall,
+    repairMod,
+    availableFiles,
     t,
     analytics,
     remoteMod?.remoteId,
@@ -337,12 +417,20 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           return t("modButton.enableMod");
         }
         return t("modButton.downloaded");
+      case ModStatus.NeedsRepair:
+        if (
+          localMod.repairReason === "needsDownloadChoice" ||
+          localMod.repairReason === "needsFileSelection"
+        ) {
+          return t("modButton.chooseRepairSource");
+        }
+        return t("modButton.needsRepair");
       case undefined:
         return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t, hovering]);
+  }, [localMod?.status, localMod?.repairReason, t, hovering]);
 
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
@@ -350,12 +438,17 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         return t("modButton.installedTooltip");
       case ModStatus.Downloaded:
         return t("modButton.downloadedTooltip");
+      case ModStatus.NeedsRepair:
+        if (localMod.repairReason) {
+          return t(`modStatus.repairReason.${localMod.repairReason}`);
+        }
+        return t("modButton.needsRepairTooltip");
       case undefined:
         return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t]);
+  }, [localMod?.status, localMod?.repairReason, t]);
 
   const buttonVariant = useMemo(() => {
     switch (localMod?.status) {
@@ -369,10 +462,20 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           return "default";
         }
         return "outline";
+      case ModStatus.NeedsRepair:
+        return "outline";
       default:
         return variant === "iconOnly" ? "outline" : "default";
     }
   }, [variant, localMod?.status, hovering]);
+
+  const buttonClassName = useMemo(
+    () =>
+      localMod?.status === ModStatus.NeedsRepair
+        ? "border-amber-500/50 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200"
+        : undefined,
+    [localMod?.status],
+  );
 
   return (
     <ErrorBoundary>
@@ -417,13 +520,18 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
             <Button
               disabled={isActionInProgress || isAnalyzing}
               icon={
-                <ModStatusIcon hovering={hovering} status={localMod?.status} />
+                <ModStatusIcon
+                  hovering={hovering}
+                  repairReason={localMod?.repairReason}
+                  status={localMod?.status}
+                />
               }
               onClick={onClick}
               ref={ref}
               size={variant === "iconOnly" ? "icon" : "default"}
               title={text}
-              variant={buttonVariant}>
+              variant={buttonVariant}
+              className={buttonClassName}>
               {variant === "iconOnly" ? null : text}
             </Button>
           </TooltipTrigger>

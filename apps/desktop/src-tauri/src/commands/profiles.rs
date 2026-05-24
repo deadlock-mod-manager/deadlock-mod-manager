@@ -567,8 +567,9 @@ pub async fn get_profile_vpk_manifest(
   log::info!("Getting VPK manifest for profile: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
+  let manifest = mod_manager.get_profile_vpk_manifest(profile_folder.clone())?;
   mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
-  mod_manager.get_profile_vpk_manifest(profile_folder)
+  Ok(manifest)
 }
 
 #[tauri::command]
@@ -619,7 +620,12 @@ pub async fn seed_profile_vpk_manifest_entries(
         entry.order,
       );
     } else {
-      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
+      manifest.mark_disabled(
+        &entry.mod_id,
+        entry.disabled_vpks,
+        entry.original_vpk_names,
+        entry.order,
+      );
     }
     changed = true;
   }

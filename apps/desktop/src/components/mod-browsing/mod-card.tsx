@@ -11,6 +11,7 @@ import {
   UpdateAvailableBadge,
   UpdatedRecentlyBadge,
 } from "@/components/mod-management/mod-update-badges";
+import { NeedsRepairBadge } from "@/components/mod-management/needs-repair-badge";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
@@ -102,6 +103,7 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
           />
         )}
         {(status === ModStatus.Installed ||
+          status === ModStatus.NeedsRepair ||
           mod.isObsolete ||
           isModOutdated(mod) ||
           isUpdatedRecently(mod) ||
@@ -109,6 +111,9 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
           <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6'>
             {status === ModStatus.Installed && (
               <Badge>{t("modStatus.installed")}</Badge>
+            )}
+            {status === ModStatus.NeedsRepair && (
+              <NeedsRepairBadge reason={localMod?.repairReason} />
             )}
             {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}

@@ -44,16 +44,18 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   Download,
   EllipsisVertical,
   FolderOpen,
   LayoutGrid,
-  Settings,
   LayoutList,
   Loader2,
   PowerOff,
   RefreshCw,
   ScanSearch,
+  Settings,
+  WrenchIcon,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -66,6 +68,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
+import { NeedsRepairBadge } from "@/components/mod-management/needs-repair-badge";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -83,6 +86,7 @@ import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
+import { useRepairMods } from "@/hooks/use-repair-mods";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
@@ -100,7 +104,12 @@ import type {
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import {
+  isAutomaticRepairMod,
+  isInstalledModWithVpks,
+  isManualRepairMod,
+  isRepairableMod,
+} from "@/lib/mods/installed-helpers";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -277,6 +286,9 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             )}
           </div>
           <div className='absolute top-2 right-2 flex flex-col gap-1'>
+            {mod.status === ModStatus.NeedsRepair && (
+              <NeedsRepairBadge reason={mod.repairReason} />
+            )}
             {mod.isAudio && (
               <Badge variant='secondary'>{t("mods.audio")}</Badge>
             )}
@@ -425,6 +437,12 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 </div>
               )}
               <div className='absolute top-1 right-1 flex flex-col gap-1'>
+                {mod.status === ModStatus.NeedsRepair && (
+                  <NeedsRepairBadge
+                    className='text-xs'
+                    reason={mod.repairReason}
+                  />
+                )}
                 {mod.isAudio && (
                   <Badge className='text-xs' variant='secondary'>
                     {t("mods.audio")}
@@ -598,6 +616,7 @@ const MyMods = () => {
     dismissProgressToast,
   } = useAddonAnalysis();
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
+  const { repairMods, isRepairing } = useRepairMods();
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.All);
@@ -742,12 +761,24 @@ const MyMods = () => {
   const installedMods = getOrderedMods();
 
   const enabledModsCount = mods.filter(isInstalledModWithVpks).length;
+  const needsRepairMods = mods.filter(isRepairableMod);
+  const needsRepairCount = needsRepairMods.length;
+  const autoRepairMods = needsRepairMods.filter(isAutomaticRepairMod);
+  const autoRepairCount = autoRepairMods.length;
+  const manualRepairMods = needsRepairMods.filter(isManualRepairMod);
+  const manualRepairCount = manualRepairMods.length;
   const disabledModsCount = mods.filter(
-    (mod) => !isInstalledModWithVpks(mod),
+    (mod) => !isInstalledModWithVpks(mod) && !isRepairableMod(mod),
   ).length;
   const enabledVpkFileCount = mods
     .filter(isInstalledModWithVpks)
     .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
+
+  useEffect(() => {
+    if (activeTab === ModFilter.NeedsRepair && needsRepairCount === 0) {
+      setActiveTab(ModFilter.All);
+    }
+  }, [activeTab, needsRepairCount]);
 
   const vpkStatSubordinateClass =
     enabledVpkFileCount >= ENGINE_VPK_LIMIT
@@ -974,6 +1005,7 @@ const MyMods = () => {
               switch (value) {
                 case ModFilter.All:
                 case ModFilter.Enabled:
+                case ModFilter.NeedsRepair:
                 case ModFilter.Disabled:
                   setActiveTab(value);
                   break;
@@ -1023,6 +1055,43 @@ const MyMods = () => {
                     />
                   </div>
                   <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 xl:justify-end'>
+                    {autoRepairCount > 0 && (
+                      <Button
+                        onClick={() => repairMods(autoRepairMods)}
+                        size='sm'
+                        variant='outline'
+                        disabled={isRepairing}
+                        isLoading={isRepairing}
+                        icon={<WrenchIcon className='h-4 w-4' />}
+                        className='border-amber-500/50 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200'>
+                        {t("myMods.repairBroken", {
+                          count: autoRepairCount,
+                        })}
+                      </Button>
+                    )}
+                    {manualRepairCount > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant='outline'
+                            tabIndex={0}
+                            aria-label={t("myMods.manualRepairTooltip", {
+                              count: manualRepairCount,
+                            })}
+                            className='cursor-help border-amber-500/50 bg-amber-500/15 px-2.5 py-1.5 text-sm text-amber-800 hover:bg-amber-500/20 focus-visible:outline-none dark:text-amber-300'>
+                            <CircleHelp className='h-4 w-4' />
+                            {t("myMods.manualRepair", {
+                              count: manualRepairCount,
+                            })}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className='max-w-xs text-pretty'>
+                          {t("myMods.manualRepairTooltip", {
+                            count: manualRepairCount,
+                          })}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     <TabsList className='h-auto min-h-9 max-w-full flex-wrap justify-start'>
                       <TabsTrigger value={ModFilter.All}>
                         {t("myMods.tabs.all")}
@@ -1037,6 +1106,15 @@ const MyMods = () => {
                           ({enabledModsCount})
                         </span>
                       </TabsTrigger>
+                      {needsRepairCount > 0 && (
+                        <TabsTrigger value={ModFilter.NeedsRepair}>
+                          <WrenchIcon className='mr-2 h-4 w-4' />
+                          {t("myMods.tabs.needsRepair")}
+                          <span className='ml-2 text-muted-foreground text-xs'>
+                            ({needsRepairCount})
+                          </span>
+                        </TabsTrigger>
+                      )}
                       <TabsTrigger value={ModFilter.Disabled}>
                         <Download className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.downloaded")}
@@ -1118,6 +1196,12 @@ const MyMods = () => {
 
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
+                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                  </TabsContent>
+                )}
+
+                {displayMods.length > 0 && (
+                  <TabsContent className='mt-0' value={ModFilter.NeedsRepair}>
                     <ModsList mods={visibleMods} viewMode={viewMode} />
                   </TabsContent>
                 )}

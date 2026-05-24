@@ -240,9 +240,14 @@
     "disableAllConfirmAction": "Disable all",
     "disableAllConfirmCancel": "Cancel",
     "disableAllSuccess": "All mods disabled",
+    "repairBroken": "Repair broken ({{count}})",
+    "manualRepair": "Manual repair ({{count}})",
+    "manualRepairTooltip_one": "{{count}} mod needs a download or VPK choice before repair. Use the question-mark repair button on the mod.",
+    "manualRepairTooltip_other": "{{count}} mods need a download or VPK choice before repair. Use the question-mark repair button on each mod.",
     "tabs": {
       "all": "All",
       "installed": "Installed",
+      "needsRepair": "Needs repair",
       "downloaded": "Downloaded"
     }
   },
@@ -289,6 +294,7 @@
     "deleteError": "Failed to delete mod",
     "deleteErrorVpkInUse": "Some mod files are currently in use by the game. Please close Deadlock and try again.",
     "disableError": "Failed to disable mod",
+    "disableErrorVpkInUse": "Some mod files are temporarily locked by Deadlock, Steam, or another process. Wait a few seconds, close the game if it is running, then try again.",
     "vpkScanAlert": {
       "title": "Unrecognized mod files found",
       "titleTooltipLabel": "What are unrecognized mod files?",
@@ -350,12 +356,17 @@
     "pause": "Pause",
     "resume": "Resume",
     "paused": "Paused",
+    "needsRepair": "Needs repair",
     "pauseError": "Could not pause download: {{message}}",
     "resumeError": "Could not resume download: {{message}}"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
+    "modEnabledSuccessfully": "Mod enabled successfully",
+    "modRepairedSuccessfully": "Mod repaired successfully",
     "failedToInstallMod": "Failed to install mod",
+    "failedToEnableMod": "Failed to enable mod",
+    "enableErrorVpkInUse": "Some VPK files are temporarily locked by Deadlock, Steam, or another process. Wait a few seconds, close the game if it is running, then try again.",
     "installationCanceled": "Installation canceled",
     "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
     "failedToPerformAction": "Failed to perform action",
@@ -905,6 +916,17 @@
     "removed": "Removed",
     "failedToRemove": "Failed to remove",
     "error": "Error occurred",
+    "needsRepair": "Needs repair",
+    "needsRepairTooltip": "Manifest says this mod is enabled, but its VPK files are missing.",
+    "repairReason": {
+      "missingEnabledVpks": "Manifest says this mod is enabled, but its VPK files are missing.",
+      "missingPayload": "This mod is in your library, but its downloaded VPK files are missing. Redownload it to repair.",
+      "needsDownloadChoice": "Repair needs you to choose which download file to use.",
+      "needsFileSelection": "Repair needs you to choose which VPK file to install.",
+      "repairFailed": "Repair failed. Try again, or redownload this mod manually.",
+      "fingerprintMismatch": "The active VPK does not match this mod's saved fingerprint. It was disabled until repaired.",
+      "unverifiedManifest": "This manifest entry has no saved VPK fingerprint, so the active file cannot be verified."
+    },
     "unknown": "Unknown"
   },
   "modButton": {
@@ -921,6 +943,14 @@
     "removed": "Removed",
     "failedToRemove": "Failed to remove",
     "error": "Error occurred",
+    "needsRepair": "Repair Mod",
+    "chooseRepairSource": "Choose repair source",
+    "needsRepairTooltip": "The manifest says this mod should be enabled, but its VPK files are missing. Redownload and reinstall it.",
+    "needsRepairSelectDownload": "Select the download file to repair this mod.",
+    "repairAllSuccess": "Repaired {{count}} broken mods.",
+    "repairAllManualOnly_one": "{{count}} mod needs manual repair.",
+    "repairAllManualOnly_other": "{{count}} mods need manual repair.",
+    "repairAllPartial": "Queued {{queued}}, repaired {{repaired}}, manual {{manual}}, failed {{failed}}.",
     "disableMod": "Disable Mod?",
     "enableMod": "Enable Mod?",
     "installedTooltip": "Toggle to disable mod (will not delete, just disable it ingame)",

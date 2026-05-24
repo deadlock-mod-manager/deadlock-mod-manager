@@ -23,9 +23,20 @@ export interface ModProfile {
 
 export interface VpkManifestEntry {
   enabled: boolean;
+  desiredState?: "enabled" | "disabled";
+  diskState?: "active" | "disabled" | "missing" | "mismatch" | "unverified";
+  repairReason?:
+    | "missingEnabledVpks"
+    | "missingPayload"
+    | "needsDownloadChoice"
+    | "needsFileSelection"
+    | "repairFailed"
+    | "fingerprintMismatch"
+    | "unverifiedManifest";
   order?: number | null;
   currentVpks: string[];
   disabledVpks: string[];
+  quarantinedVpks?: string[];
   originalVpkNames: string[];
   sourceDownloads?: RepairDownloadItem[];
   vpkFingerprints?: Array<{

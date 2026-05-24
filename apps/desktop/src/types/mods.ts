@@ -44,7 +44,9 @@ export type RepairReason =
   | "missingPayload"
   | "needsDownloadChoice"
   | "needsFileSelection"
-  | "repairFailed";
+  | "repairFailed"
+  | "fingerprintMismatch"
+  | "unverifiedManifest";
 
 export interface LocalMod extends ModDto {
   status: ModStatus;
