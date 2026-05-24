@@ -16,7 +16,7 @@ jobs:
   backup:
     name: Backup Database to S3
     if: github.repository_owner == 'deadlock-mod-manager'
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     steps:
       - name: Generate backup filename
         id: backup-filename

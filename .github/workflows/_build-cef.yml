@@ -21,6 +21,16 @@ on:
         required: false
         type: string
         default: "release-signing"
+      runner_linux:
+        description: "Runner for Linux builds"
+        required: false
+        type: string
+        default: "ubuntu-24.04"
+      runner_windows:
+        description: "Runner for Windows builds"
+        required: false
+        type: string
+        default: "windows-latest"
     secrets:
       TAURI_PRIVATE_KEY:
         required: true
@@ -54,10 +64,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: ubuntu-24.04
+          - platform: ${{ inputs.runner_linux || 'ubuntu-24.04' }}
             os: linux
             timeout_minutes: 120
-          - platform: windows-latest
+          - platform: ${{ inputs.runner_windows || 'windows-latest' }}
             os: windows
             timeout_minutes: 90
 
@@ -67,6 +77,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Enable Windows long paths
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+            -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 
       - name: Free disk space (Linux only)
         if: matrix.os == 'linux'
@@ -85,7 +102,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop -> apps/desktop/target
+          workspaces: apps/desktop
           cache-on-failure: true
 
       - name: Setup Node.js
@@ -191,6 +208,7 @@ jobs:
       - name: Build CEF (Windows)
         if: matrix.os == 'windows'
         env:
+          CARGO_TARGET_DIR: C:/t
           TAURI_CEF_BRANCH: ${{ env.TAURI_CEF_BRANCH }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
@@ -205,7 +223,7 @@ jobs:
         if: matrix.os == 'windows'
         shell: pwsh
         run: |
-          $nsisDir = "apps/desktop/target/release/bundle/nsis"
+          $nsisDir = "C:/t/release/bundle/nsis"
           Get-ChildItem -Path $nsisDir -Filter "*-setup.exe" | ForEach-Object {
             $cefName = $_.Name -replace '-setup\.exe$', '-cef-setup.exe'
             Rename-Item -Path $_.FullName -NewName $cefName
@@ -219,7 +237,7 @@ jobs:
         if: matrix.os == 'windows'
         shell: pwsh
         run: |
-          $matches = Get-ChildItem -Recurse -Path "apps/desktop/target/release/bundle/nsis" -Filter "*-cef-setup.exe"
+          $matches = Get-ChildItem -Recurse -Path "C:/t/release/bundle/nsis" -Filter "*-cef-setup.exe"
           if ($matches.Count -eq 0) {
             Write-Error "No *-cef-setup.exe artifact found!"
             exit 1
@@ -231,7 +249,7 @@ jobs:
         id: signpath-sign
         uses: ./.github/actions/signpath-sign
         with:
-          unsigned-artifact-path: apps/desktop/target/release/bundle/nsis/*-cef-setup.exe
+          unsigned-artifact-path: C:/t/release/bundle/nsis/*-cef-setup.exe
           output-directory: ./cef-artifacts
           signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}

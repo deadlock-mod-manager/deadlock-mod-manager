@@ -20,7 +20,7 @@ on:
 jobs:
   changes:
     if: github.repository_owner == 'deadlock-mod-manager'
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -62,7 +62,7 @@ jobs:
       name: production
       url: https://api.deadlockmods.app
     name: Deploy API
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.api == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:
@@ -95,7 +95,7 @@ jobs:
       name: production
       url: https://auth.deadlockmods.app
     name: Deploy Auth
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.auth == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:
@@ -127,7 +127,7 @@ jobs:
     environment:
       name: production
     name: Deploy Bot
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.bot == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:
@@ -159,7 +159,7 @@ jobs:
     environment:
       name: production
     name: Deploy Lockdex
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.lockdex == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:
@@ -191,7 +191,7 @@ jobs:
     environment:
       name: production
     name: Deploy Mirror
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.mirror == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:
@@ -224,7 +224,7 @@ jobs:
       name: production
       url: https://deadlockmods.app
     name: Deploy WWW
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: changes
     if: ${{ needs.changes.outputs.www == 'true' || github.event.inputs.force-deploy == 'true' }}
     permissions:

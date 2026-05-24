@@ -14,7 +14,7 @@ on:
 jobs:
   synchronize-with-crowdin:
     if: github.repository_owner == 'deadlock-mod-manager'
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
 
     permissions:
       contents: write
