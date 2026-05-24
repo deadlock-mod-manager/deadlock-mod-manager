@@ -2,7 +2,6 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import { ScanSearch } from "@deadlock-mods/ui/icons";
@@ -17,6 +16,7 @@ interface AnalyzeAddonsButtonProps {
   pendingLabel?: string;
   size?: "default" | "sm" | "iconExpand" | "lg";
   variant?: "default" | "outline";
+  showTooltip?: boolean;
 }
 
 export const AnalyzeAddonsButton = ({
@@ -25,6 +25,7 @@ export const AnalyzeAddonsButton = ({
   pendingLabel,
   size,
   variant = "outline",
+  showTooltip = true,
 }: AnalyzeAddonsButtonProps) => {
   const { t } = useTranslation();
   const {
@@ -38,29 +39,34 @@ export const AnalyzeAddonsButton = ({
     dismissProgressToast,
   } = useAddonAnalysis();
 
+  const button = (
+    <Button
+      type='button'
+      variant={variant}
+      onClick={startAnalysis}
+      disabled={isPending}
+      isLoading={isPending}
+      icon={<ScanSearch className='h-4 w-4' />}
+      size={size}
+      className={className}>
+      {isPending
+        ? (pendingLabel ?? t("addons.analyzing"))
+        : (label ?? t("addons.analyzeLocal"))}
+    </Button>
+  );
+
   return (
     <>
-      <TooltipProvider>
+      {showTooltip ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={variant}
-              onClick={startAnalysis}
-              disabled={isPending}
-              isLoading={isPending}
-              icon={<ScanSearch className='h-4 w-4' />}
-              size={size}
-              className={className}>
-              {isPending
-                ? (pendingLabel ?? t("addons.analyzing"))
-                : (label ?? t("addons.analyzeLocal"))}
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
           <TooltipContent>
             <p>{t("addons.analyzeLocalTooltip")}</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      ) : (
+        button
+      )}
 
       {progress && (
         <AnalysisProgressToast

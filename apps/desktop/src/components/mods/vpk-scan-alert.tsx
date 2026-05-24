@@ -151,16 +151,39 @@ export const VpkScanAlert = ({
         <div className='flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex min-w-0 items-start gap-2.5'>
             <div className='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/80'>
-              <PhosphorIcons.WarningCircle
-                weight='duotone'
-                className='h-4 w-4'
-              />
+              <PhosphorIcons.Warning weight='duotone' className='h-4 w-4' />
             </div>
             <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
               <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
                 <h3 className='font-semibold text-[13px] text-foreground leading-5'>
                   {t("mods.vpkScanAlert.title")}
                 </h3>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type='button'
+                      aria-label={t("mods.vpkScanAlert.titleTooltipLabel")}
+                      className='inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                      <PhosphorIcons.Info
+                        weight='fill'
+                        className='h-3.5 w-3.5'
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side='bottom' className='max-w-sm'>
+                    <div className='flex flex-col gap-2 text-sm'>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP1")}
+                      </p>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP2")}
+                      </p>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP3")}
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
                 <span className='inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted/50 px-1.5 font-mono font-medium text-[10px] text-muted-foreground ring-1 ring-border/70'>
                   {unmatchedVpkCount}
                 </span>
@@ -178,6 +201,7 @@ export const VpkScanAlert = ({
               label={t("mods.vpkScanAlert.analyzeButton")}
               size='sm'
               variant='default'
+              showTooltip={false}
             />
             {unmatchedVpks.length > 0 && (
               <Button
