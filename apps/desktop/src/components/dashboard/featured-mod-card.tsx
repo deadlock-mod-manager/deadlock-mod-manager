@@ -8,6 +8,7 @@ import {
   HeartIcon,
   SparkleIcon,
 } from "@phosphor-icons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Markup } from "interweave";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -15,6 +16,7 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -31,6 +33,7 @@ const FeaturedModCardSkeleton = () => (
 export const FeaturedModCard = ({ mod, isLoading }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   if (isLoading || !mod) {
@@ -38,7 +41,10 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
   }
 
   const heroImage = mod.images[0];
-  const handleClick = () => navigate(`/mods/${mod.remoteId}`);
+  const handleClick = () => {
+    void prefetchModDetail(queryClient, mod.remoteId);
+    navigate(`/mods/${mod.remoteId}`);
+  };
 
   return (
     <div

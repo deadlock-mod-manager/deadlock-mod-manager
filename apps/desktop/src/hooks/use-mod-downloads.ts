@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getModDownloads } from "@/lib/api-client";
+import { usePersistedStore } from "@/lib/store";
 import type { ModDownloadItem } from "@/types/mods";
 
 const EMPTY_DOWNLOADS: ModDownloadItem[] = [];
@@ -30,6 +31,14 @@ export const useModDownloads = ({
   isDownloadable = true,
   enabled = true,
 }: UseModDownloadsOptions) => {
+  const localDownloads = usePersistedStore((state) => {
+    if (!remoteId) {
+      return undefined;
+    }
+    const localMod = state.localMods.find((mod) => mod.remoteId === remoteId);
+    return localMod?.downloads;
+  });
+
   const query = useQuery({
     queryKey: ["mod-downloads", remoteId],
     queryFn: () => {
@@ -39,12 +48,18 @@ export const useModDownloads = ({
       return getModDownloads(remoteId);
     },
     enabled: enabled && !!remoteId && isDownloadable,
-    // Cache for 5 minutes to reduce unnecessary requests
     staleTime: 5 * 60 * 1000,
-    // Keep in cache for 10 minutes after component unmounts
     gcTime: 10 * 60 * 1000,
-    // Avoid noisy repeated requests for missing download metadata
     retry: false,
+    placeholderData: () => {
+      if (!localDownloads || localDownloads.length === 0) {
+        return undefined;
+      }
+      return {
+        downloads: localDownloads,
+        count: localDownloads.length,
+      };
+    },
     meta: {
       skipGlobalErrorHandler: true,
     },
