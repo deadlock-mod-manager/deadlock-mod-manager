@@ -6,46 +6,15 @@ import type {
   ModMetadata,
 } from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_KEYWORDS } from "./constants";
+import { parseTags } from "./profile";
 import type { GameBananaSubmission } from "./types";
 
-type GameBananaProfileForCategory =
-  | GameBanana.GameBananaModProfile
-  | GameBanana.GameBananaSoundProfile;
-
-export function categoryFromGameBananaProfile(
-  profile: GameBananaProfileForCategory,
-): string {
-  const superName = profile._aSuperCategory?._sName;
-  if (superName !== undefined && superName.length > 0) {
-    return superName;
-  }
-  const rootName = profile._aRootCategory?._sName;
-  if (rootName !== undefined && rootName.length > 0) {
-    return rootName;
-  }
-  return profile._aCategory?._sName ?? "Other";
-}
-
-export function submitterDisplayName(
-  profile: GameBananaProfileForCategory,
-): string {
-  return profile._aSubmitter?._sName?.trim() || "Unknown";
-}
-
-export const parseTags = (
-  tags: GameBanana.GameBananaSubmission["_aTags"],
-): string[] => {
-  if (!Array.isArray(tags)) {
-    return [];
-  }
-  return tags
-    .map((tag) =>
-      typeof tag === "string"
-        ? tag
-        : [tag._sTitle, tag._sValue].filter(Boolean).join(" "),
-    )
-    .filter(Boolean);
-};
+export {
+  categoryFromGameBananaProfile,
+  heroFromGameBananaProfile,
+  parseTags,
+  submitterDisplayName,
+} from "./profile";
 
 /**
  * Classify if a GameBanana mod contains NSFW content

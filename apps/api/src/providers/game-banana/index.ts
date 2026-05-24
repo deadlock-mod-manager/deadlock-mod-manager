@@ -6,14 +6,10 @@ import {
   ModRepository,
   type NewMod,
 } from "@deadlock-mods/database";
-import {
-  GameBanana,
-  type FileserverDto,
-  guessHero,
-} from "@deadlock-mods/shared";
-import { cache } from "../../lib/redis";
-import { wideEventContext } from "../../lib/logger";
+import { GameBanana, type FileserverDto } from "@deadlock-mods/shared";
+import { createWideEvent, wideEventContext } from "../../lib/logger";
 import { resolveFileserverGeo } from "../../services/geo";
+import { modCache } from "../../services/mod-cache";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
 import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
@@ -28,6 +24,7 @@ import {
   buildMetadata,
   categoryFromGameBananaProfile,
   classifyNSFW,
+  heroFromGameBananaProfile,
   mapGameBananaFileserverState,
   parseTags,
   submitterDisplayName,
@@ -276,36 +273,27 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const mods = this.getMods();
     let count = 0;
     let anyFilesUpdated = false;
+    let anyContentChanged = false;
     const startTime = Date.now();
 
     try {
       for await (const { submission, source } of mods) {
         count++;
-        const { mod, filesChanged } = await this.createMod(submission, source);
+        const { filesChanged, contentChanged } = await this.createMod(
+          submission,
+          source,
+          { deferListingInvalidation: true },
+        );
         if (filesChanged) {
           anyFilesUpdated = true;
         }
-        if (mod) {
-          this.logger
-            .withMetadata({
-              name: submission._sName,
-              id: submission._idRow,
-              source,
-            })
-            .info("Synchronized GameBanana mod");
-        } else {
-          this.logger
-            .withMetadata({
-              name: submission._sName,
-              id: submission._idRow,
-              source,
-            })
-            .warn("Failed to create mod, skipping...");
+        if (contentChanged) {
+          anyContentChanged = true;
         }
       }
 
-      if (anyFilesUpdated) {
-        await cache.del("mods:listing");
+      if (anyFilesUpdated || anyContentChanged) {
+        await modCache.invalidateListing();
       }
 
       const duration = Date.now() - startTime;
@@ -314,13 +302,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         syncDurationMs: duration,
         syncModsPerSecond: count / (duration / 1000),
         syncFilesUpdated: anyFilesUpdated,
+        syncContentChanged: anyContentChanged,
       });
     } catch (error) {
       wide?.merge({ syncProcessedCount: count });
-      this.logger
-        .withError(error)
-        .withMetadata({ processedCount: count })
-        .error("Synchronization failed");
       throw error;
     }
   }
@@ -355,7 +340,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: guessHero(profile._sName),
+      hero: heroFromGameBananaProfile(profile),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category: categoryFromGameBananaProfile(profile),
@@ -399,7 +384,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: guessHero(profile._sName),
+      hero: heroFromGameBananaProfile(profile),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category,
@@ -453,83 +438,100 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createMod(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
+    options?: { deferListingInvalidation?: boolean },
   ): Promise<{
     mod: Mod | undefined;
     filesChanged: boolean;
+    contentChanged: boolean;
     handledAsTrashed?: boolean;
   }> {
-    this.logger
-      .withMetadata({
-        modId: mod._idRow.toString(),
-        source,
-      })
-      .debug("Creating/updating mod");
+    const modId = mod._idRow.toString();
+    const wide = createWideEvent(this.logger, "mod_sync", {
+      modId,
+      source,
+    });
+
     try {
+      let t0 = Date.now();
       const payload = await this.createModPayload(mod, source);
+      wide.set("payloadMs", Date.now() - t0);
 
       if (!payload) {
-        this.logger
-          .withMetadata({ modId: mod._idRow.toString(), source })
-          .warn("Mod profile not found on GameBanana, skipping");
-        return { mod: undefined, filesChanged: false };
+        wide.set("outcome_reason", "profile_not_found");
+        wide.emit("success");
+        return { mod: undefined, filesChanged: false, contentChanged: false };
       }
 
       if (payload.isTrashed) {
         const { remoteId } = payload;
         const exists = await modRepository.existsByRemoteId(remoteId);
         if (!exists) {
-          this.logger
-            .withMetadata({ modId: remoteId, source })
-            .info("Skipping trashed GameBanana mod not in database");
+          wide.set("outcome_reason", "trashed_not_in_db");
+          wide.emit("success");
           return {
             mod: undefined,
             filesChanged: false,
+            contentChanged: false,
             handledAsTrashed: true,
           };
         }
         await modRepository.markAsTrashed(remoteId);
-        await cache.del(`mod:${remoteId}`);
-        await cache.del("mods:listing");
-        this.logger
-          .withMetadata({ modId: remoteId, source })
-          .info("Marked GameBanana mod as trashed");
+        await modCache.invalidateAfterModSync({
+          remoteId,
+          filesChanged: false,
+          contentChanged: true,
+          deferListingInvalidation: options?.deferListingInvalidation,
+        });
+        wide.set("outcome_reason", "marked_trashed");
+        wide.emit("success");
         return {
           mod: undefined,
           filesChanged: false,
+          contentChanged: true,
           handledAsTrashed: true,
         };
       }
 
-      const dbMod = await modRepository.upsertByRemoteId(payload);
+      t0 = Date.now();
+      const { mod: dbMod, contentChanged } =
+        await modRepository.upsertByRemoteId(payload);
+      wide.set("upsertMs", Date.now() - t0);
 
-      this.logger
-        .withMetadata({ modId: dbMod.id })
-        .debug("Mod upserted successfully");
-
+      t0 = Date.now();
       const { filesChanged } = await this.refreshModDownloads(dbMod);
+      wide.merge({
+        downloadsMs: Date.now() - t0,
+        filesChanged,
+        contentChanged,
+      });
+
       if (filesChanged) {
         const filesUpdatedAt = new Date();
         await modRepository.update(dbMod.id, {
           filesUpdatedAt,
         });
-        await cache.del(`mod:${dbMod.remoteId}`);
         await ModSyncHooksService.getInstance().onModFilesUpdated(
           dbMod,
           filesUpdatedAt,
         );
       }
 
-      return { mod: dbMod, filesChanged };
+      t0 = Date.now();
+      await modCache.invalidateAfterModSync({
+        remoteId: dbMod.remoteId,
+        filesChanged,
+        contentChanged,
+        deferListingInvalidation: options?.deferListingInvalidation,
+      });
+      wide.set("cacheMs", Date.now() - t0);
+
+      wide.merge({ modName: dbMod.name, hero: dbMod.hero });
+      wide.emit("success");
+
+      return { mod: dbMod, filesChanged, contentChanged };
     } catch (error) {
-      this.logger
-        .withError(error)
-        .withMetadata({
-          error,
-          modId: mod._idRow.toString(),
-          source,
-        })
-        .error("Failed to create/update mod");
-      return { mod: undefined, filesChanged: false };
+      wide.emit("error", error);
+      return { mod: undefined, filesChanged: false, contentChanged: false };
     }
   }
 
