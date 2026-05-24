@@ -291,6 +291,10 @@
     "disableError": "Nie udało się wyłączyć moda",
     "vpkScanAlert": {
       "title": "",
+      "titleTooltipLabel": "",
+      "titleTooltipP1": "",
+      "titleTooltipP2": "",
+      "titleTooltipP3": "",
       "titleWithCount_one": "",
       "titleWithCount_other": "",
       "description": "",
