@@ -1,0 +1,285 @@
+name: Build CEF
+
+on:
+  workflow_call:
+    inputs:
+      release_id:
+        description: "GitHub release ID to upload artifacts to"
+        required: true
+        type: string
+      version:
+        description: "Version string for asset URLs (e.g. 'v1.0.0' or 'nightly')"
+        required: true
+        type: string
+      nightly:
+        description: "Whether this is a nightly build"
+        required: false
+        type: boolean
+        default: false
+      signpath_policy:
+        description: "SignPath signing policy"
+        required: false
+        type: string
+        default: "release-signing"
+    secrets:
+      TAURI_PRIVATE_KEY:
+        required: true
+      VITE_GA_MEASUREMENT_ID:
+        required: true
+      SIGNPATH_API_TOKEN:
+        required: true
+      SIGNPATH_ORGANIZATION_ID:
+        required: true
+  workflow_dispatch:
+    inputs:
+      signpath_policy:
+        description: "SignPath signing policy"
+        required: false
+        type: choice
+        options:
+          - "test-signing"
+          - "release-signing"
+        default: "test-signing"
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "24.8.0"
+  TAURI_CEF_BRANCH: "feat/cef"
+
+jobs:
+  build-cef:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-24.04
+            os: linux
+            timeout_minutes: 120
+          - platform: windows-latest
+            os: windows
+            timeout_minutes: 90
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free disk space (Linux only)
+        if: matrix.os == 'linux'
+        run: |
+          echo "Disk usage before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          sudo docker system prune -af || true
+          sudo apt-get clean
+          echo "Disk usage after cleanup:"
+          df -h
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> apps/desktop/target
+          cache-on-failure: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Cache CEF binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tauri-cef
+          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cef-
+
+      - name: Cache Tauri CEF CLI
+        id: cache-tauri-cli
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-tauri
+          key: ${{ runner.os }}-${{ runner.arch }}-tauri-cli-${{ env.TAURI_CEF_BRANCH }}
+
+      - name: Install Tauri CEF CLI
+        if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
+        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch ${{ env.TAURI_CEF_BRANCH }}
+
+      - name: Install apt dependencies (Linux only)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            xdg-utils \
+            file
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Update version with commit hash (nightly only)
+        if: inputs.nightly == true || (github.event_name == 'workflow_dispatch')
+        run: |
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          pnpm version:nightly "$COMMIT_SHORT" || true
+
+      - name: Build CEF (Linux)
+        if: matrix.os == 'linux'
+        env:
+          TAURI_CEF_BRANCH: ${{ env.TAURI_CEF_BRANCH }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+          NO_STRIP: "true"
+        working-directory: apps/desktop
+        run: bun scripts/cef-patch.ts cargo tauri build --bundles deb,updater -- --no-default-features --features cef
+
+      - name: Rename .deb with CEF suffix (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          set -euo pipefail
+          mkdir -p cef-artifacts
+          for deb in apps/desktop/target/release/bundle/deb/*.deb; do
+            base=$(basename "$deb" .deb)
+            cp "$deb" "cef-artifacts/${base}-cef.deb"
+          done
+          for sig in apps/desktop/target/release/bundle/deb/*.deb.sig; do
+            [ -f "$sig" ] || continue
+            base=$(basename "$sig" .deb.sig)
+            cp "$sig" "cef-artifacts/${base}-cef.deb.sig"
+          done
+          echo "CEF artifacts:"
+          ls -la cef-artifacts/
+
+      - name: Verify CEF artifact exists (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          count=$(ls cef-artifacts/*-cef.deb 2>/dev/null | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "ERROR: No *-cef.deb artifact found!"
+            exit 1
+          fi
+
+      - name: Build CEF (Windows)
+        if: matrix.os == 'windows'
+        env:
+          TAURI_CEF_BRANCH: ${{ env.TAURI_CEF_BRANCH }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        working-directory: apps/desktop
+        run: bun scripts/cef-patch.ts cargo tauri build --bundles nsis,updater -- --no-default-features --features cef
+
+      - name: Rename NSIS installer with CEF suffix (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $nsisDir = "apps/desktop/target/release/bundle/nsis"
+          Get-ChildItem -Path $nsisDir -Filter "*-setup.exe" | ForEach-Object {
+            $cefName = $_.Name -replace '-setup\.exe$', '-cef-setup.exe'
+            Rename-Item -Path $_.FullName -NewName $cefName
+            $sigPath = "$($_.FullName).sig"
+            if (Test-Path $sigPath) {
+              Rename-Item -Path $sigPath -NewName "$cefName.sig"
+            }
+          }
+
+      - name: Verify CEF NSIS artifact exists (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $matches = Get-ChildItem -Recurse -Path "apps/desktop/target/release/bundle/nsis" -Filter "*-cef-setup.exe"
+          if ($matches.Count -eq 0) {
+            Write-Error "No *-cef-setup.exe artifact found!"
+            exit 1
+          }
+          Write-Host "Found CEF NSIS artifact: $($matches[0].FullName)"
+
+      - name: Sign Windows CEF executable
+        if: matrix.os == 'windows'
+        id: signpath-sign
+        uses: ./.github/actions/signpath-sign
+        with:
+          unsigned-artifact-path: apps/desktop/target/release/bundle/nsis/*-cef-setup.exe
+          output-directory: ./cef-artifacts
+          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          signpath-project-slug: deadlock-mod-manager
+          signpath-signing-policy: ${{ inputs.signpath_policy || 'test-signing' }}
+          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+      - name: Upload CEF artifacts to release
+        if: inputs.release_id != ''
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const releaseId = parseInt(process.env.RELEASE_ID);
+            const artifactDir = './cef-artifacts';
+
+            if (!fs.existsSync(artifactDir)) {
+              console.log('No cef-artifacts directory found, skipping upload');
+              return;
+            }
+
+            const files = fs.readdirSync(artifactDir);
+            console.log(`Files to upload: ${JSON.stringify(files)}`);
+
+            for (const file of files) {
+              const filePath = path.join(artifactDir, file);
+              const stats = fs.statSync(filePath);
+
+              if (stats.isFile()) {
+                console.log(`Uploading ${file} (${stats.size} bytes)...`);
+                const content = fs.readFileSync(filePath);
+
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: releaseId,
+                  name: file,
+                  data: content
+                });
+
+                console.log(`Successfully uploaded ${file}`);
+              }
+            }
+
+      - name: Upload CEF artifacts (workflow_dispatch fallback)
+        if: inputs.release_id == '' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cef-${{ matrix.os }}-${{ github.run_id }}
+          path: cef-artifacts/*
+          if-no-files-found: warn
