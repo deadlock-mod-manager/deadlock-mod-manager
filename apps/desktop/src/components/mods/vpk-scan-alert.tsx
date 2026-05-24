@@ -9,7 +9,7 @@ import {
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { deleteProfileVpk, showProfileVpkInFolder } from "@/lib/tauri-commands";
@@ -40,8 +40,9 @@ export const VpkScanAlert = ({
   const [dismissedFingerprint, setDismissedFingerprint] = useState<
     string | null
   >(() => window.localStorage.getItem(DISMISS_STORAGE_KEY));
-  const [isListVisible, setIsListVisible] = useState(true);
+  const [isListVisible, setIsListVisible] = useState(false);
   const [pendingFile, setPendingFile] = useState<string | null>(null);
+  const fileListId = useId();
 
   const deleteAllMutation = useMutation({
     mutationFn: async (vpks: string[]) => {
@@ -146,37 +147,48 @@ export const VpkScanAlert = ({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className='relative shrink-0 overflow-hidden rounded-xl border border-border bg-muted/30 shadow-sm'>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type='button'
-              onClick={handleDismiss}
-              aria-label={t("mods.vpkScanAlert.dismiss")}
-              className='absolute top-2.5 right-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground'>
-              <PhosphorIcons.X className='h-3.5 w-3.5' />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side='left'>
-            {t("mods.vpkScanAlert.dismissTooltip")}
-          </TooltipContent>
-        </Tooltip>
-
-        <div className='flex flex-col gap-4 p-4 sm:p-5'>
-          <div className='flex items-start gap-3 pr-8'>
-            <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border'>
-              <PhosphorIcons.Info weight='duotone' className='h-5 w-5' />
+      <div className='shrink-0 overflow-hidden rounded-lg border border-border/70 bg-card/45 shadow-sm'>
+        <div className='flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between'>
+          <div className='flex min-w-0 items-start gap-2.5'>
+            <div className='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background/80 text-muted-foreground ring-1 ring-border/80'>
+              <PhosphorIcons.Warning weight='duotone' className='h-4 w-4' />
             </div>
-            <div className='flex min-w-0 flex-1 flex-col gap-1'>
-              <div className='flex items-center gap-2'>
-                <h3 className='font-semibold text-foreground text-sm leading-tight tracking-tight'>
+            <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+              <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+                <h3 className='font-semibold text-[13px] text-foreground leading-5'>
                   {t("mods.vpkScanAlert.title")}
                 </h3>
-                <span className='inline-flex h-5 items-center rounded-full bg-muted px-2 font-mono font-semibold text-[10px] text-muted-foreground ring-1 ring-border'>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type='button'
+                      aria-label={t("mods.vpkScanAlert.titleTooltipLabel")}
+                      className='inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                      <PhosphorIcons.Info
+                        weight='fill'
+                        className='h-3.5 w-3.5'
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side='bottom' className='max-w-sm'>
+                    <div className='flex flex-col gap-2 text-sm'>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP1")}
+                      </p>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP2")}
+                      </p>
+                      <p className='text-pretty'>
+                        {t("mods.vpkScanAlert.titleTooltipP3")}
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                <span className='inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted/50 px-1.5 font-mono font-medium text-[10px] text-muted-foreground ring-1 ring-border/70'>
                   {unmatchedVpkCount}
                 </span>
               </div>
-              <p className='text-muted-foreground text-xs leading-relaxed sm:text-sm'>
+              <p className='text-muted-foreground text-xs leading-5'>
                 {t("mods.vpkScanAlert.description", {
                   count: unmatchedVpkCount,
                 })}
@@ -184,114 +196,146 @@ export const VpkScanAlert = ({
             </div>
           </div>
 
-          {unmatchedVpks.length > 0 && (
-            <div className='flex flex-col gap-2'>
-              <button
+          <div className='flex shrink-0 flex-wrap items-center gap-2 pl-9 sm:pl-0 sm:justify-end'>
+            <AnalyzeAddonsButton
+              label={t("mods.vpkScanAlert.analyzeButton")}
+              size='sm'
+              variant='default'
+              showTooltip={false}
+            />
+            {unmatchedVpks.length > 0 && (
+              <Button
                 type='button'
+                size='sm'
+                variant='outline'
                 onClick={() => setIsListVisible((v) => !v)}
-                className='flex w-fit items-center gap-1 rounded-md text-muted-foreground text-xs transition-colors hover:text-foreground'>
-                {isListVisible ? (
-                  <PhosphorIcons.CaretUp className='h-3 w-3' />
-                ) : (
-                  <PhosphorIcons.CaretDown className='h-3 w-3' />
-                )}
+                aria-expanded={isListVisible}
+                aria-controls={fileListId}
+                icon={
+                  isListVisible ? (
+                    <PhosphorIcons.CaretUp className='h-4 w-4' />
+                  ) : (
+                    <PhosphorIcons.CaretDown className='h-4 w-4' />
+                  )
+                }>
                 {isListVisible
                   ? t("mods.vpkScanAlert.hideList")
                   : t("mods.vpkScanAlert.showList")}
-              </button>
-
-              {isListVisible && (
-                <ul className='flex flex-col overflow-hidden rounded-lg border border-border bg-background/60'>
-                  {unmatchedVpks.map((vpk, idx) => {
-                    const isPending = pendingFile === vpk;
-                    return (
-                      <li
-                        key={vpk}
-                        className={cn(
-                          "group flex items-center gap-2 px-3 py-2 transition-colors hover:bg-muted/50",
-                          idx !== unmatchedVpks.length - 1 &&
-                            "border-border/60 border-b",
-                          isPending && "opacity-50",
-                        )}>
-                        <PhosphorIcons.FileArchive
-                          weight='duotone'
-                          className='h-4 w-4 shrink-0 text-muted-foreground'
-                        />
-                        <span className='min-w-0 flex-1 truncate font-mono text-foreground/90 text-xs'>
-                          {vpk}
-                        </span>
-                        <div className='flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100'>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type='button'
-                                size='sm'
-                                variant='ghost'
-                                className='h-7 w-7 p-0'
-                                disabled={isPending}
-                                onClick={() => handleOpen(vpk)}
-                                aria-label={t(
-                                  "mods.vpkScanAlert.openInFolder",
-                                )}>
-                                <PhosphorIcons.FolderOpen className='h-3.5 w-3.5' />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side='top'>
-                              {t("mods.vpkScanAlert.openInFolder")}
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type='button'
-                                size='sm'
-                                variant='ghost'
-                                className='h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive'
-                                disabled={isPending}
-                                isLoading={isPending}
-                                onClick={() => handleDelete(vpk)}
-                                aria-label={t("mods.vpkScanAlert.delete")}>
-                                {!isPending && (
-                                  <PhosphorIcons.Trash className='h-3.5 w-3.5' />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side='top'>
-                              {t("mods.vpkScanAlert.delete")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className='flex flex-wrap items-center justify-between gap-2 border-border/60 border-t bg-muted/40 px-4 py-3 sm:px-5'>
-          <Button
-            onClick={handleDeleteAll}
-            size='sm'
-            variant='destructive'
-            disabled={deleteAllMutation.isPending}
-            isLoading={deleteAllMutation.isPending}
-            icon={<PhosphorIcons.Trash className='h-4 w-4' />}>
-            {t("mods.vpkScanAlert.deleteAll")}
-          </Button>
-          <div className='flex flex-wrap items-center justify-end gap-2'>
-            <Button
-              onClick={handleRefetch}
-              size='sm'
-              variant='ghost'
-              isLoading={isRefetching}
-              icon={<PhosphorIcons.ArrowClockwiseIcon className='h-4 w-4' />}>
-              {t("mods.vpkScanAlert.refresh")}
-            </Button>
-            <AnalyzeAddonsButton size='default' />
+              </Button>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type='button'
+                  onClick={handleDismiss}
+                  aria-label={t("mods.vpkScanAlert.dismiss")}
+                  size='icon'
+                  variant='ghost'
+                  className='h-8 w-8 text-muted-foreground'>
+                  <PhosphorIcons.X className='h-4 w-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side='left'>
+                {t("mods.vpkScanAlert.dismissTooltip")}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
+
+        {unmatchedVpks.length > 0 && isListVisible && (
+          <div
+            id={fileListId}
+            className='border-border/70 border-t bg-background/40 p-3 pt-2'>
+            <div className='flex flex-col gap-2'>
+              <ul className='flex max-h-56 flex-col overflow-y-auto rounded-md border border-border bg-background'>
+                {unmatchedVpks.map((vpk, idx) => {
+                  const isPending = pendingFile === vpk;
+                  return (
+                    <li
+                      key={vpk}
+                      className={cn(
+                        "group flex min-h-9 items-center gap-2 px-2.5 py-1.5 transition-colors hover:bg-muted/50",
+                        idx !== unmatchedVpks.length - 1 &&
+                          "border-border/60 border-b",
+                        isPending && "opacity-50",
+                      )}>
+                      <PhosphorIcons.FileArchive
+                        weight='duotone'
+                        className='h-4 w-4 shrink-0 text-muted-foreground'
+                      />
+                      <span
+                        className='min-w-0 flex-1 truncate font-mono text-foreground/90 text-xs'
+                        title={vpk}>
+                        {vpk}
+                      </span>
+                      <div className='flex shrink-0 items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100'>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type='button'
+                              size='icon'
+                              variant='ghost'
+                              className='h-8 w-8'
+                              disabled={isPending}
+                              onClick={() => handleOpen(vpk)}
+                              aria-label={t("mods.vpkScanAlert.openInFolder")}>
+                              <PhosphorIcons.FolderOpen className='h-4 w-4' />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side='top'>
+                            {t("mods.vpkScanAlert.openInFolder")}
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type='button'
+                              size='icon'
+                              variant='ghost'
+                              className='h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive'
+                              disabled={isPending}
+                              isLoading={isPending}
+                              onClick={() => handleDelete(vpk)}
+                              aria-label={t("mods.vpkScanAlert.delete")}>
+                              {!isPending && (
+                                <PhosphorIcons.Trash className='h-4 w-4' />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side='top'>
+                            {t("mods.vpkScanAlert.delete")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className='flex flex-wrap items-center justify-end gap-2'>
+                <Button
+                  onClick={handleRefetch}
+                  size='sm'
+                  variant='ghost'
+                  isLoading={isRefetching}
+                  icon={
+                    <PhosphorIcons.ArrowClockwiseIcon className='h-4 w-4' />
+                  }>
+                  {t("mods.vpkScanAlert.refresh")}
+                </Button>
+                <Button
+                  onClick={handleDeleteAll}
+                  size='sm'
+                  variant='destructive'
+                  disabled={deleteAllMutation.isPending}
+                  isLoading={deleteAllMutation.isPending}
+                  icon={<PhosphorIcons.Trash className='h-4 w-4' />}>
+                  {t("mods.vpkScanAlert.deleteAll")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );

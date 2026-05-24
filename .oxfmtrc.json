@@ -13,6 +13,7 @@
   "endOfLine": "lf",
   "insertFinalNewline": true,
   "ignorePatterns": [
+    ".agents/**",
     ".cursor/**",
     "**/node_modules/**",
     "**/dist/**",

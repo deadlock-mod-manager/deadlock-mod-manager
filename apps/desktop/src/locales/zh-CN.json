@@ -1,10 +1,10 @@
 {
   "favorites": {
-    "title": "",
-    "subtitle": "",
-    "add": "",
-    "remove": "",
-    "favorite": "",
+    "title": "收藏夹",
+    "subtitle": "已保存的模组",
+    "add": "添加至收藏夹",
+    "remove": "从收藏夹中删除",
+    "favorite": "收藏",
     "favorited": "",
     "back": "",
     "emptyTitle": "",
@@ -291,6 +291,10 @@
     "disableError": "禁用模组失败",
     "vpkScanAlert": {
       "title": "",
+      "titleTooltipLabel": "",
+      "titleTooltipP1": "",
+      "titleTooltipP2": "",
+      "titleTooltipP3": "",
       "titleWithCount_one": "",
       "titleWithCount_other": "",
       "description": "",

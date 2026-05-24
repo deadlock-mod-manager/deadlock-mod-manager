@@ -4,7 +4,7 @@
   rustToolchain,
   src,
   nodejs_22,
-  pnpm_9,
+  pnpm_11,
   fetchPnpmDeps,
   pnpmConfigHook,
   pkg-config,
@@ -34,13 +34,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-7qydtbnrXfHfYHQuzIoML5wtuYsZZA9EOJhq9OuU/oU=";
+  cargoHash = "sha256-zuLzr3fL28Ed5ONGRe5a4dqLAuLFNd69B3Y3dFMNS5c=";
 
   nativeBuildInputs = [
     rustToolchain
     nodejs_22
     pnpmConfigHook
-    pnpm_9
+    pnpm_11
     pkg-config
     wrapGAppsHook3
   ];
@@ -75,10 +75,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
       version
       src
       ;
-    pnpm = pnpm_9;
-    fetcherVersion = 2;
+    pnpm = pnpm_11;
+    fetcherVersion = 3;
     sourceRoot = "source";
-    hash = "sha256-flQgVhowEtUjE94He2dxCqvGwWwOzJltDWxBJFCs17s=";
+    hash = "sha256-zl+ZrI21EnMBeMInKvEkUObiZ0OA5SJLJjnHwu/Dagc=";
   };
 
   # Environment variables

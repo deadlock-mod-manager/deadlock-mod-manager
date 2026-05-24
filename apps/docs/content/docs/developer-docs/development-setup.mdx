@@ -255,13 +255,15 @@ pnpm build
 
 ### Core Commands
 
-| Command            | Description                             |
-| ------------------ | --------------------------------------- |
-| `pnpm dev`         | Start desktop app development (default) |
-| `pnpm desktop:dev` | Start desktop app development           |
-| `pnpm api:dev`     | Start API server development            |
-| `pnpm www:dev`     | Start web app development               |
-| `pnpm docs:dev`    | Start documentation development         |
+| Command                  | Description                                         |
+| ------------------------ | --------------------------------------------------- |
+| `pnpm dev`               | Start desktop app development (default)             |
+| `pnpm desktop:dev`       | Start desktop app development                       |
+| `pnpm api:dev`           | Start API server development                        |
+| `pnpm www:dev`           | Start web app development                           |
+| `pnpm docs:dev`          | Start documentation development                     |
+| `pnpm impeccable`        | Run the Impeccable CLI                              |
+| `pnpm impeccable:detect` | Scan the desktop UI source for design anti-patterns |
 
 ### Quality Assurance
 
@@ -303,6 +305,10 @@ pnpm api:dev
 # Start the desktop app (in another terminal)
 pnpm desktop:dev
 ```
+
+Impeccable is installed as a repository-local skill in `.agents/skills/impeccable`
+with project context in `.agents/context`. Run `pnpm impeccable:detect` for a fast
+static pass over the desktop UI.
 
 For **web development**:
 

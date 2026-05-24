@@ -28,6 +28,10 @@ import type {
 import FiltersDropdown from "./filters-dropdown";
 
 type SearchBarProps = {
+  className?: string;
+  inputGroupClassName?: string;
+  searchContainerClassName?: string;
+  searchInputClassName?: string;
   query: string;
   setQuery: (query: string) => void;
   sortType?: SortType;
@@ -58,6 +62,10 @@ type SearchBarProps = {
 };
 
 const SearchBar = ({
+  className,
+  inputGroupClassName,
+  searchContainerClassName,
+  searchInputClassName,
   query,
   setQuery,
   sortType,
@@ -130,16 +138,22 @@ const SearchBar = ({
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
   return (
-    <div className='flex flex-col gap-3'>
+    <div className={cn("flex flex-col gap-3", className)}>
       <div className='flex items-center justify-between gap-4'>
-        <div className='flex items-center gap-3'>
-          <SearchInput
-            className='w-80'
-            id='search'
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("mods.searchPlaceholder")}
-            value={query}
-          />
+        <div className={cn("flex items-center gap-3", inputGroupClassName)}>
+          <div
+            className={cn(
+              "min-w-0 overflow-visible",
+              searchContainerClassName,
+            )}>
+            <SearchInput
+              className={cn("w-80", searchInputClassName)}
+              id='search'
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("mods.searchPlaceholder")}
+              value={query}
+            />
+          </div>
           <FiltersDropdown
             filterMode={filterMode}
             mods={mods}

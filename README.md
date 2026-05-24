@@ -182,10 +182,10 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
 | 🇧🇬 **Bulgarian** | Български | 🚧 15% | [macchiako](https://discordapp.com/users/macchiako./) |
-| 🇩🇪 **German** | Deutsch | 🚧 41% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 32% | [stormix](https://github.com/stormix) |
+| 🇩🇪 **German** | Deutsch | 🚧 40% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 31% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | ✅ Complete | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
-| 🇸🇦 **Arabic** | العربية | 🚧 51% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
+| 🇸🇦 **Arabic** | العربية | 🚧 50% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
 | 🇵🇱 **Polish** | Polski | 🚧 28% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 24% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 36% | [altqx](https://discordapp.com/users/altq/) |
@@ -195,8 +195,8 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 31% | [meneee](https://discordapp.com/users/meneee/) |
 | 🇮🇹 **Italian** | Italiano | 🚧 33% | [Constrat](https://github.com/Constrat) |
-| 🇯🇵 **Japanese** | 日本語 | 🚧 50% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 73% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇯🇵 **Japanese** | 日本語 | 🚧 49% | [hiropiki](https://discordapp.com/users/hiropiki/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 72% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>

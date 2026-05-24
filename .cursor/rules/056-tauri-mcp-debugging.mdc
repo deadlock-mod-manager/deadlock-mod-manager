@@ -1,0 +1,91 @@
+---
+description: Desktop debugging: use tauri-mcp-server to verify UI, IPC, and Tauri commands in the running dev app
+globs: apps/desktop/**/*
+alwaysApply: false
+---
+
+# Tauri MCP Debugging
+
+When implementing or verifying **desktop app** behavior, prefer live inspection via the **tauri-mcp-server** MCP server (`.cursor/mcp.json`) instead of asking the user to check manually.
+
+## When to use
+
+- Verifying UI changes, navigation, or component behavior
+- Debugging webview console errors or IPC between frontend and Rust
+- Confirming a Tauri command works after implementation
+- Reproducing a user-reported desktop issue
+
+Do not use tauri-mcp-server for non-desktop apps (`apps/www`, `apps/api`, etc.).
+
+## Prerequisites
+
+1. Desktop app running in **debug** mode (`pnpm --filter desktop dev`). The MCP bridge plugin is enabled only in debug builds.
+2. MCP bridge plugin registered in `apps/desktop/src-tauri/src/lib.rs` (binds to `127.0.0.1:9223`).
+3. `mcp-bridge:default` permission in `apps/desktop/src-tauri/capabilities/default.json`.
+
+**Never start the dev server yourself.** If the app is not running, ask the user to run `pnpm --filter desktop dev` and wait for them to confirm before connecting.
+
+If connection fails, call `get_setup_instructions` on the MCP server before changing project files.
+
+## Workflow
+
+1. **Connect** — `driver_session` with `action: "start"` (default port `9223`). Use `action: "status"` to check connection.
+2. **Inspect** — screenshot, DOM snapshot, logs, or backend state.
+3. **Interact** — click, type, scroll, or execute JS to reproduce or verify behavior.
+4. **Monitor** — start `ipc_monitor`, perform actions, then read `ipc_get_captured`.
+5. **Disconnect** — `driver_session` with `action: "stop"` when done (optional).
+
+Always read MCP tool schemas from the server descriptor folder before calling tools.
+
+## Tool selection
+
+| Goal | Tool |
+|------|------|
+| Confirm UI looks correct | `webview_screenshot` |
+| Find buttons, links, roles, refs | `webview_dom_snapshot` (`type: "accessibility"`) |
+| Understand DOM structure / selectors | `webview_dom_snapshot` (`type: "structure"`) |
+| Click or navigate | `webview_interact` (use `ref=eN` from snapshot, or CSS/text strategy) |
+| Read webview console output | `read_logs` (`source: "console"`) |
+| App metadata, Tauri version, windows | `ipc_get_backend_state` |
+| Run JS in webview | `webview_execute_js` |
+| Invoke a Rust command from webview | `webview_execute_js` with `window.__TAURI__.core.invoke('command_name', args)` |
+| Watch frontend ↔ Rust IPC | `ipc_monitor` + `ipc_get_captured` |
+| Wait for element or IPC event | `webview_wait_for` |
+
+Prefer MCP verification over asking the user to manually check the app when the dev server is likely running.
+
+## Invoking Rust commands
+
+`ipc_execute_command` may return "Unsupported Tauri command" for some app commands. Use this fallback:
+
+```javascript
+(() => {
+  const { invoke } = window.__TAURI__.core;
+  return invoke('is_game_running');
+})()
+```
+
+Pass as the `script` argument to `webview_execute_js`. Wrap in an IIFE when returning values.
+
+## Typical verification flow
+
+After changing desktop UI or a Tauri command:
+
+1. Connect with `driver_session`.
+2. Navigate to the affected view (`webview_interact` or let the app load naturally).
+3. Capture `webview_screenshot` and/or `webview_dom_snapshot`.
+4. If behavior depends on Rust: invoke via `webview_execute_js` or monitor IPC.
+5. Check `read_logs` for errors if something fails.
+
+## Limits
+
+- **Debug builds only** — no MCP bridge in release builds.
+- **One running instance** — if port 1420 is in use, the app is already running; connect to it. Do not start another dev session.
+- **Native screenshots** — viewport only; not full scrollable page unless you scroll first.
+
+## Project paths
+
+- MCP config: `.cursor/mcp.json`
+- Bridge plugin: `apps/desktop/src-tauri/src/lib.rs`
+- Capabilities: `apps/desktop/src-tauri/capabilities/default.json`
+- Registered commands: `apps/desktop/src-tauri/src/lib.rs` (`generate_handler!`)

@@ -14,17 +14,18 @@ name = "desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.6", features = [] }
+tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
-tauri = { version = "2.10.3", features = ["devtools"] }
-tauri-plugin-opener = "2"
-tauri-plugin-http = "=2.5.7"
+tauri = { version = "2.11.1", features = ["devtools"] }
+tauri-plugin-mcp-bridge = "0.11.1"
+tauri-plugin-opener = "2.5.4"
+tauri-plugin-http = "2.5.9"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri-plugin-os = "2.3"
-tauri-plugin-store = "2.4"
-tauri-plugin-fs = "2.4"
+tauri-plugin-os = "2.3.2"
+tauri-plugin-store = "2.4.3"
+tauri-plugin-fs = "2.5.1"
 keyvalues-serde = "0.2"
 regex = "1.12.3"
 zip = "6.0.0"
@@ -34,11 +35,11 @@ thiserror = "2.0.18"
 sysinfo = { version = "0.37.2", features = ["windows"] }
 tauri-plugin-log = "2.8"
 log = "0.4"
-tauri-plugin-process = "2.3"
+tauri-plugin-process = "2.3.1"
 sevenz-rust = "0.6.1"
 tauri-plugin-sentry = "0.5.0"
 steamlocate = "2.0.1"
-tauri-plugin-deep-link = "2"
+tauri-plugin-deep-link = "2.4.9"
 sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
@@ -51,14 +52,13 @@ tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
 reqwest = { version = "0.12", features = ["json", "stream", "socks"] }
 futures = "0.3"
-tauri-plugin-dialog = "2.7.0"
+tauri-plugin-dialog = "2.7.1"
 memchr = "2.8.0"
 notify = "8.2.0"
 clap = { version = "4.6", features = ["derive"] }
 urlencoding = "2.1"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri-plugin-ota-updater = "2.0.7"
-tauri-plugin-clipboard-manager = "2"
+tauri-plugin-clipboard-manager = "2.3.2"
 dirs = "6"
 ttf-parser = "0.24"
 
@@ -75,10 +75,10 @@ strip = true # Automatically strip symbols from the binary.
 debug = false
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-single-instance = { version = "2.4.0", features = ["deep-link"] }
+tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-updater = "2"
+tauri-plugin-updater = "2.10.1"
