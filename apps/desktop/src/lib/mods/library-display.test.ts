@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { filterStableLibraryModsByStatus } from "./library-display";
+import { filterLibraryModsByStatus, ModFilter } from "./library-display";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 type LocalModOverrides = Partial<
@@ -46,7 +46,7 @@ const mod = (
 
 const ids = (mods: LocalMod[]) => mods.map((item) => item.remoteId);
 
-describe("filterStableLibraryModsByStatus", () => {
+describe("filterLibraryModsByStatus", () => {
   it("preserves library order in the all view", () => {
     const mods = [
       mod("disabled-newer", ModStatus.Downloaded, {
@@ -62,7 +62,7 @@ describe("filterStableLibraryModsByStatus", () => {
       }),
     ];
 
-    expect(ids(filterStableLibraryModsByStatus(mods, "all"))).toEqual([
+    expect(ids(filterLibraryModsByStatus(mods, ModFilter.All))).toEqual([
       "disabled-newer",
       "enabled-late-load-order",
       "enabled-early-load-order",
@@ -82,7 +82,7 @@ describe("filterStableLibraryModsByStatus", () => {
       }),
     ];
 
-    expect(ids(filterStableLibraryModsByStatus(mods, "enabled"))).toEqual([
+    expect(ids(filterLibraryModsByStatus(mods, ModFilter.Enabled))).toEqual([
       "enabled-load-order-10",
       "enabled-load-order-1",
     ]);
@@ -98,7 +98,7 @@ describe("filterStableLibraryModsByStatus", () => {
       mod("failed-install", ModStatus.FailedToInstall),
     ];
 
-    expect(ids(filterStableLibraryModsByStatus(mods, "disabled"))).toEqual([
+    expect(ids(filterLibraryModsByStatus(mods, ModFilter.Disabled))).toEqual([
       "downloaded",
       "failed-install",
     ]);
@@ -114,10 +114,9 @@ describe("filterStableLibraryModsByStatus", () => {
       mod("repair-earlier", ModStatus.NeedsRepair),
     ];
 
-    expect(ids(filterStableLibraryModsByStatus(mods, "needsRepair"))).toEqual([
-      "repair-later",
-      "repair-earlier",
-    ]);
+    expect(ids(filterLibraryModsByStatus(mods, ModFilter.NeedsRepair))).toEqual(
+      ["repair-later", "repair-earlier"],
+    );
   });
 
   it("preserves caller-provided search result order instead of regrouping by status", () => {
@@ -129,9 +128,8 @@ describe("filterStableLibraryModsByStatus", () => {
       }),
     ];
 
-    expect(ids(filterStableLibraryModsByStatus(searchResults, "all"))).toEqual([
-      "search-hit-disabled",
-      "search-hit-enabled",
-    ]);
+    expect(
+      ids(filterLibraryModsByStatus(searchResults, ModFilter.All)),
+    ).toEqual(["search-hit-disabled", "search-hit-enabled"]);
   });
 });
