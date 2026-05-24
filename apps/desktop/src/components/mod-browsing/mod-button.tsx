@@ -33,6 +33,7 @@ import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
+import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -235,17 +236,17 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
-          const detectedHero = localMod.detectedHero;
-          if (detectedHero) {
+          const resolvedHero = resolveLocalModHero(localMod).hero;
+          if (resolvedHero) {
             const conflictingMod = localMods.find(
               (m) =>
                 m.remoteId !== localMod.remoteId &&
                 m.status === ModStatus.Installed &&
-                m.detectedHero === detectedHero,
+                resolveLocalModHero(m).hero === resolvedHero,
             );
             if (conflictingMod) {
               const resolution = await askHeroConflict(
-                detectedHero,
+                resolvedHero,
                 conflictingMod,
                 localMod,
               );
