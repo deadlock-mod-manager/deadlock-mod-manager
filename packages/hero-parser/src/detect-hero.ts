@@ -25,6 +25,12 @@ function findCriticalPaths(paths: string[]): string[] {
   return found;
 }
 
+export function resolveDetectedHeroLabel(
+  result: HeroDetectionResult,
+): string | null {
+  return result.heroDisplay ?? result.hero ?? null;
+}
+
 export function detectHero(entryPaths: string[]): HeroDetectionResult {
   const heroCounts = new Map<string, number>();
   const internalNames: string[] = [];

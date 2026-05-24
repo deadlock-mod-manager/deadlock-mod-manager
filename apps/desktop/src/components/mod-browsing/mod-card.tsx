@@ -2,6 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Card, CardHeader, CardTitle } from "@deadlock-mods/ui/components/card";
 import { CalendarIcon, DownloadIcon, HeartIcon } from "@deadlock-mods/ui/icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { usePersistedStore } from "@/lib/store";
 import {
   cn,
@@ -42,11 +44,17 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
 
   const status = localMod?.status;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   if (!mod) {
     return <ModCardSkeleton />;
   }
+
+  const openModDetail = () => {
+    void prefetchModDetail(queryClient, mod.remoteId);
+    navigate(`/mods/${mod.remoteId}`);
+  };
 
   const cardContent = (
     <Card
@@ -59,7 +67,7 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
           ? undefined
           : (e) => {
               e.stopPropagation();
-              navigate(`/mods/${mod.remoteId}`);
+              openModDetail();
             }
       }>
       <div className='relative'>

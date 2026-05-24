@@ -1,4 +1,7 @@
-import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
+import {
+  type HeroDetectionResult,
+  resolveDetectedHeroLabel,
+} from "@deadlock-mods/hero-parser";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
@@ -144,7 +147,7 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
       for (const resp of responses) {
         setDetectedHero(
           resp.modId,
-          resp.result.hero ?? null,
+          resolveDetectedHeroLabel(resp.result),
           resp.result.usesCriticalPaths,
         );
       }
@@ -166,7 +169,7 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
           });
           setDetectedHero(
             mod.remoteId,
-            result.hero ?? null,
+            resolveDetectedHeroLabel(result),
             result.usesCriticalPaths,
           );
         } catch {

@@ -12,6 +12,10 @@ import {
   type Progress,
 } from "@/types/mods";
 import type { State } from "..";
+import {
+  applyToModsAndActiveProfile,
+  applyToModsAndAllProfiles,
+} from "../utils/mod-slice";
 
 export type ModProgress = {
   percentage: number;
@@ -72,6 +76,10 @@ export type ModsState = {
     remoteId: string,
     hero: string | null,
     usesCriticalPaths?: boolean,
+  ) => void;
+  setHeroOverride: (
+    remoteId: string,
+    heroOverride: string | null | undefined,
   ) => void;
   clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
@@ -413,20 +421,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           }
           return mod;
         });
-      const activeProfile = state.profiles[state.activeProfileId];
 
-      return {
-        localMods: updateMods(state.localMods),
-        profiles: activeProfile
-          ? {
-              ...state.profiles,
-              [state.activeProfileId]: {
-                ...activeProfile,
-                mods: updateMods(activeProfile.mods),
-              },
-            }
-          : state.profiles,
-      };
+      return applyToModsAndActiveProfile(state, updateMods);
     }),
 
   getOrderedMods: () => {
@@ -439,10 +435,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         mod.installedVpks.length > 0,
     );
 
-    const modsWithOrder = installedMods.map((mod, index) => ({
-      ...mod,
-      installOrder: mod.installOrder ?? index,
-    }));
+    const modsWithOrder = installedMods.map((mod, index) =>
+      Object.assign({}, mod, { installOrder: mod.installOrder ?? index }),
+    );
 
     return modsWithOrder.sort((a, b) => {
       if (a.installOrder !== b.installOrder) {
@@ -528,25 +523,52 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     hero: string | null,
     usesCriticalPaths?: boolean,
   ) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) =>
-        mod.remoteId === remoteId
-          ? {
-              ...mod,
-              detectedHero: hero,
-              usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
-            }
-          : mod,
-      ),
-    })),
+    set((state) => {
+      const updateMods = (mods: LocalMod[]) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? {
+                ...mod,
+                detectedHero: hero,
+                usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+              }
+            : mod,
+        );
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
+
+  setHeroOverride: (remoteId, heroOverride) =>
+    set((state) => {
+      const updateMods = (mods: LocalMod[]) =>
+        mods.map((mod) => {
+          if (mod.remoteId !== remoteId) return mod;
+
+          if (heroOverride === undefined) {
+            const { heroOverride: _heroOverride, ...nextMod } = mod;
+            return nextMod;
+          }
+
+          return {
+            ...mod,
+            heroOverride,
+          };
+        });
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
 
   clearAllDetectedHeroes: () =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        detectedHero: undefined,
-      })),
-    })),
+    set((state) => {
+      // oxlint-disable-next-line unicorn/consistent-function-scoping
+      const updateMods = (mods: LocalMod[]) =>
+        mods.map((mod) => ({
+          ...mod,
+          detectedHero: undefined,
+        }));
+
+      return applyToModsAndAllProfiles(state, updateMods);
+    }),
 
   setHeroDetection: (progress) =>
     set((state) => ({

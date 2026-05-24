@@ -1,4 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { DownloadIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -6,6 +7,7 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
+import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 
 type Props = {
   mod: ModDto;
@@ -14,10 +16,14 @@ type Props = {
 export const TrendingModCard = ({ mod }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const heroImage = mod.images[0];
-  const handleClick = () => navigate(`/mods/${mod.remoteId}`);
+  const handleClick = () => {
+    void prefetchModDetail(queryClient, mod.remoteId);
+    navigate(`/mods/${mod.remoteId}`);
+  };
 
   return (
     <div

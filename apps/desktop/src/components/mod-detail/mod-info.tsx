@@ -29,8 +29,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { useHero } from "@/hooks/use-hero";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import {
+  type ResolvedModHero,
+  resolveModHero,
+} from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
+import { HeroOverridePicker } from "./hero-override-picker";
+import { HeroSourceBadge } from "./hero-source-badge";
 
 interface ModInfoProps {
   mod: ModDto;
@@ -40,22 +46,25 @@ interface ModInfoProps {
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
+const EMPTY_ARCHIVE_NAMES = new Set<string>();
 
 export const ModInfo = ({
   mod,
   hasHero = false,
-  activeArchiveNames = new Set<string>(),
+  activeArchiveNames = EMPTY_ARCHIVE_NAMES,
   totalDownloads = 0,
 }: ModInfoProps) => {
   const { t } = useTranslation();
   const showHeader = hasHero ? false : !mod.isAudio;
-  const localMods = usePersistedStore((state) => state.localMods);
-  const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
+  const localMod = usePersistedStore((state) =>
+    state.localMods.find((m) => m.remoteId === mod.remoteId),
+  );
 
-  const heroLabel = localMod?.detectedHero ?? null;
+  const resolvedHero = resolveModHero(mod, localMod);
+  const showHeroStat = resolvedHero.hero !== null || localMod !== undefined;
   const hasTags = mod.tags && mod.tags.length > 0;
   const hasFileInfo = activeArchiveNames.size > 0 && totalDownloads > 1;
-  const statCount = (heroLabel ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
+  const statCount = (showHeroStat ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
   const gridCols =
     statCount <= 3
       ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -77,7 +86,13 @@ export const ModInfo = ({
       <CardContent className={hasHero || mod.isAudio ? "" : "pt-6"}>
         <div className='space-y-5'>
           <div className={gridCols}>
-            {heroLabel && <HeroDisplay name={heroLabel} />}
+            {showHeroStat && (
+              <HeroDisplay
+                mod={mod}
+                resolvedHero={resolvedHero}
+                canOverride={localMod !== undefined}
+              />
+            )}
             <PrimaryStat
               icon={<User className='h-4 w-4' />}
               label={t("modDetail.authorLabel")}
@@ -173,12 +188,17 @@ export const ModInfo = ({
 };
 
 interface HeroDisplayProps {
-  name: string;
+  mod: ModDto;
+  resolvedHero: ResolvedModHero;
+  canOverride: boolean;
 }
 
-const HeroDisplay = ({ name }: HeroDisplayProps) => {
+const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
   const { t } = useTranslation();
-  const { data: hero } = useHero(name);
+  const name =
+    resolvedHero.hero ??
+    t("modDetail.generalOther", { defaultValue: "General/Other" });
+  const { data: hero } = useHero(resolvedHero.hero ?? "");
   const imageSrc =
     hero?.images.icon_hero_card_webp ??
     hero?.images.icon_hero_card ??
@@ -193,13 +213,20 @@ const HeroDisplay = ({ name }: HeroDisplayProps) => {
         <AvatarFallback className='text-xs'>{initial}</AvatarFallback>
       </Avatar>
       <div className='flex min-w-0 flex-col'>
-        <span className='text-muted-foreground text-xs uppercase tracking-wide'>
+        <span className='flex items-center gap-1.5 text-muted-foreground text-xs uppercase tracking-wide'>
           {t("modDetail.detectedHero")}
+          <HeroSourceBadge source={resolvedHero.source} />
         </span>
         <span className='truncate font-medium text-foreground text-sm'>
           {name}
         </span>
       </div>
+      {canOverride && (
+        <HeroOverridePicker
+          remoteId={mod.remoteId}
+          resolvedHero={resolvedHero}
+        />
+      )}
     </div>
   );
 };
