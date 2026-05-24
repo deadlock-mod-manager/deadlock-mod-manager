@@ -20,7 +20,7 @@ permissions:
 jobs:
   update-hashes:
     name: Update Nix Hashes
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     outputs:
       hashes_updated: ${{ steps.update.outputs.updated }}
@@ -142,7 +142,7 @@ jobs:
 
   check-flake:
     name: Check Flake
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: [update-hashes]
     if: always() && !failure() && !cancelled()
     steps:
@@ -169,7 +169,7 @@ jobs:
 
   build-nightly:
     name: Build Nightly Package
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: check-flake
     if: always() && needs.check-flake.result == 'success'
     steps:
@@ -223,7 +223,7 @@ jobs:
 
   build-dev-shell:
     name: Test Development Shell
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     needs: check-flake
     if: always() && needs.check-flake.result == 'success'
     steps:

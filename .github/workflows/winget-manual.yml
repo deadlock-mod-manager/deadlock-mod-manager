@@ -10,7 +10,7 @@ on:
 
 jobs:
   winget-publish:
-    runs-on: windows-latest
+    runs-on: depot-windows-2025
     permissions:
       contents: read
 
