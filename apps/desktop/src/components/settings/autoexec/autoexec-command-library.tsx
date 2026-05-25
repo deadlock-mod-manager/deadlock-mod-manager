@@ -1,4 +1,6 @@
+import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
+import { AlertTriangle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useAutoexecLibraryFilter } from "@/hooks/use-autoexec-library-filter";
 import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
@@ -27,6 +29,13 @@ export const AutoexecCommandLibrary = ({
 
   return (
     <div className='flex flex-col gap-4'>
+      <Alert variant='warning'>
+        <AlertTriangle className='h-4 w-4' />
+        <AlertDescription>
+          {t("settings.autoexecCommandWarning")}
+        </AlertDescription>
+      </Alert>
+
       <div className='flex flex-col gap-1'>
         <h4 className='font-semibold text-foreground text-sm'>
           {t("settings.autoexecLibraryHeading")}

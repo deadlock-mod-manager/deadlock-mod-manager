@@ -656,7 +656,8 @@
     "autoexecInfoBody2": "The mod manager uses this file to set the crosshair settings automatically without needing to run commands in the console. You can still edit the file manually if you want to add more commands.",
     "autoexecInfoBody3": "P.S: the autoexec config can never be empty if added as launch option or else it'll crash the game.",
     "autoexecLibraryHeading": "Command Library",
-    "autoexecLibraryDescription": "Browse verified client-safe commands and add them to your config with one click.",
+    "autoexecLibraryDescription": "Browse common client-side commands and add them to your config with one click.",
+    "autoexecCommandWarning": "Commands in this library are not verified for every Deadlock update. They may stop working or, in rare cases, cause unexpected game behavior. Test added commands carefully and remove anything that causes problems.",
     "autoexecLibrarySearchPlaceholder": "Search commands...",
     "autoexecLibraryEmpty": "No commands match your search.",
     "autoexecCommandAdd": "Add",
@@ -675,7 +676,7 @@
       "network": "Network",
       "hudUi": "HUD & UI",
       "minimap": "Minimap",
-      "matchmakingRegion": "Matchmaking & Region",
+      "matchmakingRegion": "Matchmaking",
       "privateLobbyDefaults": "Private Lobby Defaults",
       "mouseSensitivity": "Mouse & Sensitivity",
       "abilityQuickcast": "Ability Quickcast",
@@ -784,18 +785,6 @@
       },
       "mmPreferSoloOnly": {
         "description": "Prefer matches with solo players."
-      },
-      "citadelRegionOverrideAuto": {
-        "description": "Automatic region selection."
-      },
-      "citadelRegionOverrideNa": {
-        "description": "Force North America servers."
-      },
-      "citadelRegionOverrideEu": {
-        "description": "Force Europe servers."
-      },
-      "citadelRegionOverrideAsia": {
-        "description": "Force Asia servers."
       },
       "citadelPrivateLobbyBotDifficulty": {
         "description": "Private lobby bot difficulty."

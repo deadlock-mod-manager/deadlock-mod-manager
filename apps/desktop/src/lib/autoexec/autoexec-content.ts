@@ -3,6 +3,8 @@ import i18n from "@/lib/i18n";
 const WHITESPACE_REGEX = /\s+/;
 
 const I18N_KEY_COMMENT_PREFIX = "// settings.autoexecCommands.";
+const I18N_DESCRIPTION_SUFFIX = ".description";
+const CONDEBUG_COMMAND = "condebug";
 
 const parseCommandLine = (line: string): string | null => {
   const trimmed = line.trim();
@@ -24,38 +26,65 @@ export const getAutoexecCommandFileComment = (commandId: string): string => {
   });
 };
 
-export const repairI18nKeyCommentsInContent = (content: string): string => {
-  let repairedContent = content;
+const parseGeneratedCommentCommandId = (line: string): string | null => {
+  const trimmedLine = line.trim();
 
-  for (const line of content.split("\n")) {
-    const trimmedLine = line.trim();
-    if (
-      !trimmedLine.startsWith(I18N_KEY_COMMENT_PREFIX) ||
-      !trimmedLine.endsWith(".description")
-    ) {
-      continue;
-    }
-
-    const commandId = trimmedLine
-      .slice(I18N_KEY_COMMENT_PREFIX.length)
-      .replace(/\.description$/, "");
-
-    if (commandId.length === 0) {
-      continue;
-    }
-
-    const englishComment = getAutoexecCommandFileComment(commandId);
-    if (englishComment.startsWith("settings.autoexecCommands.")) {
-      continue;
-    }
-
-    repairedContent = repairedContent.replace(
-      trimmedLine,
-      `// ${englishComment}`,
-    );
+  if (
+    !trimmedLine.startsWith(I18N_KEY_COMMENT_PREFIX) ||
+    !trimmedLine.endsWith(I18N_DESCRIPTION_SUFFIX)
+  ) {
+    return null;
   }
 
-  return repairedContent;
+  const commandId = trimmedLine
+    .slice(I18N_KEY_COMMENT_PREFIX.length)
+    .slice(0, -I18N_DESCRIPTION_SUFFIX.length);
+
+  return commandId.length > 0 ? commandId : null;
+};
+
+const isGeneratedCommandComment = (
+  line: string,
+  commandId: string,
+): boolean => {
+  const trimmedLine = line.trim();
+
+  return (
+    trimmedLine ===
+      `${I18N_KEY_COMMENT_PREFIX}${commandId}${I18N_DESCRIPTION_SUFFIX}` ||
+    trimmedLine === `// ${getAutoexecCommandFileComment(commandId)}`
+  );
+};
+
+export const repairI18nKeyCommentsInContent = (content: string): string => {
+  return content
+    .split("\n")
+    .map((line) => {
+      const commandId = parseGeneratedCommentCommandId(line);
+
+      if (!commandId) {
+        return line;
+      }
+
+      const englishComment = getAutoexecCommandFileComment(commandId);
+      if (englishComment.startsWith("settings.autoexecCommands.")) {
+        return line;
+      }
+
+      const indentation = line.slice(0, line.length - line.trimStart().length);
+      return `${indentation}// ${englishComment}`;
+    })
+    .join("\n");
+};
+
+const removePreviousGeneratedComment = (
+  lines: string[],
+  commandId: string,
+): void => {
+  const previousLine = lines.at(-1);
+  if (previousLine && isGeneratedCommandComment(previousLine, commandId)) {
+    lines.pop();
+  }
 };
 
 export const removeCondebugFromContent = (content: string): string => {
@@ -64,11 +93,8 @@ export const removeCondebugFromContent = (content: string): string => {
 
   for (const line of lines) {
     const commandKey = parseCommandLine(line);
-    if (commandKey === "condebug") {
-      const previousLine = result.at(-1)?.trim() ?? "";
-      if (previousLine.startsWith("//")) {
-        result.pop();
-      }
+    if (commandKey === CONDEBUG_COMMAND) {
+      removePreviousGeneratedComment(result, CONDEBUG_COMMAND);
       continue;
     }
 
@@ -96,6 +122,10 @@ export const commandExistsInContent = (
   commandKey: string,
 ): boolean => {
   return parseAutoexecCommandKeys(content).has(commandKey);
+};
+
+export const hasAutoexecLaunchableContent = (content: string): boolean => {
+  return content.trim().length > 0;
 };
 
 export const appendPredefinedCommand = (

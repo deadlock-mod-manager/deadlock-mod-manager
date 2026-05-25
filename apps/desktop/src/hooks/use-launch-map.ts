@@ -7,7 +7,7 @@ import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 
 export const useLaunchMap = (onSuccess?: () => void) => {
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
 
   const launchMapMutation = useMutation({

@@ -208,26 +208,6 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
     icon: Globe,
     commands: [
       { id: "mmPreferSoloOnly", command: "mm_prefer_solo_only", value: "1" },
-      {
-        id: "citadelRegionOverrideAuto",
-        command: "citadel_region_override",
-        value: "-1",
-      },
-      {
-        id: "citadelRegionOverrideNa",
-        command: "citadel_region_override",
-        value: "0",
-      },
-      {
-        id: "citadelRegionOverrideEu",
-        command: "citadel_region_override",
-        value: "1",
-      },
-      {
-        id: "citadelRegionOverrideAsia",
-        command: "citadel_region_override",
-        value: "2",
-      },
     ],
   },
   {

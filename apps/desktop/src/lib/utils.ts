@@ -10,7 +10,7 @@ import { platform } from "@tauri-apps/plugin-os";
 
 import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
-import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/launch-option";
+import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import {
   STALE_MOD_DAYS,
   STALE_MOD_REPORT_THRESHOLD,
@@ -73,7 +73,7 @@ export const getAdditionalArgs = async (
         additionalArgs.push("-exec autoexec");
       }
     } catch {
-      // Autoexec config doesn't exist or failed to load, skip
+      return additionalArgs.join(" ");
     }
   }
 
@@ -124,8 +124,8 @@ export const getTimePeriodCutoff = (period: TimePeriod): Date | null => {
   }
 };
 
-export const isModOutdated = (mod: ModDto) => {
-  const cutoffDate = new Date("2026-01-22"); // OldGods update
+export const isModOutdated = (mod: ModDto): boolean => {
+  const cutoffDate = new Date("2026-01-22");
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
   return modUpdatedDate < cutoffDate;
 };

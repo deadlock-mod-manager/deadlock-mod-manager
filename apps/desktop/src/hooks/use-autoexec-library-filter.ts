@@ -66,14 +66,11 @@ export const useAutoexecLibraryFilter = (t: TFunction) => {
 
     return AUTOEXEC_CATEGORIES.map((category) => ({
       category,
-      commands: category.commands
-        .map((command) => ({
-          ...command,
-          categoryId: category.id,
-        }))
-        .filter((command) => matchesQuery(command, normalizedQuery, t)),
+      commands: filteredCommands.filter(
+        (command) => command.categoryId === category.id,
+      ),
     })).filter((group) => group.commands.length > 0);
-  }, [normalizedQuery, selectedCategory, t]);
+  }, [filteredCommands, selectedCategory]);
 
   const hasResults =
     selectedCategory === "all"

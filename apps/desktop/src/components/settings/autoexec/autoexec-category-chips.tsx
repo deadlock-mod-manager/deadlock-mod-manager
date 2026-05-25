@@ -43,7 +43,7 @@ export const AutoexecCategoryChips = ({
   };
 
   return (
-    <div className='-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+    <div className='-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-2'>
       {renderChip("all", t("settings.autoexecCategories.all"), LayoutGrid)}
       {AUTOEXEC_CATEGORIES.map((category) =>
         renderChip(

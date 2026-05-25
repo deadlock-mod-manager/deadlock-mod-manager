@@ -28,6 +28,7 @@ import {
   appendPredefinedCommand,
   commandExistsInContent,
   getAutoexecCommandFileComment,
+  hasAutoexecLaunchableContent,
   normalizeAutoexecContent,
 } from "@/lib/autoexec/autoexec-content";
 import {
@@ -87,15 +88,15 @@ export const AutoexecSettings = () => {
       fullContent: string;
       readonlySections: ReadonlySection[];
     }) => {
-      return invoke("update_autoexec_config", params);
+      return invoke<AutoexecConfig>("update_autoexec_config", params);
     },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (savedConfig) => {
       const wasSilentSave = isSilentSaveRef.current;
 
       if (!wasSilentSave) {
         toast.success(t("settings.autoexecSaved"));
 
-        if (variables.fullContent.trim().length > 0) {
+        if (hasAutoexecLaunchableContent(savedConfig.full_content)) {
           enableAutoexecLaunchOptionIfDisabled();
         } else {
           disableAutoexecLaunchOptionIfEnabled();
@@ -148,18 +149,16 @@ export const AutoexecSettings = () => {
   });
 
   const clearMutation = useMutation({
-    mutationFn: async () => {
-      if (!config) {
-        return;
-      }
-
-      return invoke("update_autoexec_config", {
+    mutationFn: async (currentConfig: AutoexecConfig) => {
+      return invoke<AutoexecConfig>("update_autoexec_config", {
         fullContent: "",
-        readonlySections: config.readonly_sections,
+        readonlySections: currentConfig.readonly_sections,
       });
     },
-    onSuccess: async () => {
-      disableAutoexecLaunchOptionIfEnabled();
+    onSuccess: async (savedConfig) => {
+      if (!hasAutoexecLaunchableContent(savedConfig.full_content)) {
+        disableAutoexecLaunchOptionIfEnabled();
+      }
       toast.success(t("settings.autoexecCleared"));
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
@@ -205,7 +204,7 @@ export const AutoexecSettings = () => {
       return;
     }
 
-    clearMutation.mutate();
+    clearMutation.mutate(config);
   };
 
   const watchedContent = form.watch("content");
