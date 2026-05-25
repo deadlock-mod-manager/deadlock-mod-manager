@@ -30,7 +30,10 @@ import {
   getAutoexecCommandFileComment,
   normalizeAutoexecContent,
 } from "@/lib/autoexec/autoexec-content";
-import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
+import {
+  disableAutoexecLaunchOptionIfEnabled,
+  enableAutoexecLaunchOptionIfDisabled,
+} from "@/lib/autoexec/launch-option";
 import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
@@ -94,6 +97,8 @@ export const AutoexecSettings = () => {
 
         if (variables.fullContent.trim().length > 0) {
           enableAutoexecLaunchOptionIfDisabled();
+        } else {
+          disableAutoexecLaunchOptionIfEnabled();
         }
       }
 
@@ -154,6 +159,7 @@ export const AutoexecSettings = () => {
       });
     },
     onSuccess: async () => {
+      disableAutoexecLaunchOptionIfEnabled();
       toast.success(t("settings.autoexecCleared"));
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },

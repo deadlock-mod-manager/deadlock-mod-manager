@@ -25,3 +25,14 @@ export const enableAutoexecLaunchOptionIfDisabled = (): void => {
     true,
   );
 };
+
+export const disableAutoexecLaunchOptionIfEnabled = (): void => {
+  const { settings, toggleSetting } = usePersistedStore.getState();
+  const autoexecSetting = settings[AUTOEXEC_LAUNCH_OPTION_ID];
+
+  if (!autoexecSetting?.enabled) {
+    return;
+  }
+
+  toggleSetting(AUTOEXEC_LAUNCH_OPTION_ID, autoexecSetting, false);
+};

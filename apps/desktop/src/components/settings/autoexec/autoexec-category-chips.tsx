@@ -26,6 +26,7 @@ export const AutoexecCategoryChips = ({
 
     return (
       <Button
+        aria-pressed={isSelected}
         className={cn(
           "shrink-0 gap-1.5",
           isSelected && "border-primary/60 bg-primary/5 text-primary",
