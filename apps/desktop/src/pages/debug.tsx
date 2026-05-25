@@ -101,7 +101,12 @@ const DeepLinkDebug = () => {
 
 const Debug = () => {
   const { t } = useTranslation();
-  const { clearMods, setHasCompletedOnboarding } = usePersistedStore();
+  const {
+    clearMods,
+    setHasCompletedOnboarding,
+    updateTelemetrySettings,
+    telemetrySettings,
+  } = usePersistedStore();
   const { showOnboarding } = useOnboarding();
   const confirm = useConfirm();
 
@@ -130,6 +135,17 @@ const Debug = () => {
             variant='outline'
             disabled={showOnboarding}>
             {t("debug.triggerOnboarding")}
+          </Button>
+          <Button
+            onClick={() =>
+              updateTelemetrySettings({
+                hasSeenTelemetryPrompt: false,
+                analyticsEnabled: false,
+              })
+            }
+            variant='outline'
+            disabled={!telemetrySettings.hasSeenTelemetryPrompt}>
+            {t("debug.resetTelemetryConsent")}
           </Button>
         </div>
       </div>

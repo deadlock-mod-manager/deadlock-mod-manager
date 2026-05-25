@@ -13,12 +13,14 @@ import type { State } from "..";
 
 export type TelemetrySettings = {
   analyticsEnabled: boolean;
+  hasSeenTelemetryPrompt: boolean;
 };
 
 export type GamePresenceHeroOverrides = Record<string, PresenceTextTemplates>;
 
 const DEFAULT_TELEMETRY_SETTINGS: TelemetrySettings = {
   analyticsEnabled: false,
+  hasSeenTelemetryPrompt: false,
 };
 
 const createEmptyPresenceTextTemplatePair = (): PresenceTextTemplatePair => ({

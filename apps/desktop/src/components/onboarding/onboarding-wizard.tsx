@@ -23,6 +23,7 @@ import { OnboardingStepApi } from "./step-api";
 import { OnboardingStepDisclaimer } from "./step-disclaimer";
 import { OnboardingStepGamePath } from "./step-game-path";
 import { OnboardingStepNetwork } from "./step-network";
+import { OnboardingStepTelemetry } from "./step-telemetry";
 
 type StepComponentProps = {
   onComplete: () => void;
@@ -63,6 +64,12 @@ const STEP_CONFIGS: StepConfig[] = [
   {
     step: 5,
     component: OnboardingStepAddons as React.ComponentType<StepComponentProps>,
+    requiresCompletion: false,
+  },
+  {
+    step: 6,
+    component:
+      OnboardingStepTelemetry as React.ComponentType<StepComponentProps>,
     requiresCompletion: false,
   },
 ];

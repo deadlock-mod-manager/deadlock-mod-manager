@@ -14,6 +14,7 @@ import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
 import { TauriAppWindowProvider } from "./components/layout/window-controls/window-context";
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
+import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
@@ -151,6 +152,7 @@ const App = () => {
                       update={update}
                     />
                     <OnboardingWizard />
+                    <TelemetryConsentDialog />
                     <FontInstallDialog
                       fonts={activePendingFontInstall?.fonts ?? []}
                       isOpen={activePendingFontInstall !== null}

@@ -149,7 +149,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(22);
+    expect(LATEST_VERSION).toBe(23);
   });
 
   describe("specific step idempotency", () => {
@@ -218,6 +218,29 @@ describe("safeMigrate", () => {
       const filters = result.modsFilters as Record<string, unknown>;
       expect(filters.audioQuickFilter).toBe("only");
       expect(filters.mapQuickFilter).toBe("off");
+    });
+
+    it("v23 (telemetry settings): adds default telemetrySettings when missing", () => {
+      const state: Record<string, unknown> = {};
+      const result = safeMigrate(state, 22) as Record<string, unknown>;
+      expect(result.telemetrySettings).toEqual({
+        analyticsEnabled: false,
+        hasSeenTelemetryPrompt: false,
+      });
+    });
+
+    it("v23 (telemetry settings): does not overwrite existing telemetrySettings", () => {
+      const state: Record<string, unknown> = {
+        telemetrySettings: {
+          analyticsEnabled: true,
+          hasSeenTelemetryPrompt: true,
+        },
+      };
+      const result = safeMigrate(state, 22) as Record<string, unknown>;
+      expect(result.telemetrySettings).toEqual({
+        analyticsEnabled: true,
+        hasSeenTelemetryPrompt: true,
+      });
     });
   });
 });

@@ -1281,6 +1281,25 @@
       "skipAnalysis": "Skip for Now"
     }
   },
+  "telemetryConsent": {
+    "title": "Help Us Improve",
+    "description": "We would really appreciate it if you keep usage analytics enabled. It helps us understand which features matter and where to focus improvements.",
+    "dialogDescription": "Usage analytics is currently off. You can turn it on anytime in Settings, but enabling it now helps us improve the app for everyone.",
+    "whatWeCollectTitle": "What we collect",
+    "whatWeCollectHwid": "An anonymous hardware ID to distinguish installs without identifying you",
+    "whatWeCollectFeatures": "Which features you use in the app",
+    "whatWeDoNotCollectTitle": "What we never collect",
+    "whatWeDoNotCollectPii": "No personally identifiable information",
+    "whatWeDoNotCollectPersonal": "No account details, messages, or mod file contents",
+    "privacyPolicyPrefix": "Learn more in our",
+    "privacyPolicyLink": "Privacy Policy",
+    "enableSwitch": "Share anonymous usage data",
+    "enableSwitchDescription": "Only an anonymous hardware ID and feature usage events are sent",
+    "enableButton": "Keep it on",
+    "disableButton": "No thanks",
+    "thankYou": "Thank you!",
+    "thankYouDescription": "Your anonymous usage data helps us improve Deadlock Mod Manager for everyone."
+  },
   "errors": {
     "genericMessage": "Something went wrong.",
     "errorCode": "Error code:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "Resets the mod list without deleting mod files from your game folder. You can re-scan to restore them.",
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "modsStateCleared": "Mods state cleared successfully",
-    "triggerOnboarding": "Trigger Onboarding"
+    "triggerOnboarding": "Trigger Onboarding",
+    "resetTelemetryConsent": "Reset Telemetry Consent"
   },
   "developer": {
     "title": "Developer Tools",

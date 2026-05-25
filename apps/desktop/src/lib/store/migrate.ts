@@ -355,6 +355,17 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 23,
+    label: "add-telemetry-settings",
+    apply: (state) => {
+      if (isPlainObject(state.telemetrySettings)) return;
+      state.telemetrySettings = {
+        analyticsEnabled: false,
+        hasSeenTelemetryPrompt: false,
+      };
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(

@@ -98,7 +98,7 @@ const seededState = {
     rememberPerItemOverrides: true,
     disableBlur: false,
   },
-  telemetrySettings: { analyticsEnabled: false },
+  telemetrySettings: { analyticsEnabled: false, hasSeenTelemetryPrompt: false },
   perItemNSFWOverrides: {},
   developerMode: false,
   ingestToolEnabled: true,
@@ -255,5 +255,40 @@ describe("persisted store integration with real production fixture", () => {
     >;
     expect(s.heroParserIntervalSeconds).toBe(30);
     expect(s.proxyConfig).toEqual(seededState.proxyConfig);
+  });
+
+  it("v22->v23 step adds telemetrySettings for users who lack it", async () => {
+    const stateWithoutTelemetry = { ...seededState } as Record<string, unknown>;
+    delete stateWithoutTelemetry.telemetrySettings;
+    seedFromVersion(22, stateWithoutTelemetry);
+
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+
+    const s = usePersistedStore.getState();
+    expect(s.telemetrySettings).toEqual({
+      analyticsEnabled: false,
+      hasSeenTelemetryPrompt: false,
+    });
+  });
+
+  it("v22->v23 step preserves existing telemetrySettings", async () => {
+    const stateWithTelemetry = {
+      ...seededState,
+      telemetrySettings: {
+        analyticsEnabled: true,
+        hasSeenTelemetryPrompt: true,
+      },
+    };
+    seedFromVersion(22, stateWithTelemetry);
+
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+
+    const s = usePersistedStore.getState();
+    expect(s.telemetrySettings).toEqual({
+      analyticsEnabled: true,
+      hasSeenTelemetryPrompt: true,
+    });
   });
 });
