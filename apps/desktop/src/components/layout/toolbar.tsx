@@ -1,5 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Separator } from "@deadlock-mods/ui/components/separator";
+import { useSidebar } from "@deadlock-mods/ui/components/sidebar";
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +26,8 @@ import Profile from "./profile";
 
 export const Toolbar = () => {
   const { t } = useTranslation();
+  const { state } = useSidebar();
+  const isSidebarCollapsed = state === "collapsed";
   const { gamePath, getEnabledModsCount } = usePersistedStore();
   const { launch } = useLaunch();
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
@@ -45,7 +48,11 @@ export const Toolbar = () => {
 
   return (
     <div className='flex min-w-0 flex-1 items-stretch' data-tauri-drag-region>
-      <div className='flex min-w-0 shrink-0 items-center pl-1.5 pr-3 py-1.5'>
+      <div
+        className={cn(
+          "flex shrink-0 items-center py-1.5 pl-1.5 pr-3",
+          !isSidebarCollapsed && "w-[--sidebar-width]",
+        )}>
         <div
           className={cn(
             "group relative flex h-7 min-w-0 items-stretch overflow-hidden rounded-md",
@@ -73,107 +80,112 @@ export const Toolbar = () => {
       </div>
 
       <div
-        className='flex flex-1 items-center justify-end gap-1.5 px-3 py-1.5'
+        className={cn(
+          "flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out",
+          showBackButton
+            ? "mr-2 w-fit opacity-100"
+            : "pointer-events-none w-0 opacity-0",
+        )}>
+        <Button
+          className='flex items-center gap-2 whitespace-nowrap'
+          onClick={onBackClick}
+          size='sm'
+          variant='ghost'>
+          <ArrowLeft className='h-4 w-4' />
+          {t("common.back", "Back")}
+        </Button>
+      </div>
+
+      <div
+        className='flex min-w-0 flex-1 items-center gap-1.5 py-1.5 pr-3'
         data-tauri-drag-region>
-        <div
-          className={cn(
-            "flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out",
-            showBackButton ? "mr-2 w-fit opacity-100" : "w-0 opacity-0",
-          )}>
-          <Button
-            className='flex items-center gap-2 whitespace-nowrap'
-            onClick={onBackClick}
-            size='sm'
-            variant='ghost'>
-            <ArrowLeft className='h-4 w-4' />
-            {t("common.back", "Back")}
-          </Button>
-          <Separator className='h-4' orientation='vertical' />
-        </div>
-
-        {!isRunning && (
-          <Button
-            className='relative h-7 gap-1.5 overflow-hidden px-2.5 text-xs'
-            disabled={!gamePath}
-            onClick={() => {
-              setVanillaAnimating(true);
-              launch(true);
-              setTimeout(() => setVanillaAnimating(false), 500);
-            }}
-            variant='outline'>
-            <div
-              className={cn(
-                "absolute inset-0 bg-foreground/10",
-                vanillaAnimating
-                  ? "w-full transition-all duration-500 ease-in-out"
-                  : "w-0",
-              )}
-            />
-            <PlayCircleIcon className='relative z-10 size-3.5' />
-            <span className='relative z-10'>{t("common.launchVanilla")}</span>
-          </Button>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <div className='ml-auto flex items-center gap-1.5'>
+          {!isRunning && (
             <Button
-              className='relative h-7 gap-1.5 overflow-hidden border border-transparent px-2.5 text-xs'
+              className='relative h-7 gap-1.5 overflow-hidden px-2.5 text-xs'
               disabled={!gamePath}
               onClick={() => {
-                if (isRunning) {
-                  invoke("stop_game").finally(() => refetch());
-                } else {
-                  setModdedAnimating(true);
-                  launch();
-                  setTimeout(() => setModdedAnimating(false), 500);
-                }
-              }}>
+                setVanillaAnimating(true);
+                launch(true);
+                setTimeout(() => setVanillaAnimating(false), 500);
+              }}
+              variant='outline'>
               <div
                 className={cn(
-                  "absolute inset-0 bg-amber-200/40",
-                  moddedAnimating
+                  "absolute inset-0 bg-foreground/10",
+                  vanillaAnimating
                     ? "w-full transition-all duration-500 ease-in-out"
                     : "w-0",
                 )}
               />
-              <span className='relative z-10 inline-flex items-center'>
-                {isRunning ? (
-                  <StopIcon className='size-3.5' />
-                ) : (
-                  <PlayCircleIcon className='size-3.5' />
-                )}
-              </span>
-              <span className='relative z-10'>
-                {isRunning ? t("common.stopGame") : t("common.launchModded")}
-              </span>
-              {!isRunning && enabledModsCount > 0 && (
-                <span className='relative z-10 inline-flex items-center gap-1 tabular-nums'>
-                  <span aria-hidden='true' className='opacity-60'>
-                    ·
-                  </span>
-                  {t("common.launchModdedCount", {
-                    count: enabledModsCount,
-                    defaultValue: "{{count}} mods",
-                  })}
-                </span>
-              )}
+              <PlayCircleIcon className='relative z-10 size-3.5' />
+              <span className='relative z-10'>{t("common.launchVanilla")}</span>
             </Button>
-          </TooltipTrigger>
-          {!gamePath && (
-            <TooltipContent>
-              <p className='text-destructive'>{t("common.gameNotDetected")}</p>
-            </TooltipContent>
           )}
-          {gamePath && (
-            <TooltipContent>
-              <p>{t("common.gameInstalledAt", { path: gamePath })}</p>
-            </TooltipContent>
-          )}
-        </Tooltip>
 
-        <Separator className='mx-0.5 h-4' orientation='vertical' />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className='relative h-7 gap-1.5 overflow-hidden border border-transparent px-2.5 text-xs'
+                disabled={!gamePath}
+                onClick={() => {
+                  if (isRunning) {
+                    invoke("stop_game").finally(() => refetch());
+                  } else {
+                    setModdedAnimating(true);
+                    launch();
+                    setTimeout(() => setModdedAnimating(false), 500);
+                  }
+                }}>
+                <div
+                  className={cn(
+                    "absolute inset-0 bg-amber-200/40",
+                    moddedAnimating
+                      ? "w-full transition-all duration-500 ease-in-out"
+                      : "w-0",
+                  )}
+                />
+                <span className='relative z-10 inline-flex items-center'>
+                  {isRunning ? (
+                    <StopIcon className='size-3.5' />
+                  ) : (
+                    <PlayCircleIcon className='size-3.5' />
+                  )}
+                </span>
+                <span className='relative z-10'>
+                  {isRunning ? t("common.stopGame") : t("common.launchModded")}
+                </span>
+                {!isRunning && enabledModsCount > 0 && (
+                  <span className='relative z-10 inline-flex items-center gap-1 tabular-nums'>
+                    <span aria-hidden='true' className='opacity-60'>
+                      ·
+                    </span>
+                    {t("common.launchModdedCount", {
+                      count: enabledModsCount,
+                      defaultValue: "{{count}} mods",
+                    })}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {!gamePath && (
+              <TooltipContent>
+                <p className='text-destructive'>
+                  {t("common.gameNotDetected")}
+                </p>
+              </TooltipContent>
+            )}
+            {gamePath && (
+              <TooltipContent>
+                <p>{t("common.gameInstalledAt", { path: gamePath })}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
 
-        <UserMenu />
+          <Separator className='mx-0.5 h-4' orientation='vertical' />
+
+          <UserMenu />
+        </div>
       </div>
     </div>
   );

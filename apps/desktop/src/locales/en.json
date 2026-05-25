@@ -2068,6 +2068,8 @@
     "viewOriginalPost": "View Post on GameBanana",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",
+    "activeVpkFiles": "Active Mod files",
+    "activeVpkFilesDescription": "VPK files from this mod currently loaded in the game addons folder.",
     "checkForUpdate": "Check for update",
     "checkingForUpdate": "Checking...",
     "noUpdateAvailable": "No update available",

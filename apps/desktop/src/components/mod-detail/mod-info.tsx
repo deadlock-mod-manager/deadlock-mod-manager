@@ -135,6 +135,12 @@ export const ModInfo = ({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className='max-w-sm'>
+                  <p className='mb-1.5 text-xs'>
+                    {t("modOptions.installedFilesCount", {
+                      count: activeArchiveNames.size,
+                      total: totalDownloads,
+                    })}
+                  </p>
                   <ul className='list-none space-y-0.5'>
                     {[...activeArchiveNames].map((name) => (
                       <li key={name} className='font-mono text-xs'>

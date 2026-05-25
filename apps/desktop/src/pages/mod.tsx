@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
+import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
@@ -325,6 +326,11 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
+          {isInstalled &&
+            localMod?.installedVpks &&
+            localMod.installedVpks.length > 0 && (
+              <InstalledVpksSection vpks={localMod.installedVpks} />
+            )}
           {mod.isMap && isCustomMapsEnabled && (
             <MapHowToPlay
               mapName={mod.metadata?.mapName}
