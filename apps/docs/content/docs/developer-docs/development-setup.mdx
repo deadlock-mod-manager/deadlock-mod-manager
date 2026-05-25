@@ -392,6 +392,45 @@ The project should work with any IDE that supports:
 - EditorConfig
 - Biome
 
+## CEF (Chromium Embedded Framework) Development
+
+The desktop app supports an optional CEF runtime as an alternative to the system WebView (Wry). CEF builds use a forked Tauri CLI from the `feat/cef` branch.
+
+### CEF Setup
+
+Install the CEF-enabled Tauri CLI (one-time, replaces the standard `cargo-tauri`):
+
+```bash
+pnpm --filter desktop cef:setup
+```
+
+<Callout type='warn' title='CLI Override'>
+  This replaces your standard `cargo tauri` binary. Run `cargo install
+  tauri-cli` to restore the normal Tauri CLI when you're done with CEF work.
+</Callout>
+
+### CEF Commands
+
+| Command                                   | Description                                        |
+| ----------------------------------------- | -------------------------------------------------- |
+| `pnpm --filter desktop cef:setup`         | Install the CEF-enabled Tauri CLI                  |
+| `pnpm --filter desktop dev:cef`           | Run desktop in dev mode with CEF runtime           |
+| `pnpm --filter desktop build:cef`         | Compile with CEF (no bundle, fast iteration)       |
+| `pnpm --filter desktop build:cef:release` | Full release build with CEF (all default bundles)  |
+| `pnpm --filter desktop build:cef:nsis`    | Build NSIS installer with CEF (matches nightly CI) |
+| `pnpm --filter desktop build:cef:deb`     | Build Linux .deb with CEF                          |
+| `pnpm --filter desktop cef:cleanup`       | Remove injected CEF patches, restore Cargo.toml    |
+
+### How It Works
+
+The `cef-patch.ts` script injects a `[patch.crates-io]` block into `Cargo.toml` pointing Tauri dependencies at the `feat/cef` branch, and adds a `cef` feature flag. The `--features cef` flag must be passed both to the Tauri CLI (before `--`) for correct bundling, and to cargo (after `--`) for compilation.
+
+On first build, the CEF binary distribution (~300MB) is downloaded automatically to your local cache directory. Subsequent builds reuse the cached binaries.
+
+### Verifying a CEF Build
+
+A correctly bundled CEF NSIS installer will be significantly larger than a Wry build (~300MB vs ~21MB) because it includes `libcef.dll` and the full CEF redistribution. If the installer size is similar to the Wry build, CEF files were not bundled correctly.
+
 ## Troubleshooting
 
 ### Common Issues

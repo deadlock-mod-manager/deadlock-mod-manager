@@ -104,19 +104,40 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Configure sccache for cargo
+        shell: bash
+        run: |
+          SCCACHE_WRAPPER="${SCCACHE_PATH//\\//}"
+          echo "RUSTC_WRAPPER=${SCCACHE_WRAPPER}" >> "$GITHUB_ENV"
+          mkdir -p "$CARGO_HOME"
+          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_WRAPPER" >> "$CARGO_HOME/config.toml"
+
+      - name: Verify sccache wrapper
+        shell: bash
+        run: |
+          echo "RUSTC_WRAPPER=$RUSTC_WRAPPER"
+          echo "SCCACHE_PATH=$SCCACHE_PATH"
+          "$RUSTC_WRAPPER" --show-stats
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop
+          workspaces: |
+            apps/desktop -> ${{ matrix.os == 'windows' && 'C:/t' || 'apps/desktop/target' }}
+          key: cef-${{ matrix.os }}
           cache-on-failure: true
+
+      - uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
-      - uses: pnpm/action-setup@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -142,6 +163,11 @@ jobs:
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch ${{ env.TAURI_CEF_BRANCH }}
 
+      - name: sccache stats after CLI install
+        if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
+        shell: bash
+        run: sccache --show-stats
+
       - name: Install apt dependencies (Linux only)
         if: matrix.os == 'linux'
         run: |
@@ -159,9 +185,6 @@ jobs:
             patchelf \
             xdg-utils \
             file
-
-      - name: Install pnpm
-        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install
@@ -182,7 +205,7 @@ jobs:
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
           NO_STRIP: "true"
         working-directory: apps/desktop
-        run: bun scripts/cef-patch.ts cargo tauri build --bundles deb,updater -- --no-default-features --features cef
+        run: pnpm build:cef:deb
 
       - name: Rename .deb with CEF suffix (Linux)
         if: matrix.os == 'linux'
@@ -222,7 +245,7 @@ jobs:
           VITE_AUTH_URL: https://auth.deadlockmods.app
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         working-directory: apps/desktop
-        run: bun scripts/cef-patch.ts cargo tauri build --bundles nsis,updater -- --no-default-features --features cef
+        run: pnpm build:cef:nsis
 
       - name: Rename NSIS installer with CEF suffix (Windows)
         if: matrix.os == 'windows'

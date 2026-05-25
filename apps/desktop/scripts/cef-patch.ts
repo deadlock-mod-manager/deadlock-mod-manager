@@ -139,13 +139,61 @@ function cleanupCefSetup(): boolean {
   return patchRemoved || featureRemoved;
 }
 
+// CEF builds need `--features cef` passed twice: once to the Tauri CLI (before
+// `--`) so the bundler picks up libcef.dll, and once to cargo (after `--`)
+// alongside `--no-default-features` so the crate compiles against the cef
+// feature instead of the default wry feature. Centralizing this here keeps
+// every call site (package.json scripts, CI steps) free of the contract.
+function injectCefFlags(
+  command: string,
+  args: string[],
+): { command: string; args: string[] } {
+  const tokens = [command, ...args];
+  const tauriIdx = tokens.indexOf("tauri");
+  if (tauriIdx === -1) {
+    return { command, args };
+  }
+
+  const subcommand = tokens[tauriIdx + 1];
+  if (subcommand !== "build" && subcommand !== "dev") {
+    return { command, args };
+  }
+
+  const cliFlags = ["--features", "cef"];
+  const cargoFlags = ["--no-default-features", "--features", "cef"];
+  const insertAt = tauriIdx + 2;
+  const dashDashIdx = tokens.indexOf("--", insertAt);
+
+  const updated =
+    dashDashIdx === -1
+      ? [
+          ...tokens.slice(0, insertAt),
+          ...cliFlags,
+          ...tokens.slice(insertAt),
+          "--",
+          ...cargoFlags,
+        ]
+      : [
+          ...tokens.slice(0, insertAt),
+          ...cliFlags,
+          ...tokens.slice(insertAt, dashDashIdx + 1),
+          ...cargoFlags,
+          ...tokens.slice(dashDashIdx + 1),
+        ];
+
+  return { command: updated[0], args: updated.slice(1) };
+}
+
 function runCommand(command: string, args: string[]): number {
   ensureCefSetup();
 
-  const result = spawnSync(command, args, {
+  const invocation = injectCefFlags(command, args);
+
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd: desktopDir,
     shell: true,
     stdio: "inherit",
+    env: process.env,
   });
 
   return result.status ?? 1;

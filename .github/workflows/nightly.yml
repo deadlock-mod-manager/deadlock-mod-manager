@@ -148,20 +148,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 100
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: pnpm-lock.yaml
-
-      - uses: pnpm/action-setup@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
 
       - name: Compute nightly version label
         id: version
@@ -349,18 +341,32 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Configure sccache for cargo
+        shell: bash
+        run: |
+          SCCACHE_WRAPPER="${SCCACHE_PATH//\\//}"
+          echo "RUSTC_WRAPPER=${SCCACHE_WRAPPER}" >> "$GITHUB_ENV"
+          mkdir -p "$CARGO_HOME"
+          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_WRAPPER" >> "$CARGO_HOME/config.toml"
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop -> apps/desktop/target
+          key: nightly-${{ matrix.os }}
+          cache-on-failure: true
+
+      - uses: pnpm/action-setup@v4
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
-      - uses: pnpm/action-setup@v4
 
       - name: Install apt dependencies (ubuntu only)
         if: matrix.os == 'linux'
@@ -383,9 +389,6 @@ jobs:
         uses: ./.github/actions/install-flatpak-sdk
         with:
           runtime-version: "49"
-
-      - name: Install pnpm
-        run: npm install -g pnpm
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -468,7 +471,13 @@ jobs:
 
   trigger-windows-signing:
     needs:
-      [check-commits, prepare-matrix, create-nightly-release, build-nightly, build-cef]
+      [
+        check-commits,
+        prepare-matrix,
+        create-nightly-release,
+        build-nightly,
+        build-cef,
+      ]
     if: >-
       always() &&
       needs.check-commits.outputs.should_build == 'true' &&
