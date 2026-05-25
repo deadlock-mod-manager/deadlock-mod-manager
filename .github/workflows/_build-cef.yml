@@ -193,7 +193,10 @@ jobs:
         uses: ./.github/actions/install-flatpak-sdk
         with:
           runtime-version: "49"
-          install-electron-base: "true"
+
+      - name: Install Electron base app (zypak for CEF)
+        if: matrix.os == 'linux'
+        run: flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
 
       - name: Install dependencies
         run: pnpm install

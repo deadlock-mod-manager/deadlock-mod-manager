@@ -6,14 +6,6 @@ inputs:
     description: "GNOME Platform/SDK runtime version (e.g. 47)"
     required: false
     default: "49"
-  install-electron-base:
-    description: "If true, also installs org.electronjs.Electron2.BaseApp (only needed for CEF builds that use zypak)"
-    required: false
-    default: "false"
-  electron-base-version:
-    description: "org.electronjs.Electron2.BaseApp version used by CEF builds for zypak"
-    required: false
-    default: "24.08"
 
 runs:
   using: composite
@@ -28,10 +20,3 @@ runs:
         flatpak install --user -y flathub \
           org.gnome.Platform//${{ inputs.runtime-version }} \
           org.gnome.Sdk//${{ inputs.runtime-version }}
-
-    - name: Install Electron base app (provides zypak for CEF)
-      if: ${{ inputs.install-electron-base == 'true' }}
-      shell: bash
-      run: |
-        flatpak install --user -y flathub \
-          org.electronjs.Electron2.BaseApp//${{ inputs.electron-base-version }}
