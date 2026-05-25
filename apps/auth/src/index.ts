@@ -129,12 +129,20 @@ app.use("/assets/*", serveStatic({ root: "./dist/client/" }));
 app.get("*", serveStatic({ path: "./dist/client/index.html" }));
 
 const main = async () => {
-  logger.info(`Auth Server started on port ${env.PORT}`);
-
-  Bun.serve({
+  const server = Bun.serve({
     port: env.PORT,
     fetch: app.fetch,
   });
+
+  logger.info(`Auth Server started on port ${server.port}`);
+
+  const shutdown = () => {
+    server.stop();
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 };
 
 if (import.meta.main) {

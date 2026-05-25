@@ -7,6 +7,6 @@ Sentry.init({
   ...SENTRY_OPTIONS,
 });
 const sentryClient = Sentry.getClient<NodeClient>()!;
-const sdk = setupInstrumentation("api", sentryClient);
+const sdk = setupInstrumentation("auth", sentryClient);
 
 sdk.start();

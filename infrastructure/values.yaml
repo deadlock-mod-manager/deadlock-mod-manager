@@ -269,7 +269,7 @@ deployments:
 
       startup:
         enabled: true
-        path: /
+        path: /health
         port: 3004
         initialDelaySeconds: 10
         periodSeconds: 5
