@@ -78,6 +78,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
+import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import { SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
@@ -127,7 +128,6 @@ const getAutoexecConfig = async () => {
   }
 };
 
-const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
 const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 
 type SettingsNavItemProps = {

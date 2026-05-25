@@ -1,37 +1,20 @@
-import { CustomSettingType } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 
-const AUTOEXEC_LAUNCH_OPTION_ID = "autoexec-launch-option";
-
 export const useLaunchMap = (onSuccess?: () => void) => {
-  const { settings, toggleSetting, getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
 
   const launchMapMutation = useMutation({
     mutationFn: async (mapName: string) => {
       await invoke("add_map_command_to_autoexec", { mapName });
 
-      const autoexecSetting = settings[AUTOEXEC_LAUNCH_OPTION_ID];
-      if (!autoexecSetting?.enabled) {
-        toggleSetting(
-          AUTOEXEC_LAUNCH_OPTION_ID,
-          {
-            id: AUTOEXEC_LAUNCH_OPTION_ID,
-            key: "-exec",
-            value: "autoexec",
-            type: CustomSettingType.LAUNCH_OPTION,
-            description: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          true,
-        );
-      }
+      enableAutoexecLaunchOptionIfDisabled();
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;

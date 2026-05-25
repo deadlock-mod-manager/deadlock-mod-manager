@@ -67,7 +67,7 @@ pub async fn get_autoexec_config() -> Result<AutoexecConfig, Error> {
 pub async fn update_autoexec_config(
   full_content: String,
   readonly_sections: Vec<crate::mod_manager::ReadonlySection>,
-) -> Result<(), Error> {
+) -> Result<AutoexecConfig, Error> {
   log::info!("Updating autoexec config");
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
