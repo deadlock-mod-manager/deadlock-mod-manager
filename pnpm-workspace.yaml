@@ -53,6 +53,9 @@ autoInstallPeers: false
 dedupePeerDependents: true
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  - "@getworkbench/core"
+  - "@getworkbench/hono"
 pmOnFail: ignore
 
 peerDependencyRules:

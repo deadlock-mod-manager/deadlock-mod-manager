@@ -27,6 +27,7 @@
     "@deadlock-mods/relay-client": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/vpk-parser": "workspace:*",
+    "@getworkbench/hono": "^0.2.1",
     "@hono/prometheus": "^1.0.2",
     "@hono/sentry": "^1.2.2",
     "@mjackson/lazy-file": "^3.4.0",

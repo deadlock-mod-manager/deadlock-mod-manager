@@ -20,6 +20,11 @@ import {
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
 import { logger, loggerContext } from "./lib/logger";
+import {
+  closeWorkbenchQueues,
+  createWorkbenchRoute,
+  WORKBENCH_BASE_PATH,
+} from "./lib/workbench";
 import { requestLogger } from "./middleware/request-logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
@@ -115,6 +120,10 @@ app
   .route("/redirect", redirectRouter)
   .route("/artifacts", artifactsRouter);
 
+if (env.WORKBENCH_ENABLED) {
+  app.route(WORKBENCH_BASE_PATH, createWorkbenchRoute());
+}
+
 const main = async () => {
   logger.info("Bootstrapping feature flags");
   const bootstrapResult = await featureFlagsService.bootstrap(
@@ -150,6 +159,9 @@ const main = async () => {
   });
 
   process.on("SIGTERM", async () => {
+    if (env.WORKBENCH_ENABLED) {
+      await closeWorkbenchQueues();
+    }
     await cronService.shutdown();
   });
 
