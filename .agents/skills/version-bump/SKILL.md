@@ -38,20 +38,43 @@ This will:
 - Parse the CHANGELOG.md for the new version
 - Generate What's New content for `apps/desktop/src/locales/en.json`
 
-### 3. Review Generated Content
+### 3. Curate the What's New Content
 
-Review the generated What's New content in the English translation file:
+The generated content needs manual curation. The What's New dialog is for **casual users** who just want to know what changed for them. Review and edit `apps/desktop/src/locales/en.json`:
 
-```bash
-cat apps/desktop/src/locales/en.json | grep -A 20 '"whatsNew"'
-```
+**REMOVE entries that are too technical or irrelevant to casual users:**
 
-If the generated content needs adjustments:
+- Internal refactors (e.g. "Refactor VPK extraction pipeline")
+- Developer-only changes (e.g. "Add debug logging for IPC commands")
+- Dependency updates or build system changes
+- Code quality improvements (e.g. "Migrate to stricter TypeScript config")
+- Infrastructure or CI changes
+- Changes to internal packages that don't affect the desktop UX
 
-- Edit `apps/desktop/src/locales/en.json`
-- Update the title to be more descriptive
-- Refine feature descriptions to be user-friendly
-- Ensure emojis are appropriate
+**KEEP and REWRITE entries to be user-friendly:**
+
+- New features users can interact with
+- Bug fixes users would have noticed
+- Performance improvements users would feel
+- UI/UX changes users would see
+
+**Rewriting guidelines:**
+
+- Use plain language, no jargon (avoid "IPC", "VPK", "pipeline", "middleware", etc.)
+- Describe the benefit, not the implementation (e.g. "Mods install faster" not "Optimized extraction pipeline")
+- Keep each entry to one short sentence
+- If a technical change has a user-visible effect, describe the effect instead
+
+**Example transformations:**
+
+| Generated (too technical)                        | Rewritten (user-friendly)                     |
+| ------------------------------------------------ | --------------------------------------------- |
+| "Refactor mod installation state machine"        | REMOVE (no user-visible change)               |
+| "Fix race condition in VPK extraction"           | "Fixed mods sometimes failing to install"     |
+| "Add retry logic to GameBanana API calls"        | "Improved reliability when browsing mods"     |
+| "Migrate auth to Better Auth v2"                 | REMOVE (no user-visible change)               |
+| "Add crosshair preview in settings"              | "Added crosshair preview in settings"         |
+| "Optimize mod list rendering performance"        | "Mod list loads faster"                       |
 
 ### 4. Verify Version Sync
 
