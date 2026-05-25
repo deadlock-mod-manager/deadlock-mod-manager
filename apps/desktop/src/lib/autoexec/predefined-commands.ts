@@ -20,7 +20,7 @@ export type AutoexecCategoryId =
   | "network"
   | "hudUi"
   | "minimap"
-  | "matchmakingRegion"
+  | "matchmaking"
   | "privateLobbyDefaults"
   | "mouseSensitivity"
   | "abilityQuickcast"
@@ -30,10 +30,13 @@ export type AutoexecCategoryId =
   | "visualEffects"
   | "replaySpectator";
 
+export type AutoexecCommandIntent = "default";
+
 export interface PredefinedAutoexecCommand {
   id: string;
   command: string;
   value: string;
+  intent?: AutoexecCommandIntent;
 }
 
 export interface AutoexecCategoryDefinition {
@@ -63,7 +66,6 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         command: "engine_low_latency_sleep_after_client_tick",
         value: "true",
       },
-      { id: "batterySaver", command: "battery_saver", value: "false" },
     ],
   },
   {
@@ -103,11 +105,13 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "citadelHudVisible",
         command: "citadel_hud_visible",
         value: "true",
+        intent: "default",
       },
       {
         id: "citadelHideReplayHud",
         command: "citadel_hide_replay_hud",
         value: "false",
+        intent: "default",
       },
       {
         id: "citadelHintSystemDisable",
@@ -133,17 +137,24 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "citadelShopDefaultTab",
         command: "citadel_shop_default_tab",
         value: "-1",
+        intent: "default",
       },
       {
         id: "clAutoCursorScale",
         command: "cl_auto_cursor_scale",
         value: "true",
       },
-      { id: "clShowfps", command: "cl_showfps", value: "0" },
+      {
+        id: "clShowfps",
+        command: "cl_showfps",
+        value: "0",
+        intent: "default",
+      },
       {
         id: "clShowframenumber",
         command: "cl_showframenumber",
         value: "false",
+        intent: "default",
       },
       {
         id: "clTrueviewShowStatus",
@@ -160,51 +171,54 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "minimapUpdateRateHz",
         command: "minimap_update_rate_hz",
         value: "60",
-      },
-      {
-        id: "citadelRenderMinimap",
-        command: "citadel_render_minimap",
-        value: "true",
+        intent: "default",
       },
       {
         id: "citadelMinimapUnitClickRadius",
         command: "citadel_minimap_unit_click_radius",
         value: "200",
+        intent: "default",
       },
       {
         id: "citadelMinimapPlayerWidth",
         command: "citadel_minimap_player_width",
         value: "7",
+        intent: "default",
       },
       {
         id: "citadelMinimapLocalPlayerWidth",
         command: "citadel_minimap_local_player_width",
         value: "12",
+        intent: "default",
       },
       {
         id: "citadelMinimapMaxIconShrink",
         command: "citadel_minimap_max_icon_shrink",
         value: "0.8",
+        intent: "default",
       },
       {
         id: "citadelMinimapOverlapScanDistance",
         command: "citadel_minimap_overlap_scan_distance",
         value: "12.5",
+        intent: "default",
       },
       {
         id: "citadelMinimapZipLineThickness",
         command: "citadel_minimap_zip_line_thickness",
         value: "2",
+        intent: "default",
       },
       {
         id: "citadelMinimapSpectatorFowTeamView",
         command: "citadel_minimap_spectator_fow_team_view",
         value: "1",
+        intent: "default",
       },
     ],
   },
   {
-    id: "matchmakingRegion",
+    id: "matchmaking",
     icon: Globe,
     commands: [
       { id: "mmPreferSoloOnly", command: "mm_prefer_solo_only", value: "1" },
@@ -218,31 +232,37 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "citadelPrivateLobbyBotDifficulty",
         command: "citadel_private_lobby_bot_difficulty",
         value: "0",
+        intent: "default",
       },
       {
         id: "citadelPrivateLobbyCheatsEnabled",
         command: "citadel_private_lobby_cheats_enabled",
         value: "false",
+        intent: "default",
       },
       {
         id: "citadelPrivateLobbyDuplicateHeroesEnabled",
         command: "citadel_private_lobby_duplicate_heroes_enabled",
         value: "false",
+        intent: "default",
       },
       {
         id: "citadelPrivateLobbyIsPubliclyVisible",
         command: "citadel_private_lobby_is_publicly_visible",
         value: "false",
+        intent: "default",
       },
       {
         id: "citadelPrivateLobbyRandomizeLanes",
         command: "citadel_private_lobby_randomize_lanes",
         value: "false",
+        intent: "default",
       },
       {
         id: "citadelPrivateLobbyServerRegion",
         command: "citadel_private_lobby_server_region",
         value: "1",
+        intent: "default",
       },
     ],
   },
@@ -250,18 +270,30 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
     id: "mouseSensitivity",
     icon: MousePointer2,
     commands: [
-      { id: "fovDesired", command: "fov_desired", value: "75" },
-      { id: "mYaw", command: "m_yaw", value: "0.022" },
-      { id: "mPitch", command: "m_pitch", value: "0.022" },
+      {
+        id: "fovDesired",
+        command: "fov_desired",
+        value: "75",
+        intent: "default",
+      },
+      { id: "mYaw", command: "m_yaw", value: "0.022", intent: "default" },
+      {
+        id: "mPitch",
+        command: "m_pitch",
+        value: "0.022",
+        intent: "default",
+      },
       {
         id: "zoomSensitivityRatio",
         command: "zoom_sensitivity_ratio",
         value: "0.818933027098955175",
+        intent: "default",
       },
       {
         id: "clCitadelZoomIsToggle",
         command: "cl_citadel_zoom_is_toggle",
         value: "false",
+        intent: "default",
       },
     ],
   },
@@ -273,21 +305,25 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "clCitadelQuickcastAbility1",
         command: "cl_citadel_quickcast_ability1",
         value: "0",
+        intent: "default",
       },
       {
         id: "clCitadelQuickcastAbility2",
         command: "cl_citadel_quickcast_ability2",
         value: "0",
+        intent: "default",
       },
       {
         id: "clCitadelQuickcastAbility3",
         command: "cl_citadel_quickcast_ability3",
         value: "0",
+        intent: "default",
       },
       {
         id: "clCitadelQuickcastAbility4",
         command: "cl_citadel_quickcast_ability4",
         value: "0",
+        intent: "default",
       },
     ],
   },
@@ -306,18 +342,30 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
     id: "audio",
     icon: Volume2,
     commands: [
-      { id: "volume", command: "volume", value: "1" },
-      { id: "sndGamevolume", command: "snd_gamevolume", value: "1" },
+      { id: "volume", command: "volume", value: "1", intent: "default" },
+      {
+        id: "sndGamevolume",
+        command: "snd_gamevolume",
+        value: "1",
+        intent: "default",
+      },
       {
         id: "sndGamevoicevolume",
         command: "snd_gamevoicevolume",
         value: "1",
+        intent: "default",
       },
-      { id: "sndVoipvolume", command: "snd_voipvolume", value: "1" },
+      {
+        id: "sndVoipvolume",
+        command: "snd_voipvolume",
+        value: "1",
+        intent: "default",
+      },
       {
         id: "soundDeviceOverride",
         command: "sound_device_override",
         value: '""',
+        intent: "default",
       },
     ],
   },
@@ -325,19 +373,36 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
     id: "voiceChat",
     icon: Mic,
     commands: [
-      { id: "voiceModenable", command: "voice_modenable", value: "true" },
-      { id: "voiceVox", command: "voice_vox", value: "0" },
+      {
+        id: "voiceModenable",
+        command: "voice_modenable",
+        value: "true",
+        intent: "default",
+      },
+      {
+        id: "voiceVox",
+        command: "voice_vox",
+        value: "0",
+        intent: "default",
+      },
       { id: "voiceThreshold", command: "voice_threshold", value: "-120" },
-      { id: "voiceLoopback", command: "voice_loopback", value: "false" },
+      {
+        id: "voiceLoopback",
+        command: "voice_loopback",
+        value: "false",
+        intent: "default",
+      },
       {
         id: "voiceAlwaysSampleMic",
         command: "voice_always_sample_mic",
         value: "false",
+        intent: "default",
       },
       {
         id: "voiceDeviceOverride",
         command: "voice_device_override",
         value: '""',
+        intent: "default",
       },
     ],
   },
@@ -360,21 +425,25 @@ export const AUTOEXEC_CATEGORIES: AutoexecCategoryDefinition[] = [
         id: "citadelAutoHighlightSecondsBefore",
         command: "citadel_auto_highlight_seconds_before",
         value: "20",
+        intent: "default",
       },
       {
         id: "citadelAutoHighlightSecondsAfter",
         command: "citadel_auto_highlight_seconds_after",
         value: "8",
+        intent: "default",
       },
       {
         id: "citadelReplayManagerDownloadChunkSize",
         command: "citadel_replay_manager_download_chunk_size",
         value: "1048576",
+        intent: "default",
       },
       {
         id: "citadelReplayManagerDownloadSimultaneousRequests",
         command: "citadel_replay_manager_download_simultaneous_requests",
         value: "3",
+        intent: "default",
       },
     ],
   },
@@ -387,9 +456,3 @@ export const FLAT_AUTOEXEC_COMMANDS: FlatAutoexecCommand[] =
       categoryId: category.id,
     })),
   );
-
-export const getAutoexecCategoryById = (
-  categoryId: AutoexecCategoryId,
-): AutoexecCategoryDefinition | undefined => {
-  return AUTOEXEC_CATEGORIES.find((category) => category.id === categoryId);
-};

@@ -103,12 +103,14 @@ export const AutoexecSettings = () => {
         }
       }
 
-      isSilentSaveRef.current = false;
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.errorOnly(error);
       toast.error(t("settings.autoexecSaveError"));
+    },
+    onSettled: () => {
+      isSilentSaveRef.current = false;
     },
   });
 
@@ -159,6 +161,11 @@ export const AutoexecSettings = () => {
       if (!hasAutoexecLaunchableContent(savedConfig.full_content)) {
         disableAutoexecLaunchOptionIfEnabled();
       }
+      queryClient.setQueryData<AutoexecConfig>(
+        ["autoexec-config"],
+        savedConfig,
+      );
+      form.reset({ content: savedConfig.full_content });
       toast.success(t("settings.autoexecCleared"));
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },

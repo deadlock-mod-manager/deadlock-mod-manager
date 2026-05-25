@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Add autoexec command library with search, presets, clear, and launch toggle
+Add autoexec command library with search, clear, and launch toggle

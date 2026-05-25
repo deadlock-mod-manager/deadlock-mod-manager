@@ -22,13 +22,21 @@ export const AutoexecCommandRow = ({
   const { t } = useTranslation();
   const isAdded = commandExistsInContent(content, command.command);
   const description = t(`settings.autoexecCommands.${command.id}.description`);
+  const isDefaultCommand = command.intent === "default";
 
   return (
     <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
       <div className='flex min-w-0 flex-col gap-1'>
-        <code className='font-mono text-sm text-foreground'>
-          {formatCommandPreview(command.command, command.value)}
-        </code>
+        <div className='flex flex-wrap items-center gap-2'>
+          <code className='font-mono text-sm text-foreground'>
+            {formatCommandPreview(command.command, command.value)}
+          </code>
+          {isDefaultCommand && (
+            <Badge variant='outline'>
+              {t("settings.autoexecCommandDefaultBadge")}
+            </Badge>
+          )}
+        </div>
         <p className='text-muted-foreground text-sm'>{description}</p>
       </div>
 

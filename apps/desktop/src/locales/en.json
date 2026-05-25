@@ -656,13 +656,14 @@
     "autoexecInfoBody2": "The mod manager uses this file to set the crosshair settings automatically without needing to run commands in the console. You can still edit the file manually if you want to add more commands.",
     "autoexecInfoBody3": "P.S: the autoexec config can never be empty if added as launch option or else it'll crash the game.",
     "autoexecLibraryHeading": "Command Library",
-    "autoexecLibraryDescription": "Browse common client-side commands and add them to your config with one click.",
-    "autoexecCommandWarning": "Commands in this library are not verified for every Deadlock update. They may stop working or, in rare cases, cause unexpected game behavior. Test added commands carefully and remove anything that causes problems.",
+    "autoexecLibraryDescription": "Browse community-sourced client-side commands. Entries marked Default restore documented defaults rather than tune behavior.",
+    "autoexecCommandWarning": "Commands in this library are community-sourced and may be removed, hidden, or changed between Deadlock updates. Test added commands carefully and remove anything that causes problems.",
     "autoexecLibrarySearchPlaceholder": "Search commands...",
     "autoexecLibraryEmpty": "No commands match your search.",
     "autoexecCommandAdd": "Add",
     "autoexecCommandAdded": "Command added to config. Save to apply.",
     "autoexecCommandAddedBadge": "Added",
+    "autoexecCommandDefaultBadge": "Default",
     "autoexecEditorHeading": "Current Autoexec Config",
     "autoexecSaving": "Saving...",
     "autoexecClear": "Clear",
@@ -676,7 +677,7 @@
       "network": "Network",
       "hudUi": "HUD & UI",
       "minimap": "Minimap",
-      "matchmakingRegion": "Matchmaking",
+      "matchmaking": "Matchmaking",
       "privateLobbyDefaults": "Private Lobby Defaults",
       "mouseSensitivity": "Mouse & Sensitivity",
       "abilityQuickcast": "Ability Quickcast",
@@ -698,9 +699,6 @@
       },
       "engineLowLatencySleepAfterClientTick": {
         "description": "Moves low-latency sleep after client simulation when low latency is active."
-      },
-      "batterySaver": {
-        "description": "Disable battery saver mode."
       },
       "rate": {
         "description": "Maximum client bandwidth rate."
@@ -724,10 +722,10 @@
         "description": "Enable new unit status bars."
       },
       "citadelHudVisible": {
-        "description": "Show the HUD."
+        "description": "Default/reset: show the HUD."
       },
       "citadelHideReplayHud": {
-        "description": "Hide replay HUD."
+        "description": "Default/reset: keep the replay HUD visible."
       },
       "citadelHintSystemDisable": {
         "description": "Disable gameplay hints."
@@ -742,130 +740,127 @@
         "description": "Show all purchase toasts."
       },
       "citadelShopDefaultTab": {
-        "description": "Set default shop tab. -1 means default behavior."
+        "description": "Default/reset: use the game's default shop tab."
       },
       "clAutoCursorScale": {
         "description": "Enable automatic cursor scaling."
       },
       "clShowfps": {
-        "description": "Show FPS counter. 0 off, 1 FPS, 2 smooth FPS, 3 server MS, 4 FPS and log."
+        "description": "Default/reset: hide the FPS counter."
       },
       "clShowframenumber": {
-        "description": "Show frame number."
+        "description": "Default/reset: hide the frame number."
       },
       "clTrueviewShowStatus": {
         "description": "Show TrueView status. 0 never, 1 only if problem, 2 always."
       },
       "minimapUpdateRateHz": {
-        "description": "Update minimap at 60 Hz."
-      },
-      "citadelRenderMinimap": {
-        "description": "Render the minimap."
+        "description": "Default/reset: update the minimap at 60 Hz."
       },
       "citadelMinimapUnitClickRadius": {
-        "description": "Easier minimap unit clicking."
+        "description": "Default/reset: restore minimap unit click radius."
       },
       "citadelMinimapPlayerWidth": {
-        "description": "Larger player icons on minimap."
+        "description": "Default/reset: restore minimap player icon width."
       },
       "citadelMinimapLocalPlayerWidth": {
-        "description": "Larger local player icon on minimap."
+        "description": "Default/reset: restore local player minimap icon width."
       },
       "citadelMinimapMaxIconShrink": {
-        "description": "Controls how much minimap icons can shrink."
+        "description": "Default/reset: restore minimap icon shrink behavior."
       },
       "citadelMinimapOverlapScanDistance": {
-        "description": "Distance used to scan overlapping minimap icons."
+        "description": "Default/reset: restore minimap overlap scan distance."
       },
       "citadelMinimapZipLineThickness": {
-        "description": "Thicker zipline lines on minimap."
+        "description": "Default/reset: restore minimap zipline thickness."
       },
       "citadelMinimapSpectatorFowTeamView": {
-        "description": "Spectator minimap team view."
+        "description": "Default/reset: restore spectator minimap team view."
       },
       "mmPreferSoloOnly": {
         "description": "Prefer matches with solo players."
       },
       "citadelPrivateLobbyBotDifficulty": {
-        "description": "Private lobby bot difficulty."
+        "description": "Default/reset: restore private lobby bot difficulty."
       },
       "citadelPrivateLobbyCheatsEnabled": {
-        "description": "Disable cheats in private lobby by default."
+        "description": "Default/reset: keep private lobby cheats disabled."
       },
       "citadelPrivateLobbyDuplicateHeroesEnabled": {
-        "description": "Disable duplicate heroes in private lobby by default."
+        "description": "Default/reset: keep duplicate heroes disabled."
       },
       "citadelPrivateLobbyIsPubliclyVisible": {
-        "description": "Hide private lobby from public list."
+        "description": "Default/reset: keep private lobbies hidden from public lists."
       },
       "citadelPrivateLobbyRandomizeLanes": {
-        "description": "Disable random lanes in private lobby."
+        "description": "Default/reset: keep random lanes disabled."
       },
       "citadelPrivateLobbyServerRegion": {
-        "description": "Private lobby server region."
+        "description": "Default/reset: restore the private lobby server region."
       },
       "fovDesired": {
-        "description": "Base field of view."
+        "description": "Default/reset: restore base field of view."
       },
       "mYaw": {
-        "description": "Mouse yaw factor."
+        "description": "Default/reset: restore mouse yaw factor."
       },
       "mPitch": {
-        "description": "Mouse pitch factor."
+        "description": "Default/reset: restore mouse pitch factor."
       },
       "zoomSensitivityRatio": {
-        "description": "ADS / zoom sensitivity scale."
+        "description": "Default/reset: restore ADS / zoom sensitivity scale."
       },
       "clCitadelZoomIsToggle": {
-        "description": "Zoom hold behavior. false means hold, true means toggle."
+        "description": "Default/reset: use hold-to-zoom behavior."
       },
       "clCitadelQuickcastAbility1": {
-        "description": "Quickcast mode for ability 1."
+        "description": "Default/reset: restore ability 1 quickcast mode."
       },
       "clCitadelQuickcastAbility2": {
-        "description": "Quickcast mode for ability 2."
+        "description": "Default/reset: restore ability 2 quickcast mode."
       },
       "clCitadelQuickcastAbility3": {
-        "description": "Quickcast mode for ability 3."
+        "description": "Default/reset: restore ability 3 quickcast mode."
       },
       "clCitadelQuickcastAbility4": {
-        "description": "Quickcast mode for ability 4."
+        "description": "Default/reset: restore ability 4 quickcast mode."
       },
       "citadelAutoQueueBuild": {
         "description": "Automatically queue selected build at game start."
       },
       "volume": {
-        "description": "Master volume."
+        "description": "Default/reset: restore master volume."
       },
       "sndGamevolume": {
-        "description": "Game volume."
+        "description": "Default/reset: restore game volume."
       },
       "sndGamevoicevolume": {
-        "description": "Game voice-over volume."
+        "description": "Default/reset: restore game voice-over volume."
       },
       "sndVoipvolume": {
-        "description": "Voice chat volume."
+        "description": "Default/reset: restore voice chat volume."
       },
       "soundDeviceOverride": {
-        "description": "Sound device override. Empty means default device."
+        "description": "Default/reset: use the default sound device."
       },
       "voiceModenable": {
-        "description": "Enable voice chat."
+        "description": "Default/reset: keep voice chat enabled."
       },
       "voiceVox": {
-        "description": "Use push-to-talk instead of always-on VOX."
+        "description": "Default/reset: use push-to-talk instead of always-on VOX."
       },
       "voiceThreshold": {
         "description": "Voice activation threshold."
       },
       "voiceLoopback": {
-        "description": "Keep voice loopback disabled."
+        "description": "Default/reset: keep voice loopback disabled."
       },
       "voiceAlwaysSampleMic": {
-        "description": "Keep voice input stream closed until needed."
+        "description": "Default/reset: keep voice input stream closed until needed."
       },
       "voiceDeviceOverride": {
-        "description": "Voice capture device override. Empty means default device."
+        "description": "Default/reset: use the default voice capture device."
       },
       "clRagdollLimit": {
         "description": "Limit visible ragdolls."
@@ -883,16 +878,16 @@
         "description": "Show human gibs."
       },
       "citadelAutoHighlightSecondsBefore": {
-        "description": "Auto-highlight seconds before event."
+        "description": "Default/reset: restore replay auto-highlight lead-in seconds."
       },
       "citadelAutoHighlightSecondsAfter": {
-        "description": "Auto-highlight seconds after event."
+        "description": "Default/reset: restore replay auto-highlight follow-up seconds."
       },
       "citadelReplayManagerDownloadChunkSize": {
-        "description": "Replay download chunk size."
+        "description": "Default/reset: restore replay download chunk size."
       },
       "citadelReplayManagerDownloadSimultaneousRequests": {
-        "description": "Simultaneous replay download requests."
+        "description": "Default/reset: restore replay download parallel request count."
       }
     },
     "openInFolder": "Open in Folder",

@@ -2,8 +2,6 @@ import { CustomSettingType } from "@deadlock-mods/shared";
 import { usePersistedStore } from "@/lib/store";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "./constants";
 
-export { AUTOEXEC_LAUNCH_OPTION_ID };
-
 export const enableAutoexecLaunchOptionIfDisabled = (): void => {
   const { settings, toggleSetting } = usePersistedStore.getState();
   const autoexecSetting = settings[AUTOEXEC_LAUNCH_OPTION_ID];

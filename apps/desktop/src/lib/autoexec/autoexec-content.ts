@@ -104,7 +104,7 @@ export const removeCondebugFromContent = (content: string): string => {
   return result.join("\n").trimEnd();
 };
 
-export const parseAutoexecCommandKeys = (content: string): Set<string> => {
+const parseAutoexecCommandKeys = (content: string): Set<string> => {
   const keys = new Set<string>();
 
   for (const line of content.split("\n")) {
