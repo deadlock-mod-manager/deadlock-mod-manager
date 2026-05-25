@@ -8,5 +8,6 @@ export const useHero = (name: string | null | undefined) =>
     enabled: !!name,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    retry: 1,
+    retry: false,
+    meta: { skipGlobalErrorHandler: true },
   });

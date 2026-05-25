@@ -14,10 +14,12 @@ export interface DeadlockHero {
   };
 }
 
-export const getHeroByName = async (name: string): Promise<DeadlockHero> => {
+export const getHeroByName = async (
+  name: string,
+): Promise<DeadlockHero | null> => {
   const res = await fetch(`${HERO_API}/${encodeURIComponent(name)}`);
   if (!res.ok) {
-    throw new Error(`Failed to load hero ${name}: ${res.status}`);
+    return null;
   }
   return res.json();
 };
