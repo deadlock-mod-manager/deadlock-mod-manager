@@ -405,19 +405,20 @@ pnpm --filter desktop cef:setup
 ```
 
 <Callout type='warn' title='CLI Override'>
-  This replaces your standard `cargo tauri` binary. Run `cargo install tauri-cli` to restore the normal Tauri CLI when you're done with CEF work.
+  This replaces your standard `cargo tauri` binary. Run `cargo install
+  tauri-cli` to restore the normal Tauri CLI when you're done with CEF work.
 </Callout>
 
 ### CEF Commands
 
-| Command | Description |
-| --- | --- |
-| `pnpm --filter desktop cef:setup` | Install the CEF-enabled Tauri CLI |
-| `pnpm --filter desktop dev:cef` | Run desktop in dev mode with CEF runtime |
-| `pnpm --filter desktop build:cef` | Compile with CEF (no bundle, fast iteration) |
-| `pnpm --filter desktop build:cef:release` | Full release build with CEF (all default bundles) |
-| `pnpm --filter desktop build:cef:nsis` | Build NSIS installer with CEF (matches nightly CI) |
-| `pnpm --filter desktop cef:cleanup` | Remove injected CEF patches, restore Cargo.toml |
+| Command                                   | Description                                        |
+| ----------------------------------------- | -------------------------------------------------- |
+| `pnpm --filter desktop cef:setup`         | Install the CEF-enabled Tauri CLI                  |
+| `pnpm --filter desktop dev:cef`           | Run desktop in dev mode with CEF runtime           |
+| `pnpm --filter desktop build:cef`         | Compile with CEF (no bundle, fast iteration)       |
+| `pnpm --filter desktop build:cef:release` | Full release build with CEF (all default bundles)  |
+| `pnpm --filter desktop build:cef:nsis`    | Build NSIS installer with CEF (matches nightly CI) |
+| `pnpm --filter desktop cef:cleanup`       | Remove injected CEF patches, restore Cargo.toml    |
 
 ### How It Works
 
