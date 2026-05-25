@@ -146,6 +146,7 @@ function runCommand(command: string, args: string[]): number {
     cwd: desktopDir,
     shell: true,
     stdio: "inherit",
+    env: process.env,
   });
 
   return result.status ?? 1;

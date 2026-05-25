@@ -78,8 +78,6 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: ${{ matrix.timeout_minutes }}
-    env:
-      RUSTC_WRAPPER: sccache
 
     steps:
       - name: Checkout repository
@@ -108,6 +106,23 @@ jobs:
 
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Configure RUSTC_WRAPPER
+        shell: bash
+        run: echo "RUSTC_WRAPPER=${SCCACHE_PATH}" >> "$GITHUB_ENV"
+
+      - name: Configure global cargo sccache wrapper
+        shell: bash
+        run: |
+          mkdir -p "$CARGO_HOME"
+          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_PATH" >> "$CARGO_HOME/config.toml"
+
+      - name: Verify sccache wrapper
+        shell: bash
+        run: |
+          echo "RUSTC_WRAPPER=$RUSTC_WRAPPER"
+          echo "SCCACHE_PATH=$SCCACHE_PATH"
+          "$SCCACHE_PATH" --show-stats
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
@@ -149,6 +164,11 @@ jobs:
       - name: Install Tauri CEF CLI
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch ${{ env.TAURI_CEF_BRANCH }}
+
+      - name: sccache stats after CLI install
+        if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
+        shell: bash
+        run: sccache --show-stats
 
       - name: Install apt dependencies (Linux only)
         if: matrix.os == 'linux'

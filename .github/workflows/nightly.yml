@@ -332,8 +332,6 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare-matrix.outputs.matrix) }}
 
     runs-on: ${{ matrix.platform }}
-    env:
-      RUSTC_WRAPPER: sccache
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -345,6 +343,16 @@ jobs:
 
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Configure RUSTC_WRAPPER
+        shell: bash
+        run: echo "RUSTC_WRAPPER=${SCCACHE_PATH}" >> "$GITHUB_ENV"
+
+      - name: Configure global cargo sccache wrapper
+        shell: bash
+        run: |
+          mkdir -p "$CARGO_HOME"
+          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_PATH" >> "$CARGO_HOME/config.toml"
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
@@ -465,7 +473,13 @@ jobs:
 
   trigger-windows-signing:
     needs:
-      [check-commits, prepare-matrix, create-nightly-release, build-nightly, build-cef]
+      [
+        check-commits,
+        prepare-matrix,
+        create-nightly-release,
+        build-nightly,
+        build-cef,
+      ]
     if: >-
       always() &&
       needs.check-commits.outputs.should_build == 'true' &&
