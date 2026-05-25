@@ -205,7 +205,7 @@ jobs:
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
           NO_STRIP: "true"
         working-directory: apps/desktop
-        run: bun scripts/cef-patch.ts cargo tauri build --bundles deb,updater --features cef -- --no-default-features --features cef
+        run: pnpm build:cef:deb
 
       - name: Rename .deb with CEF suffix (Linux)
         if: matrix.os == 'linux'
@@ -245,7 +245,7 @@ jobs:
           VITE_AUTH_URL: https://auth.deadlockmods.app
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         working-directory: apps/desktop
-        run: bun scripts/cef-patch.ts cargo tauri build --bundles nsis,updater --features cef -- --no-default-features --features cef
+        run: pnpm build:cef:nsis
 
       - name: Rename NSIS installer with CEF suffix (Windows)
         if: matrix.os == 'windows'
