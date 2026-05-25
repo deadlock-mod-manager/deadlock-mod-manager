@@ -6,7 +6,10 @@ inputs:
     description: "GitHub release ID"
     required: true
   version:
-    description: "Version string for the release URL (e.g., 'v1.0.0' or 'nightly')"
+    description: "Release tag for download URLs (e.g., 'v1.0.0' or 'nightly')"
+    required: true
+  app-version:
+    description: "Semver version for the updater JSON (e.g., '1.0.0' or '0.19.0-nightly.20260525.abc1234')"
     required: true
   github-token:
     description: "GitHub token for API access"
@@ -20,6 +23,7 @@ runs:
       env:
         RELEASE_ID: ${{ inputs.release-id }}
         VERSION: ${{ inputs.version }}
+        APP_VERSION: ${{ inputs.app-version }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       with:
         script: |
@@ -31,8 +35,9 @@ runs:
           }
 
           const releaseId = parseInt(process.env.RELEASE_ID);
-          const version = process.env.VERSION;
-          const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${version}`;
+          const releaseTag = process.env.VERSION;
+          const appVersion = process.env.APP_VERSION;
+          const baseDownloadUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/download/${releaseTag}`;
 
           const { data: release } = await github.rest.repos.getRelease({
             owner: context.repo.owner,
@@ -103,8 +108,8 @@ runs:
           }
 
           const latestCefJson = {
-            version,
-            notes: `CEF build ${version}`,
+            version: appVersion,
+            notes: `CEF build ${appVersion}`,
             pub_date: new Date().toISOString(),
             platforms
           };

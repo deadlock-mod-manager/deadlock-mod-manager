@@ -354,6 +354,7 @@ jobs:
         with:
           release-id: ${{ needs.create-release.outputs.release_id }}
           version: v${{ needs.create-release.outputs.package_version }}
+          app-version: ${{ needs.create-release.outputs.package_version }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:

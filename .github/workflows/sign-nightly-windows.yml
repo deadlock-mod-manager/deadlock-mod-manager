@@ -290,6 +290,7 @@ jobs:
         with:
           release-id: ${{ inputs.release_id }}
           version: nightly
+          app-version: ${{ inputs.nightly_version }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-nightly:
