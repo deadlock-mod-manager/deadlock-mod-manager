@@ -69,7 +69,7 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
             <img
               alt={mod.name}
               className={cn(
-                "h-full w-full object-cover transition-transform duration-700 ease-out",
+                "h-full w-full object-cover object-top transition-transform duration-700 ease-out",
                 "motion-safe:group-hover:scale-105",
               )}
               loading='eager'
@@ -133,12 +133,13 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
           />
           <div className='ml-auto'>
             <Button
-              className='gap-2'
+              className='gap-2 text-primary/80 hover:text-primary group-hover:text-primary'
               onClick={(e) => {
                 e.stopPropagation();
                 handleClick();
               }}
-              size='lg'>
+              size='lg'
+              variant='text'>
               {t("dashboard.viewMod")}
               <ArrowRightIcon className='size-4' weight='bold' />
             </Button>
