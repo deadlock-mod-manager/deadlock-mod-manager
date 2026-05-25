@@ -651,6 +651,245 @@
     "autoexecContent": "구성 파일 콘텐츠",
     "autoexecPlaceholder": "여기에 사용자 정의 콘솔 명령을 추가하세요...",
     "autoexecReadonlyNote": "참고: '수정하지 마세요'라고 표시된 섹션은 모드 관리자에 의해 관리되며 자동으로 복원됩니다.",
+    "autoexecInfoTitle": "",
+    "autoexecInfoBody1": "",
+    "autoexecInfoBody2": "",
+    "autoexecInfoBody3": "",
+    "autoexecLibraryHeading": "",
+    "autoexecLibraryDescription": "",
+    "autoexecCommandWarning": "",
+    "autoexecLibrarySearchPlaceholder": "",
+    "autoexecLibraryEmpty": "",
+    "autoexecCommandAdd": "",
+    "autoexecCommandAdded": "",
+    "autoexecCommandAddedBadge": "",
+    "autoexecCommandDefaultBadge": "",
+    "autoexecEditorHeading": "",
+    "autoexecSaving": "",
+    "autoexecClear": "",
+    "autoexecClearConfirmTitle": "",
+    "autoexecClearConfirmBody": "",
+    "autoexecClearConfirmAction": "",
+    "autoexecCleared": "",
+    "autoexecCategories": {
+      "all": "",
+      "performance": "",
+      "network": "",
+      "hudUi": "",
+      "minimap": "",
+      "matchmaking": "",
+      "privateLobbyDefaults": "",
+      "mouseSensitivity": "",
+      "abilityQuickcast": "",
+      "buildItems": "",
+      "audio": "",
+      "voiceChat": "",
+      "visualEffects": "",
+      "replaySpectator": ""
+    },
+    "autoexecCommands": {
+      "fpsMax": {
+        "description": ""
+      },
+      "fpsMaxUi": {
+        "description": ""
+      },
+      "engineNoFocusSleep": {
+        "description": ""
+      },
+      "engineLowLatencySleepAfterClientTick": {
+        "description": ""
+      },
+      "rate": {
+        "description": ""
+      },
+      "clUpdaterate": {
+        "description": ""
+      },
+      "clInterpRatio": {
+        "description": ""
+      },
+      "clLagcompensation": {
+        "description": ""
+      },
+      "clHudTelemetryNetMisdeliveryShow": {
+        "description": ""
+      },
+      "clHudTelemetryNetQualityGraphShow": {
+        "description": ""
+      },
+      "citadelUnitStatusUseNew": {
+        "description": ""
+      },
+      "citadelHudVisible": {
+        "description": ""
+      },
+      "citadelHideReplayHud": {
+        "description": ""
+      },
+      "citadelHintSystemDisable": {
+        "description": ""
+      },
+      "citadelAlwaysShowActiveHudStats": {
+        "description": ""
+      },
+      "citadelShowActiveSlotPopup": {
+        "description": ""
+      },
+      "citadelShowAllPurchaseToasts": {
+        "description": ""
+      },
+      "citadelShopDefaultTab": {
+        "description": ""
+      },
+      "clAutoCursorScale": {
+        "description": ""
+      },
+      "clShowfps": {
+        "description": ""
+      },
+      "clShowframenumber": {
+        "description": ""
+      },
+      "clTrueviewShowStatus": {
+        "description": ""
+      },
+      "minimapUpdateRateHz": {
+        "description": ""
+      },
+      "citadelMinimapUnitClickRadius": {
+        "description": ""
+      },
+      "citadelMinimapPlayerWidth": {
+        "description": ""
+      },
+      "citadelMinimapLocalPlayerWidth": {
+        "description": ""
+      },
+      "citadelMinimapMaxIconShrink": {
+        "description": ""
+      },
+      "citadelMinimapOverlapScanDistance": {
+        "description": ""
+      },
+      "citadelMinimapZipLineThickness": {
+        "description": ""
+      },
+      "citadelMinimapSpectatorFowTeamView": {
+        "description": ""
+      },
+      "mmPreferSoloOnly": {
+        "description": ""
+      },
+      "citadelPrivateLobbyBotDifficulty": {
+        "description": ""
+      },
+      "citadelPrivateLobbyCheatsEnabled": {
+        "description": ""
+      },
+      "citadelPrivateLobbyDuplicateHeroesEnabled": {
+        "description": ""
+      },
+      "citadelPrivateLobbyIsPubliclyVisible": {
+        "description": ""
+      },
+      "citadelPrivateLobbyRandomizeLanes": {
+        "description": ""
+      },
+      "citadelPrivateLobbyServerRegion": {
+        "description": ""
+      },
+      "fovDesired": {
+        "description": ""
+      },
+      "mYaw": {
+        "description": ""
+      },
+      "mPitch": {
+        "description": ""
+      },
+      "zoomSensitivityRatio": {
+        "description": ""
+      },
+      "clCitadelZoomIsToggle": {
+        "description": ""
+      },
+      "clCitadelQuickcastAbility1": {
+        "description": ""
+      },
+      "clCitadelQuickcastAbility2": {
+        "description": ""
+      },
+      "clCitadelQuickcastAbility3": {
+        "description": ""
+      },
+      "clCitadelQuickcastAbility4": {
+        "description": ""
+      },
+      "citadelAutoQueueBuild": {
+        "description": ""
+      },
+      "volume": {
+        "description": ""
+      },
+      "sndGamevolume": {
+        "description": ""
+      },
+      "sndGamevoicevolume": {
+        "description": ""
+      },
+      "sndVoipvolume": {
+        "description": ""
+      },
+      "soundDeviceOverride": {
+        "description": ""
+      },
+      "voiceModenable": {
+        "description": ""
+      },
+      "voiceVox": {
+        "description": ""
+      },
+      "voiceThreshold": {
+        "description": ""
+      },
+      "voiceLoopback": {
+        "description": ""
+      },
+      "voiceAlwaysSampleMic": {
+        "description": ""
+      },
+      "voiceDeviceOverride": {
+        "description": ""
+      },
+      "clRagdollLimit": {
+        "description": ""
+      },
+      "violenceAblood": {
+        "description": ""
+      },
+      "violenceAgibs": {
+        "description": ""
+      },
+      "violenceHblood": {
+        "description": ""
+      },
+      "violenceHgibs": {
+        "description": ""
+      },
+      "citadelAutoHighlightSecondsBefore": {
+        "description": ""
+      },
+      "citadelAutoHighlightSecondsAfter": {
+        "description": ""
+      },
+      "citadelReplayManagerDownloadChunkSize": {
+        "description": ""
+      },
+      "citadelReplayManagerDownloadSimultaneousRequests": {
+        "description": ""
+      }
+    },
     "openInFolder": "폴더에서 열기",
     "openInEditor": "편집기에서 열기",
     "saveChanges": "변경 사항 저장",
