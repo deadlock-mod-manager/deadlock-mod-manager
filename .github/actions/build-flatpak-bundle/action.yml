@@ -1,0 +1,73 @@
+name: Build Flatpak bundle
+description: Builds a Flatpak bundle from a Tauri .deb artifact using flatpak-builder.
+
+inputs:
+  bundle-filename:
+    description: "Output .flatpak filename (e.g. deadlock-mod-manager.flatpak)"
+    required: true
+  output-directory:
+    description: "Directory to place the final .flatpak bundle"
+    required: false
+    default: "."
+  deb-glob:
+    description: "Glob for the source .deb file(s); exactly one match is required"
+    required: false
+    default: "apps/desktop/target/release/bundle/deb/*.deb"
+  manifest:
+    description: "Path to the flatpak-builder manifest"
+    required: false
+    default: "apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.yml"
+  app-id:
+    description: "Flatpak application ID for build-bundle"
+    required: false
+    default: "dev.stormix.deadlock-mod-manager"
+  repo-directory:
+    description: "Local flatpak repo directory (isolated per workflow run)"
+    required: false
+    default: "flatpak-repo"
+  build-directory:
+    description: "flatpak-builder working directory"
+    required: false
+    default: "flatpak-build"
+  metainfo-source:
+    description: "Path to metainfo.xml to copy into flatpak dir"
+    required: false
+    default: "apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml"
+
+runs:
+  using: composite
+  steps:
+    - name: Build Flatpak bundle
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        BUNDLE_FILENAME="${{ inputs.bundle-filename }}"
+        OUTPUT_DIR="${{ inputs.output-directory }}"
+        DEB_GLOB="${{ inputs.deb-glob }}"
+        MANIFEST="${{ inputs.manifest }}"
+        APP_ID="${{ inputs.app-id }}"
+        REPO_DIR="${{ inputs.repo-directory }}"
+        BUILD_DIR="${{ inputs.build-directory }}"
+        METAINFO_SOURCE="${{ inputs.metainfo-source }}"
+        FLATPAK_DIR="$(dirname "${MANIFEST}")"
+
+        shopt -s nullglob
+        debs=($DEB_GLOB)
+        if [ "${#debs[@]}" -ne 1 ]; then
+          echo "ERROR: expected exactly one .deb at '${DEB_GLOB}', found ${#debs[@]}"
+          exit 1
+        fi
+
+        cp "${debs[0]}" "${FLATPAK_DIR}/deadlock-mod-manager.deb"
+        cp "${METAINFO_SOURCE}" "${FLATPAK_DIR}/"
+
+        flatpak-builder --user --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}" "${MANIFEST}"
+        flatpak build-bundle "${REPO_DIR}" "${BUNDLE_FILENAME}" "${APP_ID}"
+
+        if [ "${OUTPUT_DIR}" != "." ]; then
+          mkdir -p "${OUTPUT_DIR}"
+          cp "${BUNDLE_FILENAME}" "${OUTPUT_DIR}/"
+        fi
+
+        echo "Built Flatpak bundle: ${OUTPUT_DIR}/${BUNDLE_FILENAME}"

@@ -184,7 +184,15 @@ jobs:
             librsvg2-dev \
             patchelf \
             xdg-utils \
-            file
+            file \
+            flatpak \
+            flatpak-builder
+
+      - name: Install Flatpak SDK (Linux only)
+        if: matrix.os == 'linux'
+        uses: ./.github/actions/install-flatpak-sdk
+        with:
+          runtime-version: "49"
 
       - name: Install dependencies
         run: pnpm install
@@ -224,14 +232,31 @@ jobs:
           echo "CEF artifacts:"
           ls -la cef-artifacts/
 
-      - name: Verify CEF artifact exists (Linux)
+      - name: Build CEF Flatpak bundle (Linux)
+        if: matrix.os == 'linux'
+        uses: ./.github/actions/build-flatpak-bundle
+        with:
+          bundle-filename: deadlock-mod-manager-cef.flatpak
+          output-directory: cef-artifacts
+          repo-directory: flatpak-repo-cef
+          build-directory: flatpak-build-cef
+
+      - name: Verify CEF Linux artifacts (Linux)
         if: matrix.os == 'linux'
         run: |
-          count=$(ls cef-artifacts/*-cef.deb 2>/dev/null | wc -l)
-          if [ "$count" -eq 0 ]; then
+          set -euo pipefail
+          deb_count=$(ls cef-artifacts/*-cef.deb 2>/dev/null | wc -l)
+          if [ "$deb_count" -eq 0 ]; then
             echo "ERROR: No *-cef.deb artifact found!"
             exit 1
           fi
+          flatpak_path="cef-artifacts/deadlock-mod-manager-cef.flatpak"
+          if [ ! -s "$flatpak_path" ]; then
+            echo "ERROR: Flatpak artifact missing or empty: ${flatpak_path}"
+            exit 1
+          fi
+          echo "CEF Linux artifacts verified:"
+          ls -la cef-artifacts/
 
       - name: Build CEF (Windows)
         if: matrix.os == 'windows'

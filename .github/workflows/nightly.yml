@@ -419,13 +419,9 @@ jobs:
 
       - name: Build Flatpak bundle (Linux)
         if: matrix.os == 'linux'
-        run: |
-          DEB_PATH=$(find apps/desktop/target/release/bundle/deb -name '*.deb' | head -1)
-          cp "$DEB_PATH" apps/desktop/flatpak/deadlock-mod-manager.deb
-          cp apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml apps/desktop/flatpak/
-
-          flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.yml
-          flatpak build-bundle flatpak-repo deadlock-mod-manager.flatpak dev.stormix.deadlock-mod-manager
+        uses: ./.github/actions/build-flatpak-bundle
+        with:
+          bundle-filename: deadlock-mod-manager.flatpak
 
       - name: Upload Flatpak to release (Linux)
         if: matrix.os == 'linux'
