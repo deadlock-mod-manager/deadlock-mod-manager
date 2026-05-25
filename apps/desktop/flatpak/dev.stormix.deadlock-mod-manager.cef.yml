@@ -1,0 +1,79 @@
+id: dev.stormix.deadlock-mod-manager
+
+runtime: org.gnome.Platform
+runtime-version: "49"
+sdk: org.gnome.Sdk
+
+base: org.electronjs.Electron2.BaseApp
+base-version: "24.08"
+
+command: deadlock-mod-manager
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=session-bus
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=~/.steam
+  - --filesystem=~/.local/share/Steam
+  - --filesystem=xdg-data/Steam
+  - --filesystem=home/.steam
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.OpenURI
+  # zypak uses the spawn-strategy zygote by default which fails on some
+  # hosts ("Failed to send spawn request to supervisor: Bad file descriptor").
+  # The legacy fork strategy is more compatible with custom CEF apps.
+  - --env=ZYPAK_ZYGOTE_STRATEGY_SPAWN=0
+
+modules:
+  - name: deadlock-mod-manager
+    buildsystem: simple
+    sources:
+      - type: file
+        path: deadlock-mod-manager.deb
+      - type: file
+        path: dev.stormix.deadlock-mod-manager.metainfo.xml
+      - type: file
+        path: dev.stormix.deadlock-mod-manager.desktop
+    build-commands:
+      - set -e
+      - mkdir -p deb-extract
+      - ar -x deadlock-mod-manager.deb --output deb-extract
+      - tar -C deb-extract -xf deb-extract/data.tar.gz
+
+      # CEF builds ship the binary as a symlink under /usr/bin pointing into
+      # /usr/share/Deadlock Mod Manager/ where libcef.so, *.pak, locales/,
+      # snapshot blobs, and chrome-sandbox live. The ELF has RUNPATH=$ORIGIN,
+      # so it MUST stay next to libcef.so. zypak (from
+      # org.electronjs.Electron2.BaseApp) reroutes the Chromium SUID sandbox
+      # through flatpak's bubblewrap, so the bundled chrome-sandbox is
+      # removed and the binary is launched via zypak-wrapper.
+      # NOTE: CEF's zygote re-execs itself using argv[0] without preserving
+      # shell quoting, so the install path MUST NOT contain spaces (Chromium
+      # would split "Deadlock Mod Manager" at the space). The deb ships under
+      # "/usr/share/Deadlock Mod Manager/" but we relocate to a no-spaces
+      # directory inside /app.
+      - |
+        set -e
+        mkdir -p /app/share
+        cp -a "deb-extract/usr/share/Deadlock Mod Manager" /app/share/deadlock-mod-manager
+        rm -f /app/share/deadlock-mod-manager/chrome-sandbox
+        mkdir -p /app/bin
+        cat > /app/bin/deadlock-mod-manager <<'EOF'
+        #!/bin/sh
+        exec zypak-wrapper /app/share/deadlock-mod-manager/deadlock-mod-manager "$@"
+        EOF
+        chmod 755 /app/bin/deadlock-mod-manager
+
+      - install -Dm644 dev.stormix.deadlock-mod-manager.desktop /app/share/applications/dev.stormix.deadlock-mod-manager.desktop
+
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/32x32/apps/deadlock-mod-manager.png /app/share/icons/hicolor/32x32/apps/dev.stormix.deadlock-mod-manager.png
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/128x128/apps/deadlock-mod-manager.png /app/share/icons/hicolor/128x128/apps/dev.stormix.deadlock-mod-manager.png
+      - install -Dm644 deb-extract/usr/share/icons/hicolor/256x256@2/apps/deadlock-mod-manager.png /app/share/icons/hicolor/256x256/apps/dev.stormix.deadlock-mod-manager.png
+
+      - install -Dm644 dev.stormix.deadlock-mod-manager.metainfo.xml /app/share/metainfo/dev.stormix.deadlock-mod-manager.metainfo.xml
