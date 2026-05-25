@@ -46,18 +46,11 @@ modules:
       - ar -x deadlock-mod-manager.deb --output deb-extract
       - tar -C deb-extract -xf deb-extract/data.tar.gz
 
-      # CEF builds ship the binary as a symlink under /usr/bin pointing into
-      # /usr/share/Deadlock Mod Manager/ where libcef.so, *.pak, locales/,
-      # snapshot blobs, and chrome-sandbox live. The ELF has RUNPATH=$ORIGIN,
-      # so it MUST stay next to libcef.so. zypak (from
-      # org.electronjs.Electron2.BaseApp) reroutes the Chromium SUID sandbox
-      # through flatpak's bubblewrap, so the bundled chrome-sandbox is
-      # removed and the binary is launched via zypak-wrapper.
-      # NOTE: CEF's zygote re-execs itself using argv[0] without preserving
-      # shell quoting, so the install path MUST NOT contain spaces (Chromium
-      # would split "Deadlock Mod Manager" at the space). The deb ships under
-      # "/usr/share/Deadlock Mod Manager/" but we relocate to a no-spaces
-      # directory inside /app.
+      # The binary has RUNPATH=$ORIGIN so it must stay next to libcef.so.
+      # chrome-sandbox is removed because zypak handles sandboxing.
+      # The install path must not contain spaces (CEF's zygote re-execs
+      # using argv[0] without quoting), so we relocate from the deb's
+      # "/usr/share/Deadlock Mod Manager/" to a no-spaces path.
       - |
         set -e
         mkdir -p /app/share
