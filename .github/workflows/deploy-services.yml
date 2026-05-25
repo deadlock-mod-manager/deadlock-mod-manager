@@ -17,6 +17,9 @@ on:
       - "apps/**"
       - "packages/**"
 
+permissions:
+  contents: read
+
 jobs:
   changes:
     if: github.repository_owner == 'deadlock-mod-manager'

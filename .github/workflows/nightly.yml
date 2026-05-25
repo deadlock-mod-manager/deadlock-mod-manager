@@ -26,6 +26,9 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   check-commits:
     if: github.repository_owner == 'deadlock-mod-manager'
