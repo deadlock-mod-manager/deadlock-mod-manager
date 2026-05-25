@@ -34,12 +34,33 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Stage unsigned executables for SignPath
+      shell: bash
+      run: |
+        STAGING="./signpath-staging"
+        rm -rf "$STAGING"
+        mkdir -p "$STAGING"
+
+        shopt -s nullglob
+        matches=(${{ inputs.unsigned-artifact-path }})
+        if [ ${#matches[@]} -eq 0 ]; then
+          echo "No executables matched: ${{ inputs.unsigned-artifact-path }}"
+          exit 1
+        fi
+
+        for file in "${matches[@]}"; do
+          cp "$file" "$STAGING/$(basename "$file")"
+        done
+
+        echo "Staged files for SignPath:"
+        ls -la "$STAGING"
+
     - name: Upload unsigned artifact
       id: upload-unsigned
       uses: actions/upload-artifact@v4
       with:
         name: windows-unsigned-${{ github.run_id }}
-        path: ${{ inputs.unsigned-artifact-path }}
+        path: ./signpath-staging/*.exe
         if-no-files-found: error
 
     - name: Submit to SignPath
@@ -63,18 +84,27 @@ runs:
         echo "Contents of signpath-signed-output:"
         ls -la ./signpath-signed-output/ || echo "Directory doesn't exist or is empty"
 
-    - name: Regenerate Tauri updater signature
+    - name: Regenerate Tauri updater signatures
       shell: bash
       env:
         TAURI_PRIVATE_KEY: ${{ inputs.tauri-private-key }}
       run: |
         SIGNED_DIR="$(pwd)/signpath-signed-output"
-        exeFile=$(ls "$SIGNED_DIR"/*.exe)
-        echo "Regenerating Tauri signature for: $exeFile"
-        pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
+        shopt -s nullglob
+        exeFiles=("$SIGNED_DIR"/*.exe)
+        if [ ${#exeFiles[@]} -eq 0 ]; then
+          echo "No signed executables found in $SIGNED_DIR"
+          exit 1
+        fi
+
+        for exeFile in "${exeFiles[@]}"; do
+          echo "Regenerating Tauri signature for: $exeFile"
+          pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
+        done
+
         mv "$SIGNED_DIR"/*.exe "${{ inputs.output-directory }}/"
         mv "$SIGNED_DIR"/*.exe.sig "${{ inputs.output-directory }}/"
 
-    - name: Cleanup temporary signed output
+    - name: Cleanup temporary signing directories
       shell: bash
-      run: rm -rf ./signpath-signed-output
+      run: rm -rf ./signpath-signed-output ./signpath-staging

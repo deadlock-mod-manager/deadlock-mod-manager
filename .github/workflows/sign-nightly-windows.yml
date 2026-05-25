@@ -28,8 +28,10 @@ permissions:
   contents: write
 
 jobs:
-  sign-regular:
+  sign-windows:
     runs-on: windows-latest
+    outputs:
+      has-cef: ${{ steps.download-cef.outcome == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,18 +55,62 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ./unsigned-regular
 
+      - name: Download unsigned CEF Windows artifact
+        id: download-cef
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-unsigned-cef-nightly
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./unsigned-cef
+
+      - name: Collect unsigned executables
+        shell: bash
+        run: |
+          mkdir -p ./unsigned-combined
+          shopt -s nullglob
+          for f in ./unsigned-regular/*.exe; do
+            cp "$f" "./unsigned-combined/$(basename "$f")"
+          done
+          for f in ./unsigned-cef/*.exe; do
+            cp "$f" "./unsigned-combined/$(basename "$f")"
+          done
+
+          echo "Combined unsigned executables:"
+          ls -la ./unsigned-combined
+
       - name: Sign Windows executables
         uses: ./.github/actions/signpath-sign
         with:
-          unsigned-artifact-path: ./unsigned-regular/*.exe
-          output-directory: ./artifact-output
+          unsigned-artifact-path: ./unsigned-combined/*.exe
+          output-directory: ./signed-all
           signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           signpath-project-slug: deadlock-mod-manager
           signpath-signing-policy: test-signing
           tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
-      - name: Upload signed artifacts to release
+      - name: Split signed artifacts
+        shell: bash
+        run: |
+          mkdir -p ./artifact-output ./cef-artifacts
+          shopt -s nullglob
+          for file in ./signed-all/*; do
+            base="$(basename "$file")"
+            if [[ "$base" == *-cef-setup.exe* ]]; then
+              mv "$file" "./cef-artifacts/$base"
+            else
+              mv "$file" "./artifact-output/$base"
+            fi
+          done
+
+          echo "Regular signed artifacts:"
+          ls -la ./artifact-output
+          echo "CEF signed artifacts:"
+          ls -la ./cef-artifacts
+
+      - name: Upload signed regular artifacts to release
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ inputs.release_id }}
@@ -94,52 +140,6 @@ jobs:
                 console.log(`Uploaded ${sanitizedName}`);
               }
             }
-
-      - name: Upload signed Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-nightly-signed
-          path: ./artifact-output/*
-          if-no-files-found: error
-
-  sign-cef:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-dependency-path: pnpm-lock.yaml
-
-      - uses: pnpm/action-setup@v4
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Download unsigned CEF Windows artifact
-        id: download-cef
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-unsigned-cef-nightly
-          run-id: ${{ inputs.source_run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./unsigned-cef
-
-      - name: Sign Windows CEF executable
-        if: steps.download-cef.outcome == 'success'
-        uses: ./.github/actions/signpath-sign
-        with:
-          unsigned-artifact-path: ./unsigned-cef/*.exe
-          output-directory: ./cef-artifacts
-          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          signpath-project-slug: deadlock-mod-manager
-          signpath-signing-policy: test-signing
-          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
       - name: Upload signed CEF artifacts to release
         if: steps.download-cef.outcome == 'success'
@@ -172,8 +172,15 @@ jobs:
               }
             }
 
+      - name: Upload signed Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nightly-signed
+          path: ./artifact-output/*
+          if-no-files-found: error
+
   update-latest-json-linux:
-    needs: sign-regular
+    needs: sign-windows
     if: inputs.builds_linux == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -195,7 +202,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   update-latest-json-windows-only:
-    needs: sign-regular
+    needs: sign-windows
     if: inputs.builds_linux != 'true'
     runs-on: ubuntu-latest
     steps:
@@ -270,7 +277,8 @@ jobs:
             console.log('Successfully uploaded latest.json (Windows-only nightly)');
 
   update-latest-cef-json:
-    needs: sign-cef
+    needs: sign-windows
+    if: needs.sign-windows.outputs.has-cef == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -285,12 +293,12 @@ jobs:
 
   publish-nightly:
     needs:
-      - sign-regular
+      - sign-windows
       - update-latest-json-linux
       - update-latest-json-windows-only
     if: >-
       always() &&
-      needs.sign-regular.result == 'success' &&
+      needs.sign-windows.result == 'success' &&
       (needs.update-latest-json-linux.result == 'success' || needs.update-latest-json-windows-only.result == 'success')
     runs-on: ubuntu-latest
     permissions:
