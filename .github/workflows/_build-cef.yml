@@ -194,6 +194,10 @@ jobs:
         with:
           runtime-version: "49"
 
+      - name: Install Electron base app (zypak for CEF)
+        if: matrix.os == 'linux'
+        run: flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
+
       - name: Install dependencies
         run: pnpm install
 
@@ -240,6 +244,7 @@ jobs:
           output-directory: cef-artifacts
           repo-directory: flatpak-repo-cef
           build-directory: flatpak-build-cef
+          manifest: apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.cef.yml
 
       - name: Verify CEF Linux artifacts (Linux)
         if: matrix.os == 'linux'
