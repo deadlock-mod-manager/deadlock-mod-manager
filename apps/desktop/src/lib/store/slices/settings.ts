@@ -133,7 +133,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   autoUpdateEnabled: true,
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
-  enabledPlugins: {},
+  enabledPlugins: { themes: true },
   gamePresenceEnabled: true,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},

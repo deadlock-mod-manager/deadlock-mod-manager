@@ -95,7 +95,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   hasCompletedOnboarding: false,
   showOccultGeometry: true,
   animateOccultGeometry: true,
-  enabledPlugins: {},
+  enabledPlugins: { themes: true },
   pluginSettings: {},
 
   forceShowWhatsNew: () =>
