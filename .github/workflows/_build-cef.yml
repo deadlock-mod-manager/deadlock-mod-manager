@@ -78,6 +78,8 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: ${{ matrix.timeout_minutes }}
+    env:
+      RUSTC_WRAPPER: sccache
 
     steps:
       - name: Checkout repository
@@ -104,19 +106,25 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop
+          workspaces: |
+            apps/desktop -> ${{ matrix.os == 'windows' && 'C:/t' || 'apps/desktop/target' }}
+          key: cef-${{ matrix.os }}
           cache-on-failure: true
+
+      - uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
-      - uses: pnpm/action-setup@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -159,9 +167,6 @@ jobs:
             patchelf \
             xdg-utils \
             file
-
-      - name: Install pnpm
-        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install
