@@ -193,6 +193,7 @@ jobs:
         uses: ./.github/actions/install-flatpak-sdk
         with:
           runtime-version: "49"
+          install-electron-base: "true"
 
       - name: Install dependencies
         run: pnpm install
@@ -240,6 +241,7 @@ jobs:
           output-directory: cef-artifacts
           repo-directory: flatpak-repo-cef
           build-directory: flatpak-build-cef
+          manifest: apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.cef.yml
 
       - name: Verify CEF Linux artifacts (Linux)
         if: matrix.os == 'linux'
