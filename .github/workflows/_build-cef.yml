@@ -107,22 +107,20 @@ jobs:
       - name: Setup sccache
         uses: mozilla-actions/sccache-action@v0.0.9
 
-      - name: Configure RUSTC_WRAPPER
-        shell: bash
-        run: echo "RUSTC_WRAPPER=${SCCACHE_PATH}" >> "$GITHUB_ENV"
-
-      - name: Configure global cargo sccache wrapper
+      - name: Configure sccache for cargo
         shell: bash
         run: |
+          SCCACHE_WRAPPER="${SCCACHE_PATH//\\//}"
+          echo "RUSTC_WRAPPER=${SCCACHE_WRAPPER}" >> "$GITHUB_ENV"
           mkdir -p "$CARGO_HOME"
-          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_PATH" >> "$CARGO_HOME/config.toml"
+          printf '[build]\nrustc-wrapper = "%s"\n' "$SCCACHE_WRAPPER" >> "$CARGO_HOME/config.toml"
 
       - name: Verify sccache wrapper
         shell: bash
         run: |
           echo "RUSTC_WRAPPER=$RUSTC_WRAPPER"
           echo "SCCACHE_PATH=$SCCACHE_PATH"
-          "$SCCACHE_PATH" --show-stats
+          "$RUSTC_WRAPPER" --show-stats
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
