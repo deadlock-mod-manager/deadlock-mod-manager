@@ -23,6 +23,8 @@
   gst_all_1,
   makeDesktopItem,
   fontconfig,
+  cargo-tauri,
+  nodejs,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -37,8 +39,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoHash = "sha256-rwwE17mof+05REwlOopEnpuDn7JZZmkzjhC2cq0ORRc=";
 
   nativeBuildInputs = [
-    rustToolchain
-    nodejs_22
+rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
+
     pnpmConfigHook
     pnpm_11
     pkg-config
@@ -46,7 +48,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   ];
 
   buildInputs = [
-    # GTK and WebKit dependencies
     webkitgtk_4_1
     cairo
     gdk-pixbuf
@@ -54,14 +55,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
     glib-networking
     gtk3
     libsoup_3
-    pango
-    
-    # System libraries
+pango
+
     openssl
     bzip2
-    desktop-file-utils
-    
-    # GStreamer for media playback in WebKit
+desktop-file-utils
+
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
     gst_all_1.gst-plugins-good
@@ -81,16 +80,24 @@ rustPlatform.buildRustPackage (finalAttrs: {
     hash = "sha256-zl+ZrI21EnMBeMInKvEkUObiZ0OA5SJLJjnHwu/Dagc=";
   };
 
+  postPatch = ''
+    substituteInPlace apps/desktop/src-tauri/tauri.conf.json \
+      --replace '"createUpdaterArtifacts": true' '"createUpdaterArtifacts": false'
+  '';
+
   # Environment variables
   env.VITE_API_URL = "https://api.deadlockmods.app";
 
   # Skip tests that require network access
-  doCheck = false;
+  checkFlags = [
+    "--skip=download_manager::downloader::tests::test_download_file"
+  ];
 
   preFixup = ''
     gappsWrapperArgs+=(
       --set FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf"
-      --set TAURI_DIST_DIR "$out/share/deadlock-mod-manager/dist"
+--set TAURI_DIST_DIR "$out/share/deadlock-modmanager/dist"
+
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
       --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
       --add-flags "--disable-auto-update"
@@ -100,7 +107,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   desktopItems = [
     (makeDesktopItem {
       name = "deadlock-mod-manager";
-      desktopName = "Deadlock Mod Manager";
+      desktopName = "Deadlock Mod Manager Nightly";
       exec = "deadlock-mod-manager %u";
       terminal = false;
       type = "Application";
