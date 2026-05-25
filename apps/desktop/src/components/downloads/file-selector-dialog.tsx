@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Archive, File, FolderOpen } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -218,7 +217,7 @@ export const FileSelectorDialog = ({
               </span>
             </div>
 
-            <ScrollArea className='max-h-[50vh] overflow-y-auto pr-4'>
+            <div className='max-h-[50vh] overflow-y-auto pr-4'>
               <div className='space-y-4'>
                 {hasMultipleArchives ? (
                   // Group view - show files grouped by archive
@@ -339,7 +338,7 @@ export const FileSelectorDialog = ({
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           <DialogFooter className='flex items-center justify-between'>

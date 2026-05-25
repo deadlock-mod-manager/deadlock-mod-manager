@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
   Check,
   CloudDownload,
@@ -123,7 +122,7 @@ export const ModOptionsDialog = ({
             {t("modOptions.noOptions")}
           </div>
         ) : (
-          <ScrollArea className='max-h-[55vh] overflow-y-auto pr-4'>
+          <div className='max-h-[55vh] overflow-y-auto pr-4'>
             <div className='space-y-1'>
               {downloads.map((download) => {
                 const isChecked = checkedNames.has(download.name);
@@ -185,7 +184,7 @@ export const ModOptionsDialog = ({
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         <DialogFooter className='flex items-center justify-between'>

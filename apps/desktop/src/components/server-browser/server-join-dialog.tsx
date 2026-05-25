@@ -11,7 +11,6 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
@@ -142,7 +141,7 @@ const ServerJoinDialog = ({
                 {server.required_mods.length})
               </h3>
             </header>
-            <ScrollArea className='max-h-64 rounded-md border'>
+            <div className='max-h-64 overflow-y-auto rounded-md border'>
               <div className='space-y-1 p-1.5'>
                 {join.isLoading ? (
                   <>
@@ -158,7 +157,7 @@ const ServerJoinDialog = ({
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             <div className='flex items-start gap-2 rounded-md border border-border/60 bg-card/40 p-2'>
               <Checkbox

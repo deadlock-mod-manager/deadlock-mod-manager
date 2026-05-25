@@ -1,5 +1,4 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -53,7 +52,7 @@ const ServerDetailPanel = ({
         server={server}
       />
 
-      <ScrollArea className='flex-1'>
+      <div className='min-h-0 flex-1 overflow-y-auto'>
         <div className='space-y-5 p-4'>
           <ServerDetailMetaSection server={server} />
 
@@ -79,7 +78,7 @@ const ServerDetailPanel = ({
             </>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       <ServerDetailFooter canJoin={canJoin} server={server} />
     </aside>

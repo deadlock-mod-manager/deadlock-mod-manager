@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
   DownloadSimpleIcon,
   FileTextIcon,
@@ -56,7 +55,7 @@ export function FontInstallDialog({
               {fontCount}
             </span>
           </div>
-          <ScrollArea className='max-h-48'>
+          <div className='max-h-48 overflow-y-auto'>
             <ul className='divide-y divide-border/60'>
               {fonts.map((font) => (
                 <li
@@ -77,7 +76,7 @@ export function FontInstallDialog({
                 </li>
               ))}
             </ul>
-          </ScrollArea>
+          </div>
         </div>
 
         <DialogFooter className='gap-2 sm:gap-2'>

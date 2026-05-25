@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -147,7 +146,7 @@ export function MultiFileDownloadDialog({
             </span>
           </div>
 
-          <ScrollArea className='min-h-0 flex-1'>
+          <div className='min-h-0 flex-1 overflow-y-auto'>
             <ul className='divide-y divide-border/60' role='list'>
               {sortedFiles.map((file) => {
                 const isSelected = selectedFiles.has(file.name);
@@ -231,7 +230,7 @@ export function MultiFileDownloadDialog({
                 );
               })}
             </ul>
-          </ScrollArea>
+          </div>
         </div>
 
         <DialogFooter className='flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between'>
