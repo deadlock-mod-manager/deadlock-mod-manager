@@ -1281,6 +1281,25 @@
       "skipAnalysis": "Salta per Ora"
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "Codice errore:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "Sei sicuro di voler cancellare lo stato delle mod? Questo rimuoverà tutte le mod dall'applicazione ma NON le eliminerà dalla cartella del gioco. Puoi riscansionare la cartella delle mod per ripristinarle.",
     "modsStateCleared": "Stato delle mod cancellato con successo",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "Strumenti Sviluppatore",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "",
     "checkingForUpdate": "",
     "noUpdateAvailable": "",

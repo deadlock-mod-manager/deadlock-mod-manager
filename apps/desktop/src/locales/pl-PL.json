@@ -1281,6 +1281,25 @@
       "skipAnalysis": ""
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "Kod błędu:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "",
     "modsStateCleared": "",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "",
     "checkingForUpdate": "",
     "noUpdateAvailable": "",
