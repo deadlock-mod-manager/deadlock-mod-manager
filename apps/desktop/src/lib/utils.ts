@@ -10,6 +10,7 @@ import { platform } from "@tauri-apps/plugin-os";
 
 import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
+import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/launch-option";
 import {
   STALE_MOD_DAYS,
   STALE_MOD_REPORT_THRESHOLD,
@@ -51,13 +52,13 @@ export const getAdditionalArgs = async (
     (s) =>
       s.type === CustomSettingType.LAUNCH_OPTION &&
       s.enabled &&
-      s.id !== "autoexec-launch-option",
+      s.id !== AUTOEXEC_LAUNCH_OPTION_ID,
   )) {
     additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
   }
 
   const autoexecLaunchOption = settings.find(
-    (s) => s.id === "autoexec-launch-option" && s.enabled,
+    (s) => s.id === AUTOEXEC_LAUNCH_OPTION_ID && s.enabled,
   );
 
   if (autoexecLaunchOption) {

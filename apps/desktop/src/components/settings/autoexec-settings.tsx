@@ -16,15 +16,25 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FolderOpenIcon, PencilIcon } from "@phosphor-icons/react";
+import { FolderOpenIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { useConfirm } from "@/components/providers/alert-dialog";
+import {
+  appendPredefinedCommand,
+  commandExistsInContent,
+  getAutoexecCommandFileComment,
+  normalizeAutoexecContent,
+} from "@/lib/autoexec/autoexec-content";
+import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
+import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
+import { AutoexecCommandLibrary } from "./autoexec/autoexec-command-library";
 import Section from "./section";
 
 interface ReadonlySection {
@@ -51,7 +61,9 @@ type AutoexecFormValues = z.infer<typeof autoexecSchema>;
 
 export const AutoexecSettings = () => {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const isSilentSaveRef = useRef(false);
   const { data: config, isLoading } = useQuery({
     queryKey: ["autoexec-config"],
     queryFn: getAutoexecConfig,
@@ -67,14 +79,6 @@ export const AutoexecSettings = () => {
     },
   });
 
-  useEffect(() => {
-    if (config) {
-      form.reset({
-        content: config.full_content,
-      });
-    }
-  }, [config, form]);
-
   const saveMutation = useMutation({
     mutationFn: async (params: {
       fullContent: string;
@@ -82,8 +86,18 @@ export const AutoexecSettings = () => {
     }) => {
       return invoke("update_autoexec_config", params);
     },
-    onSuccess: async () => {
-      toast.success(t("settings.autoexecSaved"));
+    onSuccess: async (_data, variables) => {
+      const wasSilentSave = isSilentSaveRef.current;
+
+      if (!wasSilentSave) {
+        toast.success(t("settings.autoexecSaved"));
+
+        if (variables.fullContent.trim().length > 0) {
+          enableAutoexecLaunchOptionIfDisabled();
+        }
+      }
+
+      isSilentSaveRef.current = false;
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
@@ -91,6 +105,26 @@ export const AutoexecSettings = () => {
       toast.error(t("settings.autoexecSaveError"));
     },
   });
+
+  useEffect(() => {
+    if (!config) {
+      return;
+    }
+
+    const normalizedContent = normalizeAutoexecContent(config.full_content);
+
+    if (normalizedContent !== config.full_content) {
+      form.reset({ content: normalizedContent });
+      isSilentSaveRef.current = true;
+      saveMutation.mutate({
+        fullContent: normalizedContent,
+        readonlySections: config.readonly_sections,
+      });
+      return;
+    }
+
+    form.reset({ content: config.full_content });
+  }, [config, form]);
 
   const openFolderMutation = useMutation({
     mutationFn: () => invoke("open_autoexec_folder"),
@@ -108,8 +142,32 @@ export const AutoexecSettings = () => {
     },
   });
 
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      if (!config) {
+        return;
+      }
+
+      return invoke("update_autoexec_config", {
+        fullContent: "",
+        readonlySections: config.readonly_sections,
+      });
+    },
+    onSuccess: async () => {
+      toast.success(t("settings.autoexecCleared"));
+      await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
+    },
+    onError: (error) => {
+      logger.errorOnly(error);
+      toast.error(t("settings.autoexecSaveError"));
+    },
+  });
+
   const onSubmit = (values: AutoexecFormValues) => {
-    if (!config) return;
+    if (!config) {
+      return;
+    }
+
     saveMutation.mutate({
       fullContent: values.content,
       readonlySections: config.readonly_sections,
@@ -124,7 +182,47 @@ export const AutoexecSettings = () => {
     openEditorMutation.mutate();
   };
 
+  const handleClear = async () => {
+    if (!config) {
+      return;
+    }
+
+    const confirmed = await confirm({
+      title: t("settings.autoexecClearConfirmTitle"),
+      body: t("settings.autoexecClearConfirmBody"),
+      actionButton: t("settings.autoexecClearConfirmAction"),
+      cancelButton: t("common.cancel"),
+      tone: "destructive",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    clearMutation.mutate();
+  };
+
   const watchedContent = form.watch("content");
+
+  const handleAddCommand = useCallback(
+    (command: FlatAutoexecCommand) => {
+      if (commandExistsInContent(watchedContent, command.command)) {
+        return;
+      }
+
+      const description = getAutoexecCommandFileComment(command.id);
+      const nextContent = appendPredefinedCommand(
+        watchedContent,
+        command.command,
+        command.value,
+        description,
+      );
+
+      form.setValue("content", nextContent, { shouldDirty: true });
+      toast.success(t("settings.autoexecCommandAdded"));
+    },
+    [form, t, watchedContent],
+  );
 
   const isDirty = watchedContent !== config?.full_content;
 
@@ -144,29 +242,22 @@ export const AutoexecSettings = () => {
     <Section
       description={t("settings.autoexecDescription")}
       title={t("settings.autoexec")}>
-      <div className='space-y-4'>
+      <div className='space-y-6'>
         <Card className='p-0'>
           <CardHeader>
-            <CardTitle>What's an Autoexec Config?</CardTitle>
-            <CardDescription>
-              <p>
-                Autoexec is a CFG file for launching a game with set convars
-                (think console command) that will get automatically executed on
-                launch of the game.
-              </p>
-              <p>
-                The mod manager uses this file to set the crosshair settings
-                automatically without needing to run commands in the console.
-                You can still edit the file manually if you want to to add more
-                commands.
-              </p>
-              <p>
-                P.S: the autoexec config can never be empty if added as launch
-                option or else it'll crash the game.
-              </p>
+            <CardTitle>{t("settings.autoexecInfoTitle")}</CardTitle>
+            <CardDescription className='space-y-3'>
+              <p>{t("settings.autoexecInfoBody1")}</p>
+              <p>{t("settings.autoexecInfoBody2")}</p>
+              <p>{t("settings.autoexecInfoBody3")}</p>
             </CardDescription>
           </CardHeader>
         </Card>
+
+        <AutoexecCommandLibrary
+          content={watchedContent}
+          onAddCommand={handleAddCommand}
+        />
 
         <Form {...form}>
           <form className='space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
@@ -176,7 +267,7 @@ export const AutoexecSettings = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className='text-lg font-semibold'>
-                    Current Autoexec Config
+                    {t("settings.autoexecEditorHeading")}
                   </FormLabel>
                   <FormControl>
                     <Textarea
@@ -198,28 +289,39 @@ export const AutoexecSettings = () => {
 
             <div className='flex gap-2'>
               <Button
+                isLoading={openFolderMutation.isPending}
                 onClick={handleOpenFolder}
                 type='button'
-                variant='outline'
-                isLoading={openFolderMutation.isPending}>
+                variant='outline'>
                 <FolderOpenIcon className='h-4 w-4' />
                 {t("settings.openInFolder")}
               </Button>
               <Button
+                isLoading={openEditorMutation.isPending}
                 onClick={handleOpenEditor}
                 type='button'
-                variant='outline'
-                isLoading={openEditorMutation.isPending}>
+                variant='outline'>
                 <PencilIcon className='h-4 w-4' />
                 {t("settings.openInEditor")}
               </Button>
               <Button
+                disabled={
+                  clearMutation.isPending || watchedContent.trim().length === 0
+                }
+                isLoading={clearMutation.isPending}
+                onClick={handleClear}
+                type='button'
+                variant='outline'>
+                <TrashIcon className='h-4 w-4' />
+                {t("settings.autoexecClear")}
+              </Button>
+              <Button
                 className='ml-auto'
-                isLoading={saveMutation.isPending}
                 disabled={saveMutation.isPending || !isDirty}
+                isLoading={saveMutation.isPending}
                 type='submit'>
                 {saveMutation.isPending
-                  ? "Saving..."
+                  ? t("settings.autoexecSaving")
                   : t("settings.saveChanges")}
               </Button>
             </div>

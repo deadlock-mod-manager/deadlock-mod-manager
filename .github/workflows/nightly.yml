@@ -468,7 +468,13 @@ jobs:
 
   trigger-windows-signing:
     needs:
-      [check-commits, prepare-matrix, create-nightly-release, build-nightly, build-cef]
+      [
+        check-commits,
+        prepare-matrix,
+        create-nightly-release,
+        build-nightly,
+        build-cef,
+      ]
     if: >-
       always() &&
       needs.check-commits.outputs.should_build == 'true' &&

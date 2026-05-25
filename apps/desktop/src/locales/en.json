@@ -651,6 +651,261 @@
     "autoexecContent": "Config File Content",
     "autoexecPlaceholder": "Add your custom console commands here...",
     "autoexecReadonlyNote": "Note: Sections marked with 'DO NOT EDIT' are managed by the mod manager and will be restored automatically.",
+    "autoexecInfoTitle": "What's an Autoexec Config?",
+    "autoexecInfoBody1": "Autoexec is a CFG file for launching a game with set convars (think console command) that will get automatically executed on launch of the game.",
+    "autoexecInfoBody2": "The mod manager uses this file to set the crosshair settings automatically without needing to run commands in the console. You can still edit the file manually if you want to add more commands.",
+    "autoexecInfoBody3": "P.S: the autoexec config can never be empty if added as launch option or else it'll crash the game.",
+    "autoexecLibraryHeading": "Command Library",
+    "autoexecLibraryDescription": "Browse verified client-safe commands and add them to your config with one click.",
+    "autoexecLibrarySearchPlaceholder": "Search commands...",
+    "autoexecLibraryEmpty": "No commands match your search.",
+    "autoexecCommandAdd": "Add",
+    "autoexecCommandAdded": "Command added to config. Save to apply.",
+    "autoexecCommandAddedBadge": "Added",
+    "autoexecEditorHeading": "Current Autoexec Config",
+    "autoexecSaving": "Saving...",
+    "autoexecClear": "Clear",
+    "autoexecClearConfirmTitle": "Clear Autoexec Config?",
+    "autoexecClearConfirmBody": "This will remove all commands from your autoexec.cfg. Managed crosshair and map sections will be restored automatically. An empty autoexec file can crash the game if the autoexec launch option is enabled.",
+    "autoexecClearConfirmAction": "Clear Config",
+    "autoexecCleared": "Autoexec config cleared.",
+    "autoexecCategories": {
+      "all": "All",
+      "performance": "Performance",
+      "network": "Network",
+      "hudUi": "HUD & UI",
+      "minimap": "Minimap",
+      "matchmakingRegion": "Matchmaking & Region",
+      "privateLobbyDefaults": "Private Lobby Defaults",
+      "mouseSensitivity": "Mouse & Sensitivity",
+      "abilityQuickcast": "Ability Quickcast",
+      "buildItems": "Build & Items",
+      "audio": "Audio",
+      "voiceChat": "Voice Chat",
+      "visualEffects": "Visual / Effects",
+      "replaySpectator": "Replay / Spectator"
+    },
+    "autoexecCommands": {
+      "fpsMax": {
+        "description": "Main FPS limit. 0 means unlimited."
+      },
+      "fpsMaxUi": {
+        "description": "FPS limit while game UI is displayed. 0 means unlimited."
+      },
+      "engineNoFocusSleep": {
+        "description": "Sleep delay when the game window is not focused. 0 keeps FPS active in background."
+      },
+      "engineLowLatencySleepAfterClientTick": {
+        "description": "Moves low-latency sleep after client simulation when low latency is active."
+      },
+      "batterySaver": {
+        "description": "Disable battery saver mode."
+      },
+      "rate": {
+        "description": "Maximum client bandwidth rate."
+      },
+      "clUpdaterate": {
+        "description": "Requested server update packets per second."
+      },
+      "clInterpRatio": {
+        "description": "Client interpolation ratio."
+      },
+      "clLagcompensation": {
+        "description": "Keep lag compensation enabled."
+      },
+      "clHudTelemetryNetMisdeliveryShow": {
+        "description": "Show missed user commands and server snapshots only in poor conditions."
+      },
+      "clHudTelemetryNetQualityGraphShow": {
+        "description": "Hide network quality graph."
+      },
+      "citadelUnitStatusUseNew": {
+        "description": "Enable new unit status bars."
+      },
+      "citadelHudVisible": {
+        "description": "Show the HUD."
+      },
+      "citadelHideReplayHud": {
+        "description": "Hide replay HUD."
+      },
+      "citadelHintSystemDisable": {
+        "description": "Disable gameplay hints."
+      },
+      "citadelAlwaysShowActiveHudStats": {
+        "description": "Always show active HUD stats."
+      },
+      "citadelShowActiveSlotPopup": {
+        "description": "Show active slot popup."
+      },
+      "citadelShowAllPurchaseToasts": {
+        "description": "Show all purchase toasts."
+      },
+      "citadelShopDefaultTab": {
+        "description": "Set default shop tab. -1 means default behavior."
+      },
+      "clAutoCursorScale": {
+        "description": "Enable automatic cursor scaling."
+      },
+      "clShowfps": {
+        "description": "Show FPS counter. 0 off, 1 FPS, 2 smooth FPS, 3 server MS, 4 FPS and log."
+      },
+      "clShowframenumber": {
+        "description": "Show frame number."
+      },
+      "clTrueviewShowStatus": {
+        "description": "Show TrueView status. 0 never, 1 only if problem, 2 always."
+      },
+      "minimapUpdateRateHz": {
+        "description": "Update minimap at 60 Hz."
+      },
+      "citadelRenderMinimap": {
+        "description": "Render the minimap."
+      },
+      "citadelMinimapUnitClickRadius": {
+        "description": "Easier minimap unit clicking."
+      },
+      "citadelMinimapPlayerWidth": {
+        "description": "Larger player icons on minimap."
+      },
+      "citadelMinimapLocalPlayerWidth": {
+        "description": "Larger local player icon on minimap."
+      },
+      "citadelMinimapMaxIconShrink": {
+        "description": "Controls how much minimap icons can shrink."
+      },
+      "citadelMinimapOverlapScanDistance": {
+        "description": "Distance used to scan overlapping minimap icons."
+      },
+      "citadelMinimapZipLineThickness": {
+        "description": "Thicker zipline lines on minimap."
+      },
+      "citadelMinimapSpectatorFowTeamView": {
+        "description": "Spectator minimap team view."
+      },
+      "mmPreferSoloOnly": {
+        "description": "Prefer matches with solo players."
+      },
+      "citadelRegionOverrideAuto": {
+        "description": "Automatic region selection."
+      },
+      "citadelRegionOverrideNa": {
+        "description": "Force North America servers."
+      },
+      "citadelRegionOverrideEu": {
+        "description": "Force Europe servers."
+      },
+      "citadelRegionOverrideAsia": {
+        "description": "Force Asia servers."
+      },
+      "citadelPrivateLobbyBotDifficulty": {
+        "description": "Private lobby bot difficulty."
+      },
+      "citadelPrivateLobbyCheatsEnabled": {
+        "description": "Disable cheats in private lobby by default."
+      },
+      "citadelPrivateLobbyDuplicateHeroesEnabled": {
+        "description": "Disable duplicate heroes in private lobby by default."
+      },
+      "citadelPrivateLobbyIsPubliclyVisible": {
+        "description": "Hide private lobby from public list."
+      },
+      "citadelPrivateLobbyRandomizeLanes": {
+        "description": "Disable random lanes in private lobby."
+      },
+      "citadelPrivateLobbyServerRegion": {
+        "description": "Private lobby server region."
+      },
+      "fovDesired": {
+        "description": "Base field of view."
+      },
+      "mYaw": {
+        "description": "Mouse yaw factor."
+      },
+      "mPitch": {
+        "description": "Mouse pitch factor."
+      },
+      "zoomSensitivityRatio": {
+        "description": "ADS / zoom sensitivity scale."
+      },
+      "clCitadelZoomIsToggle": {
+        "description": "Zoom hold behavior. false means hold, true means toggle."
+      },
+      "clCitadelQuickcastAbility1": {
+        "description": "Quickcast mode for ability 1."
+      },
+      "clCitadelQuickcastAbility2": {
+        "description": "Quickcast mode for ability 2."
+      },
+      "clCitadelQuickcastAbility3": {
+        "description": "Quickcast mode for ability 3."
+      },
+      "clCitadelQuickcastAbility4": {
+        "description": "Quickcast mode for ability 4."
+      },
+      "citadelAutoQueueBuild": {
+        "description": "Automatically queue selected build at game start."
+      },
+      "volume": {
+        "description": "Master volume."
+      },
+      "sndGamevolume": {
+        "description": "Game volume."
+      },
+      "sndGamevoicevolume": {
+        "description": "Game voice-over volume."
+      },
+      "sndVoipvolume": {
+        "description": "Voice chat volume."
+      },
+      "soundDeviceOverride": {
+        "description": "Sound device override. Empty means default device."
+      },
+      "voiceModenable": {
+        "description": "Enable voice chat."
+      },
+      "voiceVox": {
+        "description": "Use push-to-talk instead of always-on VOX."
+      },
+      "voiceThreshold": {
+        "description": "Voice activation threshold."
+      },
+      "voiceLoopback": {
+        "description": "Keep voice loopback disabled."
+      },
+      "voiceAlwaysSampleMic": {
+        "description": "Keep voice input stream closed until needed."
+      },
+      "voiceDeviceOverride": {
+        "description": "Voice capture device override. Empty means default device."
+      },
+      "clRagdollLimit": {
+        "description": "Limit visible ragdolls."
+      },
+      "violenceAblood": {
+        "description": "Draw alien blood."
+      },
+      "violenceAgibs": {
+        "description": "Show alien gibs."
+      },
+      "violenceHblood": {
+        "description": "Draw human blood."
+      },
+      "violenceHgibs": {
+        "description": "Show human gibs."
+      },
+      "citadelAutoHighlightSecondsBefore": {
+        "description": "Auto-highlight seconds before event."
+      },
+      "citadelAutoHighlightSecondsAfter": {
+        "description": "Auto-highlight seconds after event."
+      },
+      "citadelReplayManagerDownloadChunkSize": {
+        "description": "Replay download chunk size."
+      },
+      "citadelReplayManagerDownloadSimultaneousRequests": {
+        "description": "Simultaneous replay download requests."
+      }
+    },
     "openInFolder": "Open in Folder",
     "openInEditor": "Open in Editor",
     "saveChanges": "Save Changes",
