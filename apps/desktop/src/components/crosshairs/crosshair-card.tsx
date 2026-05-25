@@ -10,12 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import {
-  CheckIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, EyeIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
@@ -110,20 +105,20 @@ export const CrosshairCard = ({
           "hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card/80",
           "hover:shadow-lg hover:shadow-primary/5",
           isActive &&
-            "border-primary/60 shadow-md shadow-primary/10 ring-1 ring-primary/30",
+            "border-primary/50 shadow-md shadow-primary/10 ring-1 ring-primary/20",
         )}
         onClick={handlePreviewOpen}>
         <CardContent className='relative flex flex-col p-0'>
-          {isActive && (
+          {isActive && !crosshair && (
             <>
-              <CornerBracket className='top-1.5 left-1.5 border-t-2 border-l-2' />
-              <CornerBracket className='top-1.5 right-1.5 border-t-2 border-r-2' />
-              <CornerBracket className='bottom-1.5 left-1.5 border-b-2 border-l-2' />
-              <CornerBracket className='bottom-1.5 right-1.5 border-b-2 border-r-2' />
+              <CornerBracket position='top-left' />
+              <CornerBracket position='top-right' />
+              <CornerBracket position='bottom-left' />
+              <CornerBracket position='bottom-right' />
             </>
           )}
 
-          <div className='relative h-[200px] w-full overflow-hidden'>
+          <div className='relative h-[200px] w-full'>
             <div
               aria-hidden
               className={cn(
@@ -145,8 +140,8 @@ export const CrosshairCard = ({
               className={cn(
                 "absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 p-2",
                 "bg-gradient-to-t from-background/95 via-background/70 to-transparent",
-                "translate-y-2 opacity-0 transition-all duration-200 ease-out",
-                "group-hover:translate-y-0 group-hover:opacity-100",
+                "opacity-0 transition-opacity duration-200 ease-out",
+                "group-hover:opacity-100",
               )}>
               <ActionIconButton
                 icon={<EyeIcon className='h-4 w-4' weight='duotone' />}
@@ -158,11 +153,10 @@ export const CrosshairCard = ({
               />
               <ActionIconButton
                 icon={
-                  isActive ? (
-                    <CheckIcon className='h-4 w-4' weight='bold' />
-                  ) : (
-                    <PencilIcon className='h-4 w-4' weight='duotone' />
-                  )
+                  <CheckCircleIcon
+                    className='h-4 w-4'
+                    weight={isActive ? "fill" : "duotone"}
+                  />
                 }
                 label={
                   isActive
@@ -189,20 +183,6 @@ export const CrosshairCard = ({
                 />
               )}
             </div>
-
-            {isActive && (
-              <div className='absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/80 px-2 py-0.5 backdrop-blur-sm'>
-                <span className='relative flex h-1.5 w-1.5'>
-                  <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75' />
-                  <span className='relative inline-flex h-1.5 w-1.5 rounded-full bg-primary' />
-                </span>
-                <span
-                  className='font-bold text-[9px] text-primary uppercase tracking-[0.2em]'
-                  style={SERIF_FONT}>
-                  {t("crosshairs.currentlyActive")}
-                </span>
-              </div>
-            )}
           </div>
 
           {crosshair && (
@@ -266,12 +246,21 @@ export const CrosshairCard = ({
   );
 };
 
-const CornerBracket = ({ className }: { className?: string }) => (
+type CornerPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+const cornerPositionClasses: Record<CornerPosition, string> = {
+  "top-left": "top-1.5 left-1.5 border-t-2 border-l-2",
+  "top-right": "top-1.5 right-1.5 border-t-2 border-r-2",
+  "bottom-left": "bottom-1.5 left-1.5 border-b-2 border-l-2",
+  "bottom-right": "bottom-1.5 right-1.5 border-b-2 border-r-2",
+};
+
+const CornerBracket = ({ position }: { position: CornerPosition }) => (
   <span
     aria-hidden
     className={cn(
-      "pointer-events-none absolute z-10 h-2.5 w-2.5 border-primary/70",
-      className,
+      "pointer-events-none absolute z-10 h-3 w-3 border-primary/60",
+      cornerPositionClasses[position],
     )}
   />
 );
