@@ -1281,6 +1281,25 @@
       "skipAnalysis": ""
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "错误代码：",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "确定要清除模组状态吗？这将从应用程序中移除所有模组，但不会从您的游戏文件夹中删除它们。您可以重新扫描模组文件夹来恢复它们。",
     "modsStateCleared": "模组状态清除成功",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "",
     "checkingForUpdate": "",
     "noUpdateAvailable": "",

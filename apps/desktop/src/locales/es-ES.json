@@ -1281,6 +1281,25 @@
       "skipAnalysis": "Omitir por Ahora"
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "Código de error:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "¿Estás seguro de que quieres limpiar el estado de los mods? Esto eliminará todos los mods de la aplicación pero NO los eliminará de tu carpeta del juego. Puedes volver a escanear tu carpeta de mods para restaurarlos.",
     "modsStateCleared": "Estado de mods limpiado exitosamente",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "Herramientas de Desarrollador",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "",
     "checkingForUpdate": "",
     "noUpdateAvailable": "",

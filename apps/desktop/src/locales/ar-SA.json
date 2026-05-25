@@ -1281,6 +1281,25 @@
       "skipAnalysis": "تخطي الآن"
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "رمز الخطأ:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "هل أنت متأكد من أنك تريد مسح حالة التعديلات؟ هذا سيزيل جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
     "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "أدوات المطور",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "",
     "updateMod": "",
     "forceUpdate": "",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "",
     "checkingForUpdate": "",
     "noUpdateAvailable": "",

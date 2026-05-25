@@ -1281,6 +1281,25 @@
       "skipAnalysis": "지금은 건너뛰기"
     }
   },
+  "telemetryConsent": {
+    "title": "",
+    "description": "",
+    "dialogDescription": "",
+    "whatWeCollectTitle": "",
+    "whatWeCollectHwid": "",
+    "whatWeCollectFeatures": "",
+    "whatWeDoNotCollectTitle": "",
+    "whatWeDoNotCollectPii": "",
+    "whatWeDoNotCollectPersonal": "",
+    "privacyPolicyPrefix": "",
+    "privacyPolicyLink": "",
+    "enableSwitch": "",
+    "enableSwitchDescription": "",
+    "enableButton": "",
+    "disableButton": "",
+    "thankYou": "",
+    "thankYouDescription": ""
+  },
   "errors": {
     "genericMessage": "",
     "errorCode": "오류 코드:",
@@ -1910,7 +1929,8 @@
     "clearModsStateDescription": "",
     "confirmClearModsState": "모드 상태를 지우시겠습니까? 이렇게 하면 애플리케이션에서 모든 모드가 제거되지만 게임 폴더에서는 삭제되지 않습니다. mods 폴더를 다시 스캔하여 복원할 수 있습니다.",
     "modsStateCleared": "Mods 상태가 성공적으로 지워졌습니다.",
-    "triggerOnboarding": ""
+    "triggerOnboarding": "",
+    "resetTelemetryConsent": ""
   },
   "developer": {
     "title": "개발자 도구",
@@ -2068,6 +2088,8 @@
     "viewOriginalPost": "GameBanana에서 게시물 보기",
     "updateMod": "모드 업데이트",
     "forceUpdate": "강제 업데이트",
+    "activeVpkFiles": "",
+    "activeVpkFilesDescription": "",
     "checkForUpdate": "업데이트 확인",
     "checkingForUpdate": "확인 중...",
     "noUpdateAvailable": "사용 가능한 업데이트가 없습니다.",
