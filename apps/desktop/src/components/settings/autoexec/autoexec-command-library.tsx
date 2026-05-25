@@ -57,7 +57,7 @@ export const AutoexecCommandLibrary = ({
         selectedCategory={selectedCategory}
       />
 
-      <div className='max-h-[420px] overflow-y-auto rounded-md border border-border/30 bg-background/20 p-3'>
+      <div className='max-h-[420px] overflow-y-auto rounded-md border border-border/30 bg-background/20 px-3 pb-3'>
         {!hasResults ? (
           <p className='py-8 text-center text-muted-foreground text-sm'>
             {t("settings.autoexecLibraryEmpty")}
