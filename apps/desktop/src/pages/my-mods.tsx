@@ -673,7 +673,23 @@ const MyMods = () => {
       return true;
     });
 
-    return filterLibraryModsByStatus(filteredMods, activeTab);
+    const statusFilteredMods = filterLibraryModsByStatus(
+      filteredMods,
+      activeTab,
+    );
+
+    if (query.trim()) {
+      return statusFilteredMods;
+    }
+
+    return [...statusFilteredMods].sort((a, b) => {
+      const orderA = a.installOrder ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.installOrder ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
+      const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
+      return dateA - dateB;
+    });
   }, [
     activeTab,
     filterMode,
