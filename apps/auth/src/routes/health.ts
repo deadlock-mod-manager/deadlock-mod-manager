@@ -1,6 +1,7 @@
 import type { Logger } from "@deadlock-mods/logging";
 import { Hono } from "hono";
 import type { HealthResponse } from "@/types/health";
+import { version } from "@/version";
 
 export const createHealthRouter = ({
   check,
@@ -11,7 +12,16 @@ export const createHealthRouter = ({
 }) => {
   const router = new Hono();
 
-  router.get("/health", (c) => c.json({ status: "ok" }, 200));
+  router.get("/health", (c) =>
+    c.json(
+      {
+        status: "ok",
+        db: { alive: true }, // For backward compatibility
+        version,
+      },
+      200,
+    ),
+  );
 
   router.get("/health/ready", async (c) => {
     const result = await check();
