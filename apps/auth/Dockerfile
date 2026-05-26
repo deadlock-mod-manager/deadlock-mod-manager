@@ -86,4 +86,4 @@ WORKDIR /usr/src/app/apps/auth
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3004/health || exit 1
 
-ENTRYPOINT [ "pnpm", "start" ]
+ENTRYPOINT [ "bun", "run", "start" ]

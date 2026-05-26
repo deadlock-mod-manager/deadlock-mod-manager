@@ -12,6 +12,8 @@ import {
   SentrySpanProcessor,
 } from "@sentry/opentelemetry";
 
+export { registerProcessHandlers } from "./process-handlers";
+
 export const setupInstrumentation = (
   serviceName: string,
   sentryClient: NodeClient,

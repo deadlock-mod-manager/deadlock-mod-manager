@@ -3,6 +3,8 @@ import "./instrument";
 
 import { prometheus } from "@hono/prometheus";
 import { sentry } from "@hono/sentry";
+import { createObservabilityStack, type AppEnv } from "@deadlock-mods/logging";
+import { registerProcessHandlers } from "@deadlock-mods/instrumentation";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { etag } from "hono/etag";
@@ -19,8 +21,7 @@ import {
 } from "./lib/constants";
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
-import { logger, loggerContext } from "./lib/logger";
-import { requestLogger } from "./middleware/request-logger";
+import { logger, loggerContext, wideEventContext } from "./lib/logger";
 import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
 import { ModsSyncProcessor } from "./processors/mods-sync";
 import { RelayDiscoveryProcessor } from "./processors/relay-discovery";
@@ -32,7 +33,6 @@ import modsRouter from "./routers/legacy/mods";
 import redirectRouter from "./routers/redirect";
 import { cronService } from "./services/cron";
 import { featureFlagsService } from "./services/feature-flags";
-import type { AppEnv } from "./types/hono";
 
 const { printMetrics, registerMetrics } = prometheus();
 
@@ -55,16 +55,18 @@ app.use(
   trimTrailingSlash(),
 );
 
-app.use("*", async (c, next) => {
-  await loggerContext.storage.run(
-    { requestId: c.get("requestId") },
-    async () => {
-      await next();
-    },
-  );
+const observability = createObservabilityStack({
+  logger,
+  loggerContext,
+  wideEventContext,
+  requestLogger: {
+    excludePaths: ["/", "/metrics"],
+  },
 });
 
-app.use("*", requestLogger);
+app.use("*", observability.loggerContextMiddleware);
+app.use("*", observability.requestLogger);
+app.onError(observability.onError);
 
 app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
@@ -116,6 +118,8 @@ app
   .route("/artifacts", artifactsRouter);
 
 const main = async () => {
+  registerProcessHandlers(logger);
+
   logger.info("Bootstrapping feature flags");
   const bootstrapResult = await featureFlagsService.bootstrap(
     featureFlagDefinitions,

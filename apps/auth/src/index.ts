@@ -5,6 +5,8 @@ import "./instrument";
 
 import { prometheus } from "@hono/prometheus";
 import { sentry } from "@hono/sentry";
+import { createObservabilityStack, type AppEnv } from "@deadlock-mods/logging";
+import { registerProcessHandlers } from "@deadlock-mods/instrumentation";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
@@ -16,12 +18,22 @@ import { auth } from "./lib/auth";
 import { SENTRY_OPTIONS } from "./lib/constants";
 import container from "./lib/container";
 import { env } from "./lib/env";
-import { logger } from "./lib/logger";
+import { logger, loggerContext, wideEventContext } from "./lib/logger";
+import { validateRedirectUrl } from "./lib/redirect";
+import { createHealthRouter } from "./routes/health";
 import { HealthService } from "./services/health";
 
 const { printMetrics, registerMetrics } = prometheus();
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
+
+app.route(
+  "/",
+  createHealthRouter({
+    check: () => container.resolve(HealthService).check(),
+    logger,
+  }),
+);
 
 app.use(
   "*",
@@ -40,71 +52,24 @@ app.use(
   trimTrailingSlash(),
 );
 
+const observability = createObservabilityStack({
+  logger,
+  loggerContext,
+  wideEventContext,
+  requestLogger: {
+    excludePaths: ["/health", "/health/ready", "/metrics"],
+    excludePathPrefixes: ["/assets/"],
+  },
+});
+
+app.use("*", observability.loggerContextMiddleware);
+app.use("*", observability.requestLogger);
+app.onError(observability.onError);
+
 app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
-app.get("/health", async (c) => {
-  const healthService = container.resolve(HealthService);
-  const result = await healthService.check();
-  return c.json(result, 200);
-});
-
-/**
- * Validates and sanitizes a redirect URL to prevent open redirect attacks.
- * Allows only relative paths or URLs matching trusted origins from CORS_ORIGIN.
- * Returns the safe redirect URL or "/" if validation fails.
- */
-function validateRedirectUrl(returnTo: string, baseURL: string): string {
-  const DEFAULT_REDIRECT = "/";
-  const trustedOrigins = env.CORS_ORIGIN;
-
-  if (!returnTo || returnTo === "/") {
-    return DEFAULT_REDIRECT;
-  }
-
-  // Allow relative paths starting with "/" (but not "//" which could be protocol-relative)
-  if (returnTo.startsWith("/") && !returnTo.startsWith("//")) {
-    try {
-      // Normalize the path using URL parsing to handle encoded characters
-      const normalized = new URL(returnTo, baseURL);
-      // Ensure the normalized URL still belongs to the base origin
-      if (normalized.origin === new URL(baseURL).origin) {
-        return normalized.pathname + normalized.search + normalized.hash;
-      }
-    } catch {
-      logger.withMetadata({ returnTo }).warn("Invalid relative redirect URL");
-    }
-    return DEFAULT_REDIRECT;
-  }
-
-  // For absolute URLs, validate against trusted origins
-  try {
-    const parsedUrl = new URL(returnTo);
-
-    // Check if the origin matches any trusted origin
-    const isTrustedOrigin = trustedOrigins.some((trustedOrigin) => {
-      try {
-        const trusted = new URL(trustedOrigin);
-        return parsedUrl.origin === trusted.origin;
-      } catch {
-        return false;
-      }
-    });
-
-    if (isTrustedOrigin) {
-      return returnTo;
-    }
-
-    logger
-      .withMetadata({ returnTo, origin: parsedUrl.origin })
-      .warn("Redirect URL blocked: untrusted origin");
-  } catch {
-    logger.withMetadata({ returnTo }).warn("Invalid redirect URL format");
-  }
-
-  return DEFAULT_REDIRECT;
-}
 
 app.get("/login", async (c, next) => {
   const returnTo = c.req.query("returnTo") || "/";
@@ -129,20 +94,23 @@ app.use("/assets/*", serveStatic({ root: "./dist/client/" }));
 app.get("*", serveStatic({ path: "./dist/client/index.html" }));
 
 const main = async () => {
+  registerProcessHandlers(logger);
+
   const server = Bun.serve({
     port: env.PORT,
     fetch: app.fetch,
   });
 
-  logger.info(`Auth Server started on port ${server.port}`);
+  logger.withMetadata({ port: server.port }).info("Auth server started");
 
-  const shutdown = () => {
+  const shutdown = (signal: NodeJS.Signals) => {
+    logger.withMetadata({ signal }).info("Auth server shutting down");
     server.stop();
     process.exit(0);
   };
 
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 };
 
 if (import.meta.main) {

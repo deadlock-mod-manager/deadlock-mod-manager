@@ -244,12 +244,12 @@ deployments:
     memory:
       request: 512Mi
       limit: 1Gi
-    cpu: 100m
+    cpu: 500m
 
     healthCheck:
       readiness:
         enabled: true
-        path: /health
+        path: /health/ready
         port: 3004
         initialDelaySeconds: 5
         periodSeconds: 5
@@ -265,7 +265,7 @@ deployments:
         periodSeconds: 10
         timeoutSeconds: 15
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 5
 
       startup:
         enabled: true

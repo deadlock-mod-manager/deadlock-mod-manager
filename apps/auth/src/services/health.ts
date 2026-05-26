@@ -1,3 +1,4 @@
+import { toErrorMessage } from "@deadlock-mods/common";
 import { db, sql } from "@deadlock-mods/database";
 import { injectable } from "tsyringe";
 import { version } from "@/version";
@@ -11,8 +12,8 @@ export class HealthService {
       await db.execute(sql`select 1`);
       return { alive: true };
     } catch (error) {
-      logger.withError(error as Error).error("DB health check failed");
-      return { alive: false, error: (error as Error).message };
+      logger.withError(error).error("DB health check failed");
+      return { alive: false, error: toErrorMessage(error) };
     }
   }
 
