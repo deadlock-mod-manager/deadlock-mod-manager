@@ -149,7 +149,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(23);
+    expect(LATEST_VERSION).toBe(24);
   });
 
   describe("specific step idempotency", () => {
