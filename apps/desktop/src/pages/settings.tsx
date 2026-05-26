@@ -55,6 +55,7 @@ import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
+import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
@@ -639,6 +640,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               description={t("settings.gamePathDescription")}
               title={t("settings.gamePath")}>
               <GamePathSettings />
+            </Section>
+
+            <Section
+              description={t("settings.steamPathSectionDescription")}
+              title={t("settings.steamPath")}>
+              <SteamPathSettings />
             </Section>
 
             <Section

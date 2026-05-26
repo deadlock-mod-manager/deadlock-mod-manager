@@ -103,6 +103,35 @@ impl SteamManager {
     self.game_path.as_ref()
   }
 
+  pub fn set_steam_dir(&mut self, path: PathBuf) -> Result<(), Error> {
+    if !path.exists() {
+      return Err(Error::InvalidInput(
+        "Invalid Steam path: directory does not exist".to_string(),
+      ));
+    }
+
+    let steam_dir = steamlocate::SteamDir::from_dir(&path).map_err(|_| {
+      Error::InvalidInput(
+        "Invalid Steam path: not a valid Steam installation directory".to_string(),
+      )
+    })?;
+
+    log::info!("Manually set Steam path to: {path:?}");
+    self.steam_dir = Some(steam_dir);
+    Ok(())
+  }
+
+  pub fn clear_steam_dir(&mut self) {
+    self.steam_dir = None;
+  }
+
+  pub fn get_steam_path(&self) -> Option<PathBuf> {
+    self
+      .steam_dir
+      .as_ref()
+      .map(|steam_dir| steam_dir.path().to_path_buf())
+  }
+
   /// Set the game path manually
   pub fn set_game_path(&mut self, path: PathBuf) -> Result<(), Error> {
     if !path.exists() {
@@ -318,5 +347,27 @@ mod tests {
         .1
         .ends_with(".var/app/com.valvesoftware.Steam/data/Steam/steamapps/common/Deadlock")
     );
+  }
+
+  #[test]
+  fn set_steam_dir_accepts_valid_steam_installation() {
+    let (_temp_dir, steam_dir) = temp_steam_dir("Steam", false);
+    let steam_path = steam_dir.path().to_path_buf();
+    let mut manager = SteamManager::new();
+
+    manager
+      .set_steam_dir(steam_path.clone())
+      .expect("expected valid Steam directory to be accepted");
+
+    assert_eq!(manager.get_steam_path(), Some(steam_path));
+  }
+
+  #[test]
+  fn set_steam_dir_rejects_invalid_directory() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let mut manager = SteamManager::new();
+
+    let result = manager.set_steam_dir(temp_dir.path().to_path_buf());
+    assert!(result.is_err());
   }
 }

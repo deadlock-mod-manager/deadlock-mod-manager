@@ -36,6 +36,30 @@ pub async fn set_game_path(path: String) -> Result<String, Error> {
 }
 
 #[tauri::command]
+pub async fn find_steam_path() -> Result<String, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let steam_path = mod_manager.find_steam_path()?;
+  log::info!("Found Steam at: {steam_path:?}");
+  Ok(steam_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn set_steam_path(path: String) -> Result<String, Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  let path_buf = PathBuf::from(&path);
+  let steam_path = mod_manager.set_steam_path(path_buf)?;
+  log::info!("Steam path manually set to: {steam_path:?}");
+  Ok(steam_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn clear_steam_path() -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.clear_steam_path();
+  Ok(())
+}
+
+#[tauri::command]
 pub async fn start_game(
   app_handle: AppHandle,
   vanilla: bool,

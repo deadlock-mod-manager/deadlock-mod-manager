@@ -58,7 +58,29 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
       usePersistedStore.getState().setGamePath(found);
     };
 
-    resolveGamePath()
+    const resolveSteamPath = async () => {
+      await waitForHydration();
+
+      const {
+        useCustomSteamPath,
+        steamPath,
+        setUseCustomSteamPath,
+        setSteamPath,
+      } = usePersistedStore.getState();
+
+      if (!useCustomSteamPath || !steamPath) {
+        return;
+      }
+
+      try {
+        await invoke<string>("set_steam_path", { path: steamPath });
+      } catch {
+        setUseCustomSteamPath(false);
+        setSteamPath("");
+      }
+    };
+
+    Promise.all([resolveGamePath(), resolveSteamPath()])
       .then(cleanupStaleServerGameinfo)
       .then(() => usePersistedStore.getState().restoreModsFromManifest())
       .catch((error) => {

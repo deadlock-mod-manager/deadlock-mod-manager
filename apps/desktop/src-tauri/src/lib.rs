@@ -106,7 +106,10 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       commands::game::find_game_path,
+      commands::game::find_steam_path,
       commands::game::set_game_path,
+      commands::game::set_steam_path,
+      commands::game::clear_steam_path,
       commands::mods::get_mod_file_tree,
       commands::mods::install_mod,
       commands::game::stop_game,

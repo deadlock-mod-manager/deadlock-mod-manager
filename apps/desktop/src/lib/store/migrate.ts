@@ -366,6 +366,14 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       };
     },
   },
+  {
+    to: 24,
+    label: "add-custom-steam-path-settings",
+    apply: (state) => {
+      state.useCustomSteamPath ??= false;
+      state.steamPath ??= "";
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(

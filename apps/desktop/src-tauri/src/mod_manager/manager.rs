@@ -62,6 +62,14 @@ impl ModManager {
     Ok(())
   }
 
+  pub fn find_steam_path(&mut self) -> Result<PathBuf, Error> {
+    self.steam_manager.find_steam()?;
+    self
+      .steam_manager
+      .get_steam_path()
+      .ok_or(Error::SteamNotFound)
+  }
+
   pub fn find_game(&mut self) -> Result<PathBuf, Error> {
     let game_path = self.steam_manager.find_game()?.clone();
     Ok(game_path)
@@ -71,6 +79,18 @@ impl ModManager {
     self.steam_manager.set_game_path(path.clone())?;
     self.addons_backup_manager.set_game_path(path.clone());
     Ok(path)
+  }
+
+  pub fn set_steam_path(&mut self, path: PathBuf) -> Result<PathBuf, Error> {
+    self.steam_manager.set_steam_dir(path)?;
+    self
+      .steam_manager
+      .get_steam_path()
+      .ok_or(Error::SteamNotFound)
+  }
+
+  pub fn clear_steam_path(&mut self) {
+    self.steam_manager.clear_steam_dir();
   }
 
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
