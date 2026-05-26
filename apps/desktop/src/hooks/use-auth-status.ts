@@ -22,10 +22,7 @@ export const useAuthStatus = () => {
   const getStatus = (): AuthStatus => {
     if (isLoading && !data) return "unknown";
     if (isError || !data) return "offline";
-
-    if (data.status !== "ok") return "offline";
-    if (!data.db.alive) return "offline";
-
+    if (data?.status !== "ok") return "offline";
     return "online";
   };
 

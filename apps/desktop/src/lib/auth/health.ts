@@ -4,8 +4,6 @@ import { HttpError } from "@/lib/http-error";
 
 export interface AuthHealthData {
   status: string;
-  db: { alive: boolean; error?: string };
-  version: string;
 }
 
 export async function getAuthHealth(): Promise<AuthHealthData> {
