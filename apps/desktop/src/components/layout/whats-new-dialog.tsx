@@ -255,8 +255,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
 
         <div className='relative flex items-center gap-2'>
           <SparkleIcon className='size-3.5 text-primary/70' weight='duotone' />
-          <span
-            className='font-primary font-bold text-[10px] text-primary/70 uppercase tracking-[0.35em]'>
+          <span className='font-primary font-bold text-[10px] text-primary/70 uppercase tracking-[0.35em]'>
             {t("whatsNew.title")}
           </span>
           <Badge

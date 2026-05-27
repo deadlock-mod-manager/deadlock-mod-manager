@@ -1,10 +1,11 @@
 import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
+import { useWhatsNew } from "@/hooks/use-whats-new";
 import { GITHUB_REPO } from "@/lib/constants";
+import { getRecentWhatsNewVersions } from "@/lib/whats-new-versions";
 import { cn } from "@/lib/utils";
 
-const RECENT_VERSIONS = ["0.18.0", "0.17.0", "0.16.0"] as const;
 const MAX_VISIBLE_FEATURES = 3;
 
 type VersionEntry = {
@@ -16,7 +17,7 @@ type VersionEntry = {
 const useRecentReleases = (): VersionEntry[] => {
   const { t } = useTranslation();
 
-  return RECENT_VERSIONS.map((version) => {
+  return getRecentWhatsNewVersions().map((version) => {
     const features = t(`whatsNew.versions.${version}.features`, {
       returnObjects: true,
       defaultValue: [],
@@ -36,9 +37,11 @@ const useRecentReleases = (): VersionEntry[] => {
 const VersionColumn = ({
   entry,
   isFirst,
+  onOpenWhatsNew,
 }: {
   entry: VersionEntry;
   isFirst: boolean;
+  onOpenWhatsNew?: () => void;
 }) => {
   const { t } = useTranslation();
   const visible = entry.features.slice(0, MAX_VISIBLE_FEATURES);
@@ -49,7 +52,23 @@ const VersionColumn = ({
       className={cn(
         "group/col relative flex min-w-0 flex-1 flex-col gap-3 px-6 py-4",
         !isFirst && "lg:border-primary/15 lg:border-l",
-      )}>
+        onOpenWhatsNew &&
+          "cursor-pointer transition-colors hover:bg-primary/[0.04]",
+      )}
+      onClick={onOpenWhatsNew}
+      onKeyDown={
+        onOpenWhatsNew
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpenWhatsNew();
+              }
+            }
+          : undefined
+      }
+      aria-label={onOpenWhatsNew ? t("navigation.whatsNew") : undefined}
+      role={onOpenWhatsNew ? "button" : undefined}
+      tabIndex={onOpenWhatsNew ? 0 : undefined}>
       <div
         aria-hidden='true'
         className='pointer-events-none absolute top-0 left-0 size-3 border-primary/0 border-t border-l opacity-0 transition-all duration-300 group-hover/col:border-primary/40 group-hover/col:opacity-100'
@@ -96,9 +115,10 @@ const VersionColumn = ({
       {hidden > 0 && (
         <button
           className='mt-auto self-start font-medium text-[10px] text-primary/80 uppercase tracking-[0.2em] transition-colors hover:text-primary'
-          onClick={() =>
-            openUrl(`${GITHUB_REPO}/releases/tag/v${entry.version}`)
-          }
+          onClick={(event) => {
+            event.stopPropagation();
+            openUrl(`${GITHUB_REPO}/releases/tag/v${entry.version}`);
+          }}
           type='button'>
           {t("dashboard.moreFeatures", { count: hidden })}
         </button>
@@ -109,6 +129,7 @@ const VersionColumn = ({
 
 export const ChangelogRibbon = () => {
   const { t } = useTranslation();
+  const { forceShow } = useWhatsNew();
   const releases = useRecentReleases();
 
   return (
@@ -140,6 +161,7 @@ export const ChangelogRibbon = () => {
             entry={entry}
             isFirst={idx === 0}
             key={entry.version}
+            onOpenWhatsNew={idx === 0 ? forceShow : undefined}
           />
         ))}
       </div>
