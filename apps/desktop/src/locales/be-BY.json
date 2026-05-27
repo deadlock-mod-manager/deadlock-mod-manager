@@ -174,26 +174,26 @@
       "latency": "{{ms}} мс"
     },
     "hostCta": {
-      "title": "",
-      "description": "",
-      "action": "",
-      "openError": ""
+      "title": "Запусціў кастомны сервер Deadlock?",
+      "description": "Падзяліся ім тут, каб іншыя гульцы маглі знайсці і далучыцца да яго.",
+      "action": "Дадаць сервер у спіс",
+      "openError": "Не атрымалася адкрыць старонку хостынгу сервера."
     }
   },
   "menu": {
-    "about": "",
-    "quit": ""
+    "about": "Аб праграме",
+    "quit": "Выйсці"
   },
   "time": {
-    "ago": "",
-    "at": ""
+    "ago": "таму",
+    "at": "у"
   },
   "myMods": {
-    "checkForUpdates": "",
-    "checkForUpdatesTooltip": "",
-    "checkForUpdatesError": "",
-    "allModsUpToDate": "",
-    "subtitle": "",
+    "checkForUpdates": "Праверыць абнаўленні",
+    "checkForUpdatesTooltip": "Праверыць наяўнасць абнаўленняў для модаў",
+    "checkForUpdatesError": "Не атрымалася праверыць наяўнасць абнаўленняў модаў",
+    "allModsUpToDate": "Усе моды актуальныя",
+    "subtitle": "Моды, якія ты спампаваў або ўсталяваў",
     "noModsTitle": "",
     "noModsDescription": "",
     "visitModsPage": "",
@@ -1324,11 +1324,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1368,11 +1368,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1430,7 +1430,96 @@
     "welcome": "",
     "fullReleaseNotes": "",
     "gotIt": "",
+    "video": {
+      "embedTitle": "",
+      "thumbnailAlt": ""
+    },
+    "categories": {
+      "new": "",
+      "improvements": "",
+      "design": "",
+      "fixes": "",
+      "i18n": "",
+      "downloads": "",
+      "experimental": "",
+      "other": ""
+    },
     "versions": {
+      "1.0.0": {
+        "title": "",
+        "videoId": "",
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "0.18.0": {
         "title": "",
         "features": [
