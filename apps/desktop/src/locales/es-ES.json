@@ -1324,11 +1324,11 @@
       ]
     },
     "http": {
-      "offline": {
+      "429": {
         "title": "",
         "description": ""
       },
-      "429": {
+      "offline": {
         "title": "",
         "description": ""
       },
@@ -1368,11 +1368,11 @@
           }
         },
         "crosshair": {
-          "404": {
+          "403": {
             "title": "",
             "description": ""
           },
-          "403": {
+          "404": {
             "title": "",
             "description": ""
           }
@@ -1430,7 +1430,96 @@
     "welcome": "¡Bienvenido a la última versión de {{appName}}!",
     "fullReleaseNotes": "Notas de Lanzamiento Completas",
     "gotIt": "¡Entendido!",
+    "video": {
+      "embedTitle": "",
+      "thumbnailAlt": ""
+    },
+    "categories": {
+      "new": "",
+      "improvements": "",
+      "design": "",
+      "fixes": "",
+      "i18n": "",
+      "downloads": "",
+      "experimental": "",
+      "other": ""
+    },
     "versions": {
+      "1.0.0": {
+        "title": "",
+        "videoId": "",
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "0.18.0": {
         "title": "Downloads",
         "features": [
