@@ -1,5 +1,12 @@
 # @deadlock-mods/database
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [700bfe8]
+  - @deadlock-mods/common@1.3.0
+
 ## 2.0.0
 
 ### Major Changes

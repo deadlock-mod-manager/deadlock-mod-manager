@@ -1,5 +1,24 @@
 # @deadlock-mods/auth
 
+## 1.1.0
+
+### Minor Changes
+
+- c7c5502: Add Sign in with Discord on the auth login page
+
+### Patch Changes
+
+- Updated dependencies [9946781]
+- Updated dependencies [700bfe8]
+- Updated dependencies [2c9d7a0]
+- Updated dependencies [0665051]
+- Updated dependencies [2dfceee]
+  - @deadlock-mods/shared@2.1.0
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/database@2.0.1
+  - @deadlock-mods/feature-flags@0.2.7
+  - @deadlock-mods/instrumentation@0.1.9
+
 ## 1.0.6
 
 ### Patch Changes

@@ -1,5 +1,115 @@
 # desktop
 
+## 1.0.0
+
+### Major Changes
+
+- 9fe835d: Complete UI overhaul with redesigned navigation, layouts, and visual styling
+
+### Minor Changes
+
+- c6b3e4b: Improve local mod drag-and-drop handling on Linux
+- e0f2bc6: Add mod variant picker for multi-VPK installed mods
+- 9946781: Add parallel batch detection and reduce lock contention
+- 9946781: Add hero detection for mods via VPK path analysis with conflict warnings when activating multiple mods for the same hero
+- 8073e73: Add telemetry consent to onboarding and show a one-time prompt when analytics is off
+- 79388f9: Add mod favorites with star toggle on cards and inline favorites filter in the Mods Store
+- 2aaad71: Add multi-select file management for mods with multiple download archives
+- be4f982: Sort mods in the library by load order by default
+- 4032210: Add Belarusian language support (thanks drodn from Discord)
+- 83ba839: Add "Disable all mods" button to My Mods page overflow menu
+- b2a753f: Show active mod VPK filenames on the mod detail page
+- 0c77517: Add optional custom Steam path setting with auto-detection as the default
+- 222cb30: Add autoexec command library with search, clear, and launch toggle
+- 0ea2c42: Automatically reset gameinfo.gi to vanilla and retry launch when game configuration is corrupted
+- 9946781: Improve hero parser with header-only VPK parsing and caching
+- 0920a18: Redesign onboarding wizard with gold gradient border, segmented stepper, animated step transitions, and Deadlock-themed styling
+- d6f9d6e: Improve rich HTML mod descriptions with GameBanana color classes, styled lists, copyable code blocks, and in-app navigation for GameBanana mod links
+- 053ec35: Overhaul Custom Theme Builder with ambient effects and controls
+- 60761cb: Add Server Browser page to discover live Deadlock servers, filter by region, mode, password and player counts, view player and required mod details, and join games directly from the app.
+- 9946781: Pause hero parser automatically when Deadlock is running
+- 63fc8d2: Remove Discord Rich Presence plugin in favor of the dedicated Discord Game Presence feature
+- c6b3e4b: Add bundled font install prompts and cleanup for local mods
+- 9946781: Add critical game path detection with warning dialog
+- 76f0c96: Add optional CEF runtime support as an alternative to the system WebView
+- f897fa2: Split monolithic commands.rs into 18 domain-aligned modules and split api.ts into separate HTTP client and Tauri IPC modules for better code locality and maintainability
+- 9c20240: Add stable/nightly update channel selection in Settings, with a rolling nightly release tag and version-pinned updater URLs.
+- c3e0364: Add Flatpak self-update support with secure bundle download and installation
+- 23dd041: Add Korean language option in settings
+- 9946781: Move hero parser to async background thread to prevent UI lag during mod scanning
+- 87380df: Add proxy support with HTTP, HTTPS, and SOCKS5 configuration in Settings
+
+### Patch Changes
+
+- 9873701: Add "Delete All" button to the unrecognized VPK scan alert for bulk-removing rogue VPK files from the addons folder
+- 9946781: Fix hero detection edge cases and improve reliability
+- 74eeb46: Fix CEF Flatpak bundle missing the CEF runtime by using a dedicated manifest that preserves the full runtime directory layout
+- 6dbaf58: Fix variant switching dialog losing previously downloaded archives and not showing which variant is active
+- 43a3acf: Redesign the unrecognized VPK alert in My Mods as a compact recovery task.
+- 8a3a8bb: Improve NSFW label contrast on mod previews (destructive styling, ring, shadow).
+- 909fb79: Show "Extracting..." state in multi-file download dialog after download completes
+- 2d45d0e: Replace dashboard trending rail scrollbars with a minimal scroll progress indicator
+- 8a3a8bb: Fix Mods Library header overlapping title and actions at narrow window widths
+- f86809b: Enable themes plugin by default for new installs
+- 8a3a8bb: Improve featured Mod of the Week selection so highlights rotate more evenly across top mods, and omit obsolete or outdated listings (same rules as the mod store).
+- 688cbd5: Fix broken skeleton loading state on Mods Store page to match actual card and search bar layout
+- b8bded5: Fix local addon paths stored as absolute instead of relative filenames
+- 87380df: Harden proxy config logging, health check, and port validation
+- 6f3eb36: Fix slow mod detail loads by showing cached mod data immediately
+- 6871199: Remove CrabNebula OTA updater; app updates now use the native Tauri updater only
+- 1eeb5d3: Fix manifest sync: persist analyzed mods to .dmm.json and hydrate mod repository from manifest on profile load
+- 87380df: Move proxy settings from Application to Network settings tab
+- 3ee2cd1: Hide Themes plugin from the plugins list
+- a9284a3: Fix mod toggle in store cards navigating to mod detail page
+- e243a4c: Fix update dialog to preselect only previously installed downloads
+- 1eeb5d3: Fix profile VPK manifest state drift and audio preview playback clicks.
+- 89120ff: Fix addon analysis not linking all VPK files when multiple VPKs belong to the same mod
+- ee8c1ae: Add skeleton loading state to individual mod detail page
+- 82baed6: Fix locally added mods opening a blank detail page instead of showing mod info
+- 688cbd5: Show user-friendly error messages in error boundary instead of raw technical error codes
+- 38d8222: Fix audio preview creating separate OS audio streams per mod card, causing volume mixer spam on Linux/PipeWire
+- 82baed6: Fix VPK files being rejected as invalid when dragged into the add mods drop zone
+- 8a3a8bb: Add plain-language descriptions next to each Danger Zone action in settings tools.
+- 8a3a8bb: Fix Mods Store and Maps store lists being clipped at the bottom so the last row scrolls fully into view
+- aa089d7: Fix sidebar transparency slider direction so that 0% is fully transparent and 100% is fully opaque
+- 0675fd8: Make the Plugins settings section available without the show-plugins feature flag
+- 8a3a8bb: Fix dashboard "In Queue" stat to only count mods actively downloading
+- 8a3a8bb: Tighten collapsed sidebar logo spacing.
+- 46353b6: Stop showing a global error toast when optional hero avatar images fail to load
+- 8a3a8bb: Remove duplicate NSFW badges on dashboard previews when the blur overlay already shows the label.
+- 2d45d0e: Fix VPK scan alert text clipping into the mod grid when the unrecognized files list is visible
+- db10d13: Fix missing libcef.dll in CEF builds by centralizing CEF flag injection.
+- 749945f: Remove duplicate addons backup section from Settings (Tools tab); backups remain under Backups.
+- 52139a6: Preserve My Mods library order when filtering by install status.
+- a1f165b: Improve VPK disable and delete reliability on Windows with retries and clearer in-use errors
+- 1b2fa95: Fix installedFileTree not being populated for multi-archive downloads, addon analysis, and manual local addons
+- 2aaad71: Fix multi-archive download file count, variant switching with shared VPK names, and stale VPK content after variant swap
+- 5fcc73d: Fix Deadlock launch failures on Linux when Steam is installed via Flatpak by probing additional fallback Steam directories.
+- 832ba1d: Fix settings UI consistency, store persistence, and theme isolation
+- 9b65961: Fix non-scrollable lists in dialogs (file download, file selector, mod options, server join, font install, server detail)
+- 3400254: Fix game path resetting to auto-detect on every restart on Linux
+- 0665051: Align server browser required mods with Deadworks Relay and show mod source links
+- 9946781: Move VPK caching and parallel detection to shared package
+- 43a3acf: Fix mod button loader not spinning during extraction and pause
+- a9284a3: Fix themes being permanently disabled after the themes settings migration removed the manual enable toggle
+- 2d45d0e: Fix sidebar group labels overlapping menu items at small window heights
+- 9946781: Remove duplicate Mods Backup section from Tools settings
+- 8a3a8bb: Fix false "update available" for mods restored from the VPK manifest by recording download time during restore.
+- 8a3a8bb: Shorten nightly build version in the sidebar and splash with a visible Nightly label, full build details on hover, and fix release notes links for nightly builds
+- Updated dependencies [9946781]
+- Updated dependencies [9946781]
+- Updated dependencies [700bfe8]
+- Updated dependencies [2c9d7a0]
+- Updated dependencies [9946781]
+- Updated dependencies [0665051]
+- Updated dependencies [9946781]
+- Updated dependencies [2dfceee]
+  - @deadlock-mods/hero-parser@1.1.0
+  - @deadlock-mods/shared@2.1.0
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/crosshair@0.2.4
+  - @deadlock-mods/vpk-parser@1.0.1
+
 ## 0.18.0
 
 ### Minor Changes

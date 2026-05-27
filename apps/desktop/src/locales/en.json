@@ -1324,13 +1324,13 @@
       ]
     },
     "http": {
-      "offline": {
-        "title": "Can't connect to the server",
-        "description": "Check your internet connection, or the server might be down. See status.deadlockmods.app for live status."
-      },
       "429": {
         "title": "Too many requests",
         "description": "Slow down a moment, then try again."
+      },
+      "offline": {
+        "title": "Can't connect to the server",
+        "description": "Check your internet connection, or the server might be down. See status.deadlockmods.app for live status."
       },
       "generic": {
         "title": "Something went wrong",
@@ -1368,13 +1368,13 @@
           }
         },
         "crosshair": {
-          "404": {
-            "title": "Crosshair not found",
-            "description": "This crosshair was removed by its author or never existed."
-          },
           "403": {
             "title": "Sign in to do that",
             "description": "You need to be signed in to like or publish a crosshair."
+          },
+          "404": {
+            "title": "Crosshair not found",
+            "description": "This crosshair was removed by its author or never existed."
           }
         }
       },
@@ -1431,6 +1431,80 @@
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "versions": {
+      "1.0.0": {
+        "title": "v1.0 - Complete UI Overhaul",
+        "features": [
+          "✨ Complete UI overhaul with redesigned navigation, layouts, and styling",
+          "✨ Server Browser to discover, filter, and join live Deadlock servers",
+          "✨ Mod favorites with star toggle and favorites filter in the Mods Store",
+          "✨ Mod variant picker for mods with multiple versions",
+          "✨ Hero detection with conflict warnings when multiple mods target the same hero",
+          "✨ File chooser for mods with multiple download archives",
+          "✨ Autoexec command library with search, clear, and launch toggle",
+          "✨ \"Disable all mods\" button in My Mods",
+          "✨ Custom Steam path setting with auto-detection as the default",
+          "✨ Optional CEF runtime as an alternative to the system WebView",
+          "✨ Stable/nightly update channel selection in Settings",
+          "✨ Proxy support (HTTP, HTTPS, SOCKS5) in Settings",
+          "✨ Warning dialog when game path can't be found",
+          "✨ Font install prompts for local mods that include custom fonts",
+          "✨ Analytics consent prompt during onboarding",
+          "✨ \"Delete All\" button to quickly remove unrecognized files from addons",
+          "✨ Plugins section now visible in Settings for everyone",
+          "📦 Mod details load faster by showing cached data immediately",
+          "📦 Mod scanning no longer causes UI lag",
+          "📦 Improved mod disable/delete reliability on Windows",
+          "📦 Improved drag-and-drop for local mods on Linux",
+          "📦 Show active mod files on the mod detail page",
+          "📦 Mod of the Week highlights rotate more evenly across top mods",
+          "📦 Better mod descriptions with improved formatting and in-app links",
+          "📦 Improved NSFW label visibility on mod previews",
+          "📦 Redesigned unrecognized files alert in My Mods",
+          "📦 Improved hero detection reliability",
+          "📦 Server browser now shows links to required mods",
+          "📦 Nightly builds now show a clear Nightly label with details on hover",
+          "📦 Themes are now enabled by default for new installs",
+          "📦 Discord Rich Presence plugin replaced with built-in Discord Game Presence",
+          "📦 Error messages are now more readable",
+          "📦 Descriptions added to Danger Zone actions in Settings",
+          "📦 Library sorted by load order by default",
+          "📥 Download dialog now shows extraction progress",
+          "📥 Flatpak self-update support",
+          "📥 Update dialog only preselects previously installed files",
+          "🎨 Redesigned onboarding wizard with Deadlock-themed styling",
+          "🎨 Overhauled Custom Theme Builder with ambient effects",
+          "🎨 Improved dashboard trending section scroll indicator",
+          "🎨 Loading animations for Mods Store and mod detail pages",
+          "🔧 Fixed variant switching losing previously downloaded files",
+          "🔧 Fixed mod toggle button accidentally opening the mod page",
+          "🔧 Fixed local mods showing a blank detail page",
+          "🔧 Fixed mod files being rejected when dragged into the app",
+          "🔧 Fixed audio previews creating duplicate audio streams on Linux",
+          "🔧 Fixed audio preview playback glitches",
+          "🔧 Fixed last row in Mods Store and Maps being cut off",
+          "🔧 Fixed sidebar transparency slider direction",
+          "🔧 Fixed Mods Library header overlapping at narrow widths",
+          "🔧 Fixed sidebar labels overlapping at small window sizes",
+          "🔧 Fixed non-scrollable lists in various dialogs",
+          "🔧 Fixed dashboard \"In Queue\" count only showing active downloads",
+          "🔧 Fixed false \"update available\" for restored mods",
+          "🔧 Fixed themes being permanently disabled after settings migration",
+          "🔧 Fixed mod install button not showing progress during extraction",
+          "🔧 Fixed file counts and stale content when switching mod variants",
+          "🔧 Fixed mods with multiple files not all being recognized",
+          "🔧 Fixed Deadlock not launching on Linux with Flatpak Steam",
+          "🔧 Fixed game path resetting on every restart on Linux",
+          "🔧 Fixed CEF runtime missing in Flatpak builds",
+          "🔧 Removed unnecessary error popups when hero images fail to load",
+          "🔧 Removed duplicate NSFW labels on dashboard",
+          "🔧 Cleaned up duplicate backup sections in Settings",
+          "🔧 Library order preserved when filtering by install status",
+          "🔧 Auto-recover from corrupted game configuration on launch",
+          "🔧 Proxy settings moved to the Network tab",
+          "🌐 Added Belarusian language support (thanks drodn from Discord)",
+          "🌐 Added Korean language support"
+        ]
+      },
       "0.18.0": {
         "title": "Custom Maps, Download Servers & UI Improvements",
         "features": [

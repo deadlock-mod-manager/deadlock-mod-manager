@@ -1,5 +1,12 @@
 # @deadlock-mods/kv-parser
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [700bfe8]
+  - @deadlock-mods/common@1.3.0
+
 ## 0.3.0
 
 ### Minor Changes

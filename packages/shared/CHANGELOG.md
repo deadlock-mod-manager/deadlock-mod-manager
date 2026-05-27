@@ -1,5 +1,17 @@
 # @deadlock-mods/shared
 
+## 2.1.0
+
+### Minor Changes
+
+- 0665051: Align server browser required mods with Deadworks Relay and show mod source links
+- 2dfceee: Add server browser schemas shared between API and desktop clients.
+
+### Patch Changes
+
+- 9946781: Add hero detection for mods via VPK path analysis with conflict warnings when activating multiple mods for the same hero
+- 2c9d7a0: Resolve GameBanana heroes from profile categories and invalidate mod caches when synced content changes.
+
 ## 2.0.0
 
 ### Major Changes

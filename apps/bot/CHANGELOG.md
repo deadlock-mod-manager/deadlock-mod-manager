@@ -1,5 +1,22 @@
 # @deadlock-mods/bot
 
+## 1.2.8
+
+### Patch Changes
+
+- Updated dependencies [9946781]
+- Updated dependencies [700bfe8]
+- Updated dependencies [2c9d7a0]
+- Updated dependencies [0665051]
+- Updated dependencies [2dfceee]
+  - @deadlock-mods/shared@2.1.0
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/database@2.0.1
+  - @deadlock-mods/feature-flags@0.2.7
+  - @deadlock-mods/instrumentation@0.1.9
+  - @deadlock-mods/queue@0.1.3
+  - @deadlock-mods/vpk-parser@1.0.1
+
 ## 1.2.7
 
 ### Patch Changes

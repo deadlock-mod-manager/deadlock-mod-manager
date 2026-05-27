@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/hero-parser",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Hero detection for Deadlock mod VPK files - analyzes VPK entry paths to determine which hero a mod targets",
   "license": "GPL-3.0",
   "exports": {

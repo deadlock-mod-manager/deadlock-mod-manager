@@ -1,5 +1,34 @@
 # api
 
+## 3.1.0
+
+### Minor Changes
+
+- be415d4: Add server browser endpoints (`/v2/servers`) backed by a relay discovery cron that aggregates active Deadlock matches and resolves required mods.
+
+### Patch Changes
+
+- 3304c5d: Fix crash in GameBanana top mods sync when the API returns null for top submissions
+- 2c9d7a0: Resolve GameBanana heroes from profile categories and invalidate mod caches when synced content changes.
+- 0675fd8: Make the Plugins settings section available without the show-plugins feature flag
+- 0665051: Align server browser required mods with Deadworks Relay and show mod source links
+- Updated dependencies [9946781]
+- Updated dependencies [3307df3]
+- Updated dependencies [700bfe8]
+- Updated dependencies [2c9d7a0]
+- Updated dependencies [0665051]
+- Updated dependencies [2dfceee]
+  - @deadlock-mods/shared@2.1.0
+  - @deadlock-mods/relay-client@0.2.0
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/database@2.0.1
+  - @deadlock-mods/feature-flags@0.2.7
+  - @deadlock-mods/instrumentation@0.1.9
+  - @deadlock-mods/kv-parser@0.3.1
+  - @deadlock-mods/queue@0.1.3
+  - @deadlock-mods/vpk-parser@1.0.1
+  - @deadlock-mods/distributed-lock@1.0.9
+
 ## 3.0.0
 
 ### Major Changes

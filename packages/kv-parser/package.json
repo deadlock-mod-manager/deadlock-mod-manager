@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/kv-parser",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "High-performance KeyValues (VDF) parser with AST support using native Rust implementation via Bun FFI",
   "keywords": [
     "ast",
@@ -15,7 +15,7 @@
     "vdf"
   ],
   "license": "GPL-3.0",
-  "author": "stormix <contact@stormix.co>",
+  "author": "stormix <hello@stormix.co>",
   "repository": {
     "type": "git",
     "url": "https://github.com/deadlock-mod-manager/deadlock-mod-manager",

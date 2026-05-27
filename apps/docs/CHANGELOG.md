@@ -1,5 +1,11 @@
 # @deadlock-mods/docs
 
+## 0.0.4
+
+### Patch Changes
+
+- 63fc8d2: Remove Discord Rich Presence plugin in favor of the dedicated Discord Game Presence feature
+
 ## 0.0.3
 
 ### Patch Changes

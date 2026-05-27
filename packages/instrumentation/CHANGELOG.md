@@ -1,5 +1,13 @@
 # @deadlock-mods/instrumentation
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [700bfe8]
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/database@2.0.1
+
 ## 0.1.8
 
 ### Patch Changes

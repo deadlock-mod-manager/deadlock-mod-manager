@@ -1,5 +1,22 @@
 # @deadlock-mods/lockdex
 
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [9946781]
+- Updated dependencies [700bfe8]
+- Updated dependencies [2c9d7a0]
+- Updated dependencies [0665051]
+- Updated dependencies [2dfceee]
+  - @deadlock-mods/shared@2.1.0
+  - @deadlock-mods/common@1.3.0
+  - @deadlock-mods/database@2.0.1
+  - @deadlock-mods/instrumentation@0.1.9
+  - @deadlock-mods/queue@0.1.3
+  - @deadlock-mods/vpk-parser@1.0.1
+  - @deadlock-mods/distributed-lock@1.0.9
+
 ## 0.2.8
 
 ### Patch Changes

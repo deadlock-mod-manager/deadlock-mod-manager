@@ -1,5 +1,11 @@
 # @deadlock-mods/common
 
+## 1.3.0
+
+### Minor Changes
+
+- 700bfe8: Add `RelayHttpError` for surfacing relay HTTP failures with status context.
+
 ## 1.2.1
 
 ### Patch Changes
