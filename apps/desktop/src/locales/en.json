@@ -1430,12 +1430,27 @@
     "welcome": "Welcome to the latest version of {{appName}}!",
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
+    "video": {
+      "embedTitle": "Release video",
+      "thumbnailAlt": "Video thumbnail"
+    },
+    "categories": {
+      "new": "New",
+      "improvements": "Improvements",
+      "design": "Design",
+      "fixes": "Fixes",
+      "i18n": "Localization",
+      "downloads": "Downloads",
+      "experimental": "Experimental",
+      "other": "Other"
+    },
     "versions": {
       "1.0.0": {
-        "title": "v1.0 - Complete UI Overhaul",
+        "title": "v1.0 - Complete UI Overhaul, more stable mod management, and more",
+        "videoId": "uyaXgGaDse4",
         "features": [
           "✨ Complete UI overhaul with redesigned navigation, layouts, and styling",
-          "✨ Server Browser to discover, filter, and join live Deadlock servers",
+          "✨ Server Browser to discover, filter, and join live Deadlock servers (internal users only)",
           "✨ Mod favorites with star toggle and favorites filter in the Mods Store",
           "✨ Mod variant picker for mods with multiple versions",
           "✨ Hero detection with conflict warnings when multiple mods target the same hero",
@@ -1471,7 +1486,7 @@
           "📥 Download dialog now shows extraction progress",
           "📥 Flatpak self-update support",
           "📥 Update dialog only preselects previously installed files",
-          "🎨 Redesigned onboarding wizard with Deadlock-themed styling",
+          "🎨 Redesigned onboarding wizard",
           "🎨 Overhauled Custom Theme Builder with ambient effects",
           "🎨 Improved dashboard trending section scroll indicator",
           "🎨 Loading animations for Mods Store and mod detail pages",

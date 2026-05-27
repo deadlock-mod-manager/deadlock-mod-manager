@@ -13,12 +13,13 @@ import {
   FloppyDiskIcon,
   GlobeIcon,
   PaintBrushIcon,
+  PlayIcon,
   PlusIcon,
   SparkleIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
@@ -121,6 +122,21 @@ const categorizeFeatures = (features: string[]): FeatureCategory[] => {
   });
 };
 
+const getFeatures = (
+  t: (
+    key: string,
+    options?: { returnObjects?: boolean; defaultValue?: string[] },
+  ) => string | string[],
+  version: string,
+): string[] => {
+  const features = t(`whatsNew.versions.${version}.features`, {
+    returnObjects: true,
+    defaultValue: [],
+  });
+  if (!Array.isArray(features)) return [];
+  return features.filter((f): f is string => typeof f === "string");
+};
+
 const CategorySection = ({
   category,
   categoryIndex,
@@ -165,77 +181,117 @@ const CategorySection = ({
   );
 };
 
+const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
+  const { t } = useTranslation();
+  const [activated, setActivated] = useState(false);
+
+  if (!videoId) return null;
+
+  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+  return (
+    <div className='wn-title-enter px-6 pt-5'>
+      <div className='relative overflow-hidden rounded-lg border border-primary/15'>
+        {activated ? (
+          <div className='aspect-video'>
+            <iframe
+              allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+              allowFullScreen
+              className='size-full'
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
+              title={t("whatsNew.video.embedTitle")}
+            />
+          </div>
+        ) : (
+          <button
+            className='group relative block aspect-video w-full cursor-pointer'
+            onClick={() => setActivated(true)}
+            type='button'>
+            <img
+              alt={t("whatsNew.video.thumbnailAlt")}
+              className='size-full object-cover'
+              src={thumbnailUrl}
+            />
+            <div className='absolute inset-0 bg-black/30 transition-colors group-hover:bg-black/40' />
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <div className='flex size-14 items-center justify-center rounded-full bg-primary/90 shadow-lg transition-transform group-hover:scale-110'>
+                <PlayIcon
+                  className='ml-0.5 size-7 text-primary-foreground'
+                  weight='fill'
+                />
+              </div>
+            </div>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { t } = useTranslation();
   const { data } = useAbout();
 
   const version = data?.version || "0.10.0";
 
-  const currentUpdate = t(`whatsNew.versions.${version}`, {
-    returnObjects: true,
-  }) as
-    | {
-        title: string;
-        features: string[];
-      }
-    | undefined;
+  const title = t(`whatsNew.versions.${version}.title`, { defaultValue: "" });
+  const videoId = t(`whatsNew.versions.${version}.videoId`, {
+    defaultValue: "",
+  });
 
   const categories = useMemo(() => {
-    if (!currentUpdate?.features) return [];
-    return categorizeFeatures(currentUpdate.features);
-  }, [currentUpdate?.features]);
+    const features = getFeatures(t, version);
+    if (features.length === 0) return [];
+    return categorizeFeatures(features);
+  }, [t, version]);
 
   return (
     <DialogContent className='wn-dialog-enter max-h-[85dvh] max-w-lg flex flex-col gap-0 overflow-hidden border-primary/15 p-0'>
-      <DialogHeader className='relative shrink-0 overflow-hidden px-6 pt-6 pb-4'>
+      <DialogHeader className='relative shrink-0 overflow-hidden px-6 pt-7 pb-5'>
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/[0.04] to-transparent'
+          className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent)]'
         />
-        <div className='relative flex items-center gap-3'>
-          <div className='flex size-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10'>
-            <SparkleIcon className='size-4 text-primary' weight='duotone' />
-          </div>
-          <div className='flex flex-col gap-0.5'>
-            <div className='flex items-center gap-2.5'>
-              <DialogTitle className='text-base leading-none'>
-                {t("whatsNew.title")}
-              </DialogTitle>
-              <Badge
-                className='rounded-md border-primary/20 bg-primary/10 font-mono text-primary text-[11px]'
-                variant='outline'>
-                v{version}
-              </Badge>
-            </div>
-            <DialogDescription className='text-xs'>
-              {t("whatsNew.welcome", { appName: APP_NAME })}
-            </DialogDescription>
-          </div>
+
+        <div className='relative flex items-center gap-2'>
+          <SparkleIcon className='size-3.5 text-primary/70' weight='duotone' />
+          <span
+            className='font-primary font-bold text-[10px] text-primary/70 uppercase tracking-[0.35em]'>
+            {t("whatsNew.title")}
+          </span>
+          <Badge
+            className='ml-auto rounded-md border-primary/20 bg-primary/[0.07] font-mono text-primary/80 text-[10px] tabular-nums'
+            variant='outline'>
+            v{version}
+          </Badge>
         </div>
 
-        {currentUpdate && (
-          <p
-            className='wn-title-enter relative mt-3 font-medium text-foreground/90 text-sm leading-snug'
-            style={{ fontFamily: '"Forevs Demo", serif' }}>
-            {currentUpdate.title}
-          </p>
-        )}
+        <DialogTitle className='relative mt-2 font-primary font-bold text-[1.65rem] leading-[1.15] tracking-tight text-foreground'>
+          {title || t("whatsNew.title")}
+        </DialogTitle>
+
+        <DialogDescription className='mt-1.5 text-muted-foreground text-xs leading-relaxed'>
+          {t("whatsNew.welcome", { appName: APP_NAME })}
+        </DialogDescription>
       </DialogHeader>
 
       <Separator className='bg-primary/10' />
 
-      {categories.length > 0 && (
+      {(videoId || categories.length > 0) && (
         <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
-          <div className='space-y-5 px-6 py-5'>
-            {categories.map((category, idx) => (
-              <CategorySection
-                category={category}
-                categoryIndex={idx}
-                key={category.key}
-                t={t}
-              />
-            ))}
-          </div>
+          {videoId && <YouTubeEmbed videoId={videoId} />}
+          {categories.length > 0 && (
+            <div className='space-y-5 px-6 py-5'>
+              {categories.map((category, idx) => (
+                <CategorySection
+                  category={category}
+                  categoryIndex={idx}
+                  key={category.key}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
