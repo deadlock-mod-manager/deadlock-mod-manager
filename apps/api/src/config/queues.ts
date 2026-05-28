@@ -2,7 +2,7 @@ import type { QueueConfig } from "@deadlock-mods/queue";
 
 export const queueConfigs: Record<string, QueueConfig> = {
   cron: {
-    name: "cron-queue",
+    name: "api-cron-queue",
     defaultJobOptions: {
       attempts: 2,
       backoff: {
