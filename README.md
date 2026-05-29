@@ -181,7 +181,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | Language | Native Name | Status | Contributors |
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇧🇬 **Bulgarian** | Български | 🚧 13% | [macchiako](https://discordapp.com/users/macchiako./) |
+| 🇧🇬 **Bulgarian** | Български | 🚧 19% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
 | 🇩🇪 **German** | Deutsch | 🚧 37% | [skeptic](https://github.com/Skeptic-systems) |
 | 🇫🇷 **French** | Français | 🚧 29% | [stormix](https://github.com/stormix) |
