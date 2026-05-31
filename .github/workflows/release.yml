@@ -65,7 +65,7 @@ jobs:
 
       - name: Create or get existing release
         id: create-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_BODY: ${{ steps.release-notes.outputs.release_notes }}
           PACKAGE_VERSION: ${{ steps.get-version.outputs.version }}
@@ -208,7 +208,7 @@ jobs:
 
       - name: Upload Flatpak to release (Linux)
         if: matrix.platform == 'ubuntu-24.04'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -283,7 +283,7 @@ jobs:
 
       - name: Upload signed artifacts to release
         if: matrix.platform == 'windows-latest'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -366,7 +366,7 @@ jobs:
 
     steps:
       - name: Publish release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
@@ -407,7 +407,7 @@ jobs:
 
     steps:
       - name: Delete release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
