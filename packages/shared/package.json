@@ -14,6 +14,6 @@
   "devDependencies": {
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/typescript-config": "workspace:*",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.0"
   }
 }
