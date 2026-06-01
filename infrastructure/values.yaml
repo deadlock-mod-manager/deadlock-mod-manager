@@ -78,9 +78,9 @@ deployments:
         port: 9000
         initialDelaySeconds: 15
         periodSeconds: 10
-        timeoutSeconds: 5
+        timeoutSeconds: 30
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 5
 
       startup:
         enabled: true
@@ -88,7 +88,7 @@ deployments:
         port: 9000
         initialDelaySeconds: 0
         periodSeconds: 5
-        timeoutSeconds: 5
+        timeoutSeconds: 30
         successThreshold: 1
         failureThreshold: 12
 
