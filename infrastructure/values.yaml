@@ -1,7 +1,7 @@
 deployments:
   mirror-service:
     image: stormix/deadlock-mods-mirror-service:latest
-    replicas: 3
+    replicas: 0
     memory:
       request: 512Mi
       limit: 1Gi
