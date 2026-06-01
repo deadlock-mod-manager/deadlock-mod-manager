@@ -73,7 +73,12 @@ export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
 
   if (!isLoading && mods.length === 0) return null;
 
-  const displayName = getModCategoryDisplayName(category);
+  const rawName = getModCategoryDisplayName(category);
+  const categoryKey = rawName.replace(/\s+/g, "");
+
+  const displayName = t(`dashboard.trendingCategory.${categoryKey}`, {
+    defaultValue: rawName,
+  });
   const scrollProgressTranslatePercent =
     scrollProgress === null
       ? 0

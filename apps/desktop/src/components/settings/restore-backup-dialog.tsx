@@ -72,8 +72,7 @@ export const RestoreBackupDialog = ({
                       {t("settings.restoreStrategyReplace")}
                     </Label>
                     <p className='text-muted-foreground text-sm'>
-                      Removes all current addons before restoring the backup.
-                      Ensures a clean state matching the backup exactly.
+                      {t("settings.restoreStrategyReplaceDescription")}
                     </p>
                   </div>
                 </div>
@@ -88,8 +87,7 @@ export const RestoreBackupDialog = ({
                       {t("settings.restoreStrategyMerge")}
                     </Label>
                     <p className='text-muted-foreground text-sm'>
-                      Restores backup files while keeping existing addons. Files
-                      with the same name will be overwritten.
+                      {t("settings.restoreStrategyMergeDescription")}
                     </p>
                   </div>
                 </div>
@@ -99,7 +97,7 @@ export const RestoreBackupDialog = ({
 
           <div className='rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3'>
             <p className='text-sm'>
-              <strong>Restoring:</strong> {backupFileName}
+              <strong>{t("settings.restoring")}</strong> {backupFileName}
             </p>
           </div>
         </div>

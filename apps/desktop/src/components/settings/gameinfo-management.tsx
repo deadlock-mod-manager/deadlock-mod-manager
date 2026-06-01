@@ -272,11 +272,11 @@ const GameInfoManagement = () => {
             <div className='flex items-center gap-2'>
               <Database className='h-4 w-4 text-blue-600' />
               <span className='font-medium text-blue-800 text-sm dark:text-blue-200'>
-                No backup found
+                {t("game.noBackupFound")}
               </span>
             </div>
             <p className='mt-1 text-blue-700 text-xs dark:text-blue-300'>
-              Creating a backup is recommended before making modifications.
+              {t("game.createBackupTip")}
             </p>
           </div>
         )}

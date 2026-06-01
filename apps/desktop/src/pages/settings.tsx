@@ -451,7 +451,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
   }, [activeTab, analytics]);
 
   const clearDownloadCache = async () => {
-    if (!(await confirm(t("settings.confirmClearDownloadCache")))) {
+    if (
+      !(await confirm({
+        title: t("settings.confirmClearDownloadCache"),
+        actionButton: t("settings.confirmClearDownloadCacheAction"),
+        cancelButton: t("common.cancel"),
+      }))
+    ) {
       return;
     }
     try {
@@ -465,7 +471,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
   };
 
   const clearAllModsData = async () => {
-    if (!(await confirm(t("settings.confirmClearAllModsData")))) {
+    if (
+      !(await confirm({
+        title: t("settings.confirmClearAllModsData"),
+        actionButton: t("settings.confirmClearAllModsDataAction"),
+        cancelButton: t("common.cancel"),
+      }))
+    ) {
       return;
     }
     try {
@@ -479,7 +491,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
   };
 
   const clearAllMods = async () => {
-    if (!(await confirm(t("settings.confirmClearAllMods")))) {
+    if (
+      !(await confirm({
+        title: t("settings.confirmClearAllMods"),
+        actionButton: t("settings.confirmClearAllModsAction"),
+        cancelButton: t("common.cancel"),
+      }))
+    ) {
       return;
     }
     try {
@@ -513,7 +531,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
         value={activeTab}>
         <div className='w-52 shrink-0 min-h-0 overflow-y-auto pr-1'>
           <TabsList className='h-fit w-full flex-col items-stretch gap-1 bg-transparent p-2'>
-            <SettingsNavGroup label='Game'>
+            <SettingsNavGroup label={t("settings.label.game")}>
               <SettingsNavItem
                 icon={Settings}
                 label={t("settings.launchOptions")}
@@ -531,7 +549,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               />
             </SettingsNavGroup>
 
-            <SettingsNavGroup label='Application'>
+            <SettingsNavGroup label={t("settings.label.application")}>
               <SettingsNavItem
                 icon={MonitorIcon}
                 label={t("settings.application")}
@@ -559,7 +577,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               />
             </SettingsNavGroup>
 
-            <SettingsNavGroup label='Advanced'>
+            <SettingsNavGroup label={t("settings.label.advanced")}>
               <SettingsNavItem
                 icon={WrenchIcon}
                 label={t("settings.tools")}
@@ -768,7 +786,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <div className='flex flex-col gap-5'>
                 <div className='flex flex-col gap-2'>
                   <p className='text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70'>
-                    Quick Access
+                    {t("settings.quickAccess")}
                   </p>
                   <div className='flex flex-wrap gap-2'>
                     <Button
