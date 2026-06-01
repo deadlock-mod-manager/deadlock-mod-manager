@@ -73,6 +73,11 @@ export const mods = pgTable(
       table.isBlacklisted,
       table.remoteUpdatedAt,
     ),
+    index("idx_mod_active_listing").on(
+      table.isBlacklisted,
+      table.isTrashed,
+      table.remoteUpdatedAt,
+    ),
   ],
 );
 

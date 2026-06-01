@@ -1,0 +1,1 @@
+CREATE INDEX "idx_mod_active_listing" ON "mod" USING btree ("is_blacklisted","is_trashed","remote_updated_at");
