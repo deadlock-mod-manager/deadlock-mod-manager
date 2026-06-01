@@ -49,10 +49,10 @@ deployments:
     port: 3002
   web:
     image: stormix/deadlock-mods-api:latest
-    replicas: 3
+    replicas: 5
     memory:
       request: 1Gi
-      limit: 2Gi
+      limit: 3Gi
     cpu: 1000m
 
     metrics:
