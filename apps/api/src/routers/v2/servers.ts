@@ -53,7 +53,6 @@ export const serversRouter = {
     }),
 
   listRelaysHealthV2: publicProcedure
-    .use(browseRateLimit)
     .route({ method: "GET", path: "/v2/relays/health" })
     .output(RelaysHealthResponseSchema)
     .handler(async () => {

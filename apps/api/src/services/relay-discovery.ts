@@ -6,7 +6,7 @@ import { version } from "@/version";
 import { CACHE_TTL } from "../lib/constants";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
-import { redis } from "../lib/redis";
+import { cache, redis } from "../lib/redis";
 import { relayManifestRefreshTotal } from "../lib/relay-metrics";
 
 const logger = mainLogger.child().withContext({
@@ -14,6 +14,7 @@ const logger = mainLogger.child().withContext({
 });
 
 const REDIS_MANIFEST_KEY = "relay-mesh:manifest";
+const REDIS_HEALTH_SNAPSHOT_KEY = "relay-mesh:health:snapshot";
 const REDIS_HEALTH_PREFIX = "relay-mesh:health:";
 const HEALTH_TTL_SECONDS = 5 * 60;
 
@@ -154,22 +155,28 @@ export class RelayDiscoveryService {
   }
 
   async getHealthSnapshot(): Promise<RelayHealthSnapshot[]> {
-    const relays = await this.getRelays();
-    return Promise.all(
-      relays.map(async (relay) => {
-        const health = await this.readHealth(relay.url);
-        const consecutiveFailures = health?.consecutiveFailures ?? 0;
-        return {
-          url: relay.url,
-          region: relay.region,
-          healthy: consecutiveFailures < FAILURE_THRESHOLD,
-          consecutiveFailures,
-          lastSuccessAt: health?.lastSuccessAt,
-          lastErrorAt: health?.lastErrorAt,
-          lastLatencyMs: health?.lastLatencyMs,
-          lastError: health?.lastError,
-        };
-      }),
+    return cache.wrap(
+      REDIS_HEALTH_SNAPSHOT_KEY,
+      async () => {
+        const relays = await this.getRelays();
+        return Promise.all(
+          relays.map(async (relay) => {
+            const health = await this.readHealth(relay.url);
+            const consecutiveFailures = health?.consecutiveFailures ?? 0;
+            return {
+              url: relay.url,
+              region: relay.region,
+              healthy: consecutiveFailures < FAILURE_THRESHOLD,
+              consecutiveFailures,
+              lastSuccessAt: health?.lastSuccessAt,
+              lastErrorAt: health?.lastErrorAt,
+              lastLatencyMs: health?.lastLatencyMs,
+              lastError: health?.lastError,
+            };
+          }),
+        );
+      },
+      CACHE_TTL.RELAYS_HEALTH,
     );
   }
 

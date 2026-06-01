@@ -38,6 +38,8 @@ export const CACHE_TTL = {
   SERVER_DETAIL: 30 * 1000,
   /** Server browser - relays.json manifest TTL (10 min) */
   RELAYS_MANIFEST: 10 * 60 * 1000,
+  /** Relay mesh health snapshot TTL (1 day) */
+  RELAYS_HEALTH: 24 * 60 * 60 * 1000,
   /** Default cache TTL - 10 minutes */
   DEFAULT: 60 * 60 * 1000,
 } as const;

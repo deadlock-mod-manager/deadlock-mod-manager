@@ -48,13 +48,10 @@ interface RateLimitOptions {
   windowSeconds: number;
 }
 
-/**
- * Creates an oRPC middleware that enforces a per-key rate limit using Redis.
- * The key is derived from the procedure path to scope limits per endpoint.
- */
+/** Per-client rate limit keyed by procedure path and client IP. */
 export function createRateLimitMiddleware(options: RateLimitOptions) {
   return o.middleware(async ({ path, context, next }) => {
-    const key = path.join(".");
+    const key = `${path.join(".")}:${context.clientIp}`;
 
     const result = await checkRateLimit(key, {
       maxRequests: options.maxRequests,
