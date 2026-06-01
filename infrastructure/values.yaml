@@ -64,7 +64,7 @@ deployments:
     healthCheck:
       readiness:
         enabled: true
-        path: /
+        path: /health/ready
         port: 9000
         initialDelaySeconds: 5
         periodSeconds: 5
@@ -74,21 +74,21 @@ deployments:
 
       liveness:
         enabled: true
-        path: /
+        path: /health/live
         port: 9000
         initialDelaySeconds: 15
         periodSeconds: 10
-        timeoutSeconds: 15
+        timeoutSeconds: 5
         successThreshold: 1
         failureThreshold: 3
 
       startup:
         enabled: true
-        path: /
+        path: /health/live
         port: 9000
         initialDelaySeconds: 0
         periodSeconds: 5
-        timeoutSeconds: 15
+        timeoutSeconds: 5
         successThreshold: 1
         failureThreshold: 12
 

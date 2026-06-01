@@ -60,7 +60,7 @@ const observability = createObservabilityStack({
   loggerContext,
   wideEventContext,
   requestLogger: {
-    excludePaths: ["/", "/metrics"],
+    excludePaths: ["/", "/health/live", "/health/ready", "/metrics"],
   },
 });
 
