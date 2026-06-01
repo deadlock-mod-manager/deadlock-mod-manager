@@ -10,6 +10,7 @@ import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { ModCategory } from "@/lib/constants";
 import {
   generateFallbackModSVG,
@@ -65,6 +66,10 @@ export const useModProcessor = () => {
     setDetectedHero,
     getActiveProfile,
   } = usePersistedStore();
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
 
   const processArchive = async (
     file: File,
@@ -312,15 +317,17 @@ export const useModProcessor = () => {
     });
     setModStatus(modId, ModStatus.Downloaded);
 
-    invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
-      .catch(() => setDetectedHero(modId, null));
+    if (isDuplicateModProtectionEnabled) {
+      invoke<HeroDetectionResult>("detect_mod_hero", { modId })
+        .then((result) =>
+          setDetectedHero(
+            modId,
+            resolveDetectedHeroLabel(result),
+            result.usesCriticalPaths,
+          ),
+        )
+        .catch(() => setDetectedHero(modId, null));
+    }
 
     setProcessing(true, t("addMods.modAddedSuccess"));
     toast.success(t("addMods.addedSuccess", { name: metadata.name }));
@@ -421,15 +428,17 @@ export const useModProcessor = () => {
     });
     setModStatus(modId, ModStatus.Installed);
 
-    invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
-      .catch(() => setDetectedHero(modId, null));
+    if (isDuplicateModProtectionEnabled) {
+      invoke<HeroDetectionResult>("detect_mod_hero", { modId })
+        .then((result) =>
+          setDetectedHero(
+            modId,
+            resolveDetectedHeroLabel(result),
+            result.usesCriticalPaths,
+          ),
+        )
+        .catch(() => setDetectedHero(modId, null));
+    }
 
     setProcessing(true, t("addMods.modAddedSuccess"));
     toast.success(t("addMods.addedSuccess", { name: metadata.name }));

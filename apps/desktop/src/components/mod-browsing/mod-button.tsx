@@ -29,6 +29,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
@@ -103,6 +104,10 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { analytics } = useAnalyticsContext();
   const confirm = useConfirm();
   const localMods = usePersistedStore((state) => state.localMods);
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
 
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
@@ -236,29 +241,31 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           break;
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
-          const resolvedHero = resolveLocalModHero(localMod).hero;
-          if (resolvedHero) {
-            const conflictingMod = localMods.find(
-              (m) =>
-                m.remoteId !== localMod.remoteId &&
-                m.status === ModStatus.Installed &&
-                resolveLocalModHero(m).hero === resolvedHero,
-            );
-            if (conflictingMod) {
-              const resolution = await askHeroConflict(
-                resolvedHero,
-                conflictingMod,
-                localMod,
+          if (isDuplicateModProtectionEnabled) {
+            const resolvedHero = resolveLocalModHero(localMod).hero;
+            if (resolvedHero) {
+              const conflictingMod = localMods.find(
+                (m) =>
+                  m.remoteId !== localMod.remoteId &&
+                  m.status === ModStatus.Installed &&
+                  resolveLocalModHero(m).hero === resolvedHero,
               );
-              if (resolution === "cancel") {
-                break;
-              }
-              if (resolution === "swap") {
-                await uninstall(conflictingMod, false);
-                analytics.trackModUninstalled(
-                  conflictingMod.remoteId,
-                  "user_choice",
+              if (conflictingMod) {
+                const resolution = await askHeroConflict(
+                  resolvedHero,
+                  conflictingMod,
+                  localMod,
                 );
+                if (resolution === "cancel") {
+                  break;
+                }
+                if (resolution === "swap") {
+                  await uninstall(conflictingMod, false);
+                  analytics.trackModUninstalled(
+                    conflictingMod.remoteId,
+                    "user_choice",
+                  );
+                }
               }
             }
           }
@@ -305,6 +312,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     t,
     analytics,
     remoteMod?.remoteId,
+    isDuplicateModProtectionEnabled,
   ]);
 
   const onClick = useCallback(
@@ -462,13 +470,15 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         onDownload={downloadSelectedFiles}
       />
 
-      <HeroConflictDialog
-        currentMod={heroConflict?.currentMod ?? null}
-        heroName={heroConflict?.heroName ?? ""}
-        newMod={heroConflict?.newMod ?? null}
-        onResolve={handleHeroConflictResolve}
-        open={heroConflict !== null}
-      />
+      {isDuplicateModProtectionEnabled && (
+        <HeroConflictDialog
+          currentMod={heroConflict?.currentMod ?? null}
+          heroName={heroConflict?.heroName ?? ""}
+          newMod={heroConflict?.newMod ?? null}
+          onResolve={handleHeroConflictResolve}
+          open={heroConflict !== null}
+        />
+      )}
     </ErrorBoundary>
   );
 };

@@ -81,6 +81,7 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import { SortType } from "@/lib/constants";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -415,6 +416,10 @@ const CustomSettingsData = ({
 const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
 
   const clearModsState = async () => {
     if (
@@ -654,11 +659,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <GameInfoManagement />
             </Section>
 
-            <Section
-              description={t("heroParser.settingsDescription")}
-              title={t("heroParser.settingsTitle")}>
-              <HeroParserSettings />
-            </Section>
+            {isDuplicateModProtectionEnabled && (
+              <Section
+                description={t("heroParser.settingsDescription")}
+                title={t("heroParser.settingsTitle")}>
+                <HeroParserSettings />
+              </Section>
+            )}
+
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='discord'>

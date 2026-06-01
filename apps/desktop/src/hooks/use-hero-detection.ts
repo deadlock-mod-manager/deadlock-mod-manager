@@ -55,7 +55,7 @@ const detectBatch = async (
   });
 };
 
-export const useHeroDetection = () => {
+export const useHeroDetection = ({ enabled }: { enabled: boolean }) => {
   const localMods = usePersistedStore((state) => state.localMods);
   const gamePath = usePersistedStore((state) => state.gamePath);
   const prevGameRunning = useRef(false);
@@ -66,10 +66,20 @@ export const useHeroDetection = () => {
     queryFn: () => isGameRunning(),
     staleTime: STALE_TIME_POLL,
     refetchInterval: 5000,
-    enabled: !!gamePath,
+    enabled: !!gamePath && enabled,
   });
 
   useEffect(() => {
+    if (enabled) {
+      return;
+    }
+    abortActiveScan();
+    resetToIdle();
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
     const wasRunning = prevGameRunning.current;
     const isRunning = gameRunning === true;
     prevGameRunning.current = isRunning;
@@ -86,19 +96,22 @@ export const useHeroDetection = () => {
       logger.info("Hero detection resumed: Deadlock stopped");
       startBackgroundScan();
     }
-  }, [gameRunning]);
+  }, [gameRunning, enabled]);
 
   // Startup: 5s after mount, scan any unindexed mods
   useEffect(() => {
+    if (!enabled) return;
+
     const timer = setTimeout(() => {
       if (pausedByGame) return;
       startBackgroundScan();
     }, 5_000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [enabled]);
 
   // Reactive: when new unindexed mods appear, scan immediately
   useEffect(() => {
+    if (!enabled) return;
     if (pausedByGame) return;
 
     const unindexedCount = localMods.filter(
@@ -120,7 +133,7 @@ export const useHeroDetection = () => {
     if (activeAbortController) return;
 
     startBackgroundScan();
-  }, [localMods]);
+  }, [localMods, enabled]);
 };
 
 const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {

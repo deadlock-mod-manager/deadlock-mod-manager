@@ -59,4 +59,11 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     defaultValue: false,
     exposed: true,
   },
+  {
+    name: "duplicate-mod-protection",
+    description: "Enable duplicate hero mod conflict protection",
+    type: "boolean",
+    defaultValue: false,
+    exposed: true,
+  },
 ];

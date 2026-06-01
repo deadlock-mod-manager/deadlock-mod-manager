@@ -295,6 +295,10 @@ export const BottomBar = () => {
     "server-browser",
     false,
   );
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
 
   const downloadingCount = localMods.filter(
     (mod) =>
@@ -366,7 +370,7 @@ export const BottomBar = () => {
               variant='compact'
             />
           )}
-          <HeroParserIndicator />
+          {isDuplicateModProtectionEnabled && <HeroParserIndicator />}
           <DiscordPresenceIndicator />
         </div>
 

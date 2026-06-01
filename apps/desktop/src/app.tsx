@@ -25,6 +25,7 @@ import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useDownloadsMigration } from "./hooks/use-downloads-migration";
+import { useFeatureFlag } from "./hooks/use-feature-flags";
 import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
@@ -44,11 +45,15 @@ interface PendingFontInstall {
 }
 
 const App = () => {
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
   useDeepLink();
   useLanguageListener();
   useModOrderMigration();
   useDownloadsMigration();
-  useHeroDetection();
+  useHeroDetection({ enabled: Boolean(isDuplicateModProtectionEnabled) });
   useIngestToolInit();
   const { t } = useTranslation();
 

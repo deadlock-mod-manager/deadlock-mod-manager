@@ -5,6 +5,7 @@ import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -23,6 +24,10 @@ export const useDownload = (
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const { isEnabled: isDuplicateModProtectionEnabled } = useFeatureFlag(
+    "duplicate-mod-protection",
+    false,
+  );
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
@@ -58,20 +63,22 @@ export const useDownload = (
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
 
-        detectHeroForMod(mod.remoteId)
-          .then((result) => {
-            setDetectedHero(
-              mod.remoteId,
-              resolveDetectedHeroLabel(result),
-              result.usesCriticalPaths,
-            );
-          })
-          .catch((err) => {
-            logger
-              .withMetadata({ mod: mod.remoteId })
-              .withError(err instanceof Error ? err : new Error(String(err)))
-              .warn("Failed to detect hero after download");
-          });
+        if (isDuplicateModProtectionEnabled) {
+          detectHeroForMod(mod.remoteId)
+            .then((result) => {
+              setDetectedHero(
+                mod.remoteId,
+                resolveDetectedHeroLabel(result),
+                result.usesCriticalPaths,
+              );
+            })
+            .catch((err) => {
+              logger
+                .withMetadata({ mod: mod.remoteId })
+                .withError(err instanceof Error ? err : new Error(String(err)))
+                .warn("Failed to detect hero after download");
+            });
+        }
       },
       onError: (error) => {
         toast.error(`Failed to download ${mod.name}: ${error.message}`);
