@@ -30,6 +30,7 @@
     "servers": "Server Browser",
     "multiplayer": "Custom Servers",
     "general": "General",
+    "earlyAccess": "Early Access",
     "mods": "Mods"
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "No preview available",
     "audio": "Audio",
     "by": "By",
+    "backToMods": "Back to Mods",
     "audioMod": "Audio Mod",
     "mapBadge": "Map",
     "customBadge": "Custom",
@@ -289,6 +291,7 @@
     "deleteError": "Failed to delete mod",
     "deleteErrorVpkInUse": "Some mod files are currently in use by the game. Please close Deadlock and try again.",
     "disableError": "Failed to disable mod",
+    "deleteMod": "Delete Mod",
     "vpkScanAlert": {
       "title": "Unrecognized mod files found",
       "titleTooltipLabel": "What are unrecognized mod files?",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "Unsaved changes",
     "plugin": "Plugins",
     "pluginDescription": "Manage plugins and integrations for the desktop app.",
+    "quickAccess": "Quick Access",
     "themes": "Themes",
     "discord": "Discord",
     "privacy": "Privacy",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "Clear Download Cache",
     "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
+    "confirmClearDownloadCacheAction": "Clear Download Cache",
     "clearAllModsData": "Clear All Mod Data",
     "clearAllModsDataDescription": "Permanently deletes all mod metadata, local mods, and preview images. This cannot be undone.",
     "confirmClearAllModsData": "This will permanently delete ALL mod data including local mods, their metadata, and preview images. Local mods cannot be recovered. Are you sure?",
+    "confirmClearAllModsDataAction": "Clear All Mod Data",
     "clearAllMods": "Clear All Mods",
     "clearAllModsDescription": "Removes all mods from the application and your game folder. This cannot be undone.",
     "confirmClearAllMods": "Are you sure you want to clear all mods? This action cannot be undone.",
+    "confirmClearAllModsAction": "Clear All Mods",
     "allModsCleared": "All mods have been cleared",
     "failedToClearMods": "Failed to clear mods",
     "addonsBackup": "Mods Backup",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "Failed to create backup",
     "restoreBackup": "Restore",
     "restoringBackup": "Restoring backup...",
+    "restoring": "Restoring:",
     "backupRestored": "Backup restored successfully",
     "backupRestoreFailed": "Failed to restore backup",
     "deleteBackup": "Delete",
     "deleteBackupConfirm": "Are you sure you want to delete this backup?",
+    "deleteBackupConfirmAction": "Delete",
     "backupDeleted": "Backup deleted successfully",
     "backupDeleteFailed": "Failed to delete backup",
     "openBackupsFolder": "Open Backups Folder",
@@ -584,7 +593,9 @@
     "backupVpkCount": "VPK Files",
     "restoreStrategy": "Restore Strategy",
     "restoreStrategyReplace": "Replace - Clear addons folder first",
+    "restoreStrategyReplaceDescription": "Removes all current addons before restoring the backup. Ensures a clean state matching the backup exactly.",
     "restoreStrategyMerge": "Merge - Keep existing addons",
+    "restoreStrategyMergeDescription": "Restores backup files while keeping existing addons. Files with the same name will be overwritten.",
     "restoreStrategyWarning": "This action cannot be undone. Please choose carefully.",
     "backupProgressInitializing": "Preparing backup...",
     "backupProgressScanning": "Scanning addons folder...",
@@ -653,7 +664,7 @@
     "linuxGpuOptimizationRestartRequired": "Restart required to apply changes.",
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
-    "confirmClearModsStateAction": "Clear State",
+    "confirmClearModsStateAction": "Clear Mods State",
     "modsStateCleared": "Mods state cleared successfully",
     "autoexec": "Autoexec.cfg",
     "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
@@ -695,6 +706,11 @@
       "voiceChat": "Voice Chat",
       "visualEffects": "Visual / Effects",
       "replaySpectator": "Replay / Spectator"
+    },
+    "label":{
+      "game": "Game",
+      "application": "Application",
+      "advanced": "Advanced"
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +977,8 @@
   },
   "game": {
     "createBackup": "Create Backup",
+    "createBackupTip": "Creating a backup is recommended before making modifications.",
+    "noBackupFound": "No backup found",
     "restoreBackup": "Restore Backup",
     "resetToVanilla": "Reset to Vanilla",
     "validateConfiguration": "Validate Configuration",
@@ -1141,6 +1159,7 @@
   },
   "modStatus": {
     "added": "Added to my mods",
+    "completed": "Completed",
     "downloading": "Downloading...",
     "extracting": "Extracting...",
     "downloaded": "Downloaded",
@@ -1236,7 +1255,8 @@
       "currentFile": "Processing {{current}} of {{total}}",
       "currentFileName": "Processing: {{fileName}}"
     },
-    "total": "total"
+    "total": "total",
+    "backup": "backup"
   },
   "onboarding": {
     "title": "Welcome to Deadlock Mod Manager",
@@ -1822,6 +1842,8 @@
     }
   },
   "plugins": {
+    "official" : "official",
+    "thirdParty" : "third-party",
     "themes": {
       "title": "Themes",
       "themeDescription": "Create your own themes or use curated presets.",
@@ -2018,7 +2040,21 @@
     "changelog": "Changelog",
     "moreFeatures": "+{{count}} more",
     "tickerPrev": "Previous announcement",
-    "tickerNext": "Next announcement"
+    "tickerNext": "Next announcement",
+    "trendingCategory": {
+      "maps": "Maps",
+      "skins": "Skins",
+      "gameplay": "Gameplay",
+      "hud": "HUD",
+      "Models": "Models",
+      "music": "Music",
+      "AbilitySounds": "Ability Sounds",
+      "WeaponSounds": "Weapon Sounds",
+      "VoiceLines": "Voice Lines",
+      "KillSounds": "Kill Sounds",
+      "KillstreakMusic": "Killstreak Music",
+      "Other": "Other"
+    }
   },
   "debug": {
     "title": "Debug",

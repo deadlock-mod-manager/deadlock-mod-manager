@@ -109,7 +109,12 @@ export const PluginList = () => {
                     </span>
                     {p.manifest.tags?.includes("official") && (
                       <span className='rounded bg-primary/10 px-2 py-0.5 text-primary text-xs'>
-                        official
+                        {t(`plugins.official`)}
+                      </span>
+                    )}
+                    {p.manifest.tags?.includes("third-party") && (
+                      <span className='rounded bg-muted px-2 py-0.5 text-muted-foreground text-xs'>
+                        {t(`plugins.thirdParty`)}
                       </span>
                     )}
                   </div>

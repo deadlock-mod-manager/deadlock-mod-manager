@@ -25,43 +25,43 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
   switch (status) {
     case ModStatus.Downloading:
       return {
-        label: "Downloading",
+        label: "modStatus.downloading",
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary animate-pulse",
       };
     case ModStatus.Extracting:
       return {
-        label: "Extracting",
+        label: "modStatus.extracting",
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary animate-pulse",
       };
     case ModStatus.Paused:
       return {
-        label: "Paused",
+        label: "modStatus.paused",
         pillClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
         dotClass: "bg-amber-500",
       };
     case ModStatus.Downloaded:
       return {
-        label: "Completed",
+        label: "modStatus.completed",
         pillClass: "bg-muted text-muted-foreground",
         dotClass: "bg-muted-foreground/70",
       };
     case ModStatus.Installing:
       return {
-        label: "Installing",
+        label: "modStatus.installing",
         pillClass: "bg-primary/10 text-primary/90",
         dotClass: "bg-primary/80 animate-pulse",
       };
     case ModStatus.Installed:
       return {
-        label: "Installed",
+        label: "modStatus.installed",
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary",
       };
     case ModStatus.FailedToDownload:
       return {
-        label: "Failed",
+        label: "modStatus.failed",
         pillClass: "bg-destructive/15 text-destructive",
         dotClass: "bg-destructive",
       };
@@ -77,8 +77,7 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
 const StatusChip = ({ status }: { status: ModStatus }) => {
   const { t } = useTranslation();
   const variant = getStatusVariant(status);
-  const label =
-    status === ModStatus.Paused ? t("downloads.paused") : variant.label;
+  const label = t(variant.label);
   return (
     <span
       className={cn(
@@ -162,7 +161,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
           </h3>
           {download.author ? (
             <p className='mt-0.5 truncate text-muted-foreground text-sm'>
-              by {download.author}
+              {t("mods.by")} {download.author}
             </p>
           ) : null}
         </div>

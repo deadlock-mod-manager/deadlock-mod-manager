@@ -218,7 +218,7 @@ const Mod = () => {
               size='sm'
               variant='ghost'>
               <ArrowLeft className='h-4 w-4' />
-              Back to Mods
+              {t("mods.backToMods")}
             </Button>
           </div>
           {mod.isObsolete && (
@@ -320,7 +320,7 @@ const Mod = () => {
                     onClick={deleteMod}
                     size='default'
                     variant='destructive'>
-                    Delete Mod
+                    {t("mods.deleteMod")}
                   </Button>
                 )}
               </div>

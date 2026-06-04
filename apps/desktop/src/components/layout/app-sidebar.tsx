@@ -182,8 +182,8 @@ const getSidebarItems = (
       ? [
           {
             id: "debug",
-            title: () => <span>Debug</span>,
-            tooltipLabel: "Debug",
+            title: () => <span>{t("debug.title")}</span>,
+            tooltipLabel: t("debug.title"),
             url: "/debug",
             icon: BugBeetleIcon,
             group: "developer" as const,

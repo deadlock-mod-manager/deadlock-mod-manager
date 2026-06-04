@@ -186,7 +186,11 @@ export const AddonsBackupManagement = () => {
   };
 
   const handleDeleteBackup = async (fileName: string) => {
-    const confirmed = await confirm(t("settings.deleteBackupConfirm"));
+    const confirmed = await confirm({
+      title: t("settings.deleteBackupConfirm"),
+      actionButton: t("settings.deleteBackupConfirmAction"),
+      cancelButton: t("common.cancel"),
+    });
     if (!confirmed) return;
 
     try {
@@ -378,8 +382,9 @@ export const AddonsBackupManagement = () => {
         </div>
         {backups.length > 0 && (
           <div className='text-muted-foreground text-sm'>
-            {backups.length} backup{backups.length === 1 ? "" : "s"} •{" "}
-            {formatFileSize(totalSize)} {t("addons.total")}
+            {backups.length} {t("addons.backup")}{" "}
+            {backups.length === 1 ? "" : "s"} • {formatFileSize(totalSize)}{" "}
+            {t("addons.total")}
           </div>
         )}
       </div>
