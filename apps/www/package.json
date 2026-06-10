@@ -67,14 +67,14 @@
     "@vitejs/plugin-react": "^5.2.0",
     "dotenv-cli": "^7.4.4",
     "jsdom": "^27.4.0",
-    "postcss": "^8.5.11",
+    "postcss": "^8.5.15",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-sitemap": "^0.8.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4",
+    "vitest": "^3.2.6",
     "web-vitals": "^5.2.0"
   }
 }
