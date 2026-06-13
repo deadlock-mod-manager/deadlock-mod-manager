@@ -51,6 +51,7 @@ import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
 import { AutoUpdateToggle } from "@/components/settings/auto-update-toggle";
 import { AutoexecSettings } from "@/components/settings/autoexec-settings";
+import { ConvarSettings } from "@/components/settings/convar-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
@@ -543,6 +544,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 value='autoexec'
               />
               <SettingsNavItem
+                icon={FileCog}
+                label={t("settings.convars")}
+                value='convars'
+              />
+              <SettingsNavItem
                 icon={GamepadIcon}
                 label={t("settings.game")}
                 value='game'
@@ -801,7 +807,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       onClick={async () => {
                         const activeProfile = getActiveProfile();
                         const profileFolder = activeProfile?.folderName ?? null;
-                        await invoke("open_mods_folder", { profileFolder });
+                        await invoke("open_mods_folder", {
+                          profileFolder,
+                        });
                       }}
                       variant='outline'>
                       <FolderOpen className='h-4 w-4' />
@@ -983,6 +991,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-4' value='autoexec'>
             <ErrorBoundary>
               <AutoexecSettings />
+            </ErrorBoundary>
+          </TabsContent>
+          <TabsContent className='mt-0 space-y-4' value='convars'>
+            <ErrorBoundary>
+              <ConvarSettings />
             </ErrorBoundary>
           </TabsContent>
         </div>

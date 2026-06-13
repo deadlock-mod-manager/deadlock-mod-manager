@@ -166,6 +166,14 @@ const getSidebarItems = (
       icon: ArticleIcon,
       group: "customization",
     },
+    {
+      id: "convars",
+      title: () => <span>{t("navigation.convars")}</span>,
+      tooltipLabel: t("navigation.convars"),
+      url: "/settings/convars",
+      icon: ArticleIcon,
+      group: "customization",
+    },
     ...(developerMode
       ? [
           {
