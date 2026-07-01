@@ -4,25 +4,38 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
+export type AccountStatus = {
+  steamId64: number;
+  accountName: string;
+  quotaLimit: number;
+  quotaRemaining: number;
+  quotaResetAt: number | null;
+  fullSyncComplete: boolean;
+  available: boolean;
+  gcUnavailable: boolean;
+};
+
 export type MatchSyncStatus = {
   enabled: boolean;
   consentAccepted: boolean;
   fullSyncRunning: boolean;
-  fullSyncComplete: boolean;
-  quotaLimit: number;
-  quotaRemaining: number;
-  quotaResetAt: number | null;
   sessionFetches: number;
+  accounts: AccountStatus[];
 };
 
 export type MatchSyncProgress = {
-  fetched: number;
-  skipped: number;
-  backfilled: number;
-  running: boolean;
-  quotaReached: boolean;
-  rateLimited: boolean;
-  quotaRemaining: number;
+  accountName: string;
+  accountIndex: number;
+  accountTotal: number;
+  progress: {
+    fetched: number;
+    skipped: number;
+    backfilled: number;
+    running: boolean;
+    quotaReached: boolean;
+    rateLimited: boolean;
+    quotaRemaining: number;
+  };
 };
 
 const STATUS_KEY = ["match-sync-status"] as const;
@@ -48,7 +61,7 @@ export const useMatchSync = () => {
       "match-sync-progress",
       (event) => {
         setProgress(event.payload);
-        if (!event.payload.running) {
+        if (!event.payload.progress.running) {
           invalidate();
         }
       },

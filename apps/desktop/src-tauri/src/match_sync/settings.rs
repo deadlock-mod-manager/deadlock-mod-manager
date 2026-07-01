@@ -19,6 +19,7 @@ const KEY_CONSENT: &str = "consent_accepted";
 const KEY_FETCHED_IDS: &str = "fetched_ids";
 const KEY_QUOTA_HITS: &str = "quota_hits";
 const KEY_FULL_SYNC_COMPLETE: &str = "full_sync_complete";
+const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 
 const MAX_FETCHED_IDS: usize = 10_000;
 
@@ -49,7 +50,6 @@ pub fn load_config(app: &AppHandle) -> Result<MatchSyncConfig, MatchSyncError> {
   Ok(MatchSyncConfig {
     enabled: get_bool(&store, KEY_ENABLED, default.enabled),
     consent_accepted: get_bool(&store, KEY_CONSENT, default.consent_accepted),
-    full_sync_complete: get_bool(&store, KEY_FULL_SYNC_COMPLETE, default.full_sync_complete),
   })
 }
 
@@ -69,37 +69,80 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
   save(&store)
 }
 
-pub fn set_full_sync_complete(app: &AppHandle, complete: bool) -> Result<(), MatchSyncError> {
+pub fn load_full_sync_complete(app: &AppHandle, steam_id64: u64) -> bool {
+  match store(app) {
+    Ok(store) => get_bool(&store, &format!("{KEY_FULL_SYNC_COMPLETE}::{steam_id64}"), false),
+    Err(_) => false,
+  }
+}
+
+pub fn set_full_sync_complete(
+  app: &AppHandle,
+  steam_id64: u64,
+  complete: bool,
+) -> Result<(), MatchSyncError> {
   let store = store(app)?;
-  store.set(KEY_FULL_SYNC_COMPLETE, complete);
+  store.set(format!("{KEY_FULL_SYNC_COMPLETE}::{steam_id64}"), complete);
   save(&store)
 }
 
-pub fn load_fetched_ids(app: &AppHandle) -> Result<Vec<u64>, MatchSyncError> {
+pub fn load_fetched_ids(app: &AppHandle, steam_id64: u64) -> Result<Vec<u64>, MatchSyncError> {
   let store = store(app)?;
   Ok(
     store
-      .get(KEY_FETCHED_IDS)
+      .get(format!("{KEY_FETCHED_IDS}::{steam_id64}"))
       .and_then(|v| serde_json::from_value::<Vec<u64>>(v).ok())
       .unwrap_or_default(),
   )
 }
 
-pub fn save_fetched_ids(app: &AppHandle, ids: &[u64]) -> Result<(), MatchSyncError> {
+pub fn save_fetched_ids(
+  app: &AppHandle,
+  steam_id64: u64,
+  ids: &[u64],
+) -> Result<(), MatchSyncError> {
   let store = store(app)?;
   let trimmed = if ids.len() > MAX_FETCHED_IDS {
     &ids[ids.len() - MAX_FETCHED_IDS..]
   } else {
     ids
   };
-  store.set(KEY_FETCHED_IDS, serde_json::json!(trimmed));
+  store.set(
+    format!("{KEY_FETCHED_IDS}::{steam_id64}"),
+    serde_json::json!(trimmed),
+  );
   save(&store)
 }
 
-pub fn load_quota(app: &AppHandle) -> Result<QuotaWindow, MatchSyncError> {
+// Unix timestamp until which this account's GC handshake is known-broken (e.g. it
+// doesn't own the game), so the loops can skip it instead of re-paying the connect cost.
+pub fn load_gc_backoff_until(app: &AppHandle, steam_id64: u64) -> Option<i64> {
+  store(app)
+    .ok()?
+    .get(format!("{KEY_GC_BACKOFF}::{steam_id64}"))
+    .and_then(|v| v.as_i64())
+}
+
+pub fn set_gc_backoff_until(
+  app: &AppHandle,
+  steam_id64: u64,
+  until: Option<i64>,
+) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  let key = format!("{KEY_GC_BACKOFF}::{steam_id64}");
+  match until {
+    Some(ts) => store.set(key, ts),
+    None => {
+      store.delete(key);
+    }
+  }
+  save(&store)
+}
+
+pub fn load_quota(app: &AppHandle, steam_id64: u64) -> Result<QuotaWindow, MatchSyncError> {
   let store = store(app)?;
   let hits = store
-    .get(KEY_QUOTA_HITS)
+    .get(format!("{KEY_QUOTA_HITS}::{steam_id64}"))
     .and_then(|v| serde_json::from_value::<Vec<i64>>(v).ok())
     .unwrap_or_default();
   Ok(QuotaWindow::new(
@@ -109,8 +152,47 @@ pub fn load_quota(app: &AppHandle) -> Result<QuotaWindow, MatchSyncError> {
   ))
 }
 
-pub fn save_quota(app: &AppHandle, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
+pub fn save_quota(
+  app: &AppHandle,
+  steam_id64: u64,
+  quota: &QuotaWindow,
+) -> Result<(), MatchSyncError> {
   let store = store(app)?;
-  store.set(KEY_QUOTA_HITS, serde_json::json!(quota.snapshot()));
+  store.set(
+    format!("{KEY_QUOTA_HITS}::{steam_id64}"),
+    serde_json::json!(quota.snapshot()),
+  );
+  save(&store)
+}
+
+pub fn prune_forgotten_accounts(
+  app: &AppHandle,
+  current_ids: &[u64],
+) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  let prefixes = [
+    KEY_QUOTA_HITS,
+    KEY_FETCHED_IDS,
+    KEY_FULL_SYNC_COMPLETE,
+    KEY_GC_BACKOFF,
+  ];
+  let stale: Vec<String> = store
+    .keys()
+    .into_iter()
+    .filter(|key| {
+      prefixes.iter().any(|prefix| {
+        key
+          .strip_prefix(&format!("{prefix}::"))
+          .and_then(|id| id.parse::<u64>().ok())
+          .is_some_and(|id| !current_ids.contains(&id))
+      })
+    })
+    .collect();
+  if stale.is_empty() {
+    return Ok(());
+  }
+  for key in stale {
+    store.delete(key);
+  }
   save(&store)
 }

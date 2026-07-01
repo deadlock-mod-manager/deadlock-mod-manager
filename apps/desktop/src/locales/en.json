@@ -1012,8 +1012,12 @@
     },
     "quota": {
       "remaining": "{{remaining}} of {{limit}} match fetches left in the next 24 hours.",
+      "accountRemaining": "{{name}}: {{remaining}}/{{limit}} today",
+      "unavailable": "currently unavailable",
+      "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },
+    "noAccounts": "No Steam accounts detected. Log into Steam to sync matches.",
     "loadError": {
       "title": "Could not load match data sharing status",
       "retry": "Retry"
@@ -1031,6 +1035,7 @@
       "button": "Fetch all my matches",
       "started": "Fetching your matches in the background.",
       "cancel": "Cancel",
+      "accountProgress": "Syncing account {{index}} of {{total}}: {{name}}",
       "running": "Fetched {{fetched}} so far. {{remaining}} of {{limit}} fetches left today.",
       "done": "Fetched {{fetched}} matches. You are all caught up.",
       "doneQuota": "Fetched {{fetched}} matches. You have reached today's limit of {{limit}}. Come back tomorrow to fetch the rest.",

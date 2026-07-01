@@ -38,6 +38,8 @@ pub async fn cancel_full_match_sync() -> Result<(), Error> {
 // game-exit watcher iff the user previously opted in. A no-op otherwise.
 #[tauri::command]
 pub async fn resume_match_sync_monitoring(app_handle: AppHandle) -> Result<(), Error> {
+  // Startup-only cleanup of persisted state for accounts removed from Steam entirely.
+  match_sync::prune_forgotten_accounts(&app_handle);
   match_sync::start_background_worker(app_handle.clone());
   game_presence::sync_monitoring_watcher(&app_handle);
   Ok(())

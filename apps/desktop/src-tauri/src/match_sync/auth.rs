@@ -14,24 +14,11 @@ pub trait SteamAuthProvider: Send + Sync {
   fn recover(&self) -> Result<AuthContext, MatchSyncError>;
 }
 
-pub struct LocalSteamAuth;
+pub struct FixedAccountAuth(pub AuthContext);
 
-impl SteamAuthProvider for LocalSteamAuth {
+impl SteamAuthProvider for FixedAccountAuth {
   fn recover(&self) -> Result<AuthContext, MatchSyncError> {
-    let steam = steamlocate::SteamDir::locate()
-      .map_err(|e| MatchSyncError::AuthUnavailable(format!("Steam not found: {e}")))?;
-    let steam_dir = steam.path();
-
-    let account = most_recent_account(steam_dir)?;
-    let blob = connect_cache_blob(&local_vdf_path(steam_dir)?, &account)?;
-    let jwt = decrypt_blob(&blob, &account)?;
-    let steam_id64 = steam_id_from_jwt(&jwt)?;
-
-    Ok(AuthContext {
-      account_name: account,
-      steam_id64,
-      refresh_token: jwt,
-    })
+    Ok(self.0.clone())
   }
 }
 
@@ -56,7 +43,7 @@ fn local_vdf_path(steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
   Ok(steam_dir.join("local.vdf"))
 }
 
-fn most_recent_account(steam_dir: &Path) -> Result<String, MatchSyncError> {
+pub fn all_account_ids(steam_dir: &Path) -> Result<Vec<(u64, String)>, MatchSyncError> {
   let path = steam_dir.join("config").join("loginusers.vdf");
   let text = std::fs::read_to_string(&path)
     .map_err(|e| err(format!("cannot read loginusers.vdf: {e}")))?;
@@ -68,24 +55,82 @@ fn most_recent_account(steam_dir: &Path) -> Result<String, MatchSyncError> {
     .get_obj()
     .ok_or_else(|| err("loginusers.vdf has no users"))?;
 
-  let mut fallback: Option<String> = None;
-  for entries in users.values() {
-    let Some(user) = entries.first() else {
+  let mut accounts = Vec::new();
+  for (key, entries) in users.iter() {
+    let Ok(steam_id64) = key.parse::<u64>() else {
+      log::warn!("skipping loginusers.vdf block with non-numeric key: {key}");
       continue;
     };
-    let Some(name) = child(user, "AccountName").and_then(Value::get_str) else {
+    let Some(name) = entries
+      .first()
+      .and_then(|user| child(user, "AccountName"))
+      .and_then(Value::get_str)
+    else {
+      log::warn!("skipping loginusers.vdf block {steam_id64} with no AccountName");
       continue;
     };
-    fallback.get_or_insert_with(|| name.to_lowercase());
-    if child(user, "MostRecent").and_then(Value::get_str) == Some("1") {
-      return Ok(name.to_lowercase());
+    accounts.push((steam_id64, name.to_lowercase()));
+  }
+  Ok(accounts)
+}
+
+// Self-locating wrapper over `all_account_ids`: every account remembered in
+// `loginusers.vdf`, regardless of current decryptability. Startup-only pruning uses
+// this so temporarily non-decryptable accounts are NOT treated as forgotten.
+pub fn all_remembered_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
+  let steam = steamlocate::SteamDir::locate()
+    .map_err(|e| err(format!("Steam not found: {e}")))?;
+  all_account_ids(steam.path())
+}
+
+pub fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
+  let steam = steamlocate::SteamDir::locate()
+    .map_err(|e| err(format!("Steam not found: {e}")))?;
+  let steam_dir = steam.path();
+  let local_vdf = local_vdf_path(steam_dir)?;
+
+  let mut available = Vec::new();
+  for (steam_id64, account_name) in all_account_ids(steam_dir)? {
+    match find_connect_cache_hex(&local_vdf, &account_name) {
+      Ok(Some(_)) => available.push((steam_id64, account_name)),
+      Ok(None) => {}
+      Err(e) => log::warn!("cannot check ConnectCache for {account_name}: {e}"),
+    }
+  }
+  Ok(available)
+}
+
+pub fn recover_all() -> Result<Vec<AuthContext>, MatchSyncError> {
+  let steam = steamlocate::SteamDir::locate()
+    .map_err(|e| err(format!("Steam not found: {e}")))?;
+  let steam_dir = steam.path();
+  let local_vdf = local_vdf_path(steam_dir)?;
+
+  let mut contexts = Vec::new();
+  for (steam_id64, account_name) in all_account_ids(steam_dir)? {
+    let recovered = connect_cache_blob(&local_vdf, &account_name)
+      .and_then(|blob| decrypt_blob(&blob, &account_name))
+      .and_then(|jwt| validate_steam_jwt(&jwt).map(|()| jwt));
+    match recovered {
+      Ok(refresh_token) => contexts.push(AuthContext {
+        account_name,
+        steam_id64,
+        refresh_token,
+      }),
+      Err(e) => log::warn!("skipping account {account_name}: {e}"),
     }
   }
 
-  fallback.ok_or_else(|| err("no remembered Steam account found"))
+  if contexts.is_empty() {
+    return Err(err("no remembered Steam account found"));
+  }
+  Ok(contexts)
 }
 
-fn connect_cache_blob(local_vdf: &Path, account: &str) -> Result<Vec<u8>, MatchSyncError> {
+fn find_connect_cache_hex(
+  local_vdf: &Path,
+  account: &str,
+) -> Result<Option<String>, MatchSyncError> {
   let text = std::fs::read_to_string(local_vdf)
     .map_err(|e| err(format!("cannot read local.vdf: {e}")))?;
   let vdf = keyvalues_parser::parse(&text)
@@ -99,13 +144,19 @@ fn connect_cache_blob(local_vdf: &Path, account: &str) -> Result<Vec<u8>, MatchS
     .ok_or_else(|| err("no ConnectCache in local.vdf (logged out or 'remember me' off)"))?;
 
   let prefix = format!("{:08x}", crc32fast::hash(account.as_bytes()));
-  let hex_value = cache
-    .iter()
-    .find(|(subkey, _)| subkey.starts_with(&prefix))
-    .and_then(|(_, values)| values.first())
-    .and_then(Value::get_str)
-    .ok_or_else(|| err("no ConnectCache entry for this account"))?;
+  Ok(
+    cache
+      .iter()
+      .find(|(subkey, _)| subkey.starts_with(&prefix))
+      .and_then(|(_, values)| values.first())
+      .and_then(Value::get_str)
+      .map(str::to_owned),
+  )
+}
 
+fn connect_cache_blob(local_vdf: &Path, account: &str) -> Result<Vec<u8>, MatchSyncError> {
+  let hex_value = find_connect_cache_hex(local_vdf, account)?
+    .ok_or_else(|| err("no ConnectCache entry for this account"))?;
   hex::decode(hex_value).map_err(|e| err(format!("invalid ConnectCache hex: {e}")))
 }
 
@@ -174,7 +225,7 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   }
 }
 
-fn steam_id_from_jwt(jwt: &str) -> Result<u64, MatchSyncError> {
+fn validate_steam_jwt(jwt: &str) -> Result<(), MatchSyncError> {
   let payload = jwt
     .split('.')
     .nth(1)
@@ -188,9 +239,5 @@ fn steam_id_from_jwt(jwt: &str) -> Result<u64, MatchSyncError> {
   if json.get("iss").and_then(serde_json::Value::as_str) != Some("steam") {
     return Err(err("token issuer is not steam"));
   }
-  json
-    .get("sub")
-    .and_then(serde_json::Value::as_str)
-    .and_then(|s| s.parse::<u64>().ok())
-    .ok_or_else(|| err("token has no SteamID"))
+  Ok(())
 }
