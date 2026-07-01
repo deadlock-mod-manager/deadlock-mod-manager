@@ -146,6 +146,11 @@ where
       st.progress.quota_remaining = 0;
       return Ok(FetchStep::QuotaReached);
     }
+    // Re-checked here, not just at pass-start: the game can launch mid-pass, and
+    // this is the actual GC choke point that must never race its own session.
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
+    }
 
     self.throttle.acquire().await;
     self.counter.fetch_add(1, Ordering::Relaxed);
@@ -217,6 +222,9 @@ where
     ctx: &AuthContext,
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
+    }
     self.throttle.acquire().await;
     self.gc.fetch_match_history(ctx, cursor).await
   }
@@ -273,6 +281,7 @@ where
       }
       let page = match self.gc_history_page(&ctx, cursor).await {
         Ok(page) => page,
+        Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
         Err(e) => {
           log::warn!("match-sync: GC match history unavailable: {e}");
           break;
@@ -331,6 +340,21 @@ where
     if cancel.load(Ordering::Relaxed) {
       return Ok(self.finish(st));
     }
+    // Emit immediately so the UI reflects "running" even if auth fails below.
+    self.persistence.emit_progress(&st.progress);
+    let result = self.run_background_inner(cancel, &mut st).await;
+    // Always clear the running state, even on error (e.g. a save_quota or
+    // post_salts failure mid-pass), so the UI never sticks on "running".
+    st.progress.running = false;
+    self.persistence.emit_progress(&st.progress);
+    result.map(|()| st.progress)
+  }
+
+  async fn run_background_inner(
+    &self,
+    cancel: &AtomicBool,
+    st: &mut RunState,
+  ) -> Result<(), MatchSyncError> {
     let ctx = self.auth.recover()?;
     let account_id = ctx.account_id();
 
@@ -338,6 +362,7 @@ where
     // list, newest first. Both best-effort so one being down still syncs the other.
     let mut own_ids = match self.gc_history_page(&ctx, None).await {
       Ok(page) => page.match_ids,
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
         log::warn!("match-sync: GC match history unavailable: {e}");
         Vec::new()
@@ -348,7 +373,7 @@ where
       Err(e) => log::warn!("match-sync: account to-fetch unavailable: {e}"),
     }
     let own = newest_first_fresh(own_ids, &st.processed);
-    let control = self.process_ids(&ctx, own, false, Some(cancel), &mut st).await?;
+    let control = self.process_ids(&ctx, own, false, Some(cancel), st).await?;
 
     // Backfill globally-missing matches with whatever of the 24h quota is left over,
     // fully in the background. The user's own matches always go first.
@@ -363,14 +388,14 @@ where
               .into_iter()
               .take(budget)
               .collect();
-            self.process_ids(&ctx, picks, true, Some(cancel), &mut st).await?;
+            self.process_ids(&ctx, picks, true, Some(cancel), st).await?;
           }
           Err(e) => log::warn!("match-sync: global to-fetch unavailable: {e}"),
         }
       }
     }
 
-    Ok(self.finish(st))
+    Ok(())
   }
 }
 
@@ -478,6 +503,7 @@ mod tests {
     progress_events: AtomicU64,
     fail_load_quota: bool,
     fail_save_quota: bool,
+    last_progress_running: Mutex<Option<bool>>,
   }
   impl SyncPersistence for MemPersistence {
     fn now(&self) -> i64 {
@@ -505,18 +531,30 @@ mod tests {
     fn set_full_sync_complete(&self, complete: bool) {
       *self.complete.lock().unwrap() = complete;
     }
-    fn emit_progress(&self, _progress: &SyncProgress) {
+    fn emit_progress(&self, progress: &SyncProgress) {
       self.progress_events.fetch_add(1, Ordering::Relaxed);
+      *self.last_progress_running.lock().unwrap() = Some(progress.running);
     }
   }
 
   #[derive(Default)]
   struct SpyGameCheck {
     running: bool,
+    // Simulates the game launching mid-pass: is_game_running() starts returning
+    // true starting from this call number (1-indexed) across the whole engine.
+    // 0 (the default) means never trips this way.
+    trip_after_calls: usize,
+    calls: std::sync::atomic::AtomicUsize,
   }
   impl GameRunningCheck for SpyGameCheck {
     fn is_game_running(&self) -> bool {
-      self.running
+      if self.running {
+        return true;
+      }
+      if self.trip_after_calls == 0 {
+        return false;
+      }
+      self.calls.fetch_add(1, Ordering::Relaxed) + 1 >= self.trip_after_calls
     }
   }
 
@@ -801,7 +839,10 @@ mod tests {
     let eng = engine_with_game_check(
       SpyGc::default(),
       backfill,
-      SpyGameCheck { running: true },
+      SpyGameCheck {
+        running: true,
+        ..Default::default()
+      },
     );
 
     assert!(matches!(
@@ -877,6 +918,64 @@ mod tests {
       Err(MatchSyncError::Store(_))
     ));
     // The fetch that couldn't be persisted must not be reported as posted.
+    assert!(eng.sink.posted.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn background_pass_finalizes_progress_as_not_running_on_mid_pass_failure() {
+    let backfill = SpyBackfill {
+      account: vec![1, 2, 3],
+      global: vec![],
+      calls: AtomicU64::new(0),
+    };
+    let eng = engine_with_persistence(
+      SpyGc::default(),
+      backfill,
+      SpyGameCheck::default(),
+      MemPersistence {
+        now: 1_000_000,
+        fail_save_quota: true,
+        ..Default::default()
+      },
+    );
+
+    assert!(
+      eng
+        .run_background_pass(&active_config(), &AtomicBool::new(false))
+        .await
+        .is_err()
+    );
+    // Even though the pass aborted mid-fetch, the last emitted progress must
+    // reflect "not running" so the UI never sticks on a stale "running" state.
+    assert_eq!(
+      *eng.persistence.last_progress_running.lock().unwrap(),
+      Some(false)
+    );
+  }
+
+  #[tokio::test]
+  async fn game_launching_mid_pass_aborts_the_run() {
+    let backfill = SpyBackfill {
+      account: vec![1, 2, 3, 4, 5],
+      global: vec![],
+      calls: AtomicU64::new(0),
+    };
+    // Not running for the pass-start check or the history page, but flips true on
+    // the first salt fetch (the actual GC choke point, not just pass-start).
+    let eng = engine_with_game_check(
+      SpyGc::default(),
+      backfill,
+      SpyGameCheck {
+        trip_after_calls: 3,
+        ..Default::default()
+      },
+    );
+
+    let p = eng
+      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+      .await;
+    assert!(matches!(p, Err(MatchSyncError::GameRunning)));
+    // Aborted at the first match, not after walking the whole list.
     assert!(eng.sink.posted.lock().unwrap().is_empty());
   }
 }
