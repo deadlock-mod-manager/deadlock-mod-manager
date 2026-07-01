@@ -117,7 +117,7 @@ fn stop_current(app_handle: Option<&AppHandle>) {
   emit_status(app_handle);
 }
 
-fn resolve_game_path() -> Option<std::path::PathBuf> {
+pub(crate) fn resolve_game_path() -> Option<std::path::PathBuf> {
   let mut mod_manager = MANAGER.lock().ok()?;
   mod_manager.find_game().ok()
 }
