@@ -66,6 +66,8 @@ pub enum Error {
   BackgroundTaskFailed(String),
   #[error("VPK files are in use and cannot be deleted: {0}")]
   VpkInUse(String),
+  #[error("Match sync error: {0}")]
+  MatchSync(String),
 }
 
 impl serde::Serialize for Error {
@@ -109,6 +111,7 @@ impl serde::Serialize for Error {
       Error::RollbackFailed(_) => "rollbackFailed",
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
       Error::VpkInUse(_) => "vpkInUse",
+      Error::MatchSync(_) => "matchSync",
     };
 
     state.serialize_field("kind", kind)?;
