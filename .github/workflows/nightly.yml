@@ -189,7 +189,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Delete previous nightly release and tag
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             try {
@@ -247,7 +247,7 @@ jobs:
 
       - name: Create nightly release
         id: create-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           COMMITS: ${{ steps.commits.outputs.commits }}
           NIGHTLY_VERSION: ${{ steps.version.outputs.nightly_version }}
@@ -428,7 +428,7 @@ jobs:
 
       - name: Upload Flatpak to release (Linux)
         if: matrix.os == 'linux'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-nightly-release.outputs.release_id }}
         with:
@@ -488,7 +488,7 @@ jobs:
       contents: read
     steps:
       - name: Trigger Windows signing workflow
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -515,7 +515,7 @@ jobs:
 
     steps:
       - name: Delete failed nightly release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           release_id: ${{ needs.create-nightly-release.outputs.release_id }}
         with:
