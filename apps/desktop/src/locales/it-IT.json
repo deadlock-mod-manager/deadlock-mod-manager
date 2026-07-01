@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "Nessuna anteprima disponibile",
     "audio": "",
     "by": "Di",
+    "backToMods": "",
     "audioMod": "Mod Sonora",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Impossibile eliminare la mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Impossibile disabilitare la mod",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "Cancella Tutte le Mod",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "Sei sicuro di voler cancellare tutte le mod? Questa azione non può essere annullata.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "Tutte le mod sono state cancellate",
     "failedToClearMods": "Impossibile cancellare le mod",
     "addonsBackup": "Backup mod",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "Impossibile creare il backup",
     "restoreBackup": "Ripristina",
     "restoringBackup": "Ripristino backup...",
+    "restoring": "",
     "backupRestored": "Backup ripristinato con successo",
     "backupRestoreFailed": "Impossibile ripristinare il backup",
     "deleteBackup": "Elimina",
     "deleteBackupConfirm": "Sei sicuro di voler eliminare questo backup?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "Backup eliminato con successo",
     "backupDeleteFailed": "Impossibile eliminare il backup",
     "openBackupsFolder": "Apri Cartella Backup",
@@ -584,7 +593,9 @@
     "backupVpkCount": "File VPK",
     "restoreStrategy": "Strategia di Ripristino",
     "restoreStrategyReplace": "Sostituisci - Svuota prima la cartella addons",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "Unisci - Mantieni addon esistenti",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "Questa azione non può essere annullata. Scegli con attenzione.",
     "backupProgressInitializing": "Preparazione backup...",
     "backupProgressScanning": "Scansione cartella addons...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "Crea un'impostazione personalizzata",
     "createCustomSettingDescription": "Aggiungi un'impostazione personalizzata al gioco. Queste verranno aggiunte al gioco come opzioni di avvio.",
     "key": "Chiave",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "Crea Backup",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "Ripristina Backup",
     "resetToVanilla": "Ripristina a Vanilla",
     "validateConfiguration": "Valida Configurazione",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Aggiunta alle mie mod",
+    "completed": "",
     "downloading": "Download...",
     "extracting": "",
     "downloaded": "Scaricata",
@@ -1236,7 +1257,8 @@
       "currentFile": "Elaborazione {{current}} di {{total}}",
       "currentFileName": "Elaborazione: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "Benvenuto su Deadlock Mod Manager",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "",
       "themeDescription": "",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "",

@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "プレビューは利用できません",
     "audio": "オーディオ",
     "by": "作成者：",
+    "backToMods": "",
     "audioMod": "オーディオMod",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Modを削除できませんでした",
     "deleteErrorVpkInUse": "",
     "disableError": "Modを無効化できませんでした",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "プラグイン",
     "pluginDescription": "デスクトップアプリのプラグインと統合機能を管理する。",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "プライバシー",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "すべてのModを削除",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "すべてのModを削除してよろしいですか？この操作は取り消せません。",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "すべてのModは削除されました",
     "failedToClearMods": "Modの削除に失敗しました",
     "addonsBackup": "モッドのバックアップ",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "バックアップの作成に失敗しました",
     "restoreBackup": "復元",
     "restoringBackup": "バックアップを復元中...",
+    "restoring": "",
     "backupRestored": "バックアップを正常に復元しました",
     "backupRestoreFailed": "バックアップの復元に失敗しました",
     "deleteBackup": "削除",
     "deleteBackupConfirm": "このバックアップを削除してもよろしいですか？",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "バックアップを正常に削除しました",
     "backupDeleteFailed": "バックアップの削除に失敗しました",
     "openBackupsFolder": "バックアップフォルダを開く",
@@ -584,7 +593,9 @@
     "backupVpkCount": "VPKファイル数",
     "restoreStrategy": "復元戦略",
     "restoreStrategyReplace": "置換 - 最初にアドオンフォルダーをクリア",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "マージ - 既存のアドオンを保持",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "この操作は取り消せません。慎重に選択してください。",
     "backupProgressInitializing": "バックアップを準備中...",
     "backupProgressScanning": "アドオンフォルダーをスキャン中...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "カスタム設定を作成",
     "createCustomSettingDescription": "ゲームにカスタム設定を追加する。これらは起動オプションとしてゲームに適用される。",
     "key": "キー",
@@ -653,7 +666,7 @@
     "linuxGpuOptimizationRestartRequired": "",
     "confirmClearModsState": "Modの状態をクリアしますか？",
     "confirmClearModsStateBody": "これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
-    "confirmClearModsStateAction": "状態をクリア",
+    "confirmClearModsStateAction": "",
     "modsStateCleared": "Modの状態を正常にクリアしました",
     "autoexec": "",
     "autoexecDescription": "autoexec.cfgファイルを管理する。変更にはゲームの再起動が必要です。",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "バックアップを作成",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "バックアップを復元",
     "resetToVanilla": "初期化",
     "validateConfiguration": "設定を検証",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Modに追加しました",
+    "completed": "",
     "downloading": "ダウンロード中...",
     "extracting": "",
     "downloaded": "ダウンロード完了",
@@ -1236,7 +1257,8 @@
       "currentFile": "{{current}}/{{total}}を処理中",
       "currentFileName": "処理中: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "Deadlock Mod Managerへようこそ",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "テーマ",
       "themeDescription": "独自のテーマを作成するか、キュレートされたプリセットを使用する。",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "デバッグ",

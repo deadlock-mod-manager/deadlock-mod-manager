@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "ไม่มีตัวอย่างให้ดู",
     "audio": "เสียง",
     "by": "โดย",
+    "backToMods": "",
     "audioMod": "ม็อดเสียง",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "ไม่สามารถลบม็อดได้",
     "deleteErrorVpkInUse": "",
     "disableError": "ไม่สามารถปิดใช้งานม็อดได้",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "ความเป็นส่วนตัว",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "ล้างม็อดทั้งหมด",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "คุณแน่ใจหรือไม่ว่าต้องการล้างม็อดทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "ล้างม็อดทั้งหมดแล้ว",
     "failedToClearMods": "ไม่สามารถล้างม็อดได้",
     "addonsBackup": "สำรองข้อมูลม็อด",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "ไม่สามารถสร้างข้อมูลสำรองได้",
     "restoreBackup": "กู้คืน",
     "restoringBackup": "กำลังกู้คืนข้อมูลสำรอง...",
+    "restoring": "",
     "backupRestored": "กู้คืนข้อมูลสำรองเรียบร้อยแล้ว",
     "backupRestoreFailed": "ไม่สามารถกู้คืนข้อมูลสำรองได้",
     "deleteBackup": "ลบ",
     "deleteBackupConfirm": "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลสำรองนี้?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "ลบข้อมูลสำรองเรียบร้อยแล้ว",
     "backupDeleteFailed": "ไม่สามารถลบข้อมูลสำรองได้",
     "openBackupsFolder": "เปิดโฟลเดอร์ข้อมูลสำรอง",
@@ -584,7 +593,9 @@
     "backupVpkCount": "ไฟล์ VPK",
     "restoreStrategy": "กลยุทธ์การกู้คืน",
     "restoreStrategyReplace": "แทนที่ - ล้างโฟลเดอร์ addons ก่อน",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "รวม - เก็บ addons ที่มีอยู่",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "การกระทำนี้ไม่สามารถย้อนกลับได้ โปรดเลือกอย่างระมัดระวัง",
     "backupProgressInitializing": "กำลังเตรียมการสำรองข้อมูล...",
     "backupProgressScanning": "กำลังสแกนโฟลเดอร์ addons...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "สร้างการตั้งค่าที่กำหนดเอง",
     "createCustomSettingDescription": "เพิ่มการตั้งค่าที่กำหนดเองลงในเกม สิ่งเหล่านี้จะถูกเพิ่มเข้าไปในเกมเป็นตัวเลือกการเริ่มเกม",
     "key": "คีย์",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "สร้างข้อมูลสำรอง",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "กู้คืนข้อมูลสำรอง",
     "resetToVanilla": "รีเซ็ตเป็นเวอร์ชันปกติ",
     "validateConfiguration": "ตรวจสอบการกำหนดค่า",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "เพิ่มไปยังม็อดของฉันแล้ว",
+    "completed": "",
     "downloading": "กำลังดาวน์โหลด...",
     "extracting": "",
     "downloaded": "ดาวน์โหลดแล้ว",
@@ -1236,7 +1257,8 @@
       "currentFile": "กำลังประมวลผล {{current}} จาก {{total}}",
       "currentFileName": "กำลังประมวลผล: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "ยินดีต้อนรับสู่ Deadlock Mod Manager",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "",
       "themeDescription": "",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "ดีบัก",

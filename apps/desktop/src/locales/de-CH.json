@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "Kein Vorschau verfüegbar",
     "audio": "",
     "by": "Vo",
+    "backToMods": "",
     "audioMod": "",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Fehler bim Lösche vo de Mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Fehler bim Deaktiviere vo de Mod",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "Dateschutz",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "Alli Mods lösche",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alli Mods lösche möchted? Die Aktion chann nöd rückgängig gmacht werde.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "Alli Mods si glöscht worde",
     "failedToClearMods": "Fehler bim Lösche vo de Mods",
     "addonsBackup": "Mods-Sicherig",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "",
     "restoreBackup": "",
     "restoringBackup": "",
+    "restoring": "",
     "backupRestored": "",
     "backupRestoreFailed": "",
     "deleteBackup": "",
     "deleteBackupConfirm": "",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "",
     "backupDeleteFailed": "",
     "openBackupsFolder": "",
@@ -584,7 +593,9 @@
     "backupVpkCount": "",
     "restoreStrategy": "",
     "restoreStrategyReplace": "",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "",
     "backupProgressInitializing": "",
     "backupProgressScanning": "",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "Benutzerdefinierti Istellung erstelle",
     "createCustomSettingDescription": "Füged Sie ei benutzerdefinierti Istellung zum Spiel hinzue. Die werded als Startoptione zum Spiel hinzuegfüegt.",
     "key": "Schlüssl",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "Sicherig erstelle",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "Wiederherstellä",
     "resetToVanilla": "uf Vanilla zrugsetze",
     "validateConfiguration": "Konfiguration validiere",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Zu mine Mods hinzuegfüegt",
+    "completed": "",
     "downloading": "Am Abelade...",
     "extracting": "",
     "downloaded": "Abelade",
@@ -1236,7 +1257,8 @@
       "currentFile": "Verarbeite {{current}} vo {{total}}",
       "currentFileName": "Verarbeite: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "",
       "themeDescription": "",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "",
