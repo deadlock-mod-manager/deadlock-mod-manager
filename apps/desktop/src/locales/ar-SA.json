@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "الخوادم المخصصة",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "لا يوجد معاينة متاحة",
     "audio": "صوت",
     "by": "من",
+    "backToMods": "",
     "audioMod": "تعديل صوتي",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "فشل في حذف التعديل",
     "deleteErrorVpkInUse": "",
     "disableError": "فشل في تعطيل التعديل",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "الإضافات",
     "pluginDescription": "إدارة الإضافات والتكاملات لتطبيق سطح المكتب.",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "الخصوصية",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "امسح جميع التعديلات",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "هل أنت متأكد من أنك تريد مسح جميع التعديلات؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "تم مسح جميع التعديلات",
     "failedToClearMods": "فشل في مسح التعديلات",
     "addonsBackup": "نسخ احتياطي للمودات",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "فشل في إنشاء النسخة الاحتياطية",
     "restoreBackup": "استعادة",
     "restoringBackup": "جاري استعادة النسخة الاحتياطية...",
+    "restoring": "",
     "backupRestored": "تم استعادة النسخة الاحتياطية بنجاح",
     "backupRestoreFailed": "فشل في استعادة النسخة الاحتياطية",
     "deleteBackup": "حذف",
     "deleteBackupConfirm": "هل أنت متأكد من أنك تريد حذف هذه النسخة الاحتياطية؟",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "تم حذف النسخة الاحتياطية بنجاح",
     "backupDeleteFailed": "فشل في حذف النسخة الاحتياطية",
     "openBackupsFolder": "افتح مجلد النسخ الاحتياطية",
@@ -584,7 +593,9 @@
     "backupVpkCount": "ملفات VPK",
     "restoreStrategy": "استراتيجية الاستعادة",
     "restoreStrategyReplace": "استبدال - مسح مجلد الإضافات أولاً",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "دمج - الاحتفاظ بالإضافات الموجودة",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "لا يمكن التراجع عن هذا الإجراء. الرجاء الاختيار بعناية.",
     "backupProgressInitializing": "تحضير النسخة الاحتياطية...",
     "backupProgressScanning": "فحص مجلد الإضافات...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "إنشاء إعداد مخصص",
     "createCustomSettingDescription": "أضف إعدادًا مخصصًا إلى اللعبة. سيتم إضافة هذه إلى اللعبة كخيارات تشغيل.",
     "key": "المفتاح",
@@ -653,7 +666,7 @@
     "linuxGpuOptimizationRestartRequired": "",
     "confirmClearModsState": "مسح حالة التعديلات؟",
     "confirmClearModsStateBody": "سيؤدي هذا إلى إزالة جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
-    "confirmClearModsStateAction": "مسح الحالة",
+    "confirmClearModsStateAction": "",
     "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
     "autoexec": "",
     "autoexecDescription": "إدارة ملف autoexec.cfg الخاص بك. التغييرات تتطلب إعادة تشغيل اللعبة.",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "إنشاء نسخة احتياطية",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "استعادة النسخة الاحتياطية",
     "resetToVanilla": "إعادة التعيين إلى النسخة الأصلية",
     "validateConfiguration": "تحقق من صحة التكوين",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "تمت الإضافة إلى تعديلاتي",
+    "completed": "",
     "downloading": "جاري التحميل...",
     "extracting": "",
     "downloaded": "تم التحميل",
@@ -1236,7 +1257,8 @@
       "currentFile": "معالجة {{current}} من {{total}}",
       "currentFileName": "المعالجة: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "مرحبًا بك في Deadlock Mod Manager",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "السمات",
       "themeDescription": "أنشئ سماتك الخاصة أو استخدم الإعدادات المنسقة.",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "التصحيح",

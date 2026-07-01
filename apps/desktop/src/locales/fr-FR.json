@@ -1,17 +1,17 @@
 {
   "favorites": {
-    "title": "",
-    "subtitle": "",
-    "add": "",
-    "remove": "",
-    "favorite": "",
-    "favorited": "",
+    "title": "Favoris",
+    "subtitle": "Mods enregistrés pour mieux les trouver.",
+    "add": "Ajouter à votre liste de favoris",
+    "remove": "Supprimer des favoris",
+    "favorite": "Ajouter aux favoris",
+    "favorited": "Favori",
     "back": "",
-    "emptyTitle": "",
-    "emptyDescription": ""
+    "emptyTitle": "Aucun favori",
+    "emptyDescription": "Cliquez l'étoile sur n'importe quel mod pour l'enregistrer ici."
   },
   "navigation": {
-    "dashboard": "",
+    "dashboard": "Tableau de bord",
     "myMods": "Mes mods",
     "getMods": "Découvrir des mods",
     "addMods": "Ajouter des mods",
@@ -21,36 +21,37 @@
     "whatsNew": "Quoi de neuf",
     "needHelp": "Besoin d'aide ?",
     "collapseMenu": "Réduire le menu",
-    "expandMenu": "",
+    "expandMenu": "Étendre le menu",
     "about": "À propos",
     "crosshairs": "Réticules",
-    "customization": "",
+    "customization": "Personnalisations",
     "autoexec": "",
-    "maps": "",
+    "maps": "Cartes",
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
     "title": "",
     "subtitle": "",
-    "searchPlaceholder": "",
+    "searchPlaceholder": "Rechercher par nom, carte ou mode de jeu",
     "filters": {
-      "all": "",
-      "withPlayers": "",
-      "withPlayersOff": "",
-      "noPassword": "",
-      "passwordOnly": "",
-      "gameMode": "",
-      "anyGameMode": "",
-      "region": "",
-      "anyRegion": "",
-      "clear": "",
+      "all": "Tous",
+      "withPlayers": "Avec des joueurs",
+      "withPlayersOff": "Afficher uniquement des serveurs avec des joueurs actifs",
+      "noPassword": "Ouverts",
+      "passwordOnly": "Mot de passe",
+      "gameMode": "Mode de Jeu",
+      "anyGameMode": "Tous les modes de jeu",
+      "region": "Région",
+      "anyRegion": "Toutes les régions",
+      "clear": "Supprimer les filtres",
       "clearN_one": "",
       "clearN_other": "",
-      "refresh": "",
-      "joinable": "",
+      "refresh": "Actualiser",
+      "joinable": "Joignable",
       "joinableTooltip": "",
       "activeFilters": "",
       "count_one": "",
@@ -61,16 +62,16 @@
         "passwordTooltip": ""
       },
       "regionGroup": {
-        "eu": "",
-        "na": "",
-        "sa": "",
-        "apac": "",
+        "eu": "Europe",
+        "na": "Amérique du Nord",
+        "sa": "Amérique du Sud",
+        "apac": "Asie-Pacifique",
         "oce": "Océanie",
-        "me": "",
-        "other": ""
+        "me": "Moyen-Orient / Afrique",
+        "other": "Autres"
       },
       "chip": {
-        "search": "",
+        "search": "Recherche",
         "mode": "",
         "region": "",
         "status": "Statut",
@@ -137,19 +138,19 @@
       "passwordPrompt": "",
       "passwordPlaceholder": "",
       "openExternal": "",
-      "unknown": "",
-      "keepMyMods": ""
+      "unknown": "Inconnu",
+      "keepMyMods": "Garder mes mods installés activés (ceux du serveur seront activés au-dessus les vôtres)"
     },
     "staging": {
       "creatingFolder": "",
-      "installing": "",
-      "installingNamed": "",
-      "awaitingFileSelection": "",
-      "awaitingCustomConfirm": "",
+      "installing": "Installation des mods requis en cours...",
+      "installingNamed": "Installation de {{name}} en cours...",
+      "awaitingFileSelection": "En attente de la sélection du fichier...",
+      "awaitingCustomConfirm": "En attente de confirmation pour télécharger des mods personnalisés...",
       "customConfirmTitle": "",
-      "customConfirmDescription": "",
-      "customConfirm": "",
-      "customSkip": "",
+      "customConfirmDescription": "Ces fichiers proviennent d'URL tierces (pas de chez GameBanana). Examinez les sources avant de permettre le téléchargement.",
+      "customConfirm": "Autoriser les téléchargements",
+      "customSkip": "Ignorer les mods personnalisés",
       "downloadingCustom": "",
       "applying": ""
     },
@@ -157,26 +158,26 @@
       "customProvider": "",
       "notInDmm": "",
       "ready": "",
-      "downloading": "",
-      "missing": ""
+      "downloading": "Téléchargement {{percent}}%",
+      "missing": "Mods manquants"
     },
     "empty": {
-      "title": "",
-      "description": "",
-      "errorTitle": "",
-      "errorDescription": ""
+      "title": "Aucun serveur trouvé",
+      "description": "Essayez de supprimer des filtres ou revenez dans un instant. La liste se rafraîchit automatiquement.",
+      "errorTitle": "Impossible de charger les serveurs",
+      "errorDescription": "Nous n'avons pas pu charger les serveurs maintenant. Veuillez réessayer dans un instant."
     },
     "relayBar": {
-      "online": "",
-      "degraded": "",
-      "offline": "",
+      "online": "en ligne",
+      "degraded": "connexion dégradée",
+      "offline": "hors ligne",
       "lastSeen": "",
-      "latency": ""
+      "latency": "{{ms}} ms"
     },
     "hostCta": {
-      "title": "",
-      "description": "",
-      "action": "",
+      "title": "Vous gérez un serveur Deadlock personnalisé ?",
+      "description": "Partagez-le ici pour que d'autres joueurs puissent le trouver et le rejoindre.",
+      "action": "L'ajouter à la liste",
       "openError": ""
     }
   },
@@ -185,14 +186,14 @@
     "quit": "Quitter"
   },
   "time": {
-    "ago": "",
-    "at": ""
+    "ago": "auparavant",
+    "at": "à"
   },
   "myMods": {
-    "checkForUpdates": "",
-    "checkForUpdatesTooltip": "",
-    "checkForUpdatesError": "",
-    "allModsUpToDate": "",
+    "checkForUpdates": "Recherche de mises à jour",
+    "checkForUpdatesTooltip": "Vérifiez si vos mods ont des mises à jour",
+    "checkForUpdatesError": "Impossible de vérifier les mises à jour des mods",
+    "allModsUpToDate": "Tous vos mods sont à jour",
     "subtitle": "Mods que vous avez téléchargés ou installés",
     "noModsTitle": "Aucun mod installé",
     "noModsDescription": "Vous n'avez encore installé aucun mod. Commencez par parcourir les mods disponibles ou analyser votre dossier d'addons local.",
@@ -201,12 +202,12 @@
     "enabledModsCount": "{{count}}/99 mods activés",
     "enabledModsCountNearLimit": "{{count}}/99 mods activés (approche de la limite)",
     "enabledModsCountAtLimit": "{{count}}/99 mods activés (à la limite)",
-    "libraryModsNoun_one": "",
-    "libraryModsNoun_other": "",
+    "libraryModsNoun_one": "mod",
+    "libraryModsNoun_other": "mods",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "",
+    "vpkLimitBadgeNear": "Près de la limite",
     "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "",
+    "modLimitTooltipP1": "Deadlock limite combien de fichiers d'extension peuvent être chargés à la fois. Le maximum habituel est {{max}}.",
     "modLimitTooltipP2": "",
     "modLimitTooltipP3": "",
     "modLimitTooltipStatHeading": "",
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "Aucun aperçu disponible",
     "audio": "",
     "by": "Par",
+    "backToMods": "",
     "audioMod": "Mod Audio",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Échec de la suppression du mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Échec de la désactivation du mod",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "Confidentialité",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "Effacer tous les mods",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "Êtes-vous sûr de vouloir effacer tous les mods ? Cette action ne peut pas être annulée.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "Tous les mods ont été effacés",
     "failedToClearMods": "Échec de l'effacement des mods",
     "addonsBackup": "Sauvegarde des mods",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "Échec de la création de la sauvegarde",
     "restoreBackup": "Restaurer",
     "restoringBackup": "Restauration de la sauvegarde...",
+    "restoring": "",
     "backupRestored": "Sauvegarde restaurée avec succès",
     "backupRestoreFailed": "Échec de la restauration de la sauvegarde",
     "deleteBackup": "Supprimer",
     "deleteBackupConfirm": "Êtes-vous sûr de vouloir supprimer cette sauvegarde?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "Sauvegarde supprimée avec succès",
     "backupDeleteFailed": "Échec de la suppression de la sauvegarde",
     "openBackupsFolder": "Ouvrir le Dossier des Sauvegardes",
@@ -584,7 +593,9 @@
     "backupVpkCount": "Fichiers VPK",
     "restoreStrategy": "Stratégie de Restauration",
     "restoreStrategyReplace": "Remplacer - Vider le dossier addons d'abord",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "Fusionner - Conserver les addons existants",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "Cette action ne peut pas être annulée. Veuillez choisir avec soin.",
     "backupProgressInitializing": "",
     "backupProgressScanning": "",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "Créer un paramètre personnalisé",
     "createCustomSettingDescription": "Ajoutez un paramètre personnalisé au jeu. Ceux-ci seront ajoutés au jeu comme options de lancement.",
     "key": "Clé",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "Créer une sauvegarde",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "Restaurer la sauvegarde",
     "resetToVanilla": "Réinitialiser à Vanilla",
     "validateConfiguration": "Valider la configuration",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Ajouté à mes mods",
+    "completed": "",
     "downloading": "Téléchargement...",
     "extracting": "",
     "downloaded": "Téléchargé",
@@ -1236,7 +1257,8 @@
       "currentFile": "Traitement de {{current}} sur {{total}}",
       "currentFileName": "Traitement : {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "Thèmes",
       "themeDescription": "Créez vos propres thèmes ou utilisez des préréglages sélectionnés.",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "",

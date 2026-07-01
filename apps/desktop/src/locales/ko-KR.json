@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "미리보기를 사용할 수 없습니다.",
     "audio": "오디오",
     "by": "에 의해",
+    "backToMods": "",
     "audioMod": "오디오 모드",
     "mapBadge": "지도",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "모드 삭제 실패",
     "deleteErrorVpkInUse": "",
     "disableError": "모드를 비활성화하지 못했습니다.",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "플러그인",
     "pluginDescription": "데스크톱 앱용 플러그인 및 통합을 관리합니다.",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "은둔",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "다운로드 캐시 지우기",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "이렇게 하면 원격 모드용으로 다운로드한 아카이브와 추출된 파일이 제거됩니다. 로컬 모드는 보존됩니다.",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "모든 모드 데이터 지우기",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "이렇게 하면 로컬 모드, 메타데이터, 미리보기 이미지를 포함한 모든 모드 데이터가 영구적으로 삭제됩니다. 로컬 모드는 복구할 수 없습니다. 확실합니까?",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "모든 모드 지우기",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "모든 모드를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "모든 모드가 삭제되었습니다.",
     "failedToClearMods": "모드를 삭제하지 못했습니다.",
     "addonsBackup": "모드 백업",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "백업을 생성하지 못했습니다.",
     "restoreBackup": "복원하다",
     "restoringBackup": "백업 복원 중...",
+    "restoring": "",
     "backupRestored": "백업이 성공적으로 복원되었습니다.",
     "backupRestoreFailed": "백업을 복원하지 못했습니다.",
     "deleteBackup": "삭제",
     "deleteBackupConfirm": "이 백업을 삭제하시겠습니까?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "백업이 삭제되었습니다.",
     "backupDeleteFailed": "백업을 삭제하지 못했습니다.",
     "openBackupsFolder": "백업 폴더 열기",
@@ -584,7 +593,9 @@
     "backupVpkCount": "VPK 파일",
     "restoreStrategy": "복원 전략",
     "restoreStrategyReplace": "바꾸기 - 애드온 폴더를 먼저 지웁니다.",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "병합 - 기존 애드온 유지",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "이 작업은 취소할 수 없습니다. 신중하게 선택해 주세요.",
     "backupProgressInitializing": "백업 준비 중...",
     "backupProgressScanning": "애드온 폴더를 검색하는 중...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "추가 인수 없이 바닐라 모드에서 게임을 시작합니다.",
     "modsStorePagination": "페이지 매김 브라우징",
     "modsStorePaginationDescription": "Mods Store와 Library를 하나의 연속 스크롤 목록 대신 페이지로 표시합니다.",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "사용자 정의 설정 만들기",
     "createCustomSettingDescription": "게임에 사용자 정의 설정을 추가합니다. 이는 게임 실행 옵션으로 추가됩니다.",
     "key": "열쇠",
@@ -653,7 +666,7 @@
     "linuxGpuOptimizationRestartRequired": "변경 사항을 적용하려면 다시 시작해야 합니다.",
     "confirmClearModsState": "모드 상태를 지우시겠습니까?",
     "confirmClearModsStateBody": "이렇게 하면 애플리케이션에서 모든 모드가 제거되지만 게임 폴더에서는 삭제되지 않습니다. mods 폴더를 다시 스캔하여 복원할 수 있습니다.",
-    "confirmClearModsStateAction": "상태 지우기",
+    "confirmClearModsStateAction": "",
     "modsStateCleared": "Mods 상태가 성공적으로 지워졌습니다.",
     "autoexec": "",
     "autoexecDescription": "autoexec.cfg 파일을 관리합니다. 변경 사항을 적용하려면 게임을 다시 시작해야 합니다.",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "백업 생성",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "백업 복원",
     "resetToVanilla": "바닐라로 재설정",
     "validateConfiguration": "구성 검증",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "내 모드에 추가됨",
+    "completed": "",
     "downloading": "다운로드 중...",
     "extracting": "",
     "downloaded": "다운로드됨",
@@ -1236,7 +1257,8 @@
       "currentFile": "{{total}} 중 {{current}} 처리 중",
       "currentFileName": "처리 중: {{fileName}}"
     },
-    "total": "총"
+    "total": "총",
+    "backup": ""
   },
   "onboarding": {
     "title": "교착 상태 모드 관리자에 오신 것을 환영합니다",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "테마",
       "themeDescription": "나만의 테마를 만들거나 선별된 사전 설정을 사용하세요.",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "디버그",

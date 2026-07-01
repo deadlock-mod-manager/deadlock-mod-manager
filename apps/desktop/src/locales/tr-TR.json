@@ -25,11 +25,12 @@
     "about": "Hakkında",
     "crosshairs": "",
     "customization": "",
-    "autoexec": "",
+    "autoexec": "Autoexec yapılandırması",
     "maps": "",
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -65,7 +66,7 @@
         "na": "",
         "sa": "",
         "apac": "",
-        "oce": "",
+        "oce": "Okyanusya",
         "me": "",
         "other": ""
       },
@@ -93,7 +94,7 @@
       "summary": ""
     },
     "table": {
-      "name": "",
+      "name": "İsim",
       "players": "",
       "map": "",
       "mode": "",
@@ -112,7 +113,7 @@
       "open": "",
       "copyConnect": "",
       "joinServer": "",
-      "downloadAndJoin": "",
+      "downloadAndJoin": "Modları İndir ve Katıl",
       "connectCopied": "",
       "noGateway": "",
       "noConnect": "",
@@ -129,10 +130,10 @@
       "metaLastSeen": "",
       "join": "",
       "joining": "",
-      "missingMods_one": "",
-      "missingMods_other": "",
-      "installAll": "",
-      "enableMod": "",
+      "missingMods_one": "Zorunlu mod eksik{{count}}",
+      "missingMods_other": "Zorunlu modlar eksik{{count}}",
+      "installAll": "Gerekli modları indir",
+      "enableMod": "Modu etkinleştir",
       "installMod": "",
       "passwordPrompt": "",
       "passwordPlaceholder": "",
@@ -144,7 +145,7 @@
       "creatingFolder": "",
       "installing": "",
       "installingNamed": "",
-      "awaitingFileSelection": "",
+      "awaitingFileSelection": "Dosya seçimi bekleniyor...",
       "awaitingCustomConfirm": "",
       "customConfirmTitle": "",
       "customConfirmDescription": "",
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "Önizleme yok",
     "audio": "Ses",
     "by": "Tarafından",
+    "backToMods": "",
     "audioMod": "Ses modu",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Mod silinirken hata oluştu",
     "deleteErrorVpkInUse": "",
     "disableError": "Mod devre dışı bırakılırken hata oluştu",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "Gizlilik",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "Tüm modları sil",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "Tüm modları silmek istendiginzine emin misiniz? Bu işlem geri alınamaz.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "Tüm modlar silinemedi",
     "failedToClearMods": "Fehler beim Löschen der Mods",
     "addonsBackup": "Mod yedeği",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "Yedek oluşturulamadı",
     "restoreBackup": "Geri Yükle",
     "restoringBackup": "Yedek geri yükleniyor...",
+    "restoring": "",
     "backupRestored": "Yedek başarıyla geri yüklendi",
     "backupRestoreFailed": "Yedek geri yüklenemedi",
     "deleteBackup": "Sil",
     "deleteBackupConfirm": "Bu yedeği silmek istediğinizden emin misiniz?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "Yedek başarıyla silindi",
     "backupDeleteFailed": "Yedek silinemedi",
     "openBackupsFolder": "Yedekler Klasörünü Aç",
@@ -584,7 +593,9 @@
     "backupVpkCount": "VPK Dosyaları",
     "restoreStrategy": "Geri Yükleme Stratejisi",
     "restoreStrategyReplace": "Değiştir - Önce eklentiler klasörünü temizle",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "Birleştir - Mevcut eklentileri koru",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "Bu işlem geri alınamaz. Lütfen dikkatli seçin.",
     "backupProgressInitializing": "",
     "backupProgressScanning": "",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "Özel ayar oluştur",
     "createCustomSettingDescription": "Oyuna özel bir ayar ekleyin. Bunlar başlatma seçeneklerine eklenir.",
     "key": "Anahtar",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "Yedek oluştur",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "Yedeği geri yükle",
     "resetToVanilla": "Vanilla’ya sıfırla",
     "validateConfiguration": "Yapılandırmayı doğrula",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Modlarıma eklendi",
+    "completed": "",
     "downloading": "İndiriliyor...",
     "extracting": "",
     "downloaded": "İndirildi",
@@ -1236,7 +1257,8 @@
       "currentFile": "{{current}}/{{total}} işleniyor",
       "currentFileName": "İşleniyor: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "Temalar",
       "themeDescription": "",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "",

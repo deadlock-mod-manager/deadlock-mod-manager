@@ -30,6 +30,7 @@
     "servers": "",
     "multiplayer": "",
     "general": "",
+    "earlyAccess": "",
     "mods": ""
   },
   "servers": {
@@ -262,6 +263,7 @@
     "noPreviewAvailable": "Prévia Indisponível",
     "audio": "Áudio",
     "by": "Por",
+    "backToMods": "",
     "audioMod": "Mod de Áudio",
     "mapBadge": "",
     "customBadge": "",
@@ -289,6 +291,7 @@
     "deleteError": "Falha ao deletar mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Falha ao desabilitar mod",
+    "deleteMod": "",
     "vpkScanAlert": {
       "title": "",
       "titleTooltipLabel": "",
@@ -515,6 +518,7 @@
     "proxyStatusUnsaved": "",
     "plugin": "",
     "pluginDescription": "",
+    "quickAccess": "",
     "themes": "",
     "discord": "",
     "privacy": "Privacidade",
@@ -555,12 +559,15 @@
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
+    "confirmClearDownloadCacheAction": "",
     "clearAllModsData": "",
     "clearAllModsDataDescription": "",
     "confirmClearAllModsData": "",
+    "confirmClearAllModsDataAction": "",
     "clearAllMods": "Apagar Todos os Mods",
     "clearAllModsDescription": "",
     "confirmClearAllMods": "Tem certeza que deseja apagar todos os mods? Essa ação é irreversível.",
+    "confirmClearAllModsAction": "",
     "allModsCleared": "Todos os seus mods foram apagados",
     "failedToClearMods": "Falha ao apagar os mods",
     "addonsBackup": "Backup de mods",
@@ -571,10 +578,12 @@
     "backupCreationFailed": "Falha ao criar backup",
     "restoreBackup": "Restaurar",
     "restoringBackup": "Restaurando backup...",
+    "restoring": "",
     "backupRestored": "Backup restaurado com sucesso",
     "backupRestoreFailed": "Falha ao restaurar backup",
     "deleteBackup": "Deletar",
     "deleteBackupConfirm": "Tem certeza que deseja deletar este backup?",
+    "deleteBackupConfirmAction": "",
     "backupDeleted": "Backup deletado com sucesso",
     "backupDeleteFailed": "Falha ao deletar backup",
     "openBackupsFolder": "Abrir Pasta de Backups",
@@ -584,7 +593,9 @@
     "backupVpkCount": "Arquivos VPK",
     "restoreStrategy": "Estratégia de Restauração",
     "restoreStrategyReplace": "Substituir - Limpar pasta de addons primeiro",
+    "restoreStrategyReplaceDescription": "",
     "restoreStrategyMerge": "Mesclar - Manter addons existentes",
+    "restoreStrategyMergeDescription": "",
     "restoreStrategyWarning": "Esta ação não pode ser desfeita. Por favor, escolha com cuidado.",
     "backupProgressInitializing": "Preparando backup...",
     "backupProgressScanning": "Escaneando pasta de addons...",
@@ -605,6 +616,8 @@
     "launchVanillaNoArgsDescription": "",
     "modsStorePagination": "",
     "modsStorePaginationDescription": "",
+    "heroConflictWarning": "",
+    "heroConflictWarningDescription": "",
     "createCustomSetting": "Criar uma configuração personalizada",
     "createCustomSettingDescription": "Adicione uma configuração personalizada ao jogo. Ela será adicionada como uma opção de inicialização.",
     "key": "Chave",
@@ -695,6 +708,11 @@
       "voiceChat": "",
       "visualEffects": "",
       "replaySpectator": ""
+    },
+    "label": {
+      "game": "",
+      "application": "",
+      "advanced": ""
     },
     "autoexecCommands": {
       "fpsMax": {
@@ -961,6 +979,8 @@
   },
   "game": {
     "createBackup": "Criar Backup",
+    "createBackupTip": "",
+    "noBackupFound": "",
     "restoreBackup": "Restaurar Backup",
     "resetToVanilla": "Resetar para Vanilla",
     "validateConfiguration": "Validar Configurações",
@@ -1141,6 +1161,7 @@
   },
   "modStatus": {
     "added": "Adicionado aos meus mods",
+    "completed": "",
     "downloading": "Baixando...",
     "extracting": "",
     "downloaded": "Baixado",
@@ -1236,7 +1257,8 @@
       "currentFile": "Processando {{current}} de {{total}}",
       "currentFileName": "Processando: {{fileName}}"
     },
-    "total": ""
+    "total": "",
+    "backup": ""
   },
   "onboarding": {
     "title": "Bem-vindo ao Deadlock Mod Manager",
@@ -1822,6 +1844,8 @@
     }
   },
   "plugins": {
+    "official": "",
+    "thirdParty": "",
     "themes": {
       "title": "",
       "themeDescription": "",
@@ -2018,7 +2042,21 @@
     "changelog": "",
     "moreFeatures": "",
     "tickerPrev": "",
-    "tickerNext": ""
+    "tickerNext": "",
+    "trendingCategory": {
+      "maps": "",
+      "skins": "",
+      "gameplay": "",
+      "hud": "",
+      "Models": "",
+      "music": "",
+      "AbilitySounds": "",
+      "WeaponSounds": "",
+      "VoiceLines": "",
+      "KillSounds": "",
+      "KillstreakMusic": "",
+      "Other": ""
+    }
   },
   "debug": {
     "title": "Depuração",
