@@ -13,6 +13,7 @@ pub mod game;
 pub mod gameinfo;
 pub mod ingest;
 pub mod logs;
+pub mod match_sync;
 pub mod mods;
 pub mod profiles;
 pub mod reports;

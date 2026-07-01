@@ -16,6 +16,7 @@ mod game_presence;
 mod hero_detector;
 mod ingest_tool;
 mod logs;
+mod match_sync;
 mod mod_manager;
 pub mod proxy;
 mod reports;
@@ -193,6 +194,12 @@ pub fn run() {
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,
       game_presence::stop_game_presence_watcher,
+      commands::match_sync::get_match_sync_status,
+      commands::match_sync::set_match_sync_consent,
+      commands::match_sync::set_match_sync_enabled,
+      commands::match_sync::start_full_match_sync,
+      commands::match_sync::cancel_full_match_sync,
+      commands::match_sync::resume_match_sync_monitoring,
       commands::profiles::create_profile_folder,
       commands::profiles::delete_profile_folder,
       commands::profiles::switch_profile,
