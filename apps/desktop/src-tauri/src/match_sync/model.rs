@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 
 pub const DEADLOCK_APP_ID: u32 = 1422450;
 
-// Hard cap on GC match-salt fetches per rolling 24h, across the whole subsystem
-// (full sync + monitoring + backfill). Persisted so it survives restarts.
 pub const FETCH_QUOTA_LIMIT: usize = 40;
 pub const FETCH_QUOTA_WINDOW_SECS: i64 = 24 * 60 * 60;
 
@@ -16,13 +14,11 @@ pub const INGEST_USERNAME: &str = "Mod Manager";
 pub struct AuthContext {
   pub account_name: String,
   pub steam_id64: u64,
-  // Read by the real GC client (stubbed); redacted from Debug.
-  #[allow(dead_code)]
   pub refresh_token: String,
 }
 
 impl AuthContext {
-  // deadlock-api's `account_id` is the 32-bit Steam3 id.
+  // deadlock-api expects the 32-bit Steam3 account id, not the SteamID64.
   pub fn account_id(&self) -> u32 {
     (self.steam_id64 & 0xFFFF_FFFF) as u32
   }
@@ -92,7 +88,6 @@ pub struct MatchSyncConfig {
 }
 
 impl MatchSyncConfig {
-  // The master gate: enabling (with consent) is what drives all background fetching.
   pub fn is_active(&self) -> bool {
     self.enabled && self.consent_accepted
   }

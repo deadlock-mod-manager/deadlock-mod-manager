@@ -1,6 +1,7 @@
 mod api_client;
 mod auth;
 mod error;
+mod game_check;
 mod gc_client;
 mod model;
 mod quota;
@@ -20,6 +21,7 @@ use crate::app_runtime::AppHandle;
 
 use api_client::ApiClient;
 use auth::LocalSteamAuth;
+use game_check::SysGameRunningCheck;
 use gc_client::SteamGcClient;
 use model::{FETCH_QUOTA_LIMIT, SyncProgress};
 use sync::{SyncEngine, SyncPersistence};
@@ -30,7 +32,6 @@ pub use error::MatchSyncError;
 // One GC request every 2 minutes: GetMatchMetaData is rate-limited per-account by
 // Steam's GC, and a fast throttle (the old 2s value) reliably tripped that limit.
 const GC_MIN_INTERVAL: Duration = Duration::from_secs(2 * 60);
-// How often the background worker does a pass while the feature is enabled.
 const BACKGROUND_PASS_INTERVAL_SECS: u64 = 15 * 60;
 const PROGRESS_EVENT: &str = "match-sync-progress";
 const ERROR_EVENT: &str = "match-sync-error";
@@ -97,7 +98,14 @@ impl SyncPersistence for AppPersistence {
   }
 }
 
-type ProdEngine = SyncEngine<LocalSteamAuth, SteamGcClient, ApiClient, ApiClient, AppPersistence>;
+type ProdEngine = SyncEngine<
+  LocalSteamAuth,
+  SteamGcClient,
+  ApiClient,
+  ApiClient,
+  AppPersistence,
+  SysGameRunningCheck,
+>;
 
 fn build_engine(app: AppHandle) -> ProdEngine {
   SyncEngine::new(
@@ -106,6 +114,7 @@ fn build_engine(app: AppHandle) -> ProdEngine {
     ApiClient::default(),
     ApiClient::default(),
     AppPersistence { app },
+    SysGameRunningCheck::new(),
     Arc::clone(&THROTTLE),
     Arc::clone(&GC_REQUEST_COUNTER),
   )
@@ -197,8 +206,7 @@ pub fn spawn_full_sync(app: AppHandle) -> Result<(), MatchSyncError> {
   Ok(())
 }
 
-// Called by the game-presence watcher on the "game closed" transition. Fires one
-// immediate background pass; a no-op unless the user has opted in.
+// Called by the game-presence watcher on the "game closed" transition.
 pub fn on_game_exit(app: AppHandle) {
   tokio::spawn(async move {
     background_pass(&app).await;
@@ -211,8 +219,7 @@ pub fn should_monitor(app: &AppHandle) -> bool {
     .unwrap_or(false)
 }
 
-// A single background pass under the shared lock (single-flight with full sync and
-// with other passes). Skips entirely when the 24h quota is already spent.
+// Skips entirely when the 24h quota is already spent, avoiding a connect for nothing.
 async fn background_pass(app: &AppHandle) {
   let config = match settings::load_config(app) {
     Ok(c) if c.is_active() => c,
@@ -236,8 +243,6 @@ async fn background_pass(app: &AppHandle) {
   drop(guard);
 }
 
-// While the feature is enabled, keep doing background passes on an interval (up to
-// the 24h quota). Single instance; stops promptly when the feature is disabled.
 pub fn start_background_worker(app: AppHandle) {
   if !should_monitor(&app) {
     return;
@@ -264,14 +269,6 @@ pub fn start_background_worker(app: AppHandle) {
 #[cfg(test)]
 mod config_tests {
   use super::model::MatchSyncConfig;
-
-  #[test]
-  fn default_config_is_inactive() {
-    let c = MatchSyncConfig::default();
-    assert!(!c.enabled);
-    assert!(!c.consent_accepted);
-    assert!(!c.is_active());
-  }
 
   #[test]
   fn active_requires_both_enabled_and_consent() {

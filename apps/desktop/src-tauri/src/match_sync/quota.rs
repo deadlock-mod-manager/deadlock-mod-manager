@@ -67,9 +67,7 @@ impl QuotaWindow {
     self.hits.clone()
   }
 
-  // Marks the whole window as consumed as of `now` (e.g. Steam itself rate-limited
-  // us): remaining(now) becomes 0 and capacity frees up 24h from `now`, same as if
-  // all `limit` requests had genuinely succeeded right now.
+  // For when Steam itself rate-limits us: treat the window as fully used from `now`.
   pub fn exhaust(&mut self, now: i64) {
     self.prune(now);
     let needed = self.limit.saturating_sub(self.hits.len());
@@ -134,7 +132,6 @@ mod tests {
   #[test]
   fn snapshot_is_pruned_after_consume() {
     let mut q = QuotaWindow::new(vec![1, 2, 3], LIMIT, WINDOW);
-    // A consume far in the future prunes the ancient entries.
     q.try_consume(WINDOW + 100).unwrap();
     assert_eq!(q.snapshot(), vec![WINDOW + 100]);
   }

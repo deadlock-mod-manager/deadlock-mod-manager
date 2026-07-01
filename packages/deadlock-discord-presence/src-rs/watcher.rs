@@ -254,7 +254,13 @@ fn emit_phase(status_callback: Option<&PresenceStatusCallback>, phase: PresenceP
     }
 }
 
-fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
+/// The `console.log` path this watcher itself checks, derived from the install dir.
+pub fn console_log_path(game_path: &Path) -> PathBuf {
+    game_path.join("game").join("citadel").join("console.log")
+}
+
+/// Exposed so other consumers can check without duplicating the process-name list.
+pub fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
     sys.refresh_processes_specifics(
         sysinfo::ProcessesToUpdate::All,
         true,

@@ -26,6 +26,9 @@ pub enum MatchSyncError {
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
 
+  #[error("Deadlock is currently running; close it to fetch matches")]
+  GameRunning,
+
   #[error("deadlock-api request failed: {0}")]
   Api(String),
 

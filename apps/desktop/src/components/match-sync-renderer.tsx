@@ -2,8 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import logger from "@/lib/logger";
 
-// Re-applies the persisted monitoring flag on startup. A no-op unless the user
-// previously opted in, so the feature stays off by default.
+// A no-op unless the user previously opted in.
 export const MatchSyncRenderer = () => {
   useEffect(() => {
     invoke("resume_match_sync_monitoring").catch((error) => {

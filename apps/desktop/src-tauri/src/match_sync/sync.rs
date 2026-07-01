@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use super::api_client::{BackfillSource, SaltsSink};
 use super::auth::SteamAuthProvider;
 use super::error::MatchSyncError;
+use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
   AuthContext, FetchScope, MatchHistoryPage, MatchSyncConfig, SaltPayload, SyncProgress,
@@ -49,7 +50,6 @@ struct RunState {
   progress: SyncProgress,
 }
 
-// Newest first, dropping ids already acted on this run.
 fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
   let mut ids: Vec<u64> = ids.into_iter().filter(|id| !processed.contains(id)).collect();
   ids.sort_unstable_by(|a, b| b.cmp(a));
@@ -57,23 +57,25 @@ fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
   ids
 }
 
-pub struct SyncEngine<A, G, S, B, P> {
+pub struct SyncEngine<A, G, S, B, P, R> {
   auth: A,
   gc: G,
   sink: S,
   backfill: B,
   persistence: P,
+  game_check: R,
   throttle: Arc<Throttle>,
   counter: Arc<AtomicU64>,
 }
 
-impl<A, G, S, B, P> SyncEngine<A, G, S, B, P>
+impl<A, G, S, B, P, R> SyncEngine<A, G, S, B, P, R>
 where
   A: SteamAuthProvider,
   G: GcMatchClient,
   S: SaltsSink,
   B: BackfillSource,
   P: SyncPersistence,
+  R: GameRunningCheck,
 {
   pub fn new(
     auth: A,
@@ -81,6 +83,7 @@ where
     sink: S,
     backfill: B,
     persistence: P,
+    game_check: R,
     throttle: Arc<Throttle>,
     counter: Arc<AtomicU64>,
   ) -> Self {
@@ -90,6 +93,7 @@ where
       sink,
       backfill,
       persistence,
+      game_check,
       throttle,
       counter,
     }
@@ -152,7 +156,7 @@ where
         self.persistence.save_quota(&st.quota);
         st.progress.rate_limited = true;
         st.progress.quota_reached = true;
-        st.progress.quota_remaining = 0;
+        st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
       // Any other failure fetched nothing, so it must not count against the cap.
@@ -162,7 +166,6 @@ where
       }
     };
 
-    // Only a real salt fetch counts; record + persist so the cap survives restarts.
     let _ = st.quota.try_consume(now);
     self.persistence.save_quota(&st.quota);
 
@@ -248,6 +251,9 @@ where
     cancel: &AtomicBool,
     st: &mut RunState,
   ) -> Result<(), MatchSyncError> {
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
+    }
     let ctx = self.auth.recover()?;
     let account_id = ctx.account_id();
 
@@ -293,12 +299,13 @@ where
   }
 
   // One background pass: the user's own new matches, then global backfill, all
-  // bounded by the shared 24h quota. A no-op unless the user has opted in.
+  // bounded by the shared 24h quota. A no-op unless the user has opted in, or
+  // while Deadlock is running (Steam routes GC traffic to the game's own pipe).
   pub async fn run_background_pass(
     &self,
     config: &MatchSyncConfig,
   ) -> Result<Option<SyncProgress>, MatchSyncError> {
-    if !config.is_active() {
+    if !config.is_active() || self.game_check.is_game_running() {
       return Ok(None);
     }
     Some(self.run_background().await).transpose()
@@ -474,10 +481,28 @@ mod tests {
     }
   }
 
+  #[derive(Default)]
+  struct SpyGameCheck {
+    running: bool,
+  }
+  impl GameRunningCheck for SpyGameCheck {
+    fn is_game_running(&self) -> bool {
+      self.running
+    }
+  }
+
   fn engine(
     gc: SpyGc,
     backfill: SpyBackfill,
-  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence> {
+  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence, SpyGameCheck> {
+    engine_with_game_check(gc, backfill, SpyGameCheck::default())
+  }
+
+  fn engine_with_game_check(
+    gc: SpyGc,
+    backfill: SpyBackfill,
+    game_check: SpyGameCheck,
+  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence, SpyGameCheck> {
     SyncEngine::new(
       SpyAuth::default(),
       gc,
@@ -487,6 +512,7 @@ mod tests {
         now: 1_000_000,
         ..Default::default()
       },
+      game_check,
       Arc::new(Throttle::new(Duration::ZERO)),
       Arc::new(AtomicU64::new(0)),
     )
@@ -512,10 +538,8 @@ mod tests {
     );
     let config = MatchSyncConfig::default();
 
-    // Monitoring: no-op, and no dependency is touched.
     let out = eng.run_background_pass(&config).await.unwrap();
     assert!(out.is_none());
-    // Full sync: refuses.
     assert!(eng.run_full_sync_if_enabled(&config, &AtomicBool::new(false)).await.is_err());
 
     assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
@@ -677,6 +701,39 @@ mod tests {
       .await
       .unwrap();
     assert_eq!(p.fetched, 0);
+    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
+  }
+
+  #[tokio::test]
+  async fn refuses_while_game_is_running() {
+    let backfill = SpyBackfill {
+      account: vec![1, 2, 3],
+      global: vec![9],
+      calls: AtomicU64::new(0),
+    };
+    let eng = engine_with_game_check(
+      SpyGc::default(),
+      backfill,
+      SpyGameCheck { running: true },
+    );
+
+    assert!(matches!(
+      eng.run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+        .await,
+      Err(MatchSyncError::GameRunning)
+    ));
+    assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
+    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
+
+    // Background pass treats it as a quiet no-op, not an error.
+    assert!(
+      eng
+        .run_background_pass(&active_config())
+        .await
+        .unwrap()
+        .is_none()
+    );
+    assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
     assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
   }
 }
