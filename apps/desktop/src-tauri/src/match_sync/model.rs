@@ -101,7 +101,6 @@ pub struct AccountStatus {
   pub quota_remaining: u32,
   pub quota_reset_at: Option<i64>,
   pub full_sync_complete: bool,
-  pub available: bool,
   pub gc_unavailable: bool,
 }
 

@@ -10,6 +10,9 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useMatchSync } from "@/hooks/use-match-sync";
 
+// Mirrors the backend's FETCH_QUOTA_LIMIT; used only until `status.accounts` loads.
+const DEFAULT_QUOTA_LIMIT = 40;
+
 // Subcodes with a stable, localizable message. Anything else (network/store
 // errors) falls back to the raw backend message, since those wrap arbitrary
 // underlying error text that can't be meaningfully translated.
@@ -71,7 +74,7 @@ export const MatchSyncSettings = () => {
     }
     const limit =
       status?.accounts.find((a) => a.accountName === progress.accountName)
-        ?.quotaLimit ?? 40;
+        ?.quotaLimit ?? DEFAULT_QUOTA_LIMIT;
     if (progress.progress.rateLimited && progress.progress.fetched === 0) {
       toast.warning(t("matchSync.fullSync.rateLimited"));
     } else if (progress.progress.quotaReached) {
@@ -116,14 +119,14 @@ export const MatchSyncSettings = () => {
   }
 
   const running = Boolean(status.fullSyncRunning || progress?.progress.running);
-  const aboutLimit = status.accounts[0]?.quotaLimit ?? 40;
+  const aboutLimit = status.accounts[0]?.quotaLimit ?? DEFAULT_QUOTA_LIMIT;
   const allQuotaExhausted =
     status.accounts.length === 0 ||
     status.accounts.every((a) => a.quotaRemaining === 0);
   const activeAccount = status.accounts.find(
     (a) => a.accountName === progress?.accountName,
   );
-  const activeLimit = activeAccount?.quotaLimit ?? 40;
+  const activeLimit = activeAccount?.quotaLimit ?? DEFAULT_QUOTA_LIMIT;
   const activeRemaining = progress?.progress.quotaRemaining ?? 0;
   const quotaUsedPct =
     activeLimit > 0 ? ((activeLimit - activeRemaining) / activeLimit) * 100 : 0;
@@ -200,11 +203,7 @@ export const MatchSyncSettings = () => {
               status.accounts.map((account) => (
                 <p
                   className={
-                    account.gcUnavailable
-                      ? "text-amber-500/90"
-                      : account.available
-                        ? undefined
-                        : "opacity-50"
+                    account.gcUnavailable ? "text-amber-500/90" : undefined
                   }
                   key={account.steamId64}>
                   {t("matchSync.quota.accountRemaining", {
@@ -214,9 +213,7 @@ export const MatchSyncSettings = () => {
                   })}
                   {account.gcUnavailable
                     ? ` (${t("matchSync.quota.gcUnavailable")})`
-                    : account.available
-                      ? ""
-                      : ` (${t("matchSync.quota.unavailable")})`}
+                    : ""}
                 </p>
               ))
             )}

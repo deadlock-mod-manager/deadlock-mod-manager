@@ -285,7 +285,6 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
         quota_remaining: quota.remaining(now) as u32,
         quota_reset_at: quota.reset_at(now),
         full_sync_complete: settings::load_full_sync_complete(app, steam_id64),
-        available: true,
         gc_unavailable: gc_backoff_active(
           settings::load_gc_backoff_until(app, steam_id64),
           now,
@@ -376,21 +375,26 @@ pub fn spawn_full_sync(app: AppHandle) -> Result<(), MatchSyncError> {
   Ok(())
 }
 
-// Sequentially full-syncs every currently-decryptable account, each with its own quota
-// bucket and throttle. Cancellation is checked between accounts (a quota-exhausted run
-// and a cancelled run both return Ok, so the flag is the only reliable signal here).
-async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
-  let contexts = match auth::recover_all() {
-    Ok(c) => c,
-    Err(e) => {
-      log::warn!("match-sync: full sync failed: {e}");
-      emit_error(app, &e);
-      return;
-    }
-  };
+// Shared per-account loop for both the one-time full sync and the recurring background
+// pass: check cancel, skip accounts under GC backoff (and any pass-specific skip),
+// build an engine, run it, log/report the result, then update GC backoff. Cancellation
+// is checked between accounts (a quota-exhausted run and a cancelled run both return
+// Ok, so the flag is the only reliable signal here).
+async fn run_account_batch<F, Fut>(
+  app: &AppHandle,
+  contexts: &[AuthContext],
+  cancel: &AtomicBool,
+  label: &str,
+  notify_on_error: bool,
+  skip_if: impl Fn(&AppHandle, &AuthContext, i64) -> bool,
+  mut run_engine: F,
+) where
+  F: FnMut(ProdEngine) -> Fut,
+  Fut: std::future::Future<Output = Result<Option<SyncProgress>, MatchSyncError>>,
+{
   let total = contexts.len() as u32;
   for (i, ctx) in contexts.iter().enumerate() {
-    if FULL_SYNC_CANCEL.load(Ordering::Relaxed) {
+    if cancel.load(Ordering::Relaxed) {
       break;
     }
     let now = settings::now_secs();
@@ -403,16 +407,20 @@ async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
       );
       continue;
     }
+    if skip_if(app, ctx, now) {
+      continue;
+    }
     let gc_error_seen = Arc::new(AtomicBool::new(false));
     let engine = build_engine(app.clone(), ctx, i as u32 + 1, total, Arc::clone(&gc_error_seen));
-    let result = engine
-      .run_full_sync_if_enabled(config, &FULL_SYNC_CANCEL)
-      .await;
+    let result = run_engine(engine).await;
     match &result {
-      Ok(p) => log::info!("match-sync: full sync finished for {}: {p:?}", ctx.account_name),
+      Ok(Some(p)) => log::info!("match-sync: {label} finished for {}: {p:?}", ctx.account_name),
+      Ok(None) => {}
       Err(e) => {
-        log::warn!("match-sync: full sync failed for {}: {e}", ctx.account_name);
-        emit_error(app, e);
+        log::warn!("match-sync: {label} failed for {}: {e}", ctx.account_name);
+        if notify_on_error {
+          emit_error(app, e);
+        }
       }
     }
     apply_gc_backoff(app, ctx, backoff, gc_error_seen.load(Ordering::Relaxed), now);
@@ -420,6 +428,34 @@ async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
       break;
     }
   }
+}
+
+// Sequentially full-syncs every currently-decryptable account, each with its own quota
+// bucket and throttle.
+async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
+  let contexts = match auth::recover_all() {
+    Ok(c) => c,
+    Err(e) => {
+      log::warn!("match-sync: full sync failed: {e}");
+      emit_error(app, &e);
+      return;
+    }
+  };
+  run_account_batch(
+    app,
+    &contexts,
+    &FULL_SYNC_CANCEL,
+    "full sync",
+    true,
+    |_, _, _| false,
+    |engine| async move {
+      engine
+        .run_full_sync_if_enabled(config, &FULL_SYNC_CANCEL)
+        .await
+        .map(Some)
+    },
+  )
+  .await;
 }
 
 // Called by the game-presence watcher on the "game closed" transition.
@@ -453,42 +489,23 @@ async fn background_pass(app: &AppHandle) {
       return;
     }
   };
-  let total = contexts.len() as u32;
-  for (i, ctx) in contexts.iter().enumerate() {
-    if BACKGROUND_CANCEL.load(Ordering::Relaxed) {
-      break;
-    }
-    let now = settings::now_secs();
-    let backoff = settings::load_gc_backoff_until(app, ctx.steam_id64);
-    if gc_backoff_active(backoff, now) {
-      log::info!(
-        "match-sync: skipping {}, GC unavailable until {:?}",
-        ctx.account_name,
-        backoff
-      );
-      continue;
-    }
-    let spent = settings::load_quota(app, ctx.steam_id64)
-      .map(|q| q.remaining(now) == 0)
-      .unwrap_or(true);
-    if spent {
-      continue;
-    }
-    let gc_error_seen = Arc::new(AtomicBool::new(false));
-    let engine = build_engine(app.clone(), ctx, i as u32 + 1, total, Arc::clone(&gc_error_seen));
-    let result = engine.run_background_pass(&config, &BACKGROUND_CANCEL).await;
-    match &result {
-      Ok(Some(p)) => {
-        log::info!("match-sync: background pass finished for {}: {p:?}", ctx.account_name)
-      }
-      Ok(None) => {}
-      Err(e) => log::warn!("match-sync: background pass failed for {}: {e}", ctx.account_name),
-    }
-    apply_gc_backoff(app, ctx, backoff, gc_error_seen.load(Ordering::Relaxed), now);
-    if let BatchControl::Abort = batch_control(&result) {
-      break;
-    }
-  }
+  run_account_batch(
+    app,
+    &contexts,
+    &BACKGROUND_CANCEL,
+    "background pass",
+    false,
+    |app, ctx, now| {
+      settings::load_quota(app, ctx.steam_id64)
+        .map(|q| q.remaining(now) == 0)
+        .unwrap_or(true)
+    },
+    |engine| {
+      let config = &config;
+      async move { engine.run_background_pass(config, &BACKGROUND_CANCEL).await }
+    },
+  )
+  .await;
 }
 
 pub fn start_background_worker(app: AppHandle) {
