@@ -616,6 +616,8 @@
     "launchVanillaNoArgsDescription": "Launch the game in vanilla mode without additional arguments.",
     "modsStorePagination": "Paginated Browsing",
     "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
+    "heroConflictWarning": "Hero Conflict Warning",
+    "heroConflictWarningDescription": "Show a warning when enabling a second mod for a hero that already has an active mod.",
     "createCustomSetting": "Create a custom setting",
     "createCustomSettingDescription": "Add a custom setting to the game. These will be added to the game as launch options.",
     "key": "Key",

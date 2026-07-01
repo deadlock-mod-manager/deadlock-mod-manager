@@ -103,6 +103,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { analytics } = useAnalyticsContext();
   const confirm = useConfirm();
   const localMods = usePersistedStore((state) => state.localMods);
+  const heroConflictWarningEnabled = usePersistedStore(
+    (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
+  );
 
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
@@ -237,7 +240,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
           const resolvedHero = resolveLocalModHero(localMod).hero;
-          if (resolvedHero) {
+          if (resolvedHero && heroConflictWarningEnabled) {
             const conflictingMod = localMods.find(
               (m) =>
                 m.remoteId !== localMod.remoteId &&
@@ -296,6 +299,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     isActionInProgress,
     localMod,
     localMods,
+    heroConflictWarningEnabled,
     confirm,
     download,
     uninstall,

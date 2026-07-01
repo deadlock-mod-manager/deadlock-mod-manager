@@ -34,6 +34,12 @@ const getSystemSettings = (
     description: t("settings.modsStorePaginationDescription"),
     defaultEnabled: isLinux,
   },
+  {
+    id: "hero-conflict-warning",
+    label: t("settings.heroConflictWarning"),
+    description: t("settings.heroConflictWarningDescription"),
+    defaultEnabled: true,
+  },
 ];
 
 const SystemSettings = () => {
