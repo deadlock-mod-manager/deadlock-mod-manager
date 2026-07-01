@@ -34,7 +34,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -155,7 +155,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-dependency-path: pnpm-lock.yaml
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
       - name: Install apt dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-24.04'
