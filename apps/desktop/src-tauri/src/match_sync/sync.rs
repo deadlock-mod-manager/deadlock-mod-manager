@@ -26,6 +26,11 @@ pub trait SyncPersistence: Send + Sync {
   fn persist_fetched(&self, ids: &[u64]);
   fn set_full_sync_complete(&self, complete: bool);
   fn emit_progress(&self, progress: &SyncProgress);
+  // Observability hook for GC failures that the engine deliberately swallows as
+  // best-effort resilience (so one dead source doesn't block the other). Lets the
+  // orchestrator back off an account whose GC connection is broken, even though the
+  // run itself still returns Ok. Default no-op: most callers don't care.
+  fn record_gc_error(&self, _err: &MatchSyncError) {}
 }
 
 enum FetchStep {
@@ -171,6 +176,7 @@ where
       // Any other failure fetched nothing, so it must not count against the cap.
       Err(e) => {
         log::warn!("match-sync: GC fetch failed for {match_id}: {e}");
+        self.persistence.record_gc_error(&e);
         return Ok(FetchStep::RetryLater);
       }
     };
@@ -284,6 +290,7 @@ where
         Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
         Err(e) => {
           log::warn!("match-sync: GC match history unavailable: {e}");
+          self.persistence.record_gc_error(&e);
           break;
         }
       };
@@ -365,6 +372,7 @@ where
       Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
         log::warn!("match-sync: GC match history unavailable: {e}");
+        self.persistence.record_gc_error(&e);
         Vec::new()
       }
     };
@@ -429,6 +437,7 @@ mod tests {
   struct SpyGc {
     calls: AtomicU64,
     fail: bool,
+    fail_history: bool,
     rate_limited: bool,
     history: Vec<u64>,
   }
@@ -439,6 +448,9 @@ mod tests {
       _cursor: Option<u64>,
     ) -> Result<MatchHistoryPage, MatchSyncError> {
       self.calls.fetch_add(1, Ordering::Relaxed);
+      if self.fail_history {
+        return Err(MatchSyncError::GcUnavailable("spy history".into()));
+      }
       Ok(MatchHistoryPage {
         match_ids: self.history.clone(),
         next_cursor: None,
@@ -501,6 +513,7 @@ mod tests {
     fetched: Mutex<Vec<u64>>,
     complete: Mutex<bool>,
     progress_events: AtomicU64,
+    gc_errors: AtomicU64,
     fail_load_quota: bool,
     fail_save_quota: bool,
     last_progress_running: Mutex<Option<bool>>,
@@ -534,6 +547,9 @@ mod tests {
     fn emit_progress(&self, progress: &SyncProgress) {
       self.progress_events.fetch_add(1, Ordering::Relaxed);
       *self.last_progress_running.lock().unwrap() = Some(progress.running);
+    }
+    fn record_gc_error(&self, _err: &MatchSyncError) {
+      self.gc_errors.fetch_add(1, Ordering::Relaxed);
     }
   }
 
@@ -603,7 +619,6 @@ mod tests {
     MatchSyncConfig {
       enabled: true,
       consent_accepted: true,
-      full_sync_complete: false,
     }
   }
 
@@ -977,5 +992,54 @@ mod tests {
     assert!(matches!(p, Err(MatchSyncError::GameRunning)));
     // Aborted at the first match, not after walking the whole list.
     assert!(eng.sink.posted.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn swallowed_salt_gc_error_is_still_reported_via_hook() {
+    // A salt-fetch GcUnavailable is swallowed to Ok (best-effort), but the orchestrator
+    // needs to see it to back the account off — the hook is that channel.
+    let backfill = SpyBackfill {
+      account: vec![1, 2, 3],
+      global: vec![],
+      calls: AtomicU64::new(0),
+    };
+    let eng = engine(
+      SpyGc {
+        fail: true,
+        ..Default::default()
+      },
+      backfill,
+    );
+
+    let p = eng
+      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(p.fetched, 0);
+    assert!(eng.persistence.gc_errors.load(Ordering::Relaxed) > 0);
+  }
+
+  #[tokio::test]
+  async fn swallowed_history_gc_error_is_still_reported_via_hook() {
+    // A history-page GcUnavailable is likewise swallowed (Vec::new / break) but must
+    // reach the hook so a broken-handshake account (e.g. no game ownership) backs off.
+    let backfill = SpyBackfill {
+      account: vec![],
+      global: vec![],
+      calls: AtomicU64::new(0),
+    };
+    let eng = engine(
+      SpyGc {
+        fail_history: true,
+        ..Default::default()
+      },
+      backfill,
+    );
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert!(eng.persistence.gc_errors.load(Ordering::Relaxed) > 0);
   }
 }

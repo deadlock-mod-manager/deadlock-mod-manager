@@ -84,13 +84,25 @@ pub struct MatchHistoryPage {
 pub struct MatchSyncConfig {
   pub enabled: bool,
   pub consent_accepted: bool,
-  pub full_sync_complete: bool,
 }
 
 impl MatchSyncConfig {
   pub fn is_active(&self) -> bool {
     self.enabled && self.consent_accepted
   }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountStatus {
+  pub steam_id64: u64,
+  pub account_name: String,
+  pub quota_limit: u32,
+  pub quota_remaining: u32,
+  pub quota_reset_at: Option<i64>,
+  pub full_sync_complete: bool,
+  pub available: bool,
+  pub gc_unavailable: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]

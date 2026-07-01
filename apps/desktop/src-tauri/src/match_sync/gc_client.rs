@@ -3,6 +3,7 @@
 //! user-auth.md). The subsystem never uses deadlock-api's own server-side endpoints.
 
 use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 
 use prost::Message as _;
@@ -208,5 +209,25 @@ impl GcMatchClient for SteamGcClient {
       metadata_salt: resp.metadata_salt,
       replay_salt: resp.replay_salt,
     })
+  }
+}
+
+// Lets the per-account resource registry in `mod.rs` hand out a shared
+// `Arc<SteamGcClient>` while still satisfying `SyncEngine`'s `G: GcMatchClient` bound.
+impl GcMatchClient for Arc<SteamGcClient> {
+  fn fetch_match_history(
+    &self,
+    ctx: &AuthContext,
+    cursor: Option<u64>,
+  ) -> impl Future<Output = Result<MatchHistoryPage, MatchSyncError>> + Send {
+    (**self).fetch_match_history(ctx, cursor)
+  }
+
+  fn fetch_match_salts(
+    &self,
+    ctx: &AuthContext,
+    match_id: u64,
+  ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send {
+    (**self).fetch_match_salts(ctx, match_id)
   }
 }

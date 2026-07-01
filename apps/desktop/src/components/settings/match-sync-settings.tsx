@@ -64,23 +64,26 @@ export const MatchSyncSettings = () => {
     if (!progress) {
       return;
     }
-    const justFinished = wasRunning.current && !progress.running;
-    wasRunning.current = progress.running;
+    const justFinished = wasRunning.current && !progress.progress.running;
+    wasRunning.current = progress.progress.running;
     if (!justFinished) {
       return;
     }
-    if (progress.rateLimited && progress.fetched === 0) {
+    const limit =
+      status?.accounts.find((a) => a.accountName === progress.accountName)
+        ?.quotaLimit ?? 40;
+    if (progress.progress.rateLimited && progress.progress.fetched === 0) {
       toast.warning(t("matchSync.fullSync.rateLimited"));
-    } else if (progress.quotaReached) {
+    } else if (progress.progress.quotaReached) {
       toast.info(
         t("matchSync.fullSync.doneQuota", {
-          fetched: progress.fetched,
-          limit: status?.quotaLimit ?? 40,
+          fetched: progress.progress.fetched,
+          limit,
         }),
       );
-    } else if (progress.fetched > 0) {
+    } else if (progress.progress.fetched > 0) {
       toast.success(
-        t("matchSync.fullSync.done", { fetched: progress.fetched }),
+        t("matchSync.fullSync.done", { fetched: progress.progress.fetched }),
       );
     }
   }, [progress, status, t]);
@@ -112,12 +115,18 @@ export const MatchSyncSettings = () => {
     );
   }
 
-  const running = Boolean(status.fullSyncRunning || progress?.running);
-  const quotaRemaining = progress?.quotaRemaining ?? status.quotaRemaining;
+  const running = Boolean(status.fullSyncRunning || progress?.progress.running);
+  const aboutLimit = status.accounts[0]?.quotaLimit ?? 40;
+  const allQuotaExhausted =
+    status.accounts.length === 0 ||
+    status.accounts.every((a) => a.quotaRemaining === 0);
+  const activeAccount = status.accounts.find(
+    (a) => a.accountName === progress?.accountName,
+  );
+  const activeLimit = activeAccount?.quotaLimit ?? 40;
+  const activeRemaining = progress?.progress.quotaRemaining ?? 0;
   const quotaUsedPct =
-    status.quotaLimit > 0
-      ? ((status.quotaLimit - quotaRemaining) / status.quotaLimit) * 100
-      : 0;
+    activeLimit > 0 ? ((activeLimit - activeRemaining) / activeLimit) * 100 : 0;
 
   const handleEnableChange = async (next: boolean) => {
     try {
@@ -157,7 +166,7 @@ export const MatchSyncSettings = () => {
       <div className='space-y-1 rounded-md border border-border/50 bg-muted/30 p-3 text-muted-foreground text-sm'>
         <p>{t("matchSync.about.reads")}</p>
         <p>{t("matchSync.about.sends")}</p>
-        <p>{t("matchSync.about.limit", { limit: status.quotaLimit })}</p>
+        <p>{t("matchSync.about.limit", { limit: aboutLimit })}</p>
         <p className='text-amber-500/90'>{t("matchSync.about.risk")}</p>
       </div>
 
@@ -184,11 +193,33 @@ export const MatchSyncSettings = () => {
 
       {status.enabled && (
         <>
-          <div className='text-muted-foreground text-sm'>
-            {t("matchSync.quota.remaining", {
-              remaining: quotaRemaining,
-              limit: status.quotaLimit,
-            })}
+          <div className='flex flex-col gap-1 text-muted-foreground text-sm'>
+            {status.accounts.length === 0 ? (
+              <p>{t("matchSync.noAccounts")}</p>
+            ) : (
+              status.accounts.map((account) => (
+                <p
+                  className={
+                    account.gcUnavailable
+                      ? "text-amber-500/90"
+                      : account.available
+                        ? undefined
+                        : "opacity-50"
+                  }
+                  key={account.steamId64}>
+                  {t("matchSync.quota.accountRemaining", {
+                    name: account.accountName,
+                    remaining: account.quotaRemaining,
+                    limit: account.quotaLimit,
+                  })}
+                  {account.gcUnavailable
+                    ? ` (${t("matchSync.quota.gcUnavailable")})`
+                    : account.available
+                      ? ""
+                      : ` (${t("matchSync.quota.unavailable")})`}
+                </p>
+              ))
+            )}
           </div>
 
           <div className='flex flex-col gap-2 border-border/30 border-t pt-4'>
@@ -210,7 +241,7 @@ export const MatchSyncSettings = () => {
                 </Button>
               ) : (
                 <Button
-                  disabled={quotaRemaining === 0}
+                  disabled={allQuotaExhausted}
                   onClick={handleStartFullSync}
                   size='sm'>
                   {t("matchSync.fullSync.button")}
@@ -220,16 +251,25 @@ export const MatchSyncSettings = () => {
             {running && (
               <div className='space-y-1'>
                 <Progress value={quotaUsedPct} />
+                {progress && (
+                  <p className='text-muted-foreground text-xs'>
+                    {t("matchSync.fullSync.accountProgress", {
+                      index: progress.accountIndex,
+                      total: progress.accountTotal,
+                      name: progress.accountName,
+                    })}
+                  </p>
+                )}
                 <p className='text-muted-foreground text-xs'>
                   {t("matchSync.fullSync.running", {
-                    fetched: progress?.fetched ?? 0,
-                    remaining: quotaRemaining,
-                    limit: status.quotaLimit,
+                    fetched: progress?.progress.fetched ?? 0,
+                    remaining: activeRemaining,
+                    limit: activeLimit,
                   })}
                 </p>
               </div>
             )}
-            {!running && quotaRemaining === 0 && (
+            {!running && allQuotaExhausted && status.accounts.length > 0 && (
               <p className='text-amber-500/90 text-xs'>
                 {t("matchSync.quota.reachedToday")}
               </p>
