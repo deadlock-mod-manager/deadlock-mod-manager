@@ -8,7 +8,9 @@ use std::time::Duration;
 
 use prost::Message as _;
 use steam_vent::proto::MsgKind;
-use steam_vent::{Connection, ConnectionTrait, GameCoordinator, ServerList, UntypedMessage};
+use steam_vent::{
+  Connection, ConnectionTrait, GameCoordinator, RawNetMessage, ServerList, UntypedMessage,
+};
 use tokio::sync::Mutex;
 use valveprotos::deadlock::{
   CMsgClientToGcGetMatchHistory, CMsgClientToGcGetMatchHistoryResponse,
@@ -94,6 +96,39 @@ impl SteamGcClient {
     }
     Ok(())
   }
+
+  // Poisons the session (drops it from `guard`) on any failure or timeout, so the next
+  // call reconnects instead of retrying a broken GC connection.
+  async fn send_job(
+    guard: &mut Option<GcSession>,
+    req_bytes: Vec<u8>,
+    kind: MsgKind,
+    label: &str,
+  ) -> Result<RawNetMessage, MatchSyncError> {
+    let sent = tokio::time::timeout(
+      GC_CALL_TIMEOUT,
+      guard
+        .as_ref()
+        .expect("connected above")
+        .gc
+        .job_untyped(UntypedMessage(req_bytes), kind, true),
+    )
+    .await;
+
+    match sent {
+      Ok(Ok(raw)) => Ok(raw),
+      Ok(Err(e)) => {
+        *guard = None;
+        Err(MatchSyncError::GcUnavailable(format!("{label} request failed: {e}")))
+      }
+      Err(_) => {
+        *guard = None;
+        Err(MatchSyncError::GcUnavailable(format!(
+          "{label} request timed out after {GC_CALL_TIMEOUT:?}"
+        )))
+      }
+    }
+  }
 }
 
 impl GcMatchClient for SteamGcClient {
@@ -111,29 +146,7 @@ impl GcMatchClient for SteamGcClient {
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchHistory as i32);
-    let sent = tokio::time::timeout(
-      GC_CALL_TIMEOUT,
-      guard
-        .as_ref()
-        .expect("connected above")
-        .gc
-        .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true),
-    )
-    .await;
-
-    let raw = match sent {
-      Ok(Ok(raw)) => raw,
-      Ok(Err(e)) => {
-        *guard = None;
-        return Err(MatchSyncError::GcUnavailable(format!("history request failed: {e}")));
-      }
-      Err(_) => {
-        *guard = None;
-        return Err(MatchSyncError::GcUnavailable(format!(
-          "history request timed out after {GC_CALL_TIMEOUT:?}"
-        )));
-      }
-    };
+    let raw = Self::send_job(&mut guard, req.encode_to_vec(), kind, "history").await?;
 
     let resp = CMsgClientToGcGetMatchHistoryResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad history response: {e}")))?;
@@ -165,29 +178,7 @@ impl GcMatchClient for SteamGcClient {
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchMetaData as i32);
-    let sent = tokio::time::timeout(
-      GC_CALL_TIMEOUT,
-      guard
-        .as_ref()
-        .expect("connected above")
-        .gc
-        .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true),
-    )
-    .await;
-
-    let raw = match sent {
-      Ok(Ok(raw)) => raw,
-      Ok(Err(e)) => {
-        *guard = None;
-        return Err(MatchSyncError::GcUnavailable(format!("salts request failed: {e}")));
-      }
-      Err(_) => {
-        *guard = None;
-        return Err(MatchSyncError::GcUnavailable(format!(
-          "salts request timed out after {GC_CALL_TIMEOUT:?}"
-        )));
-      }
-    };
+    let raw = Self::send_job(&mut guard, req.encode_to_vec(), kind, "salts").await?;
 
     let resp = CMsgClientToGcGetMatchMetaDataResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad salts response: {e}")))?;
