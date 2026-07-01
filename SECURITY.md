@@ -40,7 +40,7 @@ For security vulnerabilities, please report them **privately** through:
 ### Application Security
 
 - **Tauri Framework**: Sandboxed environment with capability-based permissions
-- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app)
+- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app, deadlock-api.com)
 - **File System**: Restricted access to app data and user-selected mod directories
 - **Input Validation**: All user inputs are validated and sanitized
 

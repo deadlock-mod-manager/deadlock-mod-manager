@@ -56,6 +56,7 @@ static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_RUNNING: AtomicBool = AtomicBool::new(false);
+static BACKGROUND_CANCEL: AtomicBool = AtomicBool::new(false);
 static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> =
   LazyLock::new(|| Arc::new(AtomicU64::new(0)));
 static THROTTLE: LazyLock<Arc<Throttle>> =
@@ -69,16 +70,11 @@ impl SyncPersistence for AppPersistence {
   fn now(&self) -> i64 {
     settings::now_secs()
   }
-  fn load_quota(&self) -> quota::QuotaWindow {
-    settings::load_quota(&self.app).unwrap_or_else(|e| {
-      log::error!("match-sync: failed to load quota: {e}");
-      quota::QuotaWindow::new(Vec::new(), FETCH_QUOTA_LIMIT, model::FETCH_QUOTA_WINDOW_SECS)
-    })
+  fn load_quota(&self) -> Result<quota::QuotaWindow, MatchSyncError> {
+    settings::load_quota(&self.app)
   }
-  fn save_quota(&self, quota: &quota::QuotaWindow) {
-    if let Err(e) = settings::save_quota(&self.app, quota) {
-      log::error!("match-sync: failed to persist quota: {e}");
-    }
+  fn save_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
+    settings::save_quota(&self.app, quota)
   }
   fn load_fetched(&self) -> Vec<u64> {
     settings::load_fetched_ids(&self.app).unwrap_or_default()
@@ -150,6 +146,9 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
 }
 
 pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError> {
+  if !accepted {
+    cancel_background_work();
+  }
   settings::set_consent(app, accepted)
 }
 
@@ -159,13 +158,20 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
       return Err(MatchSyncError::ConsentRequired);
     }
   } else {
-    cancel_full_sync();
+    cancel_background_work();
   }
   settings::set_enabled(app, enabled)?;
   if enabled {
     start_background_worker(app.clone());
   }
   Ok(())
+}
+
+// Stops both the one-time full sync and any in-flight background pass immediately,
+// so opt-out takes effect right away rather than after the current pass finishes.
+fn cancel_background_work() {
+  FULL_SYNC_CANCEL.store(true, Ordering::Relaxed);
+  BACKGROUND_CANCEL.store(true, Ordering::Relaxed);
 }
 
 pub fn cancel_full_sync() {
@@ -235,7 +241,7 @@ async fn background_pass(app: &AppHandle) {
     return;
   };
   let engine = build_engine(app.clone());
-  match engine.run_background_pass(&config).await {
+  match engine.run_background_pass(&config, &BACKGROUND_CANCEL).await {
     Ok(Some(p)) => log::info!("match-sync: background pass finished: {p:?}"),
     Ok(None) => {}
     Err(e) => log::warn!("match-sync: background pass failed: {e}"),
@@ -253,6 +259,7 @@ pub fn start_background_worker(app: AppHandle) {
   {
     return;
   }
+  BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   tokio::spawn(async move {
     while should_monitor(&app) {
       background_pass(&app).await;
@@ -263,6 +270,11 @@ pub fn start_background_worker(app: AppHandle) {
       }
     }
     BACKGROUND_RUNNING.store(false, Ordering::Relaxed);
+    // A quick disable/re-enable while this task was still shutting down could have
+    // seen BACKGROUND_RUNNING as true and returned early; make sure that isn't lost.
+    if should_monitor(&app) {
+      start_background_worker(app);
+    }
   });
 }
 

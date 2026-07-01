@@ -4,12 +4,25 @@ import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
+import type { TFunction } from "i18next";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useMatchSync } from "@/hooks/use-match-sync";
 
-const errorMessage = (error: unknown): string => {
+// Subcodes with a stable, localizable message. Anything else (network/store
+// errors) falls back to the raw backend message, since those wrap arbitrary
+// underlying error text that can't be meaningfully translated.
+const MATCH_SYNC_ERROR_KEYS: Record<string, string> = {
+  consentRequired: "matchSync.errors.consentRequired",
+  disabled: "matchSync.errors.disabled",
+  alreadyRunning: "matchSync.errors.alreadyRunning",
+  gcRateLimited: "matchSync.fullSync.rateLimited",
+  gameRunning: "matchSync.errors.gameRunning",
+  quotaReached: "matchSync.errors.quotaReached",
+};
+
+const rawErrorMessage = (error: unknown): string => {
   if (typeof error === "string") {
     return error;
   }
@@ -19,12 +32,25 @@ const errorMessage = (error: unknown): string => {
   return String(error);
 };
 
+const errorMessage = (error: unknown, t: TFunction): string => {
+  if (error && typeof error === "object" && "matchSyncKind" in error) {
+    const kind = (error as { matchSyncKind?: string }).matchSyncKind;
+    if (kind && kind in MATCH_SYNC_ERROR_KEYS) {
+      return t(MATCH_SYNC_ERROR_KEYS[kind] as string);
+    }
+  }
+  return rawErrorMessage(error);
+};
+
 export const MatchSyncSettings = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const {
     status,
     isLoading,
+    isError,
+    error,
+    refetch,
     progress,
     setConsent,
     setEnabled,
@@ -58,6 +84,24 @@ export const MatchSyncSettings = () => {
       );
     }
   }, [progress, status, t]);
+
+  if (isError) {
+    return (
+      <div className='flex flex-col gap-2'>
+        <p className='text-destructive text-sm'>
+          {t("matchSync.loadError.title")}
+          {error ? `: ${rawErrorMessage(error)}` : ""}
+        </p>
+        <Button
+          className='w-fit'
+          onClick={() => refetch()}
+          size='sm'
+          variant='outline'>
+          {t("matchSync.loadError.retry")}
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading || !status) {
     return (
@@ -95,7 +139,7 @@ export const MatchSyncSettings = () => {
       }
       await setEnabled.mutateAsync(true);
     } catch (error) {
-      toast.error(errorMessage(error));
+      toast.error(errorMessage(error, t));
     }
   };
 
@@ -104,7 +148,7 @@ export const MatchSyncSettings = () => {
       await startFullSync.mutateAsync();
       toast.success(t("matchSync.fullSync.started"));
     } catch (error) {
-      toast.error(errorMessage(error));
+      toast.error(errorMessage(error, t));
     }
   };
 

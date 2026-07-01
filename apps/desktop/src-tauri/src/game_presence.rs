@@ -122,11 +122,8 @@ pub(crate) fn resolve_game_path() -> Option<std::path::PathBuf> {
   mod_manager.find_game().ok()
 }
 
-fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) {
-  let Some(game_path) = resolve_game_path() else {
-    log::warn!("[GamePresence] Cannot start watcher: game path not found");
-    return;
-  };
+fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), Error> {
+  let game_path = resolve_game_path().ok_or(Error::GameNotFound)?;
   let discord_presence = app_handle.state::<DiscordState>().inner().clone();
   let presence_config = LATEST_PRESENCE_CONFIG
     .lock()
@@ -143,11 +140,19 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) {
   emit_status(Some(app_handle));
 
   let status_app = app_handle.clone();
-  let status_callback: PresenceStatusCallback =
-    Arc::new(move |phase| set_phase_emit(Some(&status_app), phase));
+  let status_running = Arc::clone(&running);
+  let status_callback: PresenceStatusCallback = Arc::new(move |phase| {
+    if status_running.load(Ordering::Relaxed) {
+      set_phase_emit(Some(&status_app), phase);
+    }
+  });
   let exit_app = app_handle.clone();
-  let exit_callback: GameExitCallback =
-    Arc::new(move || crate::match_sync::on_game_exit(exit_app.clone()));
+  let exit_running = Arc::clone(&running);
+  let exit_callback: GameExitCallback = Arc::new(move || {
+    if exit_running.load(Ordering::Relaxed) {
+      crate::match_sync::on_game_exit(exit_app.clone());
+    }
+  });
   let done_app = app_handle.clone();
   let done_flag = Arc::clone(&running);
 
@@ -173,9 +178,10 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) {
       emit_status(Some(&done_app));
     }
   });
+  Ok(())
 }
 
-pub(crate) fn ensure_watcher(app_handle: &AppHandle) {
+pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
   let _guard = COORDINATOR_LOCK
     .lock()
     .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -184,18 +190,18 @@ pub(crate) fn ensure_watcher(app_handle: &AppHandle) {
 
   if !presence && !monitoring {
     stop_current(Some(app_handle));
-    return;
+    return Ok(());
   }
 
   let running = is_running();
   let mode_matches = CURRENT_PRESENCE_MODE.load(Ordering::Relaxed) == presence;
   if running && mode_matches {
-    return;
+    return Ok(());
   }
   if running {
     stop_current(Some(app_handle));
   }
-  spawn_watcher(app_handle, presence);
+  spawn_watcher(app_handle, presence)
 }
 
 pub fn sync_monitoring_watcher(app_handle: &AppHandle) {
@@ -203,7 +209,9 @@ pub fn sync_monitoring_watcher(app_handle: &AppHandle) {
     crate::match_sync::should_monitor(app_handle),
     Ordering::Relaxed,
   );
-  ensure_watcher(app_handle);
+  if let Err(e) = ensure_watcher(app_handle) {
+    log::warn!("[GamePresence] Failed to start game-exit detection: {e}");
+  }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -257,7 +265,7 @@ pub async fn start_game_presence_watcher(
     *slot = Some(config);
   }
   PRESENCE_DESIRED.store(true, Ordering::Relaxed);
-  ensure_watcher(&app_handle);
+  ensure_watcher(&app_handle)?;
   log::info!("Game presence watcher requested");
   Ok(())
 }
@@ -265,7 +273,11 @@ pub async fn start_game_presence_watcher(
 #[tauri::command]
 pub async fn stop_game_presence_watcher(app_handle: AppHandle) -> Result<(), Error> {
   PRESENCE_DESIRED.store(false, Ordering::Relaxed);
-  ensure_watcher(&app_handle);
+  // Stopping presence itself always succeeds; only a fallback restart into
+  // detect-only mode (for match-sync monitoring) could fail here.
+  if let Err(e) = ensure_watcher(&app_handle) {
+    log::warn!("[GamePresence] Failed to restart in detect-only mode: {e}");
+  }
   log::info!("Game presence watcher stop requested");
   Ok(())
 }

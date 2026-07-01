@@ -56,6 +56,10 @@ pub fn load_config(app: &AppHandle) -> Result<MatchSyncConfig, MatchSyncError> {
 pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError> {
   let store = store(app)?;
   store.set(KEY_CONSENT, accepted);
+  // enabled=true with consent_accepted=false is never a valid persisted state.
+  if !accepted {
+    store.set(KEY_ENABLED, false);
+  }
   save(&store)
 }
 
