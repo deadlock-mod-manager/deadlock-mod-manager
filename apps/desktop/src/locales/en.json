@@ -991,6 +991,56 @@
     "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings."
   },
+  "matchSync": {
+    "title": "Match Data Sharing",
+    "description": "Optionally fetch your own Deadlock match data from your machine and contribute it to deadlock-api trackers.",
+    "about": {
+      "reads": "Reads your local Steam login (the auto-login token already stored on this machine) to talk to Steam on your behalf.",
+      "sends": "Sends only match IDs and match salts to deadlock-api, never your token, password, or personal data.",
+      "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
+      "risk": "This acts through your real Steam account, so the risk is low but not zero. Enable it only if you accept that."
+    },
+    "enable": {
+      "title": "Enable match data sharing",
+      "description": "Nothing is read from your machine or sent anywhere until you turn this on."
+    },
+    "consent": {
+      "title": "Enable match data sharing?",
+      "body": "When enabled, this app reads your local Steam login token from this machine to fetch your own Deadlock matches through your account, then sends the resulting match IDs and salts to deadlock-api. Your token, password, and personal data are never sent or stored. All fetching is throttled and capped at 40 requests per 24 hours. Because it acts through your real Steam account, the risk is low but not zero. Do you want to continue?",
+      "accept": "I understand, enable it",
+      "decline": "Cancel"
+    },
+    "quota": {
+      "remaining": "{{remaining}} of {{limit}} match fetches left in the next 24 hours.",
+      "accountRemaining": "{{name}}: {{remaining}}/{{limit}} today",
+      "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
+      "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
+    },
+    "noAccounts": "No Steam accounts detected. Log into Steam to sync matches.",
+    "loadError": {
+      "title": "Could not load match data sharing status",
+      "retry": "Retry"
+    },
+    "errors": {
+      "consentRequired": "You need to accept the consent screen first.",
+      "disabled": "Match data sharing is turned off.",
+      "alreadyRunning": "A sync is already in progress.",
+      "gameRunning": "Close Deadlock first, then try again.",
+      "quotaReached": "You've reached today's fetch limit. Come back tomorrow."
+    },
+    "fullSync": {
+      "title": "Fetch all my matches",
+      "description": "Walk your match history once and send everything that trackers are missing. Throttled, resumable, and safe to re-run.",
+      "button": "Fetch all my matches",
+      "started": "Fetching your matches in the background.",
+      "cancel": "Cancel",
+      "accountProgress": "Syncing account {{index}} of {{total}}: {{name}}",
+      "running": "Fetched {{fetched}} so far. {{remaining}} of {{limit}} fetches left today.",
+      "done": "Fetched {{fetched}} matches. You are all caught up.",
+      "doneQuota": "Fetched {{fetched}} matches. You have reached today's limit of {{limit}}. Come back tomorrow to fetch the rest.",
+      "rateLimited": "Steam is rate-limiting your account right now. Try again later."
+    }
+  },
   "privacy": {
     "title": "Privacy & Content",
     "description": "Control how NSFW (Not Safe For Work) content is displayed and filtered.",

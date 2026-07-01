@@ -69,6 +69,20 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-clipboard-manager = "2.3.2"
 dirs = "6"
 ttf-parser = "0.24"
+# Local Steam session recovery + GC access (see user-auth.md).
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+crc32fast = "1.4"
+hex = "0.4"
+base64 = "0.22"
+keyvalues-parser = "0.2"
+prost = "0.14"
+steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }
+valveprotos = { git = "https://github.com/deadlock-api/valveprotos-rs", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
+  "gc-common",
+  "gc-client",
+  "serde",
+] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
@@ -78,6 +92,10 @@ tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
+windows = { version = "0.58", features = [
+  "Win32_Security_Cryptography",
+  "Win32_Foundation",
+] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.10.1"
