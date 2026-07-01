@@ -3,6 +3,7 @@
 //! user-auth.md). The subsystem never uses deadlock-api's own server-side endpoints.
 
 use std::future::Future;
+use std::time::Duration;
 
 use prost::Message as _;
 use steam_vent::proto::MsgKind;
@@ -16,6 +17,21 @@ use valveprotos::deadlock::{
 
 use super::error::MatchSyncError;
 use super::model::{AuthContext, DEADLOCK_APP_ID, MatchHistoryPage, MatchSalts};
+
+// A stalled discover/login/job call must not block cancel/disable indefinitely.
+const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
+
+async fn with_timeout<T, E: std::fmt::Display>(
+  label: &str,
+  fut: impl Future<Output = Result<T, E>>,
+) -> Result<T, MatchSyncError> {
+  match tokio::time::timeout(GC_CALL_TIMEOUT, fut).await {
+    Ok(result) => result.map_err(|e| MatchSyncError::GcUnavailable(format!("{label}: {e}"))),
+    Err(_) => Err(MatchSyncError::GcUnavailable(format!(
+      "{label}: timed out after {GC_CALL_TIMEOUT:?}"
+    ))),
+  }
+}
 
 // `impl Future + Send` keeps impls spawnable. No internal retries: a failed salt
 // fetch must cost at most one quota unit (caller rate-limits + quota-gates).
@@ -52,15 +68,13 @@ impl SteamGcClient {
   }
 
   async fn connect(ctx: &AuthContext) -> Result<GcSession, MatchSyncError> {
-    let servers = ServerList::discover()
-      .await
-      .map_err(|e| MatchSyncError::GcUnavailable(format!("server discovery failed: {e}")))?;
-    let conn = Connection::access(&servers, &ctx.account_name, &ctx.refresh_token)
-      .await
-      .map_err(|e| MatchSyncError::GcUnavailable(format!("CM login failed: {e}")))?;
-    let gc = GameCoordinator::new(&conn, DEADLOCK_APP_ID)
-      .await
-      .map_err(|e| MatchSyncError::GcUnavailable(format!("GC handshake failed: {e}")))?;
+    let servers = with_timeout("server discovery", ServerList::discover()).await?;
+    let conn = with_timeout(
+      "CM login",
+      Connection::access(&servers, &ctx.account_name, &ctx.refresh_token),
+    )
+    .await?;
+    let gc = with_timeout("GC handshake", GameCoordinator::new(&conn, DEADLOCK_APP_ID)).await?;
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
@@ -96,18 +110,27 @@ impl GcMatchClient for SteamGcClient {
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchHistory as i32);
-    let sent = guard
-      .as_ref()
-      .expect("connected above")
-      .gc
-      .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true)
-      .await;
+    let sent = tokio::time::timeout(
+      GC_CALL_TIMEOUT,
+      guard
+        .as_ref()
+        .expect("connected above")
+        .gc
+        .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true),
+    )
+    .await;
 
     let raw = match sent {
-      Ok(raw) => raw,
-      Err(e) => {
+      Ok(Ok(raw)) => raw,
+      Ok(Err(e)) => {
         *guard = None;
         return Err(MatchSyncError::GcUnavailable(format!("history request failed: {e}")));
+      }
+      Err(_) => {
+        *guard = None;
+        return Err(MatchSyncError::GcUnavailable(format!(
+          "history request timed out after {GC_CALL_TIMEOUT:?}"
+        )));
       }
     };
 
@@ -141,18 +164,27 @@ impl GcMatchClient for SteamGcClient {
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchMetaData as i32);
-    let sent = guard
-      .as_ref()
-      .expect("connected above")
-      .gc
-      .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true)
-      .await;
+    let sent = tokio::time::timeout(
+      GC_CALL_TIMEOUT,
+      guard
+        .as_ref()
+        .expect("connected above")
+        .gc
+        .job_untyped(UntypedMessage(req.encode_to_vec()), kind, true),
+    )
+    .await;
 
     let raw = match sent {
-      Ok(raw) => raw,
-      Err(e) => {
+      Ok(Ok(raw)) => raw,
+      Ok(Err(e)) => {
         *guard = None;
         return Err(MatchSyncError::GcUnavailable(format!("salts request failed: {e}")));
+      }
+      Err(_) => {
+        *guard = None;
+        return Err(MatchSyncError::GcUnavailable(format!(
+          "salts request timed out after {GC_CALL_TIMEOUT:?}"
+        )));
       }
     };
 

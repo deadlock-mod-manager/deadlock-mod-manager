@@ -66,8 +66,13 @@ pub enum Error {
   BackgroundTaskFailed(String),
   #[error("VPK files are in use and cannot be deleted: {0}")]
   VpkInUse(String),
-  #[error("Match sync error: {0}")]
-  MatchSync(String),
+  // subcode is a stable machine-readable tag (e.g. "consentRequired") so the
+  // frontend can branch/localize without parsing the English message.
+  #[error("Match sync error: {message}")]
+  MatchSync {
+    subcode: &'static str,
+    message: String,
+  },
 }
 
 impl serde::Serialize for Error {
@@ -76,7 +81,7 @@ impl serde::Serialize for Error {
     S: serde::Serializer,
   {
     use serde::ser::SerializeStruct;
-    let mut state = serializer.serialize_struct("Error", 2)?;
+    let mut state = serializer.serialize_struct("Error", 3)?;
 
     // Map the error variant to the corresponding kind string
     let kind = match self {
@@ -111,11 +116,41 @@ impl serde::Serialize for Error {
       Error::RollbackFailed(_) => "rollbackFailed",
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
       Error::VpkInUse(_) => "vpkInUse",
-      Error::MatchSync(_) => "matchSync",
+      Error::MatchSync { .. } => "matchSync",
+    };
+    let match_sync_kind: Option<&str> = match self {
+      Error::MatchSync { subcode, .. } => Some(subcode),
+      _ => None,
     };
 
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
+    state.serialize_field("matchSyncKind", &match_sync_kind)?;
     state.end()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::Error;
+
+  #[test]
+  fn match_sync_error_serializes_its_subcode() {
+    let err = Error::MatchSync {
+      subcode: "consentRequired",
+      message: "Consent has not been accepted".into(),
+    };
+    let json = serde_json::to_value(&err).unwrap();
+    assert_eq!(json["kind"], "matchSync");
+    assert_eq!(json["matchSyncKind"], "consentRequired");
+    assert_eq!(json["message"], "Match sync error: Consent has not been accepted");
+  }
+
+  #[test]
+  fn other_errors_have_no_match_sync_subcode() {
+    let err = Error::GameNotFound;
+    let json = serde_json::to_value(&err).unwrap();
+    assert_eq!(json["kind"], "gameNotFound");
+    assert!(json["matchSyncKind"].is_null());
   }
 }

@@ -1014,6 +1014,17 @@
       "remaining": "{{remaining}} of {{limit}} match fetches left in the next 24 hours.",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },
+    "loadError": {
+      "title": "Could not load match data sharing status",
+      "retry": "Retry"
+    },
+    "errors": {
+      "consentRequired": "You need to accept the consent screen first.",
+      "disabled": "Match data sharing is turned off.",
+      "alreadyRunning": "A sync is already in progress.",
+      "gameRunning": "Close Deadlock first, then try again.",
+      "quotaReached": "You've reached today's fetch limit. Come back tomorrow."
+    },
     "fullSync": {
       "title": "Fetch all my matches",
       "description": "Walk your match history once and send everything that trackers are missing. Throttled, resumable, and safe to re-run.",

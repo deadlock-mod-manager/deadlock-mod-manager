@@ -36,8 +36,30 @@ pub enum MatchSyncError {
   Store(String),
 }
 
+impl MatchSyncError {
+  // A stable, machine-readable tag so the frontend can branch/localize on the
+  // specific case without parsing the English message.
+  pub fn subcode(&self) -> &'static str {
+    match self {
+      MatchSyncError::Disabled => "disabled",
+      MatchSyncError::ConsentRequired => "consentRequired",
+      MatchSyncError::QuotaReached { .. } => "quotaReached",
+      MatchSyncError::AlreadyRunning => "alreadyRunning",
+      MatchSyncError::AuthUnavailable(_) => "authUnavailable",
+      MatchSyncError::GcUnavailable(_) => "gcUnavailable",
+      MatchSyncError::GcRateLimited => "gcRateLimited",
+      MatchSyncError::GameRunning => "gameRunning",
+      MatchSyncError::Api(_) => "apiError",
+      MatchSyncError::Store(_) => "storeError",
+    }
+  }
+}
+
 impl From<MatchSyncError> for crate::errors::Error {
   fn from(err: MatchSyncError) -> Self {
-    crate::errors::Error::MatchSync(err.to_string())
+    crate::errors::Error::MatchSync {
+      subcode: err.subcode(),
+      message: err.to_string(),
+    }
   }
 }

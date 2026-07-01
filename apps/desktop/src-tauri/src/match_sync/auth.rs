@@ -23,7 +23,7 @@ impl SteamAuthProvider for LocalSteamAuth {
     let steam_dir = steam.path();
 
     let account = most_recent_account(steam_dir)?;
-    let blob = connect_cache_blob(&local_vdf_path(steam_dir), &account)?;
+    let blob = connect_cache_blob(&local_vdf_path(steam_dir)?, &account)?;
     let jwt = decrypt_blob(&blob, &account)?;
     let steam_id64 = steam_id_from_jwt(&jwt)?;
 
@@ -45,15 +45,15 @@ fn child<'a>(value: &'a Value<'a>, key: &str) -> Option<&'a Value<'a>> {
 
 // The auth file location differs on Windows (see user-auth.md).
 #[cfg(windows)]
-fn local_vdf_path(_steam_dir: &Path) -> PathBuf {
+fn local_vdf_path(_steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
   dirs::data_local_dir()
     .map(|d| d.join("Steam").join("local.vdf"))
-    .unwrap_or_else(|| PathBuf::from("local.vdf"))
+    .ok_or_else(|| err("could not resolve %LOCALAPPDATA%"))
 }
 
 #[cfg(not(windows))]
-fn local_vdf_path(steam_dir: &Path) -> PathBuf {
-  steam_dir.join("local.vdf")
+fn local_vdf_path(steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
+  Ok(steam_dir.join("local.vdf"))
 }
 
 fn most_recent_account(steam_dir: &Path) -> Result<String, MatchSyncError> {

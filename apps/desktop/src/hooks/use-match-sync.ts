@@ -88,6 +88,9 @@ export const useMatchSync = () => {
   return {
     status: status.data,
     isLoading: status.isLoading,
+    isError: status.isError,
+    error: status.error,
+    refetch: status.refetch,
     progress,
     setConsent,
     setEnabled,
