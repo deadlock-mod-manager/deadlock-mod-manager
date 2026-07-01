@@ -129,8 +129,8 @@ pub fn recover_all() -> Result<Vec<AuthContext>, MatchSyncError> {
       }),
       // The ConnectCache lookup is keyed by account name, not steam_id64 - reject a
       // blob whose token identity doesn't match the loginusers.vdf entry it came from.
-      Ok((_, sub)) => log::warn!(
-        "skipping account {account_name}: token SteamID {sub} does not match loginusers.vdf entry {steam_id64}"
+      Ok(_) => log::warn!(
+        "skipping account {account_name}: token identity does not match loginusers.vdf entry"
       ),
       Err(e) => log::warn!("skipping account {account_name}: {e}"),
     }
