@@ -3,6 +3,7 @@ use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::fs_retry;
 use log;
 use regex::Regex;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 use std::sync::LazyLock;
@@ -69,6 +70,14 @@ impl VpkManager {
     }
 
     log::info!("Starting VPK reordering for {} mods", mod_vpk_mapping.len());
+
+    let duplicate_assignments = Self::duplicate_reorder_vpk_assignments(mod_vpk_mapping);
+    if !duplicate_assignments.is_empty() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot reorder mods because VPK files are assigned to multiple mods: {}",
+        duplicate_assignments.join("; ")
+      )));
+    }
 
     let mut missing_vpks = Vec::new();
     for (mod_id, old_vpk_names) in mod_vpk_mapping {
@@ -177,6 +186,30 @@ impl VpkManager {
 
     log::info!("VPK reordering completed successfully");
     Ok(updated_mappings)
+  }
+
+  fn duplicate_reorder_vpk_assignments(mod_vpk_mapping: &[(String, Vec<String>)]) -> Vec<String> {
+    let mut owners_by_vpk: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    for (mod_id, vpk_names) in mod_vpk_mapping {
+      for vpk_name in vpk_names {
+        owners_by_vpk
+          .entry(Self::vpk_filename(vpk_name))
+          .or_default()
+          .push(mod_id.clone());
+      }
+    }
+
+    owners_by_vpk
+      .into_iter()
+      .filter_map(|(vpk_name, owners)| {
+        if owners.len() > 1 {
+          Some(format!("{vpk_name} -> {}", owners.join(", ")))
+        } else {
+          None
+        }
+      })
+      .collect()
   }
 
   /// Pre-check: verify existing VPK files can be opened for write before deleting any.
@@ -914,6 +947,30 @@ mod tests {
     );
     assert!(addons_path.join("local-abc-123_original.vpk").exists());
     assert!(!addons_path.join("pak02_dir.vpk").exists());
+  }
+
+  #[test]
+  fn reorder_errors_before_mutating_when_vpk_is_assigned_to_multiple_mods() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path();
+    write_vpk(addons_path, "pak01_dir.vpk");
+
+    let manager = VpkManager::new();
+    let err = manager
+      .reorder_vpks(
+        &[
+          ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
+          ("second".to_string(), vec!["pak01_dir.vpk".to_string()]),
+        ],
+        addons_path,
+      )
+      .unwrap_err();
+
+    assert!(err.to_string().contains(
+      "Cannot reorder mods because VPK files are assigned to multiple mods: pak01_dir.vpk -> first, second"
+    ));
+    assert!(addons_path.join("pak01_dir.vpk").exists());
+    assert!(!addons_path.join("temp_reorder").exists());
   }
 
   #[test]
